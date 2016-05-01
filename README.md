@@ -89,8 +89,7 @@ Commands:
   mkrepo <topdir>             :Create repository in another location
 
   help                        :This help
-  help <command>              :Help about specific command
-  help options                :Help about all command options
+  run --help                  :Command specific help
 
 Options common to all commands must appear before the command:
   -D                          :Debug
