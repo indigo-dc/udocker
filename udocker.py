@@ -1858,6 +1858,17 @@ class CurlURL(object):
             os.remove(header_file)
         return(hdr, buf)
 
+    def _set_pycurl_opt(self, pyc, hdr):
+        pyc.setopt(pyc.FOLLOWLOCATION, True)
+        pyc.setopt(pyc.VERBOSE, False)
+        pyc.setopt(pyc.FAILONERROR, False)
+        pyc.setopt(pyc.NOPROGRESS, True)
+        pyc.setopt(pyc.HEADERFUNCTION, hdr.write)
+        pyc.setopt(pyc.USERAGENT, self.agent)
+        pyc.setopt(pyc.CONNECTTIMEOUT, self.ctimeout)
+        pyc.setopt(pyc.TIMEOUT, self.timeout)
+        pyc.setopt(pyc.PROXY, self.http_proxy)
+      
     def get_pycurl(self, *args, **kwargs):
         """http get implementation using the PyCurl
         Example:
@@ -1870,16 +1881,8 @@ class CurlURL(object):
         buf = cStringIO.StringIO()
         hdr = CurlHeader()
         pyc = pycurl.Curl()
+        self._set_pycurl_opt(pyc, hdr)
         pyc.setopt(pyc.URL, str(url))
-        pyc.setopt(pyc.USERAGENT, self.agent)
-        pyc.setopt(pyc.FOLLOWLOCATION, True)
-        pyc.setopt(pyc.VERBOSE, True)
-        pyc.setopt(pyc.FAILONERROR, False)
-        pyc.setopt(pyc.NOPROGRESS, True)
-        pyc.setopt(pyc.HEADERFUNCTION, hdr.write)
-        pyc.setopt(pyc.CONNECTTIMEOUT, self.ctimeout)
-        pyc.setopt(pyc.TIMEOUT, self.timeout)
-        pyc.setopt(pyc.PROXY, self.http_proxy)
         if "sizeonly" in kwargs:
             hdr.sizeonly = True
         if "proxy" in kwargs and kwargs["proxy"]:
