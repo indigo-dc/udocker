@@ -74,6 +74,8 @@ class Config(object):
     self.user_init() and that can reside in ~/.udocker/udocker.conf
     """
 
+    # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-few-public-methods
     def __init__(self):
         """Initial default values. Can be overloaded by user_init()"""
         self.verbose_level = 0
@@ -93,8 +95,8 @@ class Config(object):
             "https://owncloud.indigo-datacloud.eu/index.php"
             "/s/TOZkjHmw0jHsUS2/download"
         )
-        self.osver = self.osversion()
-        self.arch = self.sysarch()
+        self.osver = self._osversion()
+        self.arch = self._sysarch()
         if self.arch == "amd64":
             self.proot_exec = "proot-x86_64"
         elif self.arch == "i386":
@@ -122,7 +124,6 @@ class Config(object):
 
         # CPU affinity executables to use with: run --cpuset-cpus="1,2,3-4"
         self.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
-        self.cpu_affinity_exec = ""
 
         # Containers execution defaults
         self.location = ""         # run os in a ROOT dir
@@ -131,7 +132,7 @@ class Config(object):
         self.http_proxy = ""    # ex. socks5://user:pass@127.0.0.1:1080
         self.timeout = 12       # default timeout (secs)
         self.download_timeout = 30 * 60    # file download timeout (secs)
-        self.ctimeout = 4       # default TCP connect timeout (secs)
+        self.ctimeout = 6       # default TCP connect timeout (secs)
         self.http_agent = (
             "docker/1.6.0 go/go1.4.2 kernel/4.0.6-200.fc21.x86_64 "
             "os/linux arch/amd64"
@@ -163,13 +164,13 @@ class Config(object):
             (key, val) = line.strip().split("=", 1)
             try:
                 exec('self.%s=%s' % (key, repr(val)))
-            except:
+            except(NameError, AttributeError, TypeError, IndexError):
                 msg.out("Error: error in config file:", line.strip())
                 return False
         msg.setlevel(self.verbose_level)
         return True
 
-    def sysarch(self):
+    def _sysarch(self):
         """Get the host system architecture"""
         try:
             mach = platform.machine()
@@ -177,18 +178,18 @@ class Config(object):
                 arch = "amd64"
             elif mach in ("i386", "i586", "i686"):
                 arch = "i386"
-        except:
+        except (NameError, AttributeError):
             if sys.maxsize > 2 ** 32:
                 arch = "amd64"
             else:
                 arch = "i386"
         return arch
 
-    def osversion(self):
+    def _osversion(self):
         """Get operating system"""
         try:
             return platform.system().lower()
-        except:
+        except (NameError, AttributeError):
             return ""
 
 
@@ -209,7 +210,7 @@ class Msg(object):
         self.stderr = sys.stderr
         try:
             nullfp = open("/dev/null", "w")
-        except:
+        except (IOError, OSError):
             self.chlderr = self.stderr
             self.chldout = self.stdout
         else:
@@ -237,17 +238,22 @@ class Unique(object):
     file names and other purposes. If module uuid does not exist
     it tries to use as last option the random generator.
     """
+    def __init__(self):
+        self.string_set = "abcdef"
+        self.def_name = "udocker"
 
     def _rnd(self, size):
         """Generate a random string"""
         return "".join(
-            random.sample("abcdef" * 64 + string.digits * 64, size))
+            random.sample(self.string_set * 64 + string.digits * 64, size))
 
     def uuid(self, name):
         """Get an ID"""
+        if not name:
+            name = self.def_name
         try:
             return str(uuid.uuid3(uuid.uuid4(), str(name) + str(time.time())))
-        except:
+        except (NameError, AttributeError):
             return(("%s-%s-%s-%s-%s") %
                    (self._rnd(8), self._rnd(4), self._rnd(4),
                     self._rnd(4), self._rnd(12)))
@@ -260,14 +266,14 @@ class Unique(object):
         """Get a container layer name"""
         return self._rnd(64)
 
-    def filename(self, name):
+    def filename(self, filename):
         """Get a filename"""
-        prefix = "udocker" + "-" + str(os.getpid()) + "-"
+        prefix = self.def_name + "-" + str(os.getpid()) + "-"
         try:
             return prefix + str(uuid.uuid3(uuid.uuid4(), \
-                str(time.time()))) + "-" + str(name)
-        except:
-            return prefix + self.uuid(name) + "-" + str(name)
+                str(time.time()))) + "-" + str(filename)
+        except (NameError, AttributeError):
+            return prefix + self.uuid(filename) + "-" + str(filename)
 
 
 class FileUtil(object):
@@ -288,7 +294,7 @@ class FileUtil(object):
         """Get the file owner user id"""
         try:
             return os.stat(self.filename).st_uid
-        except:
+        except (IOError, OSError):
             return -1
 
     def remove(self):
@@ -301,7 +307,7 @@ class FileUtil(object):
         elif os.path.isfile(filename) or os.path.islink(filename):
             try:
                 os.remove(filename)
-            except:
+            except (IOError, OSError):
                 return False
             return True
         elif os.path.isdir(filename):
@@ -323,7 +329,7 @@ class FileUtil(object):
         try:
             if os.path.isdir(self.filename):
                 return True
-        except:
+        except (IOError, OSError):
             pass
         return False
 
@@ -332,14 +338,14 @@ class FileUtil(object):
         try:
             fstat = os.stat(self.filename)
             return fstat.st_size
-        except:
+        except (IOError, OSError):
             return -1
 
     def getdata(self):
         """Read file content to a buffer"""
         try:
             filep = open(self.filename, "r")
-        except:
+        except (IOError, OSError):
             return ""
         else:
             buf = filep.read()
@@ -353,7 +359,7 @@ class FileUtil(object):
         out_file = FileUtil("findexec").mktmp()
         try:
             filep = open(out_file, "w")
-        except:
+        except (IOError, OSError):
             return ""
         subprocess.call(
             cmd_to_use, shell=True, stderr=msg.chlderr, stdout=filep)
@@ -396,13 +402,13 @@ class FileUtil(object):
         """
         try:
             fpsrc = open(self.filename, "rb")
-        except:
+        except (IOError, OSError):
             return False
         if not mode:
             mode = "w"
         try:
             fpdst = open(dest_filename, mode + "b")
-        except:
+        except (IOError, OSError):
             fpsrc.close()
             return False
         while True:
@@ -425,23 +431,26 @@ class Container(object):
     the root identity and privileges.
     """
 
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, localrepo):
-        self.localrepo = localrepo             # LocalRepository object
-        self.tmpdir = conf.tmpdir              # Dir for temporary files
-        self.tarball_url = conf.tarball_url    # URL to download PRoot
+        self.localrepo = localrepo               # LocalRepository object
+        self.tmpdir = conf.tmpdir                # Dir for temporary files
+        self.tarball_url = conf.tarball_url      # URL to download PRoot
         self.proot = self.localrepo.bindir + "/" + conf.proot_exec  # PRoot
         self.curl = CurlURL()
-        self.valid_host_env = ("TERM")         # Pass host env variables
-        self.cpu_affinity_exec_tools = conf.cpu_affinity_exec_tools
-        self.cpu_affinity_exec = conf.cpu_affinity_exec  # set CPU affinity
+        self.valid_host_env = ("TERM")           # Pass host env variables
+        self._cpu_affinity_exec_tools = conf.cpu_affinity_exec_tools
+        self._proot_kernel = conf.proot_kernel   # Emulate this kernel
         self.sysdirs_list = conf.sysdirs_list    # Host dirs to pass
         self.hostauth_list = conf.hostauth_list  # Bind passwd and group
         self.dri_list = conf.dri_list            # Bind direct rendering libs
-        self.proot_kernel = conf.proot_kernel    # Emulate this kernel
         self.cmd = conf.cmd                      # Default command
         self.opt = dict()                        # Run options
         self.imagerepo = None                    # Imagerepo of container image
+        self.container_id = ""                   # Container id
         self.tag = None                          # Tag of container image
+        self.exposed_ports = None
+        # Metadata defaults
         self.opt["nometa"] = False               # Don't load metadata
         self.opt["nosysdirs"] = False            # Bind host dirs
         self.opt["dri"] = False                  # Directories needed for DRI
@@ -461,12 +470,12 @@ class Container(object):
         self.opt["volfrom"] = []                 # Mount vol from container TBD
 
     def _banner(self, cmd=""):
-        """Print a banner upo container startup"""
+        """Print a container startup banner"""
         msg.out("",
                 "\n", "*" * 78,
                 "\n", "*", " " * 74, "*",
                 "\n", "*",
-                "UDOCKER STARTING CONTAINER".center(74, " "), "*",
+                ("STARTING " + self.container_id).center(74, " "), "*",
                 "\n", "*", " " * 74, "*",
                 "\n", "*" * 78, "\n",
                 "executing:", os.path.basename(cmd))
@@ -488,16 +497,16 @@ class Container(object):
                 return(False, False)
         return(container_dir, container_json)
 
-    def _check_exposed_ports(self, exposed_ports):
+    def _check_exposed_ports(self):
         """TCP/UDP ports < 1024 in ExposedPorts JSON metadata
         The exposed ports format is  ExposedPorts:{ "80/tcp":{}, }
         """
         port_number = -1
-        if exposed_ports:
-            for port in exposed_ports:
+        if self.exposed_ports:
+            for port in self.exposed_ports:
                 try:
                     port_number = int(port.split("/")[0])
-                except:
+                except (ValueError, TypeError):
                     pass
                 else:
                     if port_number < 1024:
@@ -508,6 +517,118 @@ class Container(object):
             msg.out("Warning: this container exposes TCP/IP"
                     " ports this may not work")
         return False
+
+    def _set_cpu_affinity(self):
+        """set the cpu affinity string for container run command"""
+        # find set affinity executable
+        for exec_cmd in self._cpu_affinity_exec_tools:
+            exec_name = FileUtil(exec_cmd.split(" ", 1)[0]).find_exec()
+            if exec_name:
+                cpu_affinity_exec = exec_name + \
+                    " " + exec_cmd.split(" ", 1)[1]
+        # if no cpu affinity executable available ignore affinity set
+        if not cpu_affinity_exec:
+            self.opt["cpuset"] = ""
+            return " "
+        elif self.opt["cpuset"]:
+            self.opt["cpuset"] = " '" + self.opt["cpuset"] + "' "
+            return " %s %s " % (cpu_affinity_exec, self.opt["cpuset"])
+        else:
+            self.opt["cpuset"] = ""
+            return " "
+
+    def _set_uid_map(self):
+        """Set the uid_map string for container run command"""
+        if self.opt["uid"] == "0":
+            uid_map = " -0 "
+        else:
+            uid_map = \
+                " -i " + self.opt["uid"] + ":" + self.opt["gid"] + " "
+        return uid_map
+
+    def _set_volume_bindings(self):
+        """Set the volume bindings string for container run command"""
+        # predefined volume bindings --sysdirs --hostauth --dri
+        if not self.opt["nosysdirs"]:
+            self.opt["vol"].extend(self.sysdirs_list)
+        if self.opt["hostauth"]:
+            self.opt["vol"].extend(self.hostauth_list)
+        if self.opt["dri"]:
+            self.opt["vol"].extend(self.dri_list)
+        # remove directory bindings specified with --novol
+        for volume in list(set(self.opt["novol"])):
+            if volume in self.opt["vol"]:
+                self.opt["vol"].remove(volume)
+        # build the volumes list
+        if self.opt["vol"]:
+            vol_str = " -b " + " -b ".join(self.opt["vol"])
+        else:
+            vol_str = " "
+        return vol_str
+
+    def _set_home(self):
+        """Binding of the host $HOME in to the container $HOME"""
+        if self.opt["bindhome"] and self.opt["home"]:
+            (r_user, dummy, dummy, dummy, dummy, r_home,
+             dummy) = self._get_user(os.getuid(), "/etc/passwd")
+            if r_user:
+                self.opt["bindhome"] = \
+                    " -b " + r_home + ":" + self.opt["home"]
+            else:
+                self.opt["bindhome"] = \
+                    " -b " + self.opt["home"] + ":" + self.opt["home"]
+        else:
+            self.opt["bindhome"] = " "
+
+    def _check_paths(self, container_root):
+        """Make sure we have a reasonable default PATH and CWD"""
+        path = self._getenv("PATH")
+        if not path and self.opt["uid"] == "0":
+            path = "/usr/sbin:/sbin:/usr/bin:/bin"
+        elif not path:
+            path = "/usr/bin:/bin"
+        self.opt["env"].append("PATH=%s" % path)
+        # verify if the working directory is valid and fixit
+        if not self.opt["cwd"]:
+            self.opt["cwd"] = self.opt["home"]
+        if not (self.opt["cwd"] in self.opt["bindhome"] or
+                (self.opt["cwd"] and (
+                    os.path.exists(container_root + "/" + self.opt["cwd"])) and (
+                        os.path.isdir(container_root + "/" + self.opt["cwd"])))):
+            msg.out("Error: invalid working directory: ", self.opt["cwd"])
+            # os.makedirs(container_root + "/" + self.opt["cwd"])
+            return False
+        else:
+            return True
+
+    def _check_executable(self, container_root):
+        """Check if executable exists and has execute permissions"""
+        path = self._getenv("PATH")
+        if self.opt["entryp"] and isinstance(self.opt["entryp"], str):
+            self.opt["cmd"] = self.opt["entryp"].strip().split(" ")
+        elif self.opt["entryp"] and isinstance(self.opt["entryp"], list):
+            if self.opt["cmd"]:                                     # and cmd
+                cmd_args = self.opt["cmd"]
+                self.opt["cmd"] = [self.opt["entryp"][0]]
+                self.opt["cmd"].extend(cmd_args)   # cmd=args entryp
+            else:
+                self.opt["cmd"] = self.opt["entryp"]
+        if not self.opt["cmd"]:
+            self.opt["cmd"] = self.cmd
+            msg.out("Warning: no command assuming:", self.opt["cmd"], l=2)
+        exec_name = self.opt["cmd"][0]            # exec pathname without args
+        if exec_name.startswith("/"):
+            exec_path = container_root + exec_name
+        else:
+            exec_path = \
+                FileUtil(exec_name).find_inpath(path, container_root + "/")
+        if (not (exec_path and os.path.exists(exec_path) and
+                 os.path.isfile(exec_path) and os.access(exec_path, os.X_OK))):
+            msg.out("Error: command not found or has no execute bit set: ",
+                    self.opt["cmd"])
+            return False
+        else:
+            return True
 
     def _run_load_metadata(self, container_id):
         """Load container metadata from container JSON payload"""
@@ -521,12 +642,6 @@ class Container(object):
                 self.get_container_attr(container_id)
             if not container_dir:
                 return(None, None)
-            # find set affinity executable
-            for exec_cmd in self.cpu_affinity_exec_tools:
-                exec_name = FileUtil(exec_cmd.split(" ", 1)[0]).find_exec()
-                if exec_name:
-                    self.cpu_affinity_exec = exec_name + \
-                        " " + exec_cmd.split(" ", 1)[1]
             # load metadata from container
             if not self.opt["nometa"]:
                 if not self.opt["user"]:
@@ -555,15 +670,15 @@ class Container(object):
                 self.opt["vol"].extend(
                     self._get_container_meta(
                         "Volumes", [], container_json))
-                exposed_ports = \
+                self.exposed_ports = \
                     self._get_container_meta(
                         "ExposedPorts", [], container_json)
+                self._check_exposed_ports()
                 meta_env = \
                     self._get_container_meta("Env", [], container_json)
                 if meta_env:
                     meta_env.extend(self.opt["env"])
                     self.opt["env"] = meta_env
-                self._check_exposed_ports(exposed_ports)
         return(container_dir, container_json)
 
     def _getenv(self, search_key):
@@ -683,7 +798,7 @@ class Container(object):
         try:
             (container_dir, dummy) = \
                 self._run_load_metadata(container_id)
-        except:
+        except (ValueError, TypeError):
             return False
 
         if conf.location:                   # using specific root tree
@@ -693,7 +808,7 @@ class Container(object):
 
         # container name(s) from container_id
         container_names = self.localrepo.get_container_name(container_id)
-
+        self.container_id = container_id
         # which user to use inside the container and setup its account
         if not self._setup_container_user(self.opt["user"], container_root):
             return 1
@@ -703,96 +818,14 @@ class Container(object):
         self.opt["env"].append("USER=" + self.opt["user"])
         self.opt["env"].append("LOGNAME=" + self.opt["user"])
         self.opt["env"].append("USERNAME=" + self.opt["user"])
-        if not self.opt["cwd"]:
-            self.opt["cwd"] = self.opt["home"]
-        if self.opt["uid"] == "0":
-            uid_map = " -0 "
-        else:
-            uid_map = \
-                " -i " + self.opt["uid"] + ":" + self.opt["gid"] + " "
 
-        # binding of the host $HOME in to the container $HOME
-        if self.opt["bindhome"] and self.opt["home"]:
-            (r_user, dummy, dummy, dummy, dummy, r_home,
-             dummy) = self._get_user(os.getuid(), "/etc/passwd")
-            if r_user:
-                self.opt["bindhome"] = \
-                    " -b " + r_home + ":" + self.opt["home"]
-            else:
-                self.opt["bindhome"] = \
-                    " -b " + self.opt["home"] + ":" + self.opt["home"]
-        else:
-            self.opt["bindhome"] = " "
-
-        # make sure we have a reasonable default PATH for executables
-        path = self._getenv("PATH")
-        if not path and self.opt["uid"] == "0":
-            path = "/usr/sbin:/sbin:/usr/bin:/bin"
-        elif not path:
-            path = "/usr/bin:/bin"
-        self.opt["env"].append("PATH=%s" % path)
-
-        # verify if the working directory is valid and fixit
-        if not (self.opt["cwd"] in self.opt["bindhome"] or
-                (self.opt["cwd"] and (
-                    os.path.exists(container_root + "/" + self.opt["cwd"])) and (
-                        os.path.isdir(container_root + "/" + self.opt["cwd"])))):
-            msg.out("Error: invalid working directory: ", self.opt["cwd"])
-            # os.makedirs(container_root + "/" + self.opt["cwd"])
+        self._set_home()
+        uid_map = self._set_uid_map()
+        cpu_affinity_str = self._set_cpu_affinity()
+        vol_str = self._set_volume_bindings()
+        if (not (self._check_paths(container_root)
+                 and self._check_executable(container_root))):
             return 2
-
-        # check if executable exists and has execute permissions
-        if self.opt["entryp"] and isinstance(self.opt["entryp"], str):
-            self.opt["cmd"] = self.opt["entryp"].strip().split(" ")
-        elif self.opt["entryp"] and isinstance(self.opt["entryp"], list):
-            if self.opt["cmd"]:                                     # and cmd
-                cmd_args = self.opt["cmd"]
-                self.opt["cmd"] = [self.opt["entryp"][0]]
-                self.opt["cmd"].extend(cmd_args)   # cmd=args entryp
-            else:
-                self.opt["cmd"] = self.opt["entryp"]
-        if not self.opt["cmd"]:
-            self.opt["cmd"] = self.cmd
-            msg.out("Warning: no command assuming:", self.opt["cmd"], l=2)
-        exec_name = self.opt["cmd"][0]            # exec pathname without args
-        if exec_name.startswith("/"):
-            exec_path = container_root + exec_name
-        else:
-            exec_path = \
-                FileUtil(exec_name).find_inpath(path, container_root + "/")
-        if (not (exec_path and os.path.exists(exec_path) and
-                 os.path.isfile(exec_path) and os.access(exec_path, os.X_OK))):
-            msg.out("Error: command not found or has no execute bit set: ",
-                    self.opt["cmd"])
-            return 2
-
-        # if no cpu affinity executable available ignore affinity set
-        if not self.cpu_affinity_exec:
-            self.opt["cpuset"] = ""
-        elif self.opt["cpuset"]:
-            self.opt["cpuset"] = " '" + self.opt["cpuset"] + "' "
-        else:
-            self.cpu_affinity_exec = ""
-            self.opt["cpuset"] = ""
-
-        # predefined volume bindings --sysdirs --hostauth --dri
-        if not self.opt["nosysdirs"]:
-            self.opt["vol"].extend(self.sysdirs_list)
-        if self.opt["hostauth"]:
-            self.opt["vol"].extend(self.hostauth_list)
-        if self.opt["dri"]:
-            self.opt["vol"].extend(self.dri_list)
-
-        # remove directory bindings specified with --novol
-        for volume in list(set(self.opt["novol"])):
-            if volume in self.opt["vol"]:
-                self.opt["vol"].remove(volume)
-
-        # build the volumes list
-        if self.opt["vol"]:
-            vol_str = " -b " + " -b ".join(self.opt["vol"])
-        else:
-            vol_str = " "
 
         # build the actual command
         cmd_t = ("unset VTE_VERSION; ",
@@ -800,13 +833,12 @@ class Container(object):
                  " SHLVL=0 container_uuid=" + container_id,
                  "container_name='",
                  str(container_names).strip("'\"[]") + "' ",
-                 self.cpu_affinity_exec,
-                 self.opt["cpuset"],
+                 cpu_affinity_str,
                  self.proot,
                  self.opt["bindhome"],
                  vol_str,
                  uid_map,
-                 "-k", self.proot_kernel,
+                 "-k", self._proot_kernel,
                  "-r", container_root,
                  " ",)
         cmd = " ".join(cmd_t)
@@ -871,14 +903,14 @@ class Container(object):
         if wanted_uid:
             try:
                 usr = pwd.getpwuid(wanted_user)
-            except:
+            except (IOError, OSError, KeyError):
                 return("", "", "", "", "", "")
             return(str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
                    str(usr.pw_gecos), usr.pw_dir, usr.pw_shell)
         else:
             try:
                 usr = pwd.getpwnam(wanted_user)
-            except:
+            except (IOError, OSError, KeyError):
                 return("", "", "", "", "", "")
             return(str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
                    str(usr.pw_gecos), usr.pw_dir, usr.pw_shell)
@@ -892,7 +924,7 @@ class Container(object):
             wanted_user = ""
         try:
             inpasswd = open(passwd_file)
-        except:
+        except (IOError, OSError):
             return("", "", "", "", "", "", "")
         else:
             for line in inpasswd:
@@ -905,11 +937,12 @@ class Container(object):
             inpasswd.close()
             return("", "", "", "", "", "", "")
 
+    # pylint: disable=too-many-arguments
     def _add_user(self, passwd_file, user, passw, uid, gid, gecos, home, shell):
         """Add a *nix user to a /etc/passwd file"""
         try:
             outpasswd = open(passwd_file, "ab")
-        except:
+        except (IOError, OSError):
             return False
         else:
             outpasswd.write("%s:%s:%s:%s:%s:%s:%s\n" %
@@ -921,7 +954,7 @@ class Container(object):
         """Add a group to a /etc/passwd file"""
         try:
             outgroup = open(group_file, "ab")
-        except:
+        except (IOError, OSError):
             return False
         else:
             outgroup.write("%s:x:%s:\n" % (group, gid))
@@ -1045,6 +1078,8 @@ class Container(object):
         return True
 
 
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-public-methods
 class LocalRepository(object):
     """Implements a basic repository for images and containers.
     The repository will be usually in the user home directory.
@@ -1131,7 +1166,7 @@ class LocalRepository(object):
             # touch create version file
             open(directory + "/PROTECT", 'w').close()
             return True
-        except:
+        except (IOError, OSError):
             return False
 
     def _unprotect(self, directory):
@@ -1139,7 +1174,7 @@ class LocalRepository(object):
         try:
             os.remove(directory + "/PROTECT")
             return True
-        except:
+        except (IOError, OSError):
             return False
 
     def _isprotected(self, directory):
@@ -1174,7 +1209,7 @@ class LocalRepository(object):
             if os.path.isdir(container_dir):
                 try:
                     filep = open(container_dir + "/imagerepo.name", "r")
-                except:
+                except (IOError, OSError):
                     reponame = ""
                 else:
                     reponame = filep.read()
@@ -1230,7 +1265,7 @@ class LocalRepository(object):
         try:
             rel_path_to_existing = os.path.relpath(
                 existing_file, os.path.dirname(link_file))
-        except:
+        except (AttributeError, NameError):
             rel_path_to_existing = self._relpath(
                 existing_file, os.path.dirname(link_file))
         os.symlink(rel_path_to_existing, link_file)
@@ -1295,7 +1330,7 @@ class LocalRepository(object):
         try:
             os.makedirs(container_dir + "/ROOT")
             out_imagerepo = open(container_dir + "/imagerepo.name", 'w')
-        except:
+        except (IOError, OSError):
             return None
         else:
             out_imagerepo.write(imagerepo + ":" + tag)
@@ -1312,7 +1347,7 @@ class LocalRepository(object):
         try:
             if os.path.isfile(tag_dir + "/TAG"):
                 return True
-        except:
+        except (IOError, OSError):
             pass
         return False
 
@@ -1447,7 +1482,7 @@ class LocalRepository(object):
         self.cur_tagdir = directory
         try:
             out_tag = open(directory + "/TAG", 'w')
-        except:
+        except (IOError, OSError):
             return False
         else:
             out_tag.write(self.cur_repodir + ":" + tag)
@@ -1472,14 +1507,14 @@ class LocalRepository(object):
                 try:
                     os.remove(directory + "/v1")
                     os.remove(directory + "/v2")
-                except:
+                except (IOError, OSError):
                     pass
                 if len(os.listdir(directory)) != 0:
                     return False
         try:
             # Create version file
             open(directory + "/" + version, 'a').close()
-        except:
+        except (IOError, OSError):
             return False
         return True
 
@@ -1513,7 +1548,8 @@ class LocalRepository(object):
                 json_string = manifest["history"][0]["v1Compatibility"].strip()
                 try:
                     container_json = json.loads(json_string)
-                except:
+                except (IOError, OSError, AttributeError,
+                        ValueError, TypeError):
                     return(None, None)
                 return(container_json, files)
         return(None, None)
@@ -1537,7 +1573,7 @@ class LocalRepository(object):
         try:
             outfile = open(out_filename, 'w')
             json.dump(data, outfile)
-        except:
+        except (IOError, OSError, AttributeError, ValueError, TypeError):
             if outfile:
                 outfile.close()
             return False
@@ -1564,7 +1600,7 @@ class LocalRepository(object):
         try:
             infile = open(in_filename)
             json_obj = json.load(infile)
-        except:
+        except (IOError, OSError, AttributeError, ValueError, TypeError):
             pass
         if infile:
             infile.close()
@@ -1727,7 +1763,7 @@ class CurlHeader(object):
         """
         try:
             infile = open(in_filename)
-        except:
+        except (IOError, OSError):
             return False
         for line in infile:
             self.write(line)
@@ -1759,7 +1795,7 @@ class CurlURL(object):
         self.http_proxy = conf.http_proxy
         try:
             dummy = pycurl.Curl()         # if pycurl is not available
-        except:
+        except (NameError, AttributeError):
             self.get = self.get_execcurl  # map get() to get_execcurl()
             self.cache_support = False
         else:
@@ -1770,13 +1806,14 @@ class CurlURL(object):
         """Get content length from the http header"""
         try:
             return int(hdr.data["content-length"])
-        except:
+        except (ValueError, TypeError):
             return -1
 
     def set_proxy(self, http_proxy):
         """Specify a socks http proxy"""
         self.http_proxy = http_proxy
 
+    # pylint: disable=too-many-locals
     def get_execcurl(self, *args, **kwargs):
         """http get implementation using the curl executable command"""
         if len(args) != 1:
@@ -1848,7 +1885,7 @@ class CurlURL(object):
         else:
             try:
                 buf = cStringIO.StringIO(open(output_file, "r").read())
-            except:
+            except(IOError, OSError):
                 msg.out("Error: reading curl output file to buffer")
             if os.path.exists(output_file):
                 os.remove(output_file)
@@ -1859,6 +1896,7 @@ class CurlURL(object):
         return(hdr, buf)
 
     def _set_pycurl_opt(self, pyc, hdr):
+        """Set options for pycurl"""
         pyc.setopt(pyc.FOLLOWLOCATION, True)
         pyc.setopt(pyc.VERBOSE, False)
         pyc.setopt(pyc.FAILONERROR, False)
@@ -1868,7 +1906,7 @@ class CurlURL(object):
         pyc.setopt(pyc.CONNECTTIMEOUT, self.ctimeout)
         pyc.setopt(pyc.TIMEOUT, self.timeout)
         pyc.setopt(pyc.PROXY, self.http_proxy)
-      
+
     def get_pycurl(self, *args, **kwargs):
         """http get implementation using the PyCurl
         Example:
@@ -1911,7 +1949,7 @@ class CurlURL(object):
                 openflags = "ab"
             try:
                 filep = open(output_file, openflags)
-            except:
+            except(IOError, OSError):
                 msg.out("Error: opening download file: %s" % output_file)
                 return(hdr, buf)
             pyc.setopt(pyc.WRITEDATA, filep)
@@ -2049,7 +2087,7 @@ class DockerIoAPI(object):
         (hdr, buf) = self._get_url(url)
         try:
             return(hdr.data, json.loads(buf.getvalue()))
-        except:
+        except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, [])
 
     def get_repo_list(self, imagerepo):
@@ -2059,7 +2097,7 @@ class DockerIoAPI(object):
         (hdr, buf) = self._get_url(url)
         try:
             return hdr.data, json.loads(buf.getvalue())
-        except:
+        except (IOError, OSError, AttributeError, ValueError, TypeError):
             return hdr.data, []
 
     def _get_v1_auth(self, www_authenticate, imagerepo):
@@ -2074,7 +2112,7 @@ class DockerIoAPI(object):
                 try:
                     auth_header = "Authorization: Token " + \
                         auth_hdr.data["x-docker-token"]
-                except:
+                except(IndexError, TypeError):
                     return ""
                 self.v1_auth_header = auth_header
             elif self.v1_auth_header:
@@ -2088,7 +2126,7 @@ class DockerIoAPI(object):
         (hdr, buf) = self._get_url(url)
         try:
             return(hdr.data, json.loads(buf.getvalue()))
-        except:
+        except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, dict())
 
     def get_v1_image_ancestry(self, endpoint, image_id):
@@ -2098,13 +2136,13 @@ class DockerIoAPI(object):
         (hdr, buf) = self._get_url(url)
         try:
             return(hdr.data, json.loads(buf.getvalue()))
-        except:
+        except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, [])
 
     def get_v1_image_json(self, endpoint, layer_id):
         """Get the JSON metadata for a specific layer"""
         url = endpoint + "/v1/images/" + layer_id + "/json"
-        msg.out("url:", url, l=2)
+        msg.out("json url:", url, l=2)
         filename = self.localrepo.layersdir + "/" + layer_id + ".json"
         if self._get_file(url, filename, 0):
             self.localrepo.add_image_layer(filename)
@@ -2114,7 +2152,7 @@ class DockerIoAPI(object):
     def get_v1_image_layer(self, endpoint, layer_id):
         """Get a specific layer data file (layer files are tarballs)"""
         url = endpoint + "/v1/images/" + layer_id + "/layer"
-        msg.out("url:", url, l=2)
+        msg.out("layer url:", url, l=2)
         filename = self.localrepo.layersdir + "/" + layer_id + ".layer"
         if self._get_file(url, filename, 3):
             self.localrepo.add_image_layer(filename)
@@ -2126,6 +2164,7 @@ class DockerIoAPI(object):
         files = []
         if layer_list:
             for layer_id in reversed(layer_list):
+                msg.out("Downloading layer:", layer_id)
                 filesize = self.get_v1_image_json(endpoint, layer_id)
                 if not filesize:
                     return []
@@ -2152,7 +2191,8 @@ class DockerIoAPI(object):
                 if token_buf and "token" in token_buf:
                     try:
                         auth_token = json.loads(token_buf)
-                    except:
+                    except (IOError, OSError, AttributeError,
+                            ValueError, TypeError):
                         return auth_header
                     auth_header = "Authorization: Bearer " + \
                         auth_token["token"]
@@ -2171,7 +2211,7 @@ class DockerIoAPI(object):
         (hdr, buf) = self._get_url(url)
         try:
             return(hdr.data, json.loads(buf.getvalue()))
-        except:
+        except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, [])
 
     def get_v2_image_layer(self, endpoint, imagerepo, layer_id):
@@ -2232,7 +2272,7 @@ class DockerIoAPI(object):
         (hdr, res) = self.get_v1_image_tags(endpoint, imagerepo)
         try:
             image_id = res[tag]
-        except:
+        except IndexError:
             return []
         if not (self.localrepo.setup_tag(tag)
                 and self.localrepo.set_version("v1")):
@@ -2257,7 +2297,7 @@ class DockerIoAPI(object):
         (dummy, buf) = self._get_url(url)
         try:
             return json.loads(buf.getvalue())
-        except:
+        except (IOError, OSError, AttributeError, ValueError, TypeError):
             return []
 
 
@@ -2343,7 +2383,7 @@ class DockerLocalFileAPI(object):
             return False
         try:
             os.rename(filepath, target_file)
-        except:
+        except(IOError, OSError):
             cmd = "/bin/cp -f " + filepath + " " + target_file
             status = subprocess.call(cmd, shell=True, stderr=msg.chlderr)
             if status:
@@ -2351,7 +2391,7 @@ class DockerLocalFileAPI(object):
         self.localrepo.add_image_layer(target_file)
         return True
 
-    def _load_image(self, structure, tmp_imagedir, imagerepo, tag):
+    def _load_image(self, structure, imagerepo, tag):
         """Load a container image into a repository mimic docker load"""
         if self.localrepo.cd_imagerepo(imagerepo, tag):
             msg.out("Error: repository and tag already exist", imagerepo, tag)
@@ -2367,7 +2407,7 @@ class DockerLocalFileAPI(object):
                 return False
             try:
                 top_layer_id = structure["repositories"][imagerepo][tag]
-            except:
+            except (IndexError, NameError):
                 top_layer_id = self._find_top_layer_id(structure)
             for layer_id in self._sorted_layers(structure, top_layer_id):
                 if str(structure["layers"][layer_id]["VERSION"]) != "1.0":
@@ -2388,7 +2428,7 @@ class DockerLocalFileAPI(object):
                                                          top_layer_id))
             return [imagerepo + ":" + tag]
 
-    def _load_repositories(self, structure, tmp_imagedir):
+    def _load_repositories(self, structure):
         """Load other image repositories into this local repo"""
         if "repositories" not in structure:
             return False
@@ -2396,7 +2436,7 @@ class DockerLocalFileAPI(object):
         for imagerepo in structure["repositories"]:
             for tag in structure["repositories"][imagerepo]:
                 if imagerepo and tag:
-                    if self._load_image(structure, tmp_imagedir,
+                    if self._load_image(structure,
                                         imagerepo, tag):
                         loaded_repositories.append(imagerepo + ":" + tag)
         return loaded_repositories
@@ -2434,12 +2474,11 @@ class DockerLocalFileAPI(object):
             return False
         else:
             if "repositories" in structure and structure["repositories"]:
-                repositories = self._load_repositories(structure, tmp_imagedir)
+                repositories = self._load_repositories(structure)
             else:
                 imagerepo = Unique().imagename()
                 tag = "latest"
-                repositories = self._load_image(structure,
-                                                tmp_imagedir, imagerepo, tag)
+                repositories = self._load_image(structure, imagerepo, tag)
             FileUtil(tmp_imagedir).remove()
             return repositories
 
@@ -2454,10 +2493,9 @@ class DockerLocalFileAPI(object):
         container_json["config"] = dict()
         container_json["architecture"] = conf.arch
         container_json["os"] = conf.osver
-        try:
-            layer_file = self.localrepo.layersdir + "/" + layer_id + ".layer"
-            container_json["size"] = FileUtil(layer_file).size()
-        except:
+        layer_file = self.localrepo.layersdir + "/" + layer_id + ".layer"
+        container_json["size"] = FileUtil(layer_file).size()
+        if container_json["size"] == -1:
             container_json["size"] = 0
         container_json["container_config"]["Hostname"] = ""
         container_json["container_config"]["Domainname"] = ""
@@ -2533,7 +2571,7 @@ class DockerLocalFileAPI(object):
         json_file = self.localrepo.layersdir + "/" + layer_id + ".json"
         try:
             os.rename(tarfile, layer_file)
-        except:
+        except(IOError, OSError):
             cmd = "/bin/cp -f " + tarfile + " " + layer_file
             status = subprocess.call(cmd, shell=True, stderr=msg.chlderr)
             if status:
@@ -2611,8 +2649,9 @@ class Udocker(object):
                 msg.out("%-30.30s %8.8s %s" %
                         (repo["name"],
                          "[OK]" if repo["is_official"] else "",
-                         filter(lambda x: x in string.printable,
-                                repo["description"]).replace("\n", "")))
+                         "".join([x if x in string.printable else ""
+                                  for x in repo["description"]]).\
+                                      replace("\n", "")))
             page += 1
 
     def do_load(self, cmdp):
@@ -3082,7 +3121,7 @@ class Udocker(object):
             try:
                 msg.out(json.dumps(container_json, sort_keys=True,
                                    indent=4, separators=(',', ': ')))
-            except:
+            except (IOError, OSError, AttributeError, ValueError, TypeError):
                 msg.out(container_json)
             return True
         return False
@@ -3114,7 +3153,7 @@ class Udocker(object):
         """Print the version number"""
         try:
             msg.out("%s %s" % ("udocker", __version__))
-        except:
+        except NameError:
             pass
 
     def do_help(self, cmdp):
@@ -3192,7 +3231,7 @@ class Udocker(object):
                     if text:
                         msg.out(text)
                     found_cmd = True
-                except:
+                except AttributeError:
                     pass
         if not found_cmd:
             msg.out(self.do_help.__doc__)
