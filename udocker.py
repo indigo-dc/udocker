@@ -101,7 +101,7 @@ class Config(object):
             self.proot_exec = "proot-x86_64"
         elif self.arch == "i386":
             self.proot_exec = "proot-x86"
-        self.proot_kernel = "4.2.0"
+        self.kernel = self._oskernel()
 
         # defaults for container execution
         self.cmd = ["/bin/bash", "-i"]  # Comand to execute
@@ -109,8 +109,8 @@ class Config(object):
         # directories to be mapped in contaners with: run --sysdirs
         self.sysdirs_list = (
             "/dev", "/proc", "/sys",
-            "/etc/resolv.conf",
-            "/etc/host.conf", "/etc/hostname",
+            "/etc/resolv.conf", "/etc/host.conf", "/etc/hostname",
+            "/lib/modules",
         )
 
         # directories to be mapped in contaners with: run --hostauth
@@ -138,7 +138,7 @@ class Config(object):
             "os/linux arch/amd64"
         )
 
-        # docker.io
+        # docker hub
         self.dockerio_index_url = "https://index.docker.io/v1"
         self.dockerio_registry_url = "https://registry-1.docker.io"
 
@@ -191,6 +191,13 @@ class Config(object):
             return platform.system().lower()
         except (NameError, AttributeError):
             return ""
+
+    def _oskernel(self):
+        """Get operating system"""
+        try:
+            return platform.release()
+        except (NameError, AttributeError):
+            return "4.2.0"
 
 
 class Msg(object):
@@ -300,7 +307,7 @@ class FileUtil(object):
     def remove(self):
         """Delete files or directories"""
         filename = os.path.abspath(self.filename)
-        if filename.count("/") <= 2 and filename != "/tmp/":
+        if filename.count("/") <= 2 and not filename.startswith("/tmp/"):
             return False
         elif self.uid() != os.getuid():
             return False
@@ -440,7 +447,7 @@ class Container(object):
         self.curl = CurlURL()
         self.valid_host_env = ("TERM")           # Pass host env variables
         self._cpu_affinity_exec_tools = conf.cpu_affinity_exec_tools
-        self._proot_kernel = conf.proot_kernel   # Emulate this kernel
+        self._kernel = conf.kernel               # Emulate this kernel
         self.sysdirs_list = conf.sysdirs_list    # Host dirs to pass
         self.hostauth_list = conf.hostauth_list  # Bind passwd and group
         self.dri_list = conf.dri_list            # Bind direct rendering libs
@@ -566,7 +573,7 @@ class Container(object):
             vol_str = " "
         return vol_str
 
-    def _set_home(self):
+    def _set_bindhome(self):
         """Binding of the host $HOME in to the container $HOME"""
         if self.opt["bindhome"] and self.opt["home"]:
             (r_user, dummy, dummy, dummy, dummy, r_home,
@@ -819,7 +826,7 @@ class Container(object):
         self.opt["env"].append("LOGNAME=" + self.opt["user"])
         self.opt["env"].append("USERNAME=" + self.opt["user"])
 
-        self._set_home()
+        self._set_bindhome()
         uid_map = self._set_uid_map()
         cpu_affinity_str = self._set_cpu_affinity()
         vol_str = self._set_volume_bindings()
@@ -827,8 +834,11 @@ class Container(object):
                  and self._check_executable(container_root))):
             return 2
 
+        if self.opt["kernel"]:
+            self._kernel = self.opt["kernel"]
+
         # build the actual command
-        cmd_t = ("unset VTE_VERSION; ",
+        cmd_t = (r"unset VTE_VERSION; PS1='%s[\W]\$ ' " % container_id[:8],
                  " ".join(self.opt["env"]),
                  " SHLVL=0 container_uuid=" + container_id,
                  "container_name='",
@@ -838,7 +848,7 @@ class Container(object):
                  self.opt["bindhome"],
                  vol_str,
                  uid_map,
-                 "-k", self._proot_kernel,
+                 "-k", self._kernel,
                  "-r", container_root,
                  " ",)
         cmd = " ".join(cmd_t)
@@ -992,6 +1002,34 @@ class Container(object):
             msg.out("Error: creating container:", container_id)
         return container_id
 
+    def _remove_whiteouts(self, tarf, destdir):
+        """The layered filesystem od docker uses whiteout files
+        to identify files or directories to be removed.
+        The format is .wh.<filename>
+        """
+        if not destdir:
+            return False
+        cmd = r"tar tf %s '*\/\.wh\.*'" % (tarf)
+        proc = subprocess.Popen(cmd, shell=True, stderr=msg.chlderr,
+                                stdout=subprocess.PIPE)
+        while True:
+            wh_filename = proc.stdout.readline().strip()
+            if wh_filename:
+                wh_basename = os.path.basename(wh_filename)
+                if wh_basename.startswith(".wh."):
+                    rm_filename = os.path.dirname(wh_filename) + "/" \
+                        + wh_basename.replace(".wh.", "", 1)
+                    FileUtil(destdir + "/" + wh_filename).remove()
+                    FileUtil(destdir + "/" + rm_filename).remove()
+            else:
+                try:
+                    proc.stdout.close()
+                    proc.terminate()
+                except(NameError, AttributeError):
+                    pass
+                break
+        return True
+
     def _untar_layer(self, tarfiles, destdir):
         """Untar all container layers. Each layer is extracted
         and permissions are changed to avoid file permission
@@ -1006,10 +1044,15 @@ class Container(object):
             cmd += r" --one-file-system --no-same-owner "
             cmd += r"--no-same-permissions --overwrite -f " + tarf
             cmd += r"; find " + destdir
+            cmd += r" \( -type d ! -perm -u=x -exec chmod u+x {} \; \) , "
             cmd += r" \( ! -perm -u=w -exec chmod u+w {} \; \) , "
             cmd += r" \( ! -gid " + gid + r" -exec chgrp " + gid
             cmd += r" {} \; \) "
             status = subprocess.call(cmd, shell=True, stderr=msg.chlderr)
+            if status:
+                break
+            else:
+                self._remove_whiteouts(tarf, destdir)
         return status
 
     def _dict_to_str(self, in_dict):
@@ -1540,7 +1583,7 @@ class LocalRepository(object):
         elif os.path.exists(directory + "/v2"):  # if dockerhub API v1
             manifest = self.load_json("manifest")
             if manifest:
-                for layer in reversed(manifest["fslayers"]):
+                for layer in reversed(manifest["fsLayers"]):
                     layer_file = directory + "/" + layer["blobSum"]
                     if not os.path.exists(layer_file):
                         return(None, None)
@@ -1702,7 +1745,7 @@ class LocalRepository(object):
                     status = False
                     continue
         elif "manifest" in structure:
-            for manifest_layer in structure["manifest"]["fslayers"]:
+            for manifest_layer in structure["manifest"]["fsLayers"]:
                 if manifest_layer["blobSum"] not in structure["layers"]:
                     msg.out("Error: layer in manifest does not exist in repo",
                             manifest_layer)
@@ -2251,19 +2294,25 @@ class DockerIoAPI(object):
             if (hdr and "X-ND-HTTPSTATUS" in hdr
                     and "401" in hdr["X-ND-HTTPSTATUS"]):
                 endpoint = self.registry_url              # Try docker registry
+            elif (hdr and "X-ND-HTTPSTATUS" in hdr
+                  and "404" in hdr["X-ND-HTTPSTATUS"]):
+                msg.out("Error: image not found")
+                return []
             else:
-                msg.out("Failed to get endpoints:", str(hdr))
+                msg.out("Error: failed to get endpoints:", str(hdr))
                 return []
         self.localrepo.setup_imagerepo(imagerepo)
+        # first try v2 image manifest
         (hdr, res) = self.get_v2_image_manifest(endpoint, imagerepo, tag)
-        if "name" in res and imagerepo in res["name"] and "fslayers" in res:
+        if "name" in res and imagerepo in res["name"] and "fsLayers" in res:
             if not (self.localrepo.setup_tag(tag)
                     and self.localrepo.set_version("v2")):
                 msg.out("Error: setting localrepo v2 tag and version")
                 return []
             self.localrepo.save_json("manifest", res)
             msg.out("v2 layers: %s" % (imagerepo), l=1)
-            files = self.get_v2_layers_all(endpoint, imagerepo, res["fslayers"])
+            files = self.get_v2_layers_all(endpoint, imagerepo,
+                                           res["fsLayers"])
             return files
         # if a v2 manifest is not found then try v1
         if not self._get_v1_auth("Token", imagerepo):
@@ -2632,7 +2681,7 @@ class Udocker(object):
             return False
         if not self.dockerioapi.is_repo_name(expression):
             return False
-        msg.out("%-30.30s %8.8s %s" %
+        msg.out("%-40.40s %8.8s %s" %
                 ("NAME", "OFFICIAL", "DESCRIPTION"))
         page = 1
         while True:
@@ -2646,9 +2695,9 @@ class Udocker(object):
                 if key_press in ("q", "Q", "e", "E"):
                     return True
             for repo in repo_list["results"]:
-                msg.out("%-30.30s %8.8s %s" %
+                msg.out("%-40.40s %8.8s %s" %
                         (repo["name"],
-                         "[OK]" if repo["is_official"] else "",
+                         "[OK]" if repo["is_official"] else "----",
                          "".join([x if x in string.printable else ""
                                   for x in repo["description"]]).\
                                       replace("\n", "")))
@@ -2706,7 +2755,11 @@ class Udocker(object):
         --httpproxy=socks5://user:pass@host:port        :use http proxy
         --httpproxy=socks4://host:port                  :use http proxy
         --httpproxy=socks5://host:port                  :use http proxy
+        --index=https://index.docker.io/v1              :docker index
+        --registry=https://registry-1.docker.io         :docker registry
         """
+        conf.dockerio_index_url = cmdp.get("--index=")
+        conf.dockerio_registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
         imagespec = cmdp.get("P1")
         if cmdp.missing_options():               # syntax error
@@ -2740,11 +2793,13 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         container_id = self._create(imagespec)
-        if name and container_id:
-            if not self.localrepo.set_container_name(container_id, name):
+        if container_id:
+            msg.out(container_id)
+            if name and not self.localrepo.set_container_name(container_id,
+                                                              name):
                 msg.out("error: invalid container name may exist "
                         "already or wrong format")
-            msg.out(container_id)
+                return False
             return True
         else:
             return False
@@ -2834,6 +2889,10 @@ class Udocker(object):
             "dnssearch": {
                 "fl": ("--dns-search=",), "act": "R",
                 "p2": "CMD_OPT", "p3": False
+            },
+            "kernel": {
+                "fl": ("--kernel=",), "act": "R",
+                "p2": "CMD_OPT", "p3": False
             }
         }
         for option, cmdp_args in cmd_options.iteritems():
@@ -2868,6 +2927,7 @@ class Udocker(object):
         --name=<container-name>    :set or change the name of the container
         --bindhome                 :bind the home directory into the container
         --location=<path-to-dir>   :use root tree outside the repository
+        --kernel=<kernel-id>       :use this Linux kernel identifier
         """
         container = Container(self.localrepo)
         self._get_run_options(cmdp, container)
@@ -3219,22 +3279,15 @@ class Udocker(object):
                run --volume=/data:/mnt --volume=/etc/hosts  <container_id>
                run --nosysdirs --volume=/dev --volume=/proc  <container_id>
         """
-        found_cmd = False
         cmd_help = cmdp.get("", "CMD")
-        for method in dir(self):
-            if (method.startswith("_") or "API" in method
-                    or "localrepo" in method):
-                continue
-            if cmd_help in (method, "options"):
-                try:
-                    text = eval("self." + method + ".__doc__")
-                    if text:
-                        msg.out(text)
-                    found_cmd = True
-                except AttributeError:
-                    pass
-        if not found_cmd:
-            msg.out(self.do_help.__doc__)
+        try:
+            text = eval("self.do_" + cmd_help + ".__doc__")
+            if text:
+                msg.out(text)
+                return
+        except AttributeError:
+            pass
+        msg.out(self.do_help.__doc__)
 
 
 class CmdParser(object):
@@ -3471,9 +3524,9 @@ class Main(object):
 
 
 if __name__ == "__main__":
+    msg = Msg()
     if not os.geteuid():
         msg.out("Error: do not run as root !")
         sys.exit(1)
-    msg = Msg()
     conf = Config()
     sys.exit(Main().start())
