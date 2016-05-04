@@ -101,23 +101,23 @@ Some examples of usage:
 
 Search on dockerhub
 ```
-udocker search  fedora
-udocker search  ubuntu
-udocker search  indigodatacloud
+udocker.py search  fedora
+udocker.py search  ubuntu
+udocker.py search  indigodatacloud
 ```
 
 Pull from docker hub and list local images
 ```
-udocker pull  fedora
-udocker pull  busybox
-udocker pull  indigodatacloud/disvis
-udocker images
+udocker.py pull  fedora
+udocker.py pull  busybox
+udocker.py pull  indigodatacloud/disvis
+udocker.py images
 ```
 
 Create the container from the image and run it
 ```
-udocker create --name=myfed  fedora
-udocker run  myfed  cat /etc/redhat-release
+udocker.py create --name=myfed  fedora
+udocker.py run  myfed  cat /etc/redhat-release
 ```
 
 Run mounting the host home dir (u457) into the container home (cuser)
@@ -125,21 +125,26 @@ Notice that you can "mount" any host directory inside the container,
 this is not a real mount but the directories will be visible inside 
 the container.
 ```
-udocker run -v /home/u/u457:/home/cuser -w /home/user myfed  /bin/bash
-udocker run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
-udocker run -v /etc/pass -v /etc/group  /bin/bash
+udocker.py run -v /home/u/u457:/home/cuser -w /home/user myfed  /bin/bash
+udocker.py run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
+udocker.py run -v /etc/pass -v /etc/group  /bin/bash
 ```
 
 Install software
 ```
-udocker run  myfed  yum install -y firefox pulseaudio gnash-plugin
+udocker.py run  myfed  yum install -y firefox pulseaudio gnash-plugin
 ```
 
 Run as some user
 ```
-udocker run --user 1000:1001  myfed  /bin/id
-udocker run --user root   myfed  /bin/id
-udocker run --user jorge  myfed  /bin/id
+udocker.py run --user 1000:1001  myfed  /bin/id
+udocker.py run --user root   myfed  /bin/id
+udocker.py run --user jorge  myfed  /bin/id
+```
+
+Firefox with audio and video
+```
+./udocker.py run --hostenv -v /proc -v /var/run -v /sys -v /home --user=jorge -w /home/jorge --dri firefox
 ```
 
 ## Aknowlegments
