@@ -998,17 +998,15 @@ class Container(object):
         self.localrepo.save_json(
             container_dir + "/container.json", container_json)
         status = self._untar_layer(layer_files, container_dir + "/ROOT")
-        if status:
+        if not status:
             msg.out("Error: creating container:", container_id)
         return container_id
 
-    def _remove_whiteouts(self, tarf, destdir):
+    def _apply_whiteouts(self, tarf, destdir):
         """The layered filesystem od docker uses whiteout files
         to identify files or directories to be removed.
         The format is .wh.<filename>
         """
-        if not destdir:
-            return False
         cmd = r"tar tf %s '*\/\.wh\.*'" % (tarf)
         proc = subprocess.Popen(cmd, shell=True, stderr=msg.chlderr,
                                 stdout=subprocess.PIPE)
@@ -1019,7 +1017,6 @@ class Container(object):
                 if wh_basename.startswith(".wh."):
                     rm_filename = os.path.dirname(wh_filename) + "/" \
                         + wh_basename.replace(".wh.", "", 1)
-                    FileUtil(destdir + "/" + wh_filename).remove()
                     FileUtil(destdir + "/" + rm_filename).remove()
             else:
                 try:
@@ -1037,6 +1034,7 @@ class Container(object):
         """
         gid = str(os.getgid())
         for tarf in tarfiles:
+            self._apply_whiteouts(tarf, destdir)
             cmd = "umask 022 ; tar -C %s -x --delay-directory-restore " % \
                 (destdir)
             if msg.level > 1:
@@ -1044,16 +1042,15 @@ class Container(object):
             cmd += r" --one-file-system --no-same-owner "
             cmd += r"--no-same-permissions --overwrite -f " + tarf
             cmd += r"; find " + destdir
-            cmd += r" \( -type d ! -perm -u=x -exec chmod u+x {} \; \) , "
-            cmd += r" \( ! -perm -u=w -exec chmod u+w {} \; \) , "
-            cmd += r" \( ! -gid " + gid + r" -exec chgrp " + gid
-            cmd += r" {} \; \) "
+            cmd += r" \( -type d ! -perm -u=x -exec /bin/chmod u+x {} \; \) , "
+            cmd += r" \( ! -perm -u=w -exec /bin/chmod u+w {} \; \) , "
+            cmd += r" \( ! -gid " + gid + r" -exec /bin/chgrp " + gid
+            cmd += r" {} \; \) , "
+            cmd += r" \( -name '.wh.*' -exec /bin/rm -f {} \; \)"
             status = subprocess.call(cmd, shell=True, stderr=msg.chlderr)
             if status:
-                break
-            else:
-                self._remove_whiteouts(tarf, destdir)
-        return status
+                msg.out("Error: while extracting image layer")
+        return not status
 
     def _dict_to_str(self, in_dict):
         """Convert dict to str"""
