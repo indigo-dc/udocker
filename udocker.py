@@ -50,8 +50,9 @@ try:
     import json
 except ImportError:
     sys.path.append(START_PATH + "/../lib/simplejson")
-    sys.path.append(os.getenv("HOME") + "/.udocker/lib/simplejson")
-    sys.path.append(os.getenv("UDOCKER") + "/.udocker/lib/simplejson")
+    sys.path.append(str(os.getenv("HOME")) + "/.udocker/lib/simplejson")
+    sys.path.append(str(os.getenv("UDOCKER")) + "/.udocker/lib/simplejson")
+    # pylint: disable=import-error
     import simplejson as json
 try:
     import uuid
@@ -120,7 +121,10 @@ class Config(object):
         )
 
         # directories for DRI (direct rendering)
-        self.dri_list = ("/usr/lib64/dri", "/usr/lib/dri",)
+        self.dri_list = (
+            "/usr/lib/dri", "/lib/dri",
+            "/usr/lib64/dri", "/lib64/dri",
+        )
 
         # CPU affinity executables to use with: run --cpuset-cpus="1,2,3-4"
         self.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
@@ -563,8 +567,16 @@ class Container(object):
         if self.opt["dri"]:
             self.opt["vol"].extend(self.dri_list)
         # remove directory bindings specified with --novol
-        for volume in list(set(self.opt["novol"])):
-            if volume in self.opt["vol"]:
+        for novolume in list(set(self.opt["novol"])):
+            try:
+                self.opt["vol"].remove(novolume)
+            except ValueError:
+                msg.out("Warning:  novol %s not in volumes list" %
+                        novolume)
+        for volume in self.opt["vol"]:
+            host_dir_file = volume.split(":")[0]
+            if not os.path.exists(host_dir_file):
+                msg.out("Warning: host dir not found: -v %s" % host_dir_file)
                 self.opt["vol"].remove(volume)
         # build the volumes list
         if self.opt["vol"]:
@@ -575,17 +587,13 @@ class Container(object):
 
     def _set_bindhome(self):
         """Binding of the host $HOME in to the container $HOME"""
-        if self.opt["bindhome"] and self.opt["home"]:
+        if self.opt["bindhome"]:
             (r_user, dummy, dummy, dummy, dummy, r_home,
              dummy) = self._get_user(os.getuid(), "/etc/passwd")
             if r_user:
-                self.opt["bindhome"] = \
-                    " -b " + r_home + ":" + self.opt["home"]
-            else:
-                self.opt["bindhome"] = \
-                    " -b " + self.opt["home"] + ":" + self.opt["home"]
+                return " -b " + r_home
         else:
-            self.opt["bindhome"] = " "
+            return " "
 
     def _check_paths(self, container_root):
         """Make sure we have a reasonable default PATH and CWD"""
@@ -598,15 +606,13 @@ class Container(object):
         # verify if the working directory is valid and fixit
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
-        if not (self.opt["cwd"] in self.opt["bindhome"] or
-                (self.opt["cwd"] and (
-                    os.path.exists(container_root + "/" + self.opt["cwd"])) and (
-                        os.path.isdir(container_root + "/" + self.opt["cwd"])))):
-            msg.out("Error: invalid working directory: ", self.opt["cwd"])
-            # os.makedirs(container_root + "/" + self.opt["cwd"])
-            return False
-        else:
-            return True
+        if (self.opt["cwd"] and not (self.opt["bindhome"] or self.opt["cwd"]
+                                     in self.opt["vol"])):
+            if (not (os.path.exists(container_root + "/" + self.opt["cwd"])
+                     and os.path.isdir(container_root + "/" + self.opt["cwd"]))):
+                msg.out("Error: invalid working directory: ", self.opt["cwd"])
+                return False
+        return True
 
     def _check_executable(self, container_root):
         """Check if executable exists and has execute permissions"""
@@ -738,10 +744,10 @@ class Container(object):
             user = self.opt["user"]
         if ":" in user:
             matched = re.match(("^(\\d+):(\\d+)$"), user)
-            if matched:
+            try:
                 self.opt["uid"] = matched.group(1)
                 self.opt["gid"] = matched.group(1)
-            else:
+            except AttributeError:
                 msg.out("Error: invalid user syntax use uid:gid or username")
                 return False
             if "/etc/passwd" in self.opt["vol"] or self.opt["hostauth"]:
@@ -778,7 +784,7 @@ class Container(object):
                     self.opt["gid"] = ""
                 elif self.opt["uid"] > 0:
                     self.opt["user"] = ""
-                msg.out("Warning: non-existing user creating ...")
+                msg.out("Warning: non-existing user will be created")
                 self._create_user(container_root + "/etc/passwd",
                                   container_root + "/etc/group")
         return True
@@ -826,7 +832,7 @@ class Container(object):
         self.opt["env"].append("LOGNAME=" + self.opt["user"])
         self.opt["env"].append("USERNAME=" + self.opt["user"])
 
-        self._set_bindhome()
+        bindhome = self._set_bindhome()
         uid_map = self._set_uid_map()
         cpu_affinity_str = self._set_cpu_affinity()
         vol_str = self._set_volume_bindings()
@@ -845,7 +851,7 @@ class Container(object):
                  str(container_names).strip("'\"[]") + "' ",
                  cpu_affinity_str,
                  self.proot,
-                 self.opt["bindhome"],
+                 bindhome,
                  vol_str,
                  uid_map,
                  "-k", self._kernel,
@@ -1135,17 +1141,7 @@ class LocalRepository(object):
     d) bin:        contains executables (PRoot is stored here)
     """
 
-    def __init__(self):
-        self.topdir = conf.def_topdir
-        self.setup(self.topdir)
-        self.cur_repodir = None
-        self.cur_tagdir = None
-        self.cur_containerdir = None
-
-    def setup(self, topdir):
-        """creates properties with pathnames for easy
-        access to the several repository directories
-        """
+    def __init__(self, topdir):
         self.topdir = topdir
         self.def_reposdir = "repos"
         self.def_layersdir = "layers"
@@ -1175,6 +1171,13 @@ class LocalRepository(object):
         self.cur_repodir = ""
         self.cur_tagdir = ""
         self.cur_containerdir = ""
+
+    def setup(self, topdir):
+        """creates properties with pathnames for easy
+        access to the several repository directories
+        """
+        self.__init__(topdir)
+
 
     def is_container_id(self, obj):
         """Verify if the provided object matches the format of a
@@ -2000,7 +2003,8 @@ class CurlURL(object):
         hdr.data["X-ND-CURLSTATUS"] = 0
         try:
             pyc.perform()
-        except pycurl.error, (errno, errstr):
+        except pycurl.error, error:
+            errno, errstr = error
             if errno == 33:
                 msg.out("Warning: cannot resume going to full download")
                 hdr.data["X-ND-CURLSTATUS"] = errno
@@ -2279,12 +2283,48 @@ class DockerIoAPI(object):
                 files.append(layer["blobSum"])
         return files
 
+    def get_v2(self, endpoint, imagerepo, tag):
+        """Pull container with v2 API"""
+        (dummy, res) = self.get_v2_image_manifest(endpoint, imagerepo, tag)
+        if "name" in res and imagerepo in res["name"] and "fsLayers" in res:
+            if not (self.localrepo.setup_tag(tag)
+                    and self.localrepo.set_version("v2")):
+                msg.out("Error: setting localrepo v2 tag and version")
+                return []
+            self.localrepo.save_json("manifest", res)
+            msg.out("v2 layers: %s" % (imagerepo), l=1)
+            files = self.get_v2_layers_all(endpoint, imagerepo,
+                                           res["fsLayers"])
+            return files
+
+    def get_v1(self, endpoint, imagerepo, tag):
+        """Pull container with v1 API"""
+        if not self._get_v1_auth("Token", imagerepo):
+            return []
+        msg.out("v1 tags: %s" % (imagerepo), l=1)
+        (dummy, res) = self.get_v1_image_tags(endpoint, imagerepo)
+        try:
+            image_id = res[tag]
+        except IndexError:
+            return []
+        if not (self.localrepo.setup_tag(tag)
+                and self.localrepo.set_version("v1")):
+            msg.out("Error: setting localrepo v1 tag and version")
+            return []
+        msg.out("v1 ancestry: %s" % (image_id), l=1)
+        (dummy, res) = self.get_v1_image_ancestry(endpoint, image_id)
+        if res:
+            self.localrepo.save_json("ancestry", res)
+            msg.out("v1 layers: %s" % (image_id), l=1)
+            files = self.get_v1_layers_all(endpoint, res)
+            return files
+
     def get(self, imagerepo, tag):
         """Pull a docker image from Docker Hub.
         Try the v2 API and if the download fails then try the v1 API.
         """
         msg.out("get imagerepo: %s tag: %s" % (imagerepo, tag))
-        (hdr, res) = self.get_repo_list(imagerepo)
+        (hdr, dummy) = self.get_repo_list(imagerepo)
         if hdr and "x-docker-endpoints" in hdr:
             endpoint = "http://" + hdr["x-docker-endpoints"]
         else:
@@ -2299,38 +2339,10 @@ class DockerIoAPI(object):
                 msg.out("Error: failed to get endpoints:", str(hdr))
                 return []
         self.localrepo.setup_imagerepo(imagerepo)
-        # first try v2 image manifest
-        (hdr, res) = self.get_v2_image_manifest(endpoint, imagerepo, tag)
-        if "name" in res and imagerepo in res["name"] and "fsLayers" in res:
-            if not (self.localrepo.setup_tag(tag)
-                    and self.localrepo.set_version("v2")):
-                msg.out("Error: setting localrepo v2 tag and version")
-                return []
-            self.localrepo.save_json("manifest", res)
-            msg.out("v2 layers: %s" % (imagerepo), l=1)
-            files = self.get_v2_layers_all(endpoint, imagerepo,
-                                           res["fsLayers"])
-            return files
-        # if a v2 manifest is not found then try v1
-        if not self._get_v1_auth("Token", imagerepo):
-            return []
-        msg.out("v1 tags: %s" % (imagerepo), l=1)
-        (hdr, res) = self.get_v1_image_tags(endpoint, imagerepo)
-        try:
-            image_id = res[tag]
-        except IndexError:
-            return []
-        if not (self.localrepo.setup_tag(tag)
-                and self.localrepo.set_version("v1")):
-            msg.out("Error: setting localrepo v1 tag and version")
-            return []
-        msg.out("v1 ancestry: %s" % (image_id), l=1)
-        (hdr, res) = self.get_v1_image_ancestry(endpoint, image_id)
-        if res:
-            self.localrepo.save_json("ancestry", res)
-            msg.out("v1 layers: %s" % (image_id), l=1)
-            files = self.get_v1_layers_all(endpoint, res)
-            return files
+        files = self.get_v2(endpoint, imagerepo, tag)      # try v2
+        if not files:
+            files = self.get_v1(endpoint, imagerepo, tag)  # try v1
+        return files
 
     def search_get_page(self, expression, page):
         """Get search result pages from Docker Hub"""
@@ -2930,7 +2942,6 @@ class Udocker(object):
         self._get_run_options(cmdp, container)
         container_or_image = cmdp.get("P1")
         conf.location = cmdp.get("--location=")
-        restart = cmdp.get("--restart")
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
         #
@@ -2955,11 +2966,7 @@ class Udocker(object):
                 if not self.localrepo.set_container_name(container_id, name):
                     msg.out("error: invalid container name format")
                     return False
-        if restart:
-            while True:
-                status = container.run(container_id)
-        else:
-            status = container.run(container_id)
+        status = container.run(container_id)
         if delete and not self.localrepo.isprotected_container(container_id):
             self.localrepo.del_container(container_id)
         return status
@@ -3468,7 +3475,7 @@ class Main(object):
             msg.setlevel(conf.verbose_level)
         if self.cmdp.get("--repo=", "GEN_OPT"):  # override repository root tree
             conf.def_topdir = self.cmdp.get("--repo=", "GEN_OPT")
-        self.localrepo = LocalRepository()
+        self.localrepo = LocalRepository(conf.def_topdir)
         self.udocker = Udocker(self.localrepo)
 
     def execute(self):

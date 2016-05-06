@@ -1,11 +1,11 @@
 # Indigo udocker
-A basic user tool to execute simple containers without requiring root 
-privileges. Enables basic download and execution of docker containers 
-by non-privileged users in systems were docker is not available.
-It can be used to access and execute the content of docker containers 
-in batch systems and interactive clusters that are managed by other 
-entities such as grid infrastructures or externaly managed batch or
-interactive Linux systems.
+A basic user tool to execute simple containers in user space without 
+requiring root privileges. Enables basic download and execution of 
+docker containers by non-privileged users in systems were docker is 
+not available. It can be used to access and execute the content of 
+docker containers in batch systems and interactive clusters that are 
+managed by other entities such as grid infrastructures or externaly 
+managed batch or interactive Linux systems.
 
 The Indigo udocker does not require any type of privileges nor the
 deployment of services by system administrators. It can be downloaded
@@ -33,6 +33,7 @@ examples of operations that are not possible:
 * accessing host protected devices and files
 * listening on TCP/IP privileged ports (range below 1024)
 * mount file-systems
+* the su command will not work
 * change the system time
 * changing routing tables, firewall rules, or network interfaces
 
@@ -43,16 +44,19 @@ The current implementation is limited to the pulling of docker images
 and its execution. The actual containers should be built using docker
 and dockerfiles.
 
-## Security
-Because of the above limitations udocker does not offer the same isolation 
-features of docker. However since udocker runs entirely as non-privileged 
-user it is as safe as any other tool or service that a normal user can use 
-and thus does not present any additional security risk to the host system. 
+Due to the way PRoot implements the chroot environment debugging inside
+of udocker will not work. udocker is mainly oriented at providing a
+run-time environment for containers execution in user space.
 
-Any user can downloaded it and execute it from its own account without 
+## Security
+Because of the above limitations udocker does not offer the same isolation
+features of docker. However since udocker runs entirely as non-privileged
+user it is as safe as any other tool or service that a normal user can use.
+
+Any user can downloaded it and execute it from its own account without
 requiring system administration intervention. However users should consider
 that the containers data will be unpacked and stored in their home
-directories, therefore the data will be as safe as any other data in the 
+directories, therefore the data will be as safe as any other data in the
 user home directory.
 
 Indigo udocker via PRoot offers the emulation of the root user. This emulation
@@ -106,7 +110,7 @@ udocker.py search  ubuntu
 udocker.py search  indigodatacloud
 ```
 
-Pull from docker hub and list local images
+Pull from docker hub and list the pulled images
 ```
 udocker.py pull  fedora
 udocker.py pull  busybox
@@ -114,28 +118,33 @@ udocker.py pull  indigodatacloud/disvis
 udocker.py images
 ```
 
-Create the container from the image and run it
+Create the container from a pulled image and run it
 ```
 udocker.py create --name=myfed  fedora
 udocker.py run  myfed  cat /etc/redhat-release
 ```
 
-Run mounting the host home dir (u457) into the container home (cuser)
-Notice that you can "mount" any host directory inside the container,
-this is not a real mount but the directories will be visible inside 
-the container.
+Run mounting the host /home/u457 into the container directory /home/cuser. 
+Notice that you can "mount" any host directory inside the container, this 
+is not a real mount but the directories will be visible inside the container.
 ```
-udocker.py run -v /home/u/u457:/home/cuser -w /home/user myfed  /bin/bash
+udocker.py run -v /home/u457:/home/cuser -w /home/user myfed  /bin/bash
 udocker.py run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
-udocker.py run -v /etc/pass -v /etc/group  /bin/bash
 ```
 
-Install software
+Run mounting the host /var, /proc, /sys and /tmp in the same container
+directories. Notice that the content of these container directories will
+be obfuscated.
 ```
-udocker.py run  myfed  yum install -y firefox pulseaudio gnash-plugin
+udocker.py run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
 ```
 
-Run as some user
+Install software inside the container
+```
+udocker.py run  --user=root myfed  yum install -y firefox pulseaudio gnash-plugin
+```
+
+Run as some user. The usernames should exist in the container 
 ```
 udocker.py run --user 1000:1001  myfed  /bin/id
 udocker.py run --user root   myfed  /bin/id
@@ -150,3 +159,4 @@ Firefox with audio and video
 ## Aknowlegments
 
 PRoot http://proot.me
+INDIGO DataCloud https://www.indigo-datacloud.eu
