@@ -153,7 +153,7 @@ udocker.py run --user jorge  myfed  /bin/id
 
 Firefox with audio and video
 ```
-./udocker.py run --hostenv -v /proc -v /var/run -v /sys -v /home --user=jorge -w /home/jorge --dri firefox
+./udocker.py run --bindhome --hostauth --hostenv -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed
 ```
 
 ## Aknowlegments
