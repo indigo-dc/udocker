@@ -52,8 +52,7 @@ except ImportError:
     sys.path.append(START_PATH + "/../lib/simplejson")
     sys.path.append(str(os.getenv("HOME")) + "/.udocker/lib/simplejson")
     sys.path.append(str(os.getenv("UDOCKER")) + "/.udocker/lib/simplejson")
-    # pylint: disable=import-error
-    import simplejson as json
+    import simplejson as json  # pylint: disable=import-error
 try:
     import uuid
 except ImportError:
@@ -137,10 +136,7 @@ class Config(object):
         self.timeout = 12       # default timeout (secs)
         self.download_timeout = 30 * 60    # file download timeout (secs)
         self.ctimeout = 6       # default TCP connect timeout (secs)
-        self.http_agent = (
-            "docker/1.6.0 go/go1.4.2 kernel/4.0.6-200.fc21.x86_64 "
-            "os/linux arch/amd64"
-        )
+        self.http_agent = ""
 
         # docker hub
         self.dockerio_index_url = "https://index.docker.io/v1"
@@ -281,8 +277,9 @@ class Unique(object):
         """Get a filename"""
         prefix = self.def_name + "-" + str(os.getpid()) + "-"
         try:
-            return prefix + str(uuid.uuid3(uuid.uuid4(), \
-                str(time.time()))) + "-" + str(filename)
+            return(prefix
+                   + str(uuid.uuid3(uuid.uuid4(), str(time.time())))
+                   + "-" + str(filename))
         except (NameError, AttributeError):
             return prefix + self.uuid(filename) + "-" + str(filename)
 
@@ -448,7 +445,7 @@ class Container(object):
         self.tmpdir = conf.tmpdir                # Dir for temporary files
         self.tarball_url = conf.tarball_url      # URL to download PRoot
         self.proot = self.localrepo.bindir + "/" + conf.proot_exec  # PRoot
-        self.curl = CurlURL()
+        self.curl = GetURL()
         self.valid_host_env = ("TERM")           # Pass host env variables
         self._cpu_affinity_exec_tools = conf.cpu_affinity_exec_tools
         self._kernel = conf.kernel               # Emulate this kernel
@@ -609,7 +606,8 @@ class Container(object):
         if (self.opt["cwd"] and not (self.opt["bindhome"] or self.opt["cwd"]
                                      in self.opt["vol"])):
             if (not (os.path.exists(container_root + "/" + self.opt["cwd"])
-                     and os.path.isdir(container_root + "/" + self.opt["cwd"]))):
+                     and os.path.isdir(container_root
+                                       + "/" + self.opt["cwd"]))):
                 msg.out("Error: invalid working directory: ", self.opt["cwd"])
                 return False
         return True
@@ -751,21 +749,21 @@ class Container(object):
                 msg.out("Error: invalid user syntax use uid:gid or username")
                 return False
             if "/etc/passwd" in self.opt["vol"] or self.opt["hostauth"]:
-                (found_user, found_uid, found_gid, found_gecos, found_home, \
-                    found_shell) = self._get_host_user(self.opt["uid"])
+                (found_user, found_uid, found_gid, found_gecos, found_home,
+                 found_shell) = self._get_host_user(self.opt["uid"])
             else:
-                (found_user, dummy, found_uid, found_gid, \
-                    found_gecos, found_home, found_shell) = \
-                    self._get_user(self.opt["uid"], \
-                    container_root + "/etc/passwd")
+                (found_user, dummy, found_uid, found_gid,
+                 found_gecos, found_home, found_shell) = \
+                    self._get_user(self.opt["uid"],
+                                   container_root + "/etc/passwd")
         else:
             if "/etc/passwd" in self.opt["vol"] or self.opt["hostauth"]:
-                (found_user, found_uid, found_gid, found_gecos, found_home, \
-                    found_shell) = self._get_host_user(user)
+                (found_user, found_uid, found_gid, found_gecos, found_home,
+                 found_shell) = self._get_host_user(user)
             else:
-                (found_user, dummy, found_uid, found_gid, \
-                     found_gecos, found_home, found_shell) = \
-                     self._get_user(user, container_root + "/etc/passwd")
+                (found_user, dummy, found_uid, found_gid,
+                 found_gecos, found_home, found_shell) = \
+                    self._get_user(user, container_root + "/etc/passwd")
         if found_user:
             self.opt["user"] = found_user
             self.opt["uid"] = found_uid
@@ -1178,7 +1176,6 @@ class LocalRepository(object):
         """
         self.__init__(topdir)
 
-
     def is_container_id(self, obj):
         """Verify if the provided object matches the format of a
         local container id.
@@ -1408,12 +1405,13 @@ class LocalRepository(object):
 
     def cd_imagerepo(self, imagerepo, tag):
         """Select an image TAG for further operations"""
-        tag_dir = self.reposdir + "/" + imagerepo + "/" + tag
-        if os.path.exists(tag_dir):
-            if self._is_tag(tag_dir):
-                self.cur_repodir = self.reposdir + "/" + imagerepo
-                self.cur_tagdir = self.cur_repodir + "/" + tag
-                return self.cur_tagdir
+        if imagerepo and tag:
+            tag_dir = self.reposdir + "/" + imagerepo + "/" + tag
+            if os.path.exists(tag_dir):
+                if self._is_tag(tag_dir):
+                    self.cur_repodir = self.reposdir + "/" + imagerepo
+                    self.cur_tagdir = self.cur_repodir + "/" + tag
+                    return self.cur_tagdir
         return ""
 
     def _findfile(self, filename, in_dir):
@@ -1822,27 +1820,29 @@ class CurlHeader(object):
         return str(self.data)
 
 
-class CurlURL(object):
-    """A portable downloader using PyCurl or alternatively a curl
-    executable
-    """
+class GetURL(object):
+    """File downloader using PyCurl or a curl cli executable"""
 
     def __init__(self):
-        """Load configuration and set which implementation to call
-        either PyCurl based or ExecCurl which uses the curl command.
-        """
+        """Load configuration common to the implementations"""
         self.timeout = conf.timeout
         self.ctimeout = conf.ctimeout
         self.download_timeout = conf.download_timeout
         self.agent = conf.http_agent
         self.http_proxy = conf.http_proxy
+        self._geturl = None
+        self.cache_support = None
+        self._select_implementation()
+
+    def _select_implementation(self):
+        """Select which implementation to use"""
         try:
-            dummy = pycurl.Curl()         # if pycurl is not available
+            dummy = pycurl.Curl()
         except (NameError, AttributeError):
-            self.get = self.get_execcurl  # map get() to get_execcurl()
+            self._geturl = GetURLexeCurl()
             self.cache_support = False
         else:
-            self.get = self.get_pycurl    # map get() to get_pycurl()
+            self._geturl = GetURLpyCurl()
             self.cache_support = True
 
     def get_content_length(self, hdr):
@@ -1856,89 +1856,26 @@ class CurlURL(object):
         """Specify a socks http proxy"""
         self.http_proxy = http_proxy
 
-    # pylint: disable=too-many-locals
-    def get_execcurl(self, *args, **kwargs):
-        """http get implementation using the curl executable command"""
+    def get(self, *args, **kwargs):
+        """Get URL using selected implementation
+        Example:
+            get(url, ctimeout=5, timeout=5, v=true, header=[]):
+        """
         if len(args) != 1:
-            msg.out("get: get wrong number of arguments: ", args)
+            msg.out("get: wrong number of arguments:", args)
             return(None, None)
-        url = str(args[0])
-        header = ""
-        verbose = ""
-        nobody = ""
-        resume = ""
-        proxy = ""
-        hdr = CurlHeader()
-        buf = cStringIO.StringIO()
-        agent = " -A '" + self.agent + "' "
-        ctimeout = " --connect-timeout " + str(self.ctimeout)
-        timeout = " -m " + str(self.timeout)
-        header_file = FileUtil("header").mktmp()
-        output_file = FileUtil("output").mktmp()
-        error_file = "/" + Unique().filename("error")
-        if "agent" in kwargs:
-            agent = " -A '" + str(kwargs["agent"]) + "'"
-        if "proxy" in kwargs and kwargs["proxy"]:
-            proxy = " --proxy='" + str(kwargs["proxy"]) + "' "
-        elif self.http_proxy:
-            proxy = " --proxy='" + self.http_proxy + "' "
-        if "ctimeout" in kwargs:
-            ctimeout = " --connect-timeout " + str(kwargs["ctimeout"])
-        if "header" in kwargs:
-            for header_item in kwargs["header"]:
-                header += " -H '" + str(header_item) + "'"
-        if "v" in kwargs and kwargs["v"]:
-            verbose = " -v"
-        if "nobody" in kwargs and kwargs["nobody"]:
-            nobody = " --head "
-        if "ofile" in kwargs:
-            output_file = kwargs["ofile"] + ".tmp"
-            timeout = " -m " + str(self.download_timeout)
-            if "resume" in kwargs and kwargs["resume"]:
-                resume = " -C - "
-        if "timeout" in kwargs:
-            timeout = " -m " + str(kwargs["timeout"])
-        other = " --max-redirs 10 -s -q -S -L -D " + \
-            header_file + " -o " + output_file + " --stderr " + error_file
-        cmd = "curl " + verbose + proxy + resume + header + \
-            nobody + agent + ctimeout + timeout + other + " '" + url + "'"
-        status = subprocess.call(cmd, shell=True)
-        hdr.setvalue_from_file(header_file)
-        hdr.data["X-ND-CURLSTATUS"] = status
-        hdr.data["X-ND-URL"] = url
-        if "header" in kwargs:
-            hdr.data["X-ND-HEADERS"] = kwargs["header"]
-        if "ofile" in kwargs:
-            if "401" in hdr.data["X-ND-HTTPSTATUS"]:  # needs authentication
-                pass
-            elif "206" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
-                os.rename(output_file, kwargs["ofile"])
-            elif "416" in hdr.data["X-ND-HTTPSTATUS"]:
-                if "resume" in kwargs:
-                    kwargs["resume"] = False
-                (hdr, buf) = self.get_execcurl(url, **kwargs)
-            elif "200" not in hdr.data["X-ND-HTTPSTATUS"]:
-                msg.out("NOT OK DELETING =", str(
-                    hdr.data["X-ND-HTTPSTATUS"]), "STATUS = ", str(status))
-                if os.path.exists(output_file):
-                    os.remove(output_file)
-            else:
-                # OK downloaded
-                os.rename(output_file, kwargs["ofile"])
         else:
-            try:
-                buf = cStringIO.StringIO(open(output_file, "r").read())
-            except(IOError, OSError):
-                msg.out("Error: reading curl output file to buffer")
-            if os.path.exists(output_file):
-                os.remove(output_file)
-        if os.path.exists(error_file):
-            os.remove(error_file)
-        if os.path.exists(header_file):
-            os.remove(header_file)
-        return(hdr, buf)
+            return self._geturl.get(*args, **kwargs)
 
-    def _set_pycurl_opt(self, pyc, hdr):
+
+class GetURLpyCurl(GetURL):
+    """Downloader implementation using PyCurl"""
+
+    def _select_implementation(self):
+        """Override the parent class method"""
+        pass
+
+    def _set_defaults(self, pyc, hdr):
         """Set options for pycurl"""
         pyc.setopt(pyc.FOLLOWLOCATION, True)
         pyc.setopt(pyc.VERBOSE, False)
@@ -1950,28 +1887,12 @@ class CurlURL(object):
         pyc.setopt(pyc.TIMEOUT, self.timeout)
         pyc.setopt(pyc.PROXY, self.http_proxy)
 
-    def get_pycurl(self, *args, **kwargs):
-        """http get implementation using the PyCurl
-        Example:
-            get(url, ctimeout=5, timeout=5, v=true, header=[]):
-        """
-        if len(args) != 1:
-            msg.out("get: get wrong number of arguments:", args)
-            return(None, None)
-        url = args[0]
-        buf = cStringIO.StringIO()
-        hdr = CurlHeader()
-        pyc = pycurl.Curl()
-        self._set_pycurl_opt(pyc, hdr)
-        pyc.setopt(pyc.URL, str(url))
+    def _mkpycurl(self, pyc, hdr, buf, **kwargs):
+        """Prepare curl command line according to invocation options"""
         if "sizeonly" in kwargs:
             hdr.sizeonly = True
         if "proxy" in kwargs and kwargs["proxy"]:
             pyc.setopt(pyc.PROXY, pyc.USERAGENT, kwargs["proxy"])
-        if "agent" in kwargs:
-            pyc.setopt(pyc.USERAGENT, kwargs["agent"])
-        if "noprogress" in kwargs:
-            pyc.setopt(pyc.NOPROGRESS, kwargs["noprogress"])
         if "ctimeout" in kwargs:
             pyc.setopt(pyc.CONNECTTIMEOUT, kwargs["ctimeout"])
         if "header" in kwargs:  # avoid known pycurl bug
@@ -1983,6 +1904,8 @@ class CurlURL(object):
             pyc.setopt(pyc.VERBOSE, kwargs["v"])
         if "nobody" in kwargs:
             pyc.setopt(pyc.NOBODY, kwargs["nobody"])  # header only no content
+        if "timeout" in kwargs:
+            pyc.setopt(pyc.TIMEOUT, kwargs["timeout"])
         if "ofile" in kwargs:
             output_file = kwargs["ofile"]
             pyc.setopt(pyc.TIMEOUT, self.download_timeout)
@@ -1994,15 +1917,28 @@ class CurlURL(object):
                 filep = open(output_file, openflags)
             except(IOError, OSError):
                 msg.out("Error: opening download file: %s" % output_file)
-                return(hdr, buf)
+                raise
             pyc.setopt(pyc.WRITEDATA, filep)
         else:
+            filep = None
+            output_file = ""
             pyc.setopt(pyc.WRITEFUNCTION, buf.write)
-        if "timeout" in kwargs:
-            pyc.setopt(pyc.TIMEOUT, kwargs["timeout"])
         hdr.data["X-ND-CURLSTATUS"] = 0
+        return(output_file, filep)
+
+    def get(self, *args, **kwargs):
+        """http get implementation using the PyCurl"""
+        buf = cStringIO.StringIO()
+        hdr = CurlHeader()
+        pyc = pycurl.Curl()
+        url = str(args[0])
+        pyc.setopt(pyc.URL, url)
+        self._set_defaults(pyc, hdr)
         try:
+            (output_file, filep) = self._mkpycurl(pyc, hdr, buf, **kwargs)
             pyc.perform()
+        except(IOError, OSError):
+            return(None, None)
         except pycurl.error, error:
             errno, errstr = error
             if errno == 33:
@@ -2024,10 +1960,108 @@ class CurlURL(object):
                 kwargs["resume"] = False
                 (hdr, buf) = self.get(url, **kwargs)
             elif "200" not in hdr.data["X-ND-HTTPSTATUS"]:
-                msg.out("NOT OK DELETING = " + str(
+                msg.out("Error: in download: " + str(
                     hdr.data["X-ND-HTTPSTATUS"]))
-                if os.path.exists(output_file):
-                    os.remove(output_file)
+                FileUtil(output_file).remove()
+        return(hdr, buf)
+
+
+class GetURLexeCurl(GetURL):
+    """Downloader implementation using curl cli executable"""
+
+    def __init__(self):
+        GetURL.__init__(self)
+        self._opts = None
+        self._files = None
+
+    def _select_implementation(self):
+        """Override the parent class method"""
+        pass
+
+    def _set_defaults(self):
+        """Set defaults for curl command line options"""
+        self._opts = {
+            "header": "",
+            "verbose": "",
+            "nobody": "",
+            "proxy": "",
+            "resume": "",
+            "ctimeout": "--connect-timeout " + str(self.ctimeout),
+            "timeout": "-m " + str(self.timeout),
+            "other": "--max-redirs 10 -s -q -S -L"
+        }
+        self._files = {
+            "url":  "",
+            "error_file": FileUtil("execurl_err").mktmp(),
+            "output_file": FileUtil("execurl_out").mktmp(),
+            "header_file": FileUtil("execurl_hdr").mktmp()
+        }
+
+    def _mkcurlcmd(self, *args, **kwargs):
+        """Prepare curl command line according to invocation options"""
+        self._files["url"] = str(args[0])
+        if "ctimeout" in kwargs:
+            self._opts["ctimeout"] = "--connect-timeout %s" \
+                % (str(kwargs["ctimeout"]))
+        if "timeout" in kwargs:
+            self._opts["timeout"] = "-m %s" % (str(kwargs["timeout"]))
+        if "proxy" in kwargs and kwargs["proxy"]:
+            self._opts["proxy"] = "--proxy '%s'" % (str(kwargs["proxy"]))
+        elif self.http_proxy:
+            self._opts["proxy"] = "--proxy '%s'" % (self.http_proxy)
+        if "header" in kwargs:
+            for header_item in kwargs["header"]:
+                self._opts["header"] += "-H '%s'" % (str(header_item))
+        if "v" in kwargs and kwargs["v"]:
+            self._opts["verbose"] = "-v"
+        if "nobody" in kwargs and kwargs["nobody"]:
+            self._opts["nobody"] = "--head"
+        if "ofile" in kwargs:
+            FileUtil(self._files["output_file"]).remove()
+            self._files["output_file"] = kwargs["ofile"] + ".tmp"
+            self._opts["timeout"] = "-m %s" % (str(self.download_timeout))
+            if "resume" in kwargs and kwargs["resume"]:
+                self._opts["resume"] = "-C -"
+        return("curl " + " ".join(self._opts.values()) + " -D %s -o %s --stderr %s '%s'"
+               % (self._files["header_file"], self._files["output_file"],
+                  self._files["error_file"], self._files["url"]))
+
+    def get(self, *args, **kwargs):
+        """http get implementation using the curl cli executable"""
+        hdr = CurlHeader()
+        buf = cStringIO.StringIO()
+        self._set_defaults()
+        cmd = self._mkcurlcmd(*args, **kwargs)
+        status = subprocess.call(cmd, shell=True)
+        hdr.setvalue_from_file(self._files["header_file"])
+        hdr.data["X-ND-CURLSTATUS"] = status
+        hdr.data["X-ND-URL"] = self._files["url"]
+        if "header" in kwargs:
+            hdr.data["X-ND-HEADERS"] = kwargs["header"]
+        if "ofile" in kwargs:
+            if "401" in hdr.data["X-ND-HTTPSTATUS"]:  # needs authentication
+                pass
+            elif "206" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
+                os.rename(self._files["output_file"], kwargs["ofile"])
+            elif "416" in hdr.data["X-ND-HTTPSTATUS"]:
+                if "resume" in kwargs:
+                    kwargs["resume"] = False
+                (hdr, buf) = self.get(self._files["url"], **kwargs)
+            elif "200" not in hdr.data["X-ND-HTTPSTATUS"]:
+                msg.out("Error: in file transfer: ", str(
+                    hdr.data["X-ND-HTTPSTATUS"]), ": ", str(status))
+                FileUtil(self._files["output_file"]).remove()
+            else:  # OK downloaded
+                os.rename(self._files["output_file"], kwargs["ofile"])
+        else:
+            try:
+                buf = cStringIO.StringIO(open(self._files["output_file"],
+                                              "r").read())
+            except(IOError, OSError):
+                msg.out("Error: reading curl output file to buffer")
+            FileUtil(self._files["output_file"]).remove()
+        FileUtil(self._files["error_file"]).remove()
+        FileUtil(self._files["header_file"]).remove()
         return(hdr, buf)
 
 
@@ -2042,7 +2076,7 @@ class DockerIoAPI(object):
         self.v1_auth_header = ""
         self.v2_auth_header = ""
         self.localrepo = localrepo
-        self.curl = CurlURL()
+        self.curl = GetURL()
 
     def set_proxy(self, http_proxy):
         """Select a socks http proxy for API access and file download"""
@@ -2056,7 +2090,7 @@ class DockerIoAPI(object):
         return False
 
     def _get_url(self, *args, **kwargs):
-        """Encapsulates the call to CurlURL.get() so that authentication
+        """Encapsulates the call to GetURL.get() so that authentication
         for v1 and v2 repositories can be treated differently.
         Example:
              _get_url(url, ctimeout=5, timeout=5, v=true, header=[]):
@@ -2087,7 +2121,7 @@ class DockerIoAPI(object):
 
     def _get_file(self, url, filename, cache_mode):
         """Get a file and check its size. Optionally enable other
-        capabilities such as caching which means check if the
+        capabilities such as caching meaning check if the
         file already exists locally and whether its size is the
         same to avoid downloaded it again.
         """
@@ -2156,7 +2190,7 @@ class DockerIoAPI(object):
                 try:
                     auth_header = "Authorization: Token " + \
                         auth_hdr.data["x-docker-token"]
-                except(IndexError, TypeError):
+                except(IndexError, TypeError, KeyError):
                     return ""
                 self.v1_auth_header = auth_header
             elif self.v1_auth_header:
@@ -2453,16 +2487,16 @@ class DockerLocalFileAPI(object):
         """Load a container image into a repository mimic docker load"""
         if self.localrepo.cd_imagerepo(imagerepo, tag):
             msg.out("Error: repository and tag already exist", imagerepo, tag)
-            return False
+            return []
         else:
             self.localrepo.setup_imagerepo(imagerepo)
             tag_dir = self.localrepo.setup_tag(tag)
             if not tag_dir:
                 msg.out("Error: setting up repository", imagerepo, tag)
-                return False
+                return []
             if not self.localrepo.set_version("v1"):
                 msg.out("Error: setting repository version")
-                return False
+                return []
             try:
                 top_layer_id = structure["repositories"][imagerepo][tag]
             except (IndexError, NameError):
@@ -2470,17 +2504,13 @@ class DockerLocalFileAPI(object):
             for layer_id in self._sorted_layers(structure, top_layer_id):
                 if str(structure["layers"][layer_id]["VERSION"]) != "1.0":
                     msg.out("Error: layer version unknown")
-                    return False
-                if not self._copy_layer_to_repo(
-                        structure["layers"][layer_id]["json_f"],
-                        layer_id):
-                    msg.out("Error: copying json")
-                    return False
-                if not self._copy_layer_to_repo(
-                        structure["layers"][layer_id]["layer_f"],
-                        layer_id):
-                    msg.out("Error: copying layer")
-                    return False
+                    return []
+                for layer_item in ("json_f", "layer_f"):
+                    filename = str(structure["layers"][layer_id][layer_item])
+                    if not self._copy_layer_to_repo(filename, layer_id):
+                        msg.out("Error: copying %s file %s"
+                                % (layer_item[:-2], filename))
+                        return []
             self.localrepo.save_json("ancestry",
                                      self._sorted_layers(structure,
                                                          top_layer_id))
@@ -2547,64 +2577,66 @@ class DockerLocalFileAPI(object):
         container_json["comment"] = comment
         container_json["created"] = \
             time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z")
-        container_json["container_config"] = dict()
-        container_json["config"] = dict()
         container_json["architecture"] = conf.arch
         container_json["os"] = conf.osver
         layer_file = self.localrepo.layersdir + "/" + layer_id + ".layer"
         container_json["size"] = FileUtil(layer_file).size()
         if container_json["size"] == -1:
             container_json["size"] = 0
-        container_json["container_config"]["Hostname"] = ""
-        container_json["container_config"]["Domainname"] = ""
-        container_json["container_config"]["User"] = ""
-        container_json["container_config"]["Memory"] = 0
-        container_json["container_config"]["MemorySwap"] = 0
-        container_json["container_config"]["CpusShares"] = 0
-        container_json["container_config"]["Cpuset"] = ""
-        container_json["container_config"]["AttachStdin"] = False
-        container_json["container_config"]["AttachStdout"] = False
-        container_json["container_config"]["AttachStderr"] = False
-        container_json["container_config"]["PortSpecs"] = None
-        container_json["container_config"]["ExposedPorts"] = None
-        container_json["container_config"]["Tty"] = False
-        container_json["container_config"]["OpenStdin"] = False
-        container_json["container_config"]["StdinOnce"] = False
-        container_json["container_config"]["Env"] = None
-        container_json["container_config"]["Cmd"] = None
-        container_json["container_config"]["Image"] = ""
-        container_json["container_config"]["Volumes"] = None
-        container_json["container_config"]["WorkingDir"] = ""
-        container_json["container_config"]["Entrypoint"] = None
-        container_json["container_config"]["NetworkDisable"] = False
-        container_json["container_config"]["MacAddress"] = ""
-        container_json["container_config"]["OnBuild"] = None
-        container_json["container_config"]["Labels"] = None
-        container_json["config"]["Hostname"] = ""
-        container_json["config"]["Domainname"] = ""
-        container_json["config"]["User"] = ""
-        container_json["config"]["Memory"] = 0
-        container_json["config"]["MemorySwap"] = 0
-        container_json["config"]["CpusShares"] = 0
-        container_json["config"]["Cpuset"] = ""
-        container_json["config"]["AttachStdin"] = False
-        container_json["config"]["AttachStdout"] = False
-        container_json["config"]["AttachStderr"] = False
-        container_json["config"]["PortSpecs"] = None
-        container_json["config"]["ExposedPorts"] = None
-        container_json["config"]["Tty"] = False
-        container_json["config"]["OpenStdin"] = False
-        container_json["config"]["StdinOnce"] = False
-        container_json["config"]["Env"] = None
-        container_json["config"]["Cmd"] = None
-        container_json["config"]["Image"] = ""
-        container_json["config"]["Volumes"] = None
-        container_json["config"]["WorkingDir"] = ""
-        container_json["config"]["Entrypoint"] = None
-        container_json["config"]["NetworkDisable"] = False
-        container_json["config"]["MacAddress"] = ""
-        container_json["config"]["OnBuild"] = None
-        container_json["config"]["Labels"] = None
+        container_json["container_config"] = {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "Memory": 0,
+            "MemorySwap": 0,
+            "CpusShares": 0,
+            "Cpuset": "",
+            "AttachStdin": False,
+            "AttachStdout": False,
+            "AttachStderr": False,
+            "PortSpecs": None,
+            "ExposedPorts": None,
+            "Tty": False,
+            "OpenStdin": False,
+            "StdinOnce": False,
+            "Env": None,
+            "Cmd": None,
+            "Image": "",
+            "Volumes": None,
+            "WorkingDir": "",
+            "Entrypoint": None,
+            "NetworkDisable": False,
+            "MacAddress": "",
+            "OnBuild": None,
+            "Labels": None
+        }
+        container_json["config"] = {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "Memory": 0,
+            "MemorySwap": 0,
+            "CpusShares": 0,
+            "Cpuset": "",
+            "AttachStdin": False,
+            "AttachStdout": False,
+            "AttachStderr": False,
+            "PortSpecs": None,
+            "ExposedPorts": None,
+            "Tty": False,
+            "OpenStdin": False,
+            "StdinOnce": False,
+            "Env": None,
+            "Cmd": None,
+            "Image": "",
+            "Volumes": None,
+            "WorkingDir": "",
+            "Entrypoint": None,
+            "NetworkDisable": False,
+            "MacAddress": "",
+            "OnBuild": None,
+            "Labels": None
+        }
         return container_json
 
     def import_(self, tarfile, imagerepo, tag):
@@ -2708,24 +2740,27 @@ class Udocker(object):
                         (repo["name"],
                          "[OK]" if repo["is_official"] else "----",
                          "".join([x if x in string.printable else ""
-                                  for x in repo["description"]]).\
-                                      replace("\n", "")))
+                                  for x in repo["description"]])
+                         .replace("\n", "")))
             page += 1
 
     def do_load(self, cmdp):
         """
         load: load a container image saved by docker with 'docker save'
-        load <docker-exported-container-file>
+        load --input=<docker-exported-container-file>
+        load -i <docker-exported-container-file>
         """
-        imagefile = cmdp.get("P1")
-        if cmdp.missing_options():               # syntax error
+        imagefile = cmdp.get("--input=")
+        if not imagefile:
+            imagefile = cmdp.get("-i=")
+        if cmdp.missing_options():  # syntax error
             return False
         if not imagefile:
-            msg.out("error: must specify filename of docker exported image")
+            msg.out("Error: must specify filename of docker exported image")
             return False
         repos = self.dockerlocalfileapi.load(imagefile)
         if not repos:
-            msg.out("error: loading failed")
+            msg.out("Error: loading failed")
             return False
         else:
             for repo_item in repos:
@@ -2742,17 +2777,17 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         if not tarfile:
-            msg.out("error: must specify tar filename")
+            msg.out("Error: must specify tar filename")
             return False
         if not imagespec:
-            msg.out("error: must specify image:tag or repository/image:tag")
+            msg.out("Error: must specify image:tag or repository/image:tag")
             return False
         imagerepo = imagespec
         tag = "latest"
         if imagespec and ":" in imagespec:
             (imagerepo, tag) = imagespec.split(":")
         if not self.dockerlocalfileapi.import_(tarfile, imagerepo, tag):
-            msg.out("error: importing file")
+            msg.out("Error: importing file")
             return False
         return True
 
@@ -2774,7 +2809,7 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         if not imagespec:
-            msg.out("error: must specify image:tag or repository/image:tag")
+            msg.out("Error: must specify image:tag or repository/image:tag")
             return False
         if not self.dockerioapi.is_repo_name(imagespec):
             return False
@@ -2806,7 +2841,7 @@ class Udocker(object):
             msg.out(container_id)
             if name and not self.localrepo.set_container_name(container_id,
                                                               name):
-                msg.out("error: invalid container name may exist "
+                msg.out("Error: invalid container name may exist "
                         "already or wrong format")
                 return False
             return True
@@ -2816,7 +2851,7 @@ class Udocker(object):
     def _create(self, imagespec):
         """Auxiliary to create(), performs the creation"""
         if not imagespec:
-            msg.out("error: must specify image:tag or repository/image:tag")
+            msg.out("Error: must specify image:tag or repository/image:tag")
             return False
         imagerepo = imagespec
         tag = "latest"
@@ -2960,11 +2995,11 @@ class Udocker(object):
                         self.localrepo.cd_imagerepo(imagerepo, tag)):
                     container_id = self._create(imagerepo+":"+tag)
                 if not container_id:
-                    msg.out("error: image or container not available")
+                    msg.out("Error: image or container not available")
                     return False
             if name and container_id:
                 if not self.localrepo.set_container_name(container_id, name):
-                    msg.out("error: invalid container name format")
+                    msg.out("Error: invalid container name format")
                     return False
         status = container.run(container_id)
         if delete and not self.localrepo.isprotected_container(container_id):
@@ -2995,7 +3030,7 @@ class Udocker(object):
                         file_size = size / (1024 * 1024)
                         if not file_size and size:
                             file_size = 1
-                        msg.out("    %s (%4dMB)" %
+                        msg.out("    %s (%d MB)" %
                                 (layer_name.replace(imagerepo_dir, ""),
                                  file_size))
         return True
@@ -3026,18 +3061,18 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         if not container_id_list:
-            msg.out("error: must specify image:tag or repository/image:tag")
+            msg.out("Error: must specify image:tag or repository/image:tag")
             return False
         status = True
         for container_id in cmdp.get("P*"):
             container_id = self.localrepo.get_container_id(container_id)
             if not container_id:
-                msg.out("error: invalid container id", container_id)
+                msg.out("Error: invalid container id", container_id)
                 status = False
                 continue
             else:
                 if self.localrepo.isprotected_container(container_id):
-                    msg.out("error: container is protected")
+                    msg.out("Error: container is protected")
                     status = False
                     continue
                 msg.out("Deleting container:", str(container_id), l=1)
@@ -3061,7 +3096,7 @@ class Udocker(object):
             return False
         else:
             if self.localrepo.isprotected_imagerepo(imagerepo, tag):
-                msg.out("error: image repository is protected")
+                msg.out("Error: image repository is protected")
                 return False
             msg.out("Deleting image:", imagespec, l=1)
             if not self.localrepo.del_imagerepo(imagerepo, tag, force):
@@ -3079,7 +3114,7 @@ class Udocker(object):
             return False
         if self.localrepo.get_container_id(arg):
             if not self.localrepo.protect_container(arg):
-                msg.out("error: protect container failed")
+                msg.out("Error: protect container failed")
                 return False
             else:
                 return True
@@ -3088,7 +3123,7 @@ class Udocker(object):
             if imagerepo and tag:
                 if self.localrepo.protect_imagerepo(imagerepo, tag):
                     return True
-            msg.out("error: protect image failed")
+            msg.out("Error: protect image failed")
             return False
 
     def do_unprotect(self, cmdp):
@@ -3101,7 +3136,7 @@ class Udocker(object):
             return False
         if self.localrepo.get_container_id(arg):
             if not self.localrepo.unprotect_container(arg):
-                msg.out("error: unprotect container failed")
+                msg.out("Error: unprotect container failed")
                 return False
             else:
                 return True
@@ -3110,7 +3145,7 @@ class Udocker(object):
             if imagerepo and tag:
                 if self.localrepo.unprotect_imagerepo(imagerepo, tag):
                     return True
-            msg.out("error: unprotect image failed")
+            msg.out("Error: unprotect image failed")
             return False
 
     def do_name(self, cmdp):
@@ -3123,10 +3158,10 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         if not (self.localrepo.get_container_id(container_id) and name):
-            msg.out("error: invalid container id or name")
+            msg.out("Error: invalid container id or name")
             return False
         if not self.localrepo.set_container_name(container_id, name):
-            msg.out("error: invalid container name")
+            msg.out("Error: invalid container name")
             return False
         return True
 
@@ -3139,10 +3174,10 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         if not name:
-            msg.out("error: invalid container id or name")
+            msg.out("Error: invalid container id or name")
             return False
         if not self.localrepo.del_container_name(name):
-            msg.out("error: removing container name")
+            msg.out("Error: removing container name")
             return False
         return True
 
@@ -3153,7 +3188,7 @@ class Udocker(object):
         if imagespec and ":" in imagespec:
             (imagerepo, tag) = imagespec.split(":")
         if not (imagespec and tag):
-            msg.out("error: must specify image:tag or repository/image:tag")
+            msg.out("Error: must specify image:tag or repository/image:tag")
             return(False, False)
         return imagerepo, tag
 
@@ -3240,7 +3275,7 @@ class Udocker(object):
           rmi <repo/image:tag>        :Delete image
           rm <container-id>           :Delete container
           import <container-id>       :Import tar file (exported by docker)
-          load  <exported-image>      :Load container image saved by docker
+          load -i <exported-image>    :Load container image saved by docker
           inspect <repo/image:tag>    :Return low level information on image
           verify <repo/image:tag>     :Verify a pulled image
 
@@ -3399,18 +3434,18 @@ class CmdParser(object):
         pos = 0
         while pos < len(opt_list):
             opt_arg = None
-            if not opt_list[pos].startswith("-"):
-                if (pos < 1 or (pos not in consumed and
-                                not opt_list[pos-1].endswith("="))):
-                    break       # end of options and start of arguments
+            if ((not opt_list[pos].startswith("-")) and
+                    (pos < 1 or (pos not in consumed and
+                                 not opt_list[pos-1].endswith("=")))):
+                break        # end of options and start of arguments
             elif opt_name.endswith("="):
                 if opt_list[pos].startswith(opt_name):
                     opt_arg = opt_list[pos].split("=", 1)[1].strip().strip('"')
-                elif opt_list[pos] == opt_name[:-1]:
-                    if not opt_list[pos + 1].startswith("-"):
-                        consumed.append(pos)
-                        pos += 1
-                        opt_arg = opt_list[pos]
+                elif (opt_list[pos] == opt_name[:-1] and
+                      not opt_list[pos + 1].startswith("-")):
+                    consumed.append(pos)
+                    pos += 1
+                    opt_arg = opt_list[pos]
             elif opt_list[pos] == opt_name:
                 consumed.append(pos)
                 opt_arg = True
@@ -3470,7 +3505,8 @@ class Main(object):
             msg.out("Error: parsing command line")
             raise NameError('CmdParse')
         conf.user_init(self.cmdp.get("--config=", "GEN_OPT"))
-        if self.cmdp.get("--debug", "GEN_OPT") or self.cmdp.get("-D", "GEN_OPT"):
+        if (self.cmdp.get("--debug", "GEN_OPT")
+                or self.cmdp.get("-D", "GEN_OPT")):
             conf.verbose_level = 3
             msg.setlevel(conf.verbose_level)
         if self.cmdp.get("--repo=", "GEN_OPT"):  # override repository root tree
@@ -3500,14 +3536,14 @@ class Main(object):
             command = self.cmdp.get("", "CMD")
             if command in cmds:
                 if self.cmdp.get("--help") or self.cmdp.get("-h"):
-                    self.udocker.do_help(self.cmdp)          # help on command
+                    self.udocker.do_help(self.cmdp)   # help on command
                     return 0
                 status = cmds[command](self.cmdp)     # executes the command
                 if self.cmdp.missing_options():
                     msg.out("Error: syntax error at: %s" %
                             " ".join(self.cmdp.missing_options()))
                 if isinstance(status, (int, long)):
-                    return status               # return with command status
+                    return status                     # return command status
             else:
                 msg.out("Error: invalid command:", command, "\n")
                 self.udocker.do_help(self.cmdp)
@@ -3526,7 +3562,7 @@ class Main(object):
             FileUtil("").cleanup()
             return exit_status
 
-
+# pylint: disable=invalid-name
 if __name__ == "__main__":
     msg = Msg()
     if not os.geteuid():
