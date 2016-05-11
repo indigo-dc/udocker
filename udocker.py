@@ -47,13 +47,6 @@ try:
 except ImportError:
     pass
 try:
-    import json
-except ImportError:
-    sys.path.append(START_PATH + "/../lib/simplejson")
-    sys.path.append(str(os.getenv("HOME")) + "/.udocker/lib/simplejson")
-    sys.path.append(str(os.getenv("UDOCKER")) + "/.udocker/lib/simplejson")
-    import simplejson as json  # pylint: disable=import-error
-try:
     import uuid
 except ImportError:
     pass
@@ -61,11 +54,31 @@ try:
     import random
 except ImportError:
     pass
+try:
+    import json
+except ImportError:
+    pass
 if PY_VER < "2.6":
     try:
         import posixpath
     except ImportError:
         pass
+
+def import_modules():
+    """Import modules for which we provide an alternative"""
+    global json                    # pylint: disable=invalid-name
+    sys.path.append(START_PATH + "/../lib/simplejson")
+    sys.path.append(str(os.getenv("HOME"))
+                    + "/.udocker/lib/simplejson")
+    sys.path.append(str(os.getenv("UDOCKER"))
+                    + "/.udocker/lib/simplejson")
+    try:
+        dummy = json.loads("[]")
+    except NameError:
+        try:
+            import simplejson as json  # pylint: disable=redefined-outer-name,import-error
+        except ImportError:
+            pass
 
 
 class Config(object):
@@ -79,11 +92,12 @@ class Config(object):
     def __init__(self):
         """Initial default values. Can be overloaded by user_init()"""
         self.verbose_level = 0
-        msg.setlevel(self.verbose_level)
-        self.def_home = os.getenv("UDOCKER_DIR")        # default home dir
-        if not self.def_home:
+        udocker_dir = os.getenv("UDOCKER_DIR")
+        if udocker_dir:
+            self.def_topdir = udocker_dir
+        else:
             self.def_home = os.getenv("HOME")           # default home dir
-        self.def_topdir = self.def_home + "/.udocker"
+            self.def_topdir = self.def_home + "/.udocker"
         self.config_file = ""
 
         # for tmp files only
@@ -109,7 +123,7 @@ class Config(object):
         # directories to be mapped in contaners with: run --sysdirs
         self.sysdirs_list = (
             "/dev", "/proc", "/sys",
-            "/etc/resolv.conf", "/etc/host.conf", "/etc/hostname",
+            "/etc/resolv.conf", "/etc/host.conf",
             "/lib/modules",
         )
 
@@ -137,6 +151,7 @@ class Config(object):
         self.download_timeout = 30 * 60    # file download timeout (secs)
         self.ctimeout = 6       # default TCP connect timeout (secs)
         self.http_agent = ""
+        self.http_insecure = False
 
         # docker hub
         self.dockerio_index_url = "https://index.docker.io/v1"
@@ -159,12 +174,13 @@ class Config(object):
             return False
         data = cfile.getdata()
         for line in data.split("\n"):
-            if not line.strip() or "=" not in line:
+            if not line.strip() or "=" not in line or line.startswith("#"):
                 continue
             (key, val) = line.strip().split("=", 1)
             try:
-                exec('self.%s=%s' % (key, repr(val)))
-            except(NameError, AttributeError, TypeError, IndexError):
+                exec('self.%s=%s' % (key.strip(), val.strip()))
+            except(NameError, AttributeError, TypeError, IndexError,
+                   SyntaxError):
                 msg.out("Error: error in config file:", line.strip())
                 return False
         msg.setlevel(self.verbose_level)
@@ -172,6 +188,7 @@ class Config(object):
 
     def _sysarch(self):
         """Get the host system architecture"""
+        arch = ""
         try:
             mach = platform.machine()
             if mach == "x86_64":
@@ -207,22 +224,24 @@ class Msg(object):
     file descriptor should be redirected to /dev/null
     """
 
-    def __init__(self):
+    def __init__(self, level=0):
         """
         Initialize Msg level=0 and /dev/null file pointers to be
         used in subprocess calls to obfuscate output and errors
         """
-        self.level = 0
+        self.level = level
         self.stdout = sys.stdout
         self.stderr = sys.stderr
         try:
-            nullfp = open("/dev/null", "w")
+            self.nullfp = open("/dev/null", "w")
         except (IOError, OSError):
             self.chlderr = self.stderr
             self.chldout = self.stdout
+            self.chldnul = self.stderr
         else:
-            self.chlderr = nullfp
-            self.chldout = nullfp
+            self.chlderr = self.nullfp
+            self.chldout = self.nullfp
+            self.chldnul = self.nullfp
 
     def setlevel(self, new_level):
         """Define debug level"""
@@ -290,6 +309,7 @@ class FileUtil(object):
     def __init__(self, filename):
         self.filename = filename
         self.tmpdir = conf.tmpdir
+        self.topdir = conf.def_topdir
 
     def mktmp(self):
         """Create a temporary filename"""
@@ -308,7 +328,10 @@ class FileUtil(object):
     def remove(self):
         """Delete files or directories"""
         filename = os.path.abspath(self.filename)
-        if filename.count("/") <= 2 and not filename.startswith("/tmp/"):
+        if not (filename.startswith(self.topdir)
+                or filename.startswith(self.tmpdir)
+                or filename.startswith("/tmp/")):
+            msg.out("Error: deleting file off limits: ", filename)
             return False
         elif self.uid() != os.getuid():
             return False
@@ -316,16 +339,34 @@ class FileUtil(object):
             try:
                 os.remove(filename)
             except (IOError, OSError):
+                msg.out("Error: deleting file: ", filename)
                 return False
             return True
         elif os.path.isdir(filename):
-            cmd = "/bin/rm -Rf --one-file-system --preserve-root "
+            cmd = "/bin/rm -Rf --preserve-root "
             cmd += filename
-            if not subprocess.call(cmd, shell=True, stderr=msg.chlderr):
-                if filename in conf.tmptrash:
+            if not subprocess.call(cmd, shell=True, stderr=msg.chlderr,
+                                   close_fds=True, env=None):
+                if self.filename in conf.tmptrash:
                     del conf.tmptrash[self.filename]
                 return True
+        msg.out("Error: deleting directory: ", filename)
         return False
+
+    def verify_tar(self):
+        """Verify a tar file"""
+        if not os.path.isfile(self.filename):
+            return False
+        else:
+            cmd = "tar t"
+            if msg.level > 1:
+                cmd += "v"
+            cmd += "f " + self.filename
+            if subprocess.call(cmd, shell=True, stderr=msg.chlderr,
+                               stdout=msg.chldnul, close_fds=True):
+                return False
+            else:
+                return True
 
     def cleanup(self):
         """Delete all temporary files"""
@@ -370,7 +411,7 @@ class FileUtil(object):
         except (IOError, OSError):
             return ""
         subprocess.call(
-            cmd_to_use, shell=True, stderr=msg.chlderr, stdout=filep)
+            cmd_to_use, shell=True, stderr=msg.chlderr, stdout=filep, close_fds=True)
         exec_pathname = FileUtil(out_file).getdata()
         filep.close()
         FileUtil(out_file).remove()
@@ -378,6 +419,16 @@ class FileUtil(object):
             return ""
         if exec_pathname and exec_pathname.startswith("/"):
             return exec_pathname.strip()
+        return ""
+
+    def find_exec(self):
+        """Find an executable pathname invoking which or type -p"""
+        cmd = self._find_exec("which " + self.filename)
+        if cmd:
+            return cmd
+        cmd = self._find_exec("type -p " + self.filename)
+        if cmd:
+            return cmd
         return ""
 
     def find_inpath(self, path, rootdir=""):
@@ -394,17 +445,7 @@ class FileUtil(object):
             return ""
         return ""
 
-    def find_exec(self):
-        """Find an executable pathname invoking which or type -p"""
-        cmd = self._find_exec("which " + self.filename)
-        if cmd:
-            return cmd
-        cmd = self._find_exec("type -p " + self.filename)
-        if cmd:
-            return cmd
-        return ""
-
-    def copyto(self, dest_filename, mode):
+    def copyto(self, dest_filename, mode="w"):
         """Copy self.filename to another file. We avoid shutil to have
         the fewest possible dependencies on other Python modules.
         """
@@ -412,8 +453,6 @@ class FileUtil(object):
             fpsrc = open(self.filename, "rb")
         except (IOError, OSError):
             return False
-        if not mode:
-            mode = "w"
         try:
             fpdst = open(dest_filename, mode + "b")
         except (IOError, OSError):
@@ -426,6 +465,45 @@ class FileUtil(object):
             fpdst.write(copy_buffer)
         fpsrc.close()
         fpdst.close()
+        return True
+
+
+class UdockerTools(object):
+    """Download and setup of the udocker supporting tools
+    Includes: proot and alternative python modules, these
+    are downloaded to facilitate the installation by the
+    end-user.
+    """
+
+    def __init__(self, localrepo):
+        self.localrepo = localrepo               # LocalRepository object
+        self.tmpdir = conf.tmpdir                # Dir for temporary files
+        self.tarball_url = conf.tarball_url      # URL to download PRoot
+        self.proot = self.localrepo.bindir + "/" + conf.proot_exec  # PRoot
+        self.curl = GetURL()
+
+    def is_available(self):
+        """Are the tools locally available (already downloaded)"""
+        return os.path.exists(self.proot)
+
+    def download(self):
+        """Get the tools tarball containing the PRoot binaries"""
+        tgz_file = FileUtil("udockertools").mktmp()
+        if not self.is_available():
+            if not self.curl.get(self.tarball_url,
+                                 ofile=tgz_file):
+                msg.out("Error: downloading additional tools")
+                return False
+            cmd = "cd " + self.localrepo.topdir + " ; "
+            cmd += "tar x"
+            if msg.level > 1:
+                cmd += "v"
+            cmd += "zf " + tgz_file + " ; "
+            cmd += "/bin/chmod u+rx bin/*"
+            status = subprocess.call(cmd, shell=True, close_fds=True)
+            FileUtil(tgz_file).remove()
+            if status:
+                return False
         return True
 
 
@@ -443,7 +521,6 @@ class Container(object):
     def __init__(self, localrepo):
         self.localrepo = localrepo               # LocalRepository object
         self.tmpdir = conf.tmpdir                # Dir for temporary files
-        self.tarball_url = conf.tarball_url      # URL to download PRoot
         self.proot = self.localrepo.bindir + "/" + conf.proot_exec  # PRoot
         self.curl = GetURL()
         self.valid_host_env = ("TERM")           # Pass host env variables
@@ -803,9 +880,6 @@ class Container(object):
           6. prepare the command to be executed inside the container
           7. build PRoot command line and execute
         """
-        if not self.get_proot():
-            msg.out("Error: while downloading and installing proot")
-            return False
         try:
             (container_dir, dummy) = \
                 self._run_load_metadata(container_id)
@@ -865,7 +939,7 @@ class Container(object):
         if not self.opt["hostenv"]:
             self._environ_cleanup()
         self._banner(self.opt["cmd"][0])
-        status = subprocess.call(cmd, shell=True)
+        status = subprocess.call(cmd, shell=True, close_fds=True)
         return status
 
     def _create_user(self, passwd_file, group_file):
@@ -1001,7 +1075,7 @@ class Container(object):
             return False
         self.localrepo.save_json(
             container_dir + "/container.json", container_json)
-        status = self._untar_layer(layer_files, container_dir + "/ROOT")
+        status = self._untar_layers(layer_files, container_dir + "/ROOT")
         if not status:
             msg.out("Error: creating container:", container_id)
         return container_id
@@ -1013,7 +1087,7 @@ class Container(object):
         """
         cmd = r"tar tf %s '*\/\.wh\.*'" % (tarf)
         proc = subprocess.Popen(cmd, shell=True, stderr=msg.chlderr,
-                                stdout=subprocess.PIPE)
+                                stdout=subprocess.PIPE, close_fds=True)
         while True:
             wh_filename = proc.stdout.readline().strip()
             if wh_filename:
@@ -1031,7 +1105,7 @@ class Container(object):
                 break
         return True
 
-    def _untar_layer(self, tarfiles, destdir):
+    def _untar_layers(self, tarfiles, destdir):
         """Untar all container layers. Each layer is extracted
         and permissions are changed to avoid file permission
         issues when extracting the next layer.
@@ -1039,7 +1113,8 @@ class Container(object):
         gid = str(os.getgid())
         for tarf in tarfiles:
             self._apply_whiteouts(tarf, destdir)
-            cmd = "umask 022 ; tar -C %s -x --delay-directory-restore " % \
+            #cmd = "umask 022 ; tar -C %s -x --delay-directory-restore " % \
+            cmd = "umask 022 ; tar -C %s -x " % \
                 (destdir)
             if msg.level > 1:
                 cmd += " -v "
@@ -1050,8 +1125,10 @@ class Container(object):
             cmd += r" \( ! -perm -u=w -exec /bin/chmod u+w {} \; \) , "
             cmd += r" \( ! -gid " + gid + r" -exec /bin/chgrp " + gid
             cmd += r" {} \; \) , "
-            cmd += r" \( -name '.wh.*' -exec /bin/rm -f {} \; \)"
-            status = subprocess.call(cmd, shell=True, stderr=msg.chlderr)
+            cmd += r" \( -name '.wh.*' -exec "
+            cmd += r" /bin/rm -f --preserve-root {} \; \)"
+            status = subprocess.call(cmd, shell=True, stderr=msg.chlderr,
+                                     close_fds=True)
             if status:
                 msg.out("Error: while extracting image layer")
         return not status
@@ -1100,26 +1177,6 @@ class Container(object):
         to download auxiliary programs such as PRoot itself.
         """
         self.curl.set_proxy(http_proxy)
-
-    def get_proot(self):
-        """Get the PRoot tarball containing the PRoot binaries"""
-        tgz_file = FileUtil("udockertools").mktmp()
-        if not os.path.exists(self.proot):
-            if not self.curl.get(self.tarball_url,
-                                 ofile=tgz_file):
-                msg.out("Error: downloading additional tools")
-                return False
-            cmd = "cd " + self.localrepo.topdir + " ; "
-            cmd += "tar x"
-            if msg.level > 1:
-                cmd += "v"
-            cmd += "zf " + tgz_file + " ; "
-            cmd += "chmod u+rx bin/*"
-            status = subprocess.call(cmd, shell=True)
-            FileUtil(tgz_file).remove()
-            if status:
-                return False
-        return True
 
 
 # pylint: disable=too-many-instance-attributes
@@ -1761,12 +1818,15 @@ class LocalRepository(object):
                         layer_id)
                 status = False
                 continue
-            if not os.path.exists(self.cur_tagdir + "/", \
+            if not os.path.exists(self.cur_tagdir + "/" + \
                     os.readlink(structure["layers"][layer_id]["layer_f"])):
                 msg.out("Error: layer data file not found")
                 status = False
                 continue
-            msg.out("Info: layer in layers repo:", layer_id)
+            if not FileUtil(structure["layers"][layer_id]["layer_f"]).verify_tar():
+                status = False
+                msg.out("Error: layer file not ok:", structure["layers"][layer_id]["layer_f"])
+            msg.out("Info: layer in repo:", layer_id)
         return status
 
 
@@ -1833,17 +1893,19 @@ class GetURL(object):
         self._geturl = None
         self.cache_support = None
         self._select_implementation()
+        self.insecure = conf.http_insecure
 
     def _select_implementation(self):
         """Select which implementation to use"""
-        try:
-            dummy = pycurl.Curl()
-        except (NameError, AttributeError):
+        if GetURLpyCurl().is_available():
+            self._geturl = GetURLpyCurl()
+            self.cache_support = True
+        elif GetURLexeCurl().is_available():
             self._geturl = GetURLexeCurl()
             self.cache_support = False
         else:
-            self._geturl = GetURLpyCurl()
-            self.cache_support = True
+            msg.out("Error: need curl or pycurl to perform downloads")
+            raise NameError('need curl or pycurl')
 
     def get_content_length(self, hdr):
         """Get content length from the http header"""
@@ -1851,6 +1913,10 @@ class GetURL(object):
             return int(hdr.data["content-length"])
         except (ValueError, TypeError):
             return -1
+
+    def set_insecure(self, bool_value=True):
+        """Use insecure downloads no SSL verification"""
+        self.insecure = bool_value
 
     def set_proxy(self, http_proxy):
         """Specify a socks http proxy"""
@@ -1871,14 +1937,22 @@ class GetURL(object):
 class GetURLpyCurl(GetURL):
     """Downloader implementation using PyCurl"""
 
+    def is_available(self):
+        """Can we use this approach for download"""
+        try:
+            dummy = pycurl.Curl()
+        except (NameError, AttributeError):
+            return False
+        return True
+
     def _select_implementation(self):
         """Override the parent class method"""
         pass
 
     def _set_defaults(self, pyc, hdr):
         """Set options for pycurl"""
+        pyc.setopt(pyc.SSL_VERIFYPEER, not self.insecure)
         pyc.setopt(pyc.FOLLOWLOCATION, True)
-        pyc.setopt(pyc.VERBOSE, False)
         pyc.setopt(pyc.FAILONERROR, False)
         pyc.setopt(pyc.NOPROGRESS, True)
         pyc.setopt(pyc.HEADERFUNCTION, hdr.write)
@@ -1886,6 +1960,10 @@ class GetURLpyCurl(GetURL):
         pyc.setopt(pyc.CONNECTTIMEOUT, self.ctimeout)
         pyc.setopt(pyc.TIMEOUT, self.timeout)
         pyc.setopt(pyc.PROXY, self.http_proxy)
+        if conf.verbose_level > 1:
+            pyc.setopt(pyc.VERBOSE, True)
+        else:
+            pyc.setopt(pyc.VERBOSE, False)
 
     def _mkpycurl(self, pyc, hdr, buf, **kwargs):
         """Prepare curl command line according to invocation options"""
@@ -1945,7 +2023,7 @@ class GetURLpyCurl(GetURL):
                 msg.out("Warning: cannot resume going to full download")
                 hdr.data["X-ND-CURLSTATUS"] = errno
             elif not (errno == 28 and "sizeonly" in kwargs):
-                msg.out('Error: in curl: ', errstr, str(errno))
+                msg.out('Error: in download: %s (%s)' % (errstr, str(errno)))
                 hdr.data["X-ND-CURLSTATUS"] = errno
         hdr.data["X-ND-URL"] = url
         if "header" in kwargs:
@@ -1974,6 +2052,13 @@ class GetURLexeCurl(GetURL):
         self._opts = None
         self._files = None
 
+    def is_available(self):
+        """Can we use this approach for download"""
+        if FileUtil("curl").find_exec():
+            return True
+        else:
+            return False
+
     def _select_implementation(self):
         """Override the parent class method"""
         pass
@@ -1981,6 +2066,7 @@ class GetURLexeCurl(GetURL):
     def _set_defaults(self):
         """Set defaults for curl command line options"""
         self._opts = {
+            "insecure": "",
             "header": "",
             "verbose": "",
             "nobody": "",
@@ -1988,8 +2074,12 @@ class GetURLexeCurl(GetURL):
             "resume": "",
             "ctimeout": "--connect-timeout " + str(self.ctimeout),
             "timeout": "-m " + str(self.timeout),
-            "other": "--max-redirs 10 -s -q -S -L"
+            "other": "--max-redirs 10 -s -q -S -L "
         }
+        if self.insecure:
+            self._opts["insecure"] = "-k"
+        if conf.verbose_level > 1:
+            self._opts["verbose"] = "-v"
         self._files = {
             "url":  "",
             "error_file": FileUtil("execurl_err").mktmp(),
@@ -2032,10 +2122,14 @@ class GetURLexeCurl(GetURL):
         buf = cStringIO.StringIO()
         self._set_defaults()
         cmd = self._mkcurlcmd(*args, **kwargs)
-        status = subprocess.call(cmd, shell=True)
+        status = subprocess.call(cmd, shell=True, close_fds=True)
         hdr.setvalue_from_file(self._files["header_file"])
         hdr.data["X-ND-CURLSTATUS"] = status
         hdr.data["X-ND-URL"] = self._files["url"]
+        if hdr.data["X-ND-CURLSTATUS"]:
+            msg.out("Error: in download: %s"
+                    % str(FileUtil(self._files["error_file"]).getdata()))
+            return(hdr, buf)
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
         if "ofile" in kwargs:
@@ -2048,7 +2142,7 @@ class GetURLexeCurl(GetURL):
                     kwargs["resume"] = False
                 (hdr, buf) = self.get(self._files["url"], **kwargs)
             elif "200" not in hdr.data["X-ND-HTTPSTATUS"]:
-                msg.out("Error: in file transfer: ", str(
+                msg.out("Error: in download: ", str(
                     hdr.data["X-ND-HTTPSTATUS"]), ": ", str(status))
                 FileUtil(self._files["output_file"]).remove()
             else:  # OK downloaded
@@ -2476,9 +2570,7 @@ class DockerLocalFileAPI(object):
         try:
             os.rename(filepath, target_file)
         except(IOError, OSError):
-            cmd = "/bin/cp -f " + filepath + " " + target_file
-            status = subprocess.call(cmd, shell=True, stderr=msg.chlderr)
-            if status:
+            if not FileUtil(filepath).copyto(target_file):
                 return False
         self.localrepo.add_image_layer(target_file)
         return True
@@ -2529,29 +2621,30 @@ class DockerLocalFileAPI(object):
                         loaded_repositories.append(imagerepo + ":" + tag)
         return loaded_repositories
 
-    def _untar_container(self, tarfile, destdir):
-        """Untar an image layer into a directory tree
-        The Docker container layers are stored as tar files
-        udocker untars all these layers into the same location
-        to recreate the complete directory structure
-        """
+    def _untar_saved_container(self, tarfile, destdir):
+        """Untar container created with docker save"""
         cmd = "umask 022 ; tar -C " + \
             destdir + " -x --delay-directory-restore "
         if msg.level > 1:
             cmd += " -v "
         cmd += " --one-file-system --no-same-owner "
         cmd += " --no-same-permissions --overwrite -f " + tarfile
-        status = subprocess.call(cmd, shell=True, stderr=msg.chlderr)
+        status = subprocess.call(cmd, shell=True, stderr=msg.chlderr,
+                                 close_fds=True)
         return not status
 
     def load(self, imagefile):
-        """Load a Docker image from local storage mimic Docker load"""
+        """Load a Docker file created with docker save, mimic Docker
+        load. The file is a tarball containing several layers, each
+        layer has metadata and data content (directory tree) stored
+        as a tar file.
+        """
         if not os.path.exists(imagefile):
             msg.out("Error: image file does not exist: ", imagefile)
             return False
         tmp_imagedir = FileUtil("import").mktmp()
         os.makedirs(tmp_imagedir)
-        if not self._untar_container(imagefile, tmp_imagedir):
+        if not self._untar_saved_container(imagefile, tmp_imagedir):
             msg.out("Error: failed to extract container:", imagefile)
             FileUtil(tmp_imagedir).remove()
             return False
@@ -2571,7 +2664,10 @@ class DockerLocalFileAPI(object):
             return repositories
 
     def create_container_meta(self, layer_id, comment="created by udocker"):
-        """Create metadata for a given container layer"""
+        """Create metadata for a given container layer, used in import.
+        A file for import is a tarball of a directory tree, does not contain
+        metadata. This method creates minimal metadata.
+        """
         container_json = dict()
         container_json["id"] = layer_id
         container_json["comment"] = comment
@@ -2640,7 +2736,8 @@ class DockerLocalFileAPI(object):
         return container_json
 
     def import_(self, tarfile, imagerepo, tag):
-        """Import tar file possibly exported by Docker"""
+        """Import a tar file containing a simple directory tree possibly
+        created with Docker export"""
         if not os.path.exists(tarfile):
             msg.out("Error: tar file does not exist: ", tarfile)
             return False
@@ -2662,9 +2759,7 @@ class DockerLocalFileAPI(object):
         try:
             os.rename(tarfile, layer_file)
         except(IOError, OSError):
-            cmd = "/bin/cp -f " + tarfile + " " + layer_file
-            status = subprocess.call(cmd, shell=True, stderr=msg.chlderr)
-            if status:
+            if not FileUtil(tarfile).copyto(layer_file):
                 msg.out("Error: in move/copy file", tarfile)
                 return False
         self.localrepo.add_image_layer(layer_file)
@@ -2736,12 +2831,16 @@ class Udocker(object):
                 if key_press in ("q", "Q", "e", "E"):
                     return True
             for repo in repo_list["results"]:
-                msg.out("%-40.40s %8.8s %s" %
-                        (repo["name"],
-                         "[OK]" if repo["is_official"] else "----",
-                         "".join([x if x in string.printable else ""
-                                  for x in repo["description"]])
-                         .replace("\n", "")))
+                if repo["is_official"]:
+                    is_official = "[OK]"
+                else:
+                    is_official = "----"
+                description = ""
+                for char in repo["description"]:
+                    if char in string.printable:
+                        description += char
+                msg.out("%-40.40s %8.8s %s"
+                        % (repo["name"], is_official, description))
             page += 1
 
     def do_load(self, cmdp):
@@ -2841,8 +2940,8 @@ class Udocker(object):
             msg.out(container_id)
             if name and not self.localrepo.set_container_name(container_id,
                                                               name):
-                msg.out("Error: invalid container name may exist "
-                        "already or wrong format")
+                msg.out("Error: invalid container name may already exist "
+                        "or wrong format")
                 return False
             return True
         else:
@@ -3508,11 +3607,16 @@ class Main(object):
         if (self.cmdp.get("--debug", "GEN_OPT")
                 or self.cmdp.get("-D", "GEN_OPT")):
             conf.verbose_level = 3
-            msg.setlevel(conf.verbose_level)
+        msg.setlevel(conf.verbose_level)
         if self.cmdp.get("--repo=", "GEN_OPT"):  # override repository root tree
             conf.def_topdir = self.cmdp.get("--repo=", "GEN_OPT")
         self.localrepo = LocalRepository(conf.def_topdir)
         self.udocker = Udocker(self.localrepo)
+        if self.cmdp.get("--insecure", "GEN_OPT"):  # override repository root tree
+            conf.http_insecure = True
+        if not UdockerTools(self.localrepo).download():
+            msg.out("Error: while downloading and installing udockertools")
+        import_modules()
 
     def execute(self):
         """Command parsing and selection"""
@@ -3564,9 +3668,9 @@ class Main(object):
 
 # pylint: disable=invalid-name
 if __name__ == "__main__":
-    msg = Msg()
     if not os.geteuid():
         msg.out("Error: do not run as root !")
         sys.exit(1)
     conf = Config()
+    msg = Msg(conf.verbose_level)
     sys.exit(Main().start())
