@@ -1,11 +1,11 @@
 # Indigo udocker
-A basic user tool to execute simple containers in user space without 
-requiring root privileges. Enables basic download and execution of 
-docker containers by non-privileged users in systems were docker is 
-not available. It can be used to access and execute the content of 
-docker containers in batch systems and interactive clusters that are 
-managed by other entities such as grid infrastructures or externaly 
-managed batch or interactive Linux systems.
+A basic user tool to execute simple docker containers in user space 
+without requiring root privileges. Enables basic download and execution 
+of docker containers by non-privileged users in Linux systems were docker 
+is not available. It can be used to access and execute the content of 
+docker containers in Linux batch systems and interactive clusters that 
+are managed by other entities such as grid infrastructures or externaly 
+managed batch or interactive systems. The tool only works on Linux hosts.
 
 The Indigo udocker does not require any type of privileges nor the
 deployment of services by system administrators. It can be downloaded
@@ -23,7 +23,7 @@ udocker does not make use of docker nor requires its presence.
 
 udocker "executes" the containers by simply providing a chroot like 
 environment over the extracted container. The current implementation 
-uses PRoot to mimic chroot without requiring privileges. 
+uses PRoot to mimic chroot without requiring privileges.
 
 ## Limitations
 Since root privileges are not involved any operation that really 
@@ -59,7 +59,7 @@ that the containers data will be unpacked and stored in their home
 directories, therefore the data will be as safe as any other data in the
 user home directory.
 
-Indigo udocker via PRoot offers the emulation of the root user. This emulation
+udocker via PRoot offers the emulation of the root user. This emulation
 mimics a real root user (e.g getuid will return 0). This is just an emulation
 no root privileges are involved. This feature enables many tools that do not 
 require privileges but that check the user id to work properly. This enables
@@ -73,7 +73,8 @@ Commands:
   images                      :List container images
   create <repo/image:tag>     :Create container from a pulled image
   ps                          :List created containers
-  run <container_id>          :Execute container 
+  rm  <container_id>          :Delete container
+  run <container_id>          :Execute container
   inspect <container_id>      :Low level information on container
   name <container_id> <name>  :Give name to container
   rmname <name>               :Delete name from container
@@ -81,7 +82,7 @@ Commands:
   rmi <repo/image:tag>        :Delete image
   rm <container-id>           :Delete container
   import <container-id>       :Import tar file (exported by docker)
-  load  <exported-image>      :Load container image saved by docker
+  load -i <exported-image>    :Load container image saved by docker
   inspect <repo/image:tag>    :Return low level information on image
   verify <repo/image:tag>     :Verify a pulled image
 
@@ -98,6 +99,7 @@ Commands:
 Options common to all commands must appear before the command:
   -D                          :Debug
   --repo=<directory>          :Use repository at directory
+
 ```
 
 ## Examples
@@ -130,6 +132,11 @@ is not a real mount but the directories will be visible inside the container.
 ```
 udocker.py run -v /home/u457:/home/cuser -w /home/user myfed  /bin/bash
 udocker.py run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
+```
+
+Put a script in your host /tmp and execute it in the container.
+```
+udocker.py run  myfed  -v /tmp  /bin/bash -c 'cd /tmp; ./myscript.sh'
 ```
 
 Run mounting the host /var, /proc, /sys and /tmp in the same container
