@@ -3,7 +3,10 @@
 ========
 udocker
 ========
-Wrapper to execute basic docker containers without using docker
+Wrapper to execute basic docker containers without using docker.
+This tool is a last resort for the execution of docker containers
+where docker is unavailable. It only provides a limited set of
+functionalities.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -92,13 +95,15 @@ class Config(object):
     def __init__(self):
         """Initial default values. Can be overloaded by user_init()"""
         self.verbose_level = 0
-        udocker_dir = os.getenv("UDOCKER_DIR")
-        if udocker_dir:
-            self.def_topdir = udocker_dir
-        else:
-            self.def_home = os.getenv("HOME")           # default home dir
-            self.def_topdir = self.def_home + "/.udocker"
+        self.def_topdir = os.getenv("UDOCKER_DIR")
+        if not self.def_topdir:
+            if os.getenv("HOME"):                 # default home dir
+                self.def_topdir = os.getenv("HOME") + "/.udocker"
+            else:
+                msg.out("Error: environment variable $HOME not defined")
+                sys.exit(1)
         self.config_file = ""
+        self.user_config = "udocker.conf"
 
         # for tmp files only
         self.tmpdir = "/tmp"
@@ -167,7 +172,7 @@ class Config(object):
         if config_file:
             self.config_file = config_file
         else:
-            self.config_file = self.def_topdir + "/udocker.conf"
+            self.config_file = self.def_topdir + "/" + self.user_config
         cfile = FileUtil(self.config_file)
         if cfile.size() > 1024 * 2:
             msg.out("Error: file size too big:", self.config_file)
@@ -490,9 +495,9 @@ class UdockerTools(object):
         """Get the tools tarball containing the PRoot binaries"""
         tgz_file = FileUtil("udockertools").mktmp()
         if not self.is_available():
-            if not self.curl.get(self.tarball_url,
-                                 ofile=tgz_file):
-                msg.out("Error: downloading additional tools")
+            msg.out("Info: installing udockertools ...")
+            (hdr, dummy) = self.curl.get(self.tarball_url, ofile=tgz_file)
+            if hdr.data["X-ND-CURLSTATUS"]:
                 return False
             cmd = "cd " + self.localrepo.topdir + " ; "
             cmd += "tar x"
@@ -896,7 +901,7 @@ class Container(object):
         self.container_id = container_id
         # which user to use inside the container and setup its account
         if not self._setup_container_user(self.opt["user"], container_root):
-            return 1
+            return 2
 
         # setup environment variables, uid mapping, and default dir
         self.opt["env"].append("HOME=" + self.opt["home"])
@@ -1209,29 +1214,49 @@ class LocalRepository(object):
         self.bindir = self.topdir + "/" + self.def_bindir
         self.libdir = self.topdir + "/" + self.def_libdir
         self.tmpdir = conf.tmpdir
-        if not os.path.exists(self.topdir):
-            os.makedirs(self.topdir)
-        if not os.path.exists(self.reposdir):
-            os.makedirs(self.reposdir)
-        if not os.path.exists(self.layersdir):
-            os.makedirs(self.layersdir)
-        if not os.path.exists(self.containersdir):
-            os.makedirs(self.containersdir)
-        if not os.path.exists(self.bindir):
-            os.makedirs(self.bindir)
-        if not os.path.exists(self.tmpdir):
-            os.makedirs(self.tmpdir)
-        if not os.path.exists(self.libdir):
-            os.makedirs(self.libdir)
         self.cur_repodir = ""
         self.cur_tagdir = ""
         self.cur_containerdir = ""
 
     def setup(self, topdir):
+        """change to a different localrepo"""
+        self.__init__(topdir)
+
+    def create_repo(self):
         """creates properties with pathnames for easy
         access to the several repository directories
         """
-        self.__init__(topdir)
+        try:
+            if not os.path.exists(self.topdir):
+                os.makedirs(self.topdir)
+            if not os.path.exists(self.reposdir):
+                os.makedirs(self.reposdir)
+            if not os.path.exists(self.layersdir):
+                os.makedirs(self.layersdir)
+            if not os.path.exists(self.containersdir):
+                os.makedirs(self.containersdir)
+            if not os.path.exists(self.bindir):
+                os.makedirs(self.bindir)
+            if not os.path.exists(self.tmpdir):
+                os.makedirs(self.tmpdir)
+            if not os.path.exists(self.libdir):
+                os.makedirs(self.libdir)
+        except(IOError, OSError):
+            return False
+        else:
+            return True
+
+    def is_repo(self):
+        """check if directory structure corresponds to a repo"""
+        if (os.path.exists(self.topdir) and
+                os.path.exists(self.reposdir) and
+                os.path.exists(self.layersdir) and
+                os.path.exists(self.containersdir) and
+                os.path.exists(self.bindir) and
+                os.path.exists(self.libdir)):
+            return True
+        else:
+            return False
 
     def is_container_id(self, obj):
         """Verify if the provided object matches the format of a
@@ -1840,8 +1865,10 @@ class CurlHeader(object):
     """
 
     def __init__(self):
-        self.data = dict()
         self.sizeonly = False
+        self.data = dict()
+        self.data["X-ND-HTTPSTATUS"] = ""
+        self.data["X-ND-CURLSTATUS"] = ""
 
     def write(self, buff):
         """Write is called by Curl()"""
@@ -1891,7 +1918,7 @@ class GetURL(object):
         self.agent = conf.http_agent
         self.http_proxy = conf.http_proxy
         self._geturl = None
-        self.cache_support = None
+        self.cache_support = False
         self._select_implementation()
         self.insecure = conf.http_insecure
 
@@ -1902,7 +1929,6 @@ class GetURL(object):
             self.cache_support = True
         elif GetURLexeCurl().is_available():
             self._geturl = GetURLexeCurl()
-            self.cache_support = False
         else:
             msg.out("Error: need curl or pycurl to perform downloads")
             raise NameError('need curl or pycurl')
@@ -2019,25 +2045,21 @@ class GetURLpyCurl(GetURL):
             return(None, None)
         except pycurl.error, error:
             errno, errstr = error
-            if errno == 33:
-                msg.out("Warning: cannot resume going to full download")
-                hdr.data["X-ND-CURLSTATUS"] = errno
-            elif not (errno == 28 and "sizeonly" in kwargs):
-                msg.out('Error: in download: %s (%s)' % (errstr, str(errno)))
-                hdr.data["X-ND-CURLSTATUS"] = errno
-        hdr.data["X-ND-URL"] = url
+            hdr.data["X-ND-CURLSTATUS"] = errno
+            if not hdr.data["X-ND-HTTPSTATUS"]:
+                hdr.data["X-ND-HTTPSTATUS"] = errstr
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
         if "ofile" in kwargs:
             filep.close()
-            if "401" in hdr.data["X-ND-HTTPSTATUS"]:  # needs authentication
+            if " 401" in hdr.data["X-ND-HTTPSTATUS"]:  # needs authentication
                 pass
-            elif "206" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
+            elif " 206" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
                 pass
-            elif "416" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
+            elif " 416" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
                 kwargs["resume"] = False
                 (hdr, buf) = self.get(url, **kwargs)
-            elif "200" not in hdr.data["X-ND-HTTPSTATUS"]:
+            elif " 200" not in hdr.data["X-ND-HTTPSTATUS"]:
                 msg.out("Error: in download: " + str(
                     hdr.data["X-ND-HTTPSTATUS"]))
                 FileUtil(output_file).remove()
@@ -2125,23 +2147,22 @@ class GetURLexeCurl(GetURL):
         status = subprocess.call(cmd, shell=True, close_fds=True)
         hdr.setvalue_from_file(self._files["header_file"])
         hdr.data["X-ND-CURLSTATUS"] = status
-        hdr.data["X-ND-URL"] = self._files["url"]
-        if hdr.data["X-ND-CURLSTATUS"]:
+        if status:
             msg.out("Error: in download: %s"
                     % str(FileUtil(self._files["error_file"]).getdata()))
             return(hdr, buf)
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
         if "ofile" in kwargs:
-            if "401" in hdr.data["X-ND-HTTPSTATUS"]:  # needs authentication
+            if " 401" in hdr.data["X-ND-HTTPSTATUS"]:  # needs authentication
                 pass
-            elif "206" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
+            elif " 206" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
                 os.rename(self._files["output_file"], kwargs["ofile"])
-            elif "416" in hdr.data["X-ND-HTTPSTATUS"]:
+            elif " 416" in hdr.data["X-ND-HTTPSTATUS"]:
                 if "resume" in kwargs:
                     kwargs["resume"] = False
                 (hdr, buf) = self.get(self._files["url"], **kwargs)
-            elif "200" not in hdr.data["X-ND-HTTPSTATUS"]:
+            elif " 200" not in hdr.data["X-ND-HTTPSTATUS"]:
                 msg.out("Error: in download: ", str(
                     hdr.data["X-ND-HTTPSTATUS"]), ": ", str(status))
                 FileUtil(self._files["output_file"]).remove()
@@ -2189,6 +2210,7 @@ class DockerIoAPI(object):
         Example:
              _get_url(url, ctimeout=5, timeout=5, v=true, header=[]):
         """
+        url = str(args[0])
         (hdr, buf) = self.curl.get(*args, **kwargs)
         msg.out("header: %s" % (hdr.data), l=3)
         if ("X-ND-HTTPSTATUS" in hdr.data
@@ -2198,10 +2220,10 @@ class DockerIoAPI(object):
                     kwargs["RETRY"] = 3
                 if "RETRY" in kwargs and kwargs["RETRY"]:
                     auth_header = ""
-                    if "/v2/" in hdr.data["X-ND-URL"]:
+                    if "/v2/" in url:
                         auth_header = self._get_v2_auth(
                             hdr.data["www-authenticate"])
-                    elif "/v1/" in hdr.data["X-ND-URL"]:
+                    elif "/v1/" in url:
                         auth_header = self._get_v1_auth(
                             hdr.data["www-authenticate"], "")
                     auth_kwargs = kwargs.copy()
@@ -2226,8 +2248,7 @@ class DockerIoAPI(object):
                 (hdr, dummy) = self._get_url(url, sizeonly=True)
             remote_size = self.curl.get_content_length(hdr)
             if remote_size == FileUtil(filename).size():
-                return True             # is cached
-            url = hdr.data["X-ND-URL"]
+                return True             # is cached skip download
         else:
             remote_size = -1
         resume = False
@@ -2801,7 +2822,11 @@ class Udocker(object):
         home = cmdp.get("P1")
         if not home or not os.path.exists(home):
             self.localrepo.setup(home)
-            return True
+            if self.localrepo.create_repo():
+                return True
+            else:
+                msg.out("Error: localrepo creation failure: ", home)
+                return False
         else:
             msg.out("Error: localrepo directory already exists: ", home)
             return False
@@ -2809,7 +2834,8 @@ class Udocker(object):
     def do_search(self, cmdp):
         """
         search: search dockerhub for container images
-        search <expression>
+        search [options]  <expression>
+        -a                         :show all entries, do not pause
         """
         pause = not cmdp.get("-a")
         expression = cmdp.get("P1")
@@ -3595,14 +3621,13 @@ class CmdParser(object):
         else:
             return None
 
-
 class Main(object):
     """Get options, parse and execute the command line"""
     def __init__(self):
         self.cmdp = CmdParser()
         if not self.cmdp.parse(sys.argv):
-            msg.out("Error: parsing command line")
-            raise NameError('CmdParse')
+            msg.out("Error: parsing command line for assistance use: udocker --help")
+            sys.exit(1)
         conf.user_init(self.cmdp.get("--config=", "GEN_OPT"))
         if (self.cmdp.get("--debug", "GEN_OPT")
                 or self.cmdp.get("-D", "GEN_OPT")):
@@ -3610,12 +3635,18 @@ class Main(object):
         msg.setlevel(conf.verbose_level)
         if self.cmdp.get("--repo=", "GEN_OPT"):  # override repository root tree
             conf.def_topdir = self.cmdp.get("--repo=", "GEN_OPT")
+            if not LocalRepository(conf.def_topdir).is_repo():
+                msg.out("Error: invalid udocker repository: " + conf.def_topdir)
+                sys.exit(1)
         self.localrepo = LocalRepository(conf.def_topdir)
+        if not LocalRepository(conf.def_topdir).is_repo():
+            msg.out("Info: creating repo: " + conf.def_topdir)
+            self.localrepo.create_repo()
         self.udocker = Udocker(self.localrepo)
         if self.cmdp.get("--insecure", "GEN_OPT"):  # override repository root tree
             conf.http_insecure = True
         if not UdockerTools(self.localrepo).download():
-            msg.out("Error: while downloading and installing udockertools")
+            msg.out("Error: install of udockertools failed")
         import_modules()
 
     def execute(self):
@@ -3646,19 +3677,22 @@ class Main(object):
                 if self.cmdp.missing_options():
                     msg.out("Error: syntax error at: %s" %
                             " ".join(self.cmdp.missing_options()))
-                if isinstance(status, (int, long)):
+                    return 1
+                if isinstance(status, bool):
+                    return not status
+                elif isinstance(status, (int, long)):
                     return status                     # return command status
             else:
                 msg.out("Error: invalid command:", command, "\n")
                 self.udocker.do_help(self.cmdp)
 
     def start(self):
-        """Start of program"""
+        """Program start and exception handling"""
         try:
-            exit_status = Main().execute()
+            exit_status = self.execute()
         except (KeyboardInterrupt, SystemExit):
             FileUtil("").cleanup()
-            return 0
+            return 1
         except:
             FileUtil("").cleanup()
             raise
@@ -3668,9 +3702,9 @@ class Main(object):
 
 # pylint: disable=invalid-name
 if __name__ == "__main__":
+    msg = Msg()
     if not os.geteuid():
         msg.out("Error: do not run as root !")
         sys.exit(1)
     conf = Config()
-    msg = Msg(conf.verbose_level)
     sys.exit(Main().start())

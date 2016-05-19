@@ -1,11 +1,11 @@
 # Indigo udocker
-A basic user tool to execute simple containers in user space without 
-requiring root privileges. Enables basic download and execution of 
-docker containers by non-privileged users in systems were docker is 
-not available. It can be used to access and execute the content of 
-docker containers in batch systems and interactive clusters that are 
-managed by other entities such as grid infrastructures or externaly 
-managed batch or interactive Linux systems.
+A basic user tool to execute simple docker containers in user space 
+without requiring root privileges. Enables basic download and execution 
+of docker containers by non-privileged users in Linux systems were docker 
+is not available. It can be used to access and execute the content of 
+docker containers in Linux batch systems and interactive clusters that 
+are managed by other entities such as grid infrastructures or externaly 
+managed batch or interactive systems. The tool only works on Linux hosts.
 
 The Indigo udocker does not require any type of privileges nor the
 deployment of services by system administrators. It can be downloaded
@@ -130,6 +130,11 @@ is not a real mount but the directories will be visible inside the container.
 ```
 udocker.py run -v /home/u457:/home/cuser -w /home/user myfed  /bin/bash
 udocker.py run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
+```
+
+Put a script in your host /tmp and execute it in the container.
+```
+udocker.py run  myfed  -v /tmp  /bin/bash -c 'cd /tmp; ./myscript.sh'
 ```
 
 Run mounting the host /var, /proc, /sys and /tmp in the same container
