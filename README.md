@@ -23,7 +23,7 @@ udocker does not make use of docker nor requires its presence.
 
 udocker "executes" the containers by simply providing a chroot like 
 environment over the extracted container. The current implementation 
-uses PRoot to mimic chroot without requiring privileges. 
+uses PRoot to mimic chroot without requiring privileges.
 
 ## Limitations
 Since root privileges are not involved any operation that really 
@@ -59,7 +59,7 @@ that the containers data will be unpacked and stored in their home
 directories, therefore the data will be as safe as any other data in the
 user home directory.
 
-Indigo udocker via PRoot offers the emulation of the root user. This emulation
+udocker via PRoot offers the emulation of the root user. This emulation
 mimics a real root user (e.g getuid will return 0). This is just an emulation
 no root privileges are involved. This feature enables many tools that do not 
 require privileges but that check the user id to work properly. This enables
@@ -73,7 +73,8 @@ Commands:
   images                      :List container images
   create <repo/image:tag>     :Create container from a pulled image
   ps                          :List created containers
-  run <container_id>          :Execute container 
+  rm  <container_id>          :Delete container
+  run <container_id>          :Execute container
   inspect <container_id>      :Low level information on container
   name <container_id> <name>  :Give name to container
   rmname <name>               :Delete name from container
@@ -81,7 +82,7 @@ Commands:
   rmi <repo/image:tag>        :Delete image
   rm <container-id>           :Delete container
   import <container-id>       :Import tar file (exported by docker)
-  load  <exported-image>      :Load container image saved by docker
+  load -i <exported-image>    :Load container image saved by docker
   inspect <repo/image:tag>    :Return low level information on image
   verify <repo/image:tag>     :Verify a pulled image
 
@@ -98,6 +99,7 @@ Commands:
 Options common to all commands must appear before the command:
   -D                          :Debug
   --repo=<directory>          :Use repository at directory
+
 ```
 
 ## Examples
