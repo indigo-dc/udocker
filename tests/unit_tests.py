@@ -31,7 +31,7 @@ import mock
 import unittest
 from StringIO import StringIO
 
-#sys.path.append(".")
+sys.path.append("..")
 import udocker
 
 STDOUT = sys.stdout

@@ -32,7 +32,8 @@ import uuid
 import mock
 import unittest
 
-import ../udocker
+sys.path.append("..")
+import udocker
 
 STDOUT = sys.stdout
 DEVNULL = open("/dev/null", "w")
