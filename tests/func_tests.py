@@ -39,6 +39,7 @@ STDOUT = sys.stdout
 DEVNULL = open("/dev/null", "w")
 UDOCKER = "udocker.py"
 
+
 def match_str(find_exp, where):
     """find_exp regexp is present in buffer where"""
     for item in where:
@@ -46,9 +47,11 @@ def match_str(find_exp, where):
             return True
     return False
 
+
 def not_match_str(find_exp, where):
     """find_exp regexp is not present in buffer where"""
     return not match_str(find_exp, where)
+
 
 def find_str(find_exp, where):
     """find_exp is present in buffer where"""
@@ -56,6 +59,7 @@ def find_str(find_exp, where):
         if find_exp in str(item):
             return True
     return False
+
 
 def choose_find(expect_prefix):
     """Choose which find method to use"""
@@ -66,6 +70,7 @@ def choose_find(expect_prefix):
     else:
         find = find_str
     return find
+
 
 def do_test(self, mock_msg, t_argv, expect_msg=None):
     """Execute a udocker command as called in the command line"""
@@ -80,7 +85,6 @@ def do_test(self, mock_msg, t_argv, expect_msg=None):
             return False
         elif expect_msg:
             find = choose_find(expect_msg[:1])
-            #print mock_msg.out.call_args_list
             if find(expect_msg[1:],
                     mock_msg.out.call_args_list):
                 self.assertTrue(True, str(t_argv))
@@ -91,6 +95,7 @@ def do_test(self, mock_msg, t_argv, expect_msg=None):
         else:
             self.assertTrue(True, str(t_argv))
             return True
+
 
 def do_run_test(self, mock_msg, t_argv, expect_msg=None, expect_out=None):
     """Execute run a command and capture stdout"""
@@ -127,9 +132,11 @@ def do_action(t_argv):
             main = udocker.Main()
             return main.start()
 
+
 def image_not_exists(image="busybox:latest"):
     """Check is the container image exists"""
     return do_action([UDOCKER, "inspect", image])
+
 
 def container_not_exists(container="busyTEST"):
     """Check is the container exists"""

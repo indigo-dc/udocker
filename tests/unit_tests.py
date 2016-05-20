@@ -36,6 +36,7 @@ import udocker
 
 STDOUT = sys.stdout
 
+
 def find_str(self, find_exp, where):
     """Find string in test ouput messages"""
     found = False
@@ -46,6 +47,7 @@ def find_str(self, find_exp, where):
             break
     if not found:
         self.assertTrue(False)
+
 
 class ConfigTestCase(unittest.TestCase):
     """Test case for the udocker configuration"""
@@ -171,6 +173,7 @@ class MsgTestCase(unittest.TestCase):
         self.assertEqual("111 222 333 444 555\n", mock_stdout.getvalue())
         sys.stdout = STDOUT
 
+
 class UniqueTestCase(unittest.TestCase):
     """Test Unique() class"""
 
@@ -218,6 +221,7 @@ class UniqueTestCase(unittest.TestCase):
         self.assertTrue(rand.endswith("12345"))
         self.assertTrue(rand.startswith("udocker"))
         self.assertGreater(len(rand.strip()), 50)
+
 
 class FileUtilTestCase(unittest.TestCase):
     """Test FileUtil() file manipulation methods"""
@@ -410,6 +414,7 @@ class FileUtilTestCase(unittest.TestCase):
             status = udocker.FileUtil("source").copyto("dest", "a")
             self.assertTrue(status)
 
+
 class UdockerToolsTestCase(unittest.TestCase):
     """Test UdockerTools() download and setup of tools needed by udocker"""
 
@@ -464,7 +469,7 @@ class UdockerToolsTestCase(unittest.TestCase):
         utools.tarball_url = "http://node.domain/filename.tgz"
         utools.localrepo.topdir = "/home/user/.udocker"
         utools.proot = "/"
-        hdr = udocker.CurlHeader() 
+        hdr = udocker.CurlHeader()
         # IS AVAILABLE NO DOWNLOAD
         mock_geturl.get.return_value = (hdr, None)
         status = utools.download()
@@ -605,14 +610,16 @@ class MainTestCase(unittest.TestCase):
         t_argv = ['./udocker.py', "images"]
         with mock.patch.object(sys, 'argv', t_argv):
             # Unprotected
-            mock_localrepo.return_value.isprotected_imagerepo.return_value = False
+            mock_localrepo.return_value.isprotected_imagerepo\
+                .return_value = False
             main = udocker.Main()
             main.execute()
             msg_out = ("busybox:latest"
                        "                                               .")
             find_str(self, msg_out, mock_msg.out.call_args)
             # Protected
-            mock_localrepo.return_value.isprotected_imagerepo.return_value = True
+            mock_localrepo.return_value.isprotected_imagerepo\
+                .return_value = True
             main.execute()
             msg_out = ("busybox:latest"
                        "                                               P")
