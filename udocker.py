@@ -20,13 +20,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
-__author__ = "udocker@lip.pt"
-__credits__ = ["PRoot http://proot.me"]
-__license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "0.0.1-1"
-__date__ = "2016"
-
 import sys
 import os
 import cStringIO
@@ -36,6 +29,13 @@ import subprocess
 import time
 import pwd
 import platform
+
+__author__ = "udocker@lip.pt"
+__credits__ = ["PRoot http://proot.me"]
+__license__ = "Licensed under the Apache License, Version 2.0"
+__version__ = "0.0.1-1"
+__date__ = "2016"
+
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
 
@@ -43,7 +43,6 @@ if os.path.islink(sys.argv[0]):
     START_PATH = os.path.dirname(os.readlink(sys.argv[0]))
 else:
     START_PATH = os.path.dirname(sys.argv[0])
-
 
 try:
     import pycurl
@@ -67,19 +66,19 @@ if PY_VER < "2.6":
     except ImportError:
         pass
 
+
 def import_modules():
     """Import modules for which we provide an alternative"""
     global json                    # pylint: disable=invalid-name
     sys.path.append(START_PATH + "/../lib/simplejson")
-    sys.path.append(str(os.getenv("HOME"))
-                    + "/.udocker/lib/simplejson")
-    sys.path.append(str(os.getenv("UDOCKER"))
-                    + "/.udocker/lib/simplejson")
+    sys.path.append(str(os.getenv("HOME")) + "/.udocker/lib/simplejson")
+    sys.path.append(str(os.getenv("UDOCKER")) + "/.udocker/lib/simplejson")
     try:
         dummy = json.loads("[]")
     except NameError:
         try:
-            import simplejson as json  # pylint: disable=redefined-outer-name,import-error
+            # pylint: disable=redefined-outer-name,import-error
+            import simplejson as json
         except ImportError:
             pass
 
@@ -301,9 +300,9 @@ class Unique(object):
         """Get a filename"""
         prefix = self.def_name + "-" + str(os.getpid()) + "-"
         try:
-            return(prefix
-                   + str(uuid.uuid3(uuid.uuid4(), str(time.time())))
-                   + "-" + str(filename))
+            return(prefix +
+                   str(uuid.uuid3(uuid.uuid4(), str(time.time()))) +
+                   "-" + str(filename))
         except (NameError, AttributeError):
             return prefix + self.uuid(filename) + "-" + str(filename)
 
@@ -333,9 +332,9 @@ class FileUtil(object):
     def remove(self):
         """Delete files or directories"""
         filename = os.path.abspath(self.filename)
-        if not (filename.startswith(self.topdir)
-                or filename.startswith(self.tmpdir)
-                or filename.startswith("/tmp/")):
+        if not (filename.startswith(self.topdir) or
+                filename.startswith(self.tmpdir) or
+                filename.startswith("/tmp/")):
             msg.out("Error: deleting file off limits: ", filename)
             return False
         elif self.uid() != os.getuid():
@@ -415,8 +414,8 @@ class FileUtil(object):
             filep = open(out_file, "w")
         except (IOError, OSError):
             return ""
-        subprocess.call(
-            cmd_to_use, shell=True, stderr=msg.chlderr, stdout=filep, close_fds=True)
+        subprocess.call(cmd_to_use, shell=True, stderr=msg.chlderr,
+                        stdout=filep, close_fds=True)
         exec_pathname = FileUtil(out_file).getdata()
         filep.close()
         FileUtil(out_file).remove()
@@ -687,9 +686,8 @@ class Container(object):
             self.opt["cwd"] = self.opt["home"]
         if (self.opt["cwd"] and not (self.opt["bindhome"] or self.opt["cwd"]
                                      in self.opt["vol"])):
-            if (not (os.path.exists(container_root + "/" + self.opt["cwd"])
-                     and os.path.isdir(container_root
-                                       + "/" + self.opt["cwd"]))):
+            if (not (os.path.exists(container_root + "/" + self.opt["cwd"]) and
+                     os.path.isdir(container_root + "/" + self.opt["cwd"]))):
                 msg.out("Error: invalid working directory: ", self.opt["cwd"])
                 return False
         return True
@@ -913,8 +911,8 @@ class Container(object):
         uid_map = self._set_uid_map()
         cpu_affinity_str = self._set_cpu_affinity()
         vol_str = self._set_volume_bindings()
-        if (not (self._check_paths(container_root)
-                 and self._check_executable(container_root))):
+        if (not (self._check_paths(container_root) and
+                 self._check_executable(container_root))):
             return 2
 
         if self.opt["kernel"]:
@@ -1118,9 +1116,8 @@ class Container(object):
         gid = str(os.getgid())
         for tarf in tarfiles:
             self._apply_whiteouts(tarf, destdir)
-            #cmd = "umask 022 ; tar -C %s -x --delay-directory-restore " % \
-            cmd = "umask 022 ; tar -C %s -x " % \
-                (destdir)
+            # cmd = "umask 022 ; tar -C %s -x --delay-directory-restore " % \
+            cmd = "umask 022 ; tar -C %s -x " % destdir
             if msg.level > 1:
                 cmd += " -v "
             cmd += r" --one-file-system --no-same-owner "
@@ -1836,21 +1833,21 @@ class LocalRepository(object):
                 msg.out("Error: layer file not found in structure", layer_id)
                 status = False
                 continue
-            if not (os.path.exists(structure["layers"][layer_id]["layer_f"])
-                    and
+            if not (os.path.exists(structure["layers"][layer_id]["layer_f"]) and
                     os.path.islink(structure["layers"][layer_id]["layer_f"])):
                 msg.out("Error: layer data file symbolic link not found",
                         layer_id)
                 status = False
                 continue
-            if not os.path.exists(self.cur_tagdir + "/" + \
-                    os.readlink(structure["layers"][layer_id]["layer_f"])):
+            if not os.path.exists(self.cur_tagdir + "/" +
+                                  os.readlink(structure["layers"][layer_id]["layer_f"])):
                 msg.out("Error: layer data file not found")
                 status = False
                 continue
             if not FileUtil(structure["layers"][layer_id]["layer_f"]).verify_tar():
                 status = False
-                msg.out("Error: layer file not ok:", structure["layers"][layer_id]["layer_f"])
+                msg.out("Error: layer file not ok:",
+                        structure["layers"][layer_id]["layer_f"])
             msg.out("Info: layer in repo:", layer_id)
         return status
 
@@ -2134,9 +2131,10 @@ class GetURLexeCurl(GetURL):
             self._opts["timeout"] = "-m %s" % (str(self.download_timeout))
             if "resume" in kwargs and kwargs["resume"]:
                 self._opts["resume"] = "-C -"
-        return("curl " + " ".join(self._opts.values()) + " -D %s -o %s --stderr %s '%s'"
-               % (self._files["header_file"], self._files["output_file"],
-                  self._files["error_file"], self._files["url"]))
+        return("curl " + " ".join(self._opts.values()) +
+               " -D %s -o %s --stderr %s '%s'" %
+               (self._files["header_file"], self._files["output_file"],
+                self._files["error_file"], self._files["url"]))
 
     def get(self, *args, **kwargs):
         """http get implementation using the curl cli executable"""
@@ -2213,8 +2211,8 @@ class DockerIoAPI(object):
         url = str(args[0])
         (hdr, buf) = self.curl.get(*args, **kwargs)
         msg.out("header: %s" % (hdr.data), l=3)
-        if ("X-ND-HTTPSTATUS" in hdr.data
-                and "401" in hdr.data["X-ND-HTTPSTATUS"]):
+        if ("X-ND-HTTPSTATUS" in hdr.data and
+            "401" in hdr.data["X-ND-HTTPSTATUS"]):
             if "www-authenticate" in hdr.data and hdr.data["www-authenticate"]:
                 if "RETRY" not in kwargs:
                     kwargs["RETRY"] = 3
@@ -2257,8 +2255,8 @@ class DockerIoAPI(object):
         (hdr, dummy) = self._get_url(url, ofile=filename, resume=resume)
         if remote_size == -1:
             remote_size = self.curl.get_content_length(hdr)
-        if (remote_size != FileUtil(filename).size()
-                and hdr.data["X-ND-CURLSTATUS"]):
+        if (remote_size != FileUtil(filename).size() and
+                hdr.data["X-ND-CURLSTATUS"]):
             msg.out("Error: file size mismatch:", filename,
                     remote_size, FileUtil(filename).size())
             return False
@@ -2436,8 +2434,8 @@ class DockerIoAPI(object):
         """Pull container with v2 API"""
         (dummy, res) = self.get_v2_image_manifest(endpoint, imagerepo, tag)
         if "name" in res and imagerepo in res["name"] and "fsLayers" in res:
-            if not (self.localrepo.setup_tag(tag)
-                    and self.localrepo.set_version("v2")):
+            if not (self.localrepo.setup_tag(tag) and
+                    self.localrepo.set_version("v2")):
                 msg.out("Error: setting localrepo v2 tag and version")
                 return []
             self.localrepo.save_json("manifest", res)
@@ -2456,15 +2454,15 @@ class DockerIoAPI(object):
             image_id = res[tag]
         except IndexError:
             return []
-        if not (self.localrepo.setup_tag(tag)
-                and self.localrepo.set_version("v1")):
+        if not (self.localrepo.setup_tag(tag) and
+                self.localrepo.set_version("v1")):
             msg.out("Error: setting localrepo v1 tag and version")
             return []
-        msg.out("v1 ancestry: %s" % (image_id), l=1)
+        msg.out("v1 ancestry: %s" % image_id, l=1)
         (dummy, res) = self.get_v1_image_ancestry(endpoint, image_id)
         if res:
             self.localrepo.save_json("ancestry", res)
-            msg.out("v1 layers: %s" % (image_id), l=1)
+            msg.out("v1 layers: %s" % image_id, l=1)
             files = self.get_v1_layers_all(endpoint, res)
             return files
 
@@ -2477,11 +2475,11 @@ class DockerIoAPI(object):
         if hdr and "x-docker-endpoints" in hdr:
             endpoint = "http://" + hdr["x-docker-endpoints"]
         else:
-            if (hdr and "X-ND-HTTPSTATUS" in hdr
-                    and "401" in hdr["X-ND-HTTPSTATUS"]):
-                endpoint = self.registry_url              # Try docker registry
-            elif (hdr and "X-ND-HTTPSTATUS" in hdr
-                  and "404" in hdr["X-ND-HTTPSTATUS"]):
+            if (hdr and "X-ND-HTTPSTATUS" in hdr and
+                    "401" in hdr["X-ND-HTTPSTATUS"]):
+                endpoint = self.registry_url          # Try docker registry
+            elif (hdr and "X-ND-HTTPSTATUS" in hdr and
+                  "404" in hdr["X-ND-HTTPSTATUS"]):
                 msg.out("Error: image not found")
                 return []
             else:
@@ -2944,7 +2942,7 @@ class Udocker(object):
             (imagerepo, tag) = imagespec.split(":")
         if imagerepo and tag:
             if http_proxy:
-                files = self.dockerioapi.set_proxy(http_proxy)
+                self.dockerioapi.set_proxy(http_proxy)
             files = self.dockerioapi.get(imagerepo, tag)
             if files:
                 msg.out(files)
@@ -3560,8 +3558,8 @@ class CmdParser(object):
         while pos < len(opt_list):
             opt_arg = None
             if ((not opt_list[pos].startswith("-")) and
-                    (pos < 1 or (pos not in consumed and
-                                 not opt_list[pos-1].endswith("=")))):
+                    (pos < 1 or (pos not in consumed and not
+                    opt_list[pos-1].endswith("=")))):
                 break        # end of options and start of arguments
             elif opt_name.endswith("="):
                 if opt_list[pos].startswith(opt_name):
@@ -3621,19 +3619,20 @@ class CmdParser(object):
         else:
             return None
 
+
 class Main(object):
     """Get options, parse and execute the command line"""
     def __init__(self):
         self.cmdp = CmdParser()
         if not self.cmdp.parse(sys.argv):
-            msg.out("Error: parsing command line for assistance use: udocker --help")
+            msg.out("Error: parsing command line, use: udocker --help")
             sys.exit(1)
         conf.user_init(self.cmdp.get("--config=", "GEN_OPT"))
-        if (self.cmdp.get("--debug", "GEN_OPT")
-                or self.cmdp.get("-D", "GEN_OPT")):
+        if (self.cmdp.get("--debug", "GEN_OPT") or
+                self.cmdp.get("-D", "GEN_OPT")):
             conf.verbose_level = 3
         msg.setlevel(conf.verbose_level)
-        if self.cmdp.get("--repo=", "GEN_OPT"):  # override repository root tree
+        if self.cmdp.get("--repo=", "GEN_OPT"): # override repo root tree
             conf.def_topdir = self.cmdp.get("--repo=", "GEN_OPT")
             if not LocalRepository(conf.def_topdir).is_repo():
                 msg.out("Error: invalid udocker repository: " + conf.def_topdir)
@@ -3643,7 +3642,7 @@ class Main(object):
             msg.out("Info: creating repo: " + conf.def_topdir)
             self.localrepo.create_repo()
         self.udocker = Udocker(self.localrepo)
-        if self.cmdp.get("--insecure", "GEN_OPT"):  # override repository root tree
+        if self.cmdp.get("--insecure", "GEN_OPT"):  # override repo root tree
             conf.http_insecure = True
         if not UdockerTools(self.localrepo).download():
             msg.out("Error: install of udockertools failed")
@@ -3664,7 +3663,8 @@ class Main(object):
             "inspect": self.udocker.do_inspect,
             "verify": self.udocker.do_verify,
         }
-        if self.cmdp.get("--help", "GEN_OPT") or self.cmdp.get("-h", "GEN_OPT"):
+        if (self.cmdp.get("--help", "GEN_OPT") or
+                self.cmdp.get("-h", "GEN_OPT")):
             self.udocker.do_help(self.cmdp)
             return 0
         else:

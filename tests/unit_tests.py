@@ -18,6 +18,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import os
+import sys
+import mock
+import unittest
+from StringIO import StringIO
+import udocker
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
@@ -25,16 +31,8 @@ __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "0.0.1-1"
 __date__ = "2016"
 
-import os
-import sys
-import mock
-import unittest
-from StringIO import StringIO
-
-#sys.path.append(".")
-import udocker
-
 STDOUT = sys.stdout
+
 
 def find_str(self, find_exp, where):
     """Find string in test ouput messages"""
@@ -46,6 +44,7 @@ def find_str(self, find_exp, where):
             break
     if not found:
         self.assertTrue(False)
+
 
 class ConfigTestCase(unittest.TestCase):
     """Test case for the udocker configuration"""
@@ -171,6 +170,7 @@ class MsgTestCase(unittest.TestCase):
         self.assertEqual("111 222 333 444 555\n", mock_stdout.getvalue())
         sys.stdout = STDOUT
 
+
 class UniqueTestCase(unittest.TestCase):
     """Test Unique() class"""
 
@@ -218,6 +218,7 @@ class UniqueTestCase(unittest.TestCase):
         self.assertTrue(rand.endswith("12345"))
         self.assertTrue(rand.startswith("udocker"))
         self.assertGreater(len(rand.strip()), 50)
+
 
 class FileUtilTestCase(unittest.TestCase):
     """Test FileUtil() file manipulation methods"""
@@ -409,6 +410,7 @@ class FileUtilTestCase(unittest.TestCase):
             self.assertTrue(status)
             status = udocker.FileUtil("source").copyto("dest", "a")
             self.assertTrue(status)
+
 
 class UdockerToolsTestCase(unittest.TestCase):
     """Test UdockerTools() download and setup of tools needed by udocker"""
@@ -627,28 +629,28 @@ class MainTestCase(unittest.TestCase):
             mock_localrepo.return_value.get_imagerepos.return_value = [
                 ('busybox', 'latest')]
             mock_localrepo.return_value.get_layers.return_value = [
-                ('/home/jorge/.udocker/repos/busybox/latest/'
-                 + 'sha256:385e281300cc6d88bdd155e0931fbdfbb1801c2b'
-                 + '0265340a40481ee2b733ae66', 675992),
-                ('/home/jorge/.udocker/repos/busybox/latest/'
-                 + '56ed16bd6310cca65920c653a9bb22de6b235990dcaa174'
-                 + '2ff839867aed730e5.layer', 675992),
-                ('/home/jorge/.udocker/repos/busybox/latest/'
-                 + '56ed16bd6310cca65920c653a9bb22de6b235990dcaa174'
-                 + '2ff839867aed730e5.json', 1034),
-                ('/home/jorge/.udocker/repos/busybox/latest/'
-                 + 'bc744c4ab376115cc45c610d53f529dd2d4249ae6b35e5d'
-                 + '6e7a96e58863545aa.json', 1155),
-                ('/home/jorge/.udocker/repos/busybox/latest/'
-                 + 'bc744c4ab376115cc45c610d53f529dd2d4249ae6b35e5d'
-                 + '6e7a96e58863545aa.layer', 32),
-                ('/home/jorge/.udocker/repos/busybox/latest/'
-                 + 'sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633c'
-                 + 'b16422d00e8a7c22955b46d4', 32)]
+                ('/home/jorge/.udocker/repos/busybox/latest/' +
+                 'sha256:385e281300cc6d88bdd155e0931fbdfbb1801c2b' +
+                 '0265340a40481ee2b733ae66', 675992),
+                ('/home/jorge/.udocker/repos/busybox/latest/' +
+                 '56ed16bd6310cca65920c653a9bb22de6b235990dcaa174' +
+                 '2ff839867aed730e5.layer', 675992),
+                ('/home/jorge/.udocker/repos/busybox/latest/' +
+                 '56ed16bd6310cca65920c653a9bb22de6b235990dcaa174' +
+                 '2ff839867aed730e5.json', 1034),
+                ('/home/jorge/.udocker/repos/busybox/latest/' +
+                 'bc744c4ab376115cc45c610d53f529dd2d4249ae6b35e5d' +
+                 '6e7a96e58863545aa.json', 1155),
+                ('/home/jorge/.udocker/repos/busybox/latest/' +
+                 'bc744c4ab376115cc45c610d53f529dd2d4249ae6b35e5d' +
+                 '6e7a96e58863545aa.layer', 32),
+                ('/home/jorge/.udocker/repos/busybox/latest/' +
+                 'sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633c' +
+                 'b16422d00e8a7c22955b46d4', 32)]
             main.execute()
-            msg_out = '    /home/jorge/.udocker/repos/busybox/latest/' \
-                + 'sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16' \
-                + '422d00e8a7c22955b46d4 (1 MB)'
+            msg_out = '    /home/jorge/.udocker/repos/busybox/latest/' + \
+                      'sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16' + \
+                      '422d00e8a7c22955b46d4 (1 MB)'
             find_str(self, msg_out, mock_msg.out.call_args)
 
 

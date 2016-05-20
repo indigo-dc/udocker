@@ -18,6 +18,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import os
+import re
+import sys
+import uuid
+import mock
+import unittest
+import udocker
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
@@ -25,18 +32,10 @@ __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "0.0.1-1"
 __date__ = "2016"
 
-import os
-import re
-import sys
-import uuid
-import mock
-import unittest
-
-import ../udocker
-
 STDOUT = sys.stdout
 DEVNULL = open("/dev/null", "w")
 UDOCKER = "udocker.py"
+
 
 def match_str(find_exp, where):
     """find_exp regexp is present in buffer where"""
@@ -45,9 +44,11 @@ def match_str(find_exp, where):
             return True
     return False
 
+
 def not_match_str(find_exp, where):
     """find_exp regexp is not present in buffer where"""
     return not match_str(find_exp, where)
+
 
 def find_str(find_exp, where):
     """find_exp is present in buffer where"""
@@ -55,6 +56,7 @@ def find_str(find_exp, where):
         if find_exp in str(item):
             return True
     return False
+
 
 def choose_find(expect_prefix):
     """Choose which find method to use"""
@@ -65,6 +67,7 @@ def choose_find(expect_prefix):
     else:
         find = find_str
     return find
+
 
 def do_test(self, mock_msg, t_argv, expect_msg=None):
     """Execute a udocker command as called in the command line"""
@@ -79,7 +82,7 @@ def do_test(self, mock_msg, t_argv, expect_msg=None):
             return False
         elif expect_msg:
             find = choose_find(expect_msg[:1])
-            #print mock_msg.out.call_args_list
+            # print mock_msg.out.call_args_list
             if find(expect_msg[1:],
                     mock_msg.out.call_args_list):
                 self.assertTrue(True, str(t_argv))
@@ -90,6 +93,7 @@ def do_test(self, mock_msg, t_argv, expect_msg=None):
         else:
             self.assertTrue(True, str(t_argv))
             return True
+
 
 def do_run_test(self, mock_msg, t_argv, expect_msg=None, expect_out=None):
     """Execute run a command and capture stdout"""
@@ -126,9 +130,11 @@ def do_action(t_argv):
             main = udocker.Main()
             return main.start()
 
+
 def image_not_exists(image="busybox:latest"):
     """Check is the container image exists"""
     return do_action([UDOCKER, "inspect", image])
+
 
 def container_not_exists(container="busyTEST"):
     """Check is the container exists"""
