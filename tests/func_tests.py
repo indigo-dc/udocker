@@ -19,12 +19,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-__author__ = "udocker@lip.pt"
-__credits__ = ["PRoot http://proot.me"]
-__license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "0.0.1-1"
-__date__ = "2016"
-
 import os
 import re
 import sys
@@ -34,6 +28,12 @@ import unittest
 
 sys.path.append("..")
 import udocker
+
+__author__ = "udocker@lip.pt"
+__credits__ = ["PRoot http://proot.me"]
+__license__ = "Licensed under the Apache License, Version 2.0"
+__version__ = "0.0.1-1"
+__date__ = "2016"
 
 STDOUT = sys.stdout
 DEVNULL = open("/dev/null", "w")

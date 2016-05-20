@@ -1841,8 +1841,8 @@ class LocalRepository(object):
                         layer_id)
                 status = False
                 continue
-            if not os.path.exists(self.cur_tagdir + "/"
-                                  + os.readlink(layer_f)):
+            if not os.path.exists(self.cur_tagdir + "/" +
+                                  os.readlink(layer_f)):
                 msg.out("Error: layer data file not found")
                 status = False
                 continue
@@ -3636,8 +3636,8 @@ class Main(object):
         if self.cmdp.get("--repo=", "GEN_OPT"):  # override repo root tree
             conf.def_topdir = self.cmdp.get("--repo=", "GEN_OPT")
             if not LocalRepository(conf.def_topdir).is_repo():
-                msg.out("Error: invalid udocker repository: "
-                        + conf.def_topdir)
+                msg.out("Error: invalid udocker repository: " +
+                        conf.def_topdir)
                 sys.exit(1)
         self.localrepo = LocalRepository(conf.def_topdir)
         if not LocalRepository(conf.def_topdir).is_repo():
