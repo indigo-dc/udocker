@@ -25,9 +25,11 @@ import sys
 import uuid
 import mock
 import unittest
-
-sys.path.append("..")
-import udocker
+try:
+    import udocker
+except ImportError:
+    sys.path.append("..")
+    import udocker
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]

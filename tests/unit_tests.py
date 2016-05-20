@@ -24,9 +24,11 @@ import sys
 import mock
 import unittest
 from StringIO import StringIO
-
-sys.path.append("..")
-import udocker
+try:
+    import udocker
+except ImportError:
+    sys.path.append("..")
+    import udocker
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
