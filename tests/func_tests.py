@@ -25,17 +25,18 @@ import sys
 import uuid
 import mock
 import unittest
-try:
-    import udocker
-except ImportError:
-    sys.path.append("..")
-    import udocker
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "0.0.1-1"
 __date__ = "2016"
+
+try:
+    import udocker
+except ImportError:
+    sys.path.append("..")
+    import udocker
 
 STDOUT = sys.stdout
 DEVNULL = open("/dev/null", "w")
