@@ -67,6 +67,16 @@ def find_str(self, find_exp, where):
         self.assertTrue(False)
 
 
+def is_writable_file(obj):
+    """Check if obj is a file"""
+    try:
+        obj.write("")
+    except(AttributeError, OSError, IOError):
+        return False
+    else:
+        return True
+
+
 class ConfigTestCase(unittest.TestCase):
     """Test case for the udocker configuration"""
 
@@ -166,33 +176,30 @@ class MsgTestCase(unittest.TestCase):
 
     def _verify_descriptors(self, msg):
         """Verify Msg() file descriptors"""
-        self.assertIsInstance(msg.chlderr, type(sys.stdin))
-        self.assertIsInstance(msg.chldout, type(sys.stdin))
-        self.assertIsInstance(msg.chldnul, type(sys.stdin))
-        self.assertIsInstance(msg.stdout, type(sys.stdin))
-        self.assertIsInstance(msg.stderr, type(sys.stdin))
+        self.assertTrue(is_writable_file(msg.chlderr))
+        self.assertTrue(is_writable_file(msg.chldout))
+        self.assertTrue(is_writable_file(msg.chldnul))
+        self.assertTrue(is_writable_file(msg.stdout))
+        self.assertTrue(is_writable_file(msg.stderr))
 
     def test_init(self):
         """Test Msg() constructor"""
-        with mock.patch(BUILTINS + '.open',
-                        new_callable=mock.mock_open()) as mopen:
-            mopen.return_value = sys.stdin
-            msg = udocker.Msg(0)
-            self._verify_descriptors(msg)
-            self.assertEqual(msg.level, 0)
+        msg = udocker.Msg(0)
+        self._verify_descriptors(msg)
+        self.assertEqual(msg.level, 0)
+        msg.nullfp.close()
 
     def test_setlevel(self):
         """Test Msg.setlevel() change of log level"""
-        with mock.patch(BUILTINS + '.open',
-                        new_callable=mock.mock_open()) as mopen:
-            mopen.return_value = sys.stdin
-            msg = udocker.Msg(5)
-            self._verify_descriptors(msg)
-            self.assertEqual(msg.level, 5)
-            msg = udocker.Msg(0)
-            msg.setlevel(7)
-            self._verify_descriptors(msg)
-            self.assertEqual(msg.level, 7)
+        msg = udocker.Msg(5)
+        self._verify_descriptors(msg)
+        self.assertEqual(msg.level, 5)
+        msg.nullfp.close()
+        msg = udocker.Msg(0)
+        msg.setlevel(7)
+        self._verify_descriptors(msg)
+        self.assertEqual(msg.level, 7)
+        msg.nullfp.close()
 
     @mock.patch('udocker.sys.stdout', new_callable=StringIO)
     def test_out(self, mock_stdout):
