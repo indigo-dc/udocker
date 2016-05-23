@@ -1951,10 +1951,8 @@ class GetURL(object):
             get(url, ctimeout=5, timeout=5, v=true, header=[]):
         """
         if len(args) != 1:
-            msg.out("get: wrong number of arguments:", args)
-            return(None, None)
-        else:
-            return self._geturl.get(*args, **kwargs)
+            raise TypeError('wrong number of arguments')
+        return self._geturl.get(*args, **kwargs)
 
 
 class GetURLpyCurl(GetURL):
