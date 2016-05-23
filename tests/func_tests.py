@@ -20,9 +20,7 @@ limitations under the License.
 """
 
 import os
-import re
 import sys
-import uuid
 import mock
 import unittest
 
@@ -35,340 +33,197 @@ __date__ = "2016"
 try:
     import udocker
 except ImportError:
+    sys.path.append(".")
     sys.path.append("..")
     import udocker
 
 STDOUT = sys.stdout
-DEVNULL = open("/dev/null", "w")
-UDOCKER = "udocker.py"
 
 
-def match_str(find_exp, where):
-    """find_exp regexp is present in buffer where"""
-    for item in where:
-        if re.search(find_exp, str(item)):
-            return True
-    return False
+def set_env():
+    """Set environment variables"""
+    if not os.getenv("HOME"):
+        os.environ["HOME"] = os.getcwd()
 
 
-def not_match_str(find_exp, where):
-    """find_exp regexp is not present in buffer where"""
-    return not match_str(find_exp, where)
-
-
-def find_str(find_exp, where):
-    """find_exp is present in buffer where"""
+def find_str(self, find_exp, where):
+    """Find string in test ouput messages"""
+    found = False
     for item in where:
         if find_exp in str(item):
-            return True
-    return False
+            self.assertTrue(True)
+            found = True
+            break
+    if not found:
+        self.assertTrue(False)
 
 
-def choose_find(expect_prefix):
-    """Choose which find method to use"""
-    if expect_prefix == '=':
-        find = match_str
-    elif expect_prefix == '!':
-        find = not_match_str
-    else:
-        find = find_str
-    return find
+class MainTestCase(unittest.TestCase):
+    """Test most udocker capabilities"""
 
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
 
-def do_test(self, mock_msg, t_argv, expect_msg=None):
-    """Execute a udocker command as called in the command line"""
-    udocker.msg = mock_msg
-    udocker.conf = udocker.Config()
-    with mock.patch.object(sys, 'argv', t_argv):
-        main = udocker.Main()
-        udocker.msg.chlderr = DEVNULL
-        udocker.msg.chldnul = DEVNULL
-        if main.start():
-            self.assertTrue(False, str(t_argv))
-            return False
-        elif expect_msg:
-            find = choose_find(expect_msg[:1])
-            if find(expect_msg[1:],
-                    mock_msg.out.call_args_list):
-                self.assertTrue(True, str(t_argv))
-                return True
-            else:
-                self.assertTrue(False, str(t_argv))
-                return False
-        else:
-            self.assertTrue(True, str(t_argv))
-            return True
-
-
-def do_run_test(self, mock_msg, t_argv, expect_msg=None, expect_out=None):
-    """Execute run a command and capture stdout"""
-    output_file = str(uuid.uuid4())
-    orig_stdout_fd = os.dup(1)
-    os.close(1)
-    os.open(output_file, os.O_WRONLY | os.O_CREAT)
-    orig_stderr_fd = os.dup(2)
-    os.close(2)
-    os.open(output_file, os.O_WRONLY)
-    status = do_test(self, mock_msg, t_argv, expect_msg)
-    sys.stdout.flush()
-    os.close(1)
-    os.dup(orig_stdout_fd)
-    sys.stderr.flush()
-    os.close(2)
-    os.dup(orig_stderr_fd)
-    if status and expect_out:
-        find = choose_find(expect_out[:1])
-        with open(output_file) as output_fp:
-            if not find(expect_out[1:], [output_fp.read()]):
-                self.assertTrue(False, str(t_argv))
-                return False
-        os.remove(output_file)
-    return status
-
-
-def do_action(t_argv):
-    """Execute an action not part of a test i.e. setup and cleanup"""
-    with mock.patch('udocker.Msg') as mock_msg:
+    @mock.patch('udocker.LocalRepository')
+    @mock.patch('udocker.UdockerTools')
+    @mock.patch('udocker.Config.user_init')
+    @mock.patch('udocker.import_modules')
+    @mock.patch('udocker.Msg')
+    def test_init(self, mock_msg, mock_import_modules,
+                  mock_user_init, mock_utools, mock_localrepo):
+        """Test udocker global command line options"""
         udocker.msg = mock_msg
         udocker.conf = udocker.Config()
+        t_argv = ['./udocker.py']
+        with mock.patch.object(sys, 'argv', t_argv):
+            udocker.Main()
+            self.assertTrue(mock_import_modules.called)
+        t_argv = ['./udocker.py', "images"]
+        with mock.patch.object(sys, 'argv', t_argv):
+            udocker.Main()
+            self.assertTrue(mock_import_modules.called)
+        t_argv = ['./udocker.py', "--config=/myconf"]
+        with mock.patch.object(sys, 'argv', t_argv):
+            udocker.Main()
+            self.assertTrue(mock_import_modules.called)
+            self.assertTrue(mock_user_init.called_with("/myconf"))
+        t_argv = ['./udocker.py', "--cofig=/myconf"]
+        with mock.patch.object(sys, 'argv', t_argv):
+            udocker.Main()
+            self.assertTrue(mock_import_modules.called)
+            self.assertTrue(mock_user_init.called_with(False))
+        udocker.conf.verbose_level = 0
+        t_argv = ['./udocker.py', "-D"]
+        with mock.patch.object(sys, 'argv', t_argv):
+            udocker.Main()
+            self.assertTrue(mock_import_modules.called)
+            self.assertEqual(udocker.conf.verbose_level, 3)
+        udocker.conf.verbose_level = 0
+        t_argv = ['./udocker.py', "--debug"]
+        with mock.patch.object(sys, 'argv', t_argv):
+            udocker.Main()
+            self.assertTrue(mock_import_modules.called)
+            self.assertEqual(udocker.conf.verbose_level, 3)
+        t_argv = ['./udocker.py', "--insecure"]
+        with mock.patch.object(sys, 'argv', t_argv):
+            udocker.Main()
+            self.assertTrue(mock_import_modules.called)
+            self.assertEqual(udocker.conf.http_insecure, True)
+        t_argv = ['./udocker.py', "--repo=/home/user/.udocker"]
+        with mock.patch.object(sys, 'argv', t_argv):
+            udocker.Main()
+            self.assertTrue(mock_import_modules.called)
+            self.assertEqual(udocker.conf.def_topdir, "/home/user/.udocker")
+
+    @mock.patch('udocker.UdockerTools')
+    @mock.patch('udocker.Msg')
+    def test_execute_help(self, mock_msg, mock_utools):
+        """Test udocker help command"""
+        udocker.msg = mock_msg
+        udocker.conf = udocker.Config()
+        t_argv = ['./udocker.py', "--help"]
         with mock.patch.object(sys, 'argv', t_argv):
             main = udocker.Main()
-            return main.start()
+            main.execute()
+            find_str(self, "Examples", mock_msg.out.call_args)
 
-
-def image_not_exists(image="busybox:latest"):
-    """Check is the container image exists"""
-    return do_action([UDOCKER, "inspect", image])
-
-
-def container_not_exists(container="busyTEST"):
-    """Check is the container exists"""
-    return do_action([UDOCKER, "inspect", "-p", container])
-
-
-class FuncTestBasic(unittest.TestCase):
-    """Test basic capabilities, help and other simple commands"""
-
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.UdockerTools')
     @mock.patch('udocker.Msg')
-    def test_01_noargs(self, mock_msg):
-        """Test invoke command without arguments"""
-        do_test(self, mock_msg,
-                [UDOCKER],
-                "Error: invalid command")
+    def test_do_search(self, mock_msg, mock_utools, mock_dockerioapi):
+        """Test udocker search command"""
+        udocker.msg = mock_msg
+        udocker.conf = udocker.Config()
+        t_argv = ['./udocker.py', "search", "-a", "iscampos"]
+        with mock.patch.object(sys, 'argv', t_argv):
+            mock_dockerioapi.return_value.search_get_page.side_effect = [
+                {u'num_results': 2, u'results': [
+                    {u'is_automated': False, u'name': u'iscampos/openqcd',
+                     u'star_count': 0, u'is_trusted': False,
+                     u'is_official': False,
+                     u'description': u'Containers for openQCD v1.4'},
+                    {u'is_automated': False, u'name': u'iscampos/codemaster',
+                     u'star_count': 0, u'is_trusted': False,
+                     u'is_official': False, u'description': u''}],
+                 u'page_size': 25, u'query': u'iscampos',
+                 u'num_pages': '1', u'page': u'0'},
+                {u'num_results': 2, u'results': [
+                    {u'is_automated': False, u'name': u'iscampos/openqcd',
+                     u'star_count': 0, u'is_trusted': False,
+                     u'is_official': False,
+                     u'description': u'Containers for openQCD v1.4'},
+                    {u'is_automated': False, u'name': u'iscampos/codemaster',
+                     u'star_count': 0, u'is_trusted': False,
+                     u'is_official': False, u'description': u''}],
+                 u'page_size': 25, u'query': u'iscampos',
+                 u'num_pages': '1', u'page': u'1'}]
+            main = udocker.Main()
+            main.execute()
+            find_str(self, "iscampos/codemaster", mock_msg.out.call_args)
 
+    @mock.patch('udocker.LocalRepository')
+    @mock.patch('udocker.UdockerTools')
     @mock.patch('udocker.Msg')
-    def test_02_help(self, mock_msg):
-        """Test invoke help command"""
-        do_test(self, mock_msg,
-                [UDOCKER, "help"],
-                " Syntax")
-
-    @mock.patch('udocker.Msg')
-    def test_03_help(self, mock_msg):
-        """Test invoke --help option"""
-        do_test(self, mock_msg,
-                [UDOCKER, "--help"],
-                " Syntax")
-
-    @mock.patch('udocker.Msg')
-    def test_04_help_about_command(self, mock_msg):
-        """Test invoke --help option for the run command"""
-        do_test(self, mock_msg,
-                [UDOCKER, "run", "--help"],
-                "=run: .*--")
-
-    @mock.patch('udocker.Msg')
-    def test_05_help_content(self, mock_msg):
-        """Test verify help content"""
-        do_test(self, mock_msg,
-                [UDOCKER, "--help"],
-                "=Commands.* search.* pull.* images.* create.* ps.* rm.* "
-                "run.* inspect.* name.* rmname.* rmi.* rm.* import.* load.* "
-                "verify.* protect.* unprotect.* protect.* unprotect.* "
-                "mkrepo.* help.* Examples:.* Notes:")
-
-    @mock.patch('udocker.Msg')
-    def test_06_images(self, mock_msg):
-        """Test invoke images command"""
-        do_test(self, mock_msg,
-                [UDOCKER, "images"],
-                " REPOSITORY")
-
-    @mock.patch('udocker.Msg')
-    def test_07_ps(self, mock_msg):
-        """Test invoke ps command"""
-        do_test(self, mock_msg,
-                [UDOCKER, "ps"],
-                " CONTAINER ID")
-
-    @mock.patch('udocker.Msg')
-    def test_08_search(self, mock_msg):
-        """Test invoke search command"""
-        do_test(self, mock_msg,
-                [UDOCKER, "search", "-a", "indigodatacloud"],
-                " indigodatacloud/disvis")
-
-
-class FuncTestRepo(unittest.TestCase):
-    """Test the local repository"""
-
-    @classmethod
-    def setUpClass(cls):
-        """Setup test"""
-        do_action([UDOCKER, "rmi", "busybox:latest"])
-        do_action([UDOCKER, "rm", "busyNAME"])
-        do_action([UDOCKER, "rm", "busyTEST"])
-
-    @classmethod
-    def tearDownClass(cls):
-        """Cleanup test"""
-        do_action([UDOCKER, "rm", "busyNAME"])
-        do_action([UDOCKER, "rm", "busyTEST"])
-
-    @mock.patch('udocker.Msg')
-    def test_00_pull(self, mock_msg):
-        """Test pull image"""
-        do_test(self, mock_msg,
-                [UDOCKER, "pull", "busybox"],
-                "!^Error:")
-
-    @mock.patch('udocker.Msg')
-    def test_00_pull_again(self, mock_msg):
-        """Test pull image again"""
-        do_test(self, mock_msg,
-                [UDOCKER, "pull", "busybox"],
-                "!^Error:")
-
-    @mock.patch('udocker.Msg')
-    def test_01_rmi(self, mock_msg):
-        """Test remove image"""
-        if image_not_exists():
-            self.skipTest("no image")
-        do_test(self, mock_msg,
-                [UDOCKER, "rmi", "busybox:latest"],
-                "!^Error:")
-
-    @mock.patch('udocker.Msg')
-    def test_02_pull_with_index(self, mock_msg):
-        """Test pull image specifying index and registry"""
-        do_action([UDOCKER, "rmi", "busybox:latest"])
-        do_test(self, mock_msg,
-                [UDOCKER, "pull",
-                 "--index=https://index.docker.io/v1",
-                 "--registry=https://registry-1.docker.io",
-                 "busybox:latest"], "!^Error:")
-
-    @mock.patch('udocker.Msg')
-    def test_03_images_short(self, mock_msg):
-        """Test images listing"""
-        if image_not_exists():
-            self.skipTest("no image")
-        do_test(self, mock_msg,
-                [UDOCKER, "images"],
-                " busybox:")
-
-    @mock.patch('udocker.Msg')
-    def test_04_images_long(self, mock_msg):
-        """Test images listing long format"""
-        if image_not_exists():
-            self.skipTest("no image")
-        do_test(self, mock_msg,
-                [UDOCKER, "images", "-l"],
-                " MB)")
-
-    @mock.patch('udocker.Msg')
-    def test_05_inspect_image(self, mock_msg):
-        """Test if image is present"""
-        if image_not_exists():
-            self.skipTest("no image")
-        do_test(self, mock_msg,
-                [UDOCKER, "inspect", "busybox"],
-                "=architecture.*container.*created.*parent")
-
-    @mock.patch('udocker.Msg')
-    def test_06_verify_image(self, mock_msg):
-        """Test verify image"""
-        if image_not_exists():
-            self.skipTest("no image")
-        do_test(self, mock_msg,
-                [UDOCKER, "verify", "busybox"],
-                " Image Ok")
-
-    @mock.patch('udocker.Msg')
-    def test_07_create_and_rename(self, mock_msg):
-        """Test creation and renaming of container"""
-        if image_not_exists():
-            self.skipTest("no image")
-        if do_test(self, mock_msg,
-                   [UDOCKER, "create", "busybox"], r"=(\d+)-(\d+)"):
-            container_id = str(mock_msg.out.call_args)[6:42]
-            do_test(self, mock_msg,
-                    [UDOCKER, "name", container_id, "busyNAME"],
-                    "!Error:")
-            do_test(self, mock_msg,
-                    [UDOCKER, "rmname", "busyNAME"],
-                    "!Error:")
-            do_test(self, mock_msg,
-                    [UDOCKER, "rm", container_id],
-                    "!Error:")
-
-    @mock.patch('udocker.Msg')
-    def test_08_create_with_name(self, mock_msg):
-        """Test creation with name"""
-        do_test(self, mock_msg,
-                [UDOCKER, "create", "--name=busyTEST",
-                 "busybox"], r"=(\d+)-(\d+)")
-
-    @mock.patch('udocker.Msg')
-    def test_09_ps_find_container(self, mock_msg):
-        """Test ps and presence of container"""
-        if container_not_exists():
-            self.skipTest("no container")
-        do_test(self, mock_msg,
-                [UDOCKER, "ps"],
-                " busyTEST")
-
-    @mock.patch('udocker.Msg')
-    def test_10_inspect_container(self, mock_msg):
-        """Test inspect container"""
-        if container_not_exists():
-            self.skipTest("no container")
-        do_test(self, mock_msg,
-                [UDOCKER, "inspect", "busyTEST"],
-                "=architecture.*container.*created.*parent")
-
-    @mock.patch('udocker.Msg')
-    def test_11_inspect_container_root(self, mock_msg):
-        """Test inspect container obtain ROOT pathname"""
-        if container_not_exists():
-            self.skipTest("no container")
-        do_test(self, mock_msg,
-                [UDOCKER, "inspect", "-p", "busyTEST"],
-                " /ROOT")
-
-
-class FuncTestRun(unittest.TestCase):
-    """Test container execution"""
-
-    @classmethod
-    def setUpClass(cls):
-        """Setup test"""
-        do_action([UDOCKER, "pull", "busybox"])
-        do_action([UDOCKER, "create", "--name=busyRUN", "busybox"])
-
-    @classmethod
-    def tearDownClass(cls):
-        """Cleanup test"""
-        do_action([UDOCKER, "rm", "busyRUN"])
-
-    @mock.patch('udocker.Msg')
-    def test_01_run_helloworld(self, mock_msg):
-        """Test container execution"""
-        if container_not_exists("busyRUN"):
-            self.skipTest("no container")
-        do_run_test(self, mock_msg,
-                    [UDOCKER, "run", "busyRUN", "echo 'hello world'"],
-                    None, " hello")
+    def test_do_images(self, mock_msg, mock_utools, mock_localrepo):
+        """Test udocker images command"""
+        udocker.msg = mock_msg
+        udocker.conf = udocker.Config()
+        mock_localrepo.return_value.cd_imagerepo.return_value = \
+            "/home/user/.udocker/repos/X/latest"
+        mock_localrepo.return_value.get_imagerepos.return_value = [
+            ('iscampos/openqcd', 'latest'), ('busybox', 'latest')]
+        t_argv = ['./udocker.py', "images"]
+        with mock.patch.object(sys, 'argv', t_argv):
+            # Unprotected
+            mock_localrepo.return_value.isprotected_imagerepo\
+                .return_value = False
+            main = udocker.Main()
+            main.execute()
+            msg_out = ("busybox:latest"
+                       "                                               .")
+            find_str(self, msg_out, mock_msg.out.call_args)
+            # Protected
+            mock_localrepo.return_value.isprotected_imagerepo\
+                .return_value = True
+            main.execute()
+            msg_out = ("busybox:latest"
+                       "                                               P")
+            find_str(self, msg_out, mock_msg.out.call_args)
+        t_argv = ['./udocker.py', "images", "-l"]
+        with mock.patch.object(sys, 'argv', t_argv):
+            main = udocker.Main()
+            main.execute()
+            msg_out = "  /home/user/.udocker/repos/X/latest"
+            find_str(self, msg_out, mock_msg.out.call_args)
+            #
+            mock_localrepo.return_value.get_imagerepos.return_value = [
+                ('busybox', 'latest')]
+            mock_localrepo.return_value.get_layers.return_value = [
+                ('/home/jorge/.udocker/repos/busybox/latest/' +
+                 'sha256:385e281300cc6d88bdd155e0931fbdfbb1801c2b' +
+                 '0265340a40481ee2b733ae66', 675992),
+                ('/home/jorge/.udocker/repos/busybox/latest/' +
+                 '56ed16bd6310cca65920c653a9bb22de6b235990dcaa174' +
+                 '2ff839867aed730e5.layer', 675992),
+                ('/home/jorge/.udocker/repos/busybox/latest/' +
+                 '56ed16bd6310cca65920c653a9bb22de6b235990dcaa174' +
+                 '2ff839867aed730e5.json', 1034),
+                ('/home/jorge/.udocker/repos/busybox/latest/' +
+                 'bc744c4ab376115cc45c610d53f529dd2d4249ae6b35e5d' +
+                 '6e7a96e58863545aa.json', 1155),
+                ('/home/jorge/.udocker/repos/busybox/latest/' +
+                 'bc744c4ab376115cc45c610d53f529dd2d4249ae6b35e5d' +
+                 '6e7a96e58863545aa.layer', 32),
+                ('/home/jorge/.udocker/repos/busybox/latest/' +
+                 'sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633c' +
+                 'b16422d00e8a7c22955b46d4', 32)]
+            main.execute()
+            msg_out = '    /home/jorge/.udocker/repos/busybox/latest/' +\
+                'sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16' +\
+                '422d00e8a7c22955b46d4 (1 MB)'
+            find_str(self, msg_out, mock_msg.out.call_args)
 
 
 if __name__ == '__main__':

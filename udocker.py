@@ -90,7 +90,6 @@ class Config(object):
     """
 
     # pylint: disable=too-many-instance-attributes
-    # pylint: disable=too-few-public-methods
     def __init__(self):
         """Initial default values. Can be overloaded by user_init()"""
         self.verbose_level = 0
@@ -1798,6 +1797,7 @@ class LocalRepository(object):
                     break
         return sorted_layers
 
+    # pylint: disable=too-many-branches
     def verify_image(self):
         """Verify the structure of an image repository"""
         msg.out("Loading structure")
