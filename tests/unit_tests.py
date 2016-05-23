@@ -164,25 +164,27 @@ class MsgTestCase(unittest.TestCase):
         self.assertIsInstance(msg.stdout, file)
         self.assertIsInstance(msg.stderr, file)
 
-    @mock.patch('__builtin__.open')
-    def test_init(self, mock_open):
+    def test_init(self):
         """Test Msg() constructor"""
-        mock_open.return_value = sys.stdin
-        msg = udocker.Msg()
-        self._verify_descriptors(msg)
-        self.assertEqual(msg.level, 0)
+        with mock.patch('__builtin__.open', 
+                        new_callable=mock.mock_open()) as mopen:
+            mopen.return_value = sys.stdin
+            msg = udocker.Msg(0)
+            self._verify_descriptors(msg)
+            self.assertEqual(msg.level, 0)
 
-    @mock.patch('__builtin__.open')
-    def test_setlevel(self, mock_open):
+    def test_setlevel(self):
         """Test Msg.setlevel() change of log level"""
-        mock_open.return_value = sys.stdin
-        msg = udocker.Msg(5)
-        self._verify_descriptors(msg)
-        self.assertEqual(msg.level, 5)
-        msg = udocker.Msg(0)
-        msg.setlevel(7)
-        self._verify_descriptors(msg)
-        self.assertEqual(msg.level, 7)
+        with mock.patch('__builtin__.open', 
+                        new_callable=mock.mock_open()) as mopen:
+            mopen.return_value = sys.stdin
+            msg = udocker.Msg(5)
+            self._verify_descriptors(msg)
+            self.assertEqual(msg.level, 5)
+            msg = udocker.Msg(0)
+            msg.setlevel(7)
+            self._verify_descriptors(msg)
+            self.assertEqual(msg.level, 7)
 
     @mock.patch('udocker.sys.stdout', new_callable=StringIO)
     def test_out(self, mock_stdout):
