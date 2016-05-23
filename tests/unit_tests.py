@@ -23,7 +23,10 @@ import os
 import sys
 import mock
 import unittest
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
@@ -39,6 +42,11 @@ except ImportError:
     import udocker
 
 STDOUT = sys.stdout
+
+if sys.version_info[0] >= 3:
+    BUILTINS = "builtins"
+else:
+    BUILTINS = "__builtin__"
 
 
 def set_env():
@@ -158,15 +166,15 @@ class MsgTestCase(unittest.TestCase):
 
     def _verify_descriptors(self, msg):
         """Verify Msg() file descriptors"""
-        self.assertIsInstance(msg.chlderr, file)
-        self.assertIsInstance(msg.chldout, file)
-        self.assertIsInstance(msg.chldnul, file)
-        self.assertIsInstance(msg.stdout, file)
-        self.assertIsInstance(msg.stderr, file)
+        self.assertIsInstance(msg.chlderr, type(sys.stdin))
+        self.assertIsInstance(msg.chldout, type(sys.stdin))
+        self.assertIsInstance(msg.chldnul, type(sys.stdin))
+        self.assertIsInstance(msg.stdout, type(sys.stdin))
+        self.assertIsInstance(msg.stderr, type(sys.stdin))
 
     def test_init(self):
         """Test Msg() constructor"""
-        with mock.patch('__builtin__.open', 
+        with mock.patch(BUILTINS + '.open',
                         new_callable=mock.mock_open()) as mopen:
             mopen.return_value = sys.stdin
             msg = udocker.Msg(0)
@@ -175,7 +183,7 @@ class MsgTestCase(unittest.TestCase):
 
     def test_setlevel(self):
         """Test Msg.setlevel() change of log level"""
-        with mock.patch('__builtin__.open', 
+        with mock.patch(BUILTINS + '.open',
                         new_callable=mock.mock_open()) as mopen:
             mopen.return_value = sys.stdin
             msg = udocker.Msg(5)
@@ -193,6 +201,7 @@ class MsgTestCase(unittest.TestCase):
         msg.out("111", "222", "333", 444, ('555'))
         self.assertEqual("111 222 333 444 555\n", mock_stdout.getvalue())
         sys.stdout = STDOUT
+        msg.nullfp.close()
 
 
 class UniqueTestCase(unittest.TestCase):
@@ -335,21 +344,34 @@ class FileUtilTestCase(unittest.TestCase):
         status = futil.remove()
         self.assertFalse(status)
 
+    @mock.patch('udocker.msg')
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.os.path.isfile')
-    def test_verify_tar(self, mock_isfile, mock_call):
+    def test_verify_tar01(self, mock_isfile, mock_call, mock_msg):
         """Test FileUtil.verify_tar() check tar file"""
-        # NOT A FILE
+        mock_msg.level = 0
         mock_isfile.return_value = False
         mock_call.return_value = 0
         status = udocker.FileUtil("tarball.tar").verify_tar()
         self.assertFalse(status)
-        # IS FILE and TAR OK
+
+    @mock.patch('udocker.msg')
+    @mock.patch('udocker.subprocess.call')
+    @mock.patch('udocker.os.path.isfile')
+    def test_verify_tar02(self, mock_isfile, mock_call, mock_msg):
+        """Test FileUtil.verify_tar() check tar file"""
+        mock_msg.level = 0
         mock_isfile.return_value = True
         mock_call.return_value = 0
         status = udocker.FileUtil("tarball.tar").verify_tar()
         self.assertTrue(status)
-        # IS FILE and TAR FAIL
+
+    @mock.patch('udocker.msg')
+    @mock.patch('udocker.subprocess.call')
+    @mock.patch('udocker.os.path.isfile')
+    def test_verify_tar03(self, mock_isfile, mock_call, mock_msg):
+        """Test FileUtil.verify_tar() check tar file"""
+        mock_msg.level = 0
         mock_isfile.return_value = True
         mock_call.return_value = 1
         status = udocker.FileUtil("tarball.tar").verify_tar()
@@ -383,7 +405,7 @@ class FileUtilTestCase(unittest.TestCase):
 
     def test_getdata(self):
         """Test FileUtil.size() get file content"""
-        with mock.patch('__builtin__.open',
+        with mock.patch(BUILTINS + '.open',
                         mock.mock_open(read_data='qwerty')):
             data = udocker.FileUtil("somefile").getdata()
             self.assertEqual(data, 'qwerty')
@@ -395,7 +417,7 @@ class FileUtilTestCase(unittest.TestCase):
     def test_find_exec(self, mock_mktmp, mock_getdata, mock_remove, mock_call):
         """Test FileUtil.find_exec() find executable"""
         mock_mktmp.return_value.mktmp.return_value = "/tmp/tmpfile"
-        with mock.patch('__builtin__.open', mock.mock_open()):
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
             # executable found
             mock_getdata.return_value = "/bin/executable"
             filename = udocker.FileUtil("executable").find_exec()
@@ -431,7 +453,7 @@ class FileUtilTestCase(unittest.TestCase):
 
     def test_copyto(self):
         """Test FileUtil.copyto() file copy"""
-        with mock.patch('__builtin__.open', mock.mock_open()):
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
             status = udocker.FileUtil("source").copyto("dest")
             self.assertTrue(status)
             status = udocker.FileUtil("source").copyto("dest", "w")
@@ -482,6 +504,7 @@ class UdockerToolsTestCase(unittest.TestCase):
         status = utools.is_available()
         self.assertFalse(status)
 
+    @mock.patch('udocker.msg')
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.UdockerTools.__init__')
     @mock.patch('udocker.FileUtil')
@@ -489,8 +512,9 @@ class UdockerToolsTestCase(unittest.TestCase):
     @mock.patch('udocker.GetURL')
     @mock.patch('udocker.FileUtil.mktmp')
     def test_download(self, mock_mktmp, mock_geturl, mock_call,
-                      mock_fileutil, mock_init, mock_localrepo):
+                      mock_fileutil, mock_init, mock_localrepo, mock_msg):
         """Test UdockerTools.download()"""
+        mock_msg.level = 0
         mock_fileutil.return_value.mktmp.return_value = "filename_tmp"
         mock_init.return_value = None
         utools = udocker.UdockerTools(mock_localrepo)

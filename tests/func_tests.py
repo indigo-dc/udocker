@@ -222,7 +222,7 @@ class MainTestCase(unittest.TestCase):
             main.execute()
             msg_out = '    /home/jorge/.udocker/repos/busybox/latest/' +\
                 'sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16' +\
-                '422d00e8a7c22955b46d4 (1 MB)'
+                '422d00e8a7c22955b46d4 ('
             find_str(self, msg_out, mock_msg.out.call_args)
 
 

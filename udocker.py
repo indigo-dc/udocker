@@ -22,7 +22,6 @@ limitations under the License.
 """
 import sys
 import os
-import cStringIO
 import string
 import re
 import subprocess
@@ -44,6 +43,10 @@ if os.path.islink(sys.argv[0]):
 else:
     START_PATH = os.path.dirname(sys.argv[0])
 
+try:
+    import cStringIO
+except ImportError:
+    from io import BytesIO as cStringIO
 try:
     import pycurl
 except ImportError:
@@ -2038,7 +2041,7 @@ class GetURLpyCurl(GetURL):
             pyc.perform()
         except(IOError, OSError):
             return(None, None)
-        except pycurl.error, error:
+        except pycurl.error as error:
             errno, errstr = error
             hdr.data["X-ND-CURLSTATUS"] = errno
             if not hdr.data["X-ND-HTTPSTATUS"]:
