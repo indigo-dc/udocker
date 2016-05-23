@@ -1245,15 +1245,12 @@ class LocalRepository(object):
 
     def is_repo(self):
         """check if directory structure corresponds to a repo"""
-        if (os.path.exists(self.topdir) and
-                os.path.exists(self.reposdir) and
-                os.path.exists(self.layersdir) and
-                os.path.exists(self.containersdir) and
-                os.path.exists(self.bindir) and
-                os.path.exists(self.libdir)):
-            return True
-        else:
-            return False
+        dirs_exist = [os.path.exists(self.reposdir),
+                      os.path.exists(self.layersdir),
+                      os.path.exists(self.containersdir),
+                      os.path.exists(self.bindir),
+                      os.path.exists(self.libdir)]
+        return all(dirs_exist)
 
     def is_container_id(self, obj):
         """Verify if the provided object matches the format of a
@@ -1394,8 +1391,8 @@ class LocalRepository(object):
         """Associates a name to a container id The container can
         then be referenced either by its id or by its name.
         """
-        if name and ("/" in name or "." in name or
-                     " " in name or "[" in name or "]" in name):
+        invalid_chars = ("/", ".", " ", "[", "]")
+        if name and any(x in name for x in invalid_chars):
             return False
         if len(name) > 30:
             return False
@@ -1510,25 +1507,28 @@ class LocalRepository(object):
         """Check if a given file is in the repository"""
         return self._findfile(filename, self.reposdir)
 
+    def _remove_layers(self, tag_dir, force):
+        """Remove link to image layer and corresponding layer
+        if not being used by other images
+        """
+        for fname in os.listdir(tag_dir):
+            f_path = tag_dir + "/" + fname  # link to layer
+            if os.path.islink(f_path):
+                layer_file = tag_dir + "/" + os.readlink(f_path)
+                if not FileUtil(f_path).remove() and not force:
+                    return False
+                if not self._inrepository(fname):
+                    # removing actual layers not reference by other repos
+                    if not FileUtil(layer_file).remove() and not force:
+                        return False
+        return True
+
     def del_imagerepo(self, imagerepo, tag, force=False):
         """Delete an image repository and its layers"""
         tag_dir = self.cd_imagerepo(imagerepo, tag)
-        if not tag_dir:
-            return False
-        else:
-            for fname in os.listdir(tag_dir):
-                f_path = tag_dir + "/" + fname
-                if os.path.islink(f_path):
-                    link_path = os.readlink(f_path)
-                    if not FileUtil(f_path).remove():    # del link to layer
-                        if not force:
-                            return False
-                    if not self._inrepository(fname):    # layer no reference
-                        # removing actual layers not reference by other repos
-                        if not FileUtil(tag_dir+"/"+link_path).remove():
-                            if not force:
-                                return False
-        if FileUtil(tag_dir).remove():
+        if (tag_dir and
+                self._remove_layers(tag_dir, force) and
+                FileUtil(tag_dir).remove()):
             self.cur_repodir = ""
             self.cur_tagdir = ""
             return True
@@ -1915,7 +1915,6 @@ class GetURL(object):
         self.download_timeout = conf.download_timeout
         self.agent = conf.http_agent
         self.http_proxy = conf.http_proxy
-        self._geturl = None
         self.cache_support = False
         self._select_implementation()
         self.insecure = conf.http_insecure
@@ -2074,10 +2073,7 @@ class GetURLexeCurl(GetURL):
 
     def is_available(self):
         """Can we use this approach for download"""
-        if FileUtil("curl").find_exec():
-            return True
-        else:
-            return False
+        return bool(FileUtil("curl").find_exec())
 
     def _select_implementation(self):
         """Override the parent class method"""
