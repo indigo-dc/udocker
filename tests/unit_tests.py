@@ -18,12 +18,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 import os
 import sys
 import mock
 import unittest
-from StringIO import StringIO
-import udocker
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
@@ -31,7 +34,25 @@ __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "0.0.1-1"
 __date__ = "2016"
 
+try:
+    import udocker
+except ImportError:
+    sys.path.append(".")
+    sys.path.append("..")
+    import udocker
+
 STDOUT = sys.stdout
+
+if sys.version_info[0] >= 3:
+    BUILTINS = "builtins"
+else:
+    BUILTINS = "__builtin__"
+
+
+def set_env():
+    """Set environment variables"""
+    if not os.getenv("HOME"):
+        os.environ["HOME"] = os.getcwd()
 
 
 def find_str(self, find_exp, where):
@@ -46,8 +67,23 @@ def find_str(self, find_exp, where):
         self.assertTrue(False)
 
 
+def is_writable_file(obj):
+    """Check if obj is a file"""
+    try:
+        obj.write("")
+    except(AttributeError, OSError, IOError):
+        return False
+    else:
+        return True
+
+
 class ConfigTestCase(unittest.TestCase):
     """Test case for the udocker configuration"""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
 
     def _verify_config(self, conf):
         """Verify config parameters"""
@@ -89,7 +125,6 @@ class ConfigTestCase(unittest.TestCase):
         conf = udocker.Config()
         self._verify_config(conf)
 
-    # pylint: disable=protected-access
     @mock.patch('udocker.platform')
     def test_platform(self, mock_platform):
         """Test Config.platform()"""
@@ -134,33 +169,37 @@ class ConfigTestCase(unittest.TestCase):
 class MsgTestCase(unittest.TestCase):
     """Test Msg() class screen error and info messages"""
 
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
+
     def _verify_descriptors(self, msg):
         """Verify Msg() file descriptors"""
-        self.assertIsInstance(msg.chlderr, file)
-        self.assertIsInstance(msg.chldout, file)
-        self.assertIsInstance(msg.chldnul, file)
-        self.assertIsInstance(msg.stdout, file)
-        self.assertIsInstance(msg.stderr, file)
+        self.assertTrue(is_writable_file(msg.chlderr))
+        self.assertTrue(is_writable_file(msg.chldout))
+        self.assertTrue(is_writable_file(msg.chldnul))
+        self.assertTrue(is_writable_file(msg.stdout))
+        self.assertTrue(is_writable_file(msg.stderr))
 
-    @mock.patch('__builtin__.open')
-    def test_init(self, mock_open):
+    def test_init(self):
         """Test Msg() constructor"""
-        mock_open.return_value = sys.stdin
-        msg = udocker.Msg()
+        msg = udocker.Msg(0)
         self._verify_descriptors(msg)
         self.assertEqual(msg.level, 0)
+        msg.nullfp.close()
 
-    @mock.patch('__builtin__.open')
-    def test_setlevel(self, mock_open):
+    def test_setlevel(self):
         """Test Msg.setlevel() change of log level"""
-        mock_open.return_value = sys.stdin
         msg = udocker.Msg(5)
         self._verify_descriptors(msg)
         self.assertEqual(msg.level, 5)
+        msg.nullfp.close()
         msg = udocker.Msg(0)
         msg.setlevel(7)
         self._verify_descriptors(msg)
         self.assertEqual(msg.level, 7)
+        msg.nullfp.close()
 
     @mock.patch('udocker.sys.stdout', new_callable=StringIO)
     def test_out(self, mock_stdout):
@@ -169,17 +208,22 @@ class MsgTestCase(unittest.TestCase):
         msg.out("111", "222", "333", 444, ('555'))
         self.assertEqual("111 222 333 444 555\n", mock_stdout.getvalue())
         sys.stdout = STDOUT
+        msg.nullfp.close()
 
 
 class UniqueTestCase(unittest.TestCase):
     """Test Unique() class"""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
 
     def test_init(self):
         """Test Unique() constructor"""
         uniq = udocker.Unique()
         self.assertEqual(uniq.def_name, "udocker")
 
-    # pylint: disable=protected-access
     def test_rnd(self):
         """Test Unique._rnd()"""
         uniq = udocker.Unique()
@@ -223,6 +267,11 @@ class UniqueTestCase(unittest.TestCase):
 class FileUtilTestCase(unittest.TestCase):
     """Test FileUtil() file manipulation methods"""
 
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
+
     @mock.patch('udocker.Config')
     def test_init(self, mock_config):
         """Test FileUtil() constructor"""
@@ -247,7 +296,6 @@ class FileUtilTestCase(unittest.TestCase):
         uid = udocker.FileUtil("filename3.txt").uid()
         self.assertEqual(uid, 1234)
 
-    # pylint: disable=unused-argument
     @mock.patch('udocker.os.remove')
     @mock.patch('udocker.os.path.islink')
     @mock.patch('udocker.os.path.isfile')
@@ -276,7 +324,6 @@ class FileUtilTestCase(unittest.TestCase):
         status = futil.remove()
         self.assertFalse(status)
 
-    # pylint: disable=too-many-arguments
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.os.path.isdir')
     @mock.patch('udocker.os.path.islink')
@@ -304,21 +351,34 @@ class FileUtilTestCase(unittest.TestCase):
         status = futil.remove()
         self.assertFalse(status)
 
+    @mock.patch('udocker.msg')
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.os.path.isfile')
-    def test_verify_tar(self, mock_isfile, mock_call):
+    def test_verify_tar01(self, mock_isfile, mock_call, mock_msg):
         """Test FileUtil.verify_tar() check tar file"""
-        # NOT A FILE
+        mock_msg.level = 0
         mock_isfile.return_value = False
         mock_call.return_value = 0
         status = udocker.FileUtil("tarball.tar").verify_tar()
         self.assertFalse(status)
-        # IS FILE and TAR OK
+
+    @mock.patch('udocker.msg')
+    @mock.patch('udocker.subprocess.call')
+    @mock.patch('udocker.os.path.isfile')
+    def test_verify_tar02(self, mock_isfile, mock_call, mock_msg):
+        """Test FileUtil.verify_tar() check tar file"""
+        mock_msg.level = 0
         mock_isfile.return_value = True
         mock_call.return_value = 0
         status = udocker.FileUtil("tarball.tar").verify_tar()
         self.assertTrue(status)
-        # IS FILE and TAR FAIL
+
+    @mock.patch('udocker.msg')
+    @mock.patch('udocker.subprocess.call')
+    @mock.patch('udocker.os.path.isfile')
+    def test_verify_tar03(self, mock_isfile, mock_call, mock_msg):
+        """Test FileUtil.verify_tar() check tar file"""
+        mock_msg.level = 0
         mock_isfile.return_value = True
         mock_call.return_value = 1
         status = udocker.FileUtil("tarball.tar").verify_tar()
@@ -336,11 +396,9 @@ class FileUtilTestCase(unittest.TestCase):
     @mock.patch('udocker.os.path.isdir')
     def test_isdir(self, mock_isdir):
         """Test FileUtil.isdir()"""
-        # is dir
         mock_isdir.return_value = True
         status = udocker.FileUtil("somedir").isdir()
         self.assertTrue(status)
-        # not a dir
         mock_isdir.return_value = False
         status = udocker.FileUtil("somedir").isdir()
         self.assertFalse(status)
@@ -354,12 +412,11 @@ class FileUtilTestCase(unittest.TestCase):
 
     def test_getdata(self):
         """Test FileUtil.size() get file content"""
-        with mock.patch('__builtin__.open',
+        with mock.patch(BUILTINS + '.open',
                         mock.mock_open(read_data='qwerty')):
             data = udocker.FileUtil("somefile").getdata()
             self.assertEqual(data, 'qwerty')
 
-    # pylint: disable=unused-argument
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.FileUtil.remove')
     @mock.patch('udocker.FileUtil.getdata')
@@ -367,7 +424,7 @@ class FileUtilTestCase(unittest.TestCase):
     def test_find_exec(self, mock_mktmp, mock_getdata, mock_remove, mock_call):
         """Test FileUtil.find_exec() find executable"""
         mock_mktmp.return_value.mktmp.return_value = "/tmp/tmpfile"
-        with mock.patch('__builtin__.open', mock.mock_open()):
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
             # executable found
             mock_getdata.return_value = "/bin/executable"
             filename = udocker.FileUtil("executable").find_exec()
@@ -403,7 +460,7 @@ class FileUtilTestCase(unittest.TestCase):
 
     def test_copyto(self):
         """Test FileUtil.copyto() file copy"""
-        with mock.patch('__builtin__.open', mock.mock_open()):
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
             status = udocker.FileUtil("source").copyto("dest")
             self.assertTrue(status)
             status = udocker.FileUtil("source").copyto("dest", "w")
@@ -415,9 +472,15 @@ class FileUtilTestCase(unittest.TestCase):
 class UdockerToolsTestCase(unittest.TestCase):
     """Test UdockerTools() download and setup of tools needed by udocker"""
 
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
+
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.Config')
-    def test_init(self, mock_config, mock_localrepo):
+    def test_init(self, mock_config, mock_localrepo, mock_geturl):
         """Test UdockerTools() constructor"""
         udocker.conf = mock_config
         udocker.conf.tmpdir = "/tmp"
@@ -448,7 +511,7 @@ class UdockerToolsTestCase(unittest.TestCase):
         status = utools.is_available()
         self.assertFalse(status)
 
-    # pylint: disable=too-many-arguments,unused-argument
+    @mock.patch('udocker.msg')
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.UdockerTools.__init__')
     @mock.patch('udocker.FileUtil')
@@ -456,8 +519,9 @@ class UdockerToolsTestCase(unittest.TestCase):
     @mock.patch('udocker.GetURL')
     @mock.patch('udocker.FileUtil.mktmp')
     def test_download(self, mock_mktmp, mock_geturl, mock_call,
-                      mock_fileutil, mock_init, mock_localrepo):
+                      mock_fileutil, mock_init, mock_localrepo, mock_msg):
         """Test UdockerTools.download()"""
+        mock_msg.level = 0
         mock_fileutil.return_value.mktmp.return_value = "filename_tmp"
         mock_init.return_value = None
         utools = udocker.UdockerTools(mock_localrepo)
@@ -466,7 +530,7 @@ class UdockerToolsTestCase(unittest.TestCase):
         utools.tarball_url = "http://node.domain/filename.tgz"
         utools.localrepo.topdir = "/home/user/.udocker"
         utools.proot = "/"
-        hdr = udocker.CurlHeader() 
+        hdr = udocker.CurlHeader()
         # IS AVAILABLE NO DOWNLOAD
         mock_geturl.get.return_value = (hdr, None)
         status = utools.download()
@@ -487,172 +551,6 @@ class UdockerToolsTestCase(unittest.TestCase):
         mock_call.return_value = 1
         status = utools.download()
         self.assertFalse(status)
-
-
-class MainTestCase(unittest.TestCase):
-    """Test most udocker capabilities"""
-
-    # pylint: disable=unused-argument,too-many-arguments
-    @mock.patch('udocker.LocalRepository')
-    @mock.patch('udocker.UdockerTools')
-    @mock.patch('udocker.Config.user_init')
-    @mock.patch('udocker.import_modules')
-    @mock.patch('udocker.Msg')
-    def test_init(self, mock_msg, mock_import_modules,
-                  mock_user_init, mock_utools, mock_localrepo):
-        """Test udocker global command line options"""
-        udocker.msg = mock_msg
-        udocker.conf = udocker.Config()
-        t_argv = ['./udocker.py']
-        with mock.patch.object(sys, 'argv', t_argv):
-            udocker.Main()
-            self.assertTrue(mock_import_modules.called)
-        t_argv = ['./udocker.py', "images"]
-        with mock.patch.object(sys, 'argv', t_argv):
-            udocker.Main()
-            self.assertTrue(mock_import_modules.called)
-        t_argv = ['./udocker.py', "--config=/myconf"]
-        with mock.patch.object(sys, 'argv', t_argv):
-            udocker.Main()
-            self.assertTrue(mock_import_modules.called)
-            self.assertTrue(mock_user_init.called_with("/myconf"))
-        t_argv = ['./udocker.py', "--cofig=/myconf"]
-        with mock.patch.object(sys, 'argv', t_argv):
-            udocker.Main()
-            self.assertTrue(mock_import_modules.called)
-            self.assertTrue(mock_user_init.called_with(False))
-        udocker.conf.verbose_level = 0
-        t_argv = ['./udocker.py', "-D"]
-        with mock.patch.object(sys, 'argv', t_argv):
-            udocker.Main()
-            self.assertTrue(mock_import_modules.called)
-            self.assertEqual(udocker.conf.verbose_level, 3)
-        udocker.conf.verbose_level = 0
-        t_argv = ['./udocker.py', "--debug"]
-        with mock.patch.object(sys, 'argv', t_argv):
-            udocker.Main()
-            self.assertTrue(mock_import_modules.called)
-            self.assertEqual(udocker.conf.verbose_level, 3)
-        t_argv = ['./udocker.py', "--insecure"]
-        with mock.patch.object(sys, 'argv', t_argv):
-            udocker.Main()
-            self.assertTrue(mock_import_modules.called)
-            self.assertEqual(udocker.conf.http_insecure, True)
-        t_argv = ['./udocker.py', "--repo=/home/user/.udocker"]
-        with mock.patch.object(sys, 'argv', t_argv):
-            udocker.Main()
-            self.assertTrue(mock_import_modules.called)
-            self.assertEqual(udocker.conf.def_topdir, "/home/user/.udocker")
-
-    # pylint: disable=unused-argument
-    @mock.patch('udocker.UdockerTools')
-    @mock.patch('udocker.Msg')
-    def test_execute_help(self, mock_msg, mock_utools):
-        """Test udocker help command"""
-        udocker.msg = mock_msg
-        udocker.conf = udocker.Config()
-        t_argv = ['./udocker.py', "--help"]
-        with mock.patch.object(sys, 'argv', t_argv):
-            main = udocker.Main()
-            main.execute()
-            find_str(self, "Examples", mock_msg.out.call_args)
-
-    # pylint: disable=unused-argument
-    @mock.patch('udocker.DockerIoAPI')
-    @mock.patch('udocker.UdockerTools')
-    @mock.patch('udocker.Msg')
-    def test_do_search(self, mock_msg, mock_utools, mock_dockerioapi):
-        """Test udocker search command"""
-        udocker.msg = mock_msg
-        udocker.conf = udocker.Config()
-        t_argv = ['./udocker.py', "search", "-a", "iscampos"]
-        with mock.patch.object(sys, 'argv', t_argv):
-            mock_dockerioapi.return_value.search_get_page.side_effect = [
-                {u'num_results': 2, u'results': [
-                    {u'is_automated': False, u'name': u'iscampos/openqcd',
-                     u'star_count': 0, u'is_trusted': False,
-                     u'is_official': False,
-                     u'description': u'Containers for openQCD v1.4'},
-                    {u'is_automated': False, u'name': u'iscampos/codemaster',
-                     u'star_count': 0, u'is_trusted': False,
-                     u'is_official': False, u'description': u''}],
-                 u'page_size': 25, u'query': u'iscampos',
-                 u'num_pages': '1', u'page': u'0'},
-                {u'num_results': 2, u'results': [
-                    {u'is_automated': False, u'name': u'iscampos/openqcd',
-                     u'star_count': 0, u'is_trusted': False,
-                     u'is_official': False,
-                     u'description': u'Containers for openQCD v1.4'},
-                    {u'is_automated': False, u'name': u'iscampos/codemaster',
-                     u'star_count': 0, u'is_trusted': False,
-                     u'is_official': False, u'description': u''}],
-                 u'page_size': 25, u'query': u'iscampos',
-                 u'num_pages': '1', u'page': u'1'}]
-            main = udocker.Main()
-            main.execute()
-            find_str(self, "iscampos/codemaster", mock_msg.out.call_args)
-
-    # pylint: disable=unused-argument
-    @mock.patch('udocker.LocalRepository')
-    @mock.patch('udocker.UdockerTools')
-    @mock.patch('udocker.Msg')
-    def test_do_images(self, mock_msg, mock_utools, mock_localrepo):
-        """Test udocker images command"""
-        udocker.msg = mock_msg
-        udocker.conf = udocker.Config()
-        mock_localrepo.return_value.cd_imagerepo.return_value = \
-            "/home/user/.udocker/repos/X/latest"
-        mock_localrepo.return_value.get_imagerepos.return_value = [
-            ('iscampos/openqcd', 'latest'), ('busybox', 'latest')]
-        t_argv = ['./udocker.py', "images"]
-        with mock.patch.object(sys, 'argv', t_argv):
-            # Unprotected
-            mock_localrepo.return_value.isprotected_imagerepo.return_value = False
-            main = udocker.Main()
-            main.execute()
-            msg_out = ("busybox:latest"
-                       "                                               .")
-            find_str(self, msg_out, mock_msg.out.call_args)
-            # Protected
-            mock_localrepo.return_value.isprotected_imagerepo.return_value = True
-            main.execute()
-            msg_out = ("busybox:latest"
-                       "                                               P")
-            find_str(self, msg_out, mock_msg.out.call_args)
-        t_argv = ['./udocker.py', "images", "-l"]
-        with mock.patch.object(sys, 'argv', t_argv):
-            main = udocker.Main()
-            main.execute()
-            msg_out = "  /home/user/.udocker/repos/X/latest"
-            find_str(self, msg_out, mock_msg.out.call_args)
-            #
-            mock_localrepo.return_value.get_imagerepos.return_value = [
-                ('busybox', 'latest')]
-            mock_localrepo.return_value.get_layers.return_value = [
-                ('/home/jorge/.udocker/repos/busybox/latest/' +
-                 'sha256:385e281300cc6d88bdd155e0931fbdfbb1801c2b' +
-                 '0265340a40481ee2b733ae66', 675992),
-                ('/home/jorge/.udocker/repos/busybox/latest/' +
-                 '56ed16bd6310cca65920c653a9bb22de6b235990dcaa174' +
-                 '2ff839867aed730e5.layer', 675992),
-                ('/home/jorge/.udocker/repos/busybox/latest/' +
-                 '56ed16bd6310cca65920c653a9bb22de6b235990dcaa174' +
-                 '2ff839867aed730e5.json', 1034),
-                ('/home/jorge/.udocker/repos/busybox/latest/' +
-                 'bc744c4ab376115cc45c610d53f529dd2d4249ae6b35e5d' +
-                 '6e7a96e58863545aa.json', 1155),
-                ('/home/jorge/.udocker/repos/busybox/latest/' +
-                 'bc744c4ab376115cc45c610d53f529dd2d4249ae6b35e5d' +
-                 '6e7a96e58863545aa.layer', 32),
-                ('/home/jorge/.udocker/repos/busybox/latest/' +
-                 'sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633c' +
-                 'b16422d00e8a7c22955b46d4', 32)]
-            main.execute()
-            msg_out = '    /home/jorge/.udocker/repos/busybox/latest/' + \
-                      'sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16' + \
-                      '422d00e8a7c22955b46d4 (1 MB)'
-            find_str(self, msg_out, mock_msg.out.call_args)
-
 
 if __name__ == '__main__':
     unittest.main()
