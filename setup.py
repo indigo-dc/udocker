@@ -30,4 +30,4 @@ setup(name="udocker",
       author_email="udocker@lip.pt",
       url="https://github.com/indigo-dc/udocker",
       scripts=["udocker.py", ],
-      platforms=["linux2",])
+      platforms=["linux2", ])
