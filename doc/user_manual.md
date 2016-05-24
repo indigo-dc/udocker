@@ -8,7 +8,7 @@ docker containers in Linux batch systems and interactive clusters that
 are managed by other entities such as grid infrastructures or externaly 
 managed batch or interactive systems.
 
-The Indigo udocker does not require any type of privileges nor the
+udocker does not require any type of privileges nor the
 deployment of services by system administrators. It can be downloaded
 and executed entirely by the end user. 
 
@@ -22,18 +22,17 @@ minimal functionality.
 ---------------------
 udocker is a simple tool written in Python, it has a minimal set
 of dependencies so that can be executed in a wide range of Linux
-systems. 
-
-udocker does not make use of docker nor requires its presence.
+systems. udocker does not make use of docker nor requires its 
+installation.
 
 udocker "executes" the containers by simply providing a chroot like 
-environment over the extracted container. The current implementation 
+environment to the extracted container. The current implementation 
 uses PRoot to mimic chroot without requiring privileges.
 
 1.2. Limitations
 ----------------
 Since root privileges are not involved any operation that really 
-requires such privileges will not be possible. The following  are
+requires privileges is not possible. The following are
 examples of operations that are not possible:
 
 * accessing host protected devices and files
@@ -43,23 +42,14 @@ examples of operations that are not possible:
 * change the system time
 * changing routing tables, firewall rules, or network interfaces
 
-If the containers require such capabilities then docker should be used
-instead.
+Other limitations:
 
-The current implementation is limited to the pulling of docker images 
-and its execution. The actual containers should be built using docker
-and dockerfiles. 
-
-udocker does not provide all the docker features, and is not intended 
-as a docker replacement.
-
-Due to the way PRoot implements the chroot environment debugging inside
-of udocker will not work.
-
-udocker is mainly oriented at providing a run-time environment for 
-containers execution in user space.
-
-The current version does not support dockerhub private repositories.
+* The current implementation is limited to the pulling of docker images and its execution. 
+* The actual containers should be built using docker and dockerfiles. 
+* udocker does not provide all the docker features, and is not intended as a docker replacement.
+* Due to the way PRoot implements the chroot environment debugging inside of udocker will not work.
+* udocker is mainly oriented at providing a run-time environment for containers execution in user space.
+* The current version does not support dockerhub private repositories.
 
 1.3. Security
 -------------
@@ -77,20 +67,21 @@ adequately protected by the user.
 udocker does not require privileges and runs under the identity of the user 
 invoking it.
 
-Users can downloaded udocker and execute it from their own accounts without
+Users can download udocker and execute it from their own accounts without
 requiring system administration intervention. 
 
 udocker via PRoot offers the emulation of the root user. This emulation
 mimics a real root user (e.g getuid will return 0). This is just an emulation
-no root privileges are involved. This feature enables many tools that do not 
+no root privileges are involved. This feature enables tools that do not 
 require privileges but that check the user id to work properly. This enables
 for instance software installation with rpm and yum inside the container.
 
-udocker must not be run by privileged users.
+Due to the lack of isolation features udocker must not be run by privileged users.
 
 1.4. Basic flow
 ---------------
 The basic flow with udocker is:
+
 1. The user downloads udocker to its home directory and executes it
 2. Upon the first execution udocker will download additional tools 
 3. Container images can be fetched from dockerhub with `pull`
@@ -98,16 +89,21 @@ The basic flow with udocker is:
 5. Containers can then be executed with `run`
 
 Additionally:
-* Containers saved by docker can be loaded with `load`
-* Tarballs created by docker with export can be imported with `import`
+
+* Containers saved with `docker save` can be loaded with `udocker.py load`
+* Tarballs created with `docker export` can be imported with `udocker.py import`
 
 2. INSTALLATION
 ===============
-Installation is not required. The end user can download and execute the tool 
-from its home directory. The tool can be shipped with batch jobs to provide
-support for the containers execution in batch systems.
+Installation is not required. The end user can download and execute the tool. 
+To get udocker use a git client to clone the repository, or use a web browser 
+to access udocker in github at https://github.com/indigo-dc/udocker and download.
 
-A basic setup.py is provided:
+```
+  git clone https://github.com/indigo-dc/udocker
+```
+
+A basic setup.py is also provided but not mandatory:
 
 ```
   python setup.py install --help
@@ -117,9 +113,9 @@ A basic setup.py is provided:
 Upon the first time the tool is executed it will create a udocker directory 
 under $HOME/.udocker The directory will contain:
 
-* additional tools and modules for udocker, downloaded when udocker is invoked 
-* data from pulled container images (layers and metadata)
-* directory trees for the containers extracted from the layers
+* Additional tools and modules for udocker, downloaded when udocker is invoked 
+* Data from pulled container images (layers and metadata)
+* Directory trees for the containers extracted from the layers
 
 The location of the udocker directory can be changed via the `UDOCKER_DIR`
 environment variable.
@@ -141,12 +137,12 @@ Quick examples:
 
   udocker.py pull busybox
   udocker.py create --name=verybusy busybox
-  udocker.py run -v /tmp verybusy
+  udocker.py run -v /tmp/mydir verybusy
 ```
 
 3.2. Obtaining help
 -------------------
-General help cab be obtained with:
+General help about available commands can be obtained with:
 ```
   udocker.py --help
 ```
@@ -165,7 +161,8 @@ Search dockerhub for container images. The command displays containers one
 page at a time and pauses for user input.
 
 Options:
-`-a` display pages continously without pause.
+
+* `-a` display pages continously without pause.
 
 Examples:
 ```
@@ -183,9 +180,10 @@ Pull a container image from dockerhub. The associated layers and metadata
 is downloaded from dockerhub. Requires pycurl or the curl command.
 
 Options:
-`--index=url` specify an index other than index.docker.io
-`--registry=url` specify a default registry other than registry-1.docker.io
-`--httpproxy=proxy` specify a socks proxy for downloading
+
+* `--index=url` specify an index other than index.docker.io
+* `--registry=url` specify a default registry other than registry-1.docker.io
+* `--httpproxy=proxy` specify a socks proxy for downloading
 
 Examples:
 ```
@@ -207,7 +205,8 @@ List images available in the local repository, these are images pulled
 form dockerhub, and/or load or imported from files.
 
 Options:
-`-l` long format, display more information about the images and related layers
+
+* `-l` long format, display more information about the images and related layers
 
 Examples:
 ```
@@ -228,7 +227,8 @@ If sucessful the comand prints the id of the extracted container.
 An easier to remember name can also be given with `--name`.
 
 Options:
-`--name=NAME` give a name to the extracted container 
+
+* `--name=NAME` give a name to the extracted container 
 
 Examples:
 ```
@@ -243,6 +243,7 @@ Examples:
 List extracted containers. These are not processes but containers
 extracted and available to the executed with `udocker.py run`.
 The command displays:
+
 * container id
 * protection mode (e.g. if can be removed with `udocker.py rm`)
 * whether the container tree is writable (is in a R/W location)
@@ -265,7 +266,8 @@ If short of disk space deleting the image after creating the container can be
 an option.
 
 Options:
-`-f` force continuation of delete even if errors occur during the delete.
+
+* `-f` force continuation of delete even if errors occur during the delete.
 
 Examples:
 ```
@@ -298,7 +300,8 @@ previously extracted containers, accepts both an image or container id
 as input.
 
 Options:
-`-p` with a container-id prints the pathname to the root of the container directory tree
+
+* `-p` with a container-id prints the pathname to the root of the container directory tree
 
 Examples:
 ```
@@ -362,7 +365,7 @@ Examples:
 3.15. load
 ----------
 ```
-  udocker.py load -i SAVED-IMAGE-FILE
+  udocker.py load -i IMAGE-FILE
 ```
 Loads into the local repository a tarball containing a docker image with
 its layers and metadata. This is equivallent to pulling an image from
@@ -437,20 +440,21 @@ Using this later approach will create multiple container directory
 trees possibly occuping considerable disk space.
 
 Options:
-`--rm` delete the container after execution
-`--workdir=PATH` specifies a working directory within the container
-`--user=NAME` username or uid:gid inside the container
-`--volume=DIR:DIR` map an host file or directory to appear inside the container
-`--novol=DIR` excludes a host file or directory from being mapped
-`--env="VAR=VAL"` set environment variables
-`--hostauth` make the host /etc/passwd and /etc/group appear inside the container
-`--nosysdirs` prevent udocker from mapping /proc /sys /run and /dev inside the container
-`--nometa` ignore the container metadata settings
-`--hostenv` pass the user host environment to the container
-`--name=NAME` set or change the name of the container useful if running from an image
-`--bindhome` attempt to make the user home directory appear inside the container
-`--kernel=KERNELID` use a specific kernel id to emulate useful when the host kernel is too old
-`--location=DIR` execute a container in a certain directory
+
+* `--rm` delete the container after execution
+* `--workdir=PATH` specifies a working directory within the container
+* `--user=NAME` username or uid:gid inside the container
+* `--volume=DIR:DIR` map an host file or directory to appear inside the container
+* `--novol=DIR` excludes a host file or directory from being mapped
+* `--env="VAR=VAL"` set environment variables
+* `--hostauth` make the host /etc/passwd and /etc/group appear inside the container
+* `--nosysdirs` prevent udocker from mapping /proc /sys /run and /dev inside the container
+* `--nometa` ignore the container metadata settings
+* `--hostenv` pass the user host environment to the container
+* `--name=NAME` set or change the name of the container useful if running from an image
+* `--bindhome` attempt to make the user home directory appear inside the container
+* `--kernel=KERNELID` use a specific kernel id to emulate useful when the host kernel is too old
+* `--location=DIR` execute a container in a certain directory
 
 Examples:
 ```
@@ -503,5 +507,5 @@ Examples:
 Aknowlegments
 =============
 
-PRoot http://proot.me
-INDIGO DataCloud https://www.indigo-datacloud.eu
+* PRoot http://proot.me
+* INDIGO DataCloud https://www.indigo-datacloud.eu
