@@ -43,13 +43,10 @@ if os.path.islink(sys.argv[0]):
 else:
     START_PATH = os.path.dirname(sys.argv[0])
 
-<<<<<<< HEAD
 try:
     import cStringIO
 except ImportError:
     from io import BytesIO as cStringIO
-=======
->>>>>>> origin/master
 try:
     import pycurl
 except ImportError:
@@ -1840,35 +1837,21 @@ class LocalRepository(object):
                 msg.out("Error: layer file not found in structure", layer_id)
                 status = False
                 continue
-<<<<<<< HEAD
             layer_f = structure["layers"][layer_id]["layer_f"]
             if not (os.path.exists(layer_f) and
                     os.path.islink(layer_f)):
-=======
-            if not (os.path.exists(structure["layers"][layer_id]["layer_f"]) and
-                    os.path.islink(structure["layers"][layer_id]["layer_f"])):
->>>>>>> origin/master
                 msg.out("Error: layer data file symbolic link not found",
                         layer_id)
                 status = False
                 continue
             if not os.path.exists(self.cur_tagdir + "/" +
-<<<<<<< HEAD
                                   os.readlink(layer_f)):
-=======
-                                  os.readlink(structure["layers"][layer_id]["layer_f"])):
->>>>>>> origin/master
                 msg.out("Error: layer data file not found")
                 status = False
                 continue
             if not FileUtil(layer_f).verify_tar():
                 status = False
-<<<<<<< HEAD
                 msg.out("Error: layer file not ok:", layer_f)
-=======
-                msg.out("Error: layer file not ok:",
-                        structure["layers"][layer_id]["layer_f"])
->>>>>>> origin/master
             msg.out("Info: layer in repo:", layer_id)
         return status
 
@@ -2227,11 +2210,7 @@ class DockerIoAPI(object):
         (hdr, buf) = self.curl.get(*args, **kwargs)
         msg.out("header: %s" % (hdr.data), l=3)
         if ("X-ND-HTTPSTATUS" in hdr.data and
-<<<<<<< HEAD
                 "401" in hdr.data["X-ND-HTTPSTATUS"]):
-=======
-            "401" in hdr.data["X-ND-HTTPSTATUS"]):
->>>>>>> origin/master
             if "www-authenticate" in hdr.data and hdr.data["www-authenticate"]:
                 if "RETRY" not in kwargs:
                     kwargs["RETRY"] = 3
@@ -3578,11 +3557,7 @@ class CmdParser(object):
             opt_arg = None
             if ((not opt_list[pos].startswith("-")) and
                     (pos < 1 or (pos not in consumed and not
-<<<<<<< HEAD
                                  opt_list[pos-1].endswith("=")))):
-=======
-                    opt_list[pos-1].endswith("=")))):
->>>>>>> origin/master
                 break        # end of options and start of arguments
             elif opt_name.endswith("="):
                 if opt_list[pos].startswith(opt_name):
@@ -3655,11 +3630,7 @@ class Main(object):
                 self.cmdp.get("-D", "GEN_OPT")):
             conf.verbose_level = 3
         msg.setlevel(conf.verbose_level)
-<<<<<<< HEAD
         if self.cmdp.get("--repo=", "GEN_OPT"):  # override repo root tree
-=======
-        if self.cmdp.get("--repo=", "GEN_OPT"): # override repo root tree
->>>>>>> origin/master
             conf.def_topdir = self.cmdp.get("--repo=", "GEN_OPT")
             if not LocalRepository(conf.def_topdir).is_repo():
                 msg.out("Error: invalid udocker repository: " +

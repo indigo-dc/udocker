@@ -18,28 +18,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-<<<<<<< HEAD
 
 import os
 import sys
 import mock
 import unittest
-=======
-import os
-import re
-import sys
-import uuid
-import mock
-import unittest
-import udocker
->>>>>>> origin/master
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "0.0.1-1"
 __date__ = "2016"
-<<<<<<< HEAD
 
 try:
     import udocker
@@ -47,12 +36,9 @@ except ImportError:
     sys.path.append(".")
     sys.path.append("..")
     import udocker
-=======
->>>>>>> origin/master
 
 STDOUT = sys.stdout
 
-<<<<<<< HEAD
 
 def set_env():
     """Set environment variables"""
@@ -70,112 +56,6 @@ def find_str(self, find_exp, where):
             break
     if not found:
         self.assertTrue(False)
-=======
-
-def match_str(find_exp, where):
-    """find_exp regexp is present in buffer where"""
-    for item in where:
-        if re.search(find_exp, str(item)):
-            return True
-    return False
-
-
-def not_match_str(find_exp, where):
-    """find_exp regexp is not present in buffer where"""
-    return not match_str(find_exp, where)
-
-
-def find_str(find_exp, where):
-    """find_exp is present in buffer where"""
-    for item in where:
-        if find_exp in str(item):
-            return True
-    return False
-
-
-def choose_find(expect_prefix):
-    """Choose which find method to use"""
-    if expect_prefix == '=':
-        find = match_str
-    elif expect_prefix == '!':
-        find = not_match_str
-    else:
-        find = find_str
-    return find
-
-
-def do_test(self, mock_msg, t_argv, expect_msg=None):
-    """Execute a udocker command as called in the command line"""
-    udocker.msg = mock_msg
-    udocker.conf = udocker.Config()
-    with mock.patch.object(sys, 'argv', t_argv):
-        main = udocker.Main()
-        udocker.msg.chlderr = DEVNULL
-        udocker.msg.chldnul = DEVNULL
-        if main.start():
-            self.assertTrue(False, str(t_argv))
-            return False
-        elif expect_msg:
-            find = choose_find(expect_msg[:1])
-            # print mock_msg.out.call_args_list
-            if find(expect_msg[1:],
-                    mock_msg.out.call_args_list):
-                self.assertTrue(True, str(t_argv))
-                return True
-            else:
-                self.assertTrue(False, str(t_argv))
-                return False
-        else:
-            self.assertTrue(True, str(t_argv))
-            return True
-
-
-def do_run_test(self, mock_msg, t_argv, expect_msg=None, expect_out=None):
-    """Execute run a command and capture stdout"""
-    output_file = str(uuid.uuid4())
-    orig_stdout_fd = os.dup(1)
-    os.close(1)
-    os.open(output_file, os.O_WRONLY | os.O_CREAT)
-    orig_stderr_fd = os.dup(2)
-    os.close(2)
-    os.open(output_file, os.O_WRONLY)
-    status = do_test(self, mock_msg, t_argv, expect_msg)
-    sys.stdout.flush()
-    os.close(1)
-    os.dup(orig_stdout_fd)
-    sys.stderr.flush()
-    os.close(2)
-    os.dup(orig_stderr_fd)
-    if status and expect_out:
-        find = choose_find(expect_out[:1])
-        with open(output_file) as output_fp:
-            if not find(expect_out[1:], [output_fp.read()]):
-                self.assertTrue(False, str(t_argv))
-                return False
-        os.remove(output_file)
-    return status
-
-
-def do_action(t_argv):
-    """Execute an action not part of a test i.e. setup and cleanup"""
-    with mock.patch('udocker.Msg') as mock_msg:
-        udocker.msg = mock_msg
-        udocker.conf = udocker.Config()
-        with mock.patch.object(sys, 'argv', t_argv):
-            main = udocker.Main()
-            return main.start()
-
-
-def image_not_exists(image="busybox:latest"):
-    """Check is the container image exists"""
-    return do_action([UDOCKER, "inspect", image])
-
-
-def container_not_exists(container="busyTEST"):
-    """Check is the container exists"""
-    return do_action([UDOCKER, "inspect", "-p", container])
-
->>>>>>> origin/master
 
 
 class MainTestCase(unittest.TestCase):
