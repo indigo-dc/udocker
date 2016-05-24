@@ -1,32 +1,34 @@
-# Indigo udocker
-A basic user tool to execute simple docker containers in user space 
-without requiring root privileges. Enables basic download and execution 
-of docker containers by non-privileged users in Linux systems were docker 
-is not available. It can be used to access and execute the content of 
-docker containers in Linux batch systems and interactive clusters that 
-are managed by other entities such as grid infrastructures or externaly 
-managed batch or interactive systems. The tool only works on Linux hosts.
+udocker
+=======
+A basic user tool to execute simple docker containers in user space
+without requiring root privileges. Enables basic download and execution
+of docker containers by non-privileged users in Linux systems were docker
+is not available. It can be used to access and execute the content of
+docker containers in Linux batch systems and interactive clusters that
+are managed by other entities such as grid infrastructures or externaly
+managed batch or interactive systems.
 
 The Indigo udocker does not require any type of privileges nor the
 deployment of services by system administrators. It can be downloaded
-and executed entirely by the end user. 
+and executed entirely by the end user.
 
-In the Indigo PaaS, udocker can be used to execute applications
-encapsulated in docker containers in conventional batch systems.
+udocker is a wrapper around several tools to mimic a subset of the
+docker capabilities including pulling images and running then with
+minimal functionality.
 
 ## How does it work
 udocker is a simple tool written in Python, it has a minimal set
 of dependencies so that can be executed in a wide range of Linux
-systems. 
+systems.
 
 udocker does not make use of docker nor requires its presence.
 
-udocker "executes" the containers by simply providing a chroot like 
-environment over the extracted container. The current implementation 
+udocker "executes" the containers by simply providing a chroot like
+environment over the extracted container. The current implementation
 uses PRoot to mimic chroot without requiring privileges.
 
 ## Limitations
-Since root privileges are not involved any operation that really 
+Since root privileges are not involved any operation that really
 requires such privileges will not be possible. The following  are
 examples of operations that are not possible:
 
@@ -37,33 +39,49 @@ examples of operations that are not possible:
 * change the system time
 * changing routing tables, firewall rules, or network interfaces
 
-If your containers require such capabilities then you will require
-those privileges at the host level.  
+If the containers require such capabilities then docker should be used
+instead.
 
-The current implementation is limited to the pulling of docker images 
+The current implementation is limited to the pulling of docker images
 and its execution. The actual containers should be built using docker
 and dockerfiles.
 
+udocker does not provide all the docker features, and is not intended
+as a docker replacement.
+
 Due to the way PRoot implements the chroot environment debugging inside
-of udocker will not work. udocker is mainly oriented at providing a
-run-time environment for containers execution in user space.
+of udocker will not work.
+
+udocker is mainly oriented at providing a run-time environment for
+containers execution in user space.
+
+The current version does not support dockerhub private repositories.
 
 ## Security
-Because of the above limitations udocker does not offer the same isolation
-features of docker. However since udocker runs entirely as non-privileged
-user it is as safe as any other tool or service that a normal user can use.
+Because of the limitations described in section 1.2 udocker does not offer
+isolation features such as the ones offered by docker. If the containers
+content is not trusted then they should not be executed with udocker as
+they will run inside the user environment.
 
-Any user can downloaded it and execute it from its own account without
-requiring system administration intervention. However users should consider
-that the containers data will be unpacked and stored in their home
-directories, therefore the data will be as safe as any other data in the
-user home directory.
+The containers data will be unpacked and stored in the user home directory or
+other location of choice. Therefore the containers data will be subjected to
+the same filesystem protections as other files owned by the user. If the
+containers have sensitive information the files and directories should be
+adequately protected by the user.
+
+udocker does not require privileges and runs under the identity of the user
+invoking it.
+
+Users can downloaded udocker and execute it from their own accounts without
+requiring system administration intervention.
 
 udocker via PRoot offers the emulation of the root user. This emulation
 mimics a real root user (e.g getuid will return 0). This is just an emulation
-no root privileges are involved. This feature enables many tools that do not 
+no root privileges are involved. This feature enables many tools that do not
 require privileges but that check the user id to work properly. This enables
 for instance software installation with rpm and yum inside the container.
+
+udocker must not be run by privileged users.
 
 ## Syntax
 ```
@@ -99,7 +117,6 @@ Commands:
 Options common to all commands must appear before the command:
   -D                          :Debug
   --repo=<directory>          :Use repository at directory
-
 ```
 
 ## Examples
@@ -136,7 +153,7 @@ udocker.py run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
 
 Put a script in your host /tmp and execute it in the container.
 ```
-udocker.py run  myfed  -v /tmp  /bin/bash -c 'cd /tmp; ./myscript.sh'
+udocker.py run  -v /tmp  myfed  /bin/bash -c 'cd /tmp; ./myscript.sh'
 ```
 
 Run mounting the host /var, /proc, /sys and /tmp in the same container
