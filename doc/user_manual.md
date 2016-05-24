@@ -490,6 +490,13 @@ Examples:
   udocker.py run --bindhome --hostauth --hostenv \
      -v /sys -v /proc -v /var/run -v /dev --user=green --dri myfed  firefox
   
+  # Run in a script
+  udocker.py run ubuntu  /bin/bash <<EOF
+cd /etc
+ls -l
+cat lsb-release
+EOF
+
 ```
 
 
