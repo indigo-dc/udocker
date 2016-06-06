@@ -1,5 +1,5 @@
-udocker
-=======
+udocker USER MANUAL
+===================
 A basic user tool to execute simple docker containers in user space 
 without requiring root privileges. Enables basic download and execution 
 of docker containers by non-privileged users in Linux systems were docker 
@@ -96,30 +96,8 @@ Additionally:
 
 2. INSTALLATION
 ===============
-Installation is not required. The end user can download and execute the tool. 
-To get udocker use a git client to clone the repository, or use a web browser 
-to access udocker in github at https://github.com/indigo-dc/udocker and download.
+See: [INSTALLATION MANUAL](installation_manual.md)
 
-```
-  git clone https://github.com/indigo-dc/udocker
-```
-
-A basic setup.py is also provided but not mandatory:
-
-```
-  python setup.py install --help
-  python setup.py install --home /home/user/tools
-```
-
-Upon the first time the tool is executed it will create a udocker directory 
-under $HOME/.udocker The directory will contain:
-
-* Additional tools and modules for udocker, downloaded when udocker is invoked 
-* Data from pulled container images (layers and metadata)
-* Directory trees for the containers extracted from the layers
-
-The location of the udocker directory can be changed via the `UDOCKER_DIR`
-environment variable.
 
 3. COMMANDS
 ===========
