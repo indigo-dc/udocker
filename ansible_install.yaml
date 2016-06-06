@@ -1,0 +1,17 @@
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Yum install epel-release
+      action: yum pkg=epel-release state=installed
+      when: ansible_os_family == "RedHat"
+
+    - name: Yum install requisites
+      action: yum pkg=git,python-pip,python-setuptools,python-simplejson,python-pycurl state=installed
+      when: ansible_os_family == "RedHat"
+
+    - name: Apt-get install requisites
+      apt: pkg=git,python-pip,python-setuptools,python-simplejson,python-pycurl state=installed update_cache=yes cache_valid_time=3600
+      when: ansible_os_family == "Debian"
+
+    - name: pip install udocker
+      pip: name=git+https://github.com/indigo-dc/udocker editable=false

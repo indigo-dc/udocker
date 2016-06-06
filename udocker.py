@@ -32,7 +32,7 @@ import platform
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "0.0.1-1"
+__version__ = "1.0.0"
 __date__ = "2016"
 
 # Python version major.minor
@@ -1387,7 +1387,10 @@ class LocalRepository(object):
         except (AttributeError, NameError):
             rel_path_to_existing = self._relpath(
                 existing_file, os.path.dirname(link_file))
-        os.symlink(rel_path_to_existing, link_file)
+        try:
+            os.symlink(rel_path_to_existing, link_file)
+        except (IOError, OSError):
+            return False
         return True
 
     def set_container_name(self, container_id, name):
@@ -1500,7 +1503,7 @@ class LocalRepository(object):
             for fullname in os.listdir(in_dir):
                 f_path = in_dir + "/" + fullname
                 if os.path.islink(f_path):
-                    if filename in fullname:            # match .layer or .json
+                    if filename in fullname:       # match .layer or .json
                         found_list.append(f_path)  # found reference to layer
                 elif os.path.isdir(f_path):
                     found_list.extend(self._findfile(filename, f_path))

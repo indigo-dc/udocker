@@ -23,8 +23,10 @@ limitations under the License.
 
 from distutils.core import setup
 
+import udocker
+
 setup(name="udocker",
-      version="1.0",
+      version=udocker.__version__,
       description="basic docker user space containers",
       author="LIP",
       author_email="udocker@lip.pt",
