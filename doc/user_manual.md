@@ -96,7 +96,8 @@ Additionally:
 
 2. INSTALLATION
 ===============
-See: [INSTALLATION MANUAL](installation_manual.md)
+udocker is usually placed in the user home directory and does not require
+system installation. For further information see the installation manual.
 
 
 3. COMMANDS
