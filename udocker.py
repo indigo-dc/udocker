@@ -376,7 +376,7 @@ class FileUtil(object):
 
     def cleanup(self):
         """Delete all temporary files"""
-        for filename in conf.tmptrash.keys():
+        for filename in conf.tmptrash:
             FileUtil(filename).remove()
 
     def isdir(self):
@@ -2453,7 +2453,7 @@ class DockerIoAPI(object):
         (dummy, res) = self.get_v1_image_tags(endpoint, imagerepo)
         try:
             image_id = res[tag]
-        except IndexError:
+        except KeyError:
             return []
         if not (self.localrepo.setup_tag(tag) and
                 self.localrepo.set_version("v1")):
