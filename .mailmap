@@ -1,0 +1,6 @@
+# Format is:
+# <preferred e-mail> <other e-mail 1>
+# <preferred e-mail> <other e-mail 2>
+udocker support <udocker@lip.pt> <jorge-lip@users.noreply.github.com>
+udocker support <udocker@lip.pt> <jorge@lnsys01.lip.pt>
+udocker support <udocker@lip.pt> <jorge@lip.pt>
