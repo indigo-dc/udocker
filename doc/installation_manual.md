@@ -6,8 +6,6 @@ also uses external statically compiled binaries to provide a chroot like
 environment where containers are executed. These tools do not require any
 privileges.
 
-udocker is available from github at: `https://github.com/indigo-dc/udocker`
-
 1. DEPENDENCIES
 ===============
 Python dependencies are described in the file requirements.txt
@@ -16,14 +14,23 @@ to download both the binaries and/or pull containers from repositories.
 
 2. USER INSTALLATION
 ====================
-To get udocker use a git client to clone the repository, or use a web browser 
-to access udocker in github at https://github.com/indigo-dc/udocker and download.
+The official release of udocker is available from the INDIGO-DataCloud
+repository at `http://repo.indigo-datacloud.eu/` where is made available
+as a tarball to be deployed by the end user. Example:
+
+```
+  cd $HOME
+  wget -O- http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.0.0.tar.gz | tar xzvf -
+```
+
+To get the latest udocker source code from github clone the repository, or use
+a web browser to access github at `https://github.com/indigo-dc/udocker`.
 
 ```
   git clone https://github.com/indigo-dc/udocker
 ```
 
-A basic setup.py is also provided but not mandatory:
+A basic setup.py is also provided in the source code:
 
 ```
   python setup.py install --help
