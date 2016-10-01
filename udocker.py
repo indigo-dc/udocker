@@ -686,13 +686,26 @@ class Container(object):
         # verify if the working directory is valid and fixit
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
-        if (self.opt["cwd"] and not (self.opt["bindhome"] or self.opt["cwd"]
-                                     in self.opt["vol"])):
-            if (not (os.path.exists(container_root + "/" + self.opt["cwd"]) and
-                     os.path.isdir(container_root + "/" + self.opt["cwd"]))):
+        if not (self.opt["bindhome"] or self.opt["cwd"] in self.opt["vol"]):
+            if not self.check_cwd(container_root):
                 msg.out("Error: invalid working directory: ", self.opt["cwd"])
                 return False
         return True
+
+    def check_cwd(self, container_root):
+        cwd = self.opt["cwd"]
+        if os.path.isdir(container_root + "/" + cwd):
+            return True
+        for volume in self.opt["vol"]:
+            if not ":" in volume:
+                host_path = volume
+                container_path = volume
+            host_path, container_path = volume.split(":")
+            if cwd.startswith(container_path):
+                relative_path = cwd.split(container_path)[1].lstrip('/')
+                if os.path.isdir(os.path.join(host_path, relative_path)):
+                    return True
+        return False
 
     def _check_executable(self, container_root):
         """Check if executable exists and has execute permissions"""
@@ -711,7 +724,7 @@ class Container(object):
             msg.out("Warning: no command assuming:", self.opt["cmd"], l=2)
         exec_name = self.opt["cmd"][0]            # exec pathname without args
         if exec_name.startswith("/"):
-            exec_path = container_root + exec_name
+            exec_path = self.find_executable_in_vol(exec_name, container_root)
         else:
             exec_path = \
                 FileUtil(exec_name).find_inpath(path, container_root + "/")
@@ -722,6 +735,25 @@ class Container(object):
             return False
         else:
             return True
+
+    def find_executable_in_vol(self, exec_name, container_root):
+        """
+        If absolute path to executable in the container is given,
+        check that it is present in the container or one of the
+        mount points.
+        """
+        if os.path.isfile(container_root + exec_name):
+            return container_root + exec_name
+        for volume in self.opt['vol']:
+            if not ':' in volume:
+                host_path = volume
+                container_path = volume
+            else:
+                host_path, container_path = volume.split(':')
+            if exec_name.startswith(container_path):
+               relative_path = exec_name.split(container_path)[1].lstrip('/')
+               if os.path.isfile(os.path.join(host_path, relative_path)):
+                   return os.path.join(host_path, relative_path)
 
     def _run_load_metadata(self, container_id):
         """Load container metadata from container JSON payload"""
