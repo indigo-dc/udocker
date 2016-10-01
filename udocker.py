@@ -160,7 +160,7 @@ class Config(object):
         self.http_insecure = False
 
         # docker hub
-        self.dockerio_index_url = "https://index.docker.io/v1"
+        self.dockerio_index_url = "https://registry-1.docker.io/v2"
         self.dockerio_registry_url = "https://registry-1.docker.io"
 
         # -------------------------------------------------------------
@@ -2314,9 +2314,9 @@ class DockerIoAPI(object):
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, [])
 
-    def get_repo_list(self, imagerepo):
+    def get_repo_list(self, imagerepo, tag):
         """Get list of images in a repo from Docker Hub"""
-        url = self.index_url + "/repositories/" + imagerepo + "/images"
+        url = self.index_url + '/' + imagerepo + "/manifests/" + tag
         msg.out("repo url:", url, l=2)
         (hdr, buf) = self._get_url(url)
         try:
@@ -2504,12 +2504,12 @@ class DockerIoAPI(object):
         Try the v2 API and if the download fails then try the v1 API.
         """
         msg.out("get imagerepo: %s tag: %s" % (imagerepo, tag))
-        (hdr, dummy) = self.get_repo_list(imagerepo)
+        (hdr, dummy) = self.get_repo_list(imagerepo, tag)
         if hdr and "x-docker-endpoints" in hdr:
             endpoint = "http://" + hdr["x-docker-endpoints"]
         else:
             if (hdr and "X-ND-HTTPSTATUS" in hdr and
-                    "401" in hdr["X-ND-HTTPSTATUS"]):
+                    "200" in hdr["X-ND-HTTPSTATUS"]):
                 endpoint = self.registry_url          # Try docker registry
             elif (hdr and "X-ND-HTTPSTATUS" in hdr and
                   "404" in hdr["X-ND-HTTPSTATUS"]):
@@ -2962,6 +2962,10 @@ class Udocker(object):
         conf.dockerio_registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
         imagespec = cmdp.get("P1")
+        if imagespec.startswith('quay.io/'):
+            self.dockerioapi.index_url = 'https://quay.io/v2'
+            self.dockerioapi.registry_url = 'https://quay.io'
+            imagespec = imagespec.split('quay.io/', 1)[1]
         if cmdp.missing_options():               # syntax error
             return False
         if not imagespec:
