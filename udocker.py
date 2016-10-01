@@ -2316,6 +2316,8 @@ class DockerIoAPI(object):
 
     def get_repo_list(self, imagerepo, tag):
         """Get list of images in a repo from Docker Hub"""
+        if not '/' in imagerepo:
+            imagerepo = "library/" + imagerepo
         url = self.index_url + '/' + imagerepo + "/manifests/" + tag
         msg.out("repo url:", url, l=2)
         (hdr, buf) = self._get_url(url)
