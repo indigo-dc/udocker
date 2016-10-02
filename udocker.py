@@ -680,9 +680,9 @@ class Container(object):
         """Make sure we have a reasonable default PATH and CWD"""
         path = self._getenv("PATH")
         if not path and self.opt["uid"] == "0":
-            path = "/usr/sbin:/sbin:/usr/bin:/bin"
+            path = "/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin"
         elif not path:
-            path = "/usr/bin:/bin"
+            path = "/usr/local/bin:/usr/bin:/bin"
         self.opt["env"].append("PATH=%s" % path)
         # verify if the working directory is valid and fixit
         if not self.opt["cwd"]:
