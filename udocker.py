@@ -611,6 +611,7 @@ class Container(object):
 
     def _set_cpu_affinity(self):
         """set the cpu affinity string for container run command"""
+        cpu_affinity_exec = None  # avoids unbounded local error
         # find set affinity executable
         for exec_cmd in self._cpu_affinity_exec_tools:
             exec_name = FileUtil(exec_cmd.split(" ", 1)[0]).find_exec()
