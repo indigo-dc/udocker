@@ -1518,8 +1518,10 @@ class LocalRepository(object):
         """See if this image TAG is protected against deletion"""
         return self._isprotected(self.reposdir + "/" + imagerepo + "/" + tag)
 
-    def cd_imagerepo(self, imagerepo, tag):
+    def cd_imagerepo(self, imagerepo, tag, registry=""):
         """Select an image TAG for further operations"""
+        if registry:
+            imagerepo = registry + "/" + imagerepo
         if imagerepo and tag:
             tag_dir = self.reposdir + "/" + imagerepo + "/" + tag
             if os.path.exists(tag_dir):
@@ -1621,10 +1623,12 @@ class LocalRepository(object):
         self._symlink(filename, linkname)
         return True
 
-    def setup_imagerepo(self, imagerepo):
+    def setup_imagerepo(self, imagerepo, registry=""):
         """Create directory for an image repository"""
         if not imagerepo:
             return False
+        if registry:
+            imagerepo = registry + "/" + imagerepo
         directory = self.reposdir + "/" + imagerepo
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -2502,7 +2506,7 @@ class DockerIoAPI(object):
             files = self.get_v1_layers_all(endpoint, res)
             return files
 
-    def get(self, imagerepo, tag):
+    def get(self, imagerepo, tag, registry=""):
         """Pull a docker image from Docker Hub.
         Try the v2 API and if the download fails then try the v1 API.
         """
@@ -2521,7 +2525,7 @@ class DockerIoAPI(object):
             else:
                 msg.out("Error: failed to get endpoints:", str(hdr))
                 return []
-        self.localrepo.setup_imagerepo(imagerepo)
+        self.localrepo.setup_imagerepo(imagerepo, registry=registry)
         files = self.get_v2(endpoint, imagerepo, tag)      # try v2
         if not files:
             files = self.get_v1(endpoint, imagerepo, tag)  # try v1
@@ -2965,10 +2969,13 @@ class Udocker(object):
         conf.dockerio_registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
         imagespec = cmdp.get("P1")
-        if imagespec.startswith('quay.io/'):
-            self.dockerioapi.index_url = 'https://quay.io/v2'
-            self.dockerioapi.registry_url = 'https://quay.io'
-            imagespec = imagespec.split('quay.io/', 1)[1]
+        registry = ""
+        if len(imagespec.split("/")) == 3:
+            components = imagespec.split("/")
+            registry = components [0]
+            imagespec = "/".join(components[1:])
+            self.dockerioapi.index_url = "https://%s/v2" % registry
+            self.dockerioapi.registry_url = 'https://%s' % registry
         if cmdp.missing_options():               # syntax error
             return False
         if not imagespec:
@@ -2983,7 +2990,7 @@ class Udocker(object):
         if imagerepo and tag:
             if http_proxy:
                 self.dockerioapi.set_proxy(http_proxy)
-            files = self.dockerioapi.get(imagerepo, tag)
+            files = self.dockerioapi.get(imagerepo, tag, registry)
             if files:
                 msg.out(files)
                 return True
@@ -3156,7 +3163,7 @@ class Udocker(object):
                     (imagerepo, tag) = imagerepo.split(":")
                 if (imagerepo and tag and
                         self.localrepo.cd_imagerepo(imagerepo, tag)):
-                    container_id = self._create(imagerepo+":"+tag)
+                    container_id = self._create(imagerepo + ":" + tag)
                 if not container_id:
                     msg.out("Error: image or container not available")
                     return False
