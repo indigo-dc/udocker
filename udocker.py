@@ -160,7 +160,7 @@ class Config(object):
         self.http_insecure = False
 
         # docker hub
-        self.dockerio_index_url = "https://registry-1.docker.io/v2"
+        self.dockerio_index_url = "https://index.docker.io/"
         self.dockerio_registry_url = "https://registry-1.docker.io"
 
         # -------------------------------------------------------------
@@ -2312,7 +2312,7 @@ class DockerIoAPI(object):
 
     def get_repo_info(self, imagerepo):
         """Get repo info from Docker Hub"""
-        url = self.index_url + "/repositories/" + imagerepo + "/"
+        url = self.index_url + "/v2/repositories/" + imagerepo + "/"
         msg.out("repo url:", url, l=2)
         (hdr, buf) = self._get_url(url)
         try:
@@ -2324,7 +2324,7 @@ class DockerIoAPI(object):
         """Get list of images in a repo from Docker Hub"""
         if not '/' in imagerepo:
             imagerepo = "library/" + imagerepo
-        url = self.index_url + '/' + imagerepo + "/manifests/" + tag
+        url = self.index_url + '/v2/' + imagerepo + "/manifests/" + tag
         msg.out("repo url:", url, l=2)
         (hdr, buf) = self._get_url(url)
         try:
@@ -2338,7 +2338,7 @@ class DockerIoAPI(object):
         if "Token" in www_authenticate:
             if imagerepo:
                 auth_url = self.index_url + \
-                    "/repositories/" + imagerepo + "/images"
+                    "/v1/repositories/" + imagerepo + "/images"
                 (auth_hdr, dummy) = self._get_url(
                     auth_url, header=["X-Docker-Token: true"])
                 try:
@@ -2535,9 +2535,9 @@ class DockerIoAPI(object):
     def search_get_page(self, expression, page):
         """Get search result pages from Docker Hub"""
         if expression:
-            url = self.index_url + "/search?q=" + expression
+            url = self.index_url + "/v1/search?q=" + expression
         else:
-            url = self.index_url + "/search?"
+            url = self.index_url + "/v1/search?"
         if page:
             url += "&page=" + str(page)
         (dummy, buf) = self._get_url(url)
@@ -2975,7 +2975,7 @@ class Udocker(object):
             components = imagespec.split("/")
             registry = components [0]
             imagespec = "/".join(components[1:])
-            self.dockerioapi.index_url = "https://%s/v2" % registry
+            self.dockerioapi.index_url = "https://%s" % registry
             self.dockerioapi.registry_url = 'https://%s' % registry
         if cmdp.missing_options():               # syntax error
             return False
