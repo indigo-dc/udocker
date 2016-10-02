@@ -698,10 +698,11 @@ class Container(object):
         if os.path.isdir(container_root + "/" + cwd):
             return True
         for volume in self.opt["vol"]:
-            if not ":" in volume:
+            if ":" in volume:
+                host_path, container_path = volume.split(":")
+            else:
                 host_path = volume
                 container_path = volume
-            host_path, container_path = volume.split(":")
             if cwd.startswith(container_path):
                 relative_path = cwd.split(container_path)[1].lstrip('/')
                 if os.path.isdir(os.path.join(host_path, relative_path)):
@@ -3186,11 +3187,11 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         images_list = self.localrepo.get_imagerepos()
-        msg.out("REPOSITORY")
+        msg.out("%-30.30s %-30.30s %s" % ("REPOSITORY", "TAG", "PROTECTED"))
         for (imagerepo, tag) in images_list:
             prot = (".", "P")[
                 self.localrepo.isprotected_imagerepo(imagerepo, tag)]
-            msg.out("%-60.60s %c" % (imagerepo + ":" + tag, prot))
+            msg.out("%-30.30s %-30.30s %c" % (imagerepo, tag, prot))
             if verbose:
                 imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
                 msg.out("  %s" % (imagerepo_dir))
