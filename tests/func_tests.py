@@ -181,15 +181,15 @@ class MainTestCase(unittest.TestCase):
                 .return_value = False
             main = udocker.Main()
             main.execute()
-            msg_out = ("busybox:latest"
-                       "                                               .")
+            msg_out = ("busybox                        latest"
+                       "                         .")
             find_str(self, msg_out, mock_msg.out.call_args)
             # Protected
             mock_localrepo.return_value.isprotected_imagerepo\
                 .return_value = True
             main.execute()
-            msg_out = ("busybox:latest"
-                       "                                               P")
+            msg_out = ("busybox                        latest"
+                       "                         P")
             find_str(self, msg_out, mock_msg.out.call_args)
         t_argv = ['./udocker.py', "images", "-l"]
         with mock.patch.object(sys, 'argv', t_argv):
