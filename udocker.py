@@ -694,6 +694,10 @@ class Container(object):
         return True
 
     def check_cwd(self, container_root):
+        """
+        Check that cwd exists either in the container_root or
+        in the mountpoint and is a directory.
+        """
         cwd = self.opt["cwd"]
         if os.path.isdir(container_root + "/" + cwd):
             return True
@@ -753,9 +757,9 @@ class Container(object):
             else:
                 host_path, container_path = volume.split(':')
             if exec_name.startswith(container_path):
-               relative_path = exec_name.split(container_path)[1].lstrip('/')
-               if os.path.isfile(os.path.join(host_path, relative_path)):
-                   return os.path.join(host_path, relative_path)
+                relative_path = exec_name.split(container_path)[1].lstrip('/')
+                if os.path.isfile(os.path.join(host_path, relative_path)):
+                    return os.path.join(host_path, relative_path)
 
     def _run_load_metadata(self, container_id):
         """Load container metadata from container JSON payload"""
@@ -2973,7 +2977,7 @@ class Udocker(object):
         registry = ""
         if len(imagespec.split("/")) == 3:
             components = imagespec.split("/")
-            registry = components [0]
+            registry = components[0]
             imagespec = "/".join(components[1:])
             self.dockerioapi.index_url = "https://%s" % registry
             self.dockerioapi.registry_url = 'https://%s' % registry
