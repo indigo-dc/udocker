@@ -160,7 +160,7 @@ class Config(object):
         self.http_insecure = False
 
         # docker hub
-        self.dockerio_index_url = "https://index.docker.io/v1"
+        self.dockerio_index_url = "https://index.docker.io/"
         self.dockerio_registry_url = "https://registry-1.docker.io"
 
         # -------------------------------------------------------------
@@ -611,6 +611,7 @@ class Container(object):
 
     def _set_cpu_affinity(self):
         """set the cpu affinity string for container run command"""
+        cpu_affinity_exec = None  # avoids unbounded local error
         # find set affinity executable
         for exec_cmd in self._cpu_affinity_exec_tools:
             exec_name = FileUtil(exec_cmd.split(" ", 1)[0]).find_exec()
@@ -679,20 +680,38 @@ class Container(object):
         """Make sure we have a reasonable default PATH and CWD"""
         path = self._getenv("PATH")
         if not path and self.opt["uid"] == "0":
-            path = "/usr/sbin:/sbin:/usr/bin:/bin"
+            path = "/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin"
         elif not path:
-            path = "/usr/bin:/bin"
+            path = "/usr/local/bin:/usr/bin:/bin"
         self.opt["env"].append("PATH=%s" % path)
         # verify if the working directory is valid and fixit
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
-        if (self.opt["cwd"] and not (self.opt["bindhome"] or self.opt["cwd"]
-                                     in self.opt["vol"])):
-            if (not (os.path.exists(container_root + "/" + self.opt["cwd"]) and
-                     os.path.isdir(container_root + "/" + self.opt["cwd"]))):
+        if not (self.opt["bindhome"] or self.opt["cwd"] in self.opt["vol"]):
+            if not self.check_cwd(container_root):
                 msg.out("Error: invalid working directory: ", self.opt["cwd"])
                 return False
         return True
+
+    def check_cwd(self, container_root):
+        """
+        Check that cwd exists either in the container_root or
+        in the mountpoint and is a directory.
+        """
+        cwd = self.opt["cwd"]
+        if os.path.isdir(container_root + "/" + cwd):
+            return True
+        for volume in self.opt["vol"]:
+            if ":" in volume:
+                host_path, container_path = volume.split(":")
+            else:
+                host_path = volume
+                container_path = volume
+            if cwd.startswith(container_path):
+                relative_path = cwd.split(container_path)[1].lstrip('/')
+                if os.path.isdir(os.path.join(host_path, relative_path)):
+                    return True
+        return False
 
     def _check_executable(self, container_root):
         """Check if executable exists and has execute permissions"""
@@ -711,7 +730,7 @@ class Container(object):
             msg.out("Warning: no command assuming:", self.opt["cmd"], l=2)
         exec_name = self.opt["cmd"][0]            # exec pathname without args
         if exec_name.startswith("/"):
-            exec_path = container_root + exec_name
+            exec_path = self.find_executable_in_vol(exec_name, container_root)
         else:
             exec_path = \
                 FileUtil(exec_name).find_inpath(path, container_root + "/")
@@ -722,6 +741,25 @@ class Container(object):
             return False
         else:
             return True
+
+    def find_executable_in_vol(self, exec_name, container_root):
+        """
+        If absolute path to executable in the container is given,
+        check that it is present in the container or one of the
+        mount points.
+        """
+        if os.path.isfile(container_root + exec_name):
+            return container_root + exec_name
+        for volume in self.opt['vol']:
+            if not ':' in volume:
+                host_path = volume
+                container_path = volume
+            else:
+                host_path, container_path = volume.split(':')
+            if exec_name.startswith(container_path):
+                relative_path = exec_name.split(container_path)[1].lstrip('/')
+                if os.path.isfile(os.path.join(host_path, relative_path)):
+                    return os.path.join(host_path, relative_path)
 
     def _run_load_metadata(self, container_id):
         """Load container metadata from container JSON payload"""
@@ -1485,8 +1523,10 @@ class LocalRepository(object):
         """See if this image TAG is protected against deletion"""
         return self._isprotected(self.reposdir + "/" + imagerepo + "/" + tag)
 
-    def cd_imagerepo(self, imagerepo, tag):
+    def cd_imagerepo(self, imagerepo, tag, registry=""):
         """Select an image TAG for further operations"""
+        if registry:
+            imagerepo = registry + "/" + imagerepo
         if imagerepo and tag:
             tag_dir = self.reposdir + "/" + imagerepo + "/" + tag
             if os.path.exists(tag_dir):
@@ -1588,10 +1628,12 @@ class LocalRepository(object):
         self._symlink(filename, linkname)
         return True
 
-    def setup_imagerepo(self, imagerepo):
+    def setup_imagerepo(self, imagerepo, registry=""):
         """Create directory for an image repository"""
         if not imagerepo:
             return False
+        if registry:
+            imagerepo = registry + "/" + imagerepo
         directory = self.reposdir + "/" + imagerepo
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -2274,7 +2316,7 @@ class DockerIoAPI(object):
 
     def get_repo_info(self, imagerepo):
         """Get repo info from Docker Hub"""
-        url = self.index_url + "/repositories/" + imagerepo + "/"
+        url = self.index_url + "/v2/repositories/" + imagerepo + "/"
         msg.out("repo url:", url, l=2)
         (hdr, buf) = self._get_url(url)
         try:
@@ -2282,9 +2324,11 @@ class DockerIoAPI(object):
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, [])
 
-    def get_repo_list(self, imagerepo):
+    def get_repo_list(self, imagerepo, tag):
         """Get list of images in a repo from Docker Hub"""
-        url = self.index_url + "/repositories/" + imagerepo + "/images"
+        if not '/' in imagerepo:
+            imagerepo = "library/" + imagerepo
+        url = self.index_url + '/v2/' + imagerepo + "/manifests/" + tag
         msg.out("repo url:", url, l=2)
         (hdr, buf) = self._get_url(url)
         try:
@@ -2298,7 +2342,7 @@ class DockerIoAPI(object):
         if "Token" in www_authenticate:
             if imagerepo:
                 auth_url = self.index_url + \
-                    "/repositories/" + imagerepo + "/images"
+                    "/v1/repositories/" + imagerepo + "/images"
                 (auth_hdr, dummy) = self._get_url(
                     auth_url, header=["X-Docker-Token: true"])
                 try:
@@ -2467,17 +2511,17 @@ class DockerIoAPI(object):
             files = self.get_v1_layers_all(endpoint, res)
             return files
 
-    def get(self, imagerepo, tag):
+    def get(self, imagerepo, tag, registry=""):
         """Pull a docker image from Docker Hub.
         Try the v2 API and if the download fails then try the v1 API.
         """
         msg.out("get imagerepo: %s tag: %s" % (imagerepo, tag))
-        (hdr, dummy) = self.get_repo_list(imagerepo)
+        (hdr, dummy) = self.get_repo_list(imagerepo, tag)
         if hdr and "x-docker-endpoints" in hdr:
             endpoint = "http://" + hdr["x-docker-endpoints"]
         else:
             if (hdr and "X-ND-HTTPSTATUS" in hdr and
-                    "401" in hdr["X-ND-HTTPSTATUS"]):
+                    "200" in hdr["X-ND-HTTPSTATUS"]):
                 endpoint = self.registry_url          # Try docker registry
             elif (hdr and "X-ND-HTTPSTATUS" in hdr and
                   "404" in hdr["X-ND-HTTPSTATUS"]):
@@ -2486,7 +2530,7 @@ class DockerIoAPI(object):
             else:
                 msg.out("Error: failed to get endpoints:", str(hdr))
                 return []
-        self.localrepo.setup_imagerepo(imagerepo)
+        self.localrepo.setup_imagerepo(imagerepo, registry=registry)
         files = self.get_v2(endpoint, imagerepo, tag)      # try v2
         if not files:
             files = self.get_v1(endpoint, imagerepo, tag)  # try v1
@@ -2495,9 +2539,9 @@ class DockerIoAPI(object):
     def search_get_page(self, expression, page):
         """Get search result pages from Docker Hub"""
         if expression:
-            url = self.index_url + "/search?q=" + expression
+            url = self.index_url + "/v1/search?q=" + expression
         else:
-            url = self.index_url + "/search?"
+            url = self.index_url + "/v1/search?"
         if page:
             url += "&page=" + str(page)
         (dummy, buf) = self._get_url(url)
@@ -2930,6 +2974,13 @@ class Udocker(object):
         conf.dockerio_registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
         imagespec = cmdp.get("P1")
+        registry = ""
+        if len(imagespec.split("/")) == 3:
+            components = imagespec.split("/")
+            registry = components[0]
+            imagespec = "/".join(components[1:])
+            self.dockerioapi.index_url = "https://%s" % registry
+            self.dockerioapi.registry_url = 'https://%s' % registry
         if cmdp.missing_options():               # syntax error
             return False
         if not imagespec:
@@ -2944,7 +2995,7 @@ class Udocker(object):
         if imagerepo and tag:
             if http_proxy:
                 self.dockerioapi.set_proxy(http_proxy)
-            files = self.dockerioapi.get(imagerepo, tag)
+            files = self.dockerioapi.get(imagerepo, tag, registry)
             if files:
                 msg.out(files)
                 return True
@@ -3117,7 +3168,7 @@ class Udocker(object):
                     (imagerepo, tag) = imagerepo.split(":")
                 if (imagerepo and tag and
                         self.localrepo.cd_imagerepo(imagerepo, tag)):
-                    container_id = self._create(imagerepo+":"+tag)
+                    container_id = self._create(imagerepo + ":" + tag)
                 if not container_id:
                     msg.out("Error: image or container not available")
                     return False
@@ -3140,11 +3191,11 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         images_list = self.localrepo.get_imagerepos()
-        msg.out("REPOSITORY")
+        msg.out("%-30.30s %-30.30s %s" % ("REPOSITORY", "TAG", "PROTECTED"))
         for (imagerepo, tag) in images_list:
             prot = (".", "P")[
                 self.localrepo.isprotected_imagerepo(imagerepo, tag)]
-            msg.out("%-60.60s %c" % (imagerepo + ":" + tag, prot))
+            msg.out("%-30.30s %-30.30s %c" % (imagerepo, tag, prot))
             if verbose:
                 imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
                 msg.out("  %s" % (imagerepo_dir))
