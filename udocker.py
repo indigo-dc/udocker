@@ -3477,12 +3477,23 @@ class CmdParser(object):
         self._argv_consumed_params['GEN_OPT'] = []
         self._argv_consumed_params['CMD_OPT'] = []
 
+    def _quote_argv(self, argv):
+        """Iterate over argv and quote items containing spaces. This is
+        useful in case an interpreter is used in the command e.g.:
+          $ udocker.py run container bash -c 'echo hello'
+        """
+        self._argv = []
+        for arg in argv:
+            if ' ' in arg:
+                arg = "'{}'".format(arg)
+            self._argv.append(arg)
+
     def parse(self, argv):
         """Parse a command line string passed to the constructor
         divides the string in three blocks udocker general_options
         udocker command and udocker command options/arguments
         """
-        self._argv = argv
+        self._quote_argv(argv)
         matched = re.match(self._regex_argv, " ".join(self._argv))
         if matched:
             if matched.group(1):
