@@ -943,7 +943,8 @@ class Container(object):
         # if not --hostenv clean the environment and execute
         if not self.opt["hostenv"]:
             self._environ_cleanup()
-        self._banner(self.opt["cmd"][0])
+        if conf.verbose_level > 1:
+            self._banner(self.opt["cmd"][0])
         status = subprocess.call(cmd, shell=True, close_fds=True)
         return status
 
