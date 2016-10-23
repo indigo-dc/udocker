@@ -2909,7 +2909,7 @@ class Udocker(object):
         imagerepo = imagespec
         tag = "latest"
         if imagespec and ":" in imagespec:
-            (imagerepo, tag) = imagespec.split(":")
+            (imagerepo, tag) = imagespec.rsplit(":", 1)
         if not self.dockerlocalfileapi.import_(tarfile, imagerepo, tag):
             msg.out("Error: importing file")
             return False
@@ -2940,7 +2940,7 @@ class Udocker(object):
         imagerepo = imagespec
         tag = "latest"
         if imagespec and ":" in imagespec:
-            (imagerepo, tag) = imagespec.split(":")
+            (imagerepo, tag) = imagespec.rsplit(":", 1)
         if imagerepo and tag:
             if http_proxy:
                 self.dockerioapi.set_proxy(http_proxy)
@@ -2980,7 +2980,7 @@ class Udocker(object):
         imagerepo = imagespec
         tag = "latest"
         if imagespec and ":" in imagespec:
-            (imagerepo, tag) = imagespec.split(":")
+            (imagerepo, tag) = imagespec.rsplit(":", 1)
         if imagerepo and tag:
             container = Container(self.localrepo)
             return container.create(imagerepo, tag)
@@ -3114,7 +3114,7 @@ class Udocker(object):
                 imagerepo = container_or_image
                 tag = "latest"
                 if imagerepo and ":" in imagerepo:
-                    (imagerepo, tag) = imagerepo.split(":")
+                    (imagerepo, tag) = imagerepo.rsplit(":", 1)
                 if (imagerepo and tag and
                         self.localrepo.cd_imagerepo(imagerepo, tag)):
                     container_id = self._create(imagerepo+":"+tag)
