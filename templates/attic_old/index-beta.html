@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta charset="utf-8" />
+<title></title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" type="text/css" id="theme"
+  href="VizGrimoireJS/vizgrimoire.css" />
+<link href="VizGrimoireJS/bootstrap/css/bootstrap.css" rel="stylesheet" />
+<link rel="stylesheet" type="text/css" href="custom.css" />
+<link href="VizGrimoireJS/bootstrap/css/bootstrap-responsive.css"
+  rel="stylesheet" />
+<link rel="shortcut icon" href="favicon.png" />
+<link rel="stylesheet" href="VizGrimoireJS/awesome/css/font-awesome.min.css">
+</head>
+
+<body>
+  <div class="container-narrow">
+    <div id="Navbar"></div>
+
+    <!-- scm, its, mls, refcard -->
+    <div class="row-fluid" style="margin-top: 20px;">
+
+
+      <div class="row-fluid invisible-box">
+          <div class="wellmin2">
+              <div class="span4 text-center text-big">
+                  <i class="fa fa-users"></i> <span class="GlobalData"
+                  data-data-source="people" data-field="active_members"></span>
+                  current community members
+              </div>
+              <div class="span4 text-center">
+                  <i class="fa fa-users"></i>
+                <span class="GlobalData"
+                  data-data-source="people" data-field="active_members_7"></span>
+                        active members during last 7 days
+              </div>
+              <div class="span4 text-center">
+                  <i class="fa fa-users"></i><span class="GlobalData"
+                  data-data-source="people" data-field="members"></span>
+                        members since the very beginning
+              </div>              
+          </div>
+      </div>
+        
+                  <div class="row-fluid invisible-box">
+
+        
+        <!-- scm summary box -->
+        <div class="span2">
+            <div class="wellmin">
+                <div class="row-fluid thin-border">
+                    <div class="span12">Commits</div>
+                </div>                
+                <div class="row-fluid grey-border">
+                    <div class="span12 big-fp-number">
+                        <a href="scm.html"><span class="GlobalData"
+                                                 data-data-source="scm" data-field="scm_commits"></span></a>
+                    </div>
+                </div>                
+                <div class="row-fluid thin-border">
+                    <div class="span12">Active developers</div>
+                </div>                
+                <div class="row-fluid grey-border">
+                    <div class="span12 big-fp-number">
+                        <a href="scm.html"> <span class="GlobalData"
+                                                  data-data-source="scm" data-field="scm_authors"></span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+      <!-- end scm summary box -->
+
+        <div class="span5">
+          <div class="wellmin">
+            <div class="MetricsEvol" data-data-source="scm"
+              data-metrics="scm_commits" data-min="true" style="height: 100px;"
+              data-light-style="true"></div>
+            <a href="scm.html" style="color: black;"> <span
+              class="MicrodashText" data-metric="scm_commits"></span>
+            </a>
+          </div>
+        </div>
+
+        <div class="span5">
+          <div class="wellmin">
+            <div class="MetricsEvol" data-data-source="scm"
+              data-metrics="scm_authors" data-min="true" style="height: 100px;"
+              data-light-style="true"></div>
+            <a href="scm.html" style="color: black;"> <span
+              class="MicrodashText" data-metric="scm_authors"></span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+      <!-- end scm -->
+
+      <!-- its -->
+      <div class="row-fluid invisible-box">
+
+        <!-- its summary box -->
+        <div class="span2">
+            <div class="wellmin">
+                <div class="row-fluid thin-border">
+                    <div class="span12">Tickets</div>
+                </div>
+                <div class="row-fluid grey-border">
+                    <div class="span12 big-fp-number">
+                        <a href="its.html"><span class="GlobalData"
+                                                 data-data-source="its" data-field="tickets"></span></a>
+                    </div>
+                </div>
+                <div class="row-fluid thin-border">
+                    <div class="span12">Active persons</div>
+                </div>                
+                <div class="row-fluid grey-border">
+                    <div class="span12 big-fp-number">
+                        <a href="its.html"> <span class="GlobalData"
+                                                  data-data-source="its" data-field="allhistory_participants"></span>
+                    </div>
+                </div>                           
+            </div>
+          </div>
+        <!-- end its summary box -->
+
+        <div class="span5">
+          <div class="wellmin">
+            <div class="MetricsEvol" data-data-source="its"
+              data-metrics="its_closed" data-min="true" style="height: 100px;"
+              data-light-style="true"></div>
+            <a href="its.html" style="color: black;"> <span
+              class="MicrodashText" data-metric="its_closed"></span>
+              </a>
+          </div>
+        </div>
+
+        <div class="span5">
+          <div class="wellmin">
+            <div class="MetricsEvol" data-data-source="its"
+              data-metrics="its_closers" data-min="true" style="height: 100px;"
+              data-light-style="true"></div>
+            <a href="its.html" style="color: black;"> <span
+              class="MicrodashText" data-metric="its_closers"></span>
+            </a>
+          </div>
+        </div>
+      </div>
+      <!-- end its -->
+
+      <!-- mls -->
+      <div class="row-fluid invisible-box">
+
+        <!-- mls summary box-->
+        <div class="span2">
+            <div class="wellmin">
+                <div class="row-fluid thin-border">
+                    <div class="span12">Mail messages</div>
+                </div>
+                <div class="row-fluid">
+                    <div class="span12 big-fp-number">
+                        <a href="mls.html"><span class="GlobalData"
+                                                 data-data-source="mls" data-field="mls_sent"></span></a> 
+                    </div>
+                </div>
+                <div class="row-fluid thin-border">
+                    <div class="span12">Active persons</div>
+                </div>
+                <div class="row-fluid">
+                    <div class="span12 big-fp-number">
+                        <a href="mls.html"> <span class="GlobalData"
+                                                  data-data-source="mls" data-field="mls_senders"></span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- end mls summary box -->
+
+        <div class="span5">
+          <div class="wellmin">
+            <div class="MetricsEvol" data-data-source="mls"
+              data-metrics="mls_sent" data-min="true" style="height: 100px;"
+              data-light-style="true"></div>
+            <a href="mls.html" style="color: black;"> <span
+              class="MicrodashText" data-metric="mls_sent"></span>
+            </a>
+          </div>
+        </div>
+
+        <div class="span5">
+          <div class="wellmin">
+            <div class="MetricsEvol" data-data-source="mls"
+              data-metrics="mls_senders" data-min="true" style="height: 100px;"
+              data-light-style="true"></div>
+            <a href="mls.html" style="color: black;"> <span
+              class="MicrodashText" data-metric="mls_senders"></span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+      <!-- end mls -->
+
+    </div>
+    <!-- end scm, its, mls -->
+
+    <div class="row-fluid" style="margin-top: 10px;">
+      <div class="span12">
+        <div id="Refcard"></div>
+      </div>
+    </div>
+
+    <footer>
+      <div id="Footer"></div>
+    </footer>
+  </div>
+
+  <script type="text/javascript" src="VizGrimoireJS/lib/jquery-1.7.1.min.js"></script>
+  <script type="text/javascript" src="VizGrimoireJS/bootstrap/js/bootstrap.js"></script>
+  <script type="text/javascript" src="VizGrimoireJS/vizgrimoire.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<div class="row">
+
+  <div class="col-md-12">
+    <div class="wellmin">
+        <div class="row">
+            <div class="col-md-3 text-left">
+                <div class="FilterItemData" data-filter="companies"></div>
+            </div>
+            <div class="col-md-9 text-left">
+                <div class="CompanyFilters"></div>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<div class="CompanyDSBlock" data-data-source="scm"
+    data-metrics="scm_commits,scm_authors:scm_newauthors"
+    data-top-metric="authors">
+</div>
+
+<div class="CompanyDSBlock" data-data-source="scr"
+    data-metrics="scr_submitted:scr_merged,scr_timeto_merge_median"
+    data-top-metric="mergers">
+</div>
+
+<div class="CompanyDSBlock" data-data-source="its"
+    data-metrics="its_closed:its_opened,its_closers:its_openers"
+    data-top-metric="closers">
+</div>
+
+<div class="CompanyDSBlock" data-data-source="mls"
+    data-metrics="mls_sent,mls_senders"
+    data-top-metric="senders">
+</div>

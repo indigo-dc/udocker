@@ -1,0 +1,13 @@
+src_files:
+  - "browser/lib/jquery-1.11.1.min.js"
+  - "browser/lib/bootstrap-3.1.1.min.js"
+  - "browser/lib/vizgrimoire.min.js"
+helpers:
+  - "helpers/jquery-1.7.1.min.js"
+spec_files:
+  - "vizgrimoireSpec.js"
+src_dir: "../../"
+spec_dir: "spec/"
+stylesheets: 
+  - "browser/css/vizgrimoire.css"
+  - "browser/css/custom.css"

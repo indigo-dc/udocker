@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Bitergia" >
+    <link rel="shortcut icon" href="../../assets/ico/favicon.png">
+
+    <title></title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/jasny-bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="./css/custom.css" rel="stylesheet">
+
+    <!-- icons -->
+    <link rel="stylesheet" href="./css/awesome/css/font-awesome.min.css">
+
+    <!-- Type ahead style -->
+    <link href="./css/typeahead.css" rel="stylesheet">
+
+    <!-- custom -->
+    <!-- <link rel="stylesheet" href="VizGrimoireJS/custom.css">-->
+    <link rel="stylesheet" type="text/css" id="theme" href="./css/vizgrimoire.css">
+  </head>
+  <body>
+
+    <div id="Navbar"></div>
+
+    <div class="container-fluid">
+      <div class="row"><span class="SectionBreadcrumb col-md-12"></span></div>
+
+      <!-- Section HTML will be placed here, do not modify manually -->
+      <!-- REPLACE SECTION HTML -->
+      
+<!-- commits, authors, stats, top authors -->
+<div class="row">
+
+  <!-- left column -->
+  <div class="col-md-6">
+
+    <!-- commits -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="scm"
+               data-metrics="scm_commits" data-min="true"
+               style="height: 160px;"></div>
+          <div class="MicrodashText" data-metric="scm_commits"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end commits -->
+
+    <!-- authors -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="scm"
+               data-metrics="scm_authors,scm_newauthors" data-min="true"
+               style="height: 120px;"></div>
+          <div class="MicrodashText" data-metric="scm_authors" data-name="true"></div>
+          <div class="MicrodashText" data-metric="scm_newauthors" data-name="true"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end authors -->
+
+    <div class="TimezonesBlock" data-data-source="scm"
+     data-metric="commits"></div>
+
+    <!-- files -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+      <div class="MetricsEvol" data-data-source="scm"
+               data-metrics="scm_files" data-min="true" style="height: 120px;"></div>
+      <div class="MicrodashText" data-metric="scm_files"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end files -->
+
+    <div class="row">
+    <div class="col-md-12">
+      <div class="well">
+        <div class="MetricsEvol" data-data-source="scm"
+         data-metrics="scm_added_lines,scm_removed_lines" data-min="true"
+         data-legend="true" style="height: 120px;"></div>
+        <div class="MicrodashText" data-metric="scm_added_lines" data-name="true"></div>
+        <div class="MicrodashText" data-metric="scm_removed_lines" data-name="true"></div>
+      </div>
+    </div>
+    </div>
+    <!-- end files, lines -->
+
+  </div>
+  <!-- end left column -->
+
+  <!-- right column -->
+  <div class="col-md-6">
+    <div class="panel panel-default">
+      <div class="panel-body">
+
+    <div class="row"><div class="col-md-12">
+        <p class="section-title"><i class="fa fa-code"></i> Source Code Management</p>
+    </div></div>
+
+    <div class="row">
+      <div class="col-md-12">
+            <table class="table">
+              <tr>
+        <td><span class="GlobalData" data-data-source="scm" data-field="scm_repositories"></span></td>
+        <td>
+                  <div class="SmartLinks" data-target="scm-repos.html" data-label="repositories"></div>
+                </td>
+        <td><span class="GlobalData" data-data-source="scm"
+              data-field="scm_organizations"></span></td>
+        <td>
+                  <div class="SmartLinks" data-target="scm-organizations.html" data-label="organizations"></div>
+                </td>
+
+              </tr>
+              <tr>
+        <td><span class="GlobalData" data-data-source="scm"
+              data-field="avg_commits_author"></span></td>
+        <td>commits/author</td>
+                <td><span class="GlobalData" data-data-source="scm"
+              data-field="avg_files_author"></span></td>
+        <td>files/author</td>
+
+              </tr>
+              <tr>
+        <td><span class="GlobalData" data-data-source="scm"
+              data-field="scm_commits_7"></span></td>
+        <td>commits last week</td>
+        <td><span class="GlobalData" data-data-source="scm"
+              data-field="scm_authors_7"></span></td>
+        <td>active authors last week</td>
+              </tr>
+            </table>
+      </div>
+    </div>
+      </div>
+      <div class="panel-body">
+        <!-- top authors -->
+        <div class="Top" data-data-source="scm" data-period_all="true"
+         data-metric="authors" data-limit="10" data-people_links="true"></div>
+      </div>
+    </div>
+    <!-- end right column -->
+  </div>
+  <!-- end commits, authors, stats, top authors -->
+
+
+</div>
+
+      <!-- END SECTION  HTML-->
+
+      <footer>
+        <div id="Footer"></div>
+      </footer>
+    </div>
+
+    <!-- Bootstrap core JavaScript
+         ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="./lib/jquery-1.11.1.min.js"></script>
+    <script src="./lib/jquery.tablesorter.min.js"></script>
+    <script src="./lib/bootstrap-3.1.1.min.js"></script>
+    <script src="./lib/jasny-bootstrap-3.1.3.min.js"></script>
+    <script src="./lib/vizgrimoire.min.js"></script>
+    <script src="./lib/timezones.js"></script>
+    <script src="./lib/filter_panel.js"></script>
+    <script src="./lib/events.js"></script>
+    <script src="./lib/project_comparison.js"></script>
+    <script src="./lib/typeahead.jquery.js"></script>
+    <script src="./lib/search.js"></script>
+    <script src="./lib/moment.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('.collapse').on('shown.bs.collapse', function(){
+                $(this).parent().find(".fa-plus").removeClass("fa-plus").addClass("fa-minus");
+                }).on('hidden.bs.collapse', function(){
+                    $(this).parent().find(".fa-minus").removeClass("fa-minus").addClass("fa-plus");
+                });
+        });
+    </script>
+    <!-- Piwik code will be included here-->
+    <!-- Piwik -->
+<!-- End Piwik Code -->
+
+    <!-- End of Piwik code -->
+  </body>
+</html>
+

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>VizJS Documentation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" type="text/css" id="theme" href="css/vizgrimoire.css" />
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="custom.css" />
+
+<link rel="shortcut icon" href="favicon.png">
+</head>
+
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-7">
+        <div class="well" id="display" style="height: 250px; overflow: auto;"></div>
+      </div>
+      <div class="col-md-5">
+        <div class="well" id="divSyntaxHelp" style="height: 100px;"></div>
+        <div class="well" id="divSyntax" style="height: 100px;">DIV:</div>
+        <div class="well" id="divParams" style="height: 350px;">Params:</div>
+      </div>
+    </div>
+    <div class="row-fluid">
+      <div id="sections"></div>
+    </div>
+  </div>
+  <div id="Footer"></div>
+  <script type="text/javascript" src="lib/jquery-1.11.1.min.js"></script>
+  <script type="text/javascript" src="lib/bootstrap-3.1.1.min.js"></script>
+  <script type="text/javascript" src="lib/vizgrimoire.min.js"></script>
+  <script type="text/javascript" src="js/vizjsDoc.js"></script>
+  <script>
+            vizjsDoc.show('sections', 'display', 'divSyntax', 'divSyntaxHelp',
+                    'divParams');
+        </script>
+</body>
+</html>

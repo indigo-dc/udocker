@@ -1,0 +1,207 @@
+html, body {
+  height: 100%;
+}
+
+body {
+    background-color: #F5F5F5;
+    padding: 50px 0 0 0;
+    color: #333333;
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 14px;
+    line-height: 1.42857;
+}
+
+@media (min-width: 0) {
+  .navbar-toggle {
+    display: block;
+    float: left;
+    margin-left: 15px;
+  }
+}
+
+@media (min-width: 992px) {
+  body {
+    padding: 0;
+  }
+}
+
+.sidemenu-divider{  /*copied from .divider */
+    background-color: #FFFFFF;
+    height: 1px;
+    margin: 9px 0;
+    overflow: hidden;
+}
+.sidemenu-smallheader{ /*copied from .dropdown-header */
+    color: #999;
+    display: block;
+    font-size: 12px;
+    line-height: 1.42857;
+    padding: 3px 20px;
+}
+
+.section-title{ /* FIXME to be moved to vizgrimoire.css*/
+    font-family: 'Nadia Serif',Helvetica,"Helvetica Neue",Arial,sans-serif;
+    font-size: 120%;
+    color: #555;
+    margin-bottom: 10px;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+.numberInTD{  /* FIXME to be moved to vizgrimoire.css*/
+    text-align: right;
+}
+
+.numbers-summary .col-xs-3{ /* FIXME to be moved to vizgrimoire.css*/
+    text-align: center;
+    }
+
+.subsection-title{ /* FIXME to be moved to vizgrimoire.css*/
+    font-family: 'Nadia Serif',Helvetica,"Helvetica Neue",Arial,sans-serif;
+    font-size: 105%;
+    color: #555;
+    margin-bottom: 7px;
+    font-weight: bold;
+    line-height: 1.0;
+}
+
+.toptable-title{
+    font-size: 105%;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    /*font-weight: bold;*/
+    line-height: 1.1;
+    text-align:center;
+    color: #555;
+}
+
+/** Filter bar used to select repository in
+scm-contributors **/
+
+.filterbar {
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    list-style: none outside none;
+    margin-bottom: 20px;
+    padding: 8px 15px;
+}
+.filterbar > li {
+    display: inline-block;
+}
+
+/** Trends **/
+.FilterItemMicrodashText {
+    text-align: center;
+}
+
+/** Background **/
+
+.container-fluid {
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-top: 65px;
+    background-color: #F5F5F5;
+}
+
+/* Project navigation bar*/
+.breadcrumbtitle {
+    background-color: transparent;
+    border-radius: 4px 4px 4px 4px;
+    list-style: none outside none;
+    margin-bottom: 20px;
+    padding: none;
+}
+.breadcrumbtitle > li {
+    display: inline-block;
+}
+.breadcrumbtitle > li + li:before {
+    color: #CCCCCC;
+    content: "/ ";
+    padding: 0 5px;
+}
+.breadcrumbtitle > .active {
+    color: #999999;
+}
+.breadcrumbtitle >li > a {
+    color: #ED9C06;
+    text-decoration: none;
+}
+.breadcrumbtitle >li > a:hover {
+    color: #FFFFFF;
+    text-decoration: none;
+}
+.ol {
+    margin-bottom: 10px;
+    margin-top: 15px;
+}
+
+/** We need this for the long list in scm-contributors */
+ul.scroll-menu {
+    height: auto;
+    max-height: 400px;
+    overflow-x: hidden;
+}
+
+/** Boxes (well is a boostrap 3 class)**/
+.well{
+    background-color: #FFFFFF; }
+.wellmin{
+    background-color: #FFFFFF; }
+
+/** Fix for issue in jasny offside canvas menu in dropdowns */
+.navmenu-nav.dropdown-menu { position: relative; }
+
+.navbar-fixed-top {
+    border-width: 0 0 2px;
+    top: 0;
+}
+
+
+/**
+*
+* YOU SHOULDN'T NEED TO MODIFY ANYTHING ABOVE THIS LINE
+*
+*/
+
+/** Navigation breadcrumb (on navigation bar) **/
+
+.navbar-default .navbar-brand {
+    color: #f5f5f5;
+}
+.navbar-default .navbar-brand:hover {
+    color: #f5f5f5;
+}
+.navbar-default {
+    background-color: #ED9C06;
+    border-color: #000000;
+}
+.navbar-default .navbar-toggle {
+    background-color: #FFFFFF;
+    border-color: #FFFFFF;
+}
+
+/** Section breadcrumb (Project overview)**/
+
+.breadcrumb {
+    background-color: #FFFFFF;
+    border-radius: 4px;
+    list-style: none outside none;
+    margin-bottom: 20px;
+    padding: 8px 15px;
+}
+/*.breadcrumbtitle >li > a {
+    color: #C43422;
+    text-decoration: none;
+}
+.breadcrumbtitle >li > a:hover {
+    color: #2A6496;
+    text-decoration: none;
+}*/
+
+/** Links **/
+
+a{
+   color: #ED9C06;
+ }

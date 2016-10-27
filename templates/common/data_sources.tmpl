@@ -1,0 +1,231 @@
+
+<!-- summary bar -->
+<div class="capped-box overall-summary ">
+  <div class="stats-switcher-viewport js-stats-switcher-viewport">
+    <ul class="numbers-summary">
+      <li><a href="scm.html"><span class="GlobalData"
+                                   data-data-source="scm" data-field="scm_commits"></span></a> commits</li>
+      <li><a href="scm.html"><span class="GlobalData"
+                                   data-data-source="scm" data-field="scm_authors"></span></a> developers
+      </li>
+      <li><a href="its.html"><span class="GlobalData"
+                                   data-data-source="its" data-field="its_opened"></span></a> tickets</li>
+      <li><a href="mls.html"><span class="GlobalData"
+                                   data-data-source="mls" data-field="mls_sent"></span></a> mail messages
+      </li>
+    </ul>
+  </div>
+</div>
+<!-- end of summary bar -->
+
+<div class="row">
+
+</div>
+<div class="row">
+  <div class="col-md-6">
+      <div class="panel panel-default">
+    <div class="DataSourcesTable"></div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="well well-lg">
+
+      <p>Our main concern as a company is <strong>to provide products and services as transparent as possible,
+          generating a trustable relationship with our costumers</strong>. Therefore, if you find any
+        inconsistencies in the data, or have any other kind of feedback, please let us know by contacting us.</p>
+      <p><strong>Thanks</strong> for your interest and support!</p>
+    </div>
+
+    <p>Get here the <a href="data/db">MySQL database dumps</a> with the complete datasets
+      retrievied using the <a href="http://metricsgrimoire.github.io"><i class="fa
+                                                 fa-external-link"></i> Metrics Grimoire Tools</a></p>
+
+    <p>You can also download the <a href="data/json">JSON files</a> (<a href="data/json.tgz">archive</a>)
+      used to display the information shown on this dashboard</p>
+
+  </div>
+
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+    <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="headingOne">
+      <h4 class="panel-title">
+        <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+          How this dashboard was produced
+        </a>
+      </h4>
+    </div>
+    <div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <div class="panel-body">
+     <p>All the information presented on this dashboard is based on the data obtained
+         from the project repositories. The process of producing the dashboard based
+         on those data is, in summary, as follows:</p>
+
+     <ul>
+       <li>Data retrieval from project repositories. Using tools in the
+           <a href="http://metricsgrimoire.github.io">MetricsGrimoire tool suite</a>,
+           repositories considered as data sources for the dashboard are visited, retrieving
+           all relevant data. This data is stored in a MySQL database, in a format suitable
+           for later curation and querying. The data retrieval is done usually once a day.</li>
+       <li>Database curation and database dumps. The data in the database requires some care
+           for detecting and fixing errors, for finding the several identities that persons may
+           use, for adding affiliation information, etc. A part of these activities is done by
+           hand, some other part by scripts. The idea is to maintain the data as accurate and
+           useful as possible, and ready for the next step. In addition, database dumps are
+           produced, which (depending on the dashboard) may be public. When they are public,
+           they are available in the <a href="data/db/"></a> directory as compressed MySQL
+           dumps which can be easily retrieved and loaded into a MySQL database.</li>
+       <li>Producing JSON files by querying the database. Once the data is updated in the
+           database, the querying software is run. This software is based on
+           <a href="https://github.com/VizGrimoire/GrimoireLib">GrimoreLib</a>, a querying
+           library specific for MetricsGrimoire databases, which can also be used for querying
+           them for other purposes. In the case of the dashboard, the queries are tailored
+           to produce JSON files that are stored in the <a href="data/json">data/json</a> directory.
+           These JSON files will be retrieved by the dashboard to produce the numbers
+           and charts it offers.</li>
+       <li>Deployment of the dashboard itself. The dashboard is based on
+           <a href="https://github.com/VizGrimoire/VizGrimoireJS">vizGrimoireJS</a>. It is
+           a collection of HTML, CSS and JavaScript documents, which provide all the
+           functionality of the dashboard by using the data in the JSON files.</li>
+     </ul>
+
+     <p>All this process is coordinated by <a href="https://github.com/MetricsGrimoire/Automator">Automator</a>,
+         which is capable of running the MetricsGrimoire tools for retrieving the data
+         from the repositories, store them in the databases, produce the JSON files by
+         querying those databases, and copy the documents composing the browser to the
+         desired location. The configuration for Automator includes information about
+         which repositories are the data sources, which parts of the dashboard are to
+         be produced, and some other configuration parameters.</p>
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="headingTwo">
+      <h4 class="panel-title">
+        <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+          Deploying a copy of the dashboard elsewhere
+        </a>
+      </h4>
+    </div>
+    <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+      <div class="panel-body">
+     <p>The dashboard, once deployed, is a self-contained, static directory. That
+         directory contains the all the HTML, CSS, JavaScript and JSON files needed
+         to provide the full functionality of the dashboard. It can be retrieved
+         by using an HTTP downloader, such as wget or curl. However, for convenience,
+         dashboards are usually git repositories, which can be cloned to obtain a
+         complete copy that can be deployed anywhere. This is done usually in one
+         of two ways:</p>
+     <ul>
+       <li>A single git repository for the whole dashboard, including HTML, CSS,
+           JavaScript and JSON files.</li>
+       <li>Two repositories, one for the whole dashboard, excluding JSON files,
+           and another one for JSON files. This second repository should be cloned
+           under data/json, so that the dashboard has access to the data it needs.</li>
+     </ul>
+
+     <p>See for example the <a href="https://github.com/bitergia">Bitergia git repositories at GitHub</a>,
+         which includes git repositories for several dashboards.</p>
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="headingThree">
+      <h4 class="panel-title">
+        <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+          Obtaining data from JSON documents
+        </a>
+      </h4>
+    </div>
+    <div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+      <div class="panel-body">
+     <p>All the information shown in the dashboard is stored in JSON files, available
+         from the <a href="data/json/">data/json</a> directory. These JSON files are
+         useful by themselves, since they store the detailed metrics shown in the
+         different pages of the dashboard.</p>
+
+     <p>There are several kinds of JSON documents, which can be classified
+         according to different criteria. [Note: not all of these documents are
+         present in all dashboards, and there are some other JSON files that are
+         not described in this list.]</p>
+
+     <ul>
+       <li>According to the organization of the data they store:</li>
+       <ul>
+     <li>Aggregated metrics (suffix: -static.json). Aggregated metrics for a
+         period of time, such as the whole life of the project.
+         Example: <a href="data/json/scm-static.json">scm-static.json</a></li><a href="data/json/scm-static.json">
+
+     </a><li><a href="data/json/scm-static.json">Time series
+         (suffix: -evolutionary.json). Time series with the values of some metrics
+         at some points in time (for example, each month).
+         Example: </a><a href="data/json/its-evolutionary.json">its-evolutionary.json</a></li>
+     <li>Lists (suffixes: -people.json, -projects-json, repos.json, -top.json).
+         Lists of items (people, projects, repositories, top entries) relevant
+         to the project, in some cases accompanied by some metrics per item.
+         Example: <a href="data/json/scm-people.json">scm-people.json</a></li>
+       </ul>
+
+       <li>According to the kind of repository to which they correspond:</li>
+       <ul>
+     <li>Source code management system (string: scm). Data obtained from source
+         code management directories, such as those managed by git or Subversion.
+         The information was extracted by using
+         <a href="https://github.com/MetricsGrimoire/CVSAnalY">CVSAnalY</a>.
+         Example: <a href="data/json/scm-static.json">scm-static.json</a></li>
+     <li>Issue tracking systems (string: its). Data obtained from issue tracking
+         (ticketing, bug reporting) systems, such as Bugzilla, Jira, Launchpad
+         tickets or GitHub tickets. The information was extracted by using
+         <a href="https://github.com/MetricsGrimoire/Bicho">Bicho</a>.
+         Example: <a href="data/json/its-static.json">its-static.json</a></li>
+     <li>Mailing lists (string: mls). Data obtained from mailing lists. The
+         information was extracted by using
+         <a href="https://github.com/MetricsGrimoire/MailingListStats">MailingListStats</a>.
+         Example: <a href="data/json/mls-static.json">mls-static.json</a></li>
+     <li>Code review systems (string: scr). Data obtained from source code
+         review systems, such as Gerrit. The information was extracted by
+         using <a href="https://github.com/MetricsGrimoire/Bicho">Bicho</a>,
+         with the corresponding backend. Example: <a href="data/json/scr-static.json">scr-static.json</a></li>
+       </ul>
+
+       <li>According to the partition of the information:</li>
+
+       <ul>
+     <li>Partitioned by organization (string: com). Data relevant to an specific
+         organization (company, foundation, etc.).
+         Example: Bitergia-scm-com-evolutionary.json</li>
+     <li>Partitioned by repository (string: rep). Data relevant to an specific
+         repository. Example: nova.git-rep-static.json</li>
+       </ul>
+     </ul>
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="headingThree">
+      <h4 class="panel-title">
+        <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+            Querying the database
+        </a>
+      </h4>
+    </div>
+    <div id="collapseFour" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingFour">
+      <div class="panel-body">
+               <p>The <a href="data/db">database dumps</a> can be loaded in a
+                   MySQL instance, and queried. This is exactly what is done to
+                   obtain the JSON files containing the data shown in the dashboard.
+                   For this querying, the Python package <a href="">GrimoireLib</a> can be used.</p>
+
+     <p>In case plain SQL is to be used, the schemas of the databases are
+         provided as a part of the documentation for each MetricsGrimoire tool.
+         You can locate that information in the
+         <a href="http://metricsgrimoire.github.io">MetricsGrimoire website</a>.</p>.
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>

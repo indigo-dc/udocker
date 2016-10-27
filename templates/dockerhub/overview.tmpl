@@ -1,0 +1,66 @@
+<div class="row">
+    <!-- left column -->
+    <div class="col-md-6">
+
+        <!-- pulls -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="well">
+                    <div class="MetricsEvol" data-data-source="dockerhub"
+                        data-metrics="dockerhub_pulls" data-min="true"
+                        style="height: 160px;"></div>
+                    <div class="MicrodashText" data-metric="dockerhub_pulls"></div>
+                </div>
+            </div>
+        </div>
+        <!-- end pulls -->
+
+        <!-- starred -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="well">
+                    <div class="MetricsEvol" data-data-source="dockerhub"
+                        data-metrics="dockerhub_starred" data-min="true"
+                        style="height: 120px;"></div>
+                    <div class="MicrodashText" data-metric="dockerhub_starred" data-name="true"></div>
+                </div>
+            </div>
+        </div>
+        <!-- end starred -->
+    </div>
+    <!-- end left column -->
+
+    <!-- right column -->
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-body">
+
+                <div class="row"><div class="col-md-12">
+                    <p class="section-title"><i class="fa fa-code"></i> Docker Hub</p>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <table class="table">
+                        <tr>
+                            <td><span class="GlobalData" data-data-source="dockerhub"
+                                data-field="dockerhub_pulls"></span></td>
+                            <td>pulls</td>
+                            <td><span class="GlobalData" data-data-source="dockerhub"
+                                data-field="dockerhub_starred"></span></td>
+                            <td>starred</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="panel-body">
+        <!-- top pulls -->
+            <div class="Top" data-data-source="dockerhub" data-period_all="true"
+                data-metric="pulls" data-limit="10"
+                data-people_links="false" ></div>
+        </div>
+    </div>
+    <!-- end right column -->
+</div>

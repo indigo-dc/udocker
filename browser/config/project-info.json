@@ -1,0 +1,16 @@
+{
+"date":"",
+"project_name" :"Project template", 
+"project_url" :"http://incubator.apache.org/allura/",
+"scm_url":"https://github.com/apache/incubator-allura",
+"scm_name":"git://git.apache.org/incubator-allura.git",
+"scm_type":"git",
+"its_url":"http://sourceforge.net/p/allura/tickets/",
+"its_name":"Tickets",
+"its_type":"",
+"mls_url":"http://incubator.apache.org/allura/mailing-lists.html",
+"mls_name":"Mailing lists",
+"mls_type":"mailman",
+"producer":"",
+"blog_url":""
+}

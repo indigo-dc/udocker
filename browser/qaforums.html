@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Bitergia" >
+    <link rel="shortcut icon" href="../../assets/ico/favicon.png">
+
+    <title></title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/jasny-bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="./css/custom.css" rel="stylesheet">
+
+    <!-- icons -->
+    <link rel="stylesheet" href="./css/awesome/css/font-awesome.min.css">
+
+    <!-- Type ahead style -->
+    <link href="./css/typeahead.css" rel="stylesheet">
+
+    <!-- custom -->
+    <!-- <link rel="stylesheet" href="VizGrimoireJS/custom.css">-->
+    <link rel="stylesheet" type="text/css" id="theme" href="./css/vizgrimoire.css">
+  </head>
+  <body>
+
+    <div id="Navbar"></div>
+
+    <div class="container-fluid">
+      <div class="row"><span class="SectionBreadcrumb col-md-12"></span></div>
+
+      <!-- Section HTML will be placed here, do not modify manually -->
+      <!-- REPLACE SECTION HTML -->
+      
+<!-- msgs sent, senders, stats, top closers -->
+<div class="row">
+
+  <!-- left column -->
+  <div class="col-md-6">
+    <!-- questions -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="qaforums"
+               data-metrics="qaforums_qsent"
+               data-min="true" style="height:160px;"
+               ></div>
+          <div class="MicrodashText"
+               data-data-source="qaforums" data-metric="qaforums_qsent"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end questions -->
+
+    <!-- users -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="qaforums"
+               data-metrics="qaforums_qsenders"
+               data-min="true" style="height:120px;"
+               ></div>
+          <div class="MicrodashText"
+               data-data-source="qaforums" data-metric="qaforums_qsenders"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end users -->
+
+    <!-- answers -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="qaforums"
+               data-metrics="qaforums_asent"
+               data-min="true" style="height:120px;"
+
+               ></div>
+          <div class="MicrodashText"
+               data-data-source="qaforums" data-metric="qaforums_asent"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end answers -->
+
+    <!-- unanswered questions -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="qaforums"
+               data-metrics="unanswered"
+               data-min="true" style="height:120px;"
+               ></div>
+        </div>
+      </div>
+    </div>
+    <!-- end unanswered questions -->
+
+  </div>
+  <!-- end left column -->
+
+  <!-- right column -->
+  <div class="col-md-6">
+    <div class="panel panel-default">
+      <div class="panel-body">
+
+    <div class="row"><div class="col-md-12">
+        <p class="section-title"><i class="fa fa-question"></i> <abbr title="Questions and Answers">Q&amp;A</abbr> Forums</p>
+    </div></div>
+    <div class="row">
+      <div class="col-md-12">
+            <table class="table">
+              <tr>
+        <td><span class="GlobalData" data-data-source="qaforums"
+                    data-field="qaforums_participants"></span>
+        </td>
+        <td>
+                  <div class="SmartLinks" data-target="qaforums-contributors.html" data-label="participants"></div>
+                </td>
+        <td><span class="GlobalData" data-data-source="qaforums"
+                    data-field="qaforums_participants_30"></span>
+        </td>
+        <td>participants last month</td>
+              </tr>
+              <tr>
+        <td><span class="GlobalData" data-data-source="qaforums"
+                    data-field="qaforums_qsenders"></span>
+        </td>
+        <td>question posters (all time)</td>
+        <td><span class="GlobalData"
+                    data-data-source="qaforums"
+                    data-field="qaforums_qsenders_30"></span>
+        </td>
+        <td>question posters last month</td>
+              </tr>
+              <tr>
+        <td><span class="GlobalData" data-data-source="qaforums"
+              data-field="qaforums_qsent"></span>
+        </td>
+        <td>questions (all time)</td>
+        <td><span class="GlobalData" data-data-source="qaforums"
+                    data-field="qaforums_qsent_30"></span>
+        </td>
+        <td>questions last month</td>
+              </tr>
+              <tr>
+        <td><span class="GlobalData" data-data-source="qaforums"
+              data-field="qaforums_asent"></span>
+        </td>
+        <td>answers (all time)</td>
+        <td><span class="GlobalData" data-data-source="qaforums"
+              data-field="qaforums_asent_30"></span>
+        </td>
+        <td>answers last month</td>
+              </tr>
+            </table>
+      </div>
+    </div>
+      </div>
+
+      <!-- top senders -->
+      <div class="panel-body">
+    <div class="Top" data-data-source="qaforums" data-period_all="true"
+             data-metric="asenders" data-limit="10"
+             data-people_links="false" ></div>
+    <!-- end senders-->
+      </div>
+    </div>
+    <!-- end right column -->
+
+  </div>
+  <!-- end msgs sent, senders, stats, top closers -->
+</div>
+
+      <!-- END SECTION  HTML-->
+
+      <footer>
+        <div id="Footer"></div>
+      </footer>
+    </div>
+
+    <!-- Bootstrap core JavaScript
+         ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="./lib/jquery-1.11.1.min.js"></script>
+    <script src="./lib/jquery.tablesorter.min.js"></script>
+    <script src="./lib/bootstrap-3.1.1.min.js"></script>
+    <script src="./lib/jasny-bootstrap-3.1.3.min.js"></script>
+    <script src="./lib/vizgrimoire.min.js"></script>
+    <script src="./lib/timezones.js"></script>
+    <script src="./lib/filter_panel.js"></script>
+    <script src="./lib/events.js"></script>
+    <script src="./lib/project_comparison.js"></script>
+    <script src="./lib/typeahead.jquery.js"></script>
+    <script src="./lib/search.js"></script>
+    <script src="./lib/moment.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('.collapse').on('shown.bs.collapse', function(){
+                $(this).parent().find(".fa-plus").removeClass("fa-plus").addClass("fa-minus");
+                }).on('hidden.bs.collapse', function(){
+                    $(this).parent().find(".fa-minus").removeClass("fa-minus").addClass("fa-plus");
+                });
+        });
+    </script>
+    <!-- Piwik code will be included here-->
+    <!-- Piwik -->
+<!-- End Piwik Code -->
+
+    <!-- End of Piwik code -->
+  </body>
+</html>
+

@@ -1,0 +1,24 @@
+body {
+    font: normal 0.75em georgia, sans-serif;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 5px;
+}
+
+h1 {
+    margin-bottom: .25em;
+    font-family: 'Nadia Serif', Helvetica, "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.4em;
+    color: #ffa500;
+}
+h2 {font-size: 1.1em;}
+
+h3 {font-size: 1.0em;}
+
+#footer p, #footer dl {
+    margin: 0;
+    font-size: 88%;
+    line-height: 1.2;
+}
+    

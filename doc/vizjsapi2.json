@@ -1,0 +1,427 @@
+{
+"sections":{
+    "Layout":{
+        "Navbar":{
+            "help":"Show menu bar"
+        },
+        "Footer":{
+            "help":"Show footer"
+        },
+        "Refcard":{
+            "help":"Show project reference card using refcard.html and project-card.html as templates."
+        }
+    },
+    "Graph":{
+        "RadarActivity":{
+            "help": "Show radar with 'scm_commits', 'scm_files', 'its_opened', 'its_closed', 'its_changed','mls_sent' metrics.",
+            "classCSS":"Radar"
+        },
+        "RadarCommunity":{
+            "help": "Show radar with 'scm_committers', 'scm_authors', 'its_openers', 'its_closers', 'its_changers', 'mls_senders' metrics.",
+            "classCSS":"Radar"
+        },
+        "Treemap":{
+            "help": "Show a Treemap using data in JSON file with a specific format (<a href='treemap.json'>sample</a>).",
+            "params":{
+                "file":{
+                    "help":"File URL with treemap data."
+                }
+            },
+            "classCSS":"treemap"
+        },
+        "Bubbles":{
+            "help": "Show a bubble map with specific evolution metrics for each data source. For SCM scm_commits and scm_committers.",
+            "params":{
+                "radius":{
+                    "help":"Radius of the bubbles. Make it smaller if bubbles overlaps."
+                },
+                "data-source":{
+                    "help":"Data Source to be used"
+                }
+            }
+        }
+    },
+    "GlobalMetrics":{
+        "MicrodashText":{
+            "help": "Show global and tendency data for a metric for last week, month and year",
+            "params":{
+                "metric":{
+                    "help":"Metric to be shown"
+                }
+            }
+        },
+        "LastActivity":{
+            "help": "Global data for all data sources for a period.",
+            "params":{
+                "period":{
+                    "help":"period of time (Year, Month, Week)."
+                }
+            }
+        },
+        "GlobalData":{
+            "help": "Show a specific global data for a data source.",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used."
+                },
+                "field":{
+                    "help":"Specific global metric (field) to be shown."
+                }
+            }
+        },
+        "Summary":{
+            "help": "Show a summary with all global data for a data source.",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used."
+                }
+            }
+        }
+    },
+    "EvolMetrics":{
+        "MetricsEvol":{
+            "help": "Show time evolution of metrics",
+            "params":{
+                "convert":{
+                    "help":"Convert metrics values (aggregate, substract, divide)."
+                },
+                "custom-title":{
+                    "help":"(optional:text) Shows a customized title."
+                },
+                "custom-help":{
+                    "help":"(optional:text) Shows a customized help message."
+                },
+                "data-source":{
+                    "help":"Data Source to be used."
+                },
+                "end":{
+                    "help":"End date in unixtime."
+                },
+                "frame-time":{
+                    "help":"Show only the time frame with activity."
+                },
+                "graph":{
+                    "help":"Use bars to change from lines to bars."
+                },
+                "help":{
+                    "help":"Show button to open help dialog."
+                },
+                "legend":{
+                    "help":"(optional:boolean) Show legend in the graph."
+                },
+                "light-style":{
+                    "help":"(optional:boolean) Shows a lighter chart (using grey colors, without legend, etc ..)."
+                },
+                "metrics":{
+                    "help":"Metrics to be shown."
+                },
+                "min":{
+                    "help":"Minimized version of the graph."
+                },
+                "start":{
+                    "help":"Start date in unixtime."
+                },
+                "remove-last-point":{
+                    "help":"Remove last data point from graph."
+                }
+            }
+        },
+        "TimeTo":{
+            "help": "Show time to fix/attention using quantiles evolution specified",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used"
+                },
+                "quantil":{
+                    "help":"Quantiles to show separated by commas (X0.99,X0.95)."
+                },
+                "type":{
+                    "values":["fix","attention"],
+                    "help":"fix or attention time to."
+                }
+            }
+        },
+        "MetricsEvolSet":{
+            "help": "Show time evolution of all metrics of a data source. Some metrics could be hidden with <a href='data/json/viz_cfg.json'>viz_cfg.json file</a>.",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used"
+                },
+                "relative":{
+                    "help":"Show relative values useful for relative area charts."
+                },
+                "legend":{
+                    "help":"Show legend."
+                },
+                "summary_graph":{
+                    "help":"Show summary graph background."
+                },
+                "all":{
+                    "help":"Show all data sources"
+                }
+            }
+        },
+        "Microdash":{
+            "help": "Show global, evolution viz and tendency data for a metric",
+            "params":{
+                "metric":{
+                    "help":"Metric to be shown."
+                }
+            }
+        }
+    },
+    "MiscStudies":{
+        "Top":{
+            "help": "Show Top contributors for a data source, using graphs and linking to people pages if not disabled.",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used"
+                },
+                "graph":{
+                    "help":"Add to report table a graph with the data."
+                },
+                "limit":{
+                    "help":"Max number of top items to show."
+                },
+                "metric":{
+                    "help":"Top metric to be shown."
+                },
+                "people_links":{
+                    "help":"Show URL links to people pages."
+                },
+                "period":{
+                    "help":"Select data from period."
+                },
+                "period_all":{
+                    "help":"Boolean. Show all period of time available with tabs"
+                },
+                "show-all":{
+                    "help":"Show all periods of time available."
+                },
+                "threads_links":{
+                    "help":"Link the subject of the threads using Google search"
+                }
+            }
+        },
+        "PersonData":{
+            "help": "Show name, email and identities for a person.",
+            "params":{
+                "person_id":{
+                    "help":"Person id according to JSON data."
+                }
+            }
+        },
+        "PersonMetrics":{
+            "help": "Show time evolution metric for a person.",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used."
+                },
+                "legend":{
+                    "help":"Show legend."
+                },
+                "metrics":{
+                    "help":"Metrics to be shown."
+                },
+                "person_id":{
+                    "help":"Person id according to JSON data."
+                }
+            }
+        },
+        "PersonSummary":{
+            "help": "Show global metrics for a person and a data source.",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used"
+                },
+                "person_id":{
+                    "help":"Person id according to JSON data."
+                }
+            }
+        },
+        "Demographics":{
+            "help": "Show a bars graph with the demography data in JSON file, grouping using period of times (years)",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used."
+                },
+                "period":{
+                    "help":"Number of years to group items together (0.25 for quarters)."
+                }
+            }
+        }
+    },
+    "FilterStudy":{
+        "FilterItemsSummary":{
+            "help": "Show global metrics for a data source and a filter study (companies, repos, countries)",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used."
+                },
+                "filter":{
+                    "help":"Filter to be used (companies, countries, repos)."
+                }
+            }
+        },
+        "FilterItemsMetricsEvol":{
+            "help": "Show together one time evolution metric for all items (companies, repos, countries) in a filter study.",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used"
+                },
+                "filter":{
+                    "help":"Filter to be used (companies, countries, repos)."
+                },
+                "metric":{
+                    "help":""
+                },
+                "start":{
+                    "help":"Start date in unixtime."
+                },
+                "end":{
+                    "help":"End date in unixtime."
+                },
+                "stacked":{
+                    "help":"Show lines overlapped or stacked."
+                }
+            }
+        },
+        "FilterItemsGlobal":{
+            "help": "Show a metric for all items (companies, repos, countries) in a filter study using a bars or pie graph.",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used"
+                },
+                "filter":{
+                    "help":"Filter to be used (companies, countries, repos)."
+                },
+                "metric":{
+                    "help":"Metric to be shown."
+                },
+                "order_by":{
+                    "help":"Order by a supported metric. All widgets for a data source and filter must have the same order."
+                },
+                "graph":{
+                    "help":"pie or bar chart."
+                },
+                "legend-div":{
+                    "help":"div where the legend should be shown."
+                }
+            }
+        },
+        "FilterItemsNav":{
+            "help": "Show a navigation bar with links to items (companies, repos, countries) details.",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used"
+                },
+                "filter":{
+                    "help":"Filter to be used (companies, countries, repos)."
+                },
+                "page":{
+                    "help":"Page to be shown."
+                }
+            }
+        },
+        "FilterItemsMiniCharts":{
+            "help": "Show a list of time evolution metrics graph for all items (companies, repos, countries) in a filter study.",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used"
+                },
+                "filter":{
+                    "help":"Filter to be used (companies, countries, repos)."
+                },
+                "page":{
+                    "help":"Page to be shown."
+                },
+                "order_by":{
+                    "help":"Deprecated. Don't use."
+                },
+                "metrics":{
+                    "help":"Metrics to be shown."
+                },
+                "show_links":{
+                    "help":"Show URL links to items specific pages."
+                },
+                "start":{
+                    "help":"Start date for the charts."
+                },
+                "end":{
+                    "help":"End date for the charts."
+                },
+                "remove-last-point":{
+                    "help":"Remove last data point from graph."
+                }
+            }
+        },
+        "FilterItemData":{
+            "help": "Show global data (name) for an item (company, repo, country)"
+        },
+        "FilterItemSummary":{
+            "help": "Show all global metrics for an item (company, repo, country)",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used"
+                },
+                "filter":{
+                    "help":"Filter to be used (companies, countries, repos)."
+                },
+                "item":{
+                    "help":"Identifier of item to be shown (<a href='data/json/scm-repos.json'>repos identifiers</a>)"
+                }
+            }
+        },
+        "FilterItemMetricsEvol":{
+            "help": "Show together time evolution metrics for an item (company, repo, country)",
+            "params":{
+                "data-source":{
+                    "help":"Data Source to be used"
+                },
+                "filter":{
+                    "help":"Filter to be used (companies, countries, repos)."
+                },
+                "item":{
+                    "help":"Identifier of item to be shown (<a href='data/json/scm-repos.json'>repos identifiers</a>)"
+                },
+                "frame-time":{
+                    "help":"Show only the time frame with activity."
+                },
+                "metrics":{
+                    "help":"Metric to be shown."
+                },
+                "show_legend":{
+                    "help":"Show legend."
+                },
+                "remove-last-point":{
+                    "help":"Remove last data point from graph."
+                }
+            }
+        },
+        "FilterItemTop":{
+            "help": "Show Top contributors for a data source and item (company, repo, country) using graphs.",
+            "params":{
+                "titles":{
+                    "help":"Show titles or just table data."
+                },
+                "data-source":{
+                    "help":"Data Source to be used"
+                },
+                "filter":{
+                    "help":"Filter to be used (companies, countries, repos)."
+                },
+                "item":{
+                    "help":"Identifier of item to be shown (<a href='data/json/scm-repos.json'>repos identifiers</a>)"
+                },
+                "period":{
+                    "help":"Period of time in which top is computed."
+                },
+                "metric":{
+                    "help":"Top metric to be shown."
+                }
+            }
+        }
+    }
+},
+"api_ver":"2.2"
+}

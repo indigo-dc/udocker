@@ -1,0 +1,173 @@
+/* Top Bootstrap menu overlap */
+body {
+  padding-top: 60px;
+  padding-bottom: 40px;
+}
+.sidebar-nav {
+  padding: 9px 0;
+}
+
+/* General viz sizes */
+.envision-component-container {
+    width: 500px;
+    height : 80px;  
+}
+
+.envision-component-container.envision-first {
+    width: 500px;
+    height : 80px;         
+}
+
+.basic-metric-html {
+	width: 150px;
+}
+
+.m0-box-div {
+    height: 130px;
+    float: left;
+    margin-bottom: 20px;   
+}
+
+.scm-flotr2-metrics,
+.its-flotr2-metrics,
+.mls-flotr2-metrics,
+.scr-flotr2-metrics,
+.irc-flotr2-metrics
+{
+	height: 130px;
+}
+
+.scm-flotr2-countries-static,
+.scm-flotr2-companies-static,
+.scm-flotr2-repos-static,
+.its-flotr2-countries-static,
+.its-flotr2-companies-static,
+.its-flotr2-repos-static,
+.mls-flotr2-countries-static,
+.mls-flotr2-companies-static,
+.mls-flotr2-repos-static,
+.its-time-to-fix,
+.mls-time-to-attention,
+.irc-flotr2-repos-static,
+.scr-flotr2-repos-static
+{
+    height: 200px;
+}
+
+.scm-flotr2-metrics-country,
+.its-flotr2-metrics-country,
+.mls-flotr2-metrics-country,
+.scm-flotr2-metrics-repo,
+.its-flotr2-metrics-repo,
+.mls-flotr2-metrics-repo,
+.irc-flotr2-metrics-repo,
+.scr-flotr2-metrics-repo,
+.scm-flotr2-metrics-company,
+.its-flotr2-metrics-company,
+.mls-flotr2-metrics-company,
+.scm-flotr2-metrics-people,
+.its-flotr2-metrics-people,
+.irc-flotr2-metrics-people,
+.scr-flotr2-metrics-people,
+.mls-flotr2-metrics-people
+{
+	height: 200px;
+}
+
+#its-envision {
+	height: 450px;
+}
+
+#mls-envision {
+    height: 250px;
+}
+
+.scm-flotr2-companies
+ {
+    height: 300px;
+}
+
+.demographic-bars, .Demographics {
+    width:400px;height:200px;
+}
+
+.subreport-list-item {
+    margin: 5px;
+}
+
+/* Bootstrap */ 
+
+.hero-unit {
+	padding: 30px;
+}
+
+.center {
+     float: none;
+     margin-left: auto;
+     margin-right: auto;
+}
+
+/* by Luis */
+
+.date {
+    color: #8F8F8F;
+    font: 12px Helvetica,arial,freesans,clean,sans-serif;
+}
+
+.num {
+    color: #333333;
+    display: block;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.num2 {
+    color: #333333;
+    display: block;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* l.com */
+.stats{
+    padding: 0 11px 0 0;
+    display: table;
+    line-height: none !important;
+}
+
+.stats em {
+    display: table-cell;
+    padding-bottom: 10px;
+    vertical-align: middle;
+    font-size: 0.9em;
+}
+
+.stats .count {
+    font-size: 200%;
+    padding-right: 10px;
+    text-align: right;
+    line-height: 40px;
+    float: right;
+}
+
+.stats strong {
+    color: #555555;
+}
+
+.container-fluid {
+    padding-left: 20px;
+    padding-right: 20px;
+    /* max-width: 1280px; */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/*.row-fluid {
+    width: 100%;
+    float:none;
+    margin:0 auto;
+}*/
+
+.bottom-padding{
+    padding: 0 0 10px 0;
+}

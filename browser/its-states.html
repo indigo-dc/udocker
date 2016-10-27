@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Bitergia" >
+    <link rel="shortcut icon" href="../../assets/ico/favicon.png">
+
+    <title></title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/jasny-bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="./css/custom.css" rel="stylesheet">
+
+    <!-- icons -->
+    <link rel="stylesheet" href="./css/awesome/css/font-awesome.min.css">
+
+    <!-- Type ahead style -->
+    <link href="./css/typeahead.css" rel="stylesheet">
+
+    <!-- custom -->
+    <!-- <link rel="stylesheet" href="VizGrimoireJS/custom.css">-->
+    <link rel="stylesheet" type="text/css" id="theme" href="./css/vizgrimoire.css">
+  </head>
+  <body>
+
+    <div id="Navbar"></div>
+
+    <div class="container-fluid">
+      <div class="row"><span class="SectionBreadcrumb col-md-12"></span></div>
+
+      <!-- Section HTML will be placed here, do not modify manually -->
+      <!-- REPLACE SECTION HTML -->
+            <div class="well">
+    <div class="row">
+      <div class="col-md-12">
+        <p><i><b>Ticket backlogs over time</b></i></p>
+
+        <p>Evolution of the backlog of tickets in the different states over time.</p>
+
+        <p>Each chart represents, for each of the states defined for tickets, how
+        many tickets were in that state the first day of each period (eg, the
+        first day of each month).</p>
+      </div>
+    </div>
+    <!--<div class="row">
+      <div class="col-md-12">-->
+    <div class="row">
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-metrics="New"
+         data-min="true" style="height:120px;"></div>
+          </div>
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-metrics="In Progress"
+         data-min="true" style="height:120px;"></div>
+          </div>
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-metrics="Opinion"
+         data-min="true" style="height:120px;"></div>
+          </div>
+    </div>
+    <div class="row">
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-metrics="Confirmed"
+         data-min="true" style="height:120px;"></div>
+          </div>
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-metrics="Incomplete"
+         data-min="true" style="height:120px;"></div>
+          </div>
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-metrics="Unknown"
+         data-min="true" style="height:120px;"></div>
+          </div>
+    </div>
+    <div class="row">
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-metrics="Fix Committed"
+         data-min="true" style="height:120px;"></div>
+          </div>
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-metrics="Fix Released"
+         data-min="true" style="height:120px;"></div>
+          </div>
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-metrics="Invalid"
+         data-min="true" style="height:120px;"></div>
+          </div>
+    </div>
+      </div>
+      <div class="well">
+    <div class="row">
+      <div class="col-md-12">
+        <p><i><b>Structure of the current backlog</b></i></p>
+
+        <p>Age structure of tickets, by current state.</p>
+
+        <p>Each chart represents, for all tickets currently in a given state, how
+        many of them were opened during each of the periods (eg., how many were
+        opened for each of the months).</p>
+
+      </div>
+    </div>
+    <!-- -->
+    <div class="row">
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_New"
+         data-min="true" style="height:120px;"></div>
+          </div>
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_In Progress"
+         data-min="true" style="height:120px;"></div>
+          </div>
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_Opinion"
+         data-min="true" style="height:120px;"></div>
+          </div>
+    </div>
+    <div class="row">
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_Confirmed"
+         data-min="true" style="height:120px;"></div>
+          </div>
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_Incomplete"
+         data-min="true" style="height:120px;"></div>
+          </div>
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_Unknown"
+         data-min="true" style="height:120px;"></div>
+          </div>
+    </div>
+    <div class="row">
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_Fix Committed"
+         data-min="true" style="height:120px;"></div>
+          </div>
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_Fix Released"
+         data-min="true" style="height:120px;"></div>
+          </div>
+          <div class="col-md-4">
+        <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_Invalid"
+         data-min="true" style="height:120px;"></div>
+          </div>
+    </div>
+      </div>
+
+  <div class="well">
+    <div class="row">
+      <div class="col-md-3">
+        <p><i><b>State transitions</b></i></p>
+
+        <p>Transitions of tickets between ticket states.</p>
+
+        <p>The table shows, for the whole life of the project, how many tickets did
+        transition between any two states.</p>
+      </div>
+      <div class="col-md-9">
+        <div class="MarkovTable" data-data-source="its" data-title="Transitions among statuses"></div>
+      </div>
+    </div>
+
+
+  </div>
+
+      <!-- END SECTION  HTML-->
+
+      <footer>
+        <div id="Footer"></div>
+      </footer>
+    </div>
+
+    <!-- Bootstrap core JavaScript
+         ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="./lib/jquery-1.11.1.min.js"></script>
+    <script src="./lib/jquery.tablesorter.min.js"></script>
+    <script src="./lib/bootstrap-3.1.1.min.js"></script>
+    <script src="./lib/jasny-bootstrap-3.1.3.min.js"></script>
+    <script src="./lib/vizgrimoire.min.js"></script>
+    <script src="./lib/timezones.js"></script>
+    <script src="./lib/filter_panel.js"></script>
+    <script src="./lib/events.js"></script>
+    <script src="./lib/project_comparison.js"></script>
+    <script src="./lib/typeahead.jquery.js"></script>
+    <script src="./lib/search.js"></script>
+    <script src="./lib/moment.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('.collapse').on('shown.bs.collapse', function(){
+                $(this).parent().find(".fa-plus").removeClass("fa-plus").addClass("fa-minus");
+                }).on('hidden.bs.collapse', function(){
+                    $(this).parent().find(".fa-minus").removeClass("fa-minus").addClass("fa-plus");
+                });
+        });
+    </script>
+    <!-- Piwik code will be included here-->
+    <!-- Piwik -->
+<!-- End Piwik Code -->
+
+    <!-- End of Piwik code -->
+  </body>
+</html>
+

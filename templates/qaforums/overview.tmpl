@@ -1,0 +1,140 @@
+
+<!-- msgs sent, senders, stats, top closers -->
+<div class="row">
+
+  <!-- left column -->
+  <div class="col-md-6">
+    <!-- questions -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="qaforums"
+               data-metrics="qaforums_qsent"
+               data-min="true" style="height:160px;"
+               ></div>
+          <div class="MicrodashText"
+               data-data-source="qaforums" data-metric="qaforums_qsent"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end questions -->
+
+    <!-- users -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="qaforums"
+               data-metrics="qaforums_qsenders"
+               data-min="true" style="height:120px;"
+               ></div>
+          <div class="MicrodashText"
+               data-data-source="qaforums" data-metric="qaforums_qsenders"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end users -->
+
+    <!-- answers -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="qaforums"
+               data-metrics="qaforums_asent"
+               data-min="true" style="height:120px;"
+
+               ></div>
+          <div class="MicrodashText"
+               data-data-source="qaforums" data-metric="qaforums_asent"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end answers -->
+
+    <!-- unanswered questions -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="qaforums"
+               data-metrics="unanswered"
+               data-min="true" style="height:120px;"
+               ></div>
+        </div>
+      </div>
+    </div>
+    <!-- end unanswered questions -->
+
+  </div>
+  <!-- end left column -->
+
+  <!-- right column -->
+  <div class="col-md-6">
+    <div class="panel panel-default">
+      <div class="panel-body">
+
+    <div class="row"><div class="col-md-12">
+        <p class="section-title"><i class="fa fa-question"></i> <abbr title="Questions and Answers">Q&amp;A</abbr> Forums</p>
+    </div></div>
+    <div class="row">
+      <div class="col-md-12">
+            <table class="table">
+              <tr>
+        <td><span class="GlobalData" data-data-source="qaforums"
+                    data-field="qaforums_participants"></span>
+        </td>
+        <td>
+                  <div class="SmartLinks" data-target="qaforums-contributors.html" data-label="participants"></div>
+                </td>
+        <td><span class="GlobalData" data-data-source="qaforums"
+                    data-field="qaforums_participants_30"></span>
+        </td>
+        <td>participants last month</td>
+              </tr>
+              <tr>
+        <td><span class="GlobalData" data-data-source="qaforums"
+                    data-field="qaforums_qsenders"></span>
+        </td>
+        <td>question posters (all time)</td>
+        <td><span class="GlobalData"
+                    data-data-source="qaforums"
+                    data-field="qaforums_qsenders_30"></span>
+        </td>
+        <td>question posters last month</td>
+              </tr>
+              <tr>
+        <td><span class="GlobalData" data-data-source="qaforums"
+              data-field="qaforums_qsent"></span>
+        </td>
+        <td>questions (all time)</td>
+        <td><span class="GlobalData" data-data-source="qaforums"
+                    data-field="qaforums_qsent_30"></span>
+        </td>
+        <td>questions last month</td>
+              </tr>
+              <tr>
+        <td><span class="GlobalData" data-data-source="qaforums"
+              data-field="qaforums_asent"></span>
+        </td>
+        <td>answers (all time)</td>
+        <td><span class="GlobalData" data-data-source="qaforums"
+              data-field="qaforums_asent_30"></span>
+        </td>
+        <td>answers last month</td>
+              </tr>
+            </table>
+      </div>
+    </div>
+      </div>
+
+      <!-- top senders -->
+      <div class="panel-body">
+    <div class="Top" data-data-source="qaforums" data-period_all="true"
+             data-metric="asenders" data-limit="10"
+             data-people_links="false" ></div>
+    <!-- end senders-->
+      </div>
+    </div>
+    <!-- end right column -->
+
+  </div>
+  <!-- end msgs sent, senders, stats, top closers -->
+</div>

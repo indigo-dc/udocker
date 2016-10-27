@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta charset="utf-8" />
+<title></title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" type="text/css" id="theme"
+  href="VizGrimoireJS/vizgrimoire.css" />
+<link href="VizGrimoireJS/bootstrap/css/bootstrap.css" rel="stylesheet" />
+<link rel="stylesheet" type="text/css" href="custom.css" />
+<link href="VizGrimoireJS/bootstrap/css/bootstrap-responsive.css"
+  rel="stylesheet" />
+<link rel="shortcut icon" href="favicon.png" />
+</head>
+
+<body>
+  <div class="container-fluid">
+    <div id="Navbar"></div>
+
+    <h4>Summary of companies activity</h4>
+
+
+    <div class="row">
+      <div class="col-md-10">
+        <b>Reviews merged</b>
+        <div class="FilterItemsMetricsEvol" data-data-source="scr"
+          data-legend-div="legend" data-metric="scr_merged"
+          data-filter="companies" data-limit="10" data-stacked="true"
+          data-start="1359676800" data-end="1385856000"></div>
+      </div>
+      <div class="col-md-2">
+        <div id="legend"></div>
+      </div>
+
+    </div>
+
+    <!-- authors companies -->
+    <!--             <div class="row">
+                <div class="col-md-12">
+                    <b>Authors</b>
+                    <div class="FilterItemsMetricsEvol" data-data-source="scm" data-metric="scm_authors"
+                         data-filter="companies" data-limit="10" data-stacked="true"></div>
+                </div>
+            </div>
+ -->
+    <!-- end authors companies -->
+
+    <div class="row">
+      <div class="col-md-6">
+        <b>Reviews merged</b>
+        <div class="FilterItemsGlobal" data-data-source="scr"
+          data-metric="scr_merged" data-filter="companies" data-limit="5"
+          data-show-others="true" data-graph="pie" data-legend="true"></div>
+      </div>
+      <!-- end commits pie -->
+
+
+      <!--                 <div class="col-md-6">
+                    <b>Authors</b>
+                    <div class="FilterItemsGlobal" data-data-source="scm" data-metric="scm_authors"
+                         data-filter="companies" data-limit="5" data-order-by="scm_commits"
+                         data-show-others="true" data-graph="pie" data-legend="true"></div>
+                </div>
+ -->
+    </div>
+
+
+    <footer>
+      <div id="Footer"></div>
+    </footer>
+  </div>
+
+  <script type="text/javascript" src="VizGrimoireJS/lib/jquery-1.7.1.min.js"></script>
+  <script type="text/javascript" src="VizGrimoireJS/bootstrap/js/bootstrap.js"></script>
+  <script type="text/javascript" src="VizGrimoireJS/vizgrimoire.min.js"></script>
+</body>
+</html>

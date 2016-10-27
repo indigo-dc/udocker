@@ -1,0 +1,49 @@
+
+<!-- commits, authors, stats, top authors -->
+<div class="row">
+
+    <div class="col-md-12">
+        <div class="well">
+            Gerrit panel to help engineering and community managers to deal with old changesets
+        </div>
+    </div>
+    <div class="col-md-12"><div class="well">
+        <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+            <div class="panel panel-default">
+                <div class="panel-heading" role="tab" id="headingOne">
+                    <h4 class="panel-title">
+                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+                            <span class="fa fa-plus"></span>
+                            &nbsp;Oldest open Gerrit changesets without code review
+                        </a>
+                    </h4>
+                </div>
+                <div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+                    <div class="panel-body">
+                        <div class="OldestChangesets" data-data-source="scr"
+                        data-headers="tracker URL,Submitted by,changeset URL,Summary,Submitted on,Last Update"
+                        data-columns="project_name,author_name,gerrit_issue_id,summary,first_upload,last_upload"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingTwo">
+                <h4 class="panel-title">
+                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
+                        <span class="fa fa-plus"></span>
+                        &nbsp;Open Gerrit changesets with most activity
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+                <div class="panel-body">
+                    <div class="MostActiveChangesets" data-data-source="scr"
+                    data-headers="Review number,Summary,Submitted on,Last update,Uploads"
+                    data-columns="gerrit_issue_id,summary,first_upload,last_upload,number_of_patchsets"></div>
+                </div>
+            </div>
+        </div>
+    </div></div>
+</div>

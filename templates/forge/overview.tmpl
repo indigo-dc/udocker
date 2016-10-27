@@ -1,0 +1,115 @@
+            <!-- msgs sent, senders, stats, top closers -->
+            <div class="row">
+
+                <!-- left column -->
+                <div class="col-md-6">
+                    <!-- msgs sent -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="well">
+                                <div class="MetricsEvol" data-data-source="releases"
+                                     data-metrics="releases_modules"
+                                     data-frame-time="true"
+                                     data-min="true" style="height:120px;"></div>
+                                     <div class="MicrodashText" data-metric="releases_modules"></div>
+                                     </div>
+                        </div>
+                    </div>
+                    <!-- end msgs sent -->
+
+                    <!-- senders -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="well">
+                                <div class="MetricsEvol" data-data-source="releases"
+                                     data-metrics="releases_authors"
+                                     data-frame-time="true"
+                                     data-min="true" style="height:120px;"></div>
+                                     <div class="MicrodashText"
+                                       data-data-source="releases" data-metric="releases_authors"></div>
+                                     </div>
+                        </div>
+                    </div>
+                    <!-- end senders -->
+
+                    <!-- time to attention -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="well">
+                                <div class="MetricsEvol" data-data-source="releases"
+                                     data-metrics="releases_releases"
+                                     data-frame-time="true"
+                                     data-min="true"
+                                  style="height:120px;"></div>
+                                  <div class="MicrodashText"
+                                       data-metric="releases_releases"></div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <!-- end time to attention -->
+
+                </div>
+                <!-- end left column -->
+
+                <!-- right column -->
+                <div class="col-md-6">
+                    <div class="row">
+                        <table class="table table-striped">
+                            <tr>
+                                <td><h5>Forge releases <small> (updated on <span class="GlobalData" data-data-source="releases" data-field="last_date"></span>)</small></h5></td></tr>
+                        </table>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-striped">
+                                <tr>
+                                    <td>
+                                        <span class="GlobalData" data-data-source="releases"
+                                              data-field="releases_modules"></span>
+                                    </td>
+                                    <td>
+                                        Modules
+                                    </td>
+                                </tr>
+                <tr>
+                                    <td>
+                                    <span class="GlobalData" data-data-source="releases"
+                                              data-field="releases_modules_30"></span>
+                                    </td>
+                                    <td>Modules updated during last month</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-striped">
+                                <tr>
+                                    <td>
+                                    <span class="GlobalData" data-data-source="releases"
+                                              data-field="releases_authors"></span>
+                                    </td>
+                                    <td>Module authors</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                    <span class="GlobalData" data-data-source="releases"
+                                              data-field="releases_authors_30"></span>
+                                    </td>
+                                    <td>Module authors active during last month</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+
+                    <!-- top senders -->
+                    <div class="Top" data-data-source="releases" data-period_all="true"
+                         data-metric="authors" data-limit="10"
+                         data-people_links="false" ></div>
+                    <!-- end senders-->
+
+                </div>
+                <!-- end right column -->
+
+            </div>
+            <!-- end msgs sent, senders, stats, top closers -->

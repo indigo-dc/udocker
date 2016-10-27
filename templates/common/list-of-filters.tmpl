@@ -1,0 +1,62 @@
+<!-- info text -->
+<div class="well">
+  <div class="row">
+    <div class="col-md-6">
+      <p>REPLACE_TEXT</p>
+    </div>
+    <div class="col-md-6">
+      <!-- evolution #companies -->
+      <div class="MetricsEvol" data-data-source="REPLACE_DS_NAME"
+           data-metrics="REPLACE_METRIC0" data-legend="false"
+           data-title="REPLACE_TITLE_METRIC0" data-help="false"
+           data-light-style="true" style="height: 80px; margin-right:20px;"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-12 FilterItemsNav">
+      <div class="FilterItemsNav center-block" data-data-source="REPLACE_DS_NAME"
+       data-order-by="REPLACE_ORDER_BY" data-filter="REPLACE_FILTER"></div>
+    </div>
+  </div>
+
+  <!-- bar charts: commits, authors company -->
+  <div class="row">
+    <!-- commits -->
+    <div class="col-md-1"></div>
+    <div class="col-md-4">
+      <div class="FilterItemsGlobal" data-data-source="REPLACE_DS_NAME"
+           data-metric="REPLACE_METRIC1" data-filter="REPLACE_FILTER"
+           data-legend-div="barchart_legend" data-limit="REPLACE_LIMIT"
+           data-order-by="REPLACE_ORDER_BY"
+           data-title="REPLACE_TITLE_METRIC1"></div>
+    </div>
+    <!-- end commits -->
+    <div class="col-md-2" id="barchart_legend"
+         style="text-align:left;font-size: 1.2em;padding-top:10px;padding-left:20px;"></div>
+    <!-- authors -->
+    <div class="col-md-4">
+      <div class="FilterItemsGlobal" data-data-source="REPLACE_DS_NAME"
+           data-metric="REPLACE_METRIC2" data-filter="REPLACE_FILTER"
+           data-legend="false" data-limit="REPLACE_LIMIT" data-order-by="REPLACE_ORDER_BY"
+           data-title="REPLACE_TITLE_METRIC2"></div>
+    </div>
+    <!-- end authors -->
+    <div class="col-md-1"></div>
+  </div>
+  <!-- end of bar charts: commits, authors company -->
+
+  <!-- commits per company -->
+  <div id="list" class="row">
+    <div class="FilterItemsMiniCharts" data-data-source="REPLACE_DS_NAME"
+         data-metrics="REPLACE_METRIC1,REPLACE_METRIC2" data-filter="REPLACE_FILTER"
+         data-order-by="REPLACE_ORDER_BY" style="margin-right:20px;"></div>
+  </div>
+  <div class="row"><div class="col-md-12">
+      <div class="FilterItemsNav" data-data-source="REPLACE_DS_NAME"
+       data-order-by="REPLACE_ORDER_BY" data-filter="REPLACE_FILTER"></div>
+    </div>
+  </div>
+
+</div>
+<!-- end commits per company -->

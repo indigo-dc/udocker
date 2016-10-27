@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta name="keywords" content="bitergia, floss, libresoft, oss, linux, research, reports, free software, software analysis, libreplan" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0">
+    <meta name="description" content="Bitergia company website" />
+    <link rel="stylesheet" type="text/css" id="theme" href="VizGrimoireJS/vizgrimoire1.css" />
+    <link rel="stylesheet" type="text/css" href="notes.css" />
+    <script type="text/javascript" src="VizGrimoireJS/lib/jquery-1.7.1.min.js"></script>
+    <title>Methodology notes</title>
+    <style type="text/css">
+    </style>
+  </head>
+
+  <body>
+    <div id="wrapper">
+      <div id="header"></div>
+      
+      <div id="info-column1"  style="width:180px;margin-bottom:60px;">
+        <div id="navigation"></div>
+      </div>
+
+      <div>
+	<ul>
+	<li><a href="#note:retriev">Retrieval methodology</a></li>
+	<li><a href="#note:filtering"></a>Filering methodology</li>
+	<li><a href="#note:analysis">Analysis methodology</a></li>
+	<li><a href="#note:viz">Visualization</a></li>
+	<li><a href="#note:charts">Charts and tables</a></li>
+	<li><a href="#note:credits">Credits</a></li>
+	</ul>
+
+	<a id="note:retriev"><h1>RETRIEVAL METHODOLOGY</h1></a>
+	
+	<a id="note:retriev:tools"><h2>Tools</h2></a>
+     
+	<p>Tools in the <a href="http://metricsgrimoire.github.com">MetricsGrimoire</a> toolset have been used to retrieve 
+        the repositories with the source data for the analysis. In particular, the following tools have been used.</p>
+
+        <ul>
+        <li>
+	       <a id="note:retriev:tools:cvsanaly"><b>CVSAnalY</b></a>
+	       <p>This tool has been used to retrieve data from the git repository, and storing it in a MySQL database 
+           which is the starting point of the analysis.</p>
+        </li>
+        </ul>
+
+	<p>The resulting database (sanitized to remove email addresses) is published for download.</p> 
+
+	<a id="note:retriev:tools"><h2>Extension</h2></a>
+
+	<p>The retrieved data spans from the beginning of the history of Project in the source code management 
+        repository up to the report date. The retrieval was performed on this latter date.</p>
+
+	<a id="note:analysis"><h1>ANALYSIS METHODOLOGY</h1></a>
+
+	<p>Techniques and details used in the analysis of data.</p>
+    
+    <a id="note:analysis:commits"><h2>Commits</h2></a>
+    <p>Changes to the source code of the project.</p>
+	
+	<a id="note:analysis:affiliation"><h2>Affiliation</h2></a>
+
+	<p>Affiliation of developers to companies and other institutions has been done based on various heuristics, 
+    some of the automatic, some other manuals. The base heuristic has bee using the domain part of 
+    the email address to identify an institution, and affiliation of the corresponding developer to it. 
+    We have also used some web pages maintained by the project itself and in some cases with 
+    information by manual search in the Internet. As a result of this process, we have classified all developers 
+    as affiliated with an organization (which we refer in this report as "company"), 
+    as <a id="#note:analysis:non-affiliated">non-affiliated</a>, or as unknown (for which we couldn't decide to 
+    which company they were affiliated). We have also considered that developers may move from company to company, 
+    identifying for some of them the first or last date of work for their employers.</p>
+
+	<a id="note:analysis:non-affiliated"><h2>Non-affiliated</h2></a>
+
+	<p>After doing some research, we have found some developers to be working on their own (be them volunteers or not). 
+    We consider them as non-affiliated. </p>
+
+	<a id="note:analysis:unknown-affilation"><h2>Unknown affiliation</h2></a>
+	
+	<p>For some developers, we couldn't decide if they were affiliated to some company, or to which company in particular they 
+    were affiliated. We consider them as "with unknown affiliation". </p>
+
+	<a id="note:analysis:unique"><h2>Identification of unique developers</h2></a>
+
+	<p>We have integrated, identifying duplicate identities of developers, all of the identities found. 
+    They had been consolidated to consider unique developers that could latter be affiliated to companies.</p>
+	
+	<a id="note:viz"><h1>VISUALIZATION</h1></a>
+
+	<p>The visualization of the data has been produced using the <a href="http://vizgrimoire.github.com">vizGrimoire</a> toolset. 
+    In particular the JavaScript producing the charts and tables is a part of the vizGrimoire.JS system. 
+    It visualized data present in JSON files produced by vizGrimoire.R from the MySQL 
+    database where all the base information is stored.</p>
+
+	<a id="note:charts"><h1>CHARTS AND TABLES</h1></a>
+	 
+	<a id="note:charts:summary"><h2>Summary charts</h2>
+	  
+	  <p>Charts that offer a summary, or an overview, of certain aspects of the project.</p>
+	  <ul>
+          <li>
+      <a id="note:charts:summary:commits"><b>Commits per company (monthly)</b></a>
+      <p>For each company, it shows the number of <a href="#note:analysis:commits">commits</a> per month  for authors 
+      <a href="#note:analysis:affiliation">affiliated</a> to that company. Only the top ten companies, 
+        by total number of commits, are shown.</p>
+          </li>
+          <li>
+	  <a id="note:charts:summary:authors"><b>Active authors per company (monthly)</b></a>
+          <p>For each company, it shows the number of active authors per month. We count active authors as those that 
+          committed at least one <a href="#note:analysis:commits">commit</a> per month, and assign them to 
+          companies following the <a href="#note:analysis:affiliation">affiliation heuristics</a>. Only the top ten companies, 
+          by total number of authors, are shown.</p>
+          </li>
+          <li>
+	  <a id="note:charts:summary:commits_pie"><b>Commits per company (pie chart)</b></a>
+	  <p>For each company, it shows the number of <a href="#note:analysis:commits">commits</a>, during the whole 
+      history of the project, for authors <a href="#note:analysis:affiliation">affiliated</a> to that company. 
+      Only top five companies, by total number of reviewed commits, are shown. Commits corresponding to authors 
+      for which we have not identified an affiliation are not considered (not even under the "others" tag).</p>
+          </li>
+          <li>
+	  <a id="note:charts:summary:authors_pie"><b>Authors per company (pie chart)</b></a>
+	  <p>For each company, it shows the number of active authors performing reviewed commits during the whole history 
+      of the project. Only top five companies, by total number of authors, are shown. We count active authors as those 
+      that committed at least one <a href="#note:analysis:commits">commit</a>, and assign them to companies following 
+      the <a href="#note:analysis:affiliation">affiliation heuristics</a>. Authors for which we have not identified an 
+      affiliation are not considered (not even under the "others" tag). </p>
+          </li>
+
+          <li>
+	  <a id="note:tables:summary:authors"><b>Top authors (table)</b></a>
+	  <p>Top authors, ordered by number of reviewed commits for the specified period. Period is the whole history of the project, or the specified year. </p>
+          </li>
+    </ul>
+          
+    <a id="note:charts:repositories"><h2>Information for all repositories</h2> 
+      <p>Charts offering an aggregated view of the data, organized by repository.</p>      
+       <ul>
+         <li>
+          <a id="note:charts:repositories:repositories"><b>Active repositories per month (evolution chart)</b></a>
+          <p>Information about the monthly evolution of the number of repositories.</p>
+      </li>          
+       
+        <li>
+      <a id="note:charts:repositories:commits"><b>Commits per repository (monthly)</b></a>
+      <p>For each repository, it shows the number of <a href="#note:analysis:commits">commits</a> per month  for authors 
+      in this repository. Only the top ten repositories, ordered by total number of commits, are shown.</p>
+          </li>
+          <li>
+      <a id="note:charts:repositories:authors"><b>Active authors per repository (monthly)</b></a>
+          <p>For each repository, it shows the number of active authors per month. We count active authors as those that 
+          committed at least one <a href="#note:analysis:commits">commit</a> per month, and assign them to repository.
+          Only the top ten companies, by total number of authors, are shown.</p>
+          </li>
+          </ul>
+          
+      <a id="note:charts:repository"><h2>Information per repository</h2>
+          <p>Charts and tables that offer several metrics for a given repository.</p>
+        <ul>
+        <li>
+        <a id="note:charts:repository:commits"><b>Commits per month (evolution chart)</b></a>
+          <p>Monthly evolution of the number of commits in the corresponding repository.</p>
+        </li>
+        <li>
+        <a id="note:charts:repository:authors"><b>Authors per month (evolution chart)</b></a>
+          <p>Monthly evolution of the number of active authors of commits to the 
+            corresponding repository.</p>
+        </li>
+        </ul>
+                         
+	<a id="note:charts:companies"><h2>Information for all companies</h2> 
+	  <p>Charts offering an aggregated view of the data, organized by company.</p>
+          <ul>
+          <li>
+          <a id="note:charts:companies:companies"><b>Active companies per month (evolution chart)</b></a>
+          <p>Information about the monthly evolution of the number of active companies. We consider a company as active 
+          during a certain month when at least a developer <a href="#note:analysis:affiliation">affiliated</a> to that 
+          company performed a commit during that month.</p>
+          </li>          
+          <li>
+          <a id="note:charts:companies:commits_agg"><b>Commits per company (aggregated) (bar chart)</b></a>
+          <p>Aggregated (for the whole history of the project) number of commits per company.
+           We assign a commit to a company when its author is a developer <a href="#note:analysis:affiliation">affiliated</a> 
+           to that company. Only top ten companies are included (the remaining commits are not presented in this chart).</p>
+          </li>          
+          <li>
+          <a id="note:charts:companies:authors_agg"><b>Authors per company (aggregated) (bar chart)</b></a>
+          <p>Aggregated (for the whole history of the project) number of authors per company. 
+          We assign authors to a company when they are <a href="#note:analysis:affiliation">affiliated</a> to that company. 
+          Only top ten companies are included (the remaining authors are not presented in this chart).</p>
+          </li>
+          </ul>
+
+        <a id="note:charts:company"><h2>Information per company</h2>
+          <p>Charts and tables that offer several metrics for a given company.</p>
+        <ul>
+        <li>
+        <a id="note:charts:company:commits"><b>Commits per month (evolution chart)</b></a>
+          <p>Monthly evolution of the number of reviewed commits performed by 
+          developers <a href="#note:analysis:affiliation">affiliated</a> to the corresponding company.</p>
+        </li>
+        <li>
+        <a id="note:charts:company:authors"><b>Authors per month (evolution chart)</b></a>
+          <p>Monthly evolution of the number of active authors of commits 
+          <a href="#note:analysis:affiliation">affiliated</a> to the corresponding company.</p>
+        </li>
+        <li>
+        <a id="note:charts:company:lines"><b>Lines added/removed per month (evolution chart)</b></a>
+          <p>Monthly evolution of the number of added and removed lines by commits performed by 
+          authors of reviewed commits <a href="#note:analysis:affiliation">affiliated</a> to the corresponding company.</p>
+        </li>
+
+	<li>
+      <a id="note:tables:company:authors"><b>Top authors (table)</b></a>
+	  <p>List of the top authors <a href="#note:analysis:affiliation">affiliated</a> to the corresponding company, 
+      ordered by the number of reviewed commits for the specified period. 
+      Period is the whole history of the project, or the specified year.</p>
+	</li>
+        </ul>
+
+	<a id="note:credits"><h1>CREDITS</h1></a>
+
+	<p></p>
+      </div>
+      <div id="footer"></div>
+    </div>
+    <script type="text/javascript" src="VizGrimoireJS/src/envision.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/DataSource.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/Loader.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/Report.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/ITS.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/MLS.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/SCM.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/Envision_Report.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/Viz.js"></script>              
+  </body>
+</html>

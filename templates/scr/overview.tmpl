@@ -1,0 +1,116 @@
+
+<!-- commits, authors, stats, top authors -->
+<div class="row">
+
+  <!-- left column -->
+  <div class="col-md-6">
+
+    <div class="row">
+      <div class="col-md-12">
+    <div class="well">
+          <div class="MetricsEvol" data-data-source="scr"
+               data-metrics="scr_pending" data-convert="aggregate" data-min="true"
+               style="height: 120px;" data-frame-time="true"></div>
+          <div class="MicrodashText" data-metric="pending"></div>
+    </div>
+      </div>
+    </div>
+
+    <!--<div class="row">
+    <div class="well">
+          <div class="MetricsEvol" data-data-source="scr"
+               data-metrics="review_time_days_median" data-legend="true"
+               data-frame-time="true"></div>
+    </div>
+    </div>-->
+
+    <div class="row">
+      <div class="col-md-12">
+    <div class="well">
+          <div class="MetricsEvol" data-data-source="scr"
+               data-metrics="scr_submitted,scr_merged,scr_abandoned"
+               data-min="true" data-legend="true" style="height:200px;"
+               data-frame-time="true" data-help="true"></div>
+          <div class="MicrodashText" data-metric="scr_submitted" data-name="true"></div>
+          <div class="MicrodashText" data-metric="scr_merged" data-name="true"></div>
+          <div class="MicrodashText" data-metric="scr_abandoned" data-name="true"></div>
+    </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- end left column -->
+
+  <!-- right column -->
+  <div class="col-md-6">
+    <div class="panel panel-default">
+      <div class="panel-body">
+
+    <div class="row"><div class="col-md-12">
+        <p class="section-title"><i class="fa fa-check"></i> Source Code Review</p>
+    </div></div>
+
+    <div class="row">
+      <div class="col-md-12">
+            <table class="table">
+          <tr>
+        <td><span class="GlobalData" data-data-source="scr"
+              data-field="scr_repositories"></span></td>
+        <td>
+                  <div class="SmartLinks" data-target="scr-repos.html" data-label="repositories"></div>
+                </td>
+        <td><span class="GlobalData" data-data-source="scr"
+                      data-field="scr_organizations"></span></td>
+        <td>
+                  <div class="SmartLinks" data-target="scr-organizations.html" data-label="organizations"></div>
+                </td>
+              </tr>
+              <tr>
+        <td><span class="GlobalData" data-data-source="scr"
+              data-field="scr_new"></span></td>
+        <td>new code reviews</td>
+        <td><span class="GlobalData" data-data-source="scr"
+              data-field="scr_merged"></span></td>
+        <td>accepted contributions</td>
+              </tr>
+              <tr>
+        <td><span class="GlobalData" data-data-source="scr"
+              data-field="scr_WaitingForReviewer"></span></td>
+        <td>code reviews waiting for reviewer</td>
+        <td><span class="GlobalData" data-data-source="scr"
+              data-field="scr_WaitingForSubmitter"></span></td>
+        <td>code reviews waiting for submitter</td>
+              </tr>
+              <tr>
+        <td><span class="GlobalData" data-data-source="scr"
+              data-field="scr_reviewers"></span></td>
+        <td>total code reviewers</td>
+        <td><span class="GlobalData" data-data-source="scr"
+              data-field="scr_reviewers_7"></span></td>
+        <td>code reviewers last week</td>
+              </tr>
+              <tr>
+        <td><span class="GlobalData" data-data-source="scr"
+              data-field="scr_review_time_days_median"></span></td>
+        <td>median time to review in days</td>
+        <td></td>
+        <td></td>
+              </tr>
+            </table>
+      </div>
+    </div>
+      </div>
+      <div class="panel-body">
+    <div class="col-md-6">
+          <div class="Top" data-data-source="scr" data-metric="openers"></div>
+    </div>
+    <div class="col-md-6">
+          <div class="Top" data-data-source="scr" data-metric="mergers"></div>
+    </div>
+      </div>
+    </div>
+    <!-- end right column -->
+  </div>
+  <!-- end commits, authors, stats, top authors -->
+
+</div>

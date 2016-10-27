@@ -1,0 +1,121 @@
+<!-- commits, authors, stats, top authors -->
+<div class="row">
+
+  <!-- left column -->
+  <div class="col-md-6">
+
+    <div class="row">
+      <div class="col-md-12">
+       <div class="well">
+           <div class="row">
+            <div class="col-md-3">
+                  <div class="FilterItemData"></div>
+            </div>
+            <div class="col-md-3"><div class="row">
+                  <div class="col-xs-6 text-right">
+                      <span class="RepositoryData" style="font-size:25px;"
+                      data-data-source="eventizer" data-field="eventizer_members"></span>
+                    </div>
+                  <div class="col-xs-6 text-left">total members</div>
+                  </div>
+            </div>
+            <div class="col-md-3"><div class="row">
+                <div class="col-xs-6 text-right">
+                    <span class="RepositoryData" style="font-size:25px;"
+                    data-data-source="eventizer" data-field="eventizer_rsvps_365"></span>
+                </div>
+                <div class="col-xs-6 text-left">Unique RSVPs last year</div>
+                </div>
+            </div>
+            <div class="col-md-3"><div class="row">
+                <div class="col-xs-6 text-right">
+                    <span class="RepositoryData" style="font-size:25px;"
+                    data-data-source="eventizer" data-field="eventizer_events_365"></span>
+                </div>
+                <div class="col-xs-6 text-left">meetings last year</div>
+            </div>
+            </div>
+        </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="well">
+                <div id="punchcard"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- authors -->
+    <div class="row">
+         <div class="col-md-12">
+          <div class="well">
+            <div class="FilterItemMetricsEvol" data-data-source="eventizer"
+                 data-metrics="eventizer_rsvps" data-min="true"
+                 data-frame-time="true"
+                 data-filter="repos"
+                 style="height: 120px;"></div>
+                 <!--<div class="FilterItemMicrodashText" data-filter="repos" data-metric="eventizer_attendees"></div>-->
+          </div>
+        </div>
+      </div>
+      <!-- end authors -->
+
+    <!-- -->
+    <div class="row">
+      <div class="col-md-12">
+    <div class="well">
+          <div class="FilterItemMetricsEvol" data-data-source="eventizer"
+               data-metrics="eventizer_events" data-min="true"
+               data-filter="repos"
+               style="height: 120px;" data-frame-time="true"></div>
+               <!--<div class="FilterItemMicrodashText" data-filter="repos" data-metric="eventizer_events"></div>-->
+    </div>
+      </div>
+    </div>
+    <!-- -->
+
+    <!-- -->
+    <div class="row">
+      <div class="col-md-12">
+    <div class="well">
+          <div class="FilterItemMetricsEvol" data-data-source="eventizer"
+               data-metrics="eventizer_rsvps,eventizer_events" data-min="true"
+               data-filter="repos"
+               data-convert="divide"
+               data-custom-title="Ratio: RSVPs per Meeting"
+               style="height: 120px;" data-frame-time="true"></div>
+    </div>
+      </div>
+    </div>
+    <!-- -->
+
+  </div>
+  <!-- end left column -->
+
+  <!-- right column -->
+  <div class="col-md-6">
+
+     <div class="row"><div class="col-md-12">
+          <div class="panel panel-default">
+            <div class="panel-body">
+            <div class="FilterItemTop" data-filter="repos" data-metric="events"
+                data-period="" data-data-source="eventizer"
+                data-people_links="true" data-height="340"></div>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="row"><div class="col-md-12">
+        <div class="panel panel-default">
+          <div class="panel-body">
+          <div class="FilterItemTop" data-filter="repos" data-metric="rsvps"
+              data-period="" data-data-source="eventizer"
+              data-people_links="true" data-height="340"></div>
+          </div></div>
+      </div>
+    </div>
+  </div>
+</div>

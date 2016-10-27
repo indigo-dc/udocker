@@ -1,0 +1,81 @@
+<div class="row">
+
+  <!-- evol charts -->
+  <div class="col-md-6">
+
+    <!-- editions -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="mediawiki"
+               data-metrics="mediawiki_reviews" data-min="true"
+               style="height: 160px;" data-frame-time="true"></div>
+          <div class="MicrodashText" data-metric="mediawiki_reviews"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end editions -->
+
+    <!-- editions -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="mediawiki"
+               data-metrics="mediawiki_authors" data-min="true"
+               style="height: 120px;" data-frame-time="true"></div>
+          <div class="MicrodashText" data-metric="mediawiki_authors"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end editions -->
+
+    <!-- mixed editions, editors -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          Editions per editor
+          <div class="MetricsEvol" data-data-source="mediawiki"
+               data-metrics="mediawiki_reviews,mediawiki_authors"
+               data-min="true" style="height: 120px;" data-convert="divide"
+               data-frame-time="true"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end mixed editions, editors -->
+  </div>
+  <!-- end evol charts -->
+
+  <!-- top senders -->
+  <div class="col-md-6">
+    <div class="panel panel-default">
+      <div class="panel-body">
+
+    <div class="row"><div class="col-md-12">
+        <p class="section-title"><i class="fa fa-pencil-square-o"></i> Wiki</p>
+    </div></div>
+
+    <div class="row">
+      <div class="col-md-12">
+            <table class="table">
+              <tr>
+        <td><span class="GlobalData" data-data-source="mediawiki"
+              data-field="mediawiki_reviews"></span></td>
+        <td>editions</td>
+        <td><span class="GlobalData" data-data-source="mediawiki"
+              data-field="mediawiki_authors"></span></td>
+        <td>editors</td>
+              </tr>
+            </table>
+      </div>
+    </div>
+      </div>
+      <div class="panel-body">
+    <div class="Top" data-data-source="mediawiki" data-perio_all="true"
+             data-people_links="true" data-metric="authors"></div>
+      </div>
+
+    </div>
+    <!-- end top senders -->
+
+  </div>
+</div>

@@ -1,0 +1,68 @@
+{
+    "menu":{
+	"scm": [
+            "companies",
+            "companies-summary",
+            "contributors",
+            "countries",
+            "domains",
+            "projects",
+            "repos"
+	],
+	"mls": [
+            "companies",
+            "contributors",
+            "countries",
+            "domains",
+            "projects",
+            "repos"
+	],
+	"qaforums": [
+            "contributors"
+	],
+	"irc": [
+            "contributors",
+            "repos"
+	],
+	"studies": [
+            "demographics"
+	],
+	"its": [
+            "companies",
+            "contributors",
+            "countries",
+            "domains",
+            "projects",
+            "repos",
+            "states"
+	],
+	"its_1": [
+            "companies",
+            "contributors",
+            "repos"
+    ],
+	"scr": [
+            "companies",
+            "companies-summary",
+            "countries",
+            "projects",
+            "repos"
+	],
+    "meetup": [
+            "past_meetings"
+    ],
+	"downloads": [],
+	"forge": [],
+	"wiki": [],
+	"extra": [
+	    ["Link 1", "http://bitergia.com"],
+	    ["Link 2", "https://twitter.com/bitergia"],
+	    ["Link 2", "https://twitter.com/flossmetrics"]
+	],
+	"project_map-OFF": [],
+    "filter": ["scm:company+country","its:company+country"],
+    "filter_companies":["Liferay","non Liferay"]
+    },
+    "releases":[],
+    "threads_site":"https://groups.google.com/"
+}

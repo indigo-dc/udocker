@@ -1,0 +1,53 @@
+
+<!-- commits companies -->
+<div class="row">
+  <div class="col-md-10">
+    <b>Commits</b>
+    <div class="FilterItemsMetricsEvol" data-data-source="scm"
+         data-metric="scm_commits" data-legend-div='legend_commits'
+         data-filter="companies" data-limit="10" data-stacked="true"></div>
+  </div>
+  <div class="col-md-2">
+    <div id="legend_commits"></div>
+  </div>
+</div>
+<!-- end commits companies -->
+
+<!-- authors companies -->
+<div class="row">
+  <div class="col-md-10">
+    <b>Authors</b>
+    <div class="FilterItemsMetricsEvol" data-data-source="scm"
+         data-metric="scm_authors" data-legend-div='legend_authors'
+         data-filter="companies" data-limit="10" data-stacked="true"></div>
+  </div>
+  <div class="col-md-2">
+    <div id="legend_authors"></div>
+  </div>
+</div>
+<!-- end authors companies -->
+
+<!-- commits, authors pies -->
+<div class="row">
+  <!-- commits pie -->
+  <div class="col-md-6">
+    <b>Commits</b>
+    <div class="FilterItemsGlobal" data-data-source="scm"
+         data-metric="scm_commits" data-filter="companies" data-limit="5"
+         data-show-others="true" data-graph="pie" data-legend="true"></div>
+  </div>
+  <!-- end commits pie -->
+
+  <!-- authors pie -->
+  <div class="col-md-6">
+    <b>Authors</b>
+    <div class="FilterItemsGlobal" data-data-source="scm"
+         data-metric="scm_authors" data-filter="companies" data-limit="5"
+         data-order-by="scm_commits" data-show-others="true" data-graph="pie"
+         data-legend="true"></div>
+  </div>
+  <!-- end authors pie -->
+</div>
+<!-- end commits, authors pies -->
+
+

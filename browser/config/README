@@ -1,0 +1,54 @@
+These two files (menu-elements.json and project-info.json) are used to set up
+the main variables of the dash. 
+
+This is an example of the menu-elements.json file we are using for openstack
+
+{
+    "menu":{
+        "scm": [
+            "companies",
+            "companies-summary",
+            "contributors",
+            "repos"
+        ],
+        "mls": [
+            "companies",
+            "contributors",
+            "repos"
+        ],
+        "qaforums": ["tags"],
+        "irc": [
+            "contributors",
+            "repos"
+        ],
+        "studies": [
+            "demographics",
+            "release"
+        ],
+        "its": [
+            "companies",
+            "contributors",
+	    "states",
+            "repos"
+        ],
+        "scr": [
+            "companies",
+            "companies-summary",
+            "contributors"
+        ],
+        "downloads_OFF": [],
+        "wiki_OFF": []
+    },
+    "releases":["essex","folsom","havana","icehouse"]
+}
+
+If the section name is not the "typical", it will be disabled from menu. Another
+option is to remove it from the list. If you have issues with the menu, first
+check if the JSON file is written with the correct syntax (you can use the 
+command json_reformat)
+
+The second file: projects-info.json is not really used now. The only important
+variable now is "project_name".
+
+These two files will be merged in a single configuration file
+

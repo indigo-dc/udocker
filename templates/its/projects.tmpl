@@ -1,0 +1,69 @@
+<div class="row">
+  <h4>Information about all projects</h4>
+</div>
+<!-- info text -->
+<div id="info" class="row">
+  <div class="col-md-5">Some charts and tables for top projects in
+    the project, and a summary of the evolution of their participation with
+    links to more detailed information per project.</div>
+  <div class="col-md-7">
+    <!-- evolution #projects -->
+    <i> <b>Active Projects per month</b>
+    </i>
+    <div class="MetricsEvol" data-data-source="its"
+         data-metrics="its_projects" data-legend="false"
+         style="height: 80px;"></div>
+  </div>
+</div>
+<!-- end info text -->
+
+
+<!-- list of projects -->
+<div id="nav" class="row">
+  <div class="FilterItemsNav" data-data-source="its"
+       data-order-by="its_closed" data-filter="projects" style="align: center"></div>
+</div>
+<!-- end list of projects -->
+
+
+<!-- submitted, merged project -->
+<div class="well">
+  <div id="summary-static" class="row">
+    <!-- submitted -->
+    <div class="col-md-1"></div>
+    <div class="col-md-4">
+      <i> <b>Submitted per project (aggregated)</b>
+      </i>
+      <div class="FilterItemsGlobal" data-data-source="its"
+           data-metric="its_closed" data-filter="projects"
+           data-legend-div="projects_legend" data-limit="10"
+           data-order-by="its_closed"></div>
+    </div>
+    <!-- end submitted -->
+
+    <div class="col-md-2" id="projects_legend"></div>
+
+    <!-- merged -->
+    <div class="col-md-4">
+      <i> <b>Senders per project (aggregated)</b>
+      </i>
+      <div class="FilterItemsGlobal" data-data-source="its"
+           data-metric="its_closers" data-filter="projects" data-legend="false"
+           data-limit="10" data-order-by="its_closed"></div>
+    </div>
+    <!-- end merged -->
+    <div class="col-md-1"></div>
+  </div>
+</div>
+<!-- end submitted, merged project -->
+
+<div id="summary-static" class="row"></div>
+
+<!-- submitted per project -->
+<div id="list" class="row">
+  <div class="FilterItemsMiniCharts" data-data-source="its"
+       data-metrics="its_closed,its_closers"
+       data-filter="projects"></div>
+</div>
+<!-- end submitted per project -->
+

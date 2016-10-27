@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Bitergia" >
+    <link rel="shortcut icon" href="../../assets/ico/favicon.png">
+
+    <title></title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/jasny-bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="./css/custom.css" rel="stylesheet">
+
+    <!-- icons -->
+    <link rel="stylesheet" href="./css/awesome/css/font-awesome.min.css">
+
+    <!-- Type ahead style -->
+    <link href="./css/typeahead.css" rel="stylesheet">
+
+    <!-- custom -->
+    <!-- <link rel="stylesheet" href="VizGrimoireJS/custom.css">-->
+    <link rel="stylesheet" type="text/css" id="theme" href="./css/vizgrimoire.css">
+  </head>
+  <body>
+
+    <div id="Navbar"></div>
+
+    <div class="container-fluid">
+      <div class="row"><span class="SectionBreadcrumb col-md-12"></span></div>
+
+      <!-- Section HTML will be placed here, do not modify manually -->
+      <!-- REPLACE SECTION HTML -->
+          <div id="info" class="row-fluid">
+      <h4>Attraction / retention</h4>
+    </div>
+
+    <div class="well">
+      <div class="row">
+        <p>
+        <p>
+          <i><b>Attracted</b>: Number of contributors entering the project
+        for each cohort. In charts, cohorts are organized by
+        "age" (time since they entered the project), each bar
+        representing one of these cohorts.
+        Large bars for any age mean that the community was attracting
+        many contributors that time ago.
+        </p>
+          <i><b>Retained</b>: Number of remaining contributors (those still
+        active) for each cohort. Large top bars (corresponding to
+        older cohorts) mean that
+        experienced contributors are still
+        active. Large bottom bars mean that new contributors are being
+        retained.
+        </p>
+    <p>
+      The ratio between retained and attracted contributors for a cohort
+      represents the retention ratio for that cohort (fraction of
+      contributors of that age that are still active).
+    </p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-4">
+        <div class="well">
+        <h6>Source code developers</h6>
+        <div class="Demographics" data-data-source="scm" data-period="0.5">
+        </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="well">
+        <h6>Tickets participants</h6>
+        <div class="Demographics" data-data-source="its" data-period="0.5">
+        </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="well">
+        <h6>Discussion participants</h6>
+        <div class="Demographics" data-data-source="mls" data-period="0.5">
+        </div>
+        </div>
+      </div>
+
+    </div>
+
+      <!-- END SECTION  HTML-->
+
+      <footer>
+        <div id="Footer"></div>
+      </footer>
+    </div>
+
+    <!-- Bootstrap core JavaScript
+         ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="./lib/jquery-1.11.1.min.js"></script>
+    <script src="./lib/jquery.tablesorter.min.js"></script>
+    <script src="./lib/bootstrap-3.1.1.min.js"></script>
+    <script src="./lib/jasny-bootstrap-3.1.3.min.js"></script>
+    <script src="./lib/vizgrimoire.min.js"></script>
+    <script src="./lib/timezones.js"></script>
+    <script src="./lib/filter_panel.js"></script>
+    <script src="./lib/events.js"></script>
+    <script src="./lib/project_comparison.js"></script>
+    <script src="./lib/typeahead.jquery.js"></script>
+    <script src="./lib/search.js"></script>
+    <script src="./lib/moment.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('.collapse').on('shown.bs.collapse', function(){
+                $(this).parent().find(".fa-plus").removeClass("fa-plus").addClass("fa-minus");
+                }).on('hidden.bs.collapse', function(){
+                    $(this).parent().find(".fa-minus").removeClass("fa-minus").addClass("fa-plus");
+                });
+        });
+    </script>
+    <!-- Piwik code will be included here-->
+    <!-- Piwik -->
+<!-- End Piwik Code -->
+
+    <!-- End of Piwik code -->
+  </body>
+</html>
+

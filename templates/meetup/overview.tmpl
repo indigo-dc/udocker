@@ -1,0 +1,125 @@
+
+<div class="row">
+    <div class="col-md-6">
+
+    </div>
+    <div class="col-md-6">
+
+    </div>
+</div>
+
+<!-- commits, authors, stats, top authors -->
+<div class="row">
+
+  <!-- left column -->
+  <div class="col-md-6">
+
+    <!-- authors -->
+     <div class="row">
+         <div class="col-md-12">
+          <div class="well">
+            <div class="MetricsEvol" data-data-source="eventizer"
+                 data-metrics="eventizer_rsvps" data-min="true"
+                 data-frame-time="true"
+                 style="height: 120px;"></div>
+            <div class="MicrodashText" data-metric="eventizer_rsvps"></div>
+          </div>
+        </div>
+    </div>
+      <!-- end authors -->
+
+    <!-- -->
+    <div class="row">
+      <div class="col-md-12">
+    <div class="well">
+          <div class="MetricsEvol" data-data-source="eventizer"
+               data-metrics="eventizer_events" data-min="true"
+               style="height: 120px;" data-frame-time="true"></div>
+          <div class="MicrodashText" data-metric="eventizer_events"></div>
+    </div>
+      </div>
+    </div>
+    <!-- -->
+
+    <!-- -->
+    <div class="row">
+      <div class="col-md-12">
+    <div class="well">
+          <div class="MetricsEvol" data-data-source="eventizer"
+               data-metrics="eventizer_groups" data-min="true"
+               style="height: 120px;" data-frame-time="true"></div>
+          <div class="MicrodashText" data-metric="eventizer_groups"></div>
+    </div>
+      </div>
+    </div>
+    <!-- -->
+
+    <!-- -->
+    <div class="row">
+      <div class="col-md-12">
+    <div class="well">
+          <div class="MetricsEvol" data-data-source="eventizer"
+               data-metrics="eventizer_events,eventizer_groups" data-min="true"
+               data-convert="divide"
+               data-custom-title="Ratio: Meetings per Group"
+               style="height: 120px;" data-frame-time="true"></div>
+    </div>
+      </div>
+    </div>
+    <!-- -->
+
+  </div>
+  <!-- end left column -->
+
+  <!-- right column -->
+  <div class="col-md-6">
+      <div class="row"><div class="col-md-12">
+      <div class="panel panel-default">
+        <div class="panel-body">
+          <div class="TopFilter" data-data-source="eventizer" data-metric="repos"
+          data-limit="5"
+          data-headers="Groups meetings during last year,Meetings,RSVPs"
+          data-columns="name,events_365,rsvps_365"
+          data-ratio="rsvps_365,events_365"
+          data-ratio-header="RSVPs/meeting"
+          style="max-height: 240px; overflow-x: hidden;"></div>
+        </div>
+      </div>
+      <!-- end right column -->
+      </div>
+      </div>
+
+      <div class="row"><div class="col-md-12">
+      <div class="panel panel-default">
+      <div class="panel-body">
+        <!-- top authors -->
+        <div class="TableFutureEvents" data-data-source="eventizer" data-period_all="true"
+         data-metric="events"
+         data-headers="Next meetings,Group,Date,City"
+         data-columns="event_name,group_name,date,city"
+         data-limit="4"></div>
+         <p class="navbar-right">See <a href="meetup-next_meetings.html" class="navbar-link">complete
+             list of next meetings</a></p>
+      </div>
+      </div>
+      </div>
+      </div>
+
+      <div class="row"><div class="col-md-12">
+      <div class="panel panel-default">
+      <div class="panel-body">
+        <!-- top authors -->
+        <div class="TablePastEvents" data-data-source="eventizer" data-period_all="true"
+         data-metric="events"
+         data-headers="Past meetings,Group,Date,City"
+         data-columns="event_name,group_name,date,city"
+         data-limit="4"></div>
+         <p class="navbar-right">See <a href="meetup-past_meetings.html" class="navbar-link">complete
+             list of past meetings</a></p>
+      </div>
+      </div>
+      </div>
+      </div>
+
+  </div>
+</div>

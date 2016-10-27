@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Bitergia" >
+    <link rel="shortcut icon" href="../../assets/ico/favicon.png">
+
+    <title></title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/jasny-bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="./css/custom.css" rel="stylesheet">
+
+    <!-- icons -->
+    <link rel="stylesheet" href="./css/awesome/css/font-awesome.min.css">
+
+    <!-- Type ahead style -->
+    <link href="./css/typeahead.css" rel="stylesheet">
+
+    <!-- custom -->
+    <!-- <link rel="stylesheet" href="VizGrimoireJS/custom.css">-->
+    <link rel="stylesheet" type="text/css" id="theme" href="./css/vizgrimoire.css">
+  </head>
+  <body>
+
+    <div id="Navbar"></div>
+
+    <div class="container-fluid">
+      <div class="row"><span class="SectionBreadcrumb col-md-12"></span></div>
+
+      <!-- Section HTML will be placed here, do not modify manually -->
+      <!-- REPLACE SECTION HTML -->
+                  <!-- msgs sent, senders, stats, top closers -->
+            <div class="row">
+
+                <!-- left column -->
+                <div class="col-md-6">
+                    <!-- msgs sent -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="well">
+                                <div class="MetricsEvol" data-data-source="releases"
+                                     data-metrics="releases_modules"
+                                     data-frame-time="true"
+                                     data-min="true" style="height:120px;"></div>
+                                     <div class="MicrodashText" data-metric="releases_modules"></div>
+                                     </div>
+                        </div>
+                    </div>
+                    <!-- end msgs sent -->
+
+                    <!-- senders -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="well">
+                                <div class="MetricsEvol" data-data-source="releases"
+                                     data-metrics="releases_authors"
+                                     data-frame-time="true"
+                                     data-min="true" style="height:120px;"></div>
+                                     <div class="MicrodashText"
+                                       data-data-source="releases" data-metric="releases_authors"></div>
+                                     </div>
+                        </div>
+                    </div>
+                    <!-- end senders -->
+
+                    <!-- time to attention -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="well">
+                                <div class="MetricsEvol" data-data-source="releases"
+                                     data-metrics="releases_releases"
+                                     data-frame-time="true"
+                                     data-min="true"
+                                  style="height:120px;"></div>
+                                  <div class="MicrodashText"
+                                       data-metric="releases_releases"></div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <!-- end time to attention -->
+
+                </div>
+                <!-- end left column -->
+
+                <!-- right column -->
+                <div class="col-md-6">
+                    <div class="row">
+                        <table class="table table-striped">
+                            <tr>
+                                <td><h5>Forge releases <small> (updated on <span class="GlobalData" data-data-source="releases" data-field="last_date"></span>)</small></h5></td></tr>
+                        </table>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-striped">
+                                <tr>
+                                    <td>
+                                        <span class="GlobalData" data-data-source="releases"
+                                              data-field="releases_modules"></span>
+                                    </td>
+                                    <td>
+                                        Modules
+                                    </td>
+                                </tr>
+                <tr>
+                                    <td>
+                                    <span class="GlobalData" data-data-source="releases"
+                                              data-field="releases_modules_30"></span>
+                                    </td>
+                                    <td>Modules updated during last month</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-striped">
+                                <tr>
+                                    <td>
+                                    <span class="GlobalData" data-data-source="releases"
+                                              data-field="releases_authors"></span>
+                                    </td>
+                                    <td>Module authors</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                    <span class="GlobalData" data-data-source="releases"
+                                              data-field="releases_authors_30"></span>
+                                    </td>
+                                    <td>Module authors active during last month</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+
+                    <!-- top senders -->
+                    <div class="Top" data-data-source="releases" data-period_all="true"
+                         data-metric="authors" data-limit="10"
+                         data-people_links="false" ></div>
+                    <!-- end senders-->
+
+                </div>
+                <!-- end right column -->
+
+            </div>
+            <!-- end msgs sent, senders, stats, top closers -->
+
+      <!-- END SECTION  HTML-->
+
+      <footer>
+        <div id="Footer"></div>
+      </footer>
+    </div>
+
+    <!-- Bootstrap core JavaScript
+         ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="./lib/jquery-1.11.1.min.js"></script>
+    <script src="./lib/jquery.tablesorter.min.js"></script>
+    <script src="./lib/bootstrap-3.1.1.min.js"></script>
+    <script src="./lib/jasny-bootstrap-3.1.3.min.js"></script>
+    <script src="./lib/vizgrimoire.min.js"></script>
+    <script src="./lib/timezones.js"></script>
+    <script src="./lib/filter_panel.js"></script>
+    <script src="./lib/events.js"></script>
+    <script src="./lib/project_comparison.js"></script>
+    <script src="./lib/typeahead.jquery.js"></script>
+    <script src="./lib/search.js"></script>
+    <script src="./lib/moment.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('.collapse').on('shown.bs.collapse', function(){
+                $(this).parent().find(".fa-plus").removeClass("fa-plus").addClass("fa-minus");
+                }).on('hidden.bs.collapse', function(){
+                    $(this).parent().find(".fa-minus").removeClass("fa-minus").addClass("fa-plus");
+                });
+        });
+    </script>
+    <!-- Piwik code will be included here-->
+    <!-- Piwik -->
+<!-- End Piwik Code -->
+
+    <!-- End of Piwik code -->
+  </body>
+</html>
+

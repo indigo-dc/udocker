@@ -1,0 +1,109 @@
+<!-- msgs sent, senders, stats, top closers -->
+<div class="row">
+
+  <!-- left column -->
+  <div class="col-md-6">
+    <!-- msgs sent -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="mls"
+               data-metrics="mls_sent"
+               data-min="true" style="height:160px;"></div>
+          <div class="MicrodashText" data-metric="mls_sent"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end msgs sent -->
+    
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="mls"
+               data-metrics="mls_threads,unanswered_posts"
+               data-min="true" style="height:160px;"></div>
+          <div class="MicrodashText" data-metric="mls_sent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- senders -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="mls"
+               data-metrics="mls_senders"
+               data-min="true" style="height:120px;"></div>
+          <div class="MicrodashText" data-metric="mls_senders"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end senders -->
+
+    <div class="TimezonesBlock" data-data-source="mls" data-metric="messages"></div>
+
+  </div>
+  <!-- end left column -->
+
+  <!-- right column -->
+  <div class="col-md-6">
+    <!-- stats -->
+    <div class="panel panel-default">
+      <div class="panel-body">
+    <div class="row"><div class="col-md-12">
+        <p class="section-title"><i class="fa fa-envelope-o"></i> Mailing Lists</p>
+    </div></div>
+      </div>
+      <div class="row">
+    <div class="col-md-12">
+          <table class="table">
+            <tr>
+              <td><span class="GlobalData" data-data-source="mls"
+                      data-field="mls_repositories"></span>
+              </td>
+              <td>
+                <div class="SmartLinks" data-target="mls-repos.html" data-label="repositories"></div>
+              </td>
+          <td><span class="GlobalData" data-data-source="mls"
+                      data-field="mls_sent_7"></span>
+              </td>
+              <td>messages last week</td>
+            </tr>
+        <tr>
+              <td><span class="GlobalData" data-data-source="mls"
+                      data-field="mls_senders"></span>
+              </td>
+              <td>total partipants</td>
+          <td><span class="GlobalData" data-data-source="mls"
+                      data-field="mls_senders_7"></span>
+              </td>
+              <td>participants last week</td>
+            </tr>
+          </table>
+    </div>
+      </div>
+      <!-- end stats -->
+
+      <!-- top senders -->
+      <div class="panel-body">
+    <div class="Top" data-data-source="mls" data-period_all="true"
+             data-metric="senders" data-limit="5"
+             data-people_links="true" ></div>
+    <!-- end senders-->
+      </div>
+      <div class="panel-body">
+    <div class="Top" data-data-source="mls"
+             data-metric="threads"
+             data-period_all="true"
+             data-limit="5"
+             data-people_links="true"
+             data-threads_links="true">
+    </div>
+      </div>
+
+    </div>
+    <!-- end right column -->
+
+  </div>
+  <!-- end msgs sent, senders, stats, top closers -->
+</div>

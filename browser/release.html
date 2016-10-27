@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Luis" >
+    <link rel="shortcut icon" href="../../assets/ico/favicon.png">
+
+    <title></title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/jasny-bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="./css/custom.css" rel="stylesheet">
+
+    <!-- icons -->
+    <link rel="stylesheet" href="./css/awesome/css/font-awesome.min.css">
+
+    <!-- custom -->
+    <!-- <link rel="stylesheet" href="VizGrimoireJS/custom.css">-->
+    <link rel="stylesheet" type="text/css" id="theme" href="./css/vizgrimoire.css">
+  </head>
+  <body>
+
+    <div id="Navbar">
+      <div role="navigation" class="navmenu navmenu-default navmenu-fixed-left offcanvas">
+    <a href="#" class="navmenu-brand"><span class="report_name">OpenStack Icehouse</span></a>
+    <div class="SideNavBar" id="SideNavBar">
+      <ul class="nav navmenu-nav">
+        <li><a href="./"><i class="fa fa-home"></i>    Home</a></li>
+        <li><a href="./"><i class="fa fa-home"></i>    Home</a></li>
+        <li><a href="./"><i class="fa fa-home"></i>    Home</a></li>
+        <li><a href="./"><i class="fa fa-home"></i>    Home</a></li>
+    </ul>
+    </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row"><span class="SectionBreadcrumb col-md-12"></span></div>
+
+      <!-- Section HTML will be placed here, do not modify manually -->
+      <!-- REPLACE SECTION HTML -->
+      <!-- summary bar -->
+<div class="capped-box overall-summary ">
+  <div class="stats-switcher-viewport js-stats-switcher-viewport">
+    <ul class="numbers-summary">
+      <li>
+    <span class="GlobalData" data-data-source="scm" data-field="scm_commits">
+    </span>
+    commits
+      </li>
+      <li>
+    <span class="GlobalData" data-data-source="scm" data-field="scm_authors">
+    </span>
+    developers
+      </li>
+      <li>
+    <span class="GlobalData" data-data-source="its" data-field="its_opened">
+    </span>
+    tickets
+      </li>
+      <li>
+    <span class="GlobalData" data-data-source="mls" data-field="mls_sent">
+    </span>
+    mail messages
+      </li>
+    </ul>
+  </div>
+</div>
+<!-- end of summary bar -->
+<div class="capped-box overall-summary ">
+  <div class="stats-switcher-viewport js-stats-switcher-viewport">
+    <div id="companies_links">
+      Top 10 Companies by Git Activity:
+    </div>
+  </div>
+</div>
+<h4>
+  Overall View of the Changes to the Source Code (Git)
+</h4>
+
+<!--SCM releases summary-->
+<div class="row invisible-box">
+  <div class="col-md-3">
+    <div class="well well-small">
+      <i>
+        Commits per company (aggregated)
+      </i>
+      <div class="CompaniesSummary" data-data-source="scm" data-evol="false" data-file="scm-companies-commits-summary.json" data-graph="bars" data-legend="false" data-metric="scm_commits" data-show-others="true" style="height: 270px">
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="well well-small">
+      <div id="legend_scm">
+      </div>
+    </div>
+  </div>
+  <div class="col-md-7">
+    <div class="well well-small">
+      <i>
+        Commits per company (weekly)
+      </i>
+      <div class="CompaniesSummary" data-data-source="scm" data-evol="true" data-file="scm-companies-commits-summary.json" data-legend-div="legend_scm" data-metric="scm_commits" data-stacked="true" style="height: 270px">
+      </div>
+    </div>
+  </div>
+</div>
+<!--End of SCM releases summary-->
+
+<h4>
+  Overall View of the Closing Ticketing Activity (Launchpad)
+</h4>
+<!--ITS releases summary-->
+<div class="row invisible-box">
+  <div class="col-md-3">
+    <div class="well well-small">
+      <i>
+        Closed tickets per company (aggregated)
+      </i>
+      <div class="CompaniesSummary" data-data-source="its" data-evol="false" data-file="its-closed-companies-summary.json" data-graph="bars" data-legend="false" data-metric="its_closed" data-show-others="true" style="height: 270px">
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="well well-small">
+      <div id="legend_its">
+      </div>
+    </div>
+  </div>
+  <div class="col-md-7">
+    <div class="well well-small">
+      <i>
+        Closed tickets per company (weekly)
+      </i>
+      <div class="CompaniesSummary" data-data-source="its" data-evol="true" data-file="its-closed-companies-summary.json" data-legend-div="legend_its" data-metric="its_closed" data-stacked="true" style="height: 270px">
+      </div>
+    </div>
+  </div>
+</div>
+<!--End of ITS releases summary-->
+
+<h4>
+  Overall View of the Mailing Lists Activity
+</h4>
+<!--MLS releases summary-->
+<div class="row invisible-box">
+  <div class="col-md-3">
+    <div class="well well-small">
+      <i>
+        Sent messages per company (aggregated)
+      </i>
+      <div class="CompaniesSummary" data-data-source="mls" data-evol="false" data-file="mls-sent-companies-summary.json" data-graph="bars" data-legend="false" data-metric="mls_sent" data-show-others="true" style="height: 270px">
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="well well-small">
+      <div id="legend_mls">
+      </div>
+    </div>
+  </div>
+  <div class="col-md-7">
+    <div class="well well-small">
+      <i>
+        Sent messages per company (weekly)
+      </i>
+      <div class="CompaniesSummary" data-data-source="mls" data-evol="true" data-file="mls-sent-companies-summary.json" data-legend-div="legend_mls" data-metric="mls_sent" data-stacked="true" style="height: 270px">
+      </div>
+    </div>
+  </div>
+</div>
+<!--End of MLS releases summary-->
+
+<!--Top actors in each data source-->
+<div class="row invisible-box">
+  <div class="col-md-12">
+    <h4>
+      Top Contributors per Data Source (Source code, Tickets and
+      Mailing Lists)
+    </h4>
+  </div>
+  <div class="col-md-12">
+    <div class="col-md-4">
+      <div class="Top" data-data-source="scm" data-limit="10" data-metric="authors" data-people_links="true" data-period="">
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="Top" data-data-source="its" data-limit="10" data-metric="closers" data-people_links="true" data-period="">
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="Top" data-data-source="mls" data-limit="10" data-metric="senders" data-people_links="true" data-period="">
+      </div>
+    </div>
+  </div>
+</div>
+
+      <!-- END SECTION  HTML-->
+
+      <footer>
+        <div id="Footer"></div>
+      </footer>
+    </div>
+
+    <!-- Bootstrap core JavaScript
+         ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="./lib/jquery-1.11.1.min.js"></script>
+    <script src="./lib/bootstrap-3.1.1.min.js"></script>
+    <script src="./lib/jasny-bootstrap-3.1.3.min.js"></script>
+    <script src="./lib/vizgrimoire.min.js"></script>
+    <script src="./lib/openstack.js"></script>
+  </body>
+</html>
+

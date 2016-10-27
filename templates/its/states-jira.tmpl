@@ -1,0 +1,106 @@
+<div class="well">
+    <div class="row">
+        <div class="col-md-12">
+            <p><i><b>Ticket backlogs over time</b></i></p>
+
+            <p>Evolution of the backlog of tickets in the different states over time.</p>
+
+            <p>Each chart represents, for each of the states defined for tickets, how
+            many tickets were in that state the first day of each period (eg, the
+            first day of each month).</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="MetricsEvol" data-data-source="its" data-metrics="Open" data-frame-time="yes"
+             data-min="true" style="height:120px;"></div>
+        </div>
+        <div class="col-md-4">
+            <div class="MetricsEvol" data-data-source="its" data-metrics="In Progress" data-frame-time="yes"
+             data-min="true" style="height:120px;"></div>
+        </div>
+        <div class="col-md-4">
+            <div class="MetricsEvol" data-data-source="its" data-metrics="Resolved" data-frame-time="yes"
+             data-min="true" style="height:120px;"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="MetricsEvol" data-data-source="its" data-metrics="Closed" data-frame-time="yes"
+             data-min="true" style="height:120px;"></div>
+        </div>
+        <div class="col-md-4">
+            <div class="MetricsEvol" data-data-source="its" data-metrics="Reviewable" data-frame-time="yes"
+             data-min="true" style="height:120px;"></div>
+        </div>
+        <div class="col-md-4">
+            <div class="MetricsEvol" data-data-source="its" data-metrics="Ready To Review" data-frame-time="yes"
+             data-min="true" style="height:120px;"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="MetricsEvol" data-data-source="its" data-metrics="Reopened" data-frame-time="yes"
+             data-min="true" style="height:120px;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="well">
+    <div class="row">
+        <div class="col-md-12">
+            <p><i><b>Structure of the current backlog</b></i></p>
+
+            <p>Age structure of tickets, by current state.</p>
+
+            <p>Each chart represents, for all tickets currently in a given state, how
+            many of them were opened during each of the periods (eg., how many were
+            opened for each of the months).</p>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_Open" data-custom-title="Open" data-frame-time="yes" 
+             data-min="true" style="height:120px;"></div>
+        </div>
+        <div class="col-md-4">
+            <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_In Progress" data-custom-title="In Progress" data-frame-time="yes"
+             data-min="true" style="height:120px;"></div>
+        </div>
+        <div class="col-md-4">
+            <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_Resolved" data-custom-title="Resolved" data-frame-time="yes" 
+             data-min="true" style="height:120px;"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_Closed" data-custom-title="Closed" data-frame-time="yes"
+             data-min="true" style="height:120px;"></div>
+        </div>
+        <div class="col-md-4">
+           <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_Reviewable" data-custom-title="Reviewable" data-frame-time="yes"
+            data-min="true" style="height:120px;"></div>
+        </div>
+        <div class="col-md-4">
+            <div class="MetricsEvol" data-data-source="its" data-graph="bars" data-metrics="current_Reopened" data-custom-title="Reopened" data-frame-time="yes"
+             data-min="true" style="height:120px;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="well">
+    <div class="row">
+        <div class="col-md-3">
+            <p><i><b>State transitions</b></i></p>
+
+            <p>Transitions of tickets between ticket states.</p>
+
+            <p>The table shows, for the whole life of the project, how many tickets did
+            transition between any two states.</p>
+        </div>
+        <div class="col-md-9">
+            <div class="MarkovTable" data-data-source="its" data-title="Transitions among statuses"></div>
+        </div>
+    </div>
+</div>

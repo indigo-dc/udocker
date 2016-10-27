@@ -1,0 +1,8 @@
+{
+"scm_hide":["scm_branches","scm_files","scm_added_lines","scm_removed_lines","scm_companies","scm_countries","scm_repositories"],
+"scr_hide":["*scr_opened", "*scr_closed", "*scr_merged", "*scr_new", "*scr_abandoned", "*scr_verified", "*scr_approved", "*scr_codereview", "*scr_WaitingForReviewer", "*scr_WaitingForSubmitter", "*scr_submitted", "*scr_sent","*scr_reviewers","scr_companies","scr_countries","scr_repositories"],
+"its_hide":["*its_opened", "*its_changed", "*its_openers", "its_closers", "its_changers","its_companies","its_countries","its_repositories"],
+"mls_hide":["*mls_senders","mls_threads","mls_responses","mls_companies","mls_countries","mls_repositories"],
+"summary_hide":["scm_authors","scm_committers","scm_branches","scm_added_lines","scm_removed_lines","scm_files", "scm_repositories","its_closed","its_closers","*its_opened", "its_openers", "its_changed", "its_changers","*mls_sent","mls_senders","mls_threads","mls_responses","mls_repositories","*scr_merged", "scr_opened", "scr_closed", "scr_new", "scr_abandoned", "scr_verified", "scr_approved", "scr_codereview", "scr_WaitingForReviewer", "scr_WaitingForSubmitter", "scr_submitted", "scr_sent","scr_reviewers","scm_companies","scm_countries","scm_repositories","mls_companies","mls_countries","mls_repositories","its_companies","its_countries","its_repositories","scr_companies","scr_countries","scr_repositories","irc_sent","irc_senders"],
+"mls_hide_lists":["<allura-users.incubator.apache.org>"]
+}

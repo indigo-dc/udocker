@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta name="keywords" content="bitergia, floss, libresoft, oss, linux, research, reports, free software, software analysis" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0">
+    <meta name="description" content="Bitergia Catalog" />
+    <link rel="stylesheet" type="text/css" id="theme" href="VizGrimoireJS/vizgrimoire.css" />
+    <link rel="stylesheet" type="text/css" href="notes.css" />
+    <script type="text/javascript" src="VizGrimoireJS/lib/jquery-1.7.1.min.js"></script>
+    <title>Bitergia Catalog</title>
+    <style type="text/css">
+    </style>
+  </head>
+
+  <body>
+    <div id="wrapper">
+        <div>
+            <h1>BITERGIA'S BASIC CHARTS SUMMARY CATALOG</h1>
+        </div>
+        <div style=width:450px;height:250px">
+            <p> 
+                This web page is intended to be a catalog of charts, metrics and specific studies
+                that are available in the basic and open source Metrics Grimoire toolset and 
+                VizGrimoire visualization platform.
+            </p>
+            <p>
+                Technology is based on <a href="https://github.com/HumbleSoftware/Flotr2">flotr2</a> and 
+                <a href="https://github.com/HumbleSoftware/envisionjs">envision</a>. Each of the charts
+                presented allow to have interaction with the dataset, providing information about
+                each of the dots.
+            </p>
+            <p>
+                Thanks to this technology, it is possible to create charts of almost any size, with
+                any type of granularity, having zoom on the dataset and even more, letting the user to 
+                specify her basic dashboard of metrics.
+            </p>
+        </div>
+        <div>  
+            <div id="info-pill" style="margin:10px;width:700px;height:170px">
+                 <div style="width:700px;height:130px;">
+                    <h2>Timeseries Chart</h2>
+                    <div id="scm-commits-flotr2" style="width:350px;height:120px;float:left"></div>
+                    <div style="float:right;margin-top:20px;margin-left:15px;width:300px;heigth:120px">
+                      <p>
+                         Timeseries chart that typically shows information about the evolution 
+                         of a specific metric. This type of charts are useful to understand how
+                         different aspects evolve over time. Although other parameters can be used
+                         the X-axis contains the evolution of time, while the Y-axis provides information
+                         about the value of the metric to be visualized.                          
+                      </p>
+                    </div>
+                 </div>
+            </div>
+            
+            <div id="info-pill" style="margin:10px;width:700px;height:170px">
+                 <div style="width:700px;height:130px;">
+                    <h2>Multivariable Timeseries Chart</h2>
+                    <div style="width:350px;height:100px;margin-right:15px;float:left" 
+                         class="scm-flotr2-metrics" data-metrics="scm_commits,scm_files" 
+                         data-legend="true"></div>
+                    <div style="float:right;margin-top:20px;margin-left:15px;width:300px;heigth:120px">
+                      <p>
+                        As similarly visualized for the previous chart, that one can be extended
+                        to any number of potential metrics. Thus, it is possible to visualize as many
+                        metrics as requiered.
+                      </p>
+                    </div>
+                  </div>
+            </div>
+
+            <div id="info-pill" style="margin:10px;width:700px;height:250px">
+               <div style="width:700px;height:130px;">
+                  <h2>Bubble Chart</h2>
+                  <div id="scm-time-bubbles" class="bubbles" style="width:500px;height:200px;float:left;"></div>
+                  <div style="float:right;margin-top:20px;margin-left:15px;width:180px;heigth:250px;">
+                    Bubbles charts adds another variable to previous charts. It is possible thanks
+                    to the possibility to play with the radius of the resultan circumference. Thus,
+                    besides the time and number of commits similar to previous examples, it is possible
+                    to add information about a third variable: number of committers that participated
+                    in a given month. 
+                  </div>              
+               </div>
+            </div>
+            <div id="info-pill" style="margin:10px;width:700px;height:270px">
+                <h2>Radar Chart</h2>
+                <div style="float:left;">
+                    <div id="radar-activity" class='radar' style="float:left;width:250px;height:210px"></div>
+                    <div id="radar-community" class='radar' style="float:left;width:250px;height:210px"></div>
+                    <div style="clear:both"></div>
+                </div>
+                <div style="float:right;margin-top:20px;margin-left:15px;width:180px;heigth:250px;">
+                   Radar charts allow to visualize static metrics in a quick glimpse. Those consist
+                   of six vertex. Each of them is a specific metric and that metric has a value.
+                   Based on the six values an area is painted, representing an easy way to compare
+                   attributes. Any kind of value can be represented. 
+                </div>
+            </div>
+
+          <div id="info-pill" style="margin:10px;width:700px;height:250px">
+                <h2>Treemap chart</h2>
+                <div id="treemap" class="treemap" data-file='flare1.json' style="width:500px;height:200px;float:left;"></div>
+                <div style="float:right;margin-top:20px;margin-left:15px;width:180px;heigth:250px;">
+                    Treemaps are typically used to represent files hierarchies. Each of the areas can be easily
+                    configured and make them bigger or smaller and change their color. Thus, using this type of
+                    charts is possible to represent several layers of information using the same treemap.
+                </div>
+          </div>
+
+
+          <div id="info-pill" style="margin:10px;width:700px;height:300px">
+                 <h2>Bar chart</h2>
+                 <div class="scm-flotr2-companies-static" 
+                      data-metric="scm_commits" data-limit="10" 
+                      style="width:300px;height:250px;margin-right:10px;margin-bottom:10px;float:left"></div>
+                <div style="float:right;margin-top:20px;margin-left:15px;width:180px;heigth:250px;">
+                    Bar charts allow representations of data to visualize proportions.
+                </div>
+          </div>
+
+
+
+          <div id="info-pill" style="margin:10px;width:700px;height:300px">
+                <h2>Pie chart</h2>
+                <div class="scm-flotr2-companies-static" 
+                        data-metric="scm_commits" data-limit="2" data-show-others="true" data-graph="pie"
+                        style="width:350px;height:250px;margin-right:10px;float:left"></div>
+                <div style="float:right;margin-top:20px;margin-left:15px;width:180px;heigth:250px;">
+                    Pie charts allow representations of data to visualize proportions.
+                </div>
+          </div>
+
+
+        <div >  
+            <h2>Composed Vizs</h2>
+            <div id="info-pill" style="height: 600px;width:700px">
+                <div id="all-envision" style="float:left"></div>
+                <div style="float:right;margin-top:20px;margin-left:15px;width:300px;heigth:600px;">
+                 This type of metrics allow to represent in the same chart several metrics. In addition
+                 it is possible to play with the zoom to obtain more details of specific information of the
+                 charts. It can be easily configurable by means of a configuration file to hide some metrics
+                 or add some others.
+                 One of the advantages of this chart is that it is possible to have a look at several metrics
+                 at the same time and specifically compare each of them with the others.
+                </div>
+            </div>            
+        </div>
+        
+        <div id="info-pill" style="margin:10px;width:700px;height:300px">  
+            <h2>Other contents</h2>
+            <div id="scm-top" style="float:left"></div>
+            <div style="float:right;margin-top:20px;margin-left:15px;width:450px;heigth:250px;">
+                  Tables
+            </div>
+        </div>
+        
+        <div id="info-pill" style="width:500px">  
+            <h2>Tracking Activities</h2>
+            <p> Tracking activities are those related to more advanced analysis of the database.
+                This is typically based on a process of filtering, cleaning and creation of new
+                visualizations according to customers requirements.
+            </p>
+            <p> Thanks to the publicly available data sources provided by open source communities,
+                it is possible to deepen in specific aspects of the project. All of this is based
+                in first place in a quantitative analysis of the requested open source communities.
+                And those analysis are enriched through the addition of qualitative information
+                derived of direct interaction to each of the communities and its members.
+            </p>
+            <p> All of this data is also studied from a statistical point of view, trying to 
+                understand tendencies of the community (size, evolution, activity), anticipate
+                potential problems and risks from a business perspective.
+            </p>
+            <div>  
+                <h3>Companies</h3>
+                   <ul>
+                   <li>Composition of the community of companies</li>
+                   <li>Areas of influence of each company</li>
+                   <li>Typical profile and behaviour of a company</li>
+                   <li>Comparison among companies in the software development process</li>
+                   <li>Risk assessment in open source communities</li>
+                   <li>Studies on the neutrality of the community/companies in the development process</li>
+                   </ul>
+            </div>
+            
+            <div>  
+                <h3>Demographics</h3>
+                    <ul>
+                    <li>Retention rate</li>
+                    <li>Evolution of old and new developers</li>
+                    <li>General behaviour of the community</li>
+                    <li>Checking the effects of development application policies</li>
+                    </ul>
+            </div>
+
+            <div>
+                <h3>Generations</h3>
+                    <ul>
+                    <li>Study of the evolution of the developers core team</li>
+                    <li>Retention rate of the core team of developers</li>
+                    </ul>
+                    
+            </div>
+
+            <div>
+                <h3>Onion model</h3>
+                    <ul>
+                    <li> Composition of the onion model </li>
+                    <li> Evolution of the attraction of new members </li>
+                    <li> Time to become a committer or reviewer in a community</li>
+                    <li> Development of strategies to become faster part of the community </li>
+                    <li> Development of strategies to attract new members to the community </li>
+                    </ul>
+            </div>
+            
+            <div>
+                <h3>Social Network Analysis</h3>
+                    <ul>
+                    <li> Evolution of main characteristics of the network</li>
+                    <li> Detection of important nodes (developers) of the network and its implications</li>
+                    <li> Tendencies in the community</li>
+                    <li> Areas of influence of main developers</li>
+                    </ul>
+            </div>
+
+            <div>
+                <h3> Analysis of strategies to follow in open source communities</h3>
+                    <ul>
+                    <li>Understanding of general idiosyncrasy of the community</li>
+                    <li>Definition of policies followed by the community from a quantitative point of view</li>
+                    <li>Definition of strategies adapted to deal with open source communities</li>
+                    </ul>
+            </div>
+            
+        </div>
+        
+        
+        
+        
+    </div>
+    
+    <script type="text/javascript" src="VizGrimoireJS/src/envision.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/d3-treemap.min.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/DataSource.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/Loader.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/Report.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/ITS.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/MLS.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/SCM.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/Envision_Report.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/src/Viz.js"></script>          
+  </body>
+</html>

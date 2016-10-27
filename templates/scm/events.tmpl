@@ -1,0 +1,23 @@
+
+   <div class="row">
+       <div class="panel panel-default">
+           <div class="panel-heading">
+               Timeline
+           </div>
+           <div class="panel-body Events" data-data-source="scm" data-event="newcomers">
+               <ul class="list-group timeline" id="target">
+               </ul>
+           </div>
+      </div>
+    </div>
+
+
+    <script id="template" type="x-tmpl-mustache">
+        {{#events}}
+        <li class="list-group-item">
+            <a class="avatar" href="{{uid}}.html"><i class="fa fa-user fa-3x"></i></a>
+            <p><strong><a href="{{uid}}.html">{{name}}</a></strong> <small>{{email}}</small> &bull; <small class="when">{{timestamp}}</small></p>
+            <p class="event">{{event_text}}</p>
+        </li>
+        {{/events}}
+    </script>

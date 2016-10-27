@@ -1,0 +1,74 @@
+
+<!-- info text -->
+<div id="info" class="row">
+  <div class="col-md-6">
+    
+    <p>Some charts and tables for top projects in
+      the project, and a summary of the evolution of their participation with
+      links to more detailed information per project.</p>  
+  </div>
+  <div class="col-md-6">
+    <!-- evolution #projects -->
+    <i> <b>Active Projects per month</b>
+    </i>
+    <div class="MetricsEvol" data-data-source="scm"
+         data-metrics="scm_projects" data-legend="false"
+         style="height: 80px;"></div>
+  </div>
+</div>
+<!-- end info text -->
+
+<!-- list of projects -->
+<div id="nav" class="row">
+  <div class="FilterItemsNav" data-data-source="scm"
+       data-order-by="scm_commits" data-filter="projects" style="align: center"></div>
+</div>
+<!-- end list of projects -->
+
+
+<!-- submitted, merged project -->
+<div class="well">
+  <div id="summary-static" class="row">
+    <!-- submitted -->
+    <div class="col-md-1"></div>
+    <div class="col-md-4">
+      <i> <b>Submitted per project (aggregated)</b>
+      </i>
+      <div class="FilterItemsGlobal" data-data-source="scm"
+           data-metric="scm_commits" data-filter="projects"
+           data-legend-div="projects_legend" data-limit="10"
+           data-order-by="scm_commits"></div>
+    </div>
+    <!-- end submitted -->
+
+    <div class="col-md-2" id="projects_legend"></div>
+
+    <!-- merged -->
+    <div class="col-md-4">
+      <i> <b>Senders per project (aggregated)</b>
+      </i>
+      <div class="FilterItemsGlobal" data-data-source="scm"
+           data-metric="scm_authors" data-filter="projects" data-legend="false"
+           data-limit="10" data-order-by="scm_commits"></div>
+    </div>
+    <!-- end merged -->
+    <div class="col-md-1"></div>
+  </div>
+</div>
+<!-- end submitted, merged project -->
+
+<div id="summary-static" class="row"></div>
+
+<!-- submitted per project -->
+<div id="list" class="row">
+  <div class="FilterItemsMiniCharts" data-data-source="scm"
+       data-metrics="scm_commits,scm_authors"
+       data-filter="projects"></div>
+</div>
+<!-- end submitted per project -->
+
+<div class="row" style="margin-top: 10px;">
+  <div class="col-md-12">
+    <div id="Refcard"></div>
+  </div>
+</div>

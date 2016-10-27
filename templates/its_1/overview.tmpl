@@ -1,0 +1,138 @@
+
+<div class="row">
+
+  <!-- left column -->
+  <div class="col-md-6">
+
+    <!-- stories -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="its_1"
+               data-metrics="its_1_stories_closed,its_1_stories_opened,its_1_stories_pending" data-min="true"
+               style="height: 160px;" data-legend="true"></div>
+          <div class="MicrodashText" data-metric="its_1_stories_closed" data-name="true"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end stories -->
+
+    <!-- tickets -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="its_1"
+               data-metrics="its_1_closed,its_1_opened" data-min="true"
+               style="height: 160px;" data-legend="true"></div>
+          <div class="MicrodashText" data-metric="its_1_closed" data-name="true"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end tickets -->
+
+    <!-- closers -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="its_1"
+               data-metrics="its_1_closers" data-min="true"
+               style="height: 120px;" data-title="People closing tickets"></div>
+          <div class="MicrodashText" data-metric="its_1_closers"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end closers -->
+
+    <!-- openers -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <div class="MetricsEvol" data-data-source="its_1"
+               data-metrics="its_1_openers" data-min="true"
+               style="height: 120px;" data-title="People submitting tickets"></div>
+          <div class="MicrodashText" data-metric="its_1_openers"></div>
+        </div>
+      </div>
+    </div>
+    <!-- end closers & changers -->
+
+    <!--<div class="row">
+      <div class="col-md-12">
+        <div class="well">
+          Time to fix in hours (quantiles)
+          <div class="TimeTo" data-data-source="its_1" data-type="fix"
+               data-quantil="X0.99,X0.95,X0.5,X0.25"></div>
+        </div>
+      </div>
+    </div>-->
+
+
+  </div>
+  <!-- end left column-->
+
+  <!-- right column -->
+  <div class="col-md-6">
+    <!-- stats -->
+    <div class="panel panel-default">
+      <div class="panel-body">
+    <div class="row"><div class="col-md-12">
+        <p class="section-title"><i class="fa fa-ticket"></i> Issue tracking system</p>
+    </div></div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table">
+              <tr>
+        <td><span class="GlobalData" data-data-source="its_1"
+              data-field="trackers"></span></td>
+        <td>
+                  <div class="SmartLinks" data-target="its_1-repos.html" data-label="trackers"></div>
+                </td>
+        <td><span class="GlobalData" data-data-source="its_1"
+                      data-field="its_1_companies"></span></td>
+        <td>
+                  <div class="SmartLinks" data-target="its_1-companies.html" data-label="companies"></div>
+                </td>
+          </tr>
+          <tr>
+        <td><span class="GlobalData" data-data-source="its_1"
+              data-field="its_1_openers"></span></td>
+        <td>people submitting tickets</td>
+        <td><span class="GlobalData" data-data-source="its_1"
+              data-field="its_1_closers"></span></td>
+        <td>people closing tickets</td>
+          </tr>
+          <tr>
+        <td><span class="GlobalData" data-data-source="its_1"
+              data-field="its_1_openers_7"></span></td>
+        <td>people submitting tickets last week</td>
+        <td><span class="GlobalData" data-data-source="its_1"
+              data-field="its_1_closers_7"></span></td>
+        <td>people closing tickets last week</td>
+          </tr>
+          <tr>
+        <td><span class="GlobalData" data-data-source="its_1"
+              data-field="its_1_stories_opened"></span></td>
+        <td>submitted stories</td>
+        <td><span class="GlobalData" data-data-source="its_1"
+              data-field="its_1_stories_closed"></span></td>
+        <td>closed stories</td>
+          </tr>
+            </table>
+      </div>
+    </div>
+      </div>
+
+      <!-- end stats -->
+
+      <!-- top closers -->
+      <div class="panel-body">
+    <div class="Top" data-data-source="its_1" data-period_all="true"
+             data-metric="closers" data-limit="10"
+             data-people_links="true"></div>
+      </div>
+      <!-- end closers-->
+    </div>
+  </div>
+    <!-- end right column -->
+</div>

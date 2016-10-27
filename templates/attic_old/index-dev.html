@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta name="keywords" content="bitergia, floss, libresoft, oss, linux, research, reports, free software, software analysis, libreplan" />
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, maximum-scale=1.0">
+        <meta name="description" content="Bitergia company website" />
+	    <link rel="stylesheet" type="text/css" id="theme" href="VizGrimoireJS/vizgrimoire.css" />
+        <script type="text/javascript" src="VizGrimoireJS/lib/jquery-1.7.1.min.js"></script>
+        <title>Bitergia Summary Report</title>
+        <style type="text/css">
+        </style>
+    </head>
+
+    <body>
+        <div id="wrapper">
+            <div id="header"></div>
+                        
+            <div id="info-column1"  style="width:180px">
+            	<div id="navigation"></div>
+            	<div id="refcard"></div>
+            	
+            </div>
+            
+			<!--  SUMMARY -->
+			<div style="float:left; margin-right:20px;">
+				<div id="info-pill">
+					<h1 style="font-weight: bold;">General activity</h1>
+				</div>
+				<div id="info-pill" style="height: 600px;">
+					<div id="all-envision" style="float:left"></div>
+				</div>
+				<div>[Use sliders to select time periods]</div>						
+			</div>
+			
+			<!--  TOPS -->
+			<div style="float:left;">
+				<div id="scm-top" style="float:left;margin-right:10px;"></div>
+				<div id="its-top" style="float:left;margin-right:10px;"></div>
+				<div id="mls-top" style="float:left;margin:0px;"></div>
+			</div>					
+
+			<!--  FLOTR2 -->
+	
+			<div style="float:left;">
+			
+				<div style="float:left;">			   
+				    <div id="scm-commits-flotr2" style="width:150px;margin-right:10px"></div>
+				    <div id="scm-authors-flotr2" style="width:150px"></div>
+			   	</div>
+
+				<div style="float:left">
+	    			<div id="its-closed-flotr2" style="width:150px;margin-right:10px"></div>
+				    <div id="its-closers-flotr2" style="width:150px"></div>
+	          		<!--<div id="info-pill">
+	        		<h1 style="font-weight:bold;">Time to close tickets</h1>
+	       			</div>
+		        	<div class="info-pill" style="width:150px;">
+	         			<div id='its-quantil099' style="height:130px;"></div>
+	         			<p>
+	         			99% of tickets open during the corresponding month were closed in less than y days
+	         			</p>
+	        		</div>-->
+				</div>
+		
+				<div style="float:left">
+					<div id="mls-sent-flotr2" style="width:150px;margin-right:10px"></div>
+				    <div id="mls-senders-flotr2" style="width:150px"></div>        					
+				</div>
+			</div>
+		
+			
+			<div id="footer"></div>
+
+		</div>
+<!--         <script type="text/javascript" src="VizGrimoireJS/vizgrimoire.min.js"></script> -->
+        <script type="text/javascript" src="VizGrimoireJS/src/envision.js"></script>
+        <script type="text/javascript" src="VizGrimoireJS/src/DataSource.js"></script>
+        <script type="text/javascript" src="VizGrimoireJS/src/DataProcess.js"></script>
+        <script type="text/javascript" src="VizGrimoireJS/src/Loader.js"></script>
+        <script type="text/javascript" src="VizGrimoireJS/src/Report.js"></script>
+        <script type="text/javascript" src="VizGrimoireJS/src/ITS.js"></script>
+        <script type="text/javascript" src="VizGrimoireJS/src/MLS.js"></script>
+        <script type="text/javascript" src="VizGrimoireJS/src/SCM.js"></script>
+        <script type="text/javascript" src="VizGrimoireJS/src/SCR.js"></script>
+        <script type="text/javascript" src="VizGrimoireJS/src/Envision_Report.js"></script>
+        <script type="text/javascript" src="VizGrimoireJS/src/Viz.js"></script>        
+    </body>
+</html>

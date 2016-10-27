@@ -1,0 +1,73 @@
+<div class="row"><h4>Information about all projects</h4></div>
+<!-- info text -->
+<div id="info" class="row">
+  <div class="col-md-5">
+    Some charts and tables for top projects in the project, and a summary
+    of the evolution of their participation with links to more detailed
+    information per projects.
+  </div>
+  <div class="col-md-7">
+    <!-- evolution #projects -->
+    <i>
+      <b>Active Projects per month</b>
+    </i>
+    <div class="MetricsEvol" data-data-source="mls"
+         data-metrics="mls_projects" data-legend="false" style="height: 80px;"></div>
+  </div>
+</div>
+<!-- end info text -->
+
+
+<!-- list of projects -->
+<div id="nav" class="row">
+  <div class="FilterItemsNav" data-data-source="mls"
+       data-order-by="mls_sent" data-filter="projects" style="align: center"></div>
+</div>
+<!-- end list of projects -->
+
+
+<!-- sent, senders project -->
+<div class="well">
+  <div id="summary-static" class="row">
+    <!-- sent -->
+    <div class="col-md-1"></div>
+    <div class="col-md-4">
+      <i>
+        <b>Messages per project (aggregated)</b>
+      </i>
+      <div class="FilterItemsGlobal" data-data-source="mls"
+           data-metric="mls_sent" data-filter="projects"
+           data-legend-div="projects_legend" data-limit="10"
+           data-order-by="mls_sent">
+      </div>
+    </div>
+    <!-- end sent -->
+
+    <div class="col-md-2" id="projects_legend"></div>
+
+    <!-- senders -->
+    <div class="col-md-4">
+      <i>
+        <b>Senders per project (aggregated)</b>
+      </i>
+      <div class="FilterItemsGlobal" data-data-source="mls"
+           data-metric="mls_senders" data-filter="projects"
+           data-legend="false" data-limit="10"
+           data-order-by="mls_sent"></div>
+    </div>
+    <!-- end senders -->
+    <div class="col-md-1"></div>
+  </div>
+</div>
+<!-- end sent, senders project -->
+
+<div id="summary-static" class="row"></div>
+
+<!-- sent per project -->
+<div id="list" class="row">
+  <div class="FilterItemsMiniCharts" data-data-source="mls"
+       data-metrics="mls_sent,mls_senders" data-filter="projects"
+       data-order-by="mls_sent">
+  </div>
+</div>
+<!-- end sent per project -->
