@@ -23,13 +23,13 @@ import os
 import re
 import sys
 import uuid
-import mock
 import unittest
+import mock
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "0.0.1-1"
+__version__ = "0.0.2-1"
 __date__ = "2016"
 
 try:
@@ -82,21 +82,35 @@ def choose_find(expect_prefix):
     return find
 
 
+def set_msglevels(mock_msg):
+    """Set mock Msg() class message levels"""
+    mock_msg.ERR = 0
+    mock_msg.MSG = 1
+    mock_msg.WAR = 2
+    mock_msg.INF = 3
+    mock_msg.VER = 4
+    mock_msg.DBG = 5
+
+
 def do_cmd(self, mock_msg, t_argv, expect_msg=None):
     """Execute a udocker command as called in the command line"""
+    set_msglevels(mock_msg)
     udocker.msg = mock_msg
     udocker.conf = udocker.Config()
     with mock.patch.object(sys, 'argv', t_argv):
         main = udocker.Main()
         udocker.msg.chlderr = DEVNULL
+        udocker.msg.chldout = DEVNULL
         udocker.msg.chldnul = DEVNULL
+        udocker.msg.level = 3
+        udocker.conf.verbose_level = 3
         if main.start():
             self.assertTrue(False, str(t_argv))
             return False
         elif expect_msg:
             find = choose_find(expect_msg[:1])
-            if find(expect_msg[1:],
-                    mock_msg.out.call_args_list):
+            if (find(expect_msg[1:], mock_msg.out.call_args_list) or
+                    find(expect_msg[1:], mock_msg.err.call_args_list)):
                 self.assertTrue(True, str(t_argv))
                 return True
             else:
@@ -110,19 +124,17 @@ def do_cmd(self, mock_msg, t_argv, expect_msg=None):
 def do_run(self, mock_msg, t_argv, expect_msg=None, expect_out=None):
     """Execute run a command and capture stdout"""
     output_file = str(uuid.uuid4())
+    out_fd = os.open(output_file, os.O_WRONLY | os.O_CREAT)
     orig_stdout_fd = os.dup(1)
-    os.close(1)
-    os.open(output_file, os.O_WRONLY | os.O_CREAT)
     orig_stderr_fd = os.dup(2)
-    os.close(2)
-    os.open(output_file, os.O_WRONLY)
+    os.dup2(out_fd, 1)
+    os.dup2(out_fd, 2)
+    out_fd.close()
     status = do_cmd(self, mock_msg, t_argv, expect_msg)
-    sys.stdout.flush()
-    os.close(1)
-    os.dup(orig_stdout_fd)
     sys.stderr.flush()
-    os.close(2)
-    os.dup(orig_stderr_fd)
+    sys.stdout.flush()
+    os.dup2(orig_stdout_fd, 1)
+    os.dup2(orig_stderr_fd, 2)
     if status and expect_out:
         find = choose_find(expect_out[:1])
         with open(output_file) as output_fp:
@@ -136,10 +148,13 @@ def do_run(self, mock_msg, t_argv, expect_msg=None, expect_out=None):
 def do_action(t_argv):
     """Execute an action not part of a test i.e. setup and cleanup"""
     with mock.patch('udocker.Msg') as mock_msg:
+        set_msglevels(mock_msg)
         udocker.msg = mock_msg
         udocker.conf = udocker.Config()
         with mock.patch.object(sys, 'argv', t_argv):
             main = udocker.Main()
+            udocker.msg.level = 3
+            udocker.conf.verbose_level = 3
             return main.start()
 
 
@@ -305,7 +320,7 @@ class FuncTestRepo(unittest.TestCase):
             self.skipTest("no image")
         do_cmd(self, mock_msg,
                [UDOCKER, "verify", "busybox"],
-               " Image Ok")
+               "mage Ok")
 
     @mock.patch('udocker.Msg')
     def test_07_create_and_rename(self, mock_msg):
@@ -375,7 +390,7 @@ class FuncTestRun(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """Cleanup test"""
-        pass
+        do_action([UDOCKER, "rm", "busyRUN"])
 
     @mock.patch('udocker.Msg')
     def test_01_run_helloworld(self, mock_msg):

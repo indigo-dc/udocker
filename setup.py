@@ -31,5 +31,5 @@ setup(name="udocker",
       author="LIP",
       author_email="udocker@lip.pt",
       url="https://github.com/indigo-dc/udocker",
-      scripts=["udocker.py", ],
+      scripts=["udocker", ],
       platforms=["linux2", ])

@@ -21,13 +21,13 @@ limitations under the License.
 
 import os
 import sys
-import mock
 import unittest
+import mock
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "0.0.1-1"
+__version__ = "0.0.2-1"
 __date__ = "2016"
 
 try:
@@ -58,6 +58,17 @@ def find_str(self, find_exp, where):
         self.assertTrue(False)
 
 
+def set_msglevels(mock_msg):
+    """Set mock Msg() class message levels"""
+    mock_msg.ERR = 0
+    mock_msg.MSG = 1
+    mock_msg.WAR = 2
+    mock_msg.INF = 3
+    mock_msg.VER = 4
+    mock_msg.DBG = 5
+    mock_msg.DEF = mock_msg.INF
+
+
 class MainTestCase(unittest.TestCase):
     """Test most udocker capabilities"""
 
@@ -69,53 +80,66 @@ class MainTestCase(unittest.TestCase):
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.UdockerTools')
     @mock.patch('udocker.Config.user_init')
-    @mock.patch('udocker.import_modules')
+    @mock.patch('udocker.import_alt_modules')
     @mock.patch('udocker.Msg')
-    def test_init(self, mock_msg, mock_import_modules,
+    def test_init(self, mock_msg, mock_import_alt_modules,
                   mock_user_init, mock_utools, mock_localrepo):
         """Test udocker global command line options"""
+        set_msglevels(mock_msg)
         udocker.msg = mock_msg
         udocker.conf = udocker.Config()
         t_argv = ['./udocker.py']
         with mock.patch.object(sys, 'argv', t_argv):
             udocker.Main()
-            self.assertTrue(mock_import_modules.called)
+            self.assertTrue(mock_import_alt_modules.called)
         t_argv = ['./udocker.py', "images"]
         with mock.patch.object(sys, 'argv', t_argv):
             udocker.Main()
-            self.assertTrue(mock_import_modules.called)
+            self.assertTrue(mock_import_alt_modules.called)
         t_argv = ['./udocker.py', "--config=/myconf"]
         with mock.patch.object(sys, 'argv', t_argv):
             udocker.Main()
-            self.assertTrue(mock_import_modules.called)
+            self.assertTrue(mock_import_alt_modules.called)
             self.assertTrue(mock_user_init.called_with("/myconf"))
         t_argv = ['./udocker.py', "--cofig=/myconf"]
         with mock.patch.object(sys, 'argv', t_argv):
             udocker.Main()
-            self.assertTrue(mock_import_modules.called)
+            self.assertTrue(mock_import_alt_modules.called)
             self.assertTrue(mock_user_init.called_with(False))
         udocker.conf.verbose_level = 0
         t_argv = ['./udocker.py', "-D"]
         with mock.patch.object(sys, 'argv', t_argv):
             udocker.Main()
-            self.assertTrue(mock_import_modules.called)
-            self.assertEqual(udocker.conf.verbose_level, 3)
+            self.assertTrue(mock_import_alt_modules.called)
+            self.assertEqual(udocker.conf.verbose_level, mock_msg.DBG)
         udocker.conf.verbose_level = 0
         t_argv = ['./udocker.py', "--debug"]
         with mock.patch.object(sys, 'argv', t_argv):
             udocker.Main()
-            self.assertTrue(mock_import_modules.called)
-            self.assertEqual(udocker.conf.verbose_level, 3)
+            self.assertTrue(mock_import_alt_modules.called)
+            self.assertEqual(udocker.conf.verbose_level, mock_msg.DBG)
+        udocker.conf.verbose_level = 0
+        t_argv = ['./udocker.py', "-q"]
+        with mock.patch.object(sys, 'argv', t_argv):
+            udocker.Main()
+            self.assertTrue(mock_import_alt_modules.called)
+            self.assertEqual(udocker.conf.verbose_level, mock_msg.MSG)
+        udocker.conf.verbose_level = 0
+        t_argv = ['./udocker.py', "--quiet"]
+        with mock.patch.object(sys, 'argv', t_argv):
+            udocker.Main()
+            self.assertTrue(mock_import_alt_modules.called)
+            self.assertEqual(udocker.conf.verbose_level, mock_msg.MSG)
         t_argv = ['./udocker.py', "--insecure"]
         with mock.patch.object(sys, 'argv', t_argv):
             udocker.Main()
-            self.assertTrue(mock_import_modules.called)
+            self.assertTrue(mock_import_alt_modules.called)
             self.assertEqual(udocker.conf.http_insecure, True)
-        t_argv = ['./udocker.py', "--repo=/home/user/.udocker"]
+        t_argv = ['./udocker.py', "--repo=/tmp"]
         with mock.patch.object(sys, 'argv', t_argv):
             udocker.Main()
-            self.assertTrue(mock_import_modules.called)
-            self.assertEqual(udocker.conf.def_topdir, "/home/user/.udocker")
+            self.assertTrue(mock_import_alt_modules.called)
+            self.assertEqual(udocker.conf.topdir, "/tmp")
 
     @mock.patch('udocker.UdockerTools')
     @mock.patch('udocker.Msg')
@@ -138,6 +162,8 @@ class MainTestCase(unittest.TestCase):
         udocker.conf = udocker.Config()
         t_argv = ['./udocker.py', "search", "-a", "iscampos"]
         with mock.patch.object(sys, 'argv', t_argv):
+            mock_dockerioapi.return_value.is_v2.return_value = False
+            mock_dockerioapi.return_value.set_v2_login_token.return_value = None
             mock_dockerioapi.return_value.search_get_page.side_effect = [
                 {u'num_results': 2, u'results': [
                     {u'is_automated': False, u'name': u'iscampos/openqcd',
@@ -158,7 +184,8 @@ class MainTestCase(unittest.TestCase):
                      u'star_count': 0, u'is_trusted': False,
                      u'is_official': False, u'description': u''}],
                  u'page_size': 25, u'query': u'iscampos',
-                 u'num_pages': '1', u'page': u'1'}]
+                 u'num_pages': '1', u'page': u'1'},
+                {}]
             main = udocker.Main()
             main.execute()
             find_str(self, "iscampos/codemaster", mock_msg.out.call_args)
