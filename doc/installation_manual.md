@@ -18,9 +18,9 @@ to download both the binaries and/or pull containers from repositories.
 The official release of udocker is available from the INDIGO-DataCloud
 repository at `http://repo.indigo-datacloud.eu/` where is made available
 as a tarball to be deployed by the end user. Allways check for the latest
-version.
+official version released by INDIGO-DataCloud.
 
-Install for the newer udocker v1.0.1:
+For udocker v1.0.1 or higher released by INDIGO-DataCloud:
 
 ```
   curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.0.1.tar.gz > udocker-tarball.tgz
@@ -29,14 +29,14 @@ Install for the newer udocker v1.0.1:
   ./udocker help   
 ```
 
-Install for previous udocker 1.0.0:
+For the previous udocker 1.0.0 released by INDIGO-DataCloud:
 
 ```
   cd $HOME
   wget -O- http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.0.0.tar.gz | tar xzvf -
 ```
 
-A basic setup.py is also provided in the tarball:
+If using the setup.py provided in the releases install with:
 
 ```
   mkdir /tmp/somedir
@@ -45,6 +45,28 @@ A basic setup.py is also provided in the tarball:
   python setup.py install --help
   python setup.py install --home /home/USER/bin
 ```
+
+
+Optionally just download and execute the udocker python script from the source and the installation
+will be performed automatically. The installation from source code is not officially supported by 
+INDIGO-DataCloud.
+
+For the master branch:
+
+```
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/master/udocker > udocker
+  chmod u+rx ./udocker
+  ./udocker
+```
+
+For the development branch:
+
+```
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/devel/udocker > udocker
+  chmod u+rx ./udocker
+  ./udocker
+```
+
 
 3. SYSTEM INSTALLATION
 ======================
@@ -98,8 +120,8 @@ To get the udocker source code repository from the development branch.
 ```
 
 
-5. DISTRIBUTION
-===============
+5. BUILD
+========
 A distribution tarball can be built using the script build_tarball.sh in
 the utils directory. The script fetches the code necessary to build the
 binary executables such as proot and compiles them statically. The following
