@@ -23,6 +23,11 @@ limitations under the License.
 
 from distutils.core import setup
 
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])))
+
 import udocker
 
 setup(name="udocker",

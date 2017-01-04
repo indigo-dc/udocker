@@ -127,6 +127,7 @@ addto_package_udocker()
 {
     echo "addto_package_udocker"
     /bin/cp -f -L  "${REPO_DIR}/udocker.py"  "${PACKAGE_DIR}/udocker" 
+    (cd ${PACKAGE_DIR}; /bin/ln -s udocker udocker.py)
 }
 
 addto_package_other()

@@ -83,7 +83,7 @@ Due to the lack of isolation features udocker must not be run by privileged user
 
 Similarly to docker, the login credentials for private repositories are stored 
 in a file and can be easily stolen. Logout can be used to delete the credentials. 
-If the host system is not trustable login should not be used.
+If the host system is not trustable the login feature should not be used.
 
 1.4. Basic flow
 ---------------
@@ -103,7 +103,7 @@ Additionally:
 
 2. INSTALLATION
 ===============
-udocker is usually placed in the user home directory and does not require
+udocker can be placed in the user home directory and thus does not require
 system installation. For further information see the installation manual.
 
 

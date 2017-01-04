@@ -9,30 +9,39 @@ privileges.
 1. DEPENDENCIES
 ===============
 Python dependencies are described in the file requirements.txt
-Most notably udocker requires either pycurl or the curl binary command,
+
+udocker requires either pycurl or the curl executable command,
 to download both the binaries and/or pull containers from repositories.
 
 2. USER INSTALLATION
 ====================
 The official release of udocker is available from the INDIGO-DataCloud
 repository at `http://repo.indigo-datacloud.eu/` where is made available
-as a tarball to be deployed by the end user. Example:
+as a tarball to be deployed by the end user. Allways check for the latest
+version.
+
+Install for the newer udocker v1.0.1:
+
+```
+  curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.0.1.tar.gz > udocker-tarball.tgz
+  export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
+  tar xzvf $UDOCKER_TARBALL udocker
+  ./udocker help   
+```
+
+Install for previous udocker 1.0.0:
 
 ```
   cd $HOME
-  wget -O- http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.X.X.tar.gz | tar xzvf -
+  wget -O- http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.0.0.tar.gz | tar xzvf -
 ```
 
-To get the latest udocker source code from github clone the repository, or use
-a web browser to access github at `https://github.com/indigo-dc/udocker`.
+A basic setup.py is also provided in the tarball:
 
 ```
-  git clone https://github.com/indigo-dc/udocker
-```
-
-A basic setup.py is also provided in the source code:
-
-```
+  mkdir /tmp/somedir
+  cd /tmp/somedir
+  curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.X.X.tar.gz | tar xzvf -
   python setup.py install --help
   python setup.py install --home /home/USER/bin
 ```
@@ -46,7 +55,6 @@ An ansible playbook is provided in the file ansible_install.yaml:
   curl https://raw.githubusercontent.com/indigo-dc/udocker/master/ansible_install.yaml > ansible_install.yaml
 
   ansible-playbook ansible_install.yaml
-
 ```
 
 Under debian based systems ansible can be installed with:
@@ -68,11 +76,34 @@ Optionally installation can be performed directly with pip:
   pip install git+https://github.com/indigo-dc/udocker
 ```
 
-4. DISTRIBUTION
+4. SOURCE CODE
+==============
+To get the latest udocker script from the github development branch without
+cloning the entire repository.
+```
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/devel/udocker.py
+```
+
+To get the udocker source code repository from the github master branch, clone the 
+repository, or use a web browser to access github at `https://github.com/indigo-dc/udocker`.
+
+```
+  git clone https://github.com/indigo-dc/udocker
+```
+
+To get the udocker source code repository from the development branch.
+
+```
+  git clone -b devel https://github.com/indigo-dc/udocker
+```
+
+
+5. DISTRIBUTION
 ===============
 A distribution tarball can be built using the script build_tarball.sh in
 the utils directory. The script fetches the code necessary to build the
-binary executables such as proot and compiles them statically.
+binary executables such as proot and compiles them statically. The following
+example builds the tarball from the master repository.
 
 ```
   git clone https://github.com/indigo-dc/udocker
@@ -80,8 +111,8 @@ binary executables such as proot and compiles them statically.
   sh build_tarball.sh
 ```
  
-5. REMARKS
-==========
+6. DIRECTORIES
+==============
 The binary executables and containers are usually kept in the user home directory
 under $HOME/.udocker this directory will contain:
 
@@ -89,5 +120,10 @@ under $HOME/.udocker this directory will contain:
 * Data from pulled container images (layers and metadata).
 * Directory trees for the containers extracted from the layers.
 
-The location of the udocker directory can be changed via the `UDOCKER_DIR`
-environment variable.
+The location of the udocker directory can be changed via environment variables.
+
+* UDOCKER_DIR : change the root directory of udocker usually $HOME/.udocker
+* UDOCKER_BIN : change the location of udocker related executables
+* UDOCKER_LIB : change the location of udocker related libraries
+* UDOCKER_CONTAINERS : change the location of container directory trees (not images)
+
