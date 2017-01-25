@@ -1514,8 +1514,7 @@ class CurlHeaderTestCase(unittest.TestCase):
         for line in buff:
             curl_header.write(line)
         buff_out = curl_header.getvalue()
-        self.assertEqual(buff_out[0:37],
-                         "{'X-ND-HTTPSTATUS': 'HTTP/1.1 200 OK'")
+        self.assertTrue("HTTP/1.1 200 OK" in buff_out[0:37])
         #
         line = ""
         curl_header = udocker.CurlHeader()
