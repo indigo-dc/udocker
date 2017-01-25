@@ -33,7 +33,7 @@ import platform
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.0.1.RC2"
+__version__ = "1.0.1"
 __date__ = "2016"
 
 # Python version major.minor
@@ -110,7 +110,7 @@ class Config(object):
     # udocker installation tarball
     _utarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/aHGQArPC2CTTr4N/download"
+        "/s/rg8saO8ij44LZF2/download"
     )
     tarball = os.getenv("UDOCKER_TARBALL", _utarball)
     autoinstall = True
@@ -2470,6 +2470,8 @@ class GetURL(object):
         self.insecure = Config.http_insecure
         self._select_implementation()
 
+    # pylint: disable=redefined-variable-type
+    # pylint: disable=locally-disabled
     def _select_implementation(self):
         """Select which implementation to use"""
         if GetURLpyCurl().is_available():
