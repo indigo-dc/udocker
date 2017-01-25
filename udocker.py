@@ -33,7 +33,7 @@ import platform
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "v1.0.1.RC1"
+__version__ = "1.0.1.RC2"
 __date__ = "2016"
 
 # Python version major.minor
@@ -58,10 +58,6 @@ try:
 except ImportError:
     pass
 try:
-    import json
-except ImportError:
-    pass
-try:
     import base64
 except ImportError:
     pass
@@ -72,29 +68,23 @@ except ImportError:
 try:
     from getpass import getpass
 except ImportError:
-    getpass = raw_input  # pylint: disable=invalid-name
+    getpass = raw_input
 
 if PY_VER < "2.6":
     try:
         import posixpath
     except ImportError:
         pass
-
-
-def import_alt_modules():
-    """Import modules for which we provide an alternative"""
-    global json                    # pylint: disable=invalid-name
+try:
+    import json
+except ImportError:
     sys.path.append(START_PATH + "/../lib/simplejson")
     sys.path.append(os.path.expanduser('~') + "/.udocker/lib/simplejson")
     sys.path.append(str(os.getenv("UDOCKER_DIR")) + "/lib/simplejson")
     try:
-        dummy = json.loads("[]")
-    except NameError:
-        try:
-            # pylint: disable=redefined-outer-name,import-error
-            import simplejson as json
-        except ImportError:
-            pass
+        import simplejson as json
+    except ImportError:
+        pass
 
 
 class Config(object):
@@ -103,92 +93,96 @@ class Config(object):
     self.user_init() and that can reside in ~/.udocker/udocker.conf
     """
 
-    # pylint: disable=too-many-instance-attributes
-    def __init__(self):
-        """Initial default values. Can be overloaded by user_init()"""
-        try:
-            self.verbose_level = int(os.getenv("UDOCKER_LOGLEVEL", Msg.DEF))
-        except ValueError:
-            self.verbose_level = Msg.DEF
+    try:
+        verbose_level = int(os.getenv("UDOCKER_LOGLEVEL", ""))
+    except ValueError:
+        verbose_level = 3
 
-        self.osver = self._osversion()
-        self.arch = self._sysarch()
-        self.kernel = self._oskernel()
-        self.username = self._username()
+    homedir = os.path.expanduser("~") + "/.udocker"
 
-        self.topdir = os.getenv("UDOCKER_DIR")
-        self.bindir = os.getenv("UDOCKER_BIN")
-        self.libdir = os.getenv("UDOCKER_LIB")
-        self.reposdir = os.getenv("UDOCKER_REPOS")
-        self.layersdir = os.getenv("UDOCKER_LAYERS")
-        self.containersdir = os.getenv("UDOCKER_CONTAINERS")
-        self.homedir = os.path.expanduser("~") + "/.udocker"
-        if not self.topdir:
-            self.topdir = self.homedir
-        if not self.topdir:
-            msg.err("Error: UDOCKER directory not found")
+    topdir = homedir
+    bindir = None
+    libdir = None
+    reposdir = None
+    layersdir = None
+    containersdir = None
+
+    # udocker installation tarball
+    _utarball = (
+        "https://owncloud.indigo-datacloud.eu/index.php"
+        "/s/aHGQArPC2CTTr4N/download"
+    )
+    tarball = os.getenv("UDOCKER_TARBALL", _utarball)
+    autoinstall = True
+
+    config = "udocker.conf"
+    keystore = "keystore"
+
+    # for tmp files only
+    tmpdir = "/tmp"
+
+    # defaults for container execution
+    cmd = ["/bin/bash", "-i"]  # Comand to execute
+
+    # directories to be mapped in contaners with: run --sysdirs
+    sysdirs_list = (
+        "/dev", "/proc", "/sys",
+        "/etc/resolv.conf", "/etc/host.conf",
+        "/lib/modules",
+    )
+
+    # directories to be mapped in contaners with: run --hostauth
+    hostauth_list = (
+        "/etc/passwd", "/etc/group",
+        "/etc/shadow", "/etc/gshadow",
+    )
+
+    # directories for DRI (direct rendering)
+    dri_list = (
+        "/usr/lib/dri", "/lib/dri",
+        "/usr/lib64/dri", "/lib64/dri",
+    )
+
+    valid_host_env = ("TERM")           # Pass host env variables
+
+    # CPU affinity executables to use with: run --cpuset-cpus="1,2,3-4"
+    cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
+
+    # Containers execution defaults
+    location = ""         # run container in this location
+
+    # Curl settings
+    http_proxy = ""    # ex. socks5://user:pass@127.0.0.1:1080
+    timeout = 12       # default timeout (secs)
+    download_timeout = 30 * 60    # file download timeout (secs)
+    ctimeout = 6       # default TCP connect timeout (secs)
+    http_agent = ""
+    http_insecure = False
+
+    # docker hub v1
+    dockerio_index_url = "https://index.docker.io"
+    # docker hub v2
+    dockerio_registry_url = "https://registry-1.docker.io"
+    # private repository v2
+    # dockerio_registry_url = "http://localhost:5000"
+
+    # -------------------------------------------------------------
+
+    def _verify_config(self):
+        """Config verification"""
+        if not Config.topdir:
+            Msg().err("Error: UDOCKER directory not found")
             sys.exit(1)
 
-        self.config = "udocker.conf"
-        self.keystore = "keystore"
-
-        # for tmp files only
-        self.tmpdir = "/tmp"
-
-        # udocker installation tarball
-        self.tarball = os.getenv("UDOCKER_TARBALL", "")
-        if not self.tarball:
-            self.tarball = (
-                "https://owncloud.indigo-datacloud.eu/index.php"
-                "/s/WNJvim03D5aWUxh/download"
-            )
-
-        # defaults for container execution
-        self.cmd = ["/bin/bash", "-i"]  # Comand to execute
-
-        # directories to be mapped in contaners with: run --sysdirs
-        self.sysdirs_list = (
-            "/dev", "/proc", "/sys",
-            "/etc/resolv.conf", "/etc/host.conf",
-            "/lib/modules",
-        )
-
-        # directories to be mapped in contaners with: run --hostauth
-        self.hostauth_list = (
-            "/etc/passwd", "/etc/group",
-            "/etc/shadow", "/etc/gshadow",
-        )
-
-        # directories for DRI (direct rendering)
-        self.dri_list = (
-            "/usr/lib/dri", "/lib/dri",
-            "/usr/lib64/dri", "/lib64/dri",
-        )
-
-        self.valid_host_env = ("TERM")           # Pass host env variables
-
-        # CPU affinity executables to use with: run --cpuset-cpus="1,2,3-4"
-        self.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
-
-        # Containers execution defaults
-        self.location = ""         # run container in this location
-
-        # Curl settings
-        self.http_proxy = ""    # ex. socks5://user:pass@127.0.0.1:1080
-        self.timeout = 12       # default timeout (secs)
-        self.download_timeout = 30 * 60    # file download timeout (secs)
-        self.ctimeout = 6       # default TCP connect timeout (secs)
-        self.http_agent = ""
-        self.http_insecure = False
-
-        # docker hub v1
-        self.dockerio_index_url = "https://index.docker.io"
-        # docker hub v2
-        self.dockerio_registry_url = "https://registry-1.docker.io"
-        # private repository v2
-        # self.dockerio_registry_url = "http://localhost:5000"
-
-        # -------------------------------------------------------------
+    def _override_config(self):
+        """Override config with environment"""
+        Config.topdir = os.getenv("UDOCKER_DIR", Config.topdir)
+        Config.bindir = os.getenv("UDOCKER_BIN", Config.bindir)
+        Config.libdir = os.getenv("UDOCKER_LIB", Config.libdir)
+        Config.reposdir = os.getenv("UDOCKER_REPOS", Config.reposdir)
+        Config.layersdir = os.getenv("UDOCKER_LAYERS", Config.layersdir)
+        Config.containersdir = os.getenv("UDOCKER_CONTAINERS",
+                                         Config.containersdir)
 
     def _read_config(self, config_file):
         """Interpret config file content"""
@@ -201,15 +195,15 @@ class Config(object):
                 continue
             (key, val) = line.strip().split("=", 1)
             key = key.strip()
-            msg.out(config_file, ":", key, "=", val, l=Msg.DBG)
+            Msg().out(config_file, ":", key, "=", val, l=Msg.DBG)
             try:
-                exec('self.%s=%s' % (key, val))
+                exec('Config.%s=%s' % (key, val))
             except(NameError, AttributeError, TypeError, IndexError,
                    SyntaxError):
                 raise ValueError("config file: %s at: %s" %
                                  (config_file, line.strip()))
             if key == "verbose_level":
-                msg.setlevel(self.verbose_level)
+                Msg().setlevel(Config.verbose_level)
         return True
 
     def user_init(self, config_file):
@@ -218,45 +212,52 @@ class Config(object):
         Defaults should be in the form x = y
         """
         try:
-            self._read_config("/etc/" + self.config)
+            self._read_config("/etc/" + Config.config)
             if self._read_config(config_file):
                 return True
-            self._read_config(self.topdir + "/" + self.config)
+            self._read_config(Config.topdir + "/" + Config.config)
             if self.topdir != self.homedir:
-                self._read_config(self.homedir + "/" + self.config)
+                self._read_config(Config.homedir + "/" + Config.config)
         except ValueError as error:
-            msg.err("Error:", error)
+            Msg().err("Error:", error)
             sys.exit(1)
+        self._override_config()
+        self._verify_config()
 
-    def _username(self):
+    def username(self):
         """Get username"""
         return pwd.getpwuid(os.getuid()).pw_name
 
-    def _sysarch(self):
+    def arch(self):
         """Get the host system architecture"""
         arch = ""
         try:
             machine = platform.machine()
+            bits = platform.architecture()[0]
             if machine == "x86_64":
-                arch = "amd64"
-            elif machine in ("i386", "i586", "i686"):
+                if bits == "32bit":
+                    arch = "i386"
+                else:
+                    arch = "amd64"
+            elif machine in ("i386", "i486", "i586", "i686"):
                 arch = "i386"
-            elif machine.startswith("armv8"):
-                arch = "arm64"
             elif machine.startswith("arm"):
-                arch = "arm32"
+                if bits == "32bit":
+                    arch = "arm"
+                else:
+                    arch = "arm64"
         except (NameError, AttributeError):
             pass
         return arch
 
-    def _osversion(self):
+    def osversion(self):
         """Get operating system"""
         try:
             return platform.system().lower()
         except (NameError, AttributeError):
             return ""
 
-    def _oskernel(self):
+    def oskernel(self):
         """Get operating system"""
         try:
             return platform.release()
@@ -265,25 +266,14 @@ class Config(object):
 
     def oskernel_isgreater(self, ref_version):
         """Compare kernel release versions"""
-        os_release = self._oskernel().split("-")[0]
-        os_version = map(int, os_release.split("."))
+        os_release = self.oskernel().split("-")[0]
+        os_version = [int(x) for x in os_release.split(".")]
         for idx in (0, 1, 2):
             if os_version[idx] > ref_version[idx]:
                 return True
             elif os_version[idx] < ref_version[idx]:
                 return False
         return False
-
-    def udocker_isequal(self, installed):
-        """Compare udocker release versions"""
-        installed_ver_str = installed.split("v")[1]
-        installed_version = map(int, installed_ver_str.split(".")[:3])
-        udocker_ver_str = __version__.split("v")[1]
-        udocker_version = map(int, udocker_ver_str.split(".")[:3])
-        for idx in (0, 1, 2):
-            if udocker_version[idx] != installed_version[idx]:
-                return False
-        return True
 
 
 class KeyStore(object):
@@ -400,48 +390,56 @@ class Msg(object):
     VER = 4
     DBG = 5
     DEF = INF
+    level = DEF
+    nullfp = None
+    chlderr = sys.stderr
+    chldout = sys.stdout
+    chldnul = sys.stderr
 
-    def __init__(self, level=DEF):
+    def __init__(self, new_level=None):
         """
         Initialize Msg level and /dev/null file pointers to be
         used in subprocess calls to obfuscate output and errors
         """
-        self.level = level
-        self.stdout = sys.stdout
-        self.stderr = sys.stderr
+        if new_level is not None:
+            Msg.level = new_level
         try:
-            self.nullfp = open("/dev/null", "w")
+            if Msg.nullfp is None:
+                Msg.nullfp = open("/dev/null", "w")
         except (IOError, OSError):
-            self.chlderr = self.stderr
-            self.chldout = self.stdout
-            self.chldnul = self.stderr
+            Msg.chlderr = sys.stderr
+            Msg.chldout = sys.stdout
+            Msg.chldnul = sys.stderr
         else:
-            self.chlderr = self.nullfp
-            self.chldout = self.nullfp
-            self.chldnul = self.nullfp
+            Msg.chlderr = Msg.nullfp
+            Msg.chldout = Msg.nullfp
+            Msg.chldnul = Msg.nullfp
 
     def setlevel(self, new_level):
         """Define debug level"""
-        self.level = new_level
-        if self.level >= Msg.DBG:
-            self.chlderr = self.stderr
-            self.chldout = self.stdout
+        Msg.level = new_level
+        if Msg.level >= Msg.DBG:
+            Msg.chlderr = sys.stderr
+            Msg.chldout = sys.stdout
+        else:
+            Msg.chlderr = Msg.nullfp
+            Msg.chldout = Msg.nullfp
 
     def out(self, *args, **kwargs):
         """Write text to stdout respecting verbose level"""
         level = Msg.MSG
         if "l" in kwargs:
             level = kwargs["l"]
-        if level <= self.level:
-            self.stdout.write(" ".join(map(str, args)) + '\n')
+        if level <= Msg.level:
+            sys.stdout.write(" ".join([str(x) for x in args]) + '\n')
 
     def err(self, *args, **kwargs):
         """Write text to stderr respecting verbose level"""
         level = Msg.ERR
         if "l" in kwargs:
             level = kwargs["l"]
-        if level <= self.level:
-            self.stderr.write(" ".join(map(str, args)) + '\n')
+        if level <= Msg.level:
+            sys.stderr.write(" ".join([str(x) for x in args]) + '\n')
 
 
 class Unique(object):
@@ -514,7 +512,7 @@ class ChkSUM(object):
         cmd = "openssl dgst -hex -r -sha256 %s" % (filename)
         try:
             output = subprocess.check_output(cmd, shell=True,
-                                             stderr=msg.chlderr,
+                                             stderr=Msg().chlderr,
                                              close_fds=True)
         except subprocess.CalledProcessError:
             return ""
@@ -538,7 +536,8 @@ class FileUtil(object):
 
     def __init__(self, filename):
         self.filename = filename
-        self._register_prefix(conf.tmpdir)
+        self._tmpdir = Config.tmpdir
+        self._register_prefix(self._tmpdir)
 
     def _register_prefix(self, prefix):
         """Register directory prefixes where remove() is allowed"""
@@ -555,7 +554,7 @@ class FileUtil(object):
     def mktmp(self):
         """Generate a temporary filename"""
         while True:
-            tmp_file = conf.tmpdir + "/" + \
+            tmp_file = self._tmpdir + "/" + \
                 Unique().filename(os.path.basename(self.filename))
             if not os.path.exists(tmp_file):
                 FileUtil.tmptrash[tmp_file] = True
@@ -595,25 +594,25 @@ class FileUtil(object):
         """Delete files or directories"""
         filename = os.path.abspath(self.filename)
         if filename.count("/") < 2:
-            msg.err("Error: delete pathname too short: ", filename)
+            Msg().err("Error: delete pathname too short: ", filename)
             return False
         elif self.uid() != os.getuid():
-            msg.err("Error: delete not owner: ", filename)
+            Msg().err("Error: delete not owner: ", filename)
             return False
         elif (not force) and (not self._is_safe_prefix(self.filename)):
-            msg.err("Error: delete outside of directory tree: ", filename)
+            Msg().err("Error: delete outside of directory tree: ", filename)
             return False
         elif os.path.isfile(filename) or os.path.islink(filename):
             try:
                 os.remove(filename)
             except (IOError, OSError):
-                msg.err("Error: deleting file: ", filename)
+                Msg().err("Error: deleting file: ", filename)
                 return False
         elif os.path.isdir(filename):
             cmd = ["/bin/rm", "-Rf", filename]
-            if subprocess.call(cmd, stderr=msg.chlderr,
+            if subprocess.call(cmd, stderr=Msg.chlderr,
                                close_fds=True, env=None):
-                msg.err("Error: deleting directory: ", filename)
+                Msg().err("Error: deleting directory: ", filename)
                 return False
         if self.filename in FileUtil.tmptrash:
             del FileUtil.tmptrash[self.filename]
@@ -625,11 +624,11 @@ class FileUtil(object):
             return False
         else:
             cmd = "tar t"
-            if msg.level >= Msg.VER:
+            if Msg.level >= Msg.VER:
                 cmd += "v"
             cmd += "f " + self.filename
-            if subprocess.call(cmd, shell=True, stderr=msg.chlderr,
-                               stdout=msg.chldnul, close_fds=True):
+            if subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
+                               stdout=Msg.chldnul, close_fds=True):
                 return False
             else:
                 return True
@@ -677,7 +676,7 @@ class FileUtil(object):
             filep = open(out_file, "w")
         except (IOError, OSError):
             return ""
-        subprocess.call(cmd_to_use, shell=True, stderr=msg.chlderr,
+        subprocess.call(cmd_to_use, shell=True, stderr=Msg.chlderr,
                         stdout=filep, close_fds=True)
         exec_pathname = FileUtil(out_file).getdata()
         filep.close()
@@ -743,14 +742,15 @@ class UdockerTools(object):
     """
 
     def __init__(self, localrepo):
-        self.localrepo = localrepo   # LocalRepository object
-        self.tarball = conf.tarball  # URL or file
+        self.localrepo = localrepo        # LocalRepository object
+        self._autoinstall = Config.autoinstall  # True / False
+        self._tarball = Config.tarball  # URL or file
         self.curl = GetURL()
 
     def _version_isequal(self, filename):
         """Is version inside file equal to this udocker version"""
-        version = FileUtil(filename).getdata()
-        return version and conf.udocker_isequal(version)
+        version = FileUtil(filename).getdata().strip()
+        return version and version == __version__
 
     def is_available(self):
         """Are the tools already installed"""
@@ -759,7 +759,7 @@ class UdockerTools(object):
     def _download(self):
         """Get the tools tarball containing the binaries"""
         tarball_file = FileUtil("udockertools").mktmp()
-        (hdr, dummy) = self.curl.get(self.tarball, ofile=tarball_file)
+        (hdr, dummy) = self.curl.get(self._tarball, ofile=tarball_file)
         if hdr.data["X-ND-CURLSTATUS"]:
             return ""
         else:
@@ -772,7 +772,7 @@ class UdockerTools(object):
             return False
         cmd = "cd " + tmpdir + " ; "
         cmd += "tar --strip-components=2 -x"
-        if msg.level >= Msg.VER:
+        if Msg.level >= Msg.VER:
             cmd += "v"
         cmd += "zf " + tarball_file + " udocker_dir/lib/VERSION ; "
         status = subprocess.call(cmd, shell=True, close_fds=True)
@@ -786,7 +786,7 @@ class UdockerTools(object):
         """Install the tarball"""
         cmd = "cd " + self.localrepo.bindir + " ; "
         cmd += "tar --strip-components=2 -x"
-        if msg.level >= Msg.VER:
+        if Msg.level >= Msg.VER:
             cmd += "v"
         cmd += "zf " + tarball_file + " udocker_dir/bin ; "
         cmd += "/bin/chmod u+rx *"
@@ -795,7 +795,7 @@ class UdockerTools(object):
             return False
         cmd = "cd " + self.localrepo.libdir + " ; "
         cmd += "tar --strip-components=2 -x"
-        if msg.level >= Msg.VER:
+        if Msg.level >= Msg.VER:
             cmd += "v"
         cmd += "zf " + tarball_file + " udocker_dir/lib ; "
         cmd += "/bin/chmod u+rx *"
@@ -830,40 +830,44 @@ class UdockerTools(object):
 
         The correct tarball version for this udocker executable is:
         """
-        msg.out(self._instructions.__doc__, __version__, l=Msg.ERR)
+        Msg().out(self._instructions.__doc__, __version__, l=Msg.ERR)
 
     def install(self):
         """Get the udocker tarball and install the binaries"""
         if self.is_available():
             return True
-        elif not self.tarball:
-            msg.err("Error: UDOCKER_TARBALL not defined\n")
+        elif not self._autoinstall:
+            Msg().out("Warning: no engine available and autoinstall disabled",
+                      l=Msg.WAR)
+            return None
+        elif not self._tarball:
+            Msg().err("Error: UDOCKER_TARBALL not defined")
             self._instructions()
             return False
         else:
-            msg.out("Info: installing udockertools", __version__,
-                    "...", l=Msg.INF)
+            Msg().out("Info: installing from tarball", __version__,
+                      l=Msg.INF)
             tarball_file = ""
-            if "://" in self.tarball:
+            if "://" in self._tarball:
                 tarball_file = self._download()
-            elif os.path.exists(self.tarball):
-                tarball_file = self.tarball
+            elif os.path.exists(self._tarball):
+                tarball_file = self._tarball
             if not tarball_file:
-                msg.err("Error: accessing tarball:",
-                        self.tarball)
+                Msg().err("Error: accessing tarball:",
+                          self._tarball)
                 self._instructions()
             else:
                 if not self._verify_version(tarball_file):
-                    msg.err("Error: wrong tarball version:",
-                            self.tarball)
+                    Msg().err("Error: wrong tarball version:",
+                              self._tarball)
                     self._instructions()
                 elif self._install(tarball_file):
                     return True
                 else:
-                    msg.err("Error: installing tarball:",
-                            self.tarball)
+                    Msg().err("Error: installing tarball:",
+                              self._tarball)
                     self._instructions()
-                if "://" in self.tarball:
+                if "://" in self._tarball:
                     FileUtil(tarball_file).remove()
         return False
 
@@ -965,7 +969,6 @@ class NixAuthentication(object):
             ingroup.close()
             return("", "", "")
 
-    # pylint: disable=too-many-arguments
     def add_user(self, user, passw, uid, gid, gecos,
                  home, shell):
         """Add a *nix user to a /etc/passwd file"""
@@ -1010,13 +1013,14 @@ class ExecutionEngine(object):
     Provides the container execution methods that are common to
     the execution drivers.
     """
+
     def __init__(self, localrepo):
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = ""                   # Container id
         self.container_root = ""                 # Container root dir
         self.container_names = []                # Container names
         self.imagerepo = None                    # Imagerepo of container image
-        self.hostauth_list = conf.hostauth_list  # passwd and group
+        self.hostauth_list = Config.hostauth_list  # passwd and group
         self.opt = dict()                        # Run options
         # Metadata defaults
         self.opt["nometa"] = False               # Don't load metadata
@@ -1032,7 +1036,7 @@ class ExecutionEngine(object):
         self.opt["user"] = ""                    # User to run in the container
         self.opt["cwd"] = ""                     # Default dir in the container
         self.opt["entryp"] = ""                  # Container entrypoint
-        self.opt["cmd"] = conf.cmd               # Comand to execute
+        self.opt["cmd"] = Config.cmd             # Comand to execute
         self.opt["hostname"] = ""                # Hostname TBD
         self.opt["domain"] = ""                  # Host domainname TBD
         self.opt["volfrom"] = []                 # Mount vol from container TBD
@@ -1050,19 +1054,19 @@ class ExecutionEngine(object):
                     pass
                 else:
                     if port_number < 1024:
-                        msg.err("Error: this container exposes privileged"
-                                " TCP/IP ports (< 1024) not supported")
+                        Msg().err("Error: this container exposes privileged"
+                                  " TCP/IP ports (< 1024) not supported")
                         return True
         if port_number != -1:
-            msg.out("Warning: this container exposes TCP/IP"
-                    " ports this may not work", l=Msg.WAR)
+            Msg().out("Warning: this container exposes TCP/IP"
+                      " ports this may not work", l=Msg.WAR)
         return False
 
     def _set_cpu_affinity(self):
         """set the cpu affinity string for container run command"""
         # find set affinity executable
         cpu_affinity_exec = ""
-        for exec_cmd in conf.cpu_affinity_exec_tools:
+        for exec_cmd in Config.cpu_affinity_exec_tools:
             exec_name = \
                 FileUtil(exec_cmd.split(" ", 1)[0]).find_exec()
             if exec_name:
@@ -1101,7 +1105,8 @@ class ExecutionEngine(object):
                                      self._is_in_volumes(self.opt["cwd"]))):
             if (not (os.path.exists(container_root + "/" + self.opt["cwd"]) and
                      os.path.isdir(container_root + "/" + self.opt["cwd"]))):
-                msg.err("Error: invalid working directory: ", self.opt["cwd"])
+                Msg().err("Error: invalid working directory: ",
+                          self.opt["cwd"])
                 return False
         return True
 
@@ -1118,9 +1123,9 @@ class ExecutionEngine(object):
             else:
                 self.opt["cmd"] = self.opt["entryp"]
         if not self.opt["cmd"]:
-            self.opt["cmd"] = conf.cmd
-            msg.err("Warning: no command assuming:", self.opt["cmd"],
-                    l=Msg.WAR)
+            self.opt["cmd"] = Config.cmd
+            Msg().err("Warning: no command assuming:", self.opt["cmd"],
+                      l=Msg.WAR)
         exec_name = self.opt["cmd"][0]            # exec pathname without args
         if exec_name.startswith("/"):
             exec_path = container_root + exec_name
@@ -1132,8 +1137,8 @@ class ExecutionEngine(object):
             exec_path = container_root + os.readlink(exec_path)
         if (not (exec_path and os.path.exists(exec_path) and
                  os.path.isfile(exec_path) and os.access(exec_path, os.X_OK))):
-            msg.err("Error: command not found or has no execute bit set: ",
-                    self.opt["cmd"])
+            Msg().err("Error: command not found or has no execute bit set: ",
+                      self.opt["cmd"])
             return False
         return True
 
@@ -1141,7 +1146,7 @@ class ExecutionEngine(object):
         """Load container metadata from container JSON payload"""
         # get container metadata unless we are dealing with a simple directory
         # tree in which case we don't have metadata
-        if conf.location:
+        if Config.location:
             container_dir = ""
             container_json = []
         else:
@@ -1210,7 +1215,7 @@ class ExecutionEngine(object):
             uid = matched.group(1)
             gid = matched.group(2)
         except AttributeError:
-            msg.err("Error: invalid syntax user must be uid:gid or username")
+            Msg().err("Error: invalid syntax user must be uid:gid or username")
         return (uid, gid)
 
     def _setup_container_user(self, user, container_root):
@@ -1268,7 +1273,7 @@ class ExecutionEngine(object):
             self.opt["shell"] = found_shell
         else:
             if "/etc/passwd" in self.opt["vol"] or self.opt["hostauth"]:
-                msg.err("Error: user not found")
+                Msg().err("Error: user not found")
                 return False
             else:
                 if ":" not in user:
@@ -1277,8 +1282,8 @@ class ExecutionEngine(object):
                     self.opt["gid"] = ""
                 elif self.opt["uid"] > 0:
                     self.opt["user"] = ""
-                msg.out("Warning: non-existing user will be created",
-                        l=Msg.WAR)
+                Msg().out("Warning: non-existing user will be created",
+                          l=Msg.WAR)
         self._create_user(container_auth, host_auth)
         return True
 
@@ -1326,20 +1331,20 @@ class ExecutionEngine(object):
 
     def _run_banner(self, cmd=""):
         """Print a container startup banner"""
-        msg.out("",
-                "\n", "*" * 78,
-                "\n", "*", " " * 74, "*",
-                "\n", "*",
-                ("STARTING " + self.container_id).center(74, " "), "*",
-                "\n", "*", " " * 74, "*",
-                "\n", "*" * 78, "\n",
-                "executing:", os.path.basename(cmd), l=Msg.INF)
+        Msg().out("",
+                  "\n", "*" * 78,
+                  "\n", "*", " " * 74, "*",
+                  "\n", "*",
+                  ("STARTING " + self.container_id).center(74, " "), "*",
+                  "\n", "*", " " * 74, "*",
+                  "\n", "*" * 78, "\n",
+                  "executing:", os.path.basename(cmd), l=Msg.INF)
 
     def _run_env_cleanup(self):
         """Allow only to pass essential environment variables."""
         environ_copy = os.environ.copy()
         for env_var in environ_copy:
-            if env_var not in conf.valid_host_env:
+            if env_var not in Config.valid_host_env:
                 del os.environ[env_var]
 
     def _run_env_set(self):
@@ -1350,7 +1355,7 @@ class ExecutionEngine(object):
         self.opt["env"].append("USERNAME=" + self.opt["user"])
 
         self.opt["env"].append("SHLVL=0")
-        self.opt["env"].append("container_ruser=" + conf.username)
+        self.opt["env"].append("container_ruser=" + Config().username())
         self.opt["env"].append("container_root=" + self.container_root)
         self.opt["env"].append("container_uuid=" + self.container_id)
         names = str(self.container_names).translate(None, " '\"[]") + "'"
@@ -1366,8 +1371,8 @@ class ExecutionEngine(object):
         except (ValueError, TypeError):
             return False
 
-        if conf.location:                   # using specific root tree
-            self.container_root = conf.location
+        if Config.location:                   # using specific root tree
+            self.container_root = Config.location
         else:
             self.container_root = container_dir + "/ROOT"
 
@@ -1395,35 +1400,51 @@ class PRootEngine(ExecutionEngine):
     Inherits from ContainerEngine class
     """
 
-    # pylint: disable=too-many-instance-attributes
     def __init__(self, localrepo):
         super(PRootEngine, self).__init__(localrepo)
+        conf = Config()
         self.proot_exec = None                   # PRoot
         self.proot_noseccomp = None              # Noseccomp mode
-        self._kernel = conf.kernel               # Emulate kernel
+        self._kernel = conf.oskernel()           # Emulate kernel
         self.sysdirs_list = conf.sysdirs_list    # Host dirs to pass
         self.dri_list = conf.dri_list            # direct rendering
         self._select_proot()
 
+    def _find_image(self, image_list):
+        """Find proot executable in list"""
+        for image in image_list:
+            image_path = self.localrepo.bindir + "/" + image
+            if os.path.exists(image_path):
+                return image_path
+        Msg().err("Error: proot executable not found")
+        sys.exit(1)
+
     def _select_proot(self):
         """Set proot executable and related variables"""
-        bindir = self.localrepo.bindir
-        if conf.arch == "amd64":
+        conf = Config()
+        self.proot_noseccomp = conf.oskernel_isgreater((4, 8, 7))
+        arch = conf.arch()
+        if arch == "amd64":
             if conf.oskernel_isgreater((4, 8, 7)):
-                self.proot_exec = bindir + "/proot-x86_64-4_8_8"
+                image_list = ["proot-x86_64-4_8_8", "proot-x86_64", "proot"]
             else:
-                self.proot_exec = bindir + "/proot-x86_64"
-        elif conf.arch == "i386":
+                image_list = ["proot-x86_64", "proot"]
+        elif arch == "i386":
             if conf.oskernel_isgreater((4, 8, 7)):
-                self.proot_exec = bindir + "/proot-x86-4_8_8"
+                image_list = ["proot-x86-4_8_8", "proot-x86", "proot"]
             else:
-                self.proot_exec = bindir + "/proot-x86"
-        elif conf.arch == "arm64":
-            self.proot_noseccomp = conf.oskernel_isgreater((4, 8, 7))
-            self.proot_exec = bindir + "/proot-arm64"
-        elif conf.arch == "arm32":
-            self.proot_noseccomp = conf.oskernel_isgreater((4, 8, 7))
-            self.proot_exec = bindir + "/proot-arm"
+                image_list = ["proot-x86", "proot"]
+        elif arch == "arm64":
+            if conf.oskernel_isgreater((4, 8, 7)):
+                image_list = ["proot-arm64-4_8_8", "proot-arm64", "proot"]
+            else:
+                image_list = ["proot-arm64", "proot"]
+        elif arch == "arm":
+            if conf.oskernel_isgreater((4, 8, 7)):
+                image_list = ["proot-arm-4_8_8", "proot-arm", "proot"]
+            else:
+                image_list = ["proot-arm", "proot"]
+        self.proot_exec = self._find_image(image_list)
 
     def _set_uid_map(self):
         """Set the uid_map string for container run command"""
@@ -1448,14 +1469,14 @@ class PRootEngine(ExecutionEngine):
             try:
                 self.opt["vol"].remove(novolume)
             except ValueError:
-                msg.out("Warning:  novol %s not in volumes list" %
-                        novolume, l=Msg.WAR)
+                Msg().out("Warning:  novol %s not in volumes list" %
+                          novolume, l=Msg.WAR)
         for volume in self.opt["vol"]:
             host_path = volume.split(":")[0]
             if not os.path.exists(host_path):
-                if host_path not in conf.dri_list:
-                    msg.out("Warning: host dir not found: -v %s" %
-                            host_path, l=Msg.WAR)
+                if host_path not in Config.dri_list:
+                    Msg().out("Warning: host dir not found: -v %s" %
+                              host_path, l=Msg.WAR)
                 self.opt["vol"].remove(volume)
         # build the volumes list
         if self.opt["vol"]:
@@ -1513,7 +1534,7 @@ class PRootEngine(ExecutionEngine):
         if self.opt["cwd"]:  # set current working directory
             cmd += " -w " + self.opt["cwd"] + " "
         cmd += " ".join(self.opt["cmd"])
-        msg.out("CMD = " + cmd, l=Msg.VER)
+        Msg().out("CMD = " + cmd, l=Msg.VER)
 
         # if not --hostenv clean the environment
         if not self.opt["hostenv"]:
@@ -1539,18 +1560,18 @@ class ContainerStructure(object):
 
     def get_container_attr(self):
         """Get container directory and JSON metadata by id or name"""
-        if conf.location:
+        if Config.location:
             container_dir = ""
             container_json = []
         else:
             container_dir = self.localrepo.cd_container(self.container_id)
             if not container_dir:
-                msg.err("Error: container id or name not found")
+                Msg().err("Error: container id or name not found")
                 return(False, False)
             container_json = self.localrepo.load_json(
                 container_dir + "/container.json")
             if not container_json:
-                msg.err("Error: invalid container json metadata")
+                Msg().err("Error: invalid container json metadata")
                 return(False, False)
         return(container_dir, container_json)
 
@@ -1566,23 +1587,23 @@ class ContainerStructure(object):
         self.tag = tag
         image_dir = self.localrepo.cd_imagerepo(self.imagerepo, self.tag)
         if not image_dir:
-            msg.err("Error: create container: imagerepo is invalid")
+            Msg().err("Error: create container: imagerepo is invalid")
             return False
         (container_json, layer_files) = self.localrepo.get_image_attributes()
         if not container_json:
-            msg.err("Error: create container: getting layers or json")
+            Msg().err("Error: create container: getting layers or json")
             return False
         container_id = Unique().uuid(os.path.basename(self.imagerepo))
         container_dir = self.localrepo.setup_container(
             self.imagerepo, self.tag, container_id)
         if not container_dir:
-            msg.err("Error: create container: setting up container")
+            Msg().err("Error: create container: setting up container")
             return False
         self.localrepo.save_json(
             container_dir + "/container.json", container_json)
         status = self._untar_layers(layer_files, container_dir + "/ROOT")
         if not status:
-            msg.err("Error: creating container:", container_id)
+            Msg().err("Error: creating container:", container_id)
         self.container_id = container_id
         return container_id
 
@@ -1592,7 +1613,7 @@ class ContainerStructure(object):
         The format is .wh.<filename>
         """
         cmd = r"tar tf %s '*\/\.wh\.*'" % (tarf)
-        proc = subprocess.Popen(cmd, shell=True, stderr=msg.chlderr,
+        proc = subprocess.Popen(cmd, shell=True, stderr=Msg.chlderr,
                                 stdout=subprocess.PIPE, close_fds=True)
         while True:
             wh_filename = proc.stdout.readline().strip()
@@ -1622,7 +1643,7 @@ class ContainerStructure(object):
             self._apply_whiteouts(tarf, destdir)
             # cmd = "umask 022 ; tar -C %s -x --delay-directory-restore " % \
             cmd = "umask 022 ; tar -C %s -x " % destdir
-            if msg.level >= Msg.VER:
+            if Msg.level >= Msg.VER:
                 cmd += " -v "
             cmd += r" --one-file-system --no-same-owner "
             cmd += r"--no-same-permissions --overwrite -f " + tarf
@@ -1633,10 +1654,10 @@ class ContainerStructure(object):
             cmd += r" {} \; \) , "
             cmd += r" \( -name '.wh.*' -exec "
             cmd += r" /bin/rm -f --preserve-root {} \; \)"
-            status = subprocess.call(cmd, shell=True, stderr=msg.chlderr,
+            status = subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
                                      close_fds=True)
             if status:
-                msg.err("Error: while extracting image layer")
+                Msg().err("Error: while extracting image layer")
         return not status
 
     def get_container_meta(self, param, default, container_json):
@@ -1679,8 +1700,6 @@ class ContainerStructure(object):
         return out_list
 
 
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-public-methods
 class LocalRepository(object):
     """Implements a basic repository for images and containers.
     The repository will be usually in the user home directory.
@@ -1701,14 +1720,14 @@ class LocalRepository(object):
         if topdir:
             self.topdir = topdir
         else:
-            self.topdir = conf.topdir
+            self.topdir = Config.topdir
 
-        self.bindir = conf.bindir
-        self.libdir = conf.libdir
-        self.reposdir = conf.reposdir
-        self.layersdir = conf.layersdir
-        self.containersdir = conf.containersdir
-        self.homedir = conf.homedir
+        self.bindir = Config.bindir
+        self.libdir = Config.libdir
+        self.reposdir = Config.reposdir
+        self.layersdir = Config.layersdir
+        self.containersdir = Config.containersdir
+        self.homedir = Config.homedir
 
         if not self.bindir:
             self.bindir = self.topdir + "/bin"
@@ -2268,13 +2287,13 @@ class LocalRepository(object):
                     elif fname.startswith("sha"):
                         structure["layers"][layer_id]["layer_f"] = f_path
                     else:
-                        msg.out("Warning: unkwnon file in layer:", f_path,
-                                l=Msg.WAR)
+                        Msg().out("Warning: unkwnon file in layer:", f_path,
+                                  l=Msg.WAR)
                 elif fname in ("TAG", "v1", "v2", "PROTECT"):
                     pass
                 else:
-                    msg.out("Warning: unkwnon file in image:", f_path,
-                            l=Msg.WAR)
+                    Msg().out("Warning: unkwnon file in image:", f_path,
+                              l=Msg.WAR)
         return structure
 
     def _find_top_layer_id(self, structure, my_layer_id=""):
@@ -2322,37 +2341,37 @@ class LocalRepository(object):
         layer_f = structure["layers"][layer_id]["layer_f"]
         if not (os.path.exists(layer_f) and
                 os.path.islink(layer_f)):
-            msg.err("Error: layer data file symbolic link not found",
-                    layer_id)
+            Msg().err("Error: layer data file symbolic link not found",
+                      layer_id)
             return False
         if not os.path.exists(self.cur_tagdir + "/" +
                               os.readlink(layer_f)):
-            msg.err("Error: layer data file not found")
+            Msg().err("Error: layer data file not found")
             return False
         if not FileUtil(layer_f).verify_tar():
-            msg.err("Error: layer file not ok:", layer_f)
+            Msg().err("Error: layer file not ok:", layer_f)
             return False
         matched = re.search("/sha256:(\\S+)$", layer_f)
         if matched:
             layer_f_chksum = ChkSUM().sha256(layer_f)
             if layer_f_chksum != matched.group(1):
-                msg.err("Error: layer file chksum error:", layer_f)
+                Msg().err("Error: layer file chksum error:", layer_f)
                 return False
         return True
 
     def verify_image(self):
         """Verify the structure of an image repository"""
-        msg.out("Info: loading structure", l=Msg.INF)
+        Msg().out("Info: loading structure", l=Msg.INF)
         structure = self._load_structure(self.cur_tagdir)
         if not structure:
-            msg.err("Error: load of image tag structure failed")
+            Msg().err("Error: load of image tag structure failed")
             return False
-        msg.out("Info: finding top layer id", l=Msg.INF)
+        Msg().out("Info: finding top layer id", l=Msg.INF)
         top_layer_id = self._find_top_layer_id(structure)
         if not top_layer_id:
-            msg.err("Error: finding top layer id")
+            Msg().err("Error: finding top layer id")
             return False
-        msg.out("Info: sorting layers", l=Msg.INF)
+        Msg().out("Info: sorting layers", l=Msg.INF)
         layers_list = self._sorted_layers(structure, top_layer_id)
         status = True
         if "ancestry" in structure:
@@ -2360,27 +2379,28 @@ class LocalRepository(object):
             for ancestry_layer in structure["ancestry"]:
                 verify_layer = layer.next()
                 if ancestry_layer != verify_layer:
-                    msg.err("Error: ancestry and layers do not match",
-                            ancestry_layer, verify_layer)
+                    Msg().err("Error: ancestry and layers do not match",
+                              ancestry_layer, verify_layer)
                     status = False
                     continue
         elif "manifest" in structure:
             for manifest_layer in structure["manifest"]["fsLayers"]:
                 if manifest_layer["blobSum"] not in structure["layers"]:
-                    msg.err("Error: layer in manifest does not exist in repo",
-                            manifest_layer)
+                    Msg().err("Error: layer in manifest does not exist",
+                              " in repo", manifest_layer)
                     status = False
                     continue
         for layer_id in structure["layers"]:
             if "layer_f" not in structure["layers"][layer_id]:
-                msg.err("Error: layer file not found in structure", layer_id)
+                Msg().err("Error: layer file not found in structure",
+                          layer_id)
                 status = False
                 continue
             layer_status = self._verify_layer_file(structure, layer_id)
             if not layer_status:
                 status = False
                 continue
-            msg.out("Info: layer ok:", layer_id, l=Msg.INF)
+            Msg().out("Info: layer ok:", layer_id, l=Msg.INF)
         return status
 
 
@@ -2441,14 +2461,14 @@ class GetURL(object):
 
     def __init__(self):
         """Load configuration common to the implementations"""
-        self.timeout = conf.timeout
-        self.ctimeout = conf.ctimeout
-        self.download_timeout = conf.download_timeout
-        self.agent = conf.http_agent
-        self.http_proxy = conf.http_proxy
+        self.timeout = Config.timeout
+        self.ctimeout = Config.ctimeout
+        self.download_timeout = Config.download_timeout
+        self.agent = Config.http_agent
+        self.http_proxy = Config.http_proxy
         self.cache_support = False
+        self.insecure = Config.http_insecure
         self._select_implementation()
-        self.insecure = conf.http_insecure
 
     def _select_implementation(self):
         """Select which implementation to use"""
@@ -2458,7 +2478,7 @@ class GetURL(object):
         elif GetURLexeCurl().is_available():
             self._geturl = GetURLexeCurl()
         else:
-            msg.err("Error: need curl or pycurl to perform downloads")
+            Msg().err("Error: need curl or pycurl to perform downloads")
             raise NameError('need curl or pycurl')
 
     def get_content_length(self, hdr):
@@ -2479,7 +2499,7 @@ class GetURL(object):
     def get(self, *args, **kwargs):
         """Get URL using selected implementation
         Example:
-            get(url, ctimeout=5, timeout=5, v=true, header=[]):
+            get(url, ctimeout=5, timeout=5, header=[]):
         """
         if len(args) != 1:
             raise TypeError('wrong number of arguments')
@@ -2521,7 +2541,7 @@ class GetURLpyCurl(GetURL):
         pyc.setopt(pyc.CONNECTTIMEOUT, self.ctimeout)
         pyc.setopt(pyc.TIMEOUT, self.timeout)
         pyc.setopt(pyc.PROXY, self.http_proxy)
-        if msg.level >= Msg.DBG:
+        if Msg.level >= Msg.DBG:
             pyc.setopt(pyc.VERBOSE, True)
         else:
             pyc.setopt(pyc.VERBOSE, False)
@@ -2559,7 +2579,7 @@ class GetURLpyCurl(GetURL):
             try:
                 filep = open(output_file, openflags)
             except(IOError, OSError):
-                msg.err("Error: opening download file: %s" % output_file)
+                Msg().err("Error: opening download file: %s" % output_file)
                 raise
             pyc.setopt(pyc.WRITEDATA, filep)
         else:
@@ -2599,7 +2619,7 @@ class GetURLpyCurl(GetURL):
                 kwargs["resume"] = False
                 (hdr, buf) = self.get(url, **kwargs)
             elif " 200" not in hdr.data["X-ND-HTTPSTATUS"]:
-                msg.err("Error: in download: " + str(
+                Msg().err("Error: in download: " + str(
                     hdr.data["X-ND-HTTPSTATUS"]))
                 FileUtil(output_file).remove()
         return(hdr, buf)
@@ -2636,7 +2656,7 @@ class GetURLexeCurl(GetURL):
         }
         if self.insecure:
             self._opts["insecure"] = "-k"
-        if msg.level > Msg.DBG:
+        if Msg().level > Msg.DBG:
             self._opts["verbose"] = "-v"
         self._files = {
             "url":  "",
@@ -2688,8 +2708,8 @@ class GetURLexeCurl(GetURL):
         hdr.setvalue_from_file(self._files["header_file"])
         hdr.data["X-ND-CURLSTATUS"] = status
         if status:
-            msg.err("Error: in download: %s"
-                    % str(FileUtil(self._files["error_file"]).getdata()))
+            Msg().err("Error: in download: %s"
+                      % str(FileUtil(self._files["error_file"]).getdata()))
             return(hdr, buf)
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
@@ -2703,7 +2723,7 @@ class GetURLexeCurl(GetURL):
                     kwargs["resume"] = False
                 (hdr, buf) = self.get(self._files["url"], **kwargs)
             elif " 200" not in hdr.data["X-ND-HTTPSTATUS"]:
-                msg.err("Error: in download: ", str(
+                Msg().err("Error: in download: ", str(
                     hdr.data["X-ND-HTTPSTATUS"]), ": ", str(status))
                 FileUtil(self._files["output_file"]).remove()
             else:  # OK downloaded
@@ -2713,7 +2733,7 @@ class GetURLexeCurl(GetURL):
                 buf = cStringIO.StringIO(open(self._files["output_file"],
                                               "r").read())
             except(IOError, OSError):
-                msg.err("Error: reading curl output file to buffer")
+                Msg().err("Error: reading curl output file to buffer")
             FileUtil(self._files["output_file"]).remove()
         FileUtil(self._files["error_file"]).remove()
         FileUtil(self._files["header_file"]).remove()
@@ -2726,8 +2746,8 @@ class DockerIoAPI(object):
     """
 
     def __init__(self, localrepo):
-        self.index_url = conf.dockerio_index_url
-        self.registry_url = conf.dockerio_registry_url
+        self.index_url = Config.dockerio_index_url
+        self.registry_url = Config.dockerio_registry_url
         self.v1_auth_header = ""
         self.v2_auth_header = ""
         self.v2_auth_token = ""
@@ -2757,7 +2777,7 @@ class DockerIoAPI(object):
         """Check if name matches authorized characters for a docker repo"""
         if imagerepo and re.match("^[a-zA-Z0-9][a-zA-Z0-9-_./:]+$", imagerepo):
             return True
-        msg.err("Error: invalid repo name syntax")
+        Msg().err("Error: invalid repo name syntax")
         return False
 
     def _is_docker_registry(self):
@@ -2769,11 +2789,11 @@ class DockerIoAPI(object):
         """Encapsulates the call to GetURL.get() so that authentication
         for v1 and v2 repositories can be treated differently.
         Example:
-             _get_url(url, ctimeout=5, timeout=5, v=true, header=[]):
+             _get_url(url, ctimeout=5, timeout=5, header=[]):
         """
         url = str(args[0])
         (hdr, buf) = self.curl.get(*args, **kwargs)
-        msg.out("header: %s" % (hdr.data), l=Msg.DBG)
+        Msg().out("header: %s" % (hdr.data), l=Msg.DBG)
         if ("X-ND-HTTPSTATUS" in hdr.data and
                 "401" in hdr.data["X-ND-HTTPSTATUS"]):
             if "www-authenticate" in hdr.data and hdr.data["www-authenticate"]:
@@ -2827,8 +2847,8 @@ class DockerIoAPI(object):
             remote_size = self.curl.get_content_length(hdr)
         if (remote_size != FileUtil(filename).size() and
                 hdr.data["X-ND-CURLSTATUS"]):
-            msg.err("Error: file size mismatch:", filename,
-                    remote_size, FileUtil(filename).size())
+            Msg().err("Error: file size mismatch:", filename,
+                      remote_size, FileUtil(filename).size())
             return False
         return True
 
@@ -2844,7 +2864,7 @@ class DockerIoAPI(object):
     def get_v1_repo(self, imagerepo):
         """Get list of images in a repo from Docker Hub"""
         url = self.index_url + "/v1/repositories/" + imagerepo + "/images"
-        msg.out("repo url:", url, l=Msg.DBG)
+        Msg().out("repo url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url, header=["X-Docker-Token: true"])
         try:
             self.v1_auth_header = "Authorization: Token " + \
@@ -2865,7 +2885,7 @@ class DockerIoAPI(object):
     def get_v1_image_tags(self, endpoint, imagerepo):
         """Get list of tags in a repo from Docker Hub"""
         url = endpoint + "/v1/repositories/" + imagerepo + "/tags"
-        msg.out("tags url:", url, l=Msg.DBG)
+        Msg().out("tags url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
             return(hdr.data, json.loads(buf.getvalue()))
@@ -2875,7 +2895,7 @@ class DockerIoAPI(object):
     def get_v1_image_tag(self, endpoint, imagerepo, tag):
         """Get list of tags in a repo from Docker Hub"""
         url = endpoint + "/v1/repositories/" + imagerepo + "/tags/" + tag
-        msg.out("tags url:", url, l=Msg.DBG)
+        Msg().out("tags url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
             return(hdr.data, json.loads(buf.getvalue()))
@@ -2885,7 +2905,7 @@ class DockerIoAPI(object):
     def get_v1_image_ancestry(self, endpoint, image_id):
         """Get the ancestry which is an ordered list of layers"""
         url = endpoint + "/v1/images/" + image_id + "/ancestry"
-        msg.out("ancestry url:", url, l=Msg.DBG)
+        Msg().out("ancestry url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
             return(hdr.data, json.loads(buf.getvalue()))
@@ -2895,7 +2915,7 @@ class DockerIoAPI(object):
     def get_v1_image_json(self, endpoint, layer_id):
         """Get the JSON metadata for a specific layer"""
         url = endpoint + "/v1/images/" + layer_id + "/json"
-        msg.out("json url:", url, l=Msg.DBG)
+        Msg().out("json url:", url, l=Msg.DBG)
         filename = self.localrepo.layersdir + "/" + layer_id + ".json"
         if self._get_file(url, filename, 0):
             self.localrepo.add_image_layer(filename)
@@ -2905,7 +2925,7 @@ class DockerIoAPI(object):
     def get_v1_image_layer(self, endpoint, layer_id):
         """Get a specific layer data file (layer files are tarballs)"""
         url = endpoint + "/v1/images/" + layer_id + "/layer"
-        msg.out("layer url:", url, l=Msg.DBG)
+        Msg().out("layer url:", url, l=Msg.DBG)
         filename = self.localrepo.layersdir + "/" + layer_id + ".layer"
         if self._get_file(url, filename, 3):
             self.localrepo.add_image_layer(filename)
@@ -2917,7 +2937,7 @@ class DockerIoAPI(object):
         files = []
         if layer_list:
             for layer_id in reversed(layer_list):
-                msg.out("Downloading layer:", layer_id, l=Msg.INF)
+                Msg().out("Downloading layer:", layer_id, l=Msg.INF)
                 filesize = self.get_v1_image_json(endpoint, layer_id)
                 if not filesize:
                     return []
@@ -2990,7 +3010,7 @@ class DockerIoAPI(object):
         else:
             url = self.registry_url + "/v2/" + imagerepo + \
                 "/manifests/" + tag
-        msg.out("manifest url:", url, l=Msg.DBG)
+        Msg().out("manifest url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
             return(hdr.data, json.loads(buf.getvalue()))
@@ -3005,7 +3025,7 @@ class DockerIoAPI(object):
         else:
             url = self.registry_url + "/v2/" + imagerepo + \
                 "/blobs/" + layer_id
-        msg.out("layer url:", url, l=Msg.DBG)
+        Msg().out("layer url:", url, l=Msg.DBG)
         filename = self.localrepo.layersdir + "/" + layer_id
         if self._get_file(url, filename, 3):
             self.localrepo.add_image_layer(filename)
@@ -3017,7 +3037,8 @@ class DockerIoAPI(object):
         files = []
         if fslayers:
             for layer in reversed(fslayers):
-                msg.out("Downloading layer:", layer["blobSum"], l=Msg.INF)
+                Msg().out("Downloading layer:", layer["blobSum"],
+                          l=Msg.INF)
                 if not self.get_v2_image_layer(imagerepo, layer["blobSum"]):
                     return []
                 files.append(layer["blobSum"])
@@ -3030,10 +3051,10 @@ class DockerIoAPI(object):
         try:
             if not (self.localrepo.setup_tag(tag) and
                     self.localrepo.set_version("v2")):
-                msg.err("Error: setting localrepo v2 tag and version")
+                Msg().err("Error: setting localrepo v2 tag and version")
                 return []
             self.localrepo.save_json("manifest", manifest)
-            msg.out("v2 layers: %s" % (imagerepo), l=Msg.DBG)
+            Msg().out("v2 layers: %s" % (imagerepo), l=Msg.DBG)
             files = self.get_v2_layers_all(imagerepo,
                                            manifest["fsLayers"])
         except (KeyError, AttributeError, IndexError, ValueError, TypeError):
@@ -3068,10 +3089,10 @@ class DockerIoAPI(object):
 
     def get_v1(self, imagerepo, tag):
         """Pull container with v1 API"""
-        msg.out("v1 image id: %s" % (imagerepo), l=Msg.DBG)
+        Msg().out("v1 image id: %s" % (imagerepo), l=Msg.DBG)
         (hdr, images_array) = self.get_v1_repo(imagerepo)
         if not images_array:
-            msg.err("Error: image not found")
+            Msg().err("Error: image not found")
             return []
         try:
             endpoint = "http://" + hdr["x-docker-endpoints"]
@@ -3080,30 +3101,30 @@ class DockerIoAPI(object):
         (dummy, tags_array) = self.get_v1_image_tags(endpoint, imagerepo)
         image_id = self._get_v1_id_from_tags(tags_array, tag)
         if not image_id:
-            msg.err("Error: image tag not found")
+            Msg().err("Error: image tag not found")
             return []
         if len(image_id) <= 8:
             image_id = self._get_v1_id_from_images(images_array, image_id)
             if not image_id:
-                msg.err("Error: image id not found")
+                Msg().err("Error: image id not found")
                 return []
         if not (self.localrepo.setup_tag(tag) and
                 self.localrepo.set_version("v1")):
-            msg.err("Error: setting localrepo v1 tag and version")
+            Msg().err("Error: setting localrepo v1 tag and version")
             return []
-        msg.out("v1 ancestry: %s" % image_id, l=Msg.DBG)
+        Msg().out("v1 ancestry: %s" % image_id, l=Msg.DBG)
         (dummy, ancestry) = self.get_v1_image_ancestry(endpoint, image_id)
         if not ancestry:
-            msg.err("Error: ancestry not found")
+            Msg().err("Error: ancestry not found")
             return []
         self.localrepo.save_json("ancestry", ancestry)
-        msg.out("v1 layers: %s" % image_id, l=Msg.DBG)
+        Msg().out("v1 layers: %s" % image_id, l=Msg.DBG)
         files = self.get_v1_layers_all(endpoint, ancestry)
         return files
 
     def get(self, imagerepo, tag):
         """Pull a docker image from a v2 registry or v1 index"""
-        msg.out("get imagerepo: %s tag: %s" % (imagerepo, tag), l=Msg.DBG)
+        Msg().out("get imagerepo: %s tag: %s" % (imagerepo, tag), l=Msg.DBG)
         if self.localrepo.cd_imagerepo(imagerepo, tag):
             new_repo = False
         else:
@@ -3211,11 +3232,11 @@ class DockerLocalFileAPI(object):
                             structure["layers"][layer_id]["layer_f"] = (
                                 layer_f_path)
                         else:
-                            msg.out("Warning: unkwnon file in layer:", f_path,
-                                    l=Msg.WAR)
+                            Msg().out("Warning: unkwnon file in layer:",
+                                      f_path, l=Msg.WAR)
                 else:
-                    msg.out("Warning: unkwnon file in image:", f_path,
-                            l=Msg.WAR)
+                    Msg().out("Warning: unkwnon file in image:", f_path,
+                              l=Msg.WAR)
         return structure
 
     def _find_top_layer_id(self, structure, my_layer_id=""):
@@ -3271,16 +3292,17 @@ class DockerLocalFileAPI(object):
     def _load_image(self, structure, imagerepo, tag):
         """Load a container image into a repository mimic docker load"""
         if self.localrepo.cd_imagerepo(imagerepo, tag):
-            msg.err("Error: repository and tag already exist", imagerepo, tag)
+            Msg().err("Error: repository and tag already exist",
+                      imagerepo, tag)
             return []
         else:
             self.localrepo.setup_imagerepo(imagerepo)
             tag_dir = self.localrepo.setup_tag(tag)
             if not tag_dir:
-                msg.err("Error: setting up repository", imagerepo, tag)
+                Msg().err("Error: setting up repository", imagerepo, tag)
                 return []
             if not self.localrepo.set_version("v1"):
-                msg.err("Error: setting repository version")
+                Msg().err("Error: setting repository version")
                 return []
             try:
                 top_layer_id = structure["repositories"][imagerepo][tag]
@@ -3288,13 +3310,13 @@ class DockerLocalFileAPI(object):
                 top_layer_id = self._find_top_layer_id(structure)
             for layer_id in self._sorted_layers(structure, top_layer_id):
                 if str(structure["layers"][layer_id]["VERSION"]) != "1.0":
-                    msg.err("Error: layer version unknown")
+                    Msg().err("Error: layer version unknown")
                     return []
                 for layer_item in ("json_f", "layer_f"):
                     filename = str(structure["layers"][layer_id][layer_item])
                     if not self._copy_layer_to_repo(filename, layer_id):
-                        msg.err("Error: copying %s file %s"
-                                % (layer_item[:-2], filename))
+                        Msg().err("Error: copying %s file %s"
+                                  % (layer_item[:-2], filename))
                         return []
             self.localrepo.save_json("ancestry",
                                      self._sorted_layers(structure,
@@ -3318,11 +3340,11 @@ class DockerLocalFileAPI(object):
         """Untar container created with docker save"""
         cmd = "umask 022 ; tar -C " + \
             destdir + " -x --delay-directory-restore "
-        if msg.level >= Msg.VER:
+        if Msg.level >= Msg.VER:
             cmd += " -v "
         cmd += " --one-file-system --no-same-owner "
         cmd += " --no-same-permissions --overwrite -f " + tarfile
-        status = subprocess.call(cmd, shell=True, stderr=msg.chlderr,
+        status = subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
                                  close_fds=True)
         return not status
 
@@ -3333,7 +3355,7 @@ class DockerLocalFileAPI(object):
         as a tar file.
         """
         if not os.path.exists(imagefile):
-            msg.err("Error: image file does not exist: ", imagefile)
+            Msg().err("Error: image file does not exist: ", imagefile)
             return False
         tmp_imagedir = FileUtil("import").mktmp()
         try:
@@ -3341,12 +3363,12 @@ class DockerLocalFileAPI(object):
         except (IOError, OSError):
             return False
         if not self._untar_saved_container(imagefile, tmp_imagedir):
-            msg.err("Error: failed to extract container:", imagefile)
+            Msg().err("Error: failed to extract container:", imagefile)
             FileUtil(tmp_imagedir).remove()
             return False
         structure = self._load_structure(tmp_imagedir)
         if not structure:
-            msg.err("Error: failed to load image structure", imagefile)
+            Msg().err("Error: failed to load image structure", imagefile)
             FileUtil(tmp_imagedir).remove()
             return False
         else:
@@ -3369,8 +3391,8 @@ class DockerLocalFileAPI(object):
         container_json["comment"] = comment
         container_json["created"] = \
             time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z")
-        container_json["architecture"] = conf.arch
-        container_json["os"] = conf.osver
+        container_json["architecture"] = Config().arch()
+        container_json["os"] = Config().osversion()
         layer_file = self.localrepo.layersdir + "/" + layer_id + ".layer"
         container_json["size"] = FileUtil(layer_file).size()
         if container_json["size"] == -1:
@@ -3435,19 +3457,19 @@ class DockerLocalFileAPI(object):
         """Import a tar file containing a simple directory tree possibly
         created with Docker export"""
         if not os.path.exists(tarfile):
-            msg.err("Error: tar file does not exist: ", tarfile)
+            Msg().err("Error: tar file does not exist: ", tarfile)
             return False
         self.localrepo.setup_imagerepo(imagerepo)
         tag_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
         if tag_dir:
-            msg.err("Error: tag already exists in repo: ", tag)
+            Msg().err("Error: tag already exists in repo: ", tag)
             return False
         tag_dir = self.localrepo.setup_tag(tag)
         if not tag_dir:
-            msg.err("Error: creating repo and tag")
+            Msg().err("Error: creating repo and tag")
             return False
         if not self.localrepo.set_version("v1"):
-            msg.err("Error: setting repository version")
+            Msg().err("Error: setting repository version")
             return False
         layer_id = Unique().layer_v1()
         layer_file = self.localrepo.layersdir + "/" + layer_id + ".layer"
@@ -3456,14 +3478,14 @@ class DockerLocalFileAPI(object):
             os.rename(tarfile, layer_file)
         except(IOError, OSError):
             if not FileUtil(tarfile).copyto(layer_file):
-                msg.err("Error: in move/copy file", tarfile)
+                Msg().err("Error: in move/copy file", tarfile)
                 return False
         self.localrepo.add_image_layer(layer_file)
         self.localrepo.save_json("ancestry", [layer_id])
         container_json = self.create_container_meta(layer_id)
         self.localrepo.save_json(json_file, container_json)
         self.localrepo.add_image_layer(json_file)
-        msg.out("Info: added layer", layer_id, l=Msg.INF)
+        Msg().out("Info: added layer", layer_id, l=Msg.INF)
         return layer_id
 
 
@@ -3477,11 +3499,11 @@ class Udocker(object):
         self.localrepo = localrepo
         self.dockerioapi = DockerIoAPI(localrepo)
         self.dockerlocalfileapi = DockerLocalFileAPI(localrepo)
-        if conf.keystore.startswith("/"):
-            self.keystore = KeyStore(conf.keystore)
+        if Config.keystore.startswith("/"):
+            self.keystore = KeyStore(Config.keystore)
         else:
             self.keystore = \
-                KeyStore(self.localrepo.homedir + "/" + conf.keystore)
+                KeyStore(self.localrepo.homedir + "/" + Config.keystore)
 
     def _cdrepo(self, cmdp):
         """Select the top directory of a local repository"""
@@ -3489,8 +3511,8 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         if not FileUtil(topdir).isdir():
-            msg.out("Warning: localrepo directory is invalid: ", topdir,
-                    l=Msg.WAR)
+            Msg().out("Warning: localrepo directory is invalid: ", topdir,
+                      l=Msg.WAR)
             return False
         self.localrepo.setup(topdir)
         return True
@@ -3504,7 +3526,7 @@ class Udocker(object):
             tag = "latest"
         if not (imagerepo and tag and
                 self.dockerioapi.is_repo_name(imagespec)):
-            msg.err("Error: must specify image:tag or repository/image:tag")
+            Msg().err("Error: must specify image:tag or repository/image:tag")
             return(None, None)
         return imagerepo, tag
 
@@ -3519,10 +3541,10 @@ class Udocker(object):
             if self.localrepo.create_repo():
                 return True
             else:
-                msg.err("Error: localrepo creation failure: ", topdir)
+                Msg().err("Error: localrepo creation failure: ", topdir)
                 return False
         else:
-            msg.err("Error: localrepo directory already exists: ", topdir)
+            Msg().err("Error: localrepo directory already exists: ", topdir)
             return False
 
     def _search_print_v1(self, repo_list):
@@ -3536,14 +3558,14 @@ class Udocker(object):
             for char in repo["description"]:
                 if char in string.printable:
                     description += char
-            msg.out("%-40.40s %8.8s %s"
-                    % (repo["name"], is_official, description))
+            Msg().out("%-40.40s %8.8s %s"
+                      % (repo["name"], is_official, description))
 
     def _search_print_v2(self, repo_list):
         """Print catalog results from v2 API"""
         for reponame in repo_list["repositories"]:
-            msg.out("%-40.40s %8.8s"
-                    % (reponame, "    "))
+            Msg().out("%-40.40s %8.8s"
+                      % (reponame, "    "))
 
     def do_search(self, cmdp):
         """
@@ -3555,8 +3577,8 @@ class Udocker(object):
         expression = cmdp.get("P1")
         if cmdp.missing_options():               # syntax error
             return False
-        msg.out("%-40.40s %8.8s %s" %
-                ("NAME", "OFFICIAL", "DESCRIPTION"), l=Msg.INF)
+        Msg().out("%-40.40s %8.8s %s" %
+                  ("NAME", "OFFICIAL", "DESCRIPTION"), l=Msg.INF)
         self.dockerioapi.search_init(pause)
         v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
         self.dockerioapi.set_v2_login_token(v2_auth_token)
@@ -3585,15 +3607,15 @@ class Udocker(object):
         if cmdp.missing_options():  # syntax error
             return False
         if not imagefile:
-            msg.err("Error: must specify filename of docker exported image")
+            Msg().err("Error: must specify filename of docker exported image")
             return False
         repos = self.dockerlocalfileapi.load(imagefile)
         if not repos:
-            msg.err("Error: loading failed")
+            Msg().err("Error: loading failed")
             return False
         else:
             for repo_item in repos:
-                msg.out(repo_item)
+                Msg().out(repo_item)
             return True
 
     def do_import(self, cmdp):
@@ -3603,7 +3625,7 @@ class Udocker(object):
         """
         tarfile = cmdp.get("P1")
         if not tarfile:
-            msg.err("Error: must specify tar filename")
+            Msg().err("Error: must specify tar filename")
             return False
         (imagerepo, tag) = self._check_imagespec(cmdp.get("P2"))
         if (not imagerepo) or cmdp.missing_options():  # syntax error
@@ -3611,7 +3633,7 @@ class Udocker(object):
         if self.dockerlocalfileapi.import_(tarfile, imagerepo, tag):
             return True
         else:
-            msg.err("Error: importing file")
+            Msg().err("Error: importing file")
             return False
 
     def do_login(self, cmdp):
@@ -3631,7 +3653,7 @@ class Udocker(object):
         if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, ""):
             return True
         else:
-            msg.err("Error: invalid credentials")
+            Msg().err("Error: invalid credentials")
             return False
 
     def do_logout(self, cmdp):
@@ -3645,7 +3667,7 @@ class Udocker(object):
         else:
             status = self.keystore.delete(self.dockerioapi.registry_url)
         if not status:
-            msg.err("Error: deleting credentials")
+            Msg().err("Error: deleting credentials")
         return status
 
     def do_pull(self, cmdp):
@@ -3676,10 +3698,10 @@ class Udocker(object):
             self.dockerioapi.set_v2_login_token(v2_auth_token)
             files = self.dockerioapi.get(imagerepo, tag)
             if files:
-                msg.out(files)
+                Msg().out(files)
                 return True
             else:
-                msg.err("Error: no files downloaded")
+                Msg().err("Error: no files downloaded")
         return False
 
     def do_create(self, cmdp):
@@ -3694,11 +3716,11 @@ class Udocker(object):
             return False
         container_id = self._create(imagespec)
         if container_id:
-            msg.out(container_id)
+            Msg().out(container_id)
             if name and not self.localrepo.set_container_name(container_id,
                                                               name):
-                msg.err("Error: invalid container name may already exist "
-                        "or wrong format")
+                Msg().err("Error: invalid container name may already exist "
+                          "or wrong format")
                 return False
             else:
                 return True
@@ -3707,7 +3729,7 @@ class Udocker(object):
     def _create(self, imagespec):
         """Auxiliary to create(), performs the creation"""
         if not self.dockerioapi.is_repo_name(imagespec):
-            msg.err("Error: must specify image:tag or repository/image:tag")
+            Msg().err("Error: must specify image:tag or repository/image:tag")
             return False
         (imagerepo, tag) = self._check_imagespec(imagespec)
         if imagerepo:
@@ -3828,13 +3850,13 @@ class Udocker(object):
         exec_engine = PRootEngine(self.localrepo)
         self._get_run_options(cmdp, exec_engine)
         container_or_image = cmdp.get("P1")
-        conf.location = cmdp.get("--location=")
+        Config.location = cmdp.get("--location=")
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
         #
         if cmdp.missing_options():               # syntax error
             return False
-        if conf.location:
+        if Config.location:
             container_id = ""
         else:
             container_id = self.localrepo.get_container_id(container_or_image)
@@ -3844,11 +3866,11 @@ class Udocker(object):
                         self.localrepo.cd_imagerepo(imagerepo, tag)):
                     container_id = self._create(imagerepo+":"+tag)
                 if not container_id:
-                    msg.err("Error: image or container not available")
+                    Msg().err("Error: image or container not available")
                     return False
             if name and container_id:
                 if not self.localrepo.set_container_name(container_id, name):
-                    msg.err("Error: invalid container name format")
+                    Msg().err("Error: invalid container name format")
                     return False
         status = exec_engine.run(container_id)
         if delete and not self.localrepo.isprotected_container(container_id):
@@ -3865,23 +3887,23 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         images_list = self.localrepo.get_imagerepos()
-        msg.out("REPOSITORY", l=Msg.INF)
+        Msg().out("REPOSITORY", l=Msg.INF)
         for (imagerepo, tag) in images_list:
             prot = (".", "P")[
                 self.localrepo.isprotected_imagerepo(imagerepo, tag)]
-            msg.out("%-60.60s %c" % (imagerepo + ":" + tag, prot))
+            Msg().out("%-60.60s %c" % (imagerepo + ":" + tag, prot))
             if verbose:
                 imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
-                msg.out("  %s" % (imagerepo_dir))
+                Msg().out("  %s" % (imagerepo_dir))
                 layers_list = self.localrepo.get_layers(imagerepo, tag)
                 if layers_list:
                     for (layer_name, size) in layers_list:
                         file_size = size / (1024 * 1024)
                         if not file_size and size:
                             file_size = 1
-                        msg.out("    %s (%d MB)" %
-                                (layer_name.replace(imagerepo_dir, ""),
-                                 file_size))
+                        Msg().out("    %s (%d MB)" %
+                                  (layer_name.replace(imagerepo_dir, ""),
+                                   file_size))
         return True
 
     def do_ps(self, cmdp):
@@ -3891,15 +3913,15 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         containers_list = self.localrepo.get_containers_list(False)
-        msg.out("%-36.36s %c %c %-18s %-s" %
-                ("CONTAINER ID", "P", "M", "NAMES", "IMAGE"), l=Msg.INF)
+        Msg().out("%-36.36s %c %c %-18s %-s" %
+                  ("CONTAINER ID", "P", "M", "NAMES", "IMAGE"), l=Msg.INF)
         for (container_id, reponame, names) in containers_list:
             prot = (".", "P")[
                 self.localrepo.isprotected_container(container_id)]
             write = ("R", "W", "N", "D")[
                 self.localrepo.iswriteable_container(container_id)]
-            msg.out("%-36.36s %c %c %-18s %-s" %
-                    (container_id, prot, write, names, reponame))
+            Msg().out("%-36.36s %c %c %-18s %-s" %
+                      (container_id, prot, write, names, reponame))
 
     def do_rm(self, cmdp):
         """
@@ -3910,24 +3932,24 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         if not container_id_list:
-            msg.err("Error: must specify image:tag or repository/image:tag")
+            Msg().err("Error: must specify image:tag or repository/image:tag")
             return False
         status = True
         for container_id in cmdp.get("P*"):
             container_id = self.localrepo.get_container_id(container_id)
             if not container_id:
-                msg.err("Error: invalid container id", container_id)
+                Msg().err("Error: invalid container id", container_id)
                 status = False
                 continue
             else:
                 if self.localrepo.isprotected_container(container_id):
-                    msg.err("Error: container is protected")
+                    Msg().err("Error: container is protected")
                     status = False
                     continue
-                msg.out("Info: deleting container:",
-                        str(container_id), l=Msg.INF)
+                Msg().out("Info: deleting container:",
+                          str(container_id), l=Msg.INF)
                 if not self.localrepo.del_container(container_id):
-                    msg.err("Error: deleting container")
+                    Msg().err("Error: deleting container")
                     status = False
         return status
 
@@ -3946,11 +3968,11 @@ class Udocker(object):
             return False
         else:
             if self.localrepo.isprotected_imagerepo(imagerepo, tag):
-                msg.err("Error: image repository is protected")
+                Msg().err("Error: image repository is protected")
                 return False
-            msg.out("Info: deleting image:", imagespec, l=Msg.INF)
+            Msg().out("Info: deleting image:", imagespec, l=Msg.INF)
             if not self.localrepo.del_imagerepo(imagerepo, tag, force):
-                msg.err("Error: deleting image")
+                Msg().err("Error: deleting image")
                 return False
             return True
 
@@ -3964,7 +3986,7 @@ class Udocker(object):
             return False
         if self.localrepo.get_container_id(arg):
             if not self.localrepo.protect_container(arg):
-                msg.err("Error: protect container failed")
+                Msg().err("Error: protect container failed")
                 return False
             else:
                 return True
@@ -3973,7 +3995,7 @@ class Udocker(object):
             if imagerepo:
                 if self.localrepo.protect_imagerepo(imagerepo, tag):
                     return True
-            msg.err("Error: protect image failed")
+            Msg().err("Error: protect image failed")
             return False
 
     def do_unprotect(self, cmdp):
@@ -3986,7 +4008,7 @@ class Udocker(object):
             return False
         if self.localrepo.get_container_id(arg):
             if not self.localrepo.unprotect_container(arg):
-                msg.err("Error: unprotect container failed")
+                Msg().err("Error: unprotect container failed")
                 return False
             else:
                 return True
@@ -3995,7 +4017,7 @@ class Udocker(object):
             if imagerepo:
                 if self.localrepo.unprotect_imagerepo(imagerepo, tag):
                     return True
-            msg.err("Error: unprotect image failed")
+            Msg().err("Error: unprotect image failed")
             return False
 
     def do_name(self, cmdp):
@@ -4008,10 +4030,10 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         if not (self.localrepo.get_container_id(container_id) and name):
-            msg.err("Error: invalid container id or name")
+            Msg().err("Error: invalid container id or name")
             return False
         if not self.localrepo.set_container_name(container_id, name):
-            msg.err("Error: invalid container name")
+            Msg().err("Error: invalid container name")
             return False
         return True
 
@@ -4024,10 +4046,10 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         if not name:
-            msg.err("Error: invalid container id or name")
+            Msg().err("Error: invalid container id or name")
             return False
         if not self.localrepo.del_container_name(name):
-            msg.err("Error: removing container name")
+            Msg().err("Error: removing container name")
             return False
         return True
 
@@ -4053,14 +4075,14 @@ class Udocker(object):
                 return False
         if print_dir:
             if container_id and container_dir:
-                msg.out(str(container_dir) + "/ROOT")
+                Msg().out(str(container_dir) + "/ROOT")
                 return True
         elif container_json:
             try:
-                msg.out(json.dumps(container_json, sort_keys=True,
-                                   indent=4, separators=(',', ': ')))
+                Msg().out(json.dumps(container_json, sort_keys=True,
+                                     indent=4, separators=(',', ': ')))
             except (IOError, OSError, AttributeError, ValueError, TypeError):
-                msg.out(container_json)
+                Msg().out(container_json)
             return True
         return False
 
@@ -4073,22 +4095,22 @@ class Udocker(object):
         if (not imagerepo) or cmdp.missing_options():  # syntax error
             return False
         else:
-            msg.out("Info: verifying: %s:%s" % (imagerepo, tag), l=Msg.INF)
+            Msg().out("Info: verifying: %s:%s" % (imagerepo, tag), l=Msg.INF)
             if not self.localrepo.cd_imagerepo(imagerepo, tag):
-                msg.err("Error: selecting image and tag")
+                Msg().err("Error: selecting image and tag")
                 return False
             else:
                 if self.localrepo.verify_image():
-                    msg.out("Info: image Ok", l=Msg.INF)
+                    Msg().out("Info: image Ok", l=Msg.INF)
                     return True
                 else:
-                    msg.err("Error: image verification failure")
+                    Msg().err("Error: image verification failure")
                     return False
 
     def do_version(self, dummy):
         """Print the version number"""
         try:
-            msg.out("%s %s" % ("udocker", __version__))
+            Msg().out("%s %s" % ("udocker", __version__))
         except NameError:
             pass
 
@@ -4162,11 +4184,11 @@ class Udocker(object):
         try:
             text = eval("self.do_" + cmd_help + ".__doc__")
             if text:
-                msg.out(text)
+                Msg().out(text)
                 return
         except AttributeError:
             pass
-        msg.out(self.do_help.__doc__)
+        Msg().out(self.do_help.__doc__)
 
 
 class CmdParser(object):
@@ -4350,34 +4372,36 @@ class CmdParser(object):
 
 class Main(object):
     """Get options, parse and execute the command line"""
+
     def __init__(self):
         self.cmdp = CmdParser()
         if not self.cmdp.parse(sys.argv):
-            msg.err("Error: parsing command line, use: udocker --help")
+            Msg().err("Error: parsing command line, use: udocker --help")
             sys.exit(1)
-        conf.user_init(self.cmdp.get("--config=", "GEN_OPT"))
+        Config().user_init(self.cmdp.get("--config=", "GEN_OPT"))
         if (self.cmdp.get("--debug", "GEN_OPT") or
                 self.cmdp.get("-D", "GEN_OPT")):
-            conf.verbose_level = Msg.DBG
+            Config.verbose_level = Msg.DBG
         elif (self.cmdp.get("--quiet", "GEN_OPT") or
               self.cmdp.get("-q", "GEN_OPT")):
-            conf.verbose_level = Msg.MSG
-        msg.setlevel(conf.verbose_level)
+            Config.verbose_level = Msg.MSG
+        Msg().setlevel(Config.verbose_level)
         if self.cmdp.get("--repo=", "GEN_OPT"):  # override repo root tree
-            conf.topdir = self.cmdp.get("--repo=", "GEN_OPT")
-            if not LocalRepository(conf.topdir).is_repo():
-                msg.err("Error: invalid udocker repository: " + conf.topdir)
+            Config.topdir = self.cmdp.get("--repo=", "GEN_OPT")
+            if not LocalRepository(Config.topdir).is_repo():
+                Msg().err("Error: invalid udocker repository:",
+                          Config.topdir)
                 sys.exit(1)
-        self.localrepo = LocalRepository(conf.topdir)
+        self.localrepo = LocalRepository(Config.topdir)
         if not self.localrepo.is_repo():
-            msg.out("Info: creating repo: " + conf.topdir, l=Msg.INF)
+            Msg().out("Info: creating repo: " + Config.topdir, l=Msg.INF)
             self.localrepo.create_repo()
         self.udocker = Udocker(self.localrepo)
         if self.cmdp.get("--insecure", "GEN_OPT"):  # override repo root tree
-            conf.http_insecure = True
-        if not UdockerTools(self.localrepo).install():
-            msg.err("Error: install of udockertools failed")
-        import_alt_modules()
+            Config.http_insecure = True
+        status = UdockerTools(self.localrepo).install()
+        if status is not None and not status:
+            Msg().err("Error: install of udockertools failed")
 
     def execute(self):
         """Command parsing and selection"""
@@ -4406,15 +4430,15 @@ class Main(object):
                     return 0
                 status = cmds[command](self.cmdp)     # executes the command
                 if self.cmdp.missing_options():
-                    msg.err("Error: syntax error at: %s" %
-                            " ".join(self.cmdp.missing_options()))
+                    Msg().err("Error: syntax error at: %s" %
+                              " ".join(self.cmdp.missing_options()))
                     return 1
                 if isinstance(status, bool):
                     return not status
                 elif isinstance(status, (int, long)):
                     return status                     # return command status
             else:
-                msg.err("Error: invalid command:", command, "\n")
+                Msg().err("Error: invalid command:", command, "\n")
                 self.udocker.do_help(self.cmdp)
 
     def start(self):
@@ -4431,11 +4455,8 @@ class Main(object):
             FileUtil("").cleanup()
             return exit_status
 
-# pylint: disable=invalid-name
 if __name__ == "__main__":
-    msg = Msg()
     if not os.geteuid():
-        msg.err("Error: do not run as root !")
+        Msg().err("Error: do not run as root !")
         sys.exit(1)
-    conf = Config()
     sys.exit(Main().start())

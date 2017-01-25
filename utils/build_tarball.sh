@@ -29,7 +29,7 @@ get_proot_static()
     echo "get_proot_static"
     cd "$BUILD_DIR"
 
-    if [ -d "proot-static-build" ] ; then
+    if [ -d "$BUILD_DIR/proot-static-build" ] ; then
         echo "proot static already exists: $BUILD_DIR/proot-static-build"
         return
     fi
