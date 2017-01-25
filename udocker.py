@@ -501,8 +501,11 @@ class ChkSUM(object):
         hash_sha256 = hashlib.sha256()
         try:
             with open(filename, "rb") as filep:
-                for chunk in iter(lambda: filep.read(4096), b""):
+                while True:
+                    chunk = filep.read(4096)
                     hash_sha256.update(chunk)
+                    if len(chunk) < 4096:
+                        break
             return hash_sha256.hexdigest()
         except (IOError, OSError):
             return ""
@@ -3523,7 +3526,7 @@ class Udocker(object):
         """Perform the image verification"""
         try:
             (imagerepo, tag) = imagespec.rsplit(":", 1)
-        except ValueError:
+        except (ValueError, AttributeError):
             imagerepo = imagespec
             tag = "latest"
         if not (imagerepo and tag and

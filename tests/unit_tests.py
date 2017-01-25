@@ -1522,9 +1522,10 @@ class CurlHeaderTestCase(unittest.TestCase):
     @mock.patch('udocker.CurlHeader.write')
     def test_03_setvalue_from_file(self, mock_write):
         """Test CurlHeader().setvalue_from_file()"""
-        with mock.patch(BUILTINS + '.open',
-                        mock.mock_open(read_data='XXXX')) as mopen:
-            mopen.return_value.__iter__ = lambda self: iter(self.readline, '')
+        fakedata = StringIO('XXXX')
+        with mock.patch(BUILTINS + '.open') as mopen:
+            mopen.return_value.__iter__ = \
+                lambda self: iter(fakedata.readline, '')
             curl_header = udocker.CurlHeader()
             self.assertTrue(curl_header.setvalue_from_file("filename"))
             mock_write.assert_called_with('XXXX')
@@ -1589,7 +1590,11 @@ class GetURLTestCase(unittest.TestCase):
         with self.assertRaises(NameError):
             udocker.GetURL()
 
-    def test_03_get_content_length(self):
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.GetURLexeCurl')
+    @mock.patch('udocker.GetURLpyCurl')
+    def test_03_get_content_length(self, mock_gupycurl,
+                                   mock_guexecurl, mock_msg):
         """Test GetURL().get_content_length()"""
         self._init()
         geturl = udocker.GetURL()
@@ -1599,7 +1604,11 @@ class GetURLTestCase(unittest.TestCase):
         hdr.data = {"content-length": dict(), }
         self.assertEqual(geturl.get_content_length(hdr), -1)
 
-    def test_04_set_insecure(self):
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.GetURLexeCurl')
+    @mock.patch('udocker.GetURLpyCurl')
+    def test_04_set_insecure(self, mock_gupycurl,
+                             mock_guexecurl, mock_msg):
         """Test GetURL().set_insecure()"""
         self._init()
         geturl = udocker.GetURL()
@@ -1609,14 +1618,22 @@ class GetURLTestCase(unittest.TestCase):
         geturl.set_insecure(False)
         self.assertEqual(geturl.insecure, False)
 
-    def test_05_set_proxy(self):
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.GetURLexeCurl')
+    @mock.patch('udocker.GetURLpyCurl')
+    def test_05_set_proxy(self, mock_gupycurl,
+                          mock_guexecurl, mock_msg):
         """Test GetURL().set_proxy()"""
         self._init()
         geturl = udocker.GetURL()
         geturl.set_proxy("http://host")
         self.assertEqual(geturl.http_proxy, "http://host")
 
-    def test_06_get(self):
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.GetURLexeCurl')
+    @mock.patch('udocker.GetURLpyCurl')
+    def test_06_get(self, mock_gupycurl,
+                    mock_guexecurl, mock_msg):
         """Test GetURL().get() generic get"""
         self._init()
         geturl = udocker.GetURL()
@@ -1627,7 +1644,11 @@ class GetURLTestCase(unittest.TestCase):
         geturl._geturl.get = self._get
         self.assertEqual(geturl.get("http://host"), "http://host")
 
-    def test_07_post(self):
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.GetURLexeCurl')
+    @mock.patch('udocker.GetURLpyCurl')
+    def test_07_post(self, mock_gupycurl,
+                     mock_guexecurl, mock_msg):
         """Test GetURL().post() generic post"""
         self._init()
         geturl = udocker.GetURL()
@@ -1683,11 +1704,11 @@ class ChkSUMTestCase(unittest.TestCase):
     def test_02_hashlib_sha256(self, mock_msg):
         """Test ChkSUM()._hashlib_sha256()"""
         sha256sum = \
-            "65e84be33532fb784c48129675f9eff3a682b27168c0ea744b2cf58ee02337c5"
+            "9ceece10cf8b97d1f1924dae5d14c137fd144ce999ede85f48be6d7582e2dd23"
         self._init()
         cksum = udocker.ChkSUM()
         with mock.patch(BUILTINS + '.open',
-                        mock.mock_open(read_data='qwerty')):
+                        mock.mock_open(read_data='qwerty\n')):
             status = cksum._hashlib_sha256("filename")
             self.assertEqual(status, sha256sum)
 
@@ -1777,10 +1798,10 @@ class NixAuthenticationTestCase(unittest.TestCase):
         self._init()
         auth = udocker.NixAuthentication()
         auth.passwd_file = "passwd"
-        passwd_line = 'root:x:0:0:root:/root:/bin/bash'
-        with mock.patch(BUILTINS + '.open',
-                        mock.mock_open(read_data=passwd_line)) as mopen:
-            mopen.return_value.__iter__ = lambda self: iter(self.readline, '')
+        passwd_line = StringIO('root:x:0:0:root:/root:/bin/bash')
+        with mock.patch(BUILTINS + '.open') as mopen:
+            mopen.return_value.__iter__ = \
+                lambda self: iter(passwd_line.readline, '')
             (name, uid, gid,
              gecos, _dir, shell) = auth._get_user_from_file("root")
             self.assertEqual(name, "root")
@@ -1790,7 +1811,12 @@ class NixAuthenticationTestCase(unittest.TestCase):
             self.assertEqual(_dir, "/root")
             self.assertEqual(shell, "/bin/bash")
             #
-            (name, uid, gid, gecos, _dir, shell) = auth._get_user_from_file(0)
+        passwd_line = StringIO('root:x:0:0:root:/root:/bin/bash')
+        with mock.patch(BUILTINS + '.open') as mopen:
+            mopen.return_value.__iter__ = \
+                lambda self: iter(passwd_line.readline, '')
+            (name, uid, gid,
+             gecos, _dir, shell) = auth._get_user_from_file(0)
             self.assertEqual(name, "root")
             self.assertEqual(uid, "0")
             self.assertEqual(gid, "0")
@@ -1803,15 +1829,19 @@ class NixAuthenticationTestCase(unittest.TestCase):
         self._init()
         auth = udocker.NixAuthentication()
         auth.passwd_file = "passwd"
-        group_line = 'root:x:0:a,b,c'
-        with mock.patch(BUILTINS + '.open',
-                        mock.mock_open(read_data=group_line)) as mopen:
-            mopen.return_value.__iter__ = lambda self: iter(self.readline, '')
+        group_line = StringIO('root:x:0:a,b,c')
+        with mock.patch(BUILTINS + '.open') as mopen:
+            mopen.return_value.__iter__ = \
+                lambda self: iter(group_line.readline, '')
             (name, gid, mem) = auth._get_group_from_file("root")
             self.assertEqual(name, "root")
             self.assertEqual(gid, "0")
             self.assertEqual(mem, "a,b,c")
             #
+        group_line = StringIO('root:x:0:a,b,c')
+        with mock.patch(BUILTINS + '.open') as mopen:
+            mopen.return_value.__iter__ = \
+                lambda self: iter(group_line.readline, '')
             (name, gid, mem) = auth._get_group_from_file(0)
             self.assertEqual(name, "root")
             self.assertEqual(gid, "0")
