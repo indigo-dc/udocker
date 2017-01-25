@@ -23,6 +23,11 @@ limitations under the License.
 
 from distutils.core import setup
 
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])))
+
 import udocker
 
 setup(name="udocker",
@@ -31,5 +36,5 @@ setup(name="udocker",
       author="LIP",
       author_email="udocker@lip.pt",
       url="https://github.com/indigo-dc/udocker",
-      scripts=["udocker.py", ],
+      scripts=["udocker", ],
       platforms=["linux2", ])

@@ -21,9 +21,12 @@ limitations under the License.
 
 import os
 import sys
-import mock
-import unittest
+import pwd
+import grp
 import subprocess
+import unittest
+import mock
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -32,7 +35,7 @@ except ImportError:
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "0.0.1-1"
+__version__ = "0.0.2-1"
 __date__ = "2016"
 
 try:
@@ -43,6 +46,7 @@ except ImportError:
     import udocker
 
 STDOUT = sys.stdout
+STDERR = sys.stderr
 UDOCKER_TOPDIR = "test_topdir"
 
 if sys.version_info[0] >= 3:
@@ -91,25 +95,23 @@ class ConfigTestCase(unittest.TestCase):
         """Verify config parameters"""
         self.assertIsInstance(conf.verbose_level, int)
 
-        self.assertIsInstance(conf.def_topdir, str)
-        self.assertIsInstance(conf.config_file, str)
-
+        self.assertIsInstance(conf.topdir, str)
+        self.assertIs(conf.bindir, None)
+        self.assertIs(conf.libdir, None)
+        self.assertIs(conf.reposdir, None)
+        self.assertIs(conf.layersdir, None)
+        self.assertIs(conf.containersdir, None)
+        self.assertIsInstance(conf.homedir, str)
+        self.assertIsInstance(conf.config, str)
+        self.assertIsInstance(conf.keystore, str)
         self.assertIsInstance(conf.tmpdir, str)
-        self.assertIsInstance(conf.tmptrash, dict)
-
-        self.assertIsInstance(conf.tarball_url, str)
-
-        self.assertIsInstance(conf.osver, str)
-        self.assertIsInstance(conf.arch, str)
-        self.assertIsInstance(conf.proot_exec, str)
-        self.assertIsInstance(conf.kernel, str)
-
+        self.assertIsInstance(conf.tarball, str)
         self.assertIsInstance(conf.cmd, list)
         self.assertIsInstance(conf.sysdirs_list, tuple)
         self.assertIsInstance(conf.hostauth_list, tuple)
         self.assertIsInstance(conf.dri_list, tuple)
+        self.assertIsInstance(conf.valid_host_env, str)
         self.assertIsInstance(conf.cpu_affinity_exec_tools, tuple)
-
         self.assertIsInstance(conf.location, str)
 
         self.assertIsInstance(conf.http_proxy, str)
@@ -132,40 +134,75 @@ class ConfigTestCase(unittest.TestCase):
         """Test Config.platform()"""
         conf = udocker.Config()
         mock_platform.machine.return_value = "x86_64"
-        arch = conf._sysarch()
+        arch = conf.arch()
         self.assertEqual("amd64", arch, "Config._sysarch x86_64")
         mock_platform.machine.return_value = "i586"
-        arch = conf._sysarch()
+        arch = conf.arch()
         self.assertEqual("i386", arch, "Config._sysarchi i586")
         mock_platform.machine.return_value = "xpto"
-        arch = conf._sysarch()
+        arch = conf.arch()
         self.assertEqual("", arch, "Config._sysarchi i586")
+        #
+        mock_platform.system.return_value = "linux"
+        osver = conf.osversion()
+        self.assertEqual(osver, "linux")
+        #
+        mock_platform.release.return_value = "release"
+        osver = conf.oskernel()
+        self.assertEqual(osver, "release")
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.FileUtil')
     def test_03_user_init_good(self, mock_fileutil, mock_msg):
         """Test Config.user_init() with good data"""
-        udocker.msg = mock_msg
+        udocker.Msg = mock_msg
         conf = udocker.Config()
         mock_fileutil.return_value.size.return_value = 10
         conf_data = '# comment\nverbose_level = 100\n'
         conf_data += 'tmpdir = "/xpto"\ncmd = ["/bin/ls", "-l"]\n'
         mock_fileutil.return_value.getdata.return_value = conf_data
         status = conf.user_init("filename.conf")
-        self.assertTrue(status, "Config.user_init good config")
-        self._verify_config(conf)
+        self.assertTrue(status)
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.FileUtil')
-    def test_04_user_init_bad(self, mock_fileutil, mock_msg):
+    @mock.patch('udocker.sys.exit')
+    def test_04_user_init_bad(self, mock_exit, mock_fileutil, mock_msg):
         """Test Config.user_init() with bad config data"""
-        udocker.msg = mock_msg
+        udocker.Msg = mock_msg
         conf = udocker.Config()
         conf_data = 'hh +=* ffhdklfh\n'
         mock_fileutil.return_value.size.return_value = 10
         mock_fileutil.return_value.getdata.return_value = conf_data
-        status = conf.user_init("filename.conf")
-        self.assertFalse(status, "Config.user_init bad config")
+        conf.user_init("filename.conf")
+        self.assertTrue(mock_exit.called)
+
+    @mock.patch('udocker.Msg')
+    def test_05_username(self, mock_msg):
+        """Test Config._username()"""
+        udocker.Msg = mock_msg
+        conf = udocker.Config()
+        user = conf.username()
+        self.assertEqual(user, pwd.getpwuid(os.getuid()).pw_name)
+
+    @mock.patch('udocker.Config.oskernel')
+    @mock.patch('udocker.Msg')
+    def test_06_oskernel_isgreater(self, mock_msg, mock_oskern):
+        """Test Config.oskernel_isgreater()"""
+        udocker.Msg = mock_msg
+        conf = udocker.Config()
+        #
+        mock_oskern.return_value = "1.1.2-"
+        status = conf.oskernel_isgreater([1, 1, 1])
+        self.assertTrue(status)
+        #
+        mock_oskern.return_value = "1.2.1-"
+        status = conf.oskernel_isgreater([1, 1, 1])
+        self.assertTrue(status)
+        #
+        mock_oskern.return_value = "1.0.1-"
+        status = conf.oskernel_isgreater([1, 1, 1])
+        self.assertFalse(status)
 
 
 class MsgTestCase(unittest.TestCase):
@@ -181,36 +218,40 @@ class MsgTestCase(unittest.TestCase):
         self.assertTrue(is_writable_file(msg.chlderr))
         self.assertTrue(is_writable_file(msg.chldout))
         self.assertTrue(is_writable_file(msg.chldnul))
-        self.assertTrue(is_writable_file(msg.stdout))
-        self.assertTrue(is_writable_file(msg.stderr))
 
     def test_01_init(self):
         """Test Msg() constructor"""
         msg = udocker.Msg(0)
         self._verify_descriptors(msg)
         self.assertEqual(msg.level, 0)
-        msg.nullfp.close()
 
     def test_02_setlevel(self):
         """Test Msg.setlevel() change of log level"""
         msg = udocker.Msg(5)
         self._verify_descriptors(msg)
         self.assertEqual(msg.level, 5)
-        msg.nullfp.close()
         msg = udocker.Msg(0)
         msg.setlevel(7)
         self._verify_descriptors(msg)
         self.assertEqual(msg.level, 7)
-        msg.nullfp.close()
 
     @mock.patch('udocker.sys.stdout', new_callable=StringIO)
     def test_03_out(self, mock_stdout):
         """Test Msg.out() screen messages"""
-        msg = udocker.Msg(0)
+        msg = udocker.Msg(udocker.Msg.MSG)
         msg.out("111", "222", "333", 444, ('555'))
         self.assertEqual("111 222 333 444 555\n", mock_stdout.getvalue())
         sys.stdout = STDOUT
-        msg.nullfp.close()
+        sys.stderr = STDERR
+
+    @mock.patch('udocker.sys.stderr', new_callable=StringIO)
+    def test_04_err(self, mock_stderr):
+        """Test Msg.err() screen messages"""
+        msg = udocker.Msg(udocker.Msg.ERR)
+        msg.err("111", "222", "333", 444, ('555'))
+        self.assertEqual("111 222 333 444 555\n", mock_stderr.getvalue())
+        sys.stdout = STDOUT
+        sys.stderr = STDERR
 
 
 class UniqueTestCase(unittest.TestCase):
@@ -277,15 +318,15 @@ class FileUtilTestCase(unittest.TestCase):
     @mock.patch('udocker.Config')
     def test_01_init(self, mock_config):
         """Test FileUtil() constructor"""
-        udocker.conf = mock_config
+        udocker.Config = mock_config
+        udocker.Config.tmpdir = "/tmp"
         futil = udocker.FileUtil("filename.txt")
         self.assertEqual(futil.filename, "filename.txt")
-        self.assertTrue(udocker.conf.tmpdir)
-        self.assertTrue(udocker.conf.def_topdir)
+        self.assertTrue(udocker.Config.tmpdir)
 
     def test_02_mktmp(self):
         """Test FileUtil.mktmp()"""
-        udocker.conf.tmpdir = "/somewhere"
+        udocker.Config.tmpdir = "/somewhere"
         tmp_file = udocker.FileUtil("filename2.txt").mktmp()
         self.assertTrue(tmp_file.endswith("-filename2.txt"))
         self.assertTrue(tmp_file.startswith("/somewhere/udocker-"))
@@ -298,16 +339,31 @@ class FileUtilTestCase(unittest.TestCase):
         uid = udocker.FileUtil("filename3.txt").uid()
         self.assertEqual(uid, 1234)
 
+    @mock.patch('udocker.Msg')
     @mock.patch('udocker.os.remove')
     @mock.patch('udocker.os.path.islink')
     @mock.patch('udocker.os.path.isfile')
     @mock.patch('udocker.FileUtil.uid')
     def test_04_remove_file(self, mock_uid, mock_isfile,
-                            mock_islink, mock_remove):
+                            mock_islink, mock_remove, mock_msg):
         """Test FileUtil.remove() with plain files"""
         mock_uid.return_value = os.getuid()
         mock_isfile.return_value = True
+        # under /
+        futil = udocker.FileUtil("/filename4.txt")
+        futil.topdir = "/home/user/.udocker"
+        futil.tmpdir = "/tmp"
+        status = futil.remove()
+        self.assertFalse(status)
+        # wrong uid
+        mock_uid.return_value = os.getuid() + 1
+        futil = udocker.FileUtil("/tmp/filename4.txt")
+        futil.topdir = "/home/user/.udocker"
+        futil.tmpdir = "/tmp"
+        status = futil.remove()
+        self.assertFalse(status)
         # under /tmp
+        mock_uid.return_value = os.getuid()
         futil = udocker.FileUtil("/tmp/filename4.txt")
         futil.topdir = "/home/user/.udocker"
         futil.tmpdir = "/tmp"
@@ -317,22 +373,25 @@ class FileUtilTestCase(unittest.TestCase):
         futil = udocker.FileUtil("/home/user/.udocker/filename4.txt")
         futil.topdir = "/home/user/.udocker"
         futil.tmpdir = "/tmp"
+        futil.safe_prefixes.append(futil.topdir)
         status = futil.remove()
         self.assertTrue(status)
         # outside of scope 1
         futil = udocker.FileUtil("/etc/filename4.txt")
         futil.topdir = "/home/user/.udocker"
         futil.tmpdir = "/tmp"
+        futil.safe_prefixes = []
         status = futil.remove()
         self.assertFalse(status)
 
+    @mock.patch('udocker.Msg')
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.os.path.isdir')
     @mock.patch('udocker.os.path.islink')
     @mock.patch('udocker.os.path.isfile')
     @mock.patch('udocker.FileUtil.uid')
     def test_05_remove_dir(self, mock_uid, mock_isfile, mock_islink,
-                           mock_isdir, mock_call):
+                           mock_isdir, mock_call, mock_msg):
         """Test FileUtil.remove() with directories"""
         mock_uid.return_value = os.getuid()
         mock_isfile.return_value = False
@@ -353,7 +412,7 @@ class FileUtilTestCase(unittest.TestCase):
         status = futil.remove()
         self.assertFalse(status)
 
-    @mock.patch('udocker.msg')
+    @mock.patch('udocker.Msg')
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.os.path.isfile')
     def test_06_verify_tar01(self, mock_isfile, mock_call, mock_msg):
@@ -364,7 +423,7 @@ class FileUtilTestCase(unittest.TestCase):
         status = udocker.FileUtil("tarball.tar").verify_tar()
         self.assertFalse(status)
 
-    @mock.patch('udocker.msg')
+    @mock.patch('udocker.Msg')
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.os.path.isfile')
     def test_07_verify_tar02(self, mock_isfile, mock_call, mock_msg):
@@ -375,7 +434,7 @@ class FileUtilTestCase(unittest.TestCase):
         status = udocker.FileUtil("tarball.tar").verify_tar()
         self.assertTrue(status)
 
-    @mock.patch('udocker.msg')
+    @mock.patch('udocker.Msg')
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.os.path.isfile')
     def test_08_verify_tar03(self, mock_isfile, mock_call, mock_msg):
@@ -390,8 +449,9 @@ class FileUtilTestCase(unittest.TestCase):
     @mock.patch('udocker.FileUtil.remove')
     def test_09_cleanup(self, mock_remove, mock_config):
         """Test FileUtil.cleanup() delete tmp files"""
-        udocker.conf = mock_config
-        udocker.conf.tmptrash = {'file1.txt': None, 'file2.txt': None}
+        udocker.Config = mock_config
+        udocker.Config.tmpdir = "/tmp"
+        udocker.FileUtil.tmptrash = {'file1.txt': None, 'file2.txt': None}
         udocker.FileUtil("").cleanup()
         self.assertEqual(mock_remove.call_count, 2)
 
@@ -472,6 +532,135 @@ class FileUtilTestCase(unittest.TestCase):
             self.assertTrue(status)
 
 
+class KeyStoreTestCase(unittest.TestCase):
+    """Test KeyStore() local basic credentials storage"""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
+
+    def _init(self):
+        """Common variables"""
+        self.url = u'https://xxx'
+        self.email = u'user@domain'
+        self.auth = u'xxx'
+        self.credentials = {self.url: {u'email': self.email,
+                                       u'auth': self.auth}}
+
+    def test_01_init(self):
+        """Test KeyStore() constructor"""
+        kstore = udocker.KeyStore("filename")
+        self.assertEqual(kstore.keystore_file, "filename")
+
+    @mock.patch('udocker.json.load')
+    def test_02_read_all(self, mock_jload):
+        """Test KeyStore()._read_all() read credentials"""
+        self._init()
+        mock_jload.return_value = self.credentials
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
+            kstore = udocker.KeyStore("filename")
+            self.assertEqual(self.credentials, kstore._read_all())
+
+    @mock.patch('udocker.Config')
+    @mock.patch('udocker.KeyStore._verify_keystore')
+    def test_02_shred(self, mock_config, mock_verks):
+        """Test KeyStore()._shred() erase file content"""
+        udocker.Config = mock_config
+        udocker.Config.tmpdir = "/tmp"
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
+            kstore = udocker.KeyStore("filename")
+            self.assertFalse(kstore._shred())
+
+    @mock.patch('udocker.Config')
+    @mock.patch('udocker.KeyStore._verify_keystore')
+    @mock.patch('udocker.os.stat')
+    def test_03_shred(self, mock_stat, mock_config, mock_verks):
+        """Test KeyStore()._shred() erase file content"""
+        udocker.Config = mock_config
+        udocker.Config.tmpdir = "/tmp"
+        mock_stat.return_value.st_size = 123
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
+            kstore = udocker.KeyStore("filename")
+            self.assertTrue(kstore._shred())
+
+    @mock.patch('udocker.Config')
+    @mock.patch('udocker.KeyStore._verify_keystore')
+    @mock.patch('udocker.json.dump')
+    @mock.patch('udocker.os.umask')
+    def test_04_write_all(self, mock_umask, mock_jdump,
+                          mock_config, mock_verks):
+        """Test KeyStore()._write_all() write all credentials to file"""
+        self._init()
+        udocker.Config = mock_config
+        udocker.Config.tmpdir = "/tmp"
+        mock_umask.return_value = 077
+        mock_jdump.side_effect = IOError('json dump')
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
+            kstore = udocker.KeyStore("filename")
+            self.assertFalse(kstore._write_all(self.credentials))
+
+    @mock.patch('udocker.Config')
+    @mock.patch('udocker.KeyStore._verify_keystore')
+    @mock.patch('udocker.KeyStore._read_all')
+    def test_05_get(self, mock_readall, mock_config, mock_verks):
+        """Test KeyStore().get() get credential for url from file"""
+        self._init()
+        udocker.Config = mock_config
+        udocker.Config.tmpdir = "/tmp"
+        mock_readall.return_value = self.credentials
+        kstore = udocker.KeyStore("filename")
+        self.assertTrue(kstore.get(self.url))
+        self.assertFalse(kstore.get("NOT EXISTING ENTRY"))
+
+    @mock.patch('udocker.Config')
+    @mock.patch('udocker.KeyStore._verify_keystore')
+    @mock.patch('udocker.KeyStore._shred')
+    @mock.patch('udocker.KeyStore._write_all')
+    @mock.patch('udocker.KeyStore._read_all')
+    def test_06_put(self, mock_readall, mock_writeall, mock_shred,
+                    mock_config, mock_verks):
+        """Test KeyStore().put() put credential for url to file"""
+        self._init()
+        udocker.Config = mock_config
+        udocker.Config.tmpdir = "/tmp"
+        kstore = udocker.KeyStore("filename")
+        self.assertFalse(kstore.put("", "", ""))
+        mock_readall.return_value = dict()
+        kstore.put(self.url, self.auth, self.email)
+        mock_writeall.assert_called_once_with(self.credentials)
+
+    @mock.patch('udocker.Config')
+    @mock.patch('udocker.KeyStore._verify_keystore')
+    @mock.patch('udocker.KeyStore._shred')
+    @mock.patch('udocker.KeyStore._write_all')
+    @mock.patch('udocker.KeyStore._read_all')
+    def test_07_delete(self, mock_readall, mock_writeall, mock_shred,
+                       mock_config, mock_verks):
+        """Test KeyStore().delete() delete credential for url from file"""
+        self._init()
+        udocker.Config = mock_config
+        udocker.Config.tmpdir = "/tmp"
+        mock_readall.return_value = self.credentials
+        kstore = udocker.KeyStore("filename")
+        kstore.delete(self.url)
+        mock_writeall.assert_called_once_with({})
+
+    @mock.patch('udocker.Config')
+    @mock.patch('udocker.KeyStore._verify_keystore')
+    @mock.patch('udocker.os.unlink')
+    @mock.patch('udocker.KeyStore._shred')
+    def test_07_erase(self, mock_shred, mock_unlink,
+                      mock_config, mock_verks):
+        """Test KeyStore().erase() erase credentials file"""
+        self._init()
+        udocker.Config = mock_config
+        udocker.Config.tmpdir = "/tmp"
+        kstore = udocker.KeyStore("filename")
+        self.assertTrue(kstore.erase())
+        mock_unlink.assert_called_once_with("filename")
+
+
 class UdockerToolsTestCase(unittest.TestCase):
     """Test UdockerTools() download and setup of tools needed by udocker"""
 
@@ -485,92 +674,192 @@ class UdockerToolsTestCase(unittest.TestCase):
     @mock.patch('udocker.Config')
     def test_01_init(self, mock_config, mock_localrepo, mock_geturl):
         """Test UdockerTools() constructor"""
-        udocker.conf = mock_config
-        udocker.conf.tmpdir = "/tmp"
-        udocker.conf.proot_exec = "proot"
+        udocker.Config = mock_config
+        udocker.Config.tmpdir = "/tmp"
+        udocker.Config.tarball = "/tmp/xxx"
         localrepo = mock_localrepo
         localrepo.bindir = "/bindir"
         utools = udocker.UdockerTools(localrepo)
         self.assertEqual(utools.localrepo, localrepo)
-        self.assertEqual(utools.tmpdir, "/tmp")
-        self.assertEqual(utools.proot, "/bindir/proot")
 
-    @mock.patch('udocker.UdockerTools.__init__')
     @mock.patch('udocker.os.path.exists')
-    def test_02_is_available(self, mock_exists, mock_init):
-        """Test UdockerTools.is_available() is already downloaded"""
-        # available
-        mock_exists.return_value = True
-        mock_init.return_value = None
-        utools = udocker.UdockerTools(None)
-        utools.proot = "/bindir/proot"
-        status = utools.is_available()
-        self.assertTrue(status)
-        # not available
-        mock_exists.return_value = False
-        mock_init.return_value = None
-        utools = udocker.UdockerTools(None)
-        utools.proot = "/bindir/proot"
-        status = utools.is_available()
-        self.assertFalse(status)
-
-    @mock.patch('udocker.msg')
+    @mock.patch('udocker.Msg')
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.UdockerTools.__init__')
     @mock.patch('udocker.FileUtil')
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.GetURL')
     @mock.patch('udocker.FileUtil.mktmp')
+    @mock.patch.object(udocker.UdockerTools, '_install')
+    @mock.patch.object(udocker.UdockerTools, '_verify_version')
+    @mock.patch.object(udocker.UdockerTools, '_instructions')
+    @mock.patch.object(udocker.UdockerTools, '_download')
     @mock.patch.object(udocker.UdockerTools, 'is_available')
-    def test_03_download(self, mock_is, mock_mktmp, mock_geturl, mock_call,
-                         mock_fileutil, mock_init, mock_localrepo, mock_msg):
-        """Test UdockerTools.download()"""
+    def test_03_install(self, mock_is, mock_down, mock_instr, mock_ver,
+                        mock_install,
+                        mock_mktmp, mock_geturl, mock_call, mock_futil,
+                        mock_init, mock_localrepo, mock_msg, mock_exists):
+        """Test UdockerTools.install()"""
         mock_msg.level = 0
-        mock_fileutil.return_value.mktmp.return_value = "filename_tmp"
+        mock_futil.return_value.mktmp.return_value = "filename_tmp"
         mock_init.return_value = None
         utools = udocker.UdockerTools(mock_localrepo)
         utools.localrepo = mock_localrepo
         utools.curl = mock_geturl
-        utools.tarball_url = "http://node.domain/filename.tgz"
         utools.localrepo.topdir = "/home/user/.udocker"
-        utools.proot = "/"
-        hdr = udocker.CurlHeader()
+        udocker.CurlHeader()
         # IS AVAILABLE NO DOWNLOAD
         mock_is.return_value = True
-        mock_geturl.get.return_value = (hdr, None)
-        status = utools.download()
+        status = utools.install()
         self.assertTrue(status)
-        # GetURL returns OK, untar returns OK
+        # NO AUTOINSTALL
         mock_is.return_value = False
-        utools.proot = "fhkljfgsakfgjkasgf"
-        mock_geturl.get.return_value = (hdr, None)
-        mock_call.return_value = 0
-        status = utools.download()
-        self.assertTrue(status)
-        # GetURL returns NOT OK
+        utools._tarball = "http://node.domain/filename.tgz"
+        utools._autoinstall = False
+        status = utools.install()
+        self.assertEqual(status, None)
+        # NO TARBALL
         mock_is.return_value = False
-        mock_geturl.get.return_value = (hdr, None)
-        mock_call.return_value = 0
-        status = utools.download()
-        self.assertTrue(status)
-        # GetURL returns OK, untar returns NOT OK
-        mock_is.return_value = False
-        mock_geturl.get.return_value = (hdr, None)
-        mock_call.return_value = 1
-        status = utools.download()
+        utools._tarball = ""
+        utools._autoinstall = True
+        status = utools.install()
         self.assertFalse(status)
+        # _download fails
+        mock_is.return_value = False
+        utools._tarball = "http://node.domain/filename.tgz"
+        mock_down.return_value = ""
+        status = utools.install()
+        self.assertTrue(mock_instr.called)
+        self.assertFalse(status)
+        # _download ok _verify_version fails
+        mock_is.return_value = False
+        utools._tarball = "http://node.domain/filename.tgz"
+        mock_down.return_value = "filename.tgz"
+        mock_ver.return_value = False
+        status = utools.install()
+        self.assertTrue(mock_instr.called)
+        self.assertTrue(mock_futil.return_value.remove.called)
+        self.assertFalse(status)
+        # _download ok _verify_version ok install ok
+        mock_is.return_value = False
+        utools._tarball = "http://node.domain/filename.tgz"
+        mock_down.return_value = "filename.tgz"
+        mock_ver.return_value = True
+        mock_install.return_value = True
+        status = utools.install()
+        self.assertTrue(mock_install.called)
+        self.assertTrue(status)
+        # _download ok _verify_version ok install fail
+        mock_is.return_value = False
+        utools._tarball = "http://node.domain/filename.tgz"
+        mock_down.return_value = "filename.tgz"
+        mock_ver.return_value = True
+        mock_install.return_value = False
+        status = utools.install()
+        self.assertTrue(mock_install.called)
+        self.assertTrue(mock_instr.called)
+        self.assertTrue(mock_futil.return_value.remove.called)
+        self.assertFalse(status)
+        # file not exists no download
+        mock_is.return_value = False
+        mock_exists.return_value = False
+        utools._tarball = "filename.tgz"
+        utools._tarball_file = ""
+        status = utools.install()
+        self.assertTrue(mock_instr.called)
+        self.assertFalse(mock_futil.remove.called)
+        self.assertFalse(status)
+
+    @mock.patch('udocker.GetURL')
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.UdockerTools.__init__')
+    def test_04_download(self, mock_init, mock_futil, mock_gurl):
+        """Test UdockerTools.download()"""
+        mock_init.return_value = None
+        utools = udocker.UdockerTools(None)
+        utools.curl = mock_gurl
+        utools._tarball = "http://node.domain/filename.tgz"
+        hdr = udocker.CurlHeader()
+        hdr.data["X-ND-CURLSTATUS"] = 0
+        mock_futil.return_value.mktmp.return_value = "tmptarball"
+        mock_gurl.get.return_value = (hdr, "")
+        status = utools._download()
+        self.assertEqual(status, "tmptarball")
+        #
+        hdr.data["X-ND-CURLSTATUS"] = 1
+        status = utools._download()
+        self.assertEqual(status, "")
+
+    @mock.patch('udocker.UdockerTools._version_isequal')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.subprocess.call')
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.UdockerTools.__init__')
+    def test_04_verify_version(self, mock_init, mock_futil, mock_call,
+                               mock_msg, mock_versioneq):
+        """Test UdockerTools._verify_version()"""
+        mock_init.return_value = None
+        utools = udocker.UdockerTools(None)
+        mock_futil.return_value.mktmp.return_value = ""
+        status = utools._verify_version("tarballfile")
+        self.assertFalse(status)
+        #
+        mock_msg.level = 0
+        mock_call.return_value = 1
+        status = utools._verify_version("tarballfile")
+        self.assertFalse(status)
+        #
+        mock_call.return_value = 0
+        mock_versioneq.return_value = False
+        status = utools._verify_version("tarballfile")
+        self.assertFalse(status)
+        #
+        mock_call.return_value = 0
+        mock_versioneq.return_value = True
+        status = utools._verify_version("tarballfile")
+        self.assertTrue(status)
+
+    @mock.patch('udocker.LocalRepository')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.subprocess.call')
+    @mock.patch('udocker.UdockerTools.__init__')
+    def test_04__install(self, mock_init, mock_call, mock_msg, mock_local):
+        """Test UdockerTools._install()"""
+        mock_init.return_value = None
+        utools = udocker.UdockerTools(None)
+        utools.localrepo = mock_local
+        mock_local.bindir = ""
+        mock_msg.level = 0
+        mock_call.return_value = 1
+        status = utools._install("tarballfile")
+        self.assertFalse(status)
+        #
+        mock_call.return_value = 0
+        status = utools._install("tarballfile")
+        self.assertTrue(status)
 
 
 class LocalRepositoryTestCase(unittest.TestCase):
     """Test LocalRepositoryTestCase() management of local repository
     of container images and extracted containers
+    Tests not yet implemented:
+    _load_structure
+    _find_top_layer_id
+    _sorted_layers
+    verify_image
     """
 
     def _localrepo(self, topdir):
         """Instantiate a local repository class"""
         topdir_path = os.getenv("HOME") + "/" + topdir
-        udocker.conf = mock.patch('udocker.Config').start()
-        udocker.conf.tmpdir = "/tmp"
+        udocker.Config = mock.patch('udocker.Config').start()
+        udocker.Config.tmpdir = "/tmp"
+        udocker.Config.homedir = "/tmp"
+        udocker.Config.bindir = ""
+        udocker.Config.libdir = ""
+        udocker.Config.reposdir = ""
+        udocker.Config.layersdir = ""
+        udocker.Config.containersdir = ""
         localrepo = udocker.LocalRepository(topdir_path)
         return localrepo
 
@@ -583,18 +872,12 @@ class LocalRepositoryTestCase(unittest.TestCase):
         """Test LocalRepository() constructor"""
         localrepo = self._localrepo(UDOCKER_TOPDIR)
         self.assertTrue(localrepo.topdir)
-        self.assertTrue(localrepo.def_reposdir)
-        self.assertTrue(localrepo.def_layersdir)
-        self.assertTrue(localrepo.def_containersdir)
-        self.assertTrue(localrepo.def_bindir)
-        self.assertTrue(localrepo.def_libdir)
         self.assertTrue(localrepo.reposdir)
         self.assertTrue(localrepo.layersdir)
         self.assertTrue(localrepo.containersdir)
         self.assertTrue(localrepo.bindir)
         self.assertTrue(localrepo.libdir)
-        self.assertTrue(localrepo.tmpdir)
-        self.assertEqual(localrepo.tmpdir, udocker.conf.tmpdir)
+        self.assertTrue(localrepo.homedir)
         self.assertEqual(localrepo.cur_repodir, "")
         self.assertEqual(localrepo.cur_tagdir, "")
         self.assertEqual(localrepo.cur_containerdir, "")
@@ -617,7 +900,6 @@ class LocalRepositoryTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(localrepo.layersdir))
         self.assertTrue(os.path.exists(localrepo.containersdir))
         self.assertTrue(os.path.exists(localrepo.bindir))
-        self.assertTrue(os.path.exists(localrepo.tmpdir))
         self.assertTrue(os.path.exists(localrepo.libdir))
         subprocess.call(["/bin/rm", "-Rf", localrepo.topdir])
 
@@ -715,14 +997,16 @@ class LocalRepositoryTestCase(unittest.TestCase):
             self.assertTrue(mexists.called)
             self.assertEqual(mexists.call_args, mock.call('/PROTECT'))
 
-    def test_11_unprotect_container(self):
+    @mock.patch('udocker.FileUtil.remove')
+    @mock.patch('udocker.os.path.exists')
+    def test_11_unprotect_container(self, mock_exists, mock_remove):
         """Test LocalRepository().isprotected_container()"""
+        mock_exists.return_value = True
+        mock_remove.return_value = False
         localrepo = self._localrepo(UDOCKER_TOPDIR)
-        with mock.patch('os.remove') as mremove:
-            container_id = "d2578feb-acfc-37e0-8561-47335f85e46a"
-            localrepo.unprotect_container(container_id)
-            self.assertTrue(mremove.called)
-            self.assertEqual(mremove.call_args, mock.call('/PROTECT'))
+        container_id = "d2578feb-acfc-37e0-8561-47335f85e46a"
+        localrepo.unprotect_container(container_id)
+        self.assertTrue(mock_remove.called)
 
     def test_12_protect_imagerepo(self):
         """Test LocalRepository().protect_imagerepo()"""
@@ -742,14 +1026,12 @@ class LocalRepositoryTestCase(unittest.TestCase):
             protect = localrepo.reposdir + "/IMAGE/TAG/PROTECT"
             self.assertEqual(mexists.call_args, mock.call(protect))
 
-    def test_14_unprotect_imagerepo(self):
-        """Test LocalRepository().isprotected_imagerepo()"""
+    @mock.patch('udocker.FileUtil.remove')
+    def test_14_unprotect_imagerepo(self, mock_remove):
+        """Test LocalRepository().unprotected_imagerepo()"""
         localrepo = self._localrepo(UDOCKER_TOPDIR)
-        with mock.patch('os.remove') as mremove:
-            localrepo.unprotect_imagerepo("IMAGE", "TAG")
-            self.assertTrue(mremove.called)
-            protect = localrepo.reposdir + "/IMAGE/TAG/PROTECT"
-            self.assertEqual(mremove.call_args, mock.call(protect))
+        localrepo.unprotect_imagerepo("IMAGE", "TAG")
+        self.assertTrue(mock_remove.called)
 
     @mock.patch('udocker.os.access')
     @mock.patch('udocker.os.path.isdir')
@@ -781,9 +1063,10 @@ class LocalRepositoryTestCase(unittest.TestCase):
         status = localrepo.iswriteable_container(container_id)
         self.assertEqual(status, 0)
 
+    @mock.patch('udocker.Msg')
     @mock.patch('udocker.os.remove')
     @mock.patch('udocker.os.path.exists')
-    def test_16_del_container_name(self, mock_exists, mock_remove):
+    def test_16_del_container_name(self, mock_exists, mock_remove, mock_msg):
         """Test LocalRepository().del_container_name()"""
         localrepo = self._localrepo(UDOCKER_TOPDIR)
         mock_exists.return_value = False
@@ -992,7 +1275,7 @@ class LocalRepositoryTestCase(unittest.TestCase):
         self.assertEqual(self.iter, 2)
         self.assertEqual(status, [])
 
-    @mock.patch('udocker.os.remove')
+    @mock.patch('udocker.FileUtil.remove')
     @mock.patch('udocker.os.path.islink')
     @mock.patch('udocker.os.path.exists')
     @mock.patch.object(udocker.LocalRepository, '_symlink')
@@ -1040,7 +1323,7 @@ class LocalRepositoryTestCase(unittest.TestCase):
         status = localrepo.setup_imagerepo("IMAGE")
         expected_directory = localrepo.reposdir + "/IMAGE"
         self.assertEqual(localrepo.cur_repodir, expected_directory)
-        self.assertTrue(status)
+        self.assertFalse(status)
         #
         mock_exists.return_value = False
         status = localrepo.setup_imagerepo("IMAGE")
@@ -1049,5 +1332,774 @@ class LocalRepositoryTestCase(unittest.TestCase):
         self.assertEqual(localrepo.cur_repodir, expected_directory)
         self.assertTrue(status)
 
+    @mock.patch('udocker.os.makedirs')
+    @mock.patch('udocker.os.path.exists')
+    def test_26_setup_tag(self, mock_exists, mock_makedirs):
+        """Test LocalRepository().setup_tag()"""
+        localrepo = self._localrepo(UDOCKER_TOPDIR)
+        #
+        mock_exists.return_value = False
+        localrepo.cur_repodir = localrepo.reposdir + "/IMAGE"
+        with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
+            status = localrepo.setup_tag("NEWTAG")
+            self.assertTrue(mock_makedirs.called)
+            expected_directory = localrepo.reposdir + "/IMAGE/NEWTAG"
+            self.assertEqual(localrepo.cur_tagdir, expected_directory)
+            self.assertTrue(mopen.called)
+            self.assertTrue(status)
+
+    @mock.patch('udocker.os.listdir')
+    @mock.patch('udocker.os.makedirs')
+    @mock.patch('udocker.os.path.exists')
+    def test_27_set_version(self, mock_exists, mock_makedirs, mock_listdir):
+        """Test LocalRepository().set_version()"""
+        localrepo = self._localrepo(UDOCKER_TOPDIR)
+        #
+        status = localrepo.set_version("v1")
+        self.assertFalse(mock_exists.called)
+        self.assertFalse(status)
+        #
+        localrepo.cur_repodir = localrepo.reposdir + "/IMAGE"
+        localrepo.cur_tagdir = localrepo.cur_repodir + "/TAG"
+        mock_exists.return_value = False
+        status = localrepo.set_version("v1")
+        self.assertFalse(mock_listdir.called)
+        self.assertFalse(status)
+        #
+        mock_exists.return_value = True
+        with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
+            status = localrepo.set_version("v1")
+            self.assertTrue(mock_listdir.called)
+            self.assertTrue(mopen.called)
+            self.assertTrue(status)
+
+    @mock.patch.object(udocker.LocalRepository, 'save_json')
+    @mock.patch.object(udocker.LocalRepository, 'load_json')
+    @mock.patch('udocker.os.path.exists')
+    def test_28_get_image_attributes(self, mock_exists, mock_loadjson,
+                                     mock_savejson):
+        """Test LocalRepository().get_image_attributes()"""
+        localrepo = self._localrepo(UDOCKER_TOPDIR)
+        #
+        mock_exists.return_value = True
+        mock_loadjson.return_value = None
+        status = localrepo.get_image_attributes()
+        self.assertEqual((None, None), status)
+        #
+        mock_exists.side_effect = [True, False]
+        mock_loadjson.side_effect = [("foolayername", ), ]
+        status = localrepo.get_image_attributes()
+        self.assertEqual((None, None), status)
+        #
+        mock_exists.side_effect = [True, True, False]
+        mock_loadjson.side_effect = [("foolayername", ), "foojson"]
+        status = localrepo.get_image_attributes()
+        self.assertEqual((None, None), status)
+        #
+        mock_exists.side_effect = [True, True, True]
+        mock_loadjson.side_effect = [("foolayername", ), "foojson"]
+        status = localrepo.get_image_attributes()
+        self.assertEqual(('foojson', ['/foolayername.layer']), status)
+        #
+        mock_exists.side_effect = [False, True]
+        mock_loadjson.side_effect = [None, ]
+        status = localrepo.get_image_attributes()
+        self.assertEqual((None, None), status)
+        #
+        mock_exists.side_effect = [False, True, False]
+        manifest = {
+            "fsLayers": ({"blobSum": "foolayername"}, ),
+            "history": ({"v1Compatibility": '["foojsonstring"]'}, )
+        }
+        mock_loadjson.side_effect = [manifest, ]
+        status = localrepo.get_image_attributes()
+        self.assertEqual((None, None), status)
+        #
+        mock_exists.side_effect = [False, True, True]
+        mock_loadjson.side_effect = [manifest, ]
+        status = localrepo.get_image_attributes()
+        self.assertEqual(([u'foojsonstring'], ['/foolayername']), status)
+
+    @mock.patch('udocker.json.dump')
+    @mock.patch('udocker.os.path.exists')
+    def test_29_save_json(self, mock_exists, mock_jsondump):
+        """Test LocalRepository().save_json()"""
+        localrepo = self._localrepo(UDOCKER_TOPDIR)
+        #
+        status = localrepo.save_json("filename", "data")
+        self.assertFalse(mock_exists.called)
+        self.assertFalse(status)
+        #
+        localrepo.cur_repodir = localrepo.reposdir + "/IMAGE"
+        localrepo.cur_tagdir = localrepo.cur_repodir + "/TAG"
+        mock_exists.return_value = False
+        status = localrepo.save_json("filename", "data")
+        self.assertTrue(mock_exists.called)
+        self.assertFalse(status)
+        #
+        mock_exists.reset_mock()
+        with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
+            status = localrepo.save_json("/filename", "data")
+            self.assertTrue(mopen.called)
+            self.assertTrue(status)
+        #
+        mock_exists.reset_mock()
+        with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
+            mopen.side_effect = IOError('foo')
+            status = localrepo.save_json("/filename", "data")
+            self.assertTrue(mopen.called)
+            self.assertFalse(status)
+
+    @mock.patch('udocker.json.load')
+    @mock.patch('udocker.os.path.exists')
+    def test_30_load_json(self, mock_exists, mock_jsonload):
+        """Test LocalRepository().load_json()"""
+        localrepo = self._localrepo(UDOCKER_TOPDIR)
+        #
+        status = localrepo.load_json("filename")
+        self.assertFalse(mock_exists.called)
+        self.assertFalse(status)
+        #
+        localrepo.cur_repodir = localrepo.reposdir + "/IMAGE"
+        localrepo.cur_tagdir = localrepo.cur_repodir + "/TAG"
+        mock_exists.return_value = False
+        status = localrepo.load_json("filename")
+        self.assertTrue(mock_exists.called)
+        self.assertFalse(status)
+        #
+        mock_exists.reset_mock()
+        with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
+            status = localrepo.load_json("/filename")
+            self.assertTrue(mopen.called)
+            self.assertTrue(status)
+        #
+        mock_exists.reset_mock()
+        with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
+            mopen.side_effect = IOError('foo')
+            status = localrepo.load_json("/filename")
+            self.assertTrue(mopen.called)
+            self.assertFalse(status)
+
+
+class CurlHeaderTestCase(unittest.TestCase):
+    """Test CurlHeader() http header parser"""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
+
+    def test_01_init(self):
+        """Test CurlHeader() constructor"""
+        curl_header = udocker.CurlHeader()
+        self.assertFalse(curl_header.sizeonly)
+        self.assertIsInstance(curl_header.data, dict)
+        self.assertEqual("", curl_header.data["X-ND-HTTPSTATUS"])
+        self.assertEqual("", curl_header.data["X-ND-CURLSTATUS"])
+
+    def test_02_write(self):
+        """Test CurlHeader().write()"""
+        buff = ["HTTP/1.1 200 OK",
+                "Content-Type: application/octet-stream",
+                "Content-Length: 32", ]
+        curl_header = udocker.CurlHeader()
+        for line in buff:
+            curl_header.write(line)
+        self.assertEqual(curl_header.data["content-type"],
+                         "application/octet-stream")
+        self.assertEqual(curl_header.data["X-ND-HTTPSTATUS"],
+                         "HTTP/1.1 200 OK")
+        #
+        buff_out = curl_header.getvalue()
+        self.assertEqual(buff_out[0:37],
+                         "{'X-ND-HTTPSTATUS': 'HTTP/1.1 200 OK'")
+        #
+        line = ""
+        curl_header = udocker.CurlHeader()
+        curl_header.sizeonly = True
+        self.assertEqual(-1, curl_header.write(line))
+
+    @mock.patch('udocker.CurlHeader.write')
+    def test_03_setvalue_from_file(self, mock_write):
+        """Test CurlHeader().setvalue_from_file()"""
+        with mock.patch(BUILTINS + '.open',
+                        mock.mock_open(read_data='XXXX')) as mopen:
+            mopen.return_value.__iter__ = lambda self: iter(self.readline, '')
+            curl_header = udocker.CurlHeader()
+            self.assertTrue(curl_header.setvalue_from_file("filename"))
+            mock_write.assert_called_with('XXXX')
+
+    def test_04_getvalue(self):
+        """Test CurlHeader().getvalue()"""
+        curl_header = udocker.CurlHeader()
+        curl_header.data = "XXXX"
+        self.assertEqual(curl_header.getvalue(), curl_header.data)
+
+
+class GetURLTestCase(unittest.TestCase):
+    """Test GetURL() perform http operations portably"""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
+
+    def _init(self):
+        """Configure variables"""
+        udocker.Config = mock.patch('udocker.Config').start()
+        udocker.Config.timeout = 1
+        udocker.Config.ctimeout = 1
+        udocker.Config.download_timeout = 1
+        udocker.Config.http_agent = ""
+        udocker.Config.http_proxy = ""
+        udocker.Config.http_insecure = 0
+
+    def _get(self, *args, **kwargs):
+        """mock for pycurl.get"""
+        return args[0]
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.GetURL._select_implementation')
+    def test_01_init(self, mock_simplement, mock_msg):
+        """Test GetURL() constructor"""
+        self._init()
+        geturl = udocker.GetURL()
+        self.assertEqual(geturl.ctimeout, udocker.Config.ctimeout)
+        self.assertEqual(geturl.insecure, udocker.Config.http_insecure)
+        self.assertEqual(geturl.cache_support, False)
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.GetURLexeCurl')
+    @mock.patch('udocker.GetURLpyCurl')
+    def test_02_select_implementation(self, mock_gupycurl,
+                                      mock_guexecurl, mock_msg):
+        """Test GetURL()._select_implementation()"""
+        self._init()
+        mock_gupycurl.return_value.is_available.return_value = True
+        geturl = udocker.GetURL()
+        geturl._select_implementation()
+        self.assertEqual(geturl.cache_support, True)
+        #
+        mock_gupycurl.return_value.is_available.return_value = False
+        geturl = udocker.GetURL()
+        geturl._select_implementation()
+        self.assertEqual(geturl.cache_support, False)
+        #
+        mock_guexecurl.return_value.is_available.return_value = False
+        with self.assertRaises(NameError):
+            udocker.GetURL()
+
+    def test_03_get_content_length(self):
+        """Test GetURL().get_content_length()"""
+        self._init()
+        geturl = udocker.GetURL()
+        hdr = type('test', (object,), {})()
+        hdr.data = {"content-length": 10, }
+        self.assertEqual(geturl.get_content_length(hdr), 10)
+        hdr.data = {"content-length": dict(), }
+        self.assertEqual(geturl.get_content_length(hdr), -1)
+
+    def test_04_set_insecure(self):
+        """Test GetURL().set_insecure()"""
+        self._init()
+        geturl = udocker.GetURL()
+        geturl.set_insecure()
+        self.assertEqual(geturl.insecure, True)
+        #
+        geturl.set_insecure(False)
+        self.assertEqual(geturl.insecure, False)
+
+    def test_05_set_proxy(self):
+        """Test GetURL().set_proxy()"""
+        self._init()
+        geturl = udocker.GetURL()
+        geturl.set_proxy("http://host")
+        self.assertEqual(geturl.http_proxy, "http://host")
+
+    def test_06_get(self):
+        """Test GetURL().get() generic get"""
+        self._init()
+        geturl = udocker.GetURL()
+        self.assertRaises(TypeError, geturl.get)
+        #
+        geturl = udocker.GetURL()
+        geturl._geturl = type('test', (object,), {})()
+        geturl._geturl.get = self._get
+        self.assertEqual(geturl.get("http://host"), "http://host")
+
+    def test_07_post(self):
+        """Test GetURL().post() generic post"""
+        self._init()
+        geturl = udocker.GetURL()
+        self.assertRaises(TypeError, geturl.post)
+        self.assertRaises(TypeError, geturl.post, "http://host")
+        #
+        geturl = udocker.GetURL()
+        geturl._geturl = type('test', (object,), {})()
+        geturl._geturl.get = self._get
+        self.assertEqual(geturl.post("http://host",
+                                     {"DATA": 1, }), "http://host")
+
+
+class ChkSUMTestCase(unittest.TestCase):
+    """Test ChkSUM() performs checksums portably"""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
+
+    def _init(self):
+        """Configure variables"""
+        pass
+
+    @mock.patch('udocker.hashlib.sha256')
+    @mock.patch('udocker.Msg')
+    def test_01_init(self, mock_msg, mock_hashlib_sha):
+        """Test ChkSUM() constructor"""
+        self._init()
+        mock_hashlib_sha.return_value = True
+        cksum = udocker.ChkSUM()
+        self.assertEqual(cksum._sha256_call, cksum._hashlib_sha256)
+
+    @mock.patch('udocker.Msg')
+    def test_01_sha256(self, mock_msg):
+        """Test ChkSUM().sha256()"""
+        self._init()
+        mock_call = mock.MagicMock()
+        cksum = udocker.ChkSUM()
+        #
+        mock_call.return_value = True
+        cksum._sha256_call = mock_call
+        status = cksum.sha256("filename")
+        self.assertTrue(status)
+        #
+        mock_call.return_value = False
+        cksum._sha256_call = mock_call
+        status = cksum.sha256("filename")
+        self.assertFalse(status)
+
+    @mock.patch('udocker.Msg')
+    def test_02_hashlib_sha256(self, mock_msg):
+        """Test ChkSUM()._hashlib_sha256()"""
+        sha256sum = \
+            "65e84be33532fb784c48129675f9eff3a682b27168c0ea744b2cf58ee02337c5"
+        self._init()
+        cksum = udocker.ChkSUM()
+        with mock.patch(BUILTINS + '.open',
+                        mock.mock_open(read_data='qwerty')):
+            status = cksum._hashlib_sha256("filename")
+            self.assertEqual(status, sha256sum)
+
+    @mock.patch('udocker.subprocess.check_output')
+    @mock.patch('udocker.Msg')
+    def test_03_openssl_sha256(self, mock_msg, mock_subproc):
+        """Test ChkSUM()._openssl_sha256()"""
+        self._init()
+        udocker.Msg = mock_msg
+        udocker.Msg.return_value.chlderr = open("/dev/null", "w")
+        udocker.Msg.chlderr = open("/dev/null", "w")
+        mock_subproc.return_value = "123456 "
+        cksum = udocker.ChkSUM()
+        status = cksum._openssl_sha256("filename")
+        self.assertEqual(status, "123456")
+
+
+class NixAuthenticationTestCase(unittest.TestCase):
+    """Test NixAuthentication() *nix authentication portably"""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
+
+    def _init(self):
+        """Configure variables"""
+        pass
+
+    def test_01_init(self):
+        """Test NixAuthentication() constructor"""
+        self._init()
+        auth = udocker.NixAuthentication()
+        self.assertEqual(auth.passwd_file, None)
+        self.assertEqual(auth.group_file, None)
+        #
+        auth = udocker.NixAuthentication("passwd", "group")
+        self.assertEqual(auth.passwd_file, "passwd")
+        self.assertEqual(auth.group_file, "group")
+
+    @mock.patch('udocker.pwd')
+    def test_01__get_user_from_host(self, mock_pwd):
+        """Test NixAuthentication()._get_user_from_host()"""
+        self._init()
+        usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr",
+                                 "/root", "/bin/bash"])
+        mock_pwd.getpwuid.return_value = usr
+        auth = udocker.NixAuthentication()
+        (name, uid, gid, gecos, _dir, shell) = auth._get_user_from_host(0)
+        self.assertEqual(name, usr.pw_name)
+        self.assertEqual(uid, usr.pw_uid)
+        self.assertEqual(gid, str(usr.pw_gid))
+        self.assertEqual(gecos, usr.pw_gecos)
+        self.assertEqual(_dir, usr.pw_dir)
+        self.assertEqual(shell, usr.pw_shell)
+        #
+        mock_pwd.getpwnam.return_value = usr
+        auth = udocker.NixAuthentication()
+        (name, uid, gid, gecos, _dir, shell) = auth._get_user_from_host("root")
+        self.assertEqual(name, usr.pw_name)
+        self.assertEqual(uid, usr.pw_uid)
+        self.assertEqual(gid, str(usr.pw_gid))
+        self.assertEqual(gecos, usr.pw_gecos)
+        self.assertEqual(_dir, usr.pw_dir)
+
+    @mock.patch('udocker.pwd')
+    def test_02__get_group_from_host(self, mock_pwd):
+        """Test NixAuthentication()._get_group_from_host()"""
+        self._init()
+        hgr = grp.struct_group(["root", "*", "0", str([])])
+        mock_pwd.getgrgid.return_value = hgr
+        auth = udocker.NixAuthentication()
+        (name, gid, mem) = auth._get_group_from_host(0)
+        self.assertEqual(name, hgr.gr_name)
+        self.assertEqual(gid, str(hgr.gr_gid))
+        self.assertEqual(mem, hgr.gr_mem)
+        #
+        mock_pwd.getgrnam.return_value = hgr
+        auth = udocker.NixAuthentication()
+        (name, gid, mem) = auth._get_group_from_host("root")
+        self.assertEqual(name, hgr.gr_name)
+        self.assertEqual(gid, str(hgr.gr_gid))
+        self.assertEqual(mem, hgr.gr_mem)
+
+    def test_03__get_user_from_file(self):
+        """Test NixAuthentication()._get_user_from_file()"""
+        self._init()
+        auth = udocker.NixAuthentication()
+        auth.passwd_file = "passwd"
+        passwd_line = 'root:x:0:0:root:/root:/bin/bash'
+        with mock.patch(BUILTINS + '.open',
+                        mock.mock_open(read_data=passwd_line)) as mopen:
+            mopen.return_value.__iter__ = lambda self: iter(self.readline, '')
+            (name, uid, gid,
+             gecos, _dir, shell) = auth._get_user_from_file("root")
+            self.assertEqual(name, "root")
+            self.assertEqual(uid, "0")
+            self.assertEqual(gid, "0")
+            self.assertEqual(gecos, "root")
+            self.assertEqual(_dir, "/root")
+            self.assertEqual(shell, "/bin/bash")
+            #
+            (name, uid, gid, gecos, _dir, shell) = auth._get_user_from_file(0)
+            self.assertEqual(name, "root")
+            self.assertEqual(uid, "0")
+            self.assertEqual(gid, "0")
+            self.assertEqual(gecos, "root")
+            self.assertEqual(_dir, "/root")
+            self.assertEqual(shell, "/bin/bash")
+
+    def test_04__get_group_from_file(self):
+        """Test NixAuthentication()._get_group_from_file()"""
+        self._init()
+        auth = udocker.NixAuthentication()
+        auth.passwd_file = "passwd"
+        group_line = 'root:x:0:a,b,c'
+        with mock.patch(BUILTINS + '.open',
+                        mock.mock_open(read_data=group_line)) as mopen:
+            mopen.return_value.__iter__ = lambda self: iter(self.readline, '')
+            (name, gid, mem) = auth._get_group_from_file("root")
+            self.assertEqual(name, "root")
+            self.assertEqual(gid, "0")
+            self.assertEqual(mem, "a,b,c")
+            #
+            (name, gid, mem) = auth._get_group_from_file(0)
+            self.assertEqual(name, "root")
+            self.assertEqual(gid, "0")
+            self.assertEqual(mem, "a,b,c")
+
+    def test_05_add_user(self):
+        """Test NixAuthentication().add_user()"""
+        self._init()
+        auth = udocker.NixAuthentication()
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
+            status = auth.add_user("root", "pw", 0, 0, "gecos",
+                                   "/home", "/bin/bash")
+            self.assertTrue(status)
+
+    def test_06_add_group(self):
+        """Test NixAuthentication().add_group()"""
+        self._init()
+        auth = udocker.NixAuthentication()
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
+            status = auth.add_group("root", 0)
+            self.assertTrue(status)
+
+    @mock.patch('udocker.NixAuthentication._get_user_from_host')
+    @mock.patch('udocker.NixAuthentication._get_user_from_file')
+    def test_07_get_user(self, mock_file, mock_host):
+        """Test NixAuthentication().get_user()"""
+        self._init()
+        auth = udocker.NixAuthentication()
+        auth.passwd_file = ""
+        auth.get_user("user")
+        self.assertTrue(mock_host.called)
+        self.assertFalse(mock_file.called)
+        #
+        mock_host.reset_mock()
+        mock_file.reset_mock()
+        auth.passwd_file = "passwd"
+        auth.get_user("user")
+        self.assertFalse(mock_host.called)
+        self.assertTrue(mock_file.called)
+
+    @mock.patch('udocker.NixAuthentication._get_group_from_host')
+    @mock.patch('udocker.NixAuthentication._get_group_from_file')
+    def test_08_get_group(self, mock_file, mock_host):
+        """Test NixAuthentication().get_group()"""
+        self._init()
+        auth = udocker.NixAuthentication()
+        auth.group_file = ""
+        auth.get_group("group")
+        self.assertTrue(mock_host.called)
+        self.assertFalse(mock_file.called)
+        #
+        mock_host.reset_mock()
+        mock_file.reset_mock()
+        auth.group_file = "group"
+        auth.get_group("group")
+        self.assertFalse(mock_host.called)
+        self.assertTrue(mock_file.called)
+
+
+class ExecutionEngine(unittest.TestCase):
+    """Test ExecutionEngine() parent class for containers execution"""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
+
+    def _init(self):
+        """Configure variables"""
+        udocker.Config = type('test', (object,), {})()
+        udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
+        udocker.Config.cmd = "/bin/bash"
+        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
+
+    @mock.patch('udocker.LocalRepository')
+    def test_01_init(self, mock_local):
+        """Test ExecutionEngine()"""
+        self._init()
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        self.assertEqual(ex_eng.container_id, "")
+        self.assertEqual(ex_eng.container_root, "")
+        self.assertEqual(ex_eng.container_names, [])
+        self.assertEqual(ex_eng.opt["nometa"], False)
+        self.assertEqual(ex_eng.opt["nosysdirs"], False)
+        self.assertEqual(ex_eng.opt["dri"], False)
+        self.assertEqual(ex_eng.opt["bindhome"], False)
+        self.assertEqual(ex_eng.opt["hostenv"], False)
+        self.assertEqual(ex_eng.opt["hostauth"], False)
+        self.assertEqual(ex_eng.opt["novol"], [])
+        self.assertEqual(ex_eng.opt["env"], [])
+        self.assertEqual(ex_eng.opt["vol"], [])
+        self.assertEqual(ex_eng.opt["cpuset"], "")
+        self.assertEqual(ex_eng.opt["user"], "")
+        self.assertEqual(ex_eng.opt["cwd"], "")
+        self.assertEqual(ex_eng.opt["entryp"], "")
+        self.assertEqual(ex_eng.opt["cmd"], udocker.Config.cmd)
+        self.assertEqual(ex_eng.opt["hostname"], "")
+        self.assertEqual(ex_eng.opt["domain"], "")
+        self.assertEqual(ex_eng.opt["volfrom"], [])
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_02__check_exposed_ports(self, mock_local, mock_msg):
+        """Test ExecutionEngine()._check_exposed_ports()"""
+        self._init()
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        status = ex_eng._check_exposed_ports(("1024", "2048/tcp", "23000/udp"))
+        self.assertFalse(status)
+        #
+        status = ex_eng._check_exposed_ports(("1023", "2048/tcp", "23000/udp"))
+        self.assertTrue(status)
+        #
+        status = ex_eng._check_exposed_ports(("1024", "80/tcp", "23000/udp"))
+        self.assertTrue(status)
+        #
+        status = ex_eng._check_exposed_ports(("1024", "2048/tcp", "23/udp"))
+        self.assertTrue(status)
+
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.LocalRepository')
+    def test_03__set_cpu_affinity(self, mock_local, mock_futil):
+        """Test ExecutionEngine()._set_cpu_affinity()"""
+        self._init()
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        mock_futil.return_value.find_exec.return_value = ""
+        status = ex_eng._set_cpu_affinity()
+        self.assertEqual(status, " ")
+        #
+        mock_futil.return_value.find_exec.return_value = "/bin/taskset"
+        status = ex_eng._set_cpu_affinity()
+        self.assertEqual(status, " ")
+        #
+        mock_futil.return_value.find_exec.return_value = "/bin/taskset"
+        ex_eng.opt["cpuset"] = "1-2"
+        status = ex_eng._set_cpu_affinity()
+        self.assertEqual(status, " /bin/taskset -C  '1-2' ")
+
+    @mock.patch('udocker.LocalRepository')
+    def test_04__is_in_volumes(self, mock_local):
+        """Test ExecutionEngine()._is_in_volumes()"""
+        self._init()
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["vol"] = ("/opt/xxx:/mnt", )
+        status = ex_eng._is_in_volumes("/opt")
+        self.assertTrue(status)
+        #
+        ex_eng.opt["vol"] = ("/var/xxx:/mnt", )
+        status = ex_eng._is_in_volumes("/opt")
+        self.assertFalse(status)
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.os.path.isdir')
+    @mock.patch('udocker.os.path.exists')
+    @mock.patch('udocker.ExecutionEngine._is_in_volumes')
+    @mock.patch('udocker.ExecutionEngine._getenv')
+    @mock.patch('udocker.LocalRepository')
+    def test_05__check_paths(self, mock_local, mock_getenv, mock_isinvol,
+                             mock_exists, mock_isdir, mock_msg):
+        """Test ExecutionEngine()._check_paths()"""
+        self._init()
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        mock_getenv.return_value = ""
+        mock_isinvol.return_value = False
+        mock_exists.return_value = False
+        mock_isdir.return_value = False
+        ex_eng.opt["uid"] = "0"
+        ex_eng.opt["cwd"] = ""
+        ex_eng.opt["home"] = "/home/user"
+        status = ex_eng._check_paths("/containers/123/ROOT")
+        self.assertFalse(status)
+        self.assertEqual(ex_eng.opt["env"][-1],
+                         "PATH=/usr/sbin:/sbin:/usr/bin:/bin")
+        self.assertEqual(ex_eng.opt["cwd"], ex_eng.opt["home"])
+        #
+        ex_eng.opt["uid"] = "1000"
+        status = ex_eng._check_paths("/containers/123/ROOT")
+        self.assertFalse(status)
+        self.assertEqual(ex_eng.opt["env"][-1],
+                         "PATH=/usr/bin:/bin")
+        self.assertEqual(ex_eng.opt["cwd"], ex_eng.opt["home"])
+        #
+        mock_exists.return_value = True
+        mock_isdir.return_value = True
+        status = ex_eng._check_paths("/containers/123/ROOT")
+        self.assertTrue(status)
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.os.access')
+    @mock.patch('udocker.os.readlink')
+    @mock.patch('udocker.os.path.isfile')
+    @mock.patch('udocker.os.path.islink')
+    @mock.patch('udocker.os.path.exists')
+    @mock.patch('udocker.ExecutionEngine._getenv')
+    @mock.patch('udocker.LocalRepository')
+    def test_06__check_executable(self, mock_local, mock_getenv,
+                                  mock_exists, mock_islink, mock_isfile,
+                                  mock_readlink, mock_access, mock_msg):
+        """Test ExecutionEngine()._check_executable()"""
+        self._init()
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        mock_getenv.return_value = ""
+        ex_eng.opt["entryp"] = "/bin/shell -x -v"
+        mock_islink.return_value = False
+        mock_exists.return_value = False
+        status = ex_eng._check_executable("/containers/123/ROOT")
+        self.assertFalse(status)
+        #
+        mock_islink.return_value = False
+        mock_exists.return_value = True
+        mock_isfile.return_value = True
+        mock_access.return_value = True
+        status = ex_eng._check_executable("/containers/123/ROOT")
+        self.assertTrue(status)
+        #
+        ex_eng.opt["entryp"] = ["/bin/shell", "-x", "-v"]
+        ex_eng.opt["cmd"] = ""
+        status = ex_eng._check_executable("/containers/123/ROOT")
+        self.assertEqual(ex_eng.opt["cmd"], ex_eng.opt["entryp"])
+        #
+        ex_eng.opt["entryp"] = ["/bin/shell", ]
+        ex_eng.opt["cmd"] = ["-x", "-v"]
+        status = ex_eng._check_executable("/containers/123/ROOT")
+        self.assertEqual(ex_eng.opt["cmd"], ["/bin/shell", "-x", "-v"])
+
+    @mock.patch('udocker.ContainerStructure')
+    @mock.patch('udocker.ExecutionEngine._check_exposed_ports')
+    @mock.patch('udocker.ExecutionEngine._getenv')
+    @mock.patch('udocker.LocalRepository')
+    def test_07__run_load_metadata(self, mock_local, mock_getenv,
+                                   mock_chkports, mock_cstruct):
+        """Test ExecutionEngine()._run_load_metadata()"""
+        self._init()
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        mock_getenv.return_value = ""
+        udocker.Config.location = "/tmp/container"
+        status = ex_eng._run_load_metadata("123")
+        self.assertEqual(status, ("", []))
+        #
+        udocker.Config.location = ""
+        mock_cstruct.return_value.get_container_attr.return_value = ("", [])
+        status = ex_eng._run_load_metadata("123")
+        self.assertEqual(status, (None, None))
+        #
+        udocker.Config.location = ""
+        mock_cstruct.return_value.get_container_attr.return_value = ("/x", [])
+        ex_eng.opt["nometa"] = True
+        status = ex_eng._run_load_metadata("123")
+        self.assertEqual(status, ("/x", []))
+        #
+        udocker.Config.location = ""
+        mock_cstruct.return_value.get_container_attr.return_value = ("/x", [])
+        ex_eng.opt["nometa"] = False
+        status = ex_eng._run_load_metadata("123")
+        self.assertEqual(status, ("/x", []))
+
+    @mock.patch('udocker.LocalRepository')
+    def test_08__getenv(self, mock_local):
+        """Test ExecutionEngine()._getenv()"""
+        self._init()
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["env"] = ["HOME=/home/user", "PATH=/bin:/usr/bin"]
+        status = ex_eng._getenv("")
+        self.assertEqual(status, None)
+        #
+        status = ex_eng._getenv("XXX")
+        self.assertEqual(status, None)
+        #
+        status = ex_eng._getenv("HOME")
+        self.assertEqual(status, "/home/user")
+        #
+        status = ex_eng._getenv("PATH")
+        self.assertEqual(status, "/bin:/usr/bin")
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_09__uid_gid_from_str(self, mock_local, mock_msg):
+        """Test ExecutionEngine()._uid_gid_from_str()"""
+        self._init()
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        status = ex_eng._uid_gid_from_str("")
+        self.assertEqual(status, (None, None))
+        #
+        status = ex_eng._uid_gid_from_str("0:0")
+        self.assertEqual(status, ('0', '0'))
+        #
+        status = ex_eng._uid_gid_from_str("100:100")
+        self.assertEqual(status, ('100', '100'))
+
+
 if __name__ == '__main__':
-    unittest.main()()
+    unittest.main()
