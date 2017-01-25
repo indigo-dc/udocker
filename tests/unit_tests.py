@@ -1581,12 +1581,13 @@ class GetURLTestCase(unittest.TestCase):
         self.assertEqual(geturl.cache_support, True)
         #
         mock_gupycurl.return_value.is_available.return_value = False
-        geturl.cache_support = False
+        geturl = udocker.GetURL()
         geturl._select_implementation()
         self.assertEqual(geturl.cache_support, False)
         #
         mock_guexecurl.return_value.is_available.return_value = False
-        self.assertRaises(NameError, geturl._select_implementation)
+        with self.assertRaises(NameError):
+            udocker.GetURL()
 
     def test_03_get_content_length(self):
         """Test GetURL().get_content_length()"""
