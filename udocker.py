@@ -3217,6 +3217,10 @@ class DockerLocalFileAPI(object):
                 if fname == "repositories":
                     structure["repositories"] = (
                         self.localrepo.load_json(f_path))
+                elif fname == "manifest.json":
+                    pass
+                elif len(fname) == 69 and fname.endswith(".json"):
+                    pass
                 elif len(fname) == 64 and FileUtil(f_path).isdir():
                     layer_id = fname
                     structure["layers"][layer_id] = dict()
