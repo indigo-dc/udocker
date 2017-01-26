@@ -256,7 +256,7 @@ class FuncTestBasic(unittest.TestCase):
         """Test invoke search command"""
         do_cmd(self, mock_msg,
                [UDOCKER, "search", "-a", "indigodatacloud"],
-               " indigodatacloud/disvis")
+               " indigodatacloudapps/disvis")
 
 
 class FuncTestRepo(unittest.TestCase):
