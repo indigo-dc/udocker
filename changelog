@@ -5,14 +5,20 @@ udocker 1.0.0
 udocker 1.0.1
 
  * Minor bugfixes
- * Use udocker as executable name instead of udocker.py
- * Improve verbose levels and messaging
- * Support for login into docker repositories
- * Support for private repositories
- * Listing of v2 repositories catalog
- * Improve download handling for v1 and v2 repositories
- * Fix insecure flag to avoid validation of host certificates
+ * Executable name changed from udocker.py to udocker
+ * Added support for login into docker repositories
+ * Added support for private repositories
+ * Added support for listing of v2 repositories catalog
  * Added checksum verification for sha256 layers
+ * Improved verbose levels and messaging
+ * Improved download handling for v1 and v2 repositories
+ * Improved installation tarball structure
+ * Insecure flag fixed
  * Address seccomp change introduced on kernels >= 4.8.8
- * Installation tarball structure improved
- * Utility to build binary executables and create a tarball
+ * Utilities for packaging
+
+ * Fixed issues:
+ * Fix issue #24 Container stdout is not redirect to the host stdout 
+ * Fix issue #29 udocker pull disregards the --registry parameter 
+ * Fix issue #30 Udocker does not work with gitlab registries 
+ * Fix issue #31 Command line parameter for unsafe SSL requests 
