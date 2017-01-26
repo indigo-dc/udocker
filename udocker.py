@@ -501,11 +501,8 @@ class ChkSUM(object):
         hash_sha256 = hashlib.sha256()
         try:
             with open(filename, "rb") as filep:
-                while True:
-                    chunk = filep.read(4096)
+                for chunk in iter(lambda: filep.read(4096), b""):
                     hash_sha256.update(chunk)
-                    if len(chunk) < 4096:
-                        break
             return hash_sha256.hexdigest()
         except (IOError, OSError):
             return ""

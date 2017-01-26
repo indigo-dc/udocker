@@ -1706,11 +1706,13 @@ class ChkSUMTestCase(unittest.TestCase):
     def test_02_hashlib_sha256(self, mock_msg):
         """Test ChkSUM()._hashlib_sha256()"""
         sha256sum = \
-            "9ceece10cf8b97d1f1924dae5d14c137fd144ce999ede85f48be6d7582e2dd23"
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         self._init()
         cksum = udocker.ChkSUM()
-        with mock.patch(BUILTINS + '.open',
-                        mock.mock_open(read_data='qwerty\n')):
+        file_data = StringIO("qwerty")
+        with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
+            mopen.return_value.__iter__ = \
+                lambda self: iter(file_data.readline, '')
             status = cksum._hashlib_sha256("filename")
             self.assertEqual(status, sha256sum)
 
