@@ -4392,6 +4392,8 @@ class Main(object):
               self.cmdp.get("-q", "GEN_OPT")):
             Config.verbose_level = Msg.MSG
         Msg().setlevel(Config.verbose_level)
+        if self.cmdp.get("--insecure", "GEN_OPT"):
+            Config.http_insecure = True
         if self.cmdp.get("--repo=", "GEN_OPT"):  # override repo root tree
             Config.topdir = self.cmdp.get("--repo=", "GEN_OPT")
             if not LocalRepository(Config.topdir).is_repo():
@@ -4403,8 +4405,6 @@ class Main(object):
             Msg().out("Info: creating repo: " + Config.topdir, l=Msg.INF)
             self.localrepo.create_repo()
         self.udocker = Udocker(self.localrepo)
-        if self.cmdp.get("--insecure", "GEN_OPT"):  # override repo root tree
-            Config.http_insecure = True
         status = UdockerTools(self.localrepo).install()
         if status is not None and not status:
             Msg().err("Error: install of udockertools failed")
