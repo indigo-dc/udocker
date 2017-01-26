@@ -140,7 +140,7 @@ Pull from docker hub and list the pulled images
 ```
 udocker pull  fedora
 udocker pull  busybox
-udocker pull  indigodatacloud/disvis
+udocker pull  indigodatacloudapps/disvis
 udocker images
 ```
 

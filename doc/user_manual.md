@@ -176,7 +176,7 @@ Examples:
 ```
   udocker pull busybox
   udocker pull fedora:latest
-  udocker indigodatacloud/disvis
+  udocker pull indigodatacloudapps/disvis
   udocker pull --httpproxy=socks4://host:port busybox
   udocker pull --httpproxy=socks5://host:port busybox
   udocker pull --httpproxy=socks4://user:pass@host:port busybox
