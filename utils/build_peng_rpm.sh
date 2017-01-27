@@ -118,7 +118,7 @@ rm -rf %{buildroot}
 
 %changelog
 * Mon Jan  9 2017 udocker maintainer <udocker@lip.pt> $VERSION-$RELEASE
-- Initial package version
+- Initial rpm package version
 
 PRENG_SPEC
 }
