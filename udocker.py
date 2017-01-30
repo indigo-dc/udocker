@@ -108,11 +108,10 @@ class Config(object):
     containersdir = None
 
     # udocker installation tarball
-    _utarball = (
+    tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
         "/s/rg8saO8ij44LZF2/download"
     )
-    tarball = os.getenv("UDOCKER_TARBALL", _utarball)
     autoinstall = True
 
     config = "udocker.conf"
@@ -183,6 +182,11 @@ class Config(object):
         Config.layersdir = os.getenv("UDOCKER_LAYERS", Config.layersdir)
         Config.containersdir = os.getenv("UDOCKER_CONTAINERS",
                                          Config.containersdir)
+        Config.dockerio_index_url = os.getenv("UDOCKER_INDEX",
+                                              Config.dockerio_index_url)
+        Config.dockerio_registry_url = os.getenv("UDOCKER_REGISTRY",
+                                                 Config.dockerio_registry_url)
+        Config.tarball = os.getenv("UDOCKER_TARBALL", Config.tarball)
 
     def _read_config(self, config_file):
         """Interpret config file content"""
@@ -1124,7 +1128,7 @@ class ExecutionEngine(object):
                 self.opt["cmd"] = self.opt["entryp"]
         if not self.opt["cmd"]:
             self.opt["cmd"] = Config.cmd
-            Msg().err("Warning: no command assuming:", self.opt["cmd"],
+            Msg().out("Warning: no command assuming:", self.opt["cmd"],
                       l=Msg.WAR)
         exec_name = self.opt["cmd"][0]            # exec pathname without args
         if exec_name.startswith("/"):
@@ -3577,10 +3581,18 @@ class Udocker(object):
         """
         search: search dockerhub for container images
         search [options]  <expression>
-        -a                         :do not pause
+        -a                                              :do not pause
+        --index=https://index.docker.io/v1              :docker index
+        --registry=https://registry-1.docker.io         :docker registry
         """
         pause = not cmdp.get("-a")
+        index_url = cmdp.get("--index=")
+        registry_url = cmdp.get("--registry=")
         expression = cmdp.get("P1")
+        if index_url:
+            self.dockerioapi.set_index(index_url)
+        if registry_url:
+            self.dockerioapi.set_registry(registry_url)
         if cmdp.missing_options():               # syntax error
             return False
         Msg().out("%-40.40s %8.8s %s" %
@@ -3604,8 +3616,8 @@ class Udocker(object):
     def do_load(self, cmdp):
         """
         load: load a container image saved by docker with 'docker save'
-        load --input=<docker-exported-container-file>
-        load -i <docker-exported-container-file>
+        load --input=<docker-saved-container-file>
+        load -i <docker-saved-container-file>
         """
         imagefile = cmdp.get("--input=")
         if not imagefile:
@@ -3647,13 +3659,20 @@ class Udocker(object):
         login: authenticate into docker repository e.g. dockerhub
         --username=username
         --password=password
+        --registry=https://registry-1.docker.io
         """
         username = cmdp.get("--username=")
         password = cmdp.get("--password=")
+        registry_url = cmdp.get("--registry=")
+        if registry_url:
+            self.dockerioapi.set_registry(registry_url)
         if not username:
             username = raw_input("username: ")
         if not password:
             password = getpass("password: ")
+        if len(password) and password == password.upper():
+            Msg().out("Warning: password in uppercase",
+                      "Caps Lock ?", l=Msg.WAR)
         v2_auth_token = \
             self.dockerioapi.get_v2_login_token(username, password)
         if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, ""):
@@ -3666,8 +3685,12 @@ class Udocker(object):
         """
         logout: authenticate into docker repository e.g. dockerhub
         -a remove all authentication credentials
+        --registry=https://registry-1.docker.io
         """
         all_credentials = cmdp.get("-a")
+        registry_url = cmdp.get("--registry=")
+        if registry_url:
+            self.dockerioapi.set_registry(registry_url)
         if all_credentials:
             status = self.keystore.erase()
         else:

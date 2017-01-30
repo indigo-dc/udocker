@@ -2,13 +2,12 @@
 
 # ##################################################################
 #
-# Build udocker package
+# Build udocker-preng rpm package
 #
 # ##################################################################
 
 sanity_check() 
 {
-    echo "sanity_check"
     if [ ! -f "$REPO_DIR/udocker.py" ] ; then
         echo "$REPO_DIR/udocker.py not found aborting"
         exit 1
@@ -40,29 +39,8 @@ create_source_tarball()
     popd
 }
 
-get_arch()
-{
-    local BITS="$(getconf LONG_BIT)"
-    local MACH="$(uname -m)"
-    local PROOT="proot"
-
-    if [ "$BITS" = "64" -a "$MACH" = "x86_64" ]; then
-        PROOT="proot-x86_64"
-    elif [ "$BITS" = "32" -a "$MACH" = "x86_64" ]; then
-        PROOT="proot-x86"
-    elif [ "$BITS" = "32" -a \( "$MACH" = "i386" -o "$MACH" = "i586" -o "$MACH" = "i686" \) ]; then
-        PROOT="proot-x86"
-    elif [ "$BITS" = "64" -a "${MACH:0:3}" = "arm" ]; then
-        PROOT="proot-arm64"
-    elif [ "$BITS" = "32" -a "${MACH:0:3}" = "arm" ]; then
-        PROOT="proot-arm"
-    fi
-    echo "$PROOT"
-}
-
 create_specfile() 
 {
-    local PROOT="$(get_arch)"
     cat - > $SPECFILE <<PRENG_SPEC
 Name: udocker-preng
 Summary: udocker-preng
@@ -81,7 +59,7 @@ Requires: libtalloc, glibc, udocker
 %define debug_package %{nil}
 
 %description
-This package provides the binaries to enable containers execution in udocker using proot. udocker is a simple tool to execute Linux Docker containers in user space without requiring root privileges. Enables basic download and execution of docker containers by non-privileged users in Linux systems were docker is not available. It can be used to access and execute the content of docker containers in Linux batch systems and interactive clusters that are managed by other entities such as grid infrastructures or externaly managed batch or interactive systems.
+Engine to provide chroot and mount like capabilities for containers execution in user mode within udocker using PRoot https://github.com/proot-me. PRoot is a user-space implementation of chroot, mount --bind, and binfmt_misc. Technically PRoot relies on ptrace, an unprivileged system-call available in every Linux kernel.
 
 %prep
 %setup -q -n $BASE_DIR
@@ -117,7 +95,7 @@ rm -rf %{buildroot}
 %doc README.rst AUTHORS COPYING
 
 %changelog
-* Mon Jan  9 2017 udocker maintainer <udocker@lip.pt> $VERSION-$RELEASE
+* Mon Jan  9 2017 udocker maintainer <udocker@lip.pt> 1.0.1-1 
 - Initial rpm package version
 
 PRENG_SPEC

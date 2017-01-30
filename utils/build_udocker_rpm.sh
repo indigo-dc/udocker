@@ -2,13 +2,12 @@
 
 # ##################################################################
 #
-# Build udocker package
+# Build udocker rpm package
 #
 # ##################################################################
 
 sanity_check() 
 {
-    echo "sanity_check"
     if [ ! -f "$REPO_DIR/udocker.py" ] ; then
         echo "$REPO_DIR/udocker.py not found aborting"
         exit 1
@@ -95,7 +94,7 @@ rm -rf %{buildroot}
 %doc README.md changelog doc/installation_manual.md doc/user_manual.md LICENSE
 
 %changelog
-* Mon Jan  9 2017 udocker maintainer <udocker@lip.pt> $VERSION-$RELEASE
+* Mon Jan  9 2017 udocker maintainer <udocker@lip.pt> 1.0.1-1
 - Initial rpm package version
 
 UDOCKER_SPEC
