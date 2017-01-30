@@ -31,10 +31,11 @@ create_source_tarball()
 {
     /bin/rm $SOURCE_TARBALL 2> /dev/null
     pushd $PARENT_DIR
-    tar czvf $SOURCE_TARBALL \
+    tar -czv --xform "s/^$BASE_DIR/udocker/" -f $SOURCE_TARBALL \
        $BASE_DIR/doc $BASE_DIR/README.md $BASE_DIR/LICENSE \
        $BASE_DIR/changelog $BASE_DIR/udocker.py
     popd
+    tar tzvf $SOURCE_TARBALL
 }
 
 create_specfile() 
@@ -61,7 +62,7 @@ Requires: fileutils, findutils, bash, python-pycurl, openssl, tar, gzip, which, 
 A simple tool to execute Linux Docker containers in user space without requiring root privileges. Enables basic download and execution of docker containers by non-privileged users in Linux systems were docker is not available. It can be used to access and execute the content of docker containers in Linux batch systems and interactive clusters that are managed by other entities such as grid infrastructures or externaly managed batch or interactive systems.
 
 %prep
-%setup -q -n $BASE_DIR
+%setup -q -n udocker
 
 %build
 cp %{_builddir}/%{name}/udocker.py %{_builddir}/%{name}/udocker
