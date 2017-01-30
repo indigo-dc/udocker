@@ -91,6 +91,7 @@ echo "%{_libexecdir}/udocker/\$PROOT" > %{_builddir}/files.lst
 rm -rf %{buildroot}
 
 %files -f %{_builddir}/files.lst
+%defattr(-,root,root)
 
 %doc README.rst AUTHORS COPYING
 

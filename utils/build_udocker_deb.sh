@@ -137,6 +137,13 @@ override_dh_clean:
 M_RULES
 }
 
+create_manpages()
+{
+    cat - > $DEB_MANPAGE_FILE <<'M_MANPAGE'
+doc/udocker.1
+M_MANPAGE
+}
+
 create_control() 
 {
     cat - > $DEB_CONTROL_FILE <<'M_CONTROL'
@@ -186,6 +193,7 @@ DEB_CHANGELOG_FILE="${BUILD_DIR}/udocker-${VERSION}/debian/changelog"
 DEB_COMPAT_FILE="${BUILD_DIR}/udocker-${VERSION}/debian/compat"
 DEB_COPYRIGHT_FILE="${BUILD_DIR}/udocker-${VERSION}/debian/copyright"
 DEB_DOCS_FILE="${BUILD_DIR}/udocker-${VERSION}/debian/docs"
+DEB_MANPAGE_FILE="${BUILD_DIR}/udocker-${VERSION}/debian/udocker.manpages"
 DEB_RULES_FILE="${BUILD_DIR}/udocker-${VERSION}/debian/rules"
 DEB_SOURCE_DIR="${BUILD_DIR}/udocker-${VERSION}/debian/source"
 DEB_FORMAT_FILE="${BUILD_DIR}/udocker-${VERSION}/debian/source/format"
@@ -201,6 +209,7 @@ create_changelog
 create_compat
 create_copyright
 create_docs
+create_manpages
 create_rules
 create_format
 create_control

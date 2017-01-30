@@ -80,11 +80,13 @@ install -m 644 -D %{_builddir}/%{name}/udocker.conf %{buildroot}/%{_sysconfdir}/
 install -m 755 -d %{buildroot}/%{_libexecdir}/udocker
 install -m 755 -d %{buildroot}/%{_datarootdir}/udocker/lib
 install -m 644 -D %{_builddir}/%{name}/VERSION %{buildroot}/%{_datarootdir}/udocker/lib/VERSION
+install -D %{_builddir}/%{name}/doc/udocker.1 %{buildroot}/%{_mandir}/man1/udocker.1
 
 %clean
 rm -rf %{buildroot}
 
 %files 
+%defattr(-,root,root)
 %{_bindir}/udocker
 %{_libexecdir}/udocker
 %{_datarootdir}/udocker/lib
@@ -92,6 +94,7 @@ rm -rf %{buildroot}
 %config(noreplace) %{_sysconfdir}/udocker.conf
 
 %doc README.md changelog doc/installation_manual.md doc/user_manual.md LICENSE
+%doc %{_mandir}/man1/udocker.1*
 
 %changelog
 * Mon Jan  9 2017 udocker maintainer <udocker@lip.pt> 1.0.1-1
