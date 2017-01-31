@@ -21,7 +21,7 @@ udocker is a simple tool written in Python, it has a minimal set
 of dependencies so that can be executed in a wide range of Linux
 systems.
 
-udocker does not make use of docker nor requires its presence.
+udocker does not make use of docker nor requires its installation.
 
 udocker "executes" the containers by simply providing a chroot like
 environment over the extracted container. The current implementation
@@ -55,8 +55,6 @@ of udocker will not work.
 udocker is mainly oriented at providing a run-time environment for
 containers execution in user space.
 
-The current version does not support dockerhub private repositories.
-
 ## Security
 Because of the limitations described in section 1.2 udocker does not offer
 isolation features such as the ones offered by docker. If the containers
@@ -72,16 +70,22 @@ adequately protected by the user.
 udocker does not require privileges and runs under the identity of the user
 invoking it.
 
-Users can downloaded udocker and execute it from their own accounts without
-requiring system administration intervention.
+Users can downloaded udocker and execute it without requiring system 
+administrators intervention.
 
 udocker via PRoot offers the emulation of the root user. This emulation
 mimics a real root user (e.g getuid will return 0). This is just an emulation
-no root privileges are involved. This feature enables many tools that do not
-require privileges but that check the user id to work properly. This enables
-for instance software installation with rpm and yum inside the container.
+no root privileges are involved. This feature enables some tools that do not
+require privileges but which check the user id. This enables for instance 
+software installation using rpm, yum or dnf inside the container.
 
-udocker must not be run by privileged users.
+Due to the lack of isolation udocker must not be run by privileged users.
+
+## Installation
+The installation tarball available from the INDIGO-DataCloud repositories
+at https://repo.indigo-datacloud.eu please check for the latest version.
+
+See the [Installation manual](doc/installation_manual.md)
 
 ## Syntax
 ```
@@ -124,62 +128,67 @@ Some examples of usage:
 
 Search on dockerhub
 ```
-udocker.py search  fedora
-udocker.py search  ubuntu
-udocker.py search  indigodatacloud
+udocker search  fedora
+udocker search  ubuntu
+udocker search  indigodatacloud
 ```
 
 Pull from docker hub and list the pulled images
 ```
-udocker.py pull  fedora
-udocker.py pull  busybox
-udocker.py pull  indigodatacloud/disvis
-udocker.py images
+udocker pull  fedora
+udocker pull  busybox
+udocker pull  iscampos/openqcd
+udocker images
 ```
 
 Create the container from a pulled image and run it
 ```
-udocker.py create --name=myfed  fedora
-udocker.py run  myfed  cat /etc/redhat-release
+udocker create --name=myfed  fedora
+udocker run  myfed  cat /etc/redhat-release
 ```
 
 Run mounting the host /home/u457 into the container directory /home/cuser. 
 Notice that you can "mount" any host directory inside the container, this 
 is not a real mount but the directories will be visible inside the container.
 ```
-udocker.py run -v /home/u457:/home/cuser -w /home/user myfed  /bin/bash
-udocker.py run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
+udocker run -v /home/u457:/home/cuser -w /home/user myfed  /bin/bash
+udocker run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
 ```
 
 Put a script in your host /tmp and execute it in the container.
 ```
-udocker.py run  -v /tmp  myfed  /bin/bash -c 'cd /tmp; ./myscript.sh'
+udocker run  -v /tmp  myfed  /bin/bash -c 'cd /tmp; ./myscript.sh'
 ```
 
 Run mounting the host /var, /proc, /sys and /tmp in the same container
 directories. Notice that the content of these container directories will
 be obfuscated.
 ```
-udocker.py run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
+udocker run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
 ```
 
 Install software inside the container
 ```
-udocker.py run  --user=root myfed  yum install -y firefox pulseaudio gnash-plugin
+udocker run  --user=root myfed  yum install -y firefox pulseaudio gnash-plugin
 ```
 
 Run as some user. The usernames should exist in the container 
 ```
-udocker.py run --user 1000:1001  myfed  /bin/id
-udocker.py run --user root   myfed  /bin/id
-udocker.py run --user jorge  myfed  /bin/id
+udocker run --user 1000:1001  myfed  /bin/id
+udocker run --user root   myfed  /bin/id
+udocker run --user jorge  myfed  /bin/id
 ```
 
 Firefox with audio and video
 ```
-./udocker.py run --bindhome --hostauth --hostenv \
+./udocker run --bindhome --hostauth --hostenv \
    -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed
 ```
+
+## Documentation
+Documentation is available at gitbook.
+
+https://indigo-dc.gitbooks.io/udocker/content/
 
 ## Aknowlegments
 
