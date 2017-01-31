@@ -203,7 +203,7 @@ DEB_INSTALL_FILE="${BUILD_DIR}/udocker-preng-${VERSION}/debian/install"
 pushd $REPO_DIR
 sanity_check
 setup_env
-#create_source_tarball
+create_source_tarball
 untar_source_tarball
 create_control
 create_changelog
