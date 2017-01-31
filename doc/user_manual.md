@@ -97,7 +97,7 @@ The basic flow with udocker is:
 
 Additionally:
 
-* Containers saved with `docker save` can be loaded with `udocker load`
+* Containers saved with `docker save` can be loaded with `udocker load -i`
 * Tarballs created with `docker export` can be imported with `udocker import`
 
 
@@ -111,7 +111,9 @@ system installation. For further information see the installation manual.
 ===========
 3.1. Syntax
 -----------
-The udocker syntax is very similar to docker:
+The udocker syntax is very similar to docker. Since version 1.0.1 the udocker
+preferred command name changed from udocker.py to udocker. A symbolic link is
+provided when installing with the distribution tarball.
 
 ```
   udocker [GLOBAL-PARAMETERS] COMMAND [COMMAND-OPTIONS] [COMMAND-ARGUMENTS]
@@ -121,10 +123,13 @@ Quick examples:
 
 ```
   udocker --help
+  udocker run --help
 
   udocker pull busybox
+  udocker --insecure pull busybox
   udocker create --name=verybusy busybox
   udocker run -v /tmp/mydir verybusy
+  udocker run verybusy /bin/ls -l /etc
 ```
 
 3.2. Obtaining help
@@ -155,7 +160,7 @@ Examples:
 ```
   udocker search busybox
   udocker search -a busybox
-  udocker search indigodatacloud/docker-opencl
+  udocker search iscampos/openqcd
 ```
 
 3.4. pull
@@ -163,8 +168,9 @@ Examples:
 ```
   udocker pull [OPTIONS] REPO/IMAGE:TAG
 ```
-Pull a container image from dockerhub. The associated layers and metadata
-is downloaded from dockerhub. Requires pycurl or the curl command.
+Pull a container image from a docker repository by defaulkt uses dockerhub. 
+The associated layers and metadata are downloaded from dockerhub. Requires 
+python pycurl or the presence of the curl command.
 
 Options:
 
@@ -232,7 +238,7 @@ extracted and available to the executed with `udocker run`.
 The command displays:
 
 * container id
-* protection mode (e.g. if can be removed with `udocker rm`)
+* protection mode (e.g. whether can be removed with `udocker rm`)
 * whether the container tree is writable (is in a R/W location)
 * the easier to remeber name(s)
 * the name of the container image from which it was extracted
@@ -410,6 +416,7 @@ Examples:
 ```
   udocker mkrepo /tmp/myrepo
   udocker --repo=/tmp/myrepo pull docker.io/fedora/memcached
+  udocker --repo=/tmp/myrepo images
 ```
 
 3.19. run
@@ -459,13 +466,13 @@ Examples:
   udocker run --volume=/tmp  myfed  /bin/bash
 
   # Same as above bun run something in /tmp
-  udocker run  -v /tmp  myfed  /bin/bash -c 'cd /tmp; ./myscript.sh'
+  udocker run  -v=/tmp  myfed  /bin/bash -c 'cd /tmp; ./myscript.sh'
 
   # Run binding a host directory inside the container to make it available
   # The host $HOME is mapped to /home/user inside the container
   # The shortest -v form is used instead of --volume=
   # The option -w same as --workdir is used to change dir to /home/user
-  udocker run -v $HOME:/home/user -w /home/user myfed  /bin/bash
+  udocker run -v=$HOME:/home/user -w=/home/user myfed  /bin/bash
 
   # Install software inside the container
   udocker run  --user=root myfed  yum install -y firefox pulseaudio gnash-plugin
@@ -500,22 +507,24 @@ Examples:
 3.21. Login
 -----------
 ```
-  udocker login [--username=USERNAME] [--password=PASSWORD]
+  udocker login [--username=USERNAME] [--password=PASSWORD] [--registry=REGISTRY]
 ```
 Login into a docker registry using v2 API. Only basic authentication
 using username and password is supported. The username and password
-can be specified in the command line, otherwise the user will be
-prompted to enter them.
+can be prompted or specified in the command line. The username is the
+username in the repository, not the associated email address.
 
 Options:
 
 * `--username=USERNAME` provide the username in the command line
 * `--password=PASSWORD` provide the password in the command line
+* `--registry=REGISTRY` credentials are for this registry
 
 Examples:
 ```
   udocker login --username=xxxx --password=yyyy
-  udocker login
+
+  udocker login --registry="https://hostname:5000"
   username: xxxx
   password: ****
 ```
@@ -532,11 +541,12 @@ the current registry. To delete all registry credentials use -a.
 Options:
 
 * `-a` delete all credentials from previous logins
+* `--registry=REGISTRY` delete credentials for this registry
 
 Examples:
 ```
   udocker logout
-  udocker --registry="https://hostname:5000" logout
+  udocker logout --registry="https://hostname:5000"
   udocker logout -a
 ```
 

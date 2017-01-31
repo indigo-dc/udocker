@@ -6,11 +6,11 @@
       when: ansible_os_family == "RedHat"
 
     - name: Yum install requisites
-      action: yum pkg=git,python-pip,python-setuptools,python-simplejson,python-pycurl state=installed
+      action: yum pkg=git,python-pip,python-setuptools,python-pycurl,findutils,numactl state=installed
       when: ansible_os_family == "RedHat"
 
     - name: Apt-get install requisites
-      apt: pkg=git,python-pip,python-setuptools,python-simplejson,python-pycurl state=installed update_cache=yes cache_valid_time=3600
+      apt: pkg=git,python-pip,python-setuptools,python-pycurl,numactl state=installed update_cache=yes cache_valid_time=3600
       when: ansible_os_family == "Debian"
 
     - name: pip install udocker

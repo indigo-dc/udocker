@@ -20,20 +20,22 @@ repository at `http://repo.indigo-datacloud.eu/` where is made available
 as a tarball to be deployed by the end user. Allways check for the latest
 official version released by INDIGO-DataCloud.
 
-For udocker v1.0.1 or higher released by INDIGO-DataCloud:
+Install udocker v1.0.1 or higher released by INDIGO-DataCloud:
 
 ```
-  curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.0.1.tar.gz > udocker-tarball.tgz
+  curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-1.0.1.tar.gz > udocker-tarball.tgz
   export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
   tar xzvf $UDOCKER_TARBALL udocker
-  ./udocker help   
+  ./udocker
+  mv ./udocker $HOME   # move the executable to your preferred location for binaries
 ```
 
-For the previous udocker 1.0.0 released by INDIGO-DataCloud:
+Install the previous udocker 1.0.0 released by INDIGO-DataCloud:
 
 ```
   cd $HOME
   wget -O- http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.0.0.tar.gz | tar xzvf -
+  ./udocker.py
 ```
 
 If using the setup.py provided in the releases install with:
@@ -42,14 +44,12 @@ If using the setup.py provided in the releases install with:
   mkdir /tmp/somedir
   cd /tmp/somedir
   curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.X.X.tar.gz | tar xzvf -
-  python setup.py install --help
   python setup.py install --home /home/USER/bin
 ```
 
-
-Optionally just download and execute the udocker python script from the source and the installation
-will be performed automatically. The installation from source code is not officially supported by 
-INDIGO-DataCloud.
+Optionally just download and execute the udocker python script from the source and the
+installation will be performed automatically. The installation from source code is not
+officially supported by INDIGO-DataCloud.
 
 For the master branch:
 
@@ -67,9 +67,24 @@ For the development branch:
   ./udocker
 ```
 
+3. SYSTEM INSTALLATION WITH RPMs and DEBs
+=========================================
+RPMs for CentOS 7 are provided at http://repo.indigo-datacloud.eu
 
-3. SYSTEM INSTALLATION
-======================
+```
+  rpm -i udocker-1.0.1-1.noarch.rpm 
+  rpm -i udocker-preng-1.0.1-1.x86_64.rpm
+```
+
+DEBs for Ubuntu 14.04 are provided at http://repo.indigo-datacloud.eu
+
+```
+  dpkg -i udocker_1.0.1-1_all.deb
+  dpkg -i udocker-preng_1.0.1-1_amd64.deb
+```
+
+4. SYSTEM INSTALLATION WITH ANSIBLE AND PYTHON
+==============================================
 For system administrators wishing to provider udocker and its dependencies. 
 An ansible playbook is provided in the file ansible_install.yaml:
 
@@ -98,7 +113,7 @@ Optionally installation can be performed directly with pip:
   pip install git+https://github.com/indigo-dc/udocker
 ```
 
-4. SOURCE CODE
+5. SOURCE CODE
 ==============
 To get the latest udocker script from the github development branch without
 cloning the entire repository.
@@ -120,7 +135,7 @@ To get the udocker source code repository from the development branch.
 ```
 
 
-5. BUILD
+6. BUILD
 ========
 A distribution tarball can be built using the script build_tarball.sh in
 the utils directory. The script fetches the code necessary to build the
@@ -133,7 +148,7 @@ example builds the tarball from the master repository.
   sh build_tarball.sh
 ```
  
-6. DIRECTORIES
+7. DIRECTORIES
 ==============
 The binary executables and containers are usually kept in the user home directory
 under $HOME/.udocker this directory will contain:
@@ -142,10 +157,35 @@ under $HOME/.udocker this directory will contain:
 * Data from pulled container images (layers and metadata).
 * Directory trees for the containers extracted from the layers.
 
+8. ENVIRONMENT
+==============
 The location of the udocker directory can be changed via environment variables.
 
 * UDOCKER_DIR : change the root directory of udocker usually $HOME/.udocker
 * UDOCKER_BIN : change the location of udocker related executables
 * UDOCKER_LIB : change the location of udocker related libraries
 * UDOCKER_CONTAINERS : change the location of container directory trees (not images)
+
+The docker index and registry and be overrided via environment variables.
+
+* UDOCKER_INDEX : https://...
+* UDOCKER_REGISTRY : https://...
+
+9. CONFIGURATION
+================
+udocker loads the following configuration files:
+
+* /etc/udocker.conf
+* $UDOCKER_DIR/udocker.conf
+* $HOME/.udocker/udocker.conf (if different from the above)
+
+The configuration files allow modification of the udocker Config class attributes.
+Example of the udocker.conf syntax:
+
+```
+  dockerio_registry_url = "https://myregistry.mydomain:5000"
+  http_insecure = True
+  verbose_level = 5
+```
+
 

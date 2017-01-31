@@ -85,10 +85,7 @@ Due to the lack of isolation udocker must not be run by privileged users.
 The installation tarball available from the INDIGO-DataCloud repositories
 at https://repo.indigo-datacloud.eu please check for the latest version.
 
-```
-wget https://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-vX.X.X.tar.gz
-tar xzvf udocker-vX.X.X.tar.gz
-```
+See the [Installation manual](doc/installation_manual.md)
 
 ## Syntax
 ```
@@ -140,7 +137,7 @@ Pull from docker hub and list the pulled images
 ```
 udocker pull  fedora
 udocker pull  busybox
-udocker pull  indigodatacloudapps/disvis
+udocker pull  iscampos/openqcd
 udocker images
 ```
 
