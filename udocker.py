@@ -1136,9 +1136,12 @@ class ExecutionEngine(object):
         else:
             exec_path = \
                 FileUtil(exec_name).find_inpath(path, container_root + "/")
-        if (os.path.islink(exec_path) and
-                os.readlink(exec_path).startswith("/")):
-            exec_path = container_root + os.readlink(exec_path)
+        while os.path.islink(exec_path):
+            real_path = os.readlink(exec_path)
+            if real_path.startswith("/"):
+                exec_path = container_root + real_path
+            else:
+                exec_path = os.path.dirname(exec_path) + "/" + real_path
         if (not (exec_path and os.path.exists(exec_path) and
                  os.path.isfile(exec_path) and os.access(exec_path, os.X_OK))):
             Msg().err("Error: command not found or has no execute bit set: ",

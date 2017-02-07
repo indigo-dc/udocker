@@ -2134,6 +2134,225 @@ class ExecutionEngine(unittest.TestCase):
         status = ex_eng._uid_gid_from_str("100:100")
         self.assertEqual(status, ('100', '100'))
 
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.NixAuthentication')
+    @mock.patch('udocker.LocalRepository')
+    @mock.patch('udocker.ExecutionEngine._create_user')
+    @mock.patch('udocker.ExecutionEngine._uid_gid_from_str')
+    def test_10__setup_container_user(self, mock_ugfs, mock_cruser,
+                                      mock_local, mock_nix, mock_msg):
+        """Test ExecutionEngine()._setup_container_user()"""
+        self._init()
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        mock_ugfs.return_value = (None, None)
+        status = ex_eng._setup_container_user("0:0", "")
+        self.assertFalse(status)
+        self.assertTrue(mock_ugfs.called_once_with("root"))
+        #
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["vol"] = ""
+        ex_eng.opt["hostauth"] = False
+        mock_nix.return_value.get_user.return_value = ("", "", "",
+                                                       "", "", "")
+        mock_ugfs.return_value = ("0", "0")
+        status = ex_eng._setup_container_user("0:0", "")
+        self.assertTrue(status)
+        self.assertTrue(mock_cruser.called)
+        #
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["vol"] = ""
+        ex_eng.opt["hostauth"] = False
+        mock_nix.return_value.get_user.return_value = ("root", 0, 0,
+                                                       "", "", "")
+        mock_ugfs.return_value = ("0", "0")
+        status = ex_eng._setup_container_user("0:0", "")
+        self.assertTrue(status)
+        self.assertTrue(mock_cruser.called)
+        #
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["vol"] = ""
+        ex_eng.opt["hostauth"] = True
+        mock_nix.return_value.get_user.return_value = ("", "", "",
+                                                       "", "", "")
+        mock_ugfs.return_value = ("0", "0")
+        status = ex_eng._setup_container_user("0:0", "")
+        self.assertFalse(status)
+        #
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["vol"] = ""
+        ex_eng.opt["hostauth"] = True
+        mock_nix.return_value.get_user.return_value = ("root", 0, 0,
+                                                       "", "", "")
+        mock_ugfs.return_value = ("0", "0")
+        status = ex_eng._setup_container_user("0:0", "")
+        self.assertTrue(status)
+        self.assertTrue(mock_cruser.called)
+        #
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["vol"] = ""
+        ex_eng.opt["hostauth"] = False
+        mock_nix.return_value.get_user.return_value = ("", "", "",
+                                                       "", "", "")
+        status = ex_eng._setup_container_user("", "")
+        self.assertTrue(status)
+        self.assertTrue(mock_cruser.called)
+        #
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["vol"] = ""
+        ex_eng.opt["hostauth"] = False
+        mock_nix.return_value.get_user.return_value = ("root", 0, 0,
+                                                       "", "", "")
+        status = ex_eng._setup_container_user("", "")
+        self.assertTrue(status)
+        self.assertTrue(mock_cruser.called)
+        #
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["vol"] = ""
+        ex_eng.opt["hostauth"] = True
+        mock_nix.return_value.get_user.return_value = ("", "", "",
+                                                       "", "", "")
+        status = ex_eng._setup_container_user("", "")
+        self.assertFalse(status)
+        #
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["vol"] = ""
+        ex_eng.opt["hostauth"] = False
+        mock_nix.return_value.get_user.return_value = ("", 100, 0,
+                                                       "", "", "")
+        mock_ugfs.return_value = ("0", "0")
+        status = ex_eng._setup_container_user("0:0", "")
+        self.assertTrue(status)
+        self.assertTrue(mock_cruser.called)
+        self.assertEqual(ex_eng.opt["user"], "")
+
+    @mock.patch('udocker.os.getgroups')
+    @mock.patch('udocker.os.getgid')
+    @mock.patch('udocker.os.getuid')
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.NixAuthentication')
+    @mock.patch('udocker.LocalRepository')
+    def test_11__create_user(self, mock_local, mock_nix, mock_msg,
+                             mock_futil, mock_uid, mock_gid, mock_groups):
+        """Test ExecutionEngine()._create_user()"""
+        self._init()
+        container_auth = udocker.NixAuthentication("", "")
+        container_auth.passwd_file = ""
+        container_auth.group_file = ""
+        host_auth = udocker.NixAuthentication("", "")
+        #
+        mock_uid.return_value = 1000
+        mock_gid.return_value = 1000
+        mock_nix.return_value.add_user.return_value = False
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["uid"] = ""
+        ex_eng.opt["gid"] = ""
+        ex_eng.opt["user"] = ""
+        ex_eng.opt["home"] = ""
+        ex_eng.opt["shell"] = ""
+        ex_eng.opt["gecos"] = ""
+        status = ex_eng._create_user(container_auth, host_auth)
+        self.assertFalse(status)
+        self.assertEqual(ex_eng.opt["uid"], "1000")
+        self.assertEqual(ex_eng.opt["gid"], "1000")
+        self.assertEqual(ex_eng.opt["user"], "udoc1000")
+        self.assertEqual(ex_eng.opt["home"], "/home/udoc1000")
+        self.assertEqual(ex_eng.opt["shell"], "/bin/sh")
+        self.assertEqual(ex_eng.opt["gecos"], "*UDOCKER*")
+        #
+        mock_nix.return_value.add_user.return_value = False
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["uid"] = "60000"
+        ex_eng.opt["gid"] = "60000"
+        ex_eng.opt["user"] = "someuser"
+        ex_eng.opt["home"] = ""
+        ex_eng.opt["shell"] = "/bin/false"
+        ex_eng.opt["gecos"] = "*XXX*"
+        status = ex_eng._create_user(container_auth, host_auth)
+        self.assertFalse(status)
+        self.assertEqual(ex_eng.opt["uid"], "60000")
+        self.assertEqual(ex_eng.opt["gid"], "60000")
+        self.assertEqual(ex_eng.opt["user"], "someuser")
+        self.assertEqual(ex_eng.opt["home"], "/home/someuser")
+        self.assertEqual(ex_eng.opt["shell"], "/bin/false")
+        self.assertEqual(ex_eng.opt["gecos"], "*XXX*")
+        #
+        mock_nix.return_value.add_user.return_value = False
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["uid"] = "60000"
+        ex_eng.opt["gid"] = "60000"
+        ex_eng.opt["user"] = "someuser"
+        ex_eng.opt["home"] = "/home/batata"
+        ex_eng.opt["shell"] = "/bin/false"
+        ex_eng.opt["gecos"] = "*XXX*"
+        status = ex_eng._create_user(container_auth, host_auth)
+        self.assertFalse(status)
+        self.assertEqual(ex_eng.opt["uid"], "60000")
+        self.assertEqual(ex_eng.opt["gid"], "60000")
+        self.assertEqual(ex_eng.opt["user"], "someuser")
+        self.assertEqual(ex_eng.opt["home"], "/home/batata")
+        self.assertEqual(ex_eng.opt["shell"], "/bin/false")
+        self.assertEqual(ex_eng.opt["gecos"], "*XXX*")
+        #
+        mock_nix.return_value.add_user.return_value = True
+        mock_nix.return_value.get_group.return_value = ("", "", "")
+        mock_nix.return_value.add_group.return_value = True
+        mock_groups.return_value = ()
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["uid"] = "60000"
+        ex_eng.opt["gid"] = "60000"
+        ex_eng.opt["user"] = "someuser"
+        ex_eng.opt["home"] = "/home/batata"
+        ex_eng.opt["shell"] = "/bin/false"
+        ex_eng.opt["gecos"] = "*XXX*"
+        status = ex_eng._create_user(container_auth, host_auth)
+        self.assertTrue(status)
+        self.assertEqual(ex_eng.opt["uid"], "60000")
+        self.assertEqual(ex_eng.opt["gid"], "60000")
+        self.assertEqual(ex_eng.opt["user"], "someuser")
+        self.assertEqual(ex_eng.opt["home"], "/home/batata")
+        self.assertEqual(ex_eng.opt["shell"], "/bin/false")
+        self.assertEqual(ex_eng.opt["gecos"], "*XXX*")
+        self.assertEqual(ex_eng.opt["hostauth"], True)
+        mgroup = mock_nix.return_value.get_group
+        self.assertTrue(mgroup.called_once_with("60000"))
+        #
+        mock_nix.return_value.add_user.return_value = True
+        mock_nix.return_value.get_group.return_value = ("", "", "")
+        mock_nix.return_value.add_group.return_value = True
+        mock_groups.return_value = (80000, )
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["uid"] = "60000"
+        ex_eng.opt["gid"] = "60000"
+        ex_eng.opt["user"] = "someuser"
+        ex_eng.opt["home"] = "/home/batata"
+        ex_eng.opt["shell"] = "/bin/false"
+        ex_eng.opt["gecos"] = "*XXX*"
+        status = ex_eng._create_user(container_auth, host_auth)
+        self.assertTrue(status)
+        self.assertEqual(ex_eng.opt["uid"], "60000")
+        self.assertEqual(ex_eng.opt["gid"], "60000")
+        self.assertEqual(ex_eng.opt["user"], "someuser")
+        self.assertEqual(ex_eng.opt["home"], "/home/batata")
+        self.assertEqual(ex_eng.opt["shell"], "/bin/false")
+        self.assertEqual(ex_eng.opt["gecos"], "*XXX*")
+        self.assertEqual(ex_eng.opt["hostauth"], True)
+        ggroup = mock_nix.return_value.get_group
+        self.assertTrue(ggroup.called_once_with("60000"))
+        agroup = mock_nix.return_value.add_group
+        self.assertTrue(agroup.called_once_with("G80000", "80000"))
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.os.path.basename')
+    @mock.patch('udocker.LocalRepository')
+    def test_12__run_banner(self, mock_local, mock_base, mock_msg):
+        """Test ExecutionEngine()._run_banner()"""
+        self._init()
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng._run_banner("/bin/bash")
+        ex_eng.container_id = "CONTAINERID"
+        self.assertTrue(mock_base.called_once_with("/bin/bash"))
+
 
 if __name__ == '__main__':
     unittest.main()
