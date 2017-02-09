@@ -3003,7 +3003,8 @@ class DockerIoAPI(object):
         """Check if registry is of type v2"""
         (hdr, dummy) = self._get_url(self.registry_url + "/v2/")
         try:
-            if "200" in hdr.data["X-ND-HTTPSTATUS"]:
+            if ("200" in hdr.data["X-ND-HTTPSTATUS"] or
+                    "401" in hdr.data["X-ND-HTTPSTATUS"]):
                 return True
         except (KeyError, AttributeError, TypeError):
             pass
