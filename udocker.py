@@ -33,7 +33,7 @@ import platform
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __date__ = "2016"
 
 # Python version major.minor
@@ -110,7 +110,7 @@ class Config(object):
     # udocker installation tarball
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/rg8saO8ij44LZF2/download"
+        "/s/jZmbZU9sNmgs1ah/download"
     )
     autoinstall = True
 
@@ -269,7 +269,7 @@ class Config(object):
             return "4.2.0"
 
     def oskernel_isgreater(self, ref_version):
-        """Compare kernel release versions"""
+        """Compare kernel version is greater or equal than ref_version"""
         os_release = self.oskernel().split("-")[0]
         os_version = [int(x) for x in os_release.split(".")]
         for idx in (0, 1, 2):
@@ -277,7 +277,7 @@ class Config(object):
                 return True
             elif os_version[idx] < ref_version[idx]:
                 return False
-        return False
+        return True
 
 
 class KeyStore(object):
@@ -1429,26 +1429,26 @@ class PRootEngine(ExecutionEngine):
     def _select_proot(self):
         """Set proot executable and related variables"""
         conf = Config()
-        self.proot_noseccomp = conf.oskernel_isgreater((4, 8, 7))
+        self.proot_noseccomp = conf.oskernel_isgreater((4, 8, 0))
         arch = conf.arch()
         if arch == "amd64":
-            if conf.oskernel_isgreater((4, 8, 7)):
-                image_list = ["proot-x86_64-4_8_8", "proot-x86_64", "proot"]
+            if conf.oskernel_isgreater((4, 8, 0)):
+                image_list = ["proot-x86_64-4_8_0", "proot-x86_64", "proot"]
             else:
                 image_list = ["proot-x86_64", "proot"]
         elif arch == "i386":
-            if conf.oskernel_isgreater((4, 8, 7)):
-                image_list = ["proot-x86-4_8_8", "proot-x86", "proot"]
+            if conf.oskernel_isgreater((4, 8, 0)):
+                image_list = ["proot-x86-4_8_0", "proot-x86", "proot"]
             else:
                 image_list = ["proot-x86", "proot"]
         elif arch == "arm64":
-            if conf.oskernel_isgreater((4, 8, 7)):
-                image_list = ["proot-arm64-4_8_8", "proot-arm64", "proot"]
+            if conf.oskernel_isgreater((4, 8, 0)):
+                image_list = ["proot-arm64-4_8_0", "proot-arm64", "proot"]
             else:
                 image_list = ["proot-arm64", "proot"]
         elif arch == "arm":
-            if conf.oskernel_isgreater((4, 8, 7)):
-                image_list = ["proot-arm-4_8_8", "proot-arm", "proot"]
+            if conf.oskernel_isgreater((4, 8, 0)):
+                image_list = ["proot-arm-4_8_0", "proot-arm", "proot"]
             else:
                 image_list = ["proot-arm", "proot"]
         self.proot_exec = self._find_image(image_list)
@@ -1518,7 +1518,7 @@ class PRootEngine(ExecutionEngine):
         # set environment variables
         self._run_env_set()
 
-        # seccomp and ptrace behavior change on 4.8.8 onwards
+        # seccomp and ptrace behavior change on 4.8.0 onwards
         if self.proot_noseccomp:
             self.opt["env"].append("PROOT_NO_SECCOMP=1")
 

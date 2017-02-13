@@ -52,15 +52,15 @@ prepare_proot_source()
     /bin/mv PRoot "$PROOT_SOURCE_DIR"
 }
 
-patch_proot_source()
+patch_proot_source1()
 {
-    echo "patch_proot_source : $1"
+    echo "patch_proot_source1 : $1"
     local PROOT_SOURCE_DIR="$1"
 
     cd "$PROOT_SOURCE_DIR/src"
 
     if [ -e "GNUmakefile.patch" ] ; then
-        echo "patch proot source already applied: $PROOT_SOURCE_DIR/src/GNUmakefile"
+        echo "patch proot source1 already applied: $PROOT_SOURCE_DIR/src/GNUmakefile"
         return
     fi
 
@@ -86,6 +86,227 @@ patch_proot_source()
 EOF_GNUmakefile.patch
 
     patch < GNUmakefile.patch
+}
+
+patch_proot_source2()
+{
+    echo "patch_proot_source2 : $1"
+    local PROOT_SOURCE_DIR="$1"
+
+    cd "$PROOT_SOURCE_DIR/src/tracee"
+
+    if [ -e "event.patch" ] ; then
+        echo "patch proot source2 already applied: $PROOT_SOURCE_DIR/src/tracee/event.patch"
+        return
+    fi
+
+    cat > event.patch <<'EOF_event.patch'
+--- PRoot/src/tracee/event.c	2017-02-10 23:04:47.000000000 +0000
++++ PROOT/PRoot-new/src/tracee/event.c	2017-02-12 21:27:37.592560666 +0000
+@@ -20,6 +20,7 @@
+  * 02110-1301 USA.
+  */
+ 
++#include <stdio.h>
+ #include <sched.h>      /* CLONE_*,  */
+ #include <sys/types.h>  /* pid_t, */
+ #include <sys/ptrace.h> /* ptrace(1), PTRACE_*, */
+@@ -47,6 +48,7 @@
+ #include "attribute.h"
+ #include "compat.h"
+ 
++
+ /**
+  * Start @tracee->exe with the given @argv[].  This function
+  * returns -errno if an error occurred, otherwise 0.
+@@ -205,6 +207,27 @@
+ static int last_exit_status = -1;
+ 
+ /**
++ * Check if kernel >= 4.8
++ */
++bool is_kernel_4_8(void) {
++	struct utsname utsname;
++        int status;
++        static bool version_48 = false;
++        static int major = 0;
++        static int minor = 0;
++        if (! major) {
++		status = uname(&utsname);
++		if (status < 0)
++			return false;
++		sscanf(utsname.release, "%d.%d", &major, &minor);
++		if (major >= 4)
++			if (minor >= 8)
++				version_48 = true;
++	}
++	return version_48;
++}
++
++/**
+  * Check if this instance of PRoot can *technically* handle @tracee.
+  */
+ static void check_architecture(Tracee *tracee)
+@@ -362,6 +385,7 @@
+ int handle_tracee_event(Tracee *tracee, int tracee_status)
+ {
+ 	static bool seccomp_detected = false;
++        static bool seccomp_enabled = false;
+ 	pid_t pid = tracee->pid;
+ 	long status;
+ 	int signal;
+@@ -432,6 +456,7 @@
+ 			status = ptrace(PTRACE_SETOPTIONS, tracee->pid, NULL,
+ 					default_ptrace_options | PTRACE_O_TRACESECCOMP);
+ 			if (status < 0) {
++				seccomp_enabled = false;
+ 				/* ... otherwise use default options only.  */
+ 				status = ptrace(PTRACE_SETOPTIONS, tracee->pid, NULL,
+ 						default_ptrace_options);
+@@ -440,8 +465,71 @@
+ 					exit(EXIT_FAILURE);
+ 				}
+ 			}
++                        else { 
++				if (getenv("PROOT_NO_SECCOMP") == NULL)
++					seccomp_enabled = true;
++			}
+ 		}
+ 			/* Fall through. */
++		case SIGTRAP | PTRACE_EVENT_SECCOMP2 << 8:
++		case SIGTRAP | PTRACE_EVENT_SECCOMP << 8:
++
++			if (is_kernel_4_8()) { 
++	                	if (seccomp_enabled) {
++					if (!seccomp_detected) {
++						VERBOSE(tracee, 1, "ptrace acceleration (seccomp mode 2) enabled");
++						tracee->seccomp = ENABLED;
++						seccomp_detected = true;
++					}
++	
++					unsigned long flags = 0;
++					status = ptrace(PTRACE_GETEVENTMSG, tracee->pid, NULL, &flags);
++					if (status < 0)
++						break;
++           	             	}
++			}
++			else if (signal == (SIGTRAP | PTRACE_EVENT_SECCOMP2 << 8) ||
++                                 signal == (SIGTRAP | PTRACE_EVENT_SECCOMP << 8)) {
++				unsigned long flags = 0;
++
++				signal = 0;
++
++                	        if (!seccomp_detected) {
++                        	        VERBOSE(tracee, 1, "ptrace acceleration (seccomp mode 2) enabled");
++                                	tracee->seccomp = ENABLED;
++         	                	seccomp_detected = true;
++                	        }
++
++                        	/* Use the common ptrace flow if seccomp was
++				 * explicitely disabled for this tracee.  */
++        	                if (tracee->seccomp != ENABLED)
++                	                break;
++
++                        	status = ptrace(PTRACE_GETEVENTMSG, tracee->pid, NULL, &flags);
++                        	if (status < 0)
++                                	break;
++
++                        	/* Use the common ptrace flow when
++				 * sysexit has to be handled.  */
++                        	if ((flags & FILTER_SYSEXIT) != 0) {
++                                	tracee->restart_how = PTRACE_SYSCALL;
++                                	break;
++                        	}
++
++                        	/* Otherwise, handle the sysenter
++                        	 * stage right now.  */
++                        	tracee->restart_how = PTRACE_CONT;
++                        	translate_syscall(tracee);
++
++                        	/* This syscall has disabled seccomp, so move
++                        	 * the ptrace flow back to the common path to
++                       		 * ensure its sysexit will be handled.  */
++                        	if (tracee->seccomp == DISABLING)
++                                	tracee->restart_how = PTRACE_SYSCALL;
++                        	break;
++                	}
++
++			/* Fall through. */
+ 		case SIGTRAP | 0x80:
+ 			signal = 0;
+ 
+@@ -458,17 +546,20 @@
+ 				if (IS_IN_SYSENTER(tracee)) {
+ 					/* sysenter: ensure the sysexit
+ 					 * stage will be hit under seccomp.  */
++				        VERBOSE(tracee, 1, "SYSENTER");
+ 					tracee->restart_how = PTRACE_SYSCALL;
+ 					tracee->sysexit_pending = true;
+ 				}
+ 				else {
+ 					/* sysexit: the next sysenter
+ 					 * will be notified by seccomp.  */
++				        VERBOSE(tracee, 1, "SYSEXIT");
+ 					tracee->restart_how = PTRACE_CONT;
+ 					tracee->sysexit_pending = false;
+ 				}
+ 				/* Fall through.  */
+ 			case DISABLED:
++				VERBOSE(tracee, 1, "TRANSLATE (in fall through)");
+ 				translate_syscall(tracee);
+ 
+ 				/* This syscall has disabled seccomp.  */
+@@ -490,47 +581,6 @@
+ 			}
+ 			break;
+ 
+-		case SIGTRAP | PTRACE_EVENT_SECCOMP2 << 8:
+-		case SIGTRAP | PTRACE_EVENT_SECCOMP << 8: {
+-			unsigned long flags = 0;
+-
+-			signal = 0;
+-
+-			if (!seccomp_detected) {
+-				VERBOSE(tracee, 1, "ptrace acceleration (seccomp mode 2) enabled");
+-				tracee->seccomp = ENABLED;
+-				seccomp_detected = true;
+-			}
+-
+-			/* Use the common ptrace flow if seccomp was
+-			 * explicitely disabled for this tracee.  */
+-			if (tracee->seccomp != ENABLED)
+-				break;
+-
+-			status = ptrace(PTRACE_GETEVENTMSG, tracee->pid, NULL, &flags);
+-			if (status < 0)
+-				break;
+-
+-			/* Use the common ptrace flow when
+-			 * sysexit has to be handled.  */
+-			if ((flags & FILTER_SYSEXIT) != 0) {
+-				tracee->restart_how = PTRACE_SYSCALL;
+-				break;
+-			}
+-
+-			/* Otherwise, handle the sysenter
+-			 * stage right now.  */
+-			tracee->restart_how = PTRACE_CONT;
+-			translate_syscall(tracee);
+-
+-			/* This syscall has disabled seccomp, so move
+-			 * the ptrace flow back to the common path to
+-			 * ensure its sysexit will be handled.  */
+-			if (tracee->seccomp == DISABLING)
+-				tracee->restart_how = PTRACE_SYSCALL;
+-			break;
+-		}
+-
+ 		case SIGTRAP | PTRACE_EVENT_VFORK << 8:
+ 			signal = 0;
+ 			(void) new_child(tracee, CLONE_VFORK);
+EOF_event.patch
+
+    patch < event.patch
 }
 
 prepare_package()
@@ -154,8 +375,8 @@ create_package_tarball()
         return
     fi
 
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86/src/proot"  "${PACKAGE_DIR}/udocker_dir/bin/proot-x86-4_8_8"
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/src/proot"  "${PACKAGE_DIR}/udocker_dir/bin/proot-x86_64-4_8_8"
+    /bin/cp -f "${BUILD_DIR}/proot-source-x86/src/proot"  "${PACKAGE_DIR}/udocker_dir/bin/proot-x86-4_8_0"
+    /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/src/proot"  "${PACKAGE_DIR}/udocker_dir/bin/proot-x86_64-4_8_0"
 
     find "${PACKAGE_DIR}" -type d -exec /bin/chmod u=rwx,og=rx  {} \;
     find "${PACKAGE_DIR}" -type f -exec /bin/chmod u=+r+w,og=r  {} \;
@@ -308,11 +529,13 @@ addto_package_udocker
 addto_package_other
 
 prepare_proot_source "${BUILD_DIR}/proot-source-x86"
-patch_proot_source "${BUILD_DIR}/proot-source-x86"
+patch_proot_source1 "${BUILD_DIR}/proot-source-x86"
+patch_proot_source2 "${BUILD_DIR}/proot-source-x86"
 fedora25_build "i386" "${BUILD_DIR}/proot-source-x86"
 
 prepare_proot_source "${BUILD_DIR}/proot-source-x86_64"
-patch_proot_source "${BUILD_DIR}/proot-source-x86_64"
+patch_proot_source1 "${BUILD_DIR}/proot-source-x86_64"
+patch_proot_source2 "${BUILD_DIR}/proot-source-x86_64"
 fedora25_build "x86_64" "${BUILD_DIR}/proot-source-x86_64"
 
 create_package_tarball

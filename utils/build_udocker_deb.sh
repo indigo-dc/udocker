@@ -63,6 +63,13 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker (1.0.2-1) trusty; urgency=low
+
+  * Fix download on repositories that fail authentication on /v2
+  * Fix run verification binaries with recursive symbolic links
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Tue, 14 Feb 2017 22:36:00 +0000
+
 udocker (1.0.1-1) trusty; urgency=low
 
   * Initial debian package

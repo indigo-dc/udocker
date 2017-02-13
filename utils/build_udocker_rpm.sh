@@ -98,6 +98,9 @@ rm -rf %{buildroot}
 %doc %{_mandir}/man1/udocker.1*
 
 %changelog
+* Tue Feb 14 2017 udocker maintainer <udocker@lip.pt> 1.0.2-1 
+- Fix download on repositories that fail authentication on /v2
+- Fix run verification binaries with recursive symbolic links
 * Mon Jan  9 2017 udocker maintainer <udocker@lip.pt> 1.0.1-1
 - Initial rpm package version
 
