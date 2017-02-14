@@ -277,7 +277,7 @@ class Config(object):
                 return True
             elif os_version[idx] < ref_version[idx]:
                 return False
-        return False
+        return True
 
 
 class KeyStore(object):
@@ -1426,25 +1426,25 @@ class PRootEngine(ExecutionEngine):
     def _select_proot(self):
         """Set proot executable and related variables"""
         conf = Config()
-        self.proot_noseccomp = conf.oskernel_isgreater((4, 8, 7))
+        self.proot_noseccomp = conf.oskernel_isgreater((4, 8, 0))
         arch = conf.arch()
         if arch == "amd64":
-            if conf.oskernel_isgreater((4, 8, 7)):
+            if conf.oskernel_isgreater((4, 8, 0)):
                 image_list = ["proot-x86_64-4_8_8", "proot-x86_64", "proot"]
             else:
                 image_list = ["proot-x86_64", "proot"]
         elif arch == "i386":
-            if conf.oskernel_isgreater((4, 8, 7)):
+            if conf.oskernel_isgreater((4, 8, 0)):
                 image_list = ["proot-x86-4_8_8", "proot-x86", "proot"]
             else:
                 image_list = ["proot-x86", "proot"]
         elif arch == "arm64":
-            if conf.oskernel_isgreater((4, 8, 7)):
+            if conf.oskernel_isgreater((4, 8, 0)):
                 image_list = ["proot-arm64-4_8_8", "proot-arm64", "proot"]
             else:
                 image_list = ["proot-arm64", "proot"]
         elif arch == "arm":
-            if conf.oskernel_isgreater((4, 8, 7)):
+            if conf.oskernel_isgreater((4, 8, 0)):
                 image_list = ["proot-arm-4_8_8", "proot-arm", "proot"]
             else:
                 image_list = ["proot-arm", "proot"]
