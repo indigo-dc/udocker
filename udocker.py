@@ -118,7 +118,7 @@ class Config(object):
     keystore = "keystore"
 
     # for tmp files only
-    tmpdir = "/tmp"
+    tmpdir = os.getenv("UDOCKER_TMPDIR", "/tmp")
 
     # defaults for container execution
     cmd = ["/bin/bash", "-i"]  # Comand to execute
