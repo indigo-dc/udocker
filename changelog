@@ -3,6 +3,14 @@ udocker (1.0.2)
   * Fix accelerated seccomp on kernels >= 4.8.0
   * Fix download on repositories that fail authentication on /v2
   * Fix run verification binaries with recursive symbolic links
+  * Fix not owner error upon temporary file removal 
+    - closes: #50
+  * Fix validation of -v volumes specification to impose absolute paths
+    - closes: #43
+  * Fix environment variable with spaces in command line -e --env
+    - closes: #48
+  * Change misleading behavior of import tarball from move to copy
+    - closes: #44
 
 udocker (1.0.1)
 

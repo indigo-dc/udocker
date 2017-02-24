@@ -321,7 +321,7 @@ class FileUtilTestCase(unittest.TestCase):
         udocker.Config = mock_config
         udocker.Config.tmpdir = "/tmp"
         futil = udocker.FileUtil("filename.txt")
-        self.assertEqual(futil.filename, "filename.txt")
+        self.assertEqual(futil.filename, os.path.abspath("filename.txt"))
         self.assertTrue(udocker.Config.tmpdir)
 
     def test_02_mktmp(self):
@@ -341,15 +341,23 @@ class FileUtilTestCase(unittest.TestCase):
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.os.remove')
+    @mock.patch('udocker.os.path.exists')
     @mock.patch('udocker.os.path.islink')
     @mock.patch('udocker.os.path.isfile')
     @mock.patch('udocker.FileUtil.uid')
     def test_04_remove_file(self, mock_uid, mock_isfile,
-                            mock_islink, mock_remove, mock_msg):
+                            mock_islink, mock_exists, mock_remove,
+                            mock_msg):
         """Test FileUtil.remove() with plain files"""
         mock_uid.return_value = os.getuid()
         mock_isfile.return_value = True
+        # file does not exist (regression of #50)
+        mock_exists = False
+        futil = udocker.FileUtil("/tmp/filename4.txt")
+        status = futil.remove()
+        self.assertTrue(status)
         # under /
+        mock_exists = True
         futil = udocker.FileUtil("/filename4.txt")
         futil.topdir = "/home/user/.udocker"
         futil.tmpdir = "/tmp"
@@ -386,17 +394,20 @@ class FileUtilTestCase(unittest.TestCase):
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.subprocess.call')
+    @mock.patch('udocker.os.path.exists')
     @mock.patch('udocker.os.path.isdir')
     @mock.patch('udocker.os.path.islink')
     @mock.patch('udocker.os.path.isfile')
     @mock.patch('udocker.FileUtil.uid')
     def test_05_remove_dir(self, mock_uid, mock_isfile, mock_islink,
-                           mock_isdir, mock_call, mock_msg):
+                           mock_isdir, mock_exists, mock_call,
+                           mock_msg):
         """Test FileUtil.remove() with directories"""
         mock_uid.return_value = os.getuid()
         mock_isfile.return_value = False
         mock_islink.return_value = False
         mock_isdir.return_value = True
+        mock_exists = True
         mock_call.return_value = 0
         # remove directory under /tmp OK
         futil = udocker.FileUtil("/tmp/directory")
