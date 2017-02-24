@@ -145,7 +145,8 @@ class Config(object):
     # PRoot seccomp
     proot_noseccomp = None
 
-    valid_host_env = ("TERM")           # Pass host env variables
+    # Pass host env variables
+    valid_host_env = ("TERM")
 
     # CPU affinity executables to use with: run --cpuset-cpus="1,2,3-4"
     cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
@@ -1168,12 +1169,12 @@ class ExecutionEngine(object):
 
     def _check_paths(self, container_root):
         """Make sure we have a reasonable default PATH and CWD"""
-        path = self._getenv("PATH")
-        if not path and self.opt["uid"] == "0":
-            path = "/usr/sbin:/sbin:/usr/bin:/bin"
-        elif not path:
-            path = "/usr/bin:/bin"
-        self.opt["env"].append("PATH=%s" % path)
+        if not self._getenv("PATH"):
+            if self.opt["uid"] == "0":
+                path = "/usr/sbin:/sbin:/usr/bin:/bin"
+            else:
+                path = "/usr/bin:/bin"
+            self.opt["env"].append("PATH=%s" % path)
         # verify if the working directory is valid and fix it
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
@@ -1185,6 +1186,18 @@ class ExecutionEngine(object):
                           self.opt["cwd"])
                 return False
         return True
+
+    def _quote(self, argv):
+        """Iterate over argv and quote items containing spaces. This is
+        useful in case an interpreter is used in the command e.g.:
+        $ udocker.py run container bash -c 'echo hello'
+        """
+        _argv = []
+        for arg in argv:
+            if ' ' in arg:
+                arg = "'{}'".format(arg)
+            _argv.append(arg)
+        return _argv
 
     def _check_executable(self, container_root):
         """Check if executable exists and has execute permissions"""
@@ -1203,6 +1216,7 @@ class ExecutionEngine(object):
             Msg().out("Warning: no command assuming:", self.opt["cmd"],
                       l=Msg.WAR)
         exec_name = self.opt["cmd"][0]            # exec pathname without args
+        self.opt["cmd"] = self._quote(self.opt["cmd"])
         if exec_name.startswith("/"):
             exec_path = container_root + exec_name
         else:
@@ -1282,14 +1296,13 @@ class ExecutionEngine(object):
             if not pair or "=" not in pair:
                 self.opt["env"].remove(pair)
                 continue
+            (key, val) = pair.split("=", 1)
+            if " " in key or key[0] in string.digits:
+                Msg().err("Error: in environment:", pair)
+                return False
             if " " in pair and "'" not in pair and '"' not in pair:
                 self.opt["env"].remove(pair)
-                (key, val) = pair.split("=", 1)
-                if " " in key:
-                    Msg().err("Error: in environment:", pair)
-                    return False
-                else:
-                    self.opt["env"].append("%s='%s'" % (key, val))
+                self.opt["env"].append('%s="%s"' % (key, val))
         return True
 
     def _getenv(self, search_key):
@@ -3854,7 +3867,7 @@ class Udocker(object):
             return ContainerStructure(self.localrepo).create(imagerepo, tag)
         return False
 
-    def _get_run_options(self, cmdp, container):
+    def _get_run_options(self, cmdp, exec_engine):
         """Read command line options into variables"""
         cmdp.declare_options("-v= -e= -w= -u= -i -t -a")
         cmd_options = {
@@ -3938,9 +3951,9 @@ class Udocker(object):
                                         cmdp_args["p2"], cmdp_args["p3"])
                 if cmdp_args["act"] == "R":   # action is replace
                     if option_value or last_value is None:
-                        container.opt[option] = option_value
+                        exec_engine.opt[option] = option_value
                 elif cmdp_args["act"] == "E":   # action is extend
-                    container.opt[option].extend(option_value)
+                    exec_engine.opt[option].extend(option_value)
                 last_value = option_value
 
     def do_run(self, cmdp):
@@ -4323,78 +4336,44 @@ class CmdParser(object):
         self._argv_split = dict()
         self._argv_consumed_options = dict()
         self._argv_consumed_params = dict()
-        self._regex_argv = \
-            "[^ ]+((?: +--?[a-zA-Z0-9_]+(?:=[^ ]+)?)+)?( +[a-zA-Z0-9_]+)?(.*)"
         self._argv_split['CMD'] = ""
-        self._argv_split['GEN_OPT'] = ""
-        self._argv_split['CMD_OPT'] = ""
+        self._argv_split['GEN_OPT'] = []
+        self._argv_split['CMD_OPT'] = []
         self._argv_consumed_options['GEN_OPT'] = []
         self._argv_consumed_options['CMD_OPT'] = []
         self._argv_consumed_params['GEN_OPT'] = []
         self._argv_consumed_params['CMD_OPT'] = []
-
-    def _quote_argv(self, argv):
-        """Iterate over argv and quote items containing spaces. This is
-        useful in case an interpreter is used in the command e.g.:
-        $ udocker.py run container bash -c 'echo hello'
-        """
-        self._argv = []
-        for arg in argv:
-            if ' ' in arg:
-                arg = "'{}'".format(arg)
-            self._argv.append(arg)
 
     def parse(self, argv):
         """Parse a command line string passed to the constructor
         divides the string in three blocks: general_options,
         command name, and command options+arguments
         """
-        self._quote_argv(argv)   # replaces self._argv = argv
-        matched = re.match(self._regex_argv, " ".join(self._argv))
-        if matched:
-            if matched.group(1):
-                self._argv_split['GEN_OPT'] = matched.group(1).strip()
-            if matched.group(3):
-                self._argv_split['CMD_OPT'] = matched.group(3).strip()
-            if matched.group(2):
-                self._argv_split['CMD'] = matched.group(2).strip()
-            return True
-        else:
-            return False
-
-    def _split(self, argv_string):
-        """Split strings on white space respecting quoted text"""
-        argc = 0
-        argv_list = []
-        quoted = False
-        for char in argv_string:
-            if char == " ":
-                if quoted:
-                    pass
+        step = 1
+        for arg in argv[1:]:
+            if step == 1:
+                if arg[0] in string.letters:
+                    self._argv_split['CMD'] = arg
+                    step = 2
                 else:
-                    argc += 1
-                    continue
-            elif char in ('"', "'"):
-                quoted = not quoted
-                continue
-            try:
-                argv_list[argc] = argv_list[argc] + char
-            except IndexError:
-                argv_list.append(char)
-        return argv_list
+                    self._argv_split['GEN_OPT'].append(arg)
+            elif step == 2:
+                self._argv_split['CMD_OPT'].append(arg)
+        print self._argv_split['CMD_OPT']
+        return step == 2
 
     def missing_options(self):
         """Get comamnd line options not used/fetched by Cmdp.get()
         """
         all_opt = []
-        for pos in range(len(self._split(self._argv_split['GEN_OPT']))):
+        for pos in range(len(self._argv_split['GEN_OPT'])):
             if (pos not in self._argv_consumed_options['GEN_OPT'] and
                     pos not in self._argv_consumed_params['GEN_OPT']):
-                all_opt.append(self._split(self._argv_split['GEN_OPT'])[pos])
-        for pos in range(len(self._split(self._argv_split['CMD_OPT']))):
+                all_opt.append(self._argv_split['GEN_OPT'][pos])
+        for pos in range(len(self._argv_split['CMD_OPT'])):
             if (pos not in self._argv_consumed_options['CMD_OPT'] and
                     pos not in self._argv_consumed_params['CMD_OPT']):
-                all_opt.append(self._split(self._argv_split['CMD_OPT'])[pos])
+                all_opt.append(self._argv_split['CMD_OPT'][pos])
         return all_opt
 
     def get(self, opt_name, opt_where="CMD_OPT", opt_multiple=False):
@@ -4402,7 +4381,7 @@ class CmdParser(object):
         multiple=true  multiple occurences of option can be present
         """
         if opt_where == "CMD":
-            return self._argv_split[opt_where]
+            return self._argv_split["CMD"]
         elif opt_where in ("CMD_OPT", "GEN_OPT"):
             if opt_name.startswith("P"):
                 return(self._get_param(opt_name,
@@ -4420,7 +4399,7 @@ class CmdParser(object):
         """Declare in advance options that are part of the command line
         """
         pos = 0
-        opt_list = self._split(self._argv_split[opt_where].strip())
+        opt_list = self._argv_split[opt_where]
         while pos < len(opt_list):
             for opt_name in opts_string.strip().split():
                 if opt_name.endswith("="):
@@ -4436,13 +4415,12 @@ class CmdParser(object):
                     self._argv_consumed_options[opt_where].append(pos)
             pos += 1
 
-    def _get_option(self, opt_name, opt_string, consumed, opt_multiple):
+    def _get_option(self, opt_name, opt_list, consumed, opt_multiple):
         """Get command line options such as: -x -x= --x --x=
         The options may exist in the first and third part of the udocker
         command line.
         """
         all_args = []
-        opt_list = self._split(opt_string)
         pos = 0
         while pos < len(opt_list):
             opt_arg = None
@@ -4452,7 +4430,8 @@ class CmdParser(object):
                 break        # end of options and start of arguments
             elif opt_name.endswith("="):
                 if opt_list[pos].startswith(opt_name):
-                    opt_arg = opt_list[pos].split("=", 1)[1].strip().strip('"')
+                    #opt_arg = opt_list[pos].split("=", 1)[1].strip().strip('"')
+                    opt_arg = opt_list[pos].split("=", 1)[1].strip()
                 elif (opt_list[pos] == opt_name[:-1] and
                       not opt_list[pos + 1].startswith("-")):
                     consumed.append(pos)
@@ -4475,14 +4454,13 @@ class CmdParser(object):
         else:
             return False
 
-    def _get_param(self, opt_name, opt_string, consumed, consumed_params):
+    def _get_param(self, opt_name, opt_list, consumed, consumed_params):
         """Get command line parameters
         The CLI of udocker has 3 parts, first options, second command name
         third everything after the command name. The params are the arguments
         that do not start with - and may exist after the options.
         """
         all_args = []
-        opt_list = self._split(opt_string)
         pos = 0
         param_num = 0
         skip_opts = True
@@ -4504,6 +4482,7 @@ class CmdParser(object):
         if opt_name[1] == '*':
             return all_args
         elif opt_name[1] == '+':
+            print all_args[1:]
             return all_args[1:]
         else:
             return None
