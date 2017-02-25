@@ -1521,7 +1521,6 @@ class PRootEngine(ExecutionEngine):
         self.proot_exec = None                   # PRoot
         self.proot_noseccomp = False             # Noseccomp mode
         self._kernel = conf.oskernel()           # Emulate kernel
-        self._select_proot()
 
     def _find_image(self, image_list):
         """Find proot executable in list"""
@@ -1562,6 +1561,8 @@ class PRootEngine(ExecutionEngine):
                 self.proot_noseccomp = True
             if conf.proot_noseccomp is not None:
                 self.proot_noseccomp = conf.proot_noseccomp
+            if self.opt["noseccomp"]:
+                self.proot_noseccomp = True
 
     def _set_uid_map(self):
         """Set the uid_map string for container run command"""
@@ -1602,6 +1603,8 @@ class PRootEngine(ExecutionEngine):
         # setup execution
         if not self._run_ini(container_id):
             return 2
+
+        self._select_proot()
 
         # seccomp and ptrace behavior change on 4.8.0 onwards
         if self.proot_noseccomp:
@@ -3942,6 +3945,10 @@ class Udocker(object):
             "kernel": {
                 "fl": ("--kernel=",), "act": "R",
                 "p2": "CMD_OPT", "p3": False
+            },
+            "noseccomp": {
+                "fl": ("--noseccomp",), "act": "R",
+                "p2": "CMD_OPT", "p3": False
             }
         }
         for option, cmdp_args in cmd_options.iteritems():
@@ -4359,7 +4366,6 @@ class CmdParser(object):
                     self._argv_split['GEN_OPT'].append(arg)
             elif step == 2:
                 self._argv_split['CMD_OPT'].append(arg)
-        print self._argv_split['CMD_OPT']
         return step == 2
 
     def missing_options(self):
@@ -4482,7 +4488,6 @@ class CmdParser(object):
         if opt_name[1] == '*':
             return all_args
         elif opt_name[1] == '+':
-            print all_args[1:]
             return all_args[1:]
         else:
             return None
