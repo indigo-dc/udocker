@@ -133,7 +133,7 @@ udocker search  ubuntu
 udocker search  indigodatacloud
 ```
 
-Pull from docker hub and list the pulled images
+Pull from docker hub and list the pulled images.
 ```
 udocker pull  fedora
 udocker pull  busybox
@@ -141,7 +141,14 @@ udocker pull  iscampos/openqcd
 udocker images
 ```
 
-Create the container from a pulled image and run it
+Pull from a registry other than dockerhub.
+```
+udocker pull --registry=https://registry.access.redhat.com  rhel7
+udocker create --name=rh7 rhel7
+udocker run rh7
+```
+
+Create the container from a pulled image and run it.
 ```
 udocker create --name=myfed  fedora
 udocker run  myfed  cat /etc/redhat-release

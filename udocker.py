@@ -142,7 +142,11 @@ class Config(object):
         "/usr/lib64/dri", "/lib64/dri",
     )
 
-    valid_host_env = ("TERM")           # Pass host env variables
+    # PRoot seccomp
+    proot_noseccomp = None
+
+    # Pass host env variables
+    valid_host_env = ("TERM")
 
     # CPU affinity executables to use with: run --cpuset-cpus="1,2,3-4"
     cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
@@ -187,6 +191,7 @@ class Config(object):
         Config.dockerio_registry_url = os.getenv("UDOCKER_REGISTRY",
                                                  Config.dockerio_registry_url)
         Config.tarball = os.getenv("UDOCKER_TARBALL", Config.tarball)
+        Config.tmpdir = os.getenv("UDOCKER_TMP", Config.tmpdir)
 
     def _read_config(self, config_file):
         """Interpret config file content"""
@@ -231,6 +236,10 @@ class Config(object):
     def username(self):
         """Get username"""
         return pwd.getpwuid(os.getuid()).pw_name
+
+    def userhome(self):
+        """Get user home dir"""
+        return pwd.getpwuid(os.getuid()).pw_dir
 
     def arch(self):
         """Get the host system architecture"""
@@ -334,7 +343,7 @@ class KeyStore(object):
                 json.dump(auths, filep)
             os.umask(oldmask)
         except (IOError, OSError):
-            if oldmask:
+            if oldmask is not None:
                 os.umask(oldmask)
             return False
         return True
@@ -537,9 +546,15 @@ class FileUtil(object):
 
     tmptrash = dict()
     safe_prefixes = []
+    orig_umask = None
 
-    def __init__(self, filename):
-        self.filename = filename
+    def __init__(self, filename=None):
+        try:
+            self.filename = os.path.abspath(filename)
+            self.basename = os.path.basename(self.filename)
+        except (AttributeError, TypeError):
+            self.filename = filename
+            self.basename = filename
         self._tmpdir = Config.tmpdir
         self._register_prefix(self._tmpdir)
 
@@ -555,11 +570,27 @@ class FileUtil(object):
         """Register self.filename as prefix where remove() is allowed"""
         self._register_prefix(self.filename)
 
+    def umask(self, new_umask=None):
+        """Set umask"""
+        if new_umask is not None:
+            try:
+                old_umask = os.umask(new_umask)
+            except (TypeError, ValueError):
+                return False
+            if FileUtil.orig_umask is None:
+                FileUtil.orig_umask = old_umask
+        else:
+            try:
+                os.umask(FileUtil.orig_umask)
+            except (TypeError, ValueError):
+                return False
+        return True
+
     def mktmp(self):
         """Generate a temporary filename"""
         while True:
             tmp_file = self._tmpdir + "/" + \
-                Unique().filename(os.path.basename(self.filename))
+                Unique().filename(self.basename)
             if not os.path.exists(tmp_file):
                 FileUtil.tmptrash[tmp_file] = True
                 self.filename = tmp_file
@@ -596,29 +627,31 @@ class FileUtil(object):
 
     def remove(self, force=False):
         """Delete files or directories"""
-        filename = os.path.abspath(self.filename)
-        if filename.count("/") < 2:
-            Msg().err("Error: delete pathname too short: ", filename)
+        if not os.path.exists(self.filename):
+            pass
+        elif self.filename.count("/") < 2:
+            Msg().err("Error: delete pathname too short: ", self.filename)
             return False
         elif self.uid() != os.getuid():
-            Msg().err("Error: delete not owner: ", filename)
+            Msg().err("Error: delete not owner: ", self.filename)
             return False
         elif (not force) and (not self._is_safe_prefix(self.filename)):
-            Msg().err("Error: delete outside of directory tree: ", filename)
+            Msg().err("Error: delete outside of directory tree: ",
+                      self.filename)
             return False
-        elif os.path.isfile(filename) or os.path.islink(filename):
+        elif os.path.isfile(self.filename) or os.path.islink(self.filename):
             try:
-                os.remove(filename)
+                os.remove(self.filename)
             except (IOError, OSError):
-                Msg().err("Error: deleting file: ", filename)
+                Msg().err("Error: deleting file: ", self.filename)
                 return False
-        elif os.path.isdir(filename):
-            cmd = ["/bin/rm", "-Rf", filename]
+        elif os.path.isdir(self.filename):
+            cmd = ["/bin/rm", "-Rf", self.filename]
             if subprocess.call(cmd, stderr=Msg.chlderr,
                                close_fds=True, env=None):
-                Msg().err("Error: deleting directory: ", filename)
+                Msg().err("Error: deleting directory: ", self.filename)
                 return False
-        if self.filename in FileUtil.tmptrash:
+        if self.filename in dict(FileUtil.tmptrash):
             del FileUtil.tmptrash[self.filename]
         return True
 
@@ -693,10 +726,10 @@ class FileUtil(object):
 
     def find_exec(self):
         """Find an executable pathname invoking which or type -p"""
-        cmd = self._find_exec("which " + self.filename)
+        cmd = self._find_exec("which " + self.basename)
         if cmd:
             return cmd
-        cmd = self._find_exec("type -p " + self.filename)
+        cmd = self._find_exec("type -p " + self.basename)
         if cmd:
             return cmd
         return ""
@@ -709,7 +742,7 @@ class FileUtil(object):
             path = path.split(":")
         if isinstance(path, list) or isinstance(path, tuple):
             for directory in path:
-                full_path = rootdir + directory + "/" + self.filename
+                full_path = rootdir + directory + "/" + self.basename
                 if os.path.exists(full_path):
                     return full_path
             return ""
@@ -1024,8 +1057,8 @@ class ExecutionEngine(object):
         self.container_root = ""                 # Container root dir
         self.container_names = []                # Container names
         self.imagerepo = None                    # Imagerepo of container image
-        self.hostauth_list = Config.hostauth_list  # passwd and group
         self.opt = dict()                        # Run options
+        self.hostauth_list = Config.hostauth_list # passwd and group
         # Metadata defaults
         self.opt["nometa"] = False               # Don't load metadata
         self.opt["nosysdirs"] = False            # Bind host dirs
@@ -1094,14 +1127,55 @@ class ExecutionEngine(object):
                 return True
         return False
 
+    def _check_volumes(self):
+        """Check volume paths"""
+        for vol in list(self.opt["vol"]):
+            if ":" in vol:
+                (host_path, cont_path) = vol.split(":")
+            else:
+                host_path = vol
+                cont_path = ""
+            if cont_path and not cont_path.startswith("/"):
+                Msg().err("Error: volume destination must be absolute path:",
+                          cont_path)
+                return False
+            elif not (host_path and host_path.startswith("/")):
+                Msg().err("Error: invalid volume spec:", vol)
+                return False
+            elif not os.path.exists(host_path):
+                if host_path in Config.dri_list:
+                    self.opt["vol"].remove(vol)
+                else:
+                    Msg().err("Error: invalid host volume path:", host_path)
+                    return False
+        return True
+
+    def _set_volume_bindings(self):
+        """Set the volume bindings string for container run command"""
+        # predefined volume bindings --sysdirs --hostauth --dri
+        if not self.opt["nosysdirs"]:
+            self.opt["vol"].extend(Config.sysdirs_list)
+        if self.opt["hostauth"]:
+            self.opt["vol"].extend(self.hostauth_list)
+        if self.opt["dri"]:
+            self.opt["vol"].extend(Config.dri_list)
+        # remove directory bindings specified with --novol
+        for novolume in list(set(self.opt["novol"])):
+            try:
+                self.opt["vol"].remove(novolume)
+            except ValueError:
+                Msg().out("Warning:  novol %s not in volumes list" %
+                          novolume, l=Msg.WAR)
+        return self._check_volumes()
+
     def _check_paths(self, container_root):
         """Make sure we have a reasonable default PATH and CWD"""
-        path = self._getenv("PATH")
-        if not path and self.opt["uid"] == "0":
-            path = "/usr/sbin:/sbin:/usr/bin:/bin"
-        elif not path:
-            path = "/usr/bin:/bin"
-        self.opt["env"].append("PATH=%s" % path)
+        if not self._getenv("PATH"):
+            if self.opt["uid"] == "0":
+                path = "/usr/sbin:/sbin:/usr/bin:/bin"
+            else:
+                path = "/usr/bin:/bin"
+            self.opt["env"].append("PATH=%s" % path)
         # verify if the working directory is valid and fix it
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
@@ -1113,6 +1187,18 @@ class ExecutionEngine(object):
                           self.opt["cwd"])
                 return False
         return True
+
+    def _quote(self, argv):
+        """Iterate over argv and quote items containing spaces. This is
+        useful in case an interpreter is used in the command e.g.:
+        $ udocker.py run container bash -c 'echo hello'
+        """
+        _argv = []
+        for arg in argv:
+            if ' ' in arg:
+                arg = "'{}'".format(arg)
+            _argv.append(arg)
+        return _argv
 
     def _check_executable(self, container_root):
         """Check if executable exists and has execute permissions"""
@@ -1131,6 +1217,7 @@ class ExecutionEngine(object):
             Msg().out("Warning: no command assuming:", self.opt["cmd"],
                       l=Msg.WAR)
         exec_name = self.opt["cmd"][0]            # exec pathname without args
+        self.opt["cmd"] = self._quote(self.opt["cmd"])
         if exec_name.startswith("/"):
             exec_path = container_root + exec_name
         else:
@@ -1204,11 +1291,30 @@ class ExecutionEngine(object):
                     self.opt["env"] = meta_env
         return(container_dir, container_json)
 
+    def _check_env(self):
+        """Sanitize the environment variables"""
+        for pair in list(self.opt["env"]):
+            if not pair or "=" not in pair:
+                self.opt["env"].remove(pair)
+                continue
+            (key, val) = pair.split("=", 1)
+            if " " in key or key[0] in string.digits:
+                Msg().err("Error: in environment:", pair)
+                return False
+            if " " in pair and "'" not in pair and '"' not in pair:
+                self.opt["env"].remove(pair)
+                self.opt["env"].append('%s="%s"' % (key, val))
+        return True
+
     def _getenv(self, search_key):
         """A getenv() for the container environment metadata."""
         for pair in self.opt["env"]:
             if pair:
-                (key, val) = pair.split("=", 1)
+                if "=" in pair:
+                    (key, val) = pair.split("=", 1)
+                else:
+                    key = pair
+                    val = ""
                 if key == search_key:
                     return str(val)
         return None
@@ -1301,10 +1407,12 @@ class ExecutionEngine(object):
         later are binding/mapped/passed to the container. So
         setup this binding as well via hostauth.
         """
+        FileUtil().umask(0o077)
         tmp_passwd = FileUtil("passwd").mktmp()
         tmp_group = FileUtil("group").mktmp()
-        FileUtil(container_auth.passwd_file).copyto(tmp_passwd, "w")
-        FileUtil(container_auth.group_file).copyto(tmp_group, "w")
+        FileUtil(container_auth.passwd_file).copyto(tmp_passwd)
+        FileUtil(container_auth.group_file).copyto(tmp_group)
+        FileUtil().umask()
         if not self.opt["uid"]:
             self.opt["uid"] = str(os.getuid())
         if not self.opt["gid"]:
@@ -1363,6 +1471,7 @@ class ExecutionEngine(object):
 
         self.opt["env"].append("SHLVL=0")
         self.opt["env"].append("container_ruser=" + Config().username())
+        self.opt["env"].append("container_rhome=" + Config().userhome())
         self.opt["env"].append("container_root=" + self.container_root)
         self.opt["env"].append("container_uuid=" + self.container_id)
         names = str(self.container_names).translate(None, " '\"[]") + "'"
@@ -1411,11 +1520,8 @@ class PRootEngine(ExecutionEngine):
         super(PRootEngine, self).__init__(localrepo)
         conf = Config()
         self.proot_exec = None                   # PRoot
-        self.proot_noseccomp = None              # Noseccomp mode
+        self.proot_noseccomp = False             # Noseccomp mode
         self._kernel = conf.oskernel()           # Emulate kernel
-        self.sysdirs_list = conf.sysdirs_list    # Host dirs to pass
-        self.dri_list = conf.dri_list            # direct rendering
-        self._select_proot()
 
     def _find_image(self, image_list):
         """Find proot executable in list"""
@@ -1429,7 +1535,6 @@ class PRootEngine(ExecutionEngine):
     def _select_proot(self):
         """Set proot executable and related variables"""
         conf = Config()
-        self.proot_noseccomp = conf.oskernel_isgreater((4, 8, 0))
         arch = conf.arch()
         if arch == "amd64":
             if conf.oskernel_isgreater((4, 8, 0)):
@@ -1452,6 +1557,13 @@ class PRootEngine(ExecutionEngine):
             else:
                 image_list = ["proot-arm", "proot"]
         self.proot_exec = self._find_image(image_list)
+        if conf.oskernel_isgreater((4, 8, 0)):
+            if not self.proot_exec.endswith("-4_8_0"):
+                self.proot_noseccomp = True
+            if conf.proot_noseccomp is not None:
+                self.proot_noseccomp = conf.proot_noseccomp
+            if self.opt["noseccomp"]:
+                self.proot_noseccomp = True
 
     def _set_uid_map(self):
         """Set the uid_map string for container run command"""
@@ -1462,30 +1574,8 @@ class PRootEngine(ExecutionEngine):
                 " -i " + self.opt["uid"] + ":" + self.opt["gid"] + " "
         return uid_map
 
-    def _set_volume_bindings(self):
-        """Set the volume bindings string for container run command"""
-        # predefined volume bindings --sysdirs --hostauth --dri
-        if not self.opt["nosysdirs"]:
-            self.opt["vol"].extend(self.sysdirs_list)
-        if self.opt["hostauth"]:
-            self.opt["vol"].extend(self.hostauth_list)
-        if self.opt["dri"]:
-            self.opt["vol"].extend(self.dri_list)
-        # remove directory bindings specified with --novol
-        for novolume in list(set(self.opt["novol"])):
-            try:
-                self.opt["vol"].remove(novolume)
-            except ValueError:
-                Msg().out("Warning:  novol %s not in volumes list" %
-                          novolume, l=Msg.WAR)
-        for volume in self.opt["vol"]:
-            host_path = volume.split(":")[0]
-            if not os.path.exists(host_path):
-                if host_path not in Config.dri_list:
-                    Msg().out("Warning: host dir not found: -v %s" %
-                              host_path, l=Msg.WAR)
-                self.opt["vol"].remove(volume)
-        # build the volumes list
+    def _get_volume_bindings(self):
+        """Get the volume bindings string for container run command"""
         if self.opt["vol"]:
             vol_str = " -b " + " -b ".join(self.opt["vol"])
         else:
@@ -1500,8 +1590,7 @@ class PRootEngine(ExecutionEngine):
              dummy) = host_auth.get_user(os.getuid())
             if r_user:
                 return " -b " + r_home
-        else:
-            return " "
+        return ""
 
     def run(self, container_id):
         """Execute a Docker container using PRoot. This is the main method
@@ -1515,8 +1604,7 @@ class PRootEngine(ExecutionEngine):
         if not self._run_ini(container_id):
             return 2
 
-        # set environment variables
-        self._run_env_set()
+        self._select_proot()
 
         # seccomp and ptrace behavior change on 4.8.0 onwards
         if self.proot_noseccomp:
@@ -1525,6 +1613,14 @@ class PRootEngine(ExecutionEngine):
         if self.opt["kernel"]:
             self._kernel = self.opt["kernel"]
 
+        if not self._set_volume_bindings():
+            return 3
+
+        # set environment variables
+        self._run_env_set()
+        if not self._check_env():
+            return 4
+
         # build the actual command
         cmd_t = (r"unset VTE_VERSION;",
                  r"PS1='%s[\W]\$ ' " % self.container_id[:8],
@@ -1532,7 +1628,7 @@ class PRootEngine(ExecutionEngine):
                  self._set_cpu_affinity(),
                  self.proot_exec,
                  self._set_bindhome(),
-                 self._set_volume_bindings(),
+                 self._get_volume_bindings(),
                  self._set_uid_map(),
                  "-k", self._kernel,
                  "-r", self.container_root,
@@ -3467,7 +3563,7 @@ class DockerLocalFileAPI(object):
         }
         return container_json
 
-    def import_(self, tarfile, imagerepo, tag):
+    def import_(self, tarfile, imagerepo, tag, move_tarball=True):
         """Import a tar file containing a simple directory tree possibly
         created with Docker export"""
         if not os.path.exists(tarfile):
@@ -3488,9 +3584,12 @@ class DockerLocalFileAPI(object):
         layer_id = Unique().layer_v1()
         layer_file = self.localrepo.layersdir + "/" + layer_id + ".layer"
         json_file = self.localrepo.layersdir + "/" + layer_id + ".json"
-        try:
-            os.rename(tarfile, layer_file)
-        except(IOError, OSError):
+        if move_tarball:
+            try:
+                os.rename(tarfile, layer_file)
+            except(IOError, OSError):
+                pass
+        if not os.path.exists(layer_file):
             if not FileUtil(tarfile).copyto(layer_file):
                 Msg().err("Error: in move/copy file", tarfile)
                 return False
@@ -3644,15 +3743,17 @@ class Udocker(object):
         """
         import : import image (directory tree) from tar file
         import <tar-file> <repo/image:tag>
+        --mv                       :if possible move tar-file instead of copy
         """
         tarfile = cmdp.get("P1")
+        move_tarball = cmdp.get("--mv")
         if not tarfile:
             Msg().err("Error: must specify tar filename")
             return False
         (imagerepo, tag) = self._check_imagespec(cmdp.get("P2"))
         if (not imagerepo) or cmdp.missing_options():  # syntax error
             return False
-        if self.dockerlocalfileapi.import_(tarfile, imagerepo, tag):
+        if self.dockerlocalfileapi.import_(tarfile, imagerepo, tag, move_tarball):
             return True
         else:
             Msg().err("Error: importing file")
@@ -3769,7 +3870,7 @@ class Udocker(object):
             return ContainerStructure(self.localrepo).create(imagerepo, tag)
         return False
 
-    def _get_run_options(self, cmdp, container):
+    def _get_run_options(self, cmdp, exec_engine):
         """Read command line options into variables"""
         cmdp.declare_options("-v= -e= -w= -u= -i -t -a")
         cmd_options = {
@@ -3844,6 +3945,10 @@ class Udocker(object):
             "kernel": {
                 "fl": ("--kernel=",), "act": "R",
                 "p2": "CMD_OPT", "p3": False
+            },
+            "noseccomp": {
+                "fl": ("--noseccomp",), "act": "R",
+                "p2": "CMD_OPT", "p3": False
             }
         }
         for option, cmdp_args in cmd_options.iteritems():
@@ -3853,9 +3958,9 @@ class Udocker(object):
                                         cmdp_args["p2"], cmdp_args["p3"])
                 if cmdp_args["act"] == "R":   # action is replace
                     if option_value or last_value is None:
-                        container.opt[option] = option_value
+                        exec_engine.opt[option] = option_value
                 elif cmdp_args["act"] == "E":   # action is extend
-                    container.opt[option].extend(option_value)
+                    exec_engine.opt[option].extend(option_value)
                 last_value = option_value
 
     def do_run(self, cmdp):
@@ -4238,57 +4343,43 @@ class CmdParser(object):
         self._argv_split = dict()
         self._argv_consumed_options = dict()
         self._argv_consumed_params = dict()
-        self._regex_argv = \
-            "[^ ]+((?: +--?[a-zA-Z0-9_]+(?:=[^ ]+)?)+)?( +[a-zA-Z0-9_]+)?(.*)"
         self._argv_split['CMD'] = ""
-        self._argv_split['GEN_OPT'] = ""
-        self._argv_split['CMD_OPT'] = ""
+        self._argv_split['GEN_OPT'] = []
+        self._argv_split['CMD_OPT'] = []
         self._argv_consumed_options['GEN_OPT'] = []
         self._argv_consumed_options['CMD_OPT'] = []
         self._argv_consumed_params['GEN_OPT'] = []
         self._argv_consumed_params['CMD_OPT'] = []
-
-    def _quote_argv(self, argv):
-        """Iterate over argv and quote items containing spaces. This is
-        useful in case an interpreter is used in the command e.g.:
-        $ udocker.py run container bash -c 'echo hello'
-        """
-        self._argv = []
-        for arg in argv:
-            if ' ' in arg:
-                arg = "'{}'".format(arg)
-            self._argv.append(arg)
 
     def parse(self, argv):
         """Parse a command line string passed to the constructor
         divides the string in three blocks: general_options,
         command name, and command options+arguments
         """
-        self._quote_argv(argv)   # replaces self._argv = argv
-        matched = re.match(self._regex_argv, " ".join(self._argv))
-        if matched:
-            if matched.group(1):
-                self._argv_split['GEN_OPT'] = matched.group(1).strip()
-            if matched.group(3):
-                self._argv_split['CMD_OPT'] = matched.group(3).strip()
-            if matched.group(2):
-                self._argv_split['CMD'] = matched.group(2).strip()
-            return True
-        else:
-            return False
+        step = 1
+        for arg in argv[1:]:
+            if step == 1:
+                if arg[0] in string.letters:
+                    self._argv_split['CMD'] = arg
+                    step = 2
+                else:
+                    self._argv_split['GEN_OPT'].append(arg)
+            elif step == 2:
+                self._argv_split['CMD_OPT'].append(arg)
+        return step == 2
 
     def missing_options(self):
         """Get comamnd line options not used/fetched by Cmdp.get()
         """
         all_opt = []
-        for pos in range(len(self._argv_split['GEN_OPT'].split())):
+        for pos in range(len(self._argv_split['GEN_OPT'])):
             if (pos not in self._argv_consumed_options['GEN_OPT'] and
                     pos not in self._argv_consumed_params['GEN_OPT']):
-                all_opt.append(self._argv_split['GEN_OPT'].split(" ")[pos])
-        for pos in range(len(self._argv_split['CMD_OPT'].split())):
+                all_opt.append(self._argv_split['GEN_OPT'][pos])
+        for pos in range(len(self._argv_split['CMD_OPT'])):
             if (pos not in self._argv_consumed_options['CMD_OPT'] and
                     pos not in self._argv_consumed_params['CMD_OPT']):
-                all_opt.append(self._argv_split['CMD_OPT'].split(" ")[pos])
+                all_opt.append(self._argv_split['CMD_OPT'][pos])
         return all_opt
 
     def get(self, opt_name, opt_where="CMD_OPT", opt_multiple=False):
@@ -4296,7 +4387,7 @@ class CmdParser(object):
         multiple=true  multiple occurences of option can be present
         """
         if opt_where == "CMD":
-            return self._argv_split[opt_where]
+            return self._argv_split["CMD"]
         elif opt_where in ("CMD_OPT", "GEN_OPT"):
             if opt_name.startswith("P"):
                 return(self._get_param(opt_name,
@@ -4314,7 +4405,7 @@ class CmdParser(object):
         """Declare in advance options that are part of the command line
         """
         pos = 0
-        opt_list = self._argv_split[opt_where].strip().split()
+        opt_list = self._argv_split[opt_where]
         while pos < len(opt_list):
             for opt_name in opts_string.strip().split():
                 if opt_name.endswith("="):
@@ -4330,13 +4421,12 @@ class CmdParser(object):
                     self._argv_consumed_options[opt_where].append(pos)
             pos += 1
 
-    def _get_option(self, opt_name, opt_string, consumed, opt_multiple):
+    def _get_option(self, opt_name, opt_list, consumed, opt_multiple):
         """Get command line options such as: -x -x= --x --x=
-        The options may exist in the first and third part od the udocker
+        The options may exist in the first and third part of the udocker
         command line.
         """
         all_args = []
-        opt_list = opt_string.split(" ")
         pos = 0
         while pos < len(opt_list):
             opt_arg = None
@@ -4346,7 +4436,8 @@ class CmdParser(object):
                 break        # end of options and start of arguments
             elif opt_name.endswith("="):
                 if opt_list[pos].startswith(opt_name):
-                    opt_arg = opt_list[pos].split("=", 1)[1].strip().strip('"')
+                    #opt_arg = opt_list[pos].split("=", 1)[1].strip().strip('"')
+                    opt_arg = opt_list[pos].split("=", 1)[1].strip()
                 elif (opt_list[pos] == opt_name[:-1] and
                       not opt_list[pos + 1].startswith("-")):
                     consumed.append(pos)
@@ -4369,14 +4460,13 @@ class CmdParser(object):
         else:
             return False
 
-    def _get_param(self, opt_name, opt_string, consumed, consumed_params):
+    def _get_param(self, opt_name, opt_list, consumed, consumed_params):
         """Get command line parameters
         The CLI of udocker has 3 parts, first options, second command name
         third everything after the command name. The params are the arguments
         that do not start with - and may exist after the options.
         """
         all_args = []
-        opt_list = opt_string.split(" ")
         pos = 0
         param_num = 0
         skip_opts = True
@@ -4479,13 +4569,13 @@ class Main(object):
         try:
             exit_status = self.execute()
         except (KeyboardInterrupt, SystemExit):
-            FileUtil("").cleanup()
+            FileUtil().cleanup()
             return 1
         except:
-            FileUtil("").cleanup()
+            FileUtil().cleanup()
             raise
         else:
-            FileUtil("").cleanup()
+            FileUtil().cleanup()
             return exit_status
 
 if __name__ == "__main__":

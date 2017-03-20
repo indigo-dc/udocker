@@ -47,9 +47,8 @@ Other limitations:
 * The current implementation is limited to the pulling of docker images and its execution. 
 * The actual containers should be built using docker and dockerfiles. 
 * udocker does not provide all the docker features, and is not intended as a docker replacement.
-* Due to the way PRoot implements the chroot environment debugging inside of udocker will not work.
+* Due to the way PRoot implements the chroot environment debugging and system call tracing inside of udocker will not work.
 * udocker is mainly oriented at providing a run-time environment for containers execution in user space.
-* The current version does not support dockerhub private repositories.
 
 1.3. Security
 -------------
@@ -67,8 +66,9 @@ adequately protected by the user.
 udocker does not require privileges and runs under the identity of the user 
 invoking it.
 
-Users can download udocker and execute it from their own accounts without
-requiring system administration intervention. 
+Users can download the udocker tarball, install in the home directory and 
+execute it from their own accounts without requiring system administration 
+intervention. 
 
 udocker provides a chroot like environment for container execution. This is
 currently implemented by PRoot via the kernel ptrace system call.
@@ -79,11 +79,13 @@ no root privileges are involved. This feature enables tools that do not
 require privileges but that check the user id to work properly. This enables
 for instance software installation with rpm and yum inside the container.
 
-Due to the lack of isolation features udocker must not be run by privileged users.
+Due to the lack of isolation features udocker must not be run by privileged 
+users.
 
 Similarly to docker, the login credentials for private repositories are stored 
 in a file and can be easily stolen. Logout can be used to delete the credentials. 
-If the host system is not trustable the login feature should not be used.
+If the host system is not trustable the private repositoty login feature should 
+not be used as it may expose the credentials.
 
 1.4. Basic flow
 ---------------
@@ -112,8 +114,9 @@ system installation. For further information see the installation manual.
 3.1. Syntax
 -----------
 The udocker syntax is very similar to docker. Since version 1.0.1 the udocker
-preferred command name changed from udocker.py to udocker. A symbolic link is
-provided when installing with the distribution tarball.
+preferred command name changed from udocker.py to udocker. A symbolic link
+between udocker and udocker.py is provided when installing with the distribution
+tarball.
 
 ```
   udocker [GLOBAL-PARAMETERS] COMMAND [COMMAND-OPTIONS] [COMMAND-ARGUMENTS]
@@ -130,6 +133,10 @@ Quick examples:
   udocker create --name=verybusy busybox
   udocker run -v /tmp/mydir verybusy
   udocker run verybusy /bin/ls -l /etc
+
+  udocker pull --registry=https://registry.access.redhat.com  rhel7
+  udocker create --name=rh7 rhel7
+  udocker run rh7
 ```
 
 3.2. Obtaining help
@@ -175,7 +182,7 @@ python pycurl or the presence of the curl command.
 Options:
 
 * `--index=url` specify an index other than index.docker.io
-* `--registry=url` specify a default registry other than registry-1.docker.io
+* `--registry=url` specify a registry other than registry-1.docker.io
 * `--httpproxy=proxy` specify a socks proxy for downloading
 
 Examples:
@@ -183,6 +190,7 @@ Examples:
   udocker pull busybox
   udocker pull fedora:latest
   udocker pull indigodatacloudapps/disvis
+  udocker pull --registry=https://registry.access.redhat.com  rhel7
   udocker pull --httpproxy=socks4://host:port busybox
   udocker pull --httpproxy=socks5://host:port busybox
   udocker pull --httpproxy=socks4://user:pass@host:port busybox
@@ -344,15 +352,20 @@ Examples:
 3.14. import
 ------------
 ```
-  udocker import TARBALL REPO/IMAGE:TAG
+  udocker import [OPTIONS] TARBALL REPO/IMAGE:TAG
 ```
 Imports into the local repository a tarball containing a directory tree of
 a container. Can be used to import containers previously exported by docker
 with `docker export`.
 
+Options:
+
+* `--mv` move the container file instead to copy to save space.
+
 Examples:
 ```
   udocker import container.tar myrepo:latest
+  udocker import --mv container.tar myrepo:latest
 ```
 
 3.15. load
