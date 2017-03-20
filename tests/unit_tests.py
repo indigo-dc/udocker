@@ -1926,10 +1926,15 @@ class ExecutionEngine(unittest.TestCase):
 
     def _init(self):
         """Configure variables"""
-        udocker.Config = type('test', (object,), {})()
+        #udocker.Config = type('ctest', (object,), {})()
+        udocker.Config = mock.MagicMock()
         udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
         udocker.Config.cmd = "/bin/bash"
         udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
+        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.return_value.username.return_value = "user"
+        udocker.Config.return_value.userhome.return_value = "/"
+        udocker.Config.location = ""
 
     @mock.patch('udocker.LocalRepository')
     def test_01_init(self, mock_local):
@@ -2363,6 +2368,226 @@ class ExecutionEngine(unittest.TestCase):
         ex_eng._run_banner("/bin/bash")
         ex_eng.container_id = "CONTAINERID"
         self.assertTrue(mock_base.called_once_with("/bin/bash"))
+
+    @mock.patch('udocker.os')
+    @mock.patch('udocker.LocalRepository')
+    def test_14__env_cleanup(self, mock_local, mock_os):
+        """Test ExecutionEngine()._env_cleanup()"""
+        self._init()
+        mock_os.environ = {'HOME': '/', 'USERNAME': 'user', }
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng._run_env_cleanup()
+        self.assertEqual(mock_os.environ, {'HOME': '/', })
+
+    @mock.patch('udocker.LocalRepository')
+    def test_15__run_env_set(self, mock_local):
+        """Test ExecutionEngine()._run_env_set()"""
+        self._init()
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.opt["home"] = "/"
+        ex_eng.opt["user"] = "user"
+        ex_eng.container_root = "/croot"
+        ex_eng.container_id = "2717add4-e6f6-397c-9019-74fa67be439f"
+        ex_eng.container_names = ['cna[]me', ]
+        ex_eng._run_env_set()
+        self.assertTrue("HOME=" + ex_eng.opt["home"] in ex_eng.opt["env"])
+        self.assertTrue("USER=" + ex_eng.opt["user"] in ex_eng.opt["env"])
+        self.assertTrue("LOGNAME=" + ex_eng.opt["user"] in ex_eng.opt["env"])
+        self.assertTrue("USERNAME=" + ex_eng.opt["user"] in ex_eng.opt["env"])
+        self.assertTrue("SHLVL=0" in ex_eng.opt["env"])
+        self.assertTrue("container_root=/croot" in ex_eng.opt["env"])
+        self.assertTrue("container_names='cname'" in ex_eng.opt["env"])
+
+    @mock.patch('udocker.ExecutionEngine._check_executable')
+    @mock.patch('udocker.ExecutionEngine._check_paths')
+    @mock.patch('udocker.ExecutionEngine._setup_container_user')
+    @mock.patch('udocker.ExecutionEngine._run_load_metadata')
+    @mock.patch('udocker.LocalRepository')
+    def test_16__run_ini(self, mock_local, mock_loadmeta, mock_setupuser,
+                         mock_chkpaths, mock_chkexec):
+        """Test ExecutionEngine()._run_ini()"""
+        self._init()
+        mock_local.get_container_name.return_value = "cname"
+        mock_loadmeta.return_value = ("/container_dir", "dummy", )
+        mock_setupuser.return_value = True
+        mock_chkpaths.return_value = True
+        mock_chkexec.return_value = True
+        ex_eng = udocker.ExecutionEngine(mock_local)
+        status = ex_eng._run_ini("2717add4-e6f6-397c-9019-74fa67be439f")
+        self.assertTrue(status)
+        self.assertEqual(ex_eng.container_root, "/container_dir/ROOT")
+        #
+        mock_setupuser.return_value = False
+        mock_chkpaths.return_value = True
+        mock_chkexec.return_value = True
+        status = ex_eng._run_ini("2717add4-e6f6-397c-9019-74fa67be439f")
+        self.assertFalse(status)
+        #
+        mock_setupuser.return_value = True
+        mock_chkpaths.return_value = False
+        mock_chkexec.return_value = True
+        status = ex_eng._run_ini("2717add4-e6f6-397c-9019-74fa67be439f")
+        self.assertFalse(status)
+        #
+        mock_setupuser.return_value = True
+        mock_chkpaths.return_value = True
+        mock_chkexec.return_value = False
+        status = ex_eng._run_ini("2717add4-e6f6-397c-9019-74fa67be439f")
+        self.assertFalse(status)
+
+
+class PRootEngine(unittest.TestCase):
+    """Test PRootEngine() class for containers execution"""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
+
+    def _init(self):
+        """Configure variables"""
+        udocker.Config = mock.MagicMock()
+        udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
+        udocker.Config.cmd = "/bin/bash"
+        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
+        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.return_value.username.return_value = "user"
+        udocker.Config.return_value.userhome.return_value = "/"
+        udocker.Config.return_value.oskernel.return_value = "4.8.13"
+        udocker.Config.location = ""
+
+    @mock.patch('udocker.ExecutionEngine')
+    @mock.patch('udocker.LocalRepository')
+    def test_01_init(self, mock_local, mock_exeng):
+        """Test PRootEngine()"""
+        self._init()
+        prex = udocker.PRootEngine(mock_local)
+        self.assertFalse(prex.proot_noseccomp)
+        self.assertEqual(prex._kernel, "4.8.13")
+        self.assertEqual(prex.proot_exec, None)
+
+    @mock.patch('udocker.sys.exit')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.os.path.exists')
+    @mock.patch('udocker.LocalRepository')
+    def test_02__find_image(self, mock_local, mock_exists,
+                            mock_msg, mock_exit):
+        """Test PRootEngine()._find_image()"""
+        self._init()
+        mock_local.bindir = "/container_dir"
+        mock_exists.return_value = True
+        prex = udocker.PRootEngine(mock_local)
+        status = prex._find_image(("/bin/ls", "bin/cat", ))
+        self.assertEqual(status, "/container_dir//bin/ls")
+        #
+        mock_exists.return_value = False
+        status = prex._find_image(("/bin/ls", "bin/cat", ))
+        self.assertTrue(mock_exit.called)
+
+    @mock.patch('udocker.PRootEngine._find_image')
+    @mock.patch('udocker.LocalRepository')
+    def test_03__select_proot(self, mock_local, mock_fimage):
+        """Test PRootEngine()._select_proot()"""
+        self._init()
+        udocker.Config.return_value.arch.return_value = "amd64"
+        udocker.Config.return_value.oskernel_isgreater.return_value = False
+        mock_fimage.return_value = "proot-4_8_0"
+        prex = udocker.PRootEngine(mock_local)
+        prex._select_proot()
+        self.assertFalse(prex.proot_noseccomp)
+        #
+        udocker.Config.return_value.oskernel_isgreater.return_value = True
+        mock_fimage.return_value = "proot"
+        prex = udocker.PRootEngine(mock_local)
+        prex.opt["noseccomp"] = True
+        prex._select_proot()
+        self.assertTrue(prex.proot_noseccomp)
+        #
+        udocker.Config.return_value.oskernel_isgreater.return_value = True
+        mock_fimage.return_value = "proot"
+        prex = udocker.PRootEngine(mock_local)
+        prex.opt["noseccomp"] = False
+        prex._select_proot()
+        self.assertTrue(prex.proot_noseccomp)
+        #
+        udocker.Config.return_value.oskernel_isgreater.return_value = True
+        mock_fimage.return_value = "proot-x86_64-4_8_0"
+        prex = udocker.PRootEngine(mock_local)
+        prex.opt["noseccomp"] = False
+        prex._select_proot()
+        self.assertTrue(prex.proot_noseccomp)
+        #
+        udocker.Config.return_value.oskernel_isgreater.return_value = True
+        mock_fimage.return_value = "proot-x86_64-4_8_0"
+        prex = udocker.PRootEngine(mock_local)
+        prex.opt["noseccomp"] = False
+        udocker.Config.return_value.proot_noseccomp = False
+        prex._select_proot()
+        self.assertFalse(prex.proot_noseccomp)
+        #
+        udocker.Config.return_value.oskernel_isgreater.return_value = True
+        mock_fimage.return_value = "proot-x86_64-4_8_0"
+        prex = udocker.PRootEngine(mock_local)
+        prex.opt["noseccomp"] = True
+        udocker.Config.return_value.proot_noseccomp = False
+        prex._select_proot()
+        self.assertTrue(prex.proot_noseccomp)
+
+    @mock.patch('udocker.LocalRepository')
+    def test_04__set_uid_map(self, mock_local):
+        """Test PRootEngine()._set_uid_map()"""
+        self._init()
+        prex = udocker.PRootEngine(mock_local)
+        prex.opt["uid"] = "0"
+        status = prex._set_uid_map()
+        self.assertEqual(status, " -0 ")
+        #
+        prex = udocker.PRootEngine(mock_local)
+        prex.opt["uid"] = "1000"
+        prex.opt["gid"] = "1001"
+        status = prex._set_uid_map()
+        self.assertEqual(status, " -i 1000:1001 ")
+
+    @mock.patch('udocker.LocalRepository')
+    def test_05__get_volume_bindings(self, mock_local):
+        """Test PRootEngine()._get_volume_bindings()"""
+        self._init()
+        prex = udocker.PRootEngine(mock_local)
+        prex.opt["vol"] = ()
+        status = prex._get_volume_bindings()
+        self.assertEqual(status, " ")
+        #
+        prex = udocker.PRootEngine(mock_local)
+        prex.opt["vol"] = ("/tmp", "/bbb", )
+        status = prex._get_volume_bindings()
+        self.assertEqual(status, " -b /tmp -b /bbb")
+
+    @mock.patch('udocker.NixAuthentication')
+    @mock.patch('udocker.LocalRepository')
+    def test_06__set_bindhome(self, mock_local, mock_nixauth):
+        """Test PRootEngine()._set_bindhome()"""
+        self._init()
+        #
+        prex = udocker.PRootEngine(mock_local)
+        prex.opt["bindhome"] = False
+        status = prex._set_bindhome()
+        self.assertEqual(status, "")
+        #
+        mock_nixauth.return_value.get_user.return_value = (
+            "user", "dummy", "dummy", "dummy", "/home/user", "dummy",
+        )
+        prex = udocker.PRootEngine(mock_local)
+        prex.opt["bindhome"] = True
+        status = prex._set_bindhome()
+        self.assertEqual(status, " -b /home/user")
+        #
+        mock_nixauth.return_value.get_user.return_value = (
+            "", "dummy", "dummy", "dummy", "", "dummy",
+        )
+        prex = udocker.PRootEngine(mock_local)
+        prex.opt["bindhome"] = True
+        status = prex._set_bindhome()
+        self.assertEqual(status, "")
 
 
 if __name__ == '__main__':

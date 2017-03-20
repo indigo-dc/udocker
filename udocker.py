@@ -1136,7 +1136,8 @@ class ExecutionEngine(object):
                 host_path = vol
                 cont_path = ""
             if cont_path and not cont_path.startswith("/"):
-                Msg().err("Error: invalid volume destination path:", cont_path)
+                Msg().err("Error: volume destination must be absolute path:",
+                          cont_path)
                 return False
             elif not (host_path and host_path.startswith("/")):
                 Msg().err("Error: invalid volume spec:", vol)
@@ -1589,8 +1590,7 @@ class PRootEngine(ExecutionEngine):
              dummy) = host_auth.get_user(os.getuid())
             if r_user:
                 return " -b " + r_home
-        else:
-            return " "
+        return ""
 
     def run(self, container_id):
         """Execute a Docker container using PRoot. This is the main method
