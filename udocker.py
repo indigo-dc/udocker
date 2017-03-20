@@ -1299,7 +1299,7 @@ class ExecutionEngine(object):
                 continue
             if "=" not in pair:
                 self.opt["env"].remove(pair)
-                val = os.getenv(pair, "") 
+                val = os.getenv(pair, "")
                 if val:
                     self.opt["env"].append('%s="%s"' % (pair, val))
                 continue
