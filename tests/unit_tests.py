@@ -2604,6 +2604,188 @@ class PRootEngine(unittest.TestCase):
         status = prex._set_bindhome()
         self.assertEqual(status, "")
 
+    @mock.patch('udocker.PRootEngine._set_uid_map')
+    @mock.patch('udocker.PRootEngine._get_volume_bindings')
+    @mock.patch('udocker.PRootEngine._set_bindhome')
+    @mock.patch('udocker.PRootEngine._set_cpu_affinity')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.subprocess.call')
+    @mock.patch('udocker.PRootEngine._run_banner')
+    @mock.patch('udocker.PRootEngine._run_env_cleanup')
+    @mock.patch('udocker.PRootEngine._check_env')
+    @mock.patch('udocker.PRootEngine._run_env_set')
+    @mock.patch('udocker.PRootEngine._set_volume_bindings')
+    @mock.patch('udocker.PRootEngine._select_proot')
+    @mock.patch('udocker.PRootEngine._run_ini')
+    @mock.patch('udocker.LocalRepository')
+    def test_07_run(self, mock_local, mock_runini, mock_selproot,
+                    mock_volbinds, mock_envset, mock_chkenv,
+                    mock_envclean, mock_banner, mock_call,
+                    mock_msg, mock_affinity, mock_bindhome,
+                    mock_getvolbinds, mock_uidmap):
+        """Test PRootEngine().run()"""
+        self._init()
+        #
+        prex = udocker.PRootEngine(mock_local)
+        mock_runini.return_value = False
+        status = prex.run("64d5abf3-d0b4-30fd-89a5-5df244dfb2ea")
+        self.assertEqual(status, 2)
+        #
+        prex = udocker.PRootEngine(mock_local)
+        prex.proot_noseccomp = False
+        prex.opt["kernel"] = None
+        mock_runini.return_value = True
+        mock_volbinds.return_value = False
+        status = prex.run("64d5abf3-d0b4-30fd-89a5-5df244dfb2ea")
+        self.assertEqual(status, 3)
+        self.assertEqual(prex.opt["kernel"], None)
+        self.assertTrue("PROOT_NO_SECCOMP=1" not in prex.opt["env"])
+        #
+        prex = udocker.PRootEngine(mock_local)
+        prex.proot_noseccomp = True
+        prex.opt["kernel"] = "1.2.3"
+        mock_runini.return_value = True
+        mock_volbinds.return_value = False
+        status = prex.run("64d5abf3-d0b4-30fd-89a5-5df244dfb2ea")
+        self.assertEqual(status, 3)
+        self.assertEqual(prex.opt["kernel"], "1.2.3")
+        self.assertTrue("PROOT_NO_SECCOMP=1" in prex.opt["env"])
+        #
+        prex = udocker.PRootEngine(mock_local)
+        prex.proot_noseccomp = True
+        prex.opt["kernel"] = "1.2.3"
+        mock_runini.return_value = True
+        mock_volbinds.return_value = True
+        mock_chkenv.return_value = False
+        status = prex.run("64d5abf3-d0b4-30fd-89a5-5df244dfb2ea")
+        self.assertEqual(status, 4)
+        self.assertEqual(prex.opt["kernel"], "1.2.3")
+        self.assertTrue("PROOT_NO_SECCOMP=1" in prex.opt["env"])
+        #
+        prex = udocker.PRootEngine(mock_local)
+        prex.proot_noseccomp = True
+        prex.opt["kernel"] = "1.2.3"
+        prex.opt["env"] = ["", ]
+        prex.proot_exec = "proot"
+        mock_runini.return_value = True
+        mock_volbinds.return_value = True
+        mock_chkenv.return_value = True
+        mock_call.return_value = True
+        mock_affinity.return_value = ""
+        mock_bindhome.return_value = ""
+        mock_getvolbinds.return_value = ""
+        mock_uidmap.return_value = ""
+        status = prex.run("64d5abf3-d0b4-30fd-89a5-5df244dfb2ea")
+        self.assertEqual(status, True)
+        self.assertEqual(prex.opt["kernel"], "1.2.3")
+        self.assertTrue("PROOT_NO_SECCOMP=1" in prex.opt["env"])
+
+
+class ContainerStructure(unittest.TestCase):
+    """Test ContainerStructure() class for containers structure"""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
+
+    def _init(self):
+        """Configure variables"""
+        udocker.Config = mock.MagicMock()
+        udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
+        udocker.Config.cmd = "/bin/bash"
+        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
+        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.return_value.username.return_value = "user"
+        udocker.Config.return_value.userhome.return_value = "/"
+        udocker.Config.return_value.oskernel.return_value = "4.8.13"
+        udocker.Config.location = ""
+
+    @mock.patch('udocker.LocalRepository')
+    def test_01_init(self, mock_local):
+        """Test ContainerStructure()"""
+        self._init()
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        self.assertEqual(prex.tag, "")
+        self.assertEqual(prex.imagerepo, "")
+        #
+        prex = udocker.ContainerStructure(mock_local, "123456")
+        self.assertEqual(prex.tag, "")
+        self.assertEqual(prex.imagerepo, "")
+        self.assertEqual(prex.container_id, "123456")
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_02_get_container_attr(self, mock_local, mock_msg):
+        """Test ContainerStructure().get_container_attr()"""
+        self._init()
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        udocker.Config.location = "/"
+        (container_dir, container_json) = prex.get_container_attr()
+        self.assertEqual(container_dir, "")
+        self.assertEqual(container_json, [])
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        udocker.Config.location = ""
+        mock_local.cd_container.return_value = ""
+        (container_dir, container_json) = prex.get_container_attr()
+        self.assertEqual(container_dir, False)
+        self.assertEqual(container_json, False)
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        udocker.Config.location = ""
+        mock_local.cd_container.return_value = "/"
+        mock_local.load_json.return_value = []
+        (container_dir, container_json) = prex.get_container_attr()
+        self.assertEqual(container_dir, False)
+        self.assertEqual(container_json, False)
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        udocker.Config.location = ""
+        mock_local.cd_container.return_value = "/"
+        mock_local.load_json.return_value = ["value", ]
+        (container_dir, container_json) = prex.get_container_attr()
+        self.assertEqual(container_dir, "/")
+        self.assertEqual(container_json, ["value", ])
+
+    @mock.patch('udocker.ContainerStructure._untar_layers')
+    @mock.patch('udocker.Unique')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_03_create(self, mock_local, mock_msg, mock_unique,
+                       mock_untar):
+        """Test ContainerStructure().create()"""
+        self._init()
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        mock_local.cd_imagerepo.return_value = ""
+        status = prex.create("imagerepo", "tag")
+        self.assertFalse(status)
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        mock_local.cd_imagerepo.return_value = "/"
+        mock_local.get_image_attributes.return_value = ([], [])
+        status = prex.create("imagerepo", "tag")
+        self.assertFalse(status)
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        mock_local.cd_imagerepo.return_value = "/"
+        mock_local.get_image_attributes.return_value = (["value", ], [])
+        mock_local.setup_container.return_value = ""
+        status = prex.create("imagerepo", "tag")
+        self.assertFalse(status)
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        mock_local.cd_imagerepo.return_value = "/"
+        mock_local.get_image_attributes.return_value = (["value", ], [])
+        mock_local.setup_container.return_value = "/"
+        mock_untar.return_value = False
+        mock_unique.return_value.uuid.return_value = "123456"
+        status = prex.create("imagerepo", "tag")
+        self.assertEqual(status, "123456")
+
 
 if __name__ == '__main__':
     unittest.main()
