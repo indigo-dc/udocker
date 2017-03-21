@@ -25,7 +25,8 @@ udocker does not make use of docker nor requires its installation.
 
 udocker "executes" the containers by simply providing a chroot like
 environment over the extracted container. The current implementation
-uses PRoot to mimic chroot without requiring privileges.
+uses two different approaches using PRoot or fakechroot to mimic 
+chroot without requiring privileges.
 
 ## Limitations
 Since root privileges are not involved any operation that really
@@ -49,8 +50,8 @@ and dockerfiles.
 udocker does not provide all the docker features, and is not intended
 as a docker replacement.
 
-Due to the way PRoot implements the chroot environment debugging inside
-of udocker will not work.
+Debugging inside of udocker with the PRoot engine will not work due to 
+the way PRoot implements the chroot environment
 
 udocker is mainly oriented at providing a run-time environment for
 containers execution in user space.
@@ -200,4 +201,5 @@ https://indigo-dc.gitbooks.io/udocker/content/
 ## Aknowlegments
 
 PRoot http://proot.me
+fakechroot https://github.com/dex4er/fakechroot/wiki
 INDIGO DataCloud https://www.indigo-datacloud.eu
