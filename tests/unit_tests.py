@@ -1074,19 +1074,34 @@ class LocalRepositoryTestCase(unittest.TestCase):
         status = localrepo.iswriteable_container(container_id)
         self.assertEqual(status, 0)
 
+    @mock.patch('udocker.FileUtil')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.os.remove')
     @mock.patch('udocker.os.path.exists')
-    def test_16_del_container_name(self, mock_exists, mock_remove, mock_msg):
+    def test_16_del_container_name(self, mock_exists, mock_remove, mock_msg,
+                                   mock_futil):
         """Test LocalRepository().del_container_name()"""
         localrepo = self._localrepo(UDOCKER_TOPDIR)
+        #
         mock_exists.return_value = False
+        mock_futil.return_value.remove.return_value = False
+        status = localrepo.del_container_name("NAMEALIAS")
+        self.assertFalse(status)
+        #
+        mock_exists.return_value = False
+        mock_futil.return_value.remove.return_value = True
         status = localrepo.del_container_name("NAMEALIAS")
         self.assertFalse(status)
         #
         mock_exists.return_value = True
+        mock_futil.return_value.remove.return_value = True
         status = localrepo.del_container_name("NAMEALIAS")
         self.assertTrue(status)
+        #
+        mock_exists.return_value = True
+        mock_futil.return_value.remove.return_value = False
+        status = localrepo.del_container_name("NAMEALIAS")
+        self.assertFalse(status)
 
     @mock.patch('udocker.os.symlink')
     @mock.patch('udocker.os.path.exists')
