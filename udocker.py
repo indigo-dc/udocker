@@ -1208,7 +1208,7 @@ class ExecutionEngine(object):
         elif self.opt["entryp"] and isinstance(self.opt["entryp"], list):
             if self.opt["cmd"]:                                     # and cmd
                 cmd_args = self.opt["cmd"]
-                self.opt["cmd"] = [self.opt["entryp"][0]]
+                self.opt["cmd"] = self.opt["entryp"]
                 self.opt["cmd"].extend(cmd_args)   # cmd=args entryp
             else:
                 self.opt["cmd"] = self.opt["entryp"]
@@ -2027,32 +2027,32 @@ class LocalRepository(object):
             return False
         return True
 
+    def _name_is_valid(self, name):
+        """Check name alias validity"""
+        invalid_chars = ("/", ".", " ", "[", "]")
+        if name and any(x in name for x in invalid_chars):
+            return False
+        return not len(name) > 2048
+
     def set_container_name(self, container_id, name):
         """Associates a name to a container id The container can
         then be referenced either by its id or by its name.
         """
-        invalid_chars = ("/", ".", " ", "[", "]")
-        if name and any(x in name for x in invalid_chars):
-            return False
-        if len(name) > 30:
-            return False
-        container_dir = self.cd_container(container_id)
-        if container_dir:
-            linkname = self.containersdir + "/" + name
-            if os.path.exists(linkname):
-                return False
-            self._symlink(container_dir, linkname)
-            return True
+        if self._name_is_valid(name):
+            container_dir = self.cd_container(container_id)
+            if container_dir:
+                linkname = self.containersdir + "/" + name
+                if os.path.exists(linkname):
+                    return False
+                return self._symlink(container_dir, linkname)
         return False
 
     def del_container_name(self, name):
         """Remove a name previously associated to a container"""
-        if "/" in name or "." in name or " " in name or len(name) > 30:
-            return False
-        linkname = self.containersdir + "/" + name
-        if os.path.exists(linkname):
-            FileUtil(linkname).remove()
-            return True
+        if self._name_is_valid(name):
+            linkname = self.containersdir + "/" + name
+            if os.path.exists(linkname):
+                return FileUtil(linkname).remove()
         return False
 
     def get_container_id(self, container_name):
@@ -3422,7 +3422,7 @@ class DockerLocalFileAPI(object):
                 return []
             try:
                 top_layer_id = structure["repositories"][imagerepo][tag]
-            except (IndexError, NameError):
+            except (IndexError, NameError, KeyError):
                 top_layer_id = self._find_top_layer_id(structure)
             for layer_id in self._sorted_layers(structure, top_layer_id):
                 if str(structure["layers"][layer_id]["VERSION"]) != "1.0":

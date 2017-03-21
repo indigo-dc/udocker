@@ -4,6 +4,8 @@ udocker (1.0.2)
   * Improve run verification binaries with recursive symbolic links
   * Fix further elements in ENTRYPOINT
     - closes: #53
+  * Increase name alias length
+    - closes: #52
   * Fix not owner error upon temporary file removal 
     - closes: #50
   * Fix validation of -v volumes specification to impose absolute paths
