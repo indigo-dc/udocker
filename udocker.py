@@ -1575,7 +1575,7 @@ class ExecutionEngineCommon(object):
         elif self.opt["entryp"] and isinstance(self.opt["entryp"], list):
             if self.opt["cmd"]:                                     # and cmd
                 cmd_args = self.opt["cmd"]
-                self.opt["cmd"] = [self.opt["entryp"][0]]
+                self.opt["cmd"] = self.opt["entryp"]
                 self.opt["cmd"].extend(cmd_args)   # cmd=args entryp
             else:
                 self.opt["cmd"] = self.opt["entryp"]

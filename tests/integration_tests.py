@@ -199,8 +199,9 @@ class FuncTestBasic(unittest.TestCase):
         """Setup test"""
         set_env()
 
+    @mock.patch('udocker.sys.exit')
     @mock.patch('udocker.Msg')
-    def test_01_noargs(self, mock_msg):
+    def test_01_noargs(self, mock_msg, mock_exit):
         """Test invoke command without arguments"""
         do_cmd(self, mock_msg,
                [UDOCKER],
@@ -213,8 +214,9 @@ class FuncTestBasic(unittest.TestCase):
                [UDOCKER, "help"],
                " Syntax")
 
+    @mock.patch('udocker.sys.exit')
     @mock.patch('udocker.Msg')
-    def test_03_help(self, mock_msg):
+    def test_03_help(self, mock_msg, mock_exit):
         """Test invoke --help option"""
         do_cmd(self, mock_msg,
                [UDOCKER, "--help"],
@@ -227,8 +229,9 @@ class FuncTestBasic(unittest.TestCase):
                [UDOCKER, "run", "--help"],
                "=run: .*--")
 
+    @mock.patch('udocker.sys.exit')
     @mock.patch('udocker.Msg')
-    def test_05_help_content(self, mock_msg):
+    def test_05_help_content(self, mock_msg, mock_exit):
         """Test verify help content"""
         do_cmd(self, mock_msg,
                [UDOCKER, "--help"],
