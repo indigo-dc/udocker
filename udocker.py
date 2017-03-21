@@ -1294,8 +1294,14 @@ class ExecutionEngine(object):
     def _check_env(self):
         """Sanitize the environment variables"""
         for pair in list(self.opt["env"]):
-            if not pair or "=" not in pair:
+            if not pair:
                 self.opt["env"].remove(pair)
+                continue
+            if "=" not in pair:
+                self.opt["env"].remove(pair)
+                val = os.getenv(pair, "")
+                if val:
+                    self.opt["env"].append('%s="%s"' % (pair, val))
                 continue
             (key, val) = pair.split("=", 1)
             if " " in key or key[0] in string.digits:
