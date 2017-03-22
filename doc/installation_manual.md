@@ -156,7 +156,7 @@ under $HOME/.udocker this directory will contain:
  * Additional tools and modules for udocker such as proot.
  * Data from pulled container images (layers and metadata).
  * Directory trees for the containers extracted from the layers.
-
+ 
 
 8. ENVIRONMENT
 ==============
@@ -171,7 +171,7 @@ The docker index and registry and be overrided via environment variables.
 
  * UDOCKER_INDEX : https://...
  * UDOCKER_REGISTRY : https://...
-
+ 
 
 9. CONFIGURATION
 ================
