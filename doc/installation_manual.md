@@ -157,6 +157,7 @@ under $HOME/.udocker this directory will contain:
  * Data from pulled container images (layers and metadata).
  * Directory trees for the containers extracted from the layers.
 
+
 8. ENVIRONMENT
 ==============
 The location of the udocker directory can be changed via environment variables.
@@ -170,6 +171,7 @@ The docker index and registry and be overrided via environment variables.
 
  * UDOCKER_INDEX : https://...
  * UDOCKER_REGISTRY : https://...
+
 
 9. CONFIGURATION
 ================
