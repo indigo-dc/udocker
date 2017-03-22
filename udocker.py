@@ -33,7 +33,7 @@ import platform
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 __date__ = "2016"
 
 # Python version major.minor
@@ -1123,8 +1123,14 @@ class ExecutionEngine(object):
     def _is_in_volumes(self, pathname):
         """Is pathaname in the volumes exported to the container"""
         for vol in self.opt["vol"]:
-            if vol.startswith(pathname):
-                return True
+            if ":" in vol:
+                (host_path, cont_path) = vol.split(":")
+                if pathname.startswith(cont_path):
+                    if os.path.isdir(host_path + pathname[len(cont_path):]):
+                        return True
+            elif pathname.startswith(vol):
+                if os.path.isdir(pathname):                    
+                    return True
         return False
 
     def _check_volumes(self):
@@ -1150,6 +1156,16 @@ class ExecutionEngine(object):
                     return False
         return True
 
+    def _get_bindhome(self):
+        """Binding of the host $HOME in to the container $HOME"""
+        if self.opt["bindhome"]:
+            host_auth = NixAuthentication()
+            (r_user, dummy, dummy, dummy, r_home,
+             dummy) = host_auth.get_user(os.getuid())
+            if r_user:
+                return r_home
+        return ""
+
     def _set_volume_bindings(self):
         """Set the volume bindings string for container run command"""
         # predefined volume bindings --sysdirs --hostauth --dri
@@ -1159,6 +1175,9 @@ class ExecutionEngine(object):
             self.opt["vol"].extend(self.hostauth_list)
         if self.opt["dri"]:
             self.opt["vol"].extend(Config.dri_list)
+        home = self._get_bindhome()
+        if home:
+            self.opt["vol"].append(home)
         # remove directory bindings specified with --novol
         for novolume in list(set(self.opt["novol"])):
             try:
@@ -1179,8 +1198,7 @@ class ExecutionEngine(object):
         # verify if the working directory is valid and fix it
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
-        if (self.opt["cwd"] and not (self.opt["bindhome"] or
-                                     self._is_in_volumes(self.opt["cwd"]))):
+        if (self.opt["cwd"] and not self._is_in_volumes(self.opt["cwd"])):
             if (not (os.path.exists(container_root + "/" + self.opt["cwd"]) and
                      os.path.isdir(container_root + "/" + self.opt["cwd"]))):
                 Msg().err("Error: invalid working directory: ",
@@ -1507,6 +1525,9 @@ class ExecutionEngine(object):
                                           self.container_root):
             return False
 
+        if not self._set_volume_bindings():
+            return False
+
         if (not (self._check_paths(self.container_root) and
                  self._check_executable(self.container_root))):
             return False
@@ -1588,16 +1609,6 @@ class PRootEngine(ExecutionEngine):
             vol_str = " "
         return vol_str
 
-    def _set_bindhome(self):
-        """Binding of the host $HOME in to the container $HOME"""
-        if self.opt["bindhome"]:
-            host_auth = NixAuthentication()
-            (r_user, dummy, dummy, dummy, r_home,
-             dummy) = host_auth.get_user(os.getuid())
-            if r_user:
-                return " -b " + r_home
-        return ""
-
     def run(self, container_id):
         """Execute a Docker container using PRoot. This is the main method
         invoked to run the a container with PRoot.
@@ -1619,9 +1630,6 @@ class PRootEngine(ExecutionEngine):
         if self.opt["kernel"]:
             self._kernel = self.opt["kernel"]
 
-        if not self._set_volume_bindings():
-            return 3
-
         # set environment variables
         self._run_env_set()
         if not self._check_env():
@@ -1633,7 +1641,6 @@ class PRootEngine(ExecutionEngine):
                  " ".join(self.opt["env"]),
                  self._set_cpu_affinity(),
                  self.proot_exec,
-                 self._set_bindhome(),
                  self._get_volume_bindings(),
                  self._set_uid_map(),
                  "-k", self._kernel,

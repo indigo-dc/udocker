@@ -199,8 +199,9 @@ class FuncTestBasic(unittest.TestCase):
         """Setup test"""
         set_env()
 
+    @mock.patch('udocker.sys.exit')
     @mock.patch('udocker.Msg')
-    def test_01_noargs(self, mock_msg):
+    def test_01_noargs(self, mock_msg, mock_exit):
         """Test invoke command without arguments"""
         do_cmd(self, mock_msg,
                [UDOCKER],
@@ -213,8 +214,9 @@ class FuncTestBasic(unittest.TestCase):
                [UDOCKER, "help"],
                " Syntax")
 
+    @mock.patch('udocker.sys.exit')
     @mock.patch('udocker.Msg')
-    def test_03_help(self, mock_msg):
+    def test_03_help(self, mock_msg, mock_exit):
         """Test invoke --help option"""
         do_cmd(self, mock_msg,
                [UDOCKER, "--help"],
@@ -227,11 +229,12 @@ class FuncTestBasic(unittest.TestCase):
                [UDOCKER, "run", "--help"],
                "=run: .*--")
 
+    @mock.patch('udocker.sys.exit')
     @mock.patch('udocker.Msg')
-    def test_05_help_content(self, mock_msg):
+    def test_05_help_content(self, mock_msg, mock_exit):
         """Test verify help content"""
         do_cmd(self, mock_msg,
-               [UDOCKER, "--help"],
+               [UDOCKER, "help"],
                "=Commands.* search.* pull.* images.* create.* ps.* rm.* "
                "run.* inspect.* name.* rmname.* rmi.* rm.* import.* load.* "
                "verify.* protect.* unprotect.* protect.* unprotect.* "
@@ -398,6 +401,14 @@ class FuncTestRepo(unittest.TestCase):
                [UDOCKER, "inspect", "-p", "busyTEST"],
                " /ROOT")
 
+    @mock.patch('udocker.Msg')
+    def test_14_pull_with_registry(self, mock_msg):
+        """Test pull with registry"""
+        # disregard of --registry (regression of #29)
+        do_cmd(self, mock_msg,
+               [UDOCKER, "pull", "--registry=xxx://127.0.0.1:1",
+                "busybox:latest"], " Error:")
+
 
 class FuncTestRun(unittest.TestCase):
     """Test container execution"""
@@ -424,6 +435,16 @@ class FuncTestRun(unittest.TestCase):
         do_run(self, mock_msg,
                [UDOCKER, "run", "busyRUN", "/bin/echo", "'hello world'"],
                None, " hello")
+
+    @mock.patch('udocker.Msg')
+    def test_02_run_volume_validation(self, mock_msg):
+        """Test run volume validation"""
+        # discrepancy of -v (regression of #43)
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "-v", "/tmp:aaa", "busyRUN",
+                "/bin/echo", "'hello'"], None, " invalid volume")
 
 
 if __name__ == '__main__':

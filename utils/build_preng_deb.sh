@@ -286,6 +286,12 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker-preng (1.0.3-1) trusty; urgency=low
+
+  * repackaging for udocker 1.0.3
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Wed, 22 Mar 2017 14:37:40 +0000
+
 udocker-preng (1.0.2-1) trusty; urgency=low
 
   * Fix accelerated seccomp on kernels >= 4.8.0

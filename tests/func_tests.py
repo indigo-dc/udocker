@@ -77,13 +77,14 @@ class MainTestCase(unittest.TestCase):
         """Setup test"""
         set_env()
 
+    @mock.patch('udocker.sys.exit')
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.UdockerTools')
     @mock.patch('udocker.Config.user_init')
     @mock.patch('udocker.Udocker.do_images')
     @mock.patch('udocker.Msg')
     def test_init(self, mock_msg, mock_images,
-                  mock_user_init, mock_utools, mock_localrepo):
+                  mock_user_init, mock_utools, mock_localrepo, mock_exit):
         """Test udocker global command line options"""
         set_msglevels(mock_msg)
         udocker.Msg = mock_msg
@@ -98,7 +99,7 @@ class MainTestCase(unittest.TestCase):
         t_argv = ['./udocker.py', "--cofig=/myconf"]
         with mock.patch.object(sys, 'argv', t_argv):
             udocker.Main().start()
-            self.assertTrue(mock_user_init.called_with(False))
+            self.assertTrue(mock_exit.called)
         udocker.Config().verbose_level = 0
         t_argv = ['./udocker.py', "-D", "images"]
         with mock.patch.object(sys, 'argv', t_argv):
@@ -134,7 +135,7 @@ class MainTestCase(unittest.TestCase):
         """Test udocker help command"""
         udocker.msg = mock_msg
         udocker.conf = udocker.Config()
-        t_argv = ['./udocker.py', "--help"]
+        t_argv = ['./udocker.py', "help"]
         with mock.patch.object(sys, 'argv', t_argv):
             main = udocker.Main()
             main.execute()

@@ -98,6 +98,16 @@ rm -rf %{buildroot}
 %doc %{_mandir}/man1/udocker.1*
 
 %changelog
+* Wed Mar 22 2017 udocker maintainer <udocker@lip.pt> 1.0.3-1 
+- Support for import containers in newer Docker format
+- Restructuring to support additional execution engines
+- Support further elements in ENTRYPOINT
+- Increase name alias length
+- Add support for change dir into volume directories
+- Fix owner error upon temporary file removal
+- Improve support for variables with spaces in command line
+- Change misleading behavior of import from move to copy
+- Fix validation of volumes to impose absolute paths
 * Tue Feb 14 2017 udocker maintainer <udocker@lip.pt> 1.0.2-1 
 - Fix download on repositories that fail authentication on /v2
 - Fix run verification binaries with recursive symbolic links
