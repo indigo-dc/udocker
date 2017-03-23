@@ -18,6 +18,7 @@ minimal functionality.
 
 1. INTRODUCTION
 ===============
+
 1.1. How does it work
 ---------------------
 udocker is a simple tool written in Python, it has a minimal set
@@ -101,16 +102,17 @@ Additionally:
 
 * Containers saved with `docker save` can be loaded with `udocker load -i`
 * Tarballs created with `docker export` can be imported with `udocker import`
-
+  
 
 2. INSTALLATION
 ===============
 udocker can be placed in the user home directory and thus does not require
 system installation. For further information see the installation manual.
-
+  
 
 3. COMMANDS
 ===========
+  
 3.1. Syntax
 -----------
 The udocker syntax is very similar to docker. Since version 1.0.1 the udocker

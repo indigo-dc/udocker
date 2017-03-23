@@ -5,9 +5,10 @@ system administrator intervention. udocker itself is written in Python, but
 also uses external statically compiled binaries to provide a chroot like
 environment where containers are executed. These tools do not require any
 privileges.
-
+  
 1. DEPENDENCIES
 ===============
+
 Python dependencies are described in the file requirements.txt
 
 udocker requires either pycurl or the curl executable command,
@@ -15,6 +16,7 @@ to download both the binaries and/or pull containers from repositories.
 
 2. USER INSTALLATION
 ====================
+
 The official release of udocker is available from the INDIGO-DataCloud
 repository at `http://repo.indigo-datacloud.eu/` where is made available
 as a tarball to be deployed by the end user. Allways check for the latest
@@ -69,6 +71,7 @@ For the development branch:
 
 3. SYSTEM INSTALLATION WITH RPMs and DEBs
 =========================================
+
 RPMs for CentOS 7 are provided at http://repo.indigo-datacloud.eu
 
 ```
@@ -85,6 +88,7 @@ DEBs for Ubuntu 14.04 are provided at http://repo.indigo-datacloud.eu
 
 4. SYSTEM INSTALLATION WITH ANSIBLE AND PYTHON
 ==============================================
+
 For system administrators wishing to provider udocker and its dependencies. 
 An ansible playbook is provided in the file ansible_install.yaml:
 
@@ -115,6 +119,7 @@ Optionally installation can be performed directly with pip:
 
 5. SOURCE CODE
 ==============
+
 To get the latest udocker script from the github development branch without
 cloning the entire repository.
 ```
@@ -137,6 +142,7 @@ To get the udocker source code repository from the development branch.
 
 6. BUILD
 ========
+
 A distribution tarball can be built using the script build_tarball.sh in
 the utils directory. The script fetches the code necessary to build the
 binary executables such as proot and compiles them statically. The following
@@ -150,6 +156,7 @@ example builds the tarball from the master repository.
  
 7. DIRECTORIES
 ==============
+
 The binary executables and containers are usually kept in the user home directory
 under $HOME/.udocker this directory will contain:
 
@@ -160,6 +167,7 @@ under $HOME/.udocker this directory will contain:
 
 8. ENVIRONMENT
 ==============
+
 The location of the udocker directory can be changed via environment variables.
 
  * UDOCKER_DIR : change the root directory of udocker usually $HOME/.udocker
@@ -175,6 +183,7 @@ The docker index and registry and be overrided via environment variables.
 
 9. CONFIGURATION
 ================
+
 udocker loads the following configuration files:
 
  * /etc/udocker.conf
