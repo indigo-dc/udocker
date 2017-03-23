@@ -352,6 +352,7 @@ class FileUtilTestCase(unittest.TestCase):
                             mock_exists, mock_config):
         """Test FileUtil.remove() with plain files"""
         mock_uid.return_value = os.getuid()
+        # file does not exist (regression of #50)
         mock_isdir.return_value = True
         mock_isfile.return_value = True
         mock_exists.return_value = True
@@ -1930,6 +1931,8 @@ class ExecutionEngineCommon(unittest.TestCase):
         udocker.Config.cmd = "/bin/bash"
         udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
         udocker.Config.location = ""
+        udocker.Config.uid = 1000
+        udocker.Config.sysdirs_list = ["/", ]
 
     @mock.patch('udocker.LocalRepository')
     def test_01_init(self, mock_local):
@@ -1994,18 +1997,29 @@ class ExecutionEngineCommon(unittest.TestCase):
         status = ex_eng._set_cpu_affinity()
         self.assertEqual(status, " /bin/taskset -C  '1-2' ")
 
+    @mock.patch('udocker.os.path.isdir')
     @mock.patch('udocker.LocalRepository')
-    def test_04__is_in_volumes(self, mock_local):
+    def test_04__is_in_volumes(self, mock_local, mock_isdir):
         """Test ExecutionEngineCommon()._is_in_volumes()"""
         self._init()
+        mock_isdir.return_value = True
+        #
         ex_eng = udocker.ExecutionEngineCommon(mock_local)
         ex_eng.opt["vol"] = ("/opt/xxx:/mnt", )
-        status = ex_eng._is_in_volumes("/opt")
+        status = ex_eng._is_in_volumes("/mnt")
         self.assertTrue(status)
         #
         ex_eng.opt["vol"] = ("/var/xxx:/mnt", )
         status = ex_eng._is_in_volumes("/opt")
         self.assertFalse(status)
+        # change dir to volume (regression of #51)
+        ex_eng.opt["vol"] = ("/var/xxx", )
+        status = ex_eng._is_in_volumes("/var/xxx/tt")
+        self.assertTrue(status)
+        # change dir to volume (regression of #51)
+        ex_eng.opt["vol"] = ("/var/xxx:/mnt", )
+        status = ex_eng._is_in_volumes("/mnt/tt")
+        self.assertTrue(status)
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.os.path.isdir')
@@ -2369,7 +2383,7 @@ class ExecutionEngineCommon(unittest.TestCase):
         """Test ExecutionEngineCommon()._env_cleanup()"""
         #self._init()
         udocker.Config = mock_config
-        udocker.Config.valid_host_env = ( "HOME", )
+        udocker.Config.valid_host_env = ("HOME", )
         mock_os.environ = {'HOME': '/', 'USERNAME': 'user', }
         ex_eng = udocker.ExecutionEngineCommon(mock_local)
         ex_eng._run_env_cleanup()
@@ -2380,7 +2394,6 @@ class ExecutionEngineCommon(unittest.TestCase):
     def test_15__run_env_set(self, mock_local, mock_config):
         """Test ExecutionEngineCommon()._run_env_set()"""
         #self._init()
-        mock_config
         ex_eng = udocker.ExecutionEngineCommon(mock_local)
         ex_eng.opt["home"] = "/"
         ex_eng.opt["user"] = "user"
@@ -2402,9 +2415,9 @@ class ExecutionEngineCommon(unittest.TestCase):
     @mock.patch('udocker.ExecutionEngineCommon._setup_container_user')
     @mock.patch('udocker.ExecutionEngineCommon._run_load_metadata')
     @mock.patch('udocker.LocalRepository')
-    def test_16__run_ini(self, mock_local, mock_loadmeta, mock_setupuser,
-                         mock_chkpaths, mock_chkexec, mock_execmode):
-        """Test ExecutionEngineCommon()._run_ini()"""
+    def test_16__run_init(self, mock_local, mock_loadmeta, mock_setupuser,
+                          mock_chkpaths, mock_chkexec, mock_execmode):
+        """Test ExecutionEngineCommon()._run_init()"""
         self._init()
         mock_local.get_container_name.return_value = "cname"
         mock_loadmeta.return_value = ("/container_dir", "dummy", )
@@ -2433,6 +2446,33 @@ class ExecutionEngineCommon(unittest.TestCase):
         mock_chkexec.return_value = False
         status = ex_eng._run_init("2717add4-e6f6-397c-9019-74fa67be439f")
         self.assertFalse(status)
+
+    @mock.patch('udocker.NixAuthentication')
+    @mock.patch('udocker.LocalRepository')
+    def test_06__get_bindhome(self, mock_local, mock_nixauth):
+        """Test ExecutionEngine()._get_bindhome()"""
+        self._init()
+        #
+        prex = udocker.ExecutionEngineCommon(mock_local)
+        prex.opt["bindhome"] = False
+        status = prex._get_bindhome()
+        self.assertEqual(status, "")
+        #
+        mock_nixauth.return_value.get_user.return_value = (
+            "user", "dummy", "dummy", "dummy", "/home/user", "dummy",
+        )
+        prex = udocker.ExecutionEngineCommon(mock_local)
+        prex.opt["bindhome"] = True
+        status = prex._get_bindhome()
+        self.assertEqual(status, "/home/user")
+        #
+        mock_nixauth.return_value.get_user.return_value = (
+            "", "dummy", "dummy", "dummy", "", "dummy",
+        )
+        prex = udocker.ExecutionEngineCommon(mock_local)
+        prex.opt["bindhome"] = True
+        status = prex._get_bindhome()
+        self.assertEqual(status, "")
 
 
 class PRootEngine(unittest.TestCase):
@@ -2551,33 +2591,6 @@ class PRootEngine(unittest.TestCase):
         prex.opt["vol"] = ("/tmp", "/bbb", )
         status = prex._get_volume_bindings()
         self.assertEqual(status, " -b /tmp -b /bbb")
-
-    @mock.patch('udocker.NixAuthentication')
-    @mock.patch('udocker.LocalRepository')
-    def test_06__set_bindhome(self, mock_local, mock_nixauth):
-        """Test PRootEngine()._set_bindhome()"""
-        self._init()
-        #
-        prex = udocker.PRootEngine(mock_local)
-        prex.opt["bindhome"] = False
-        status = prex._set_bindhome()
-        self.assertEqual(status, "")
-        #
-        mock_nixauth.return_value.get_user.return_value = (
-            "user", "dummy", "dummy", "dummy", "/home/user", "dummy",
-        )
-        prex = udocker.PRootEngine(mock_local)
-        prex.opt["bindhome"] = True
-        status = prex._set_bindhome()
-        self.assertEqual(status, " -b /home/user")
-        #
-        mock_nixauth.return_value.get_user.return_value = (
-            "", "dummy", "dummy", "dummy", "", "dummy",
-        )
-        prex = udocker.PRootEngine(mock_local)
-        prex.opt["bindhome"] = True
-        status = prex._set_bindhome()
-        self.assertEqual(status, "")
 
 
 if __name__ == '__main__':

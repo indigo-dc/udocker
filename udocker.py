@@ -697,8 +697,9 @@ class FileUtil(object):
                 Msg().err("Error: deleting file: ", self.filename)
                 return False
         elif os.path.isdir(self.filename):
-            cmd = ["/bin/rm", "-Rf", self.filename]
-            if subprocess.call(cmd, stderr=Msg.chlderr,
+            cmd = "/bin/rm -Rf %s || /bin/chmod -R u+w %s && /bin/rm -Rf %s" % \
+                  (self.filename, self.filename, self.filename)
+            if subprocess.call(cmd, stderr=Msg.chlderr, shell=True,
                                close_fds=True, env=None):
                 Msg().err("Error: deleting directory: ", self.filename)
                 return False
@@ -839,10 +840,7 @@ class FileUtil(object):
         l_path = os.readlink(f_path)
         if l_path.startswith("/") and not l_path.startswith(self.filename):
             p_path = os.path.realpath(os.path.dirname(f_path))
-            print "TARGET " + l_path
-            print "FROM " + p_path
             new_l_path = os.path.relpath(root_path + l_path, p_path)
-            print "RESULT " + new_l_path
             if force and not os.access(p_path, os.W_OK):
                 os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
                 os.remove(f_path)
@@ -864,7 +862,7 @@ class FileUtil(object):
             Msg().err("Error: links convertion outside of directory tree: ",
                       root_path)
             return None
-        for dir_path, dirs, files in os.walk(root_path):
+        for dir_path, dummy, files in os.walk(root_path):
             for f_name in files:
                 try:
                     f_path = dir_path + "/" + f_name
@@ -1069,10 +1067,10 @@ class ElfPatcher(object):
         placeholder for the filename.
         """
         status = False
-        for dir_path, dirs, files in os.walk(root_path):
+        for dir_path, dummy, files in os.walk(root_path):
             for f_name in files:
-                try: 
-                    f_path = dir_path + "/" + f_name 
+                try:
+                    f_path = dir_path + "/" + f_name
                     if os.path.islink(f_path):
                         continue
                     if os.stat(f_path).st_uid != self._uid:
@@ -1082,7 +1080,6 @@ class ElfPatcher(object):
                             continue
                     if ((action & self.BIN and os.access(f_path, os.X_OK)) or
                             (action & self.LIB and self._shlib.match(f_name))):
-                        #print cmd
                         out = Uprocess().get_output(cmd.replace("#f", f_path))
                         if out:
                             status = out
@@ -1237,7 +1234,7 @@ class ElfPatcher(object):
         if root_path is None:
             root_path = self._container_root
         ld_list = []
-        for dir_path, dirs, files in os.walk(root_path):
+        for dir_path, dummy, files in os.walk(root_path):
             for f_name in files:
                 try:
                     f_path = dir_path + "/" + f_name
@@ -1255,7 +1252,6 @@ class ElfPatcher(object):
         """Get ld library paths"""
         if force or not os.path.exists(self._container_ld_libdirs):
             ld_list = self.find_ld_libdirs()
-            #print ld_list
             ld_str = ":".join(ld_list)
             FileUtil(self._container_ld_libdirs).putdata(ld_str)
             return ld_list
@@ -1491,8 +1487,14 @@ class ExecutionEngineCommon(object):
     def _is_in_volumes(self, pathname):
         """Is pathaname in the volumes exported to the container"""
         for vol in self.opt["vol"]:
-            if vol.startswith(pathname):
-                return True
+            if ":" in vol:
+                (host_path, cont_path) = vol.split(":")
+                if pathname.startswith(cont_path):
+                    if os.path.isdir(host_path + pathname[len(cont_path):]):
+                        return True
+            elif pathname.startswith(vol):
+                if os.path.isdir(pathname):
+                    return True
         return False
 
     def _check_volumes(self):
@@ -1517,6 +1519,16 @@ class ExecutionEngineCommon(object):
                     return False
         return True
 
+    def _get_bindhome(self):
+        """Binding of the host $HOME in to the container $HOME"""
+        if self.opt["bindhome"]:
+            host_auth = NixAuthentication()
+            (r_user, dummy, dummy, dummy, r_home,
+             dummy) = host_auth.get_user(Config.uid)
+            if r_user:
+                return r_home
+        return ""
+
     def _set_volume_bindings(self):
         """Set the volume bindings string for container run command"""
         # predefined volume bindings --sysdirs --hostauth --dri
@@ -1526,12 +1538,18 @@ class ExecutionEngineCommon(object):
             self.opt["vol"].extend(self.hostauth_list)
         if self.opt["dri"]:
             self.opt["vol"].extend(Config.dri_list)
+        home = self._get_bindhome()
+        if home:
+            self.opt["vol"].append(home)
         # remove directory bindings specified with --novol
-        for novolume in list(set(self.opt["novol"])):
-            try:
-                self.opt["vol"].remove(novolume)
-            except ValueError:
-                Msg().out("Warning:  novol %s not in volumes list" %
+        for novolume in list(self.opt["novol"]):
+            found = False
+            for vol in list(self.opt["vol"]):
+                if novolume == vol or novolume == vol.split(":")[0]:
+                    self.opt["vol"].remove(vol)
+                    found = True
+            if not found:
+                Msg().out("Warning: --novol %s not in volumes list" %
                           novolume, l=Msg.WAR)
         return self._check_volumes()
 
@@ -1546,8 +1564,7 @@ class ExecutionEngineCommon(object):
         # verify if the working directory is valid and fix it
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
-        if (self.opt["cwd"] and not (self.opt["bindhome"] or
-                                     self._is_in_volumes(self.opt["cwd"]))):
+        if self.opt["cwd"] and not self._is_in_volumes(self.opt["cwd"]):
             if (not (os.path.exists(container_root + "/" + self.opt["cwd"]) and
                      os.path.isdir(container_root + "/" + self.opt["cwd"]))):
                 Msg().err("Error: invalid working directory: ",
@@ -1661,8 +1678,14 @@ class ExecutionEngineCommon(object):
     def _check_env(self):
         """Sanitize the environment variables"""
         for pair in list(self.opt["env"]):
-            if not pair or "=" not in pair:
+            if not pair:
                 self.opt["env"].remove(pair)
+                continue
+            if "=" not in pair:
+                self.opt["env"].remove(pair)
+                val = os.getenv(pair, "")
+                if val:
+                    self.opt["env"].append('%s="%s"' % (pair, val))
                 continue
             (key, val) = pair.split("=", 1)
             if " " in key or key[0] in string.digits:
@@ -1871,6 +1894,9 @@ class ExecutionEngineCommon(object):
                                           self.container_root):
             return ""
 
+        if not self._set_volume_bindings():
+            return ""
+
         exec_path = self._check_executable(self.container_root)
         if not (self._check_paths(self.container_root) and exec_path):
             return ""
@@ -1947,16 +1973,6 @@ class PRootEngine(ExecutionEngineCommon):
             vol_str = " "
         return vol_str
 
-    def _set_bindhome(self):
-        """Binding of the host $HOME in to the container $HOME"""
-        if self.opt["bindhome"]:
-            host_auth = NixAuthentication()
-            (r_user, dummy, dummy, dummy, r_home,
-             dummy) = host_auth.get_user(Config.uid)
-            if r_user:
-                return " -b " + r_home
-        return ""
-
     def run(self, container_id):
         """Execute a Docker container using PRoot. This is the main method
         invoked to run the a container with PRoot.
@@ -1968,9 +1984,6 @@ class PRootEngine(ExecutionEngineCommon):
         # setup execution
         if not self._run_init(container_id):
             return 2
-
-        if not self._set_volume_bindings():
-            return 3
 
         self._select_proot()
 
@@ -1998,7 +2011,6 @@ class PRootEngine(ExecutionEngineCommon):
                  self._set_cpu_affinity(),
                  self.proot_exec,
                  proot_verbose,
-                 self._set_bindhome(),
                  self._get_volume_bindings(),
                  self._set_uid_map(),
                  "-k", self._kernel,
@@ -2116,16 +2128,6 @@ class FakechrootEngine(ExecutionEngineCommon):
         self._create_user(container_auth, host_auth)
         return True
 
-    def _set_bindhome(self):
-        """Binding of the host $HOME in to the container $HOME"""
-        if self.opt["bindhome"]:
-            host_auth = NixAuthentication()
-            (r_user, dummy, dummy, dummy, r_home,
-             dummy) = host_auth.get_user(Config.uid)
-            if r_user:
-                return r_home
-        return ""
-
     def _get_volume_bindings(self):
         """Get the volume bindings string for fakechroot run"""
         host_volumes_list = []
@@ -2141,10 +2143,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                 host_volumes_list.append(host_dir)
             else:
                 map_volumes_dict[cont_dir] = host_dir + "!" + cont_dir
-        home = self._set_bindhome()
-        if home:
-            host_volumes_list.append(home)
-        for cont_dir in sorted(map_volumes_dict.keys(), reverse=True):
+        for cont_dir in sorted(map_volumes_dict, reverse=True):
             map_volumes_list.append(map_volumes_dict[cont_dir])
         return (":".join(host_volumes_list), ":".join(map_volumes_list))
 
@@ -2208,10 +2207,6 @@ class FakechrootEngine(ExecutionEngineCommon):
         exec_path = self._run_init(container_id)
         if not exec_path:
             return 2
-
-        if not self._set_volume_bindings():
-            return 3
-
 
         # execution mode and get patcher
         xmode = self.exec_mode.get_mode()
@@ -2422,6 +2417,7 @@ class ContainerStructure(object):
         and permissions are changed to avoid file permission
         issues when extracting the next layer.
         """
+        status = True
         gid = str(os.getgid())
         for tarf in tarfiles:
             self._apply_whiteouts(tarf, destdir)
@@ -2703,10 +2699,11 @@ class LocalRepository(object):
         return True
 
     def _name_is_valid(self, name):
+        """Check name alias validity"""
         invalid_chars = ("/", ".", " ", "[", "]")
         if name and any(x in name for x in invalid_chars):
             return False
-        return not len(name) > 1024
+        return not len(name) > 2048
 
     def set_container_name(self, container_id, name):
         """Associates a name to a container id The container can

@@ -1,5 +1,5 @@
-udocker USER MANUAL
-===================
+# udocker USER MANUAL
+
 A basic user tool to execute simple docker containers in user space 
 without requiring root privileges. Enables basic download and execution 
 of docker containers by non-privileged users in Linux systems were docker 
@@ -16,10 +16,9 @@ udocker is a wrapper around several tools to mimic a subset of the
 docker capabilities including pulling images and running then with
 minimal functionality.
 
-1. INTRODUCTION
-===============
-1.1. How does it work
----------------------
+## 1. INTRODUCTION
+
+### 1.1. How does it work
 udocker is a simple tool written in Python, it has a minimal set
 of dependencies so that can be executed in a wide range of Linux
 systems. udocker does not make use of docker nor requires its 
@@ -29,8 +28,7 @@ udocker "executes" the containers by simply providing a chroot like
 environment to the extracted container. The current implementation 
 uses PRoot to mimic chroot without requiring privileges.
 
-1.2. Limitations
-----------------
+### 1.2. Limitations
 Since root privileges are not involved any operation that really 
 requires privileges is not possible. The following are
 examples of operations that are not possible:
@@ -50,8 +48,7 @@ Other limitations:
 * Due to the way PRoot implements the chroot environment debugging and system call tracing inside of udocker will not work.
 * udocker is mainly oriented at providing a run-time environment for containers execution in user space.
 
-1.3. Security
--------------
+### 1.3. Security
 Because of the limitations described in section 1.2 udocker does not offer 
 isolation features such as the ones offered by docker. If the containers
 content is not trusted then they should not be executed with udocker as
@@ -87,8 +84,7 @@ in a file and can be easily stolen. Logout can be used to delete the credentials
 If the host system is not trustable the private repositoty login feature should 
 not be used as it may expose the credentials.
 
-1.4. Basic flow
----------------
+### 1.4. Basic flow
 The basic flow with udocker is:
 
 1. The user downloads udocker to its home directory and executes it
@@ -103,16 +99,15 @@ Additionally:
 * Tarballs created with `docker export` can be imported with `udocker import`
 
 
-2. INSTALLATION
-===============
+## 2. INSTALLATION
+
 udocker can be placed in the user home directory and thus does not require
 system installation. For further information see the installation manual.
 
 
-3. COMMANDS
-===========
-3.1. Syntax
------------
+## 3. COMMANDS
+
+### 3.1. Syntax
 The udocker syntax is very similar to docker. Since version 1.0.1 the udocker
 preferred command name changed from udocker.py to udocker. A symbolic link
 between udocker and udocker.py is provided when installing with the distribution
@@ -139,8 +134,7 @@ Quick examples:
   udocker run rh7
 ```
 
-3.2. Obtaining help
--------------------
+### 3.2. Obtaining help
 General help about available commands can be obtained with:
 ```
   udocker --help
@@ -151,8 +145,7 @@ Command specific help can be obtained with:
   udocker COMMAND --help
 ```
 
-3.3. search
------------
+### 3.3. search
 ```
   udocker search [OPTIONS] REPO/IMAGE:TAG
 ```
@@ -170,8 +163,7 @@ Examples:
   udocker search iscampos/openqcd
 ```
 
-3.4. pull
----------
+### 3.4. pull
 ```
   udocker pull [OPTIONS] REPO/IMAGE:TAG
 ```
@@ -197,8 +189,7 @@ Examples:
   udocker pull --httpproxy=socks5://user:pass@host:port busybox
 ```
 
-3.5. images
------------
+### 3.5. images
 ```
   udocker images [OPTIONS]
 ```
@@ -215,8 +206,7 @@ Examples:
   udocker images -l
 ```
 
-3.6. create
------------
+### 3.6. create
 ```
   udocker create [OPTIONS] REPO/IMAGE:TAG
 ```
@@ -236,8 +226,7 @@ Examples:
   udocker create --name=mycontainer indigodatacloud/disvis:latest
 ```
 
-3.7. ps
--------
+### 3.7. ps
 ```
   udocker ps
 ```
@@ -256,8 +245,7 @@ Examples:
   udocker ps
 ```
 
-3.8. rmi
---------
+### 3.8. rmi
 ```
   udocker rmi [OPTIONS] REPO/IMAGE:TAG
 ```
@@ -275,8 +263,7 @@ Examples:
   udocker rmi -f indigodatacloud/ambertools\_app:latest
 ```
 
-3.9. rm
--------
+### 3.9. rm
 ```
   udocker rm CONTAINER-ID
 ```
@@ -290,8 +277,7 @@ Examples:
   udocker rm mycontainer
 ```
 
-3.10. inspect
--------------
+### 3.10. inspect
 ```
   udocker inspect REPO/IMAGE:TAG
   udocker inspect [OPTIONS] CONTAINER-ID
@@ -311,8 +297,7 @@ Examples:
   udocker inspect -p d2578feb-acfc-37e0-8561-47335f85e46d
 ```
 
-3.11. name
-----------
+### 3.11. name
 ```
   udocker name CONTAINER-ID NAME
 ```
@@ -324,8 +309,7 @@ Examples:
   udocker name d2578feb-acfc-37e0-8561-47335f85e46d BLUE
 ```
 
-3.12. rmname
-------------
+### 3.12. rmname
 ```
   udocker rmname NAME
 ```
@@ -337,8 +321,7 @@ Examples:
   udocker rmname BLUE
 ```
 
-3.13. verify
-------------
+### 3.13. verify
 ```
   udocker verify REPO/IMAGE:TAG
 ```
@@ -349,8 +332,7 @@ Examples:
   udocker verify indigodatacloud/powerfit:latest
 ```
 
-3.14. import
-------------
+### 3.14. import
 ```
   udocker import [OPTIONS] TARBALL REPO/IMAGE:TAG
 ```
@@ -368,8 +350,7 @@ Examples:
   udocker import --mv container.tar myrepo:latest
 ```
 
-3.15. load
-----------
+### 3.15. load
 ```
   udocker load -i IMAGE-FILE
 ```
@@ -385,8 +366,7 @@ Examples:
   udocker load -i docker-image.tar
 ```
 
-3.16. protect
--------------
+### 3.16. protect
 ```
   udocker protect REPO/IMAGE:TAG
   udocker protect CONTAINER-ID
@@ -401,8 +381,7 @@ Examples:
   udocker protect 3d528987-a51e-331a-94a0-d278bacf79d9
 ```
 
-3.17. unprotect
----------------
+### 3.17. unprotect
 ```
   udocker unprotect REPO/IMAGE:TAG
   udocker unprotect CONTAINER-ID
@@ -415,8 +394,7 @@ Examples:
   udocker unprotect 3d528987-a51e-331a-94a0-d278bacf79d9
 ```
 
-3.18. mkrepo
-------------
+### 3.18. mkrepo
 ```
   udocker mkrepo DIRECTORY
 ```
@@ -432,8 +410,7 @@ Examples:
   udocker --repo=/tmp/myrepo images
 ```
 
-3.19. run
----------
+### 3.19. run
 ```
   udocker run [OPTIONS] CONTAINER-ID|CONTAINER-NAME
   udocker run [OPTIONS] REPO/IMAGE:TAG
@@ -507,8 +484,7 @@ EOF
 ```
 
 
-3.20. Debug
------------
+### 3.20. Debug
 Further debugging information can be obtaining by running with `-D`.
 
 Examples:
@@ -517,8 +493,7 @@ Examples:
   udocker -D run busybox:latest
 ```
 
-3.21. Login
------------
+### 3.21. Login
 ```
   udocker login [--username=USERNAME] [--password=PASSWORD] [--registry=REGISTRY]
 ```
@@ -542,8 +517,7 @@ Examples:
   password: ****
 ```
 
-3.22. Logout
-------------
+### 3.22. Logout
 ```
   udocker logout [-a]
 ```
@@ -564,8 +538,7 @@ Examples:
 ```
 
 
-Aknowlegments
-=============
+## Aknowlegments
 
 * PRoot http://proot.me
 * INDIGO DataCloud https://www.indigo-datacloud.eu
