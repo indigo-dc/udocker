@@ -1,20 +1,19 @@
-udocker INSTALLATION MANUAL
-===========================
+# udocker INSTALLATION MANUAL
 In most circumstances the end user can download and execute the tool without
 system administrator intervention. udocker itself is written in Python, but 
 also uses external statically compiled binaries to provide a chroot like
 environment where containers are executed. These tools do not require any
 privileges.
+  
+## 1. DEPENDENCIES
 
-1. DEPENDENCIES
-===============
 Python dependencies are described in the file requirements.txt
 
 udocker requires either pycurl or the curl executable command,
 to download both the binaries and/or pull containers from repositories.
 
-2. USER INSTALLATION
-====================
+## 2. USER INSTALLATION
+
 The official release of udocker is available from the INDIGO-DataCloud
 repository at `http://repo.indigo-datacloud.eu/` where is made available
 as a tarball to be deployed by the end user. Allways check for the latest
@@ -67,8 +66,8 @@ For the development branch:
   ./udocker
 ```
 
-3. SYSTEM INSTALLATION WITH RPMs and DEBs
-=========================================
+## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
+
 RPMs for CentOS 7 are provided at http://repo.indigo-datacloud.eu
 
 ```
@@ -83,8 +82,8 @@ DEBs for Ubuntu 14.04 are provided at http://repo.indigo-datacloud.eu
   dpkg -i udocker-preng_1.0.1-1_amd64.deb
 ```
 
-4. SYSTEM INSTALLATION WITH ANSIBLE AND PYTHON
-==============================================
+## 4. SYSTEM INSTALLATION WITH ANSIBLE AND PYTHON
+
 For system administrators wishing to provider udocker and its dependencies. 
 An ansible playbook is provided in the file ansible_install.yaml:
 
@@ -113,8 +112,8 @@ Optionally installation can be performed directly with pip:
   pip install git+https://github.com/indigo-dc/udocker
 ```
 
-5. SOURCE CODE
-==============
+## 5. SOURCE CODE
+
 To get the latest udocker script from the github development branch without
 cloning the entire repository.
 ```
@@ -135,8 +134,8 @@ To get the udocker source code repository from the development branch.
 ```
 
 
-6. BUILD
-========
+## 6. BUILD
+
 A distribution tarball can be built using the script build_tarball.sh in
 the utils directory. The script fetches the code necessary to build the
 binary executables such as proot and compiles them statically. The following
@@ -148,8 +147,8 @@ example builds the tarball from the master repository.
   sh build_tarball.sh
 ```
  
-7. DIRECTORIES
-==============
+## 7. DIRECTORIES
+
 The binary executables and containers are usually kept in the user home directory
 under $HOME/.udocker this directory will contain:
 
@@ -158,8 +157,8 @@ under $HOME/.udocker this directory will contain:
  * Directory trees for the containers extracted from the layers.
  
 
-8. ENVIRONMENT
-==============
+## 8. ENVIRONMENT
+
 The location of the udocker directory can be changed via environment variables.
 
  * UDOCKER_DIR : change the root directory of udocker usually $HOME/.udocker
@@ -173,8 +172,8 @@ The docker index and registry and be overrided via environment variables.
  * UDOCKER_REGISTRY : https://...
  
 
-9. CONFIGURATION
-================
+## 9. CONFIGURATION
+
 udocker loads the following configuration files:
 
  * /etc/udocker.conf
