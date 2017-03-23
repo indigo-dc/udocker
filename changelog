@@ -1,20 +1,22 @@
 udocker (1.0.3)
 
-  * Support for import containers in newer Docker format
+  * Support for import Docker containers in newer metadata structure
+  * Improve the command line parsing
+  * Improve temporary file handling and removal
   * Restructuring to support additional execution engines
-  * Support further elements in ENTRYPOINT
+  * Improved parsing of entrypoint and cmd metadata
     - closes: #53
   * Increase name alias length
     - closes: #52
   * Add support for change dir into volume directories
     - closes: #51
-  * Fix owner error upon temporary file removal 
+  * Fix deletion of files upon container import
     - closes: #50
-  * Improve support for variables with spaces in command line -e --env
+  * Fix exporting of host environment variables to the containers
     - closes: #48
   * Change misleading behavior of import tarball from move to copy
     - closes: #44
-  * Fix validation of -v volumes specification to impose absolute paths
+  * Fix validation of volumes specification
     - closes: #43
 
 udocker (1.0.2)

@@ -110,7 +110,7 @@ class Config(object):
     # udocker installation tarball
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/jZmbZU9sNmgs1ah/download"
+        "/s/rsGr1QF3Fb5c8SK/download"
     )
     autoinstall = True
 
@@ -646,8 +646,9 @@ class FileUtil(object):
                 Msg().err("Error: deleting file: ", self.filename)
                 return False
         elif os.path.isdir(self.filename):
-            cmd = ["/bin/rm", "-Rf", self.filename]
-            if subprocess.call(cmd, stderr=Msg.chlderr,
+            cmd = "/bin/rm -Rf %s || /bin/chmod -R u+w %s && /bin/rm -Rf %s" % \
+                  (self.filename, self.filename, self.filename)
+            if subprocess.call(cmd, stderr=Msg.chlderr, shell=True,
                                close_fds=True, env=None):
                 Msg().err("Error: deleting directory: ", self.filename)
                 return False
@@ -1129,7 +1130,7 @@ class ExecutionEngine(object):
                     if os.path.isdir(host_path + pathname[len(cont_path):]):
                         return True
             elif pathname.startswith(vol):
-                if os.path.isdir(pathname):                    
+                if os.path.isdir(pathname):
                     return True
         return False
 
@@ -1179,11 +1180,14 @@ class ExecutionEngine(object):
         if home:
             self.opt["vol"].append(home)
         # remove directory bindings specified with --novol
-        for novolume in list(set(self.opt["novol"])):
-            try:
-                self.opt["vol"].remove(novolume)
-            except ValueError:
-                Msg().out("Warning:  novol %s not in volumes list" %
+        for novolume in list(self.opt["novol"]):
+            found = False
+            for vol in list(self.opt["vol"]):
+                if novolume == vol or novolume == vol.split(":")[0]:
+                    self.opt["vol"].remove(vol)
+                    found = True
+            if not found:
+                Msg().out("Warning: --novol %s not in volumes list" %
                           novolume, l=Msg.WAR)
         return self._check_volumes()
 
@@ -1198,7 +1202,7 @@ class ExecutionEngine(object):
         # verify if the working directory is valid and fix it
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
-        if (self.opt["cwd"] and not self._is_in_volumes(self.opt["cwd"])):
+        if self.opt["cwd"] and not self._is_in_volumes(self.opt["cwd"]):
             if (not (os.path.exists(container_root + "/" + self.opt["cwd"]) and
                      os.path.isdir(container_root + "/" + self.opt["cwd"]))):
                 Msg().err("Error: invalid working directory: ",
@@ -1754,6 +1758,7 @@ class ContainerStructure(object):
         and permissions are changed to avoid file permission
         issues when extracting the next layer.
         """
+        status = True
         gid = str(os.getgid())
         for tarf in tarfiles:
             self._apply_whiteouts(tarf, destdir)
@@ -3997,6 +4002,7 @@ class Udocker(object):
         --bindhome                 :bind the home directory into the container
         --location=<path-to-dir>   :use root tree outside the repository
         --kernel=<kernel-id>       :use this Linux kernel identifier
+        --noseccomp                :disable proot seccomp
         """
         exec_engine = PRootEngine(self.localrepo)
         self._get_run_options(cmdp, exec_engine)

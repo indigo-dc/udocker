@@ -2025,7 +2025,7 @@ class ExecutionEngine(unittest.TestCase):
         ex_eng.opt["vol"] = ("/opt/xxx:/mnt", )
         status = ex_eng._is_in_volumes("/mnt")
         self.assertTrue(status)
-        # 
+        #
         ex_eng.opt["vol"] = ("/var/xxx:/mnt", )
         status = ex_eng._is_in_volumes("/opt")
         self.assertFalse(status)
@@ -2547,7 +2547,7 @@ class PRootEngine(unittest.TestCase):
     def test_03__select_proot(self, mock_local, mock_fimage):
         """Test PRootEngine()._select_proot()"""
         self._init()
-        # seccomp mode and image selection (regression of #40) 
+        # seccomp mode and image selection (regression of #40)
         udocker.Config.return_value.arch.return_value = "amd64"
         udocker.Config.return_value.oskernel_isgreater.return_value = False
         mock_fimage.return_value = "proot-4_8_0"
@@ -2784,6 +2784,107 @@ class ContainerStructure(unittest.TestCase):
         mock_unique.return_value.uuid.return_value = "123456"
         status = prex.create("imagerepo", "tag")
         self.assertEqual(status, "123456")
+
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_04__apply_whiteouts(self, mock_local, mock_msg, mock_futil):
+        """Test ContainerStructure()._apply_whiteouts()"""
+        self._init()
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        with mock.patch.object(subprocess, 'Popen') as mock_popen:
+            mock_popen.return_value.stdout.readline.side_effect = ["/aaa", "", ]
+            status = prex._apply_whiteouts("tarball", "/tmp")
+        self.assertTrue(status)
+        self.assertFalse(mock_futil.called)
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        with mock.patch.object(subprocess, 'Popen') as mock_popen:
+            mock_popen.return_value.stdout.readline.side_effect = ["/a/.wh.x",
+                                                                   "", ]
+            status = prex._apply_whiteouts("tarball", "/tmp")
+        self.assertTrue(status)
+        self.assertTrue(mock_futil.called)
+
+    @mock.patch('udocker.subprocess.call')
+    @mock.patch('udocker.ContainerStructure._apply_whiteouts')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_05__untar_layers(self, mock_local, mock_msg, mock_appwhite,
+                              mock_call):
+        """Test ContainerStructure()._untar_layers()"""
+        self._init()
+        tarfiles = ["a.tar", "b.tar", ]
+        #
+        mock_call.return_value = False
+        prex = udocker.ContainerStructure(mock_local)
+        status = prex._untar_layers(tarfiles, "/tmp")
+        self.assertTrue(status)
+        self.assertTrue(mock_call.called)
+        #
+        mock_call.reset_mock()
+        mock_call.return_value = True
+        prex = udocker.ContainerStructure(mock_local)
+        status = prex._untar_layers(tarfiles, "/tmp")
+        self.assertFalse(status)
+        self.assertTrue(mock_call.called)
+        #
+        mock_call.reset_mock()
+        mock_call.return_value = True
+        prex = udocker.ContainerStructure(mock_local)
+        status = prex._untar_layers([], "/tmp")
+        self.assertFalse(status)
+        self.assertFalse(mock_call.called)
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_06_get_container_meta(self, mock_local, mock_msg):
+        """Test ContainerStructure().get_container_meta()"""
+        self._init()
+        container_json = {
+            "architecture": "amd64",
+            "author": "https://github.com/CentOS/sig-cloud-instance-images",
+            "config": {
+                "AttachStderr": False,
+                "AttachStdin": False,
+                "AttachStdout": False,
+                "Cmd": [
+                    "/bin/bash"
+                ],
+                "Domainname": "",
+                "Entrypoint": None,
+                "Env": [
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                ],
+                "Hostname": "9aac06993d69",
+                "Image": "sha256:4f64745dd34556af8f644a7886fcf" +
+                         "cb11c059f64e1b0a753cb41188656ec8b33",
+                "Labels": {
+                    "build-date": "20161102",
+                    "license": "GPLv2",
+                    "name": "CentOS Base Image",
+                    "vendor": "CentOS"
+                },
+                "OnBuild": None,
+                "OpenStdin": False,
+                "StdinOnce": False,
+                "Tty": False,
+                "User": "",
+                "Volumes": None,
+                "WorkingDir": ""
+            },
+        }
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        status = prex.get_container_meta("Cmd", "", container_json)
+        self.assertEqual(status, "/bin/bash")
+        #
+        status = prex.get_container_meta("XXX", "", container_json)
+        self.assertEqual(status, None)
+        #
+        status = prex.get_container_meta("Entrypoint", "BBB", container_json)
+        self.assertEqual(status, "BBB")
 
 
 if __name__ == '__main__':
