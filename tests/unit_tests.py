@@ -2014,18 +2014,29 @@ class ExecutionEngine(unittest.TestCase):
         status = ex_eng._set_cpu_affinity()
         self.assertEqual(status, " /bin/taskset -C  '1-2' ")
 
+    @mock.patch('udocker.os.path.isdir')
     @mock.patch('udocker.LocalRepository')
-    def test_04__is_in_volumes(self, mock_local):
+    def test_04__is_in_volumes(self, mock_local, mock_isdir):
         """Test ExecutionEngine()._is_in_volumes()"""
         self._init()
+        mock_isdir.return_value = True
+        #
         ex_eng = udocker.ExecutionEngine(mock_local)
         ex_eng.opt["vol"] = ("/opt/xxx:/mnt", )
-        status = ex_eng._is_in_volumes("/opt")
+        status = ex_eng._is_in_volumes("/mnt")
         self.assertTrue(status)
         #
         ex_eng.opt["vol"] = ("/var/xxx:/mnt", )
         status = ex_eng._is_in_volumes("/opt")
         self.assertFalse(status)
+        # change dir to volume (regression of #51)
+        ex_eng.opt["vol"] = ("/var/xxx", )
+        status = ex_eng._is_in_volumes("/var/xxx/tt")
+        self.assertTrue(status)
+        # change dir to volume (regression of #51)
+        ex_eng.opt["vol"] = ("/var/xxx:/mnt", )
+        status = ex_eng._is_in_volumes("/mnt/tt")
+        self.assertTrue(status)
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.os.path.isdir')
@@ -2100,6 +2111,11 @@ class ExecutionEngine(unittest.TestCase):
         ex_eng.opt["cmd"] = ["-x", "-v"]
         status = ex_eng._check_executable("/containers/123/ROOT")
         self.assertEqual(ex_eng.opt["cmd"], ["/bin/shell", "-x", "-v"])
+        # further elements in entrypoint (regression of #53)
+        ex_eng.opt["entryp"] = ["/bin/ls", "-a", ]
+        ex_eng.opt["cmd"] = ["-l", ]
+        status = ex_eng._check_executable("/containers/123/ROOT")
+        self.assertEqual(ex_eng.opt["cmd"], ["/bin/ls", "-a", "-l"])
 
     @mock.patch('udocker.ContainerStructure')
     @mock.patch('udocker.ExecutionEngine._check_exposed_ports')
@@ -2450,6 +2466,33 @@ class ExecutionEngine(unittest.TestCase):
         status = ex_eng._run_ini("2717add4-e6f6-397c-9019-74fa67be439f")
         self.assertFalse(status)
 
+    @mock.patch('udocker.NixAuthentication')
+    @mock.patch('udocker.LocalRepository')
+    def test_17__get_bindhome(self, mock_local, mock_nixauth):
+        """Test ExecutionEngine()._get_bindhome()"""
+        self._init()
+        #
+        prex = udocker.ExecutionEngine(mock_local)
+        prex.opt["bindhome"] = False
+        status = prex._get_bindhome()
+        self.assertEqual(status, "")
+        #
+        mock_nixauth.return_value.get_user.return_value = (
+            "user", "dummy", "dummy", "dummy", "/home/user", "dummy",
+        )
+        prex = udocker.ExecutionEngine(mock_local)
+        prex.opt["bindhome"] = True
+        status = prex._get_bindhome()
+        self.assertEqual(status, "/home/user")
+        #
+        mock_nixauth.return_value.get_user.return_value = (
+            "", "dummy", "dummy", "dummy", "", "dummy",
+        )
+        prex = udocker.ExecutionEngine(mock_local)
+        prex.opt["bindhome"] = True
+        status = prex._get_bindhome()
+        self.assertEqual(status, "")
+
 
 class PRootEngine(unittest.TestCase):
     """Test PRootEngine() class for containers execution"""
@@ -2504,6 +2547,7 @@ class PRootEngine(unittest.TestCase):
     def test_03__select_proot(self, mock_local, mock_fimage):
         """Test PRootEngine()._select_proot()"""
         self._init()
+        # seccomp mode and image selection (regression of #40)
         udocker.Config.return_value.arch.return_value = "amd64"
         udocker.Config.return_value.oskernel_isgreater.return_value = False
         mock_fimage.return_value = "proot-4_8_0"
@@ -2577,36 +2621,8 @@ class PRootEngine(unittest.TestCase):
         status = prex._get_volume_bindings()
         self.assertEqual(status, " -b /tmp -b /bbb")
 
-    @mock.patch('udocker.NixAuthentication')
-    @mock.patch('udocker.LocalRepository')
-    def test_06__set_bindhome(self, mock_local, mock_nixauth):
-        """Test PRootEngine()._set_bindhome()"""
-        self._init()
-        #
-        prex = udocker.PRootEngine(mock_local)
-        prex.opt["bindhome"] = False
-        status = prex._set_bindhome()
-        self.assertEqual(status, "")
-        #
-        mock_nixauth.return_value.get_user.return_value = (
-            "user", "dummy", "dummy", "dummy", "/home/user", "dummy",
-        )
-        prex = udocker.PRootEngine(mock_local)
-        prex.opt["bindhome"] = True
-        status = prex._set_bindhome()
-        self.assertEqual(status, " -b /home/user")
-        #
-        mock_nixauth.return_value.get_user.return_value = (
-            "", "dummy", "dummy", "dummy", "", "dummy",
-        )
-        prex = udocker.PRootEngine(mock_local)
-        prex.opt["bindhome"] = True
-        status = prex._set_bindhome()
-        self.assertEqual(status, "")
-
     @mock.patch('udocker.PRootEngine._set_uid_map')
     @mock.patch('udocker.PRootEngine._get_volume_bindings')
-    @mock.patch('udocker.PRootEngine._set_bindhome')
     @mock.patch('udocker.PRootEngine._set_cpu_affinity')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.subprocess.call')
@@ -2621,7 +2637,7 @@ class PRootEngine(unittest.TestCase):
     def test_07_run(self, mock_local, mock_runini, mock_selproot,
                     mock_volbinds, mock_envset, mock_chkenv,
                     mock_envclean, mock_banner, mock_call,
-                    mock_msg, mock_affinity, mock_bindhome,
+                    mock_msg, mock_affinity,
                     mock_getvolbinds, mock_uidmap):
         """Test PRootEngine().run()"""
         self._init()
@@ -2632,31 +2648,15 @@ class PRootEngine(unittest.TestCase):
         self.assertEqual(status, 2)
         #
         prex = udocker.PRootEngine(mock_local)
-        prex.proot_noseccomp = False
-        prex.opt["kernel"] = None
-        mock_runini.return_value = True
-        mock_volbinds.return_value = False
-        status = prex.run("64d5abf3-d0b4-30fd-89a5-5df244dfb2ea")
-        self.assertEqual(status, 3)
-        self.assertEqual(prex.opt["kernel"], None)
-        self.assertTrue("PROOT_NO_SECCOMP=1" not in prex.opt["env"])
-        #
-        prex = udocker.PRootEngine(mock_local)
         prex.proot_noseccomp = True
         prex.opt["kernel"] = "1.2.3"
-        mock_runini.return_value = True
-        mock_volbinds.return_value = False
-        status = prex.run("64d5abf3-d0b4-30fd-89a5-5df244dfb2ea")
-        self.assertEqual(status, 3)
-        self.assertEqual(prex.opt["kernel"], "1.2.3")
-        self.assertTrue("PROOT_NO_SECCOMP=1" in prex.opt["env"])
-        #
-        prex = udocker.PRootEngine(mock_local)
-        prex.proot_noseccomp = True
-        prex.opt["kernel"] = "1.2.3"
+        prex.proot_exec = "proot"
         mock_runini.return_value = True
         mock_volbinds.return_value = True
         mock_chkenv.return_value = False
+        mock_affinity.return_value = ""
+        mock_getvolbinds.return_value = ""
+        mock_uidmap.return_value = ""
         status = prex.run("64d5abf3-d0b4-30fd-89a5-5df244dfb2ea")
         self.assertEqual(status, 4)
         self.assertEqual(prex.opt["kernel"], "1.2.3")
@@ -2672,7 +2672,6 @@ class PRootEngine(unittest.TestCase):
         mock_chkenv.return_value = True
         mock_call.return_value = True
         mock_affinity.return_value = ""
-        mock_bindhome.return_value = ""
         mock_getvolbinds.return_value = ""
         mock_uidmap.return_value = ""
         status = prex.run("64d5abf3-d0b4-30fd-89a5-5df244dfb2ea")
@@ -2785,6 +2784,107 @@ class ContainerStructure(unittest.TestCase):
         mock_unique.return_value.uuid.return_value = "123456"
         status = prex.create("imagerepo", "tag")
         self.assertEqual(status, "123456")
+
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_04__apply_whiteouts(self, mock_local, mock_msg, mock_futil):
+        """Test ContainerStructure()._apply_whiteouts()"""
+        self._init()
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        with mock.patch.object(subprocess, 'Popen') as mock_popen:
+            mock_popen.return_value.stdout.readline.side_effect = ["/aaa", "", ]
+            status = prex._apply_whiteouts("tarball", "/tmp")
+        self.assertTrue(status)
+        self.assertFalse(mock_futil.called)
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        with mock.patch.object(subprocess, 'Popen') as mock_popen:
+            mock_popen.return_value.stdout.readline.side_effect = ["/a/.wh.x",
+                                                                   "", ]
+            status = prex._apply_whiteouts("tarball", "/tmp")
+        self.assertTrue(status)
+        self.assertTrue(mock_futil.called)
+
+    @mock.patch('udocker.subprocess.call')
+    @mock.patch('udocker.ContainerStructure._apply_whiteouts')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_05__untar_layers(self, mock_local, mock_msg, mock_appwhite,
+                              mock_call):
+        """Test ContainerStructure()._untar_layers()"""
+        self._init()
+        tarfiles = ["a.tar", "b.tar", ]
+        #
+        mock_call.return_value = False
+        prex = udocker.ContainerStructure(mock_local)
+        status = prex._untar_layers(tarfiles, "/tmp")
+        self.assertTrue(status)
+        self.assertTrue(mock_call.called)
+        #
+        mock_call.reset_mock()
+        mock_call.return_value = True
+        prex = udocker.ContainerStructure(mock_local)
+        status = prex._untar_layers(tarfiles, "/tmp")
+        self.assertFalse(status)
+        self.assertTrue(mock_call.called)
+        #
+        mock_call.reset_mock()
+        mock_call.return_value = True
+        prex = udocker.ContainerStructure(mock_local)
+        status = prex._untar_layers([], "/tmp")
+        self.assertFalse(status)
+        self.assertFalse(mock_call.called)
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_06_get_container_meta(self, mock_local, mock_msg):
+        """Test ContainerStructure().get_container_meta()"""
+        self._init()
+        container_json = {
+            "architecture": "amd64",
+            "author": "https://github.com/CentOS/sig-cloud-instance-images",
+            "config": {
+                "AttachStderr": False,
+                "AttachStdin": False,
+                "AttachStdout": False,
+                "Cmd": [
+                    "/bin/bash"
+                ],
+                "Domainname": "",
+                "Entrypoint": None,
+                "Env": [
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                ],
+                "Hostname": "9aac06993d69",
+                "Image": "sha256:4f64745dd34556af8f644a7886fcf" +
+                         "cb11c059f64e1b0a753cb41188656ec8b33",
+                "Labels": {
+                    "build-date": "20161102",
+                    "license": "GPLv2",
+                    "name": "CentOS Base Image",
+                    "vendor": "CentOS"
+                },
+                "OnBuild": None,
+                "OpenStdin": False,
+                "StdinOnce": False,
+                "Tty": False,
+                "User": "",
+                "Volumes": None,
+                "WorkingDir": ""
+            },
+        }
+        #
+        prex = udocker.ContainerStructure(mock_local)
+        status = prex.get_container_meta("Cmd", "", container_json)
+        self.assertEqual(status, "/bin/bash")
+        #
+        status = prex.get_container_meta("XXX", "", container_json)
+        self.assertEqual(status, None)
+        #
+        status = prex.get_container_meta("Entrypoint", "BBB", container_json)
+        self.assertEqual(status, "BBB")
 
 
 if __name__ == '__main__':

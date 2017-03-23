@@ -34,7 +34,7 @@ get_proot_static()
         return
     fi
 
-    git clone https://github.com/proot-me/proot-static-build 
+    git clone --depth=1 https://github.com/proot-me/proot-static-build 
 }
 
 prepare_proot_source()
@@ -48,7 +48,7 @@ prepare_proot_source()
         return
     fi
 
-    git clone https://github.com/proot-me/PRoot 
+    git clone --depth=1 https://github.com/proot-me/PRoot 
     /bin/mv PRoot "$PROOT_SOURCE_DIR"
 }
 
@@ -337,7 +337,7 @@ addto_package_simplejson()
         return
     fi
 
-    git clone https://github.com/simplejson/simplejson.git --branch python2.2 
+    git clone --depth=1 https://github.com/simplejson/simplejson.git --branch python2.2 
     /bin/rm -Rf simplejson/.git
     /bin/rm -Rf simplejson/docs
     /bin/rm -Rf simplejson/scripts

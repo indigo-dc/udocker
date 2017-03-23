@@ -63,6 +63,20 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker (1.0.3-1) trusty; urgency=low
+
+  * Support for import containers in newer Docker format
+  * Restructuring to support additional execution engines
+  * Support further elements in ENTRYPOINT
+  * Increase name alias length
+  * Add support for change dir into volume directories
+  * Fix owner error upon temporary file removal
+  * Improve support for variables with spaces in command line
+  * Change misleading behavior of import from move to copy
+  * Fix validation of volumes to impose absolute paths
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Wed, 22 Mar 2017 14:39:40 +0000
+
 udocker (1.0.2-1) trusty; urgency=low
 
   * Fix download on repositories that fail authentication on /v2

@@ -25,6 +25,7 @@ import sys
 import uuid
 import unittest
 import mock
+import pwd
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
@@ -48,7 +49,9 @@ def set_env():
     """Set environment variables"""
     if not os.getenv("HOME"):
         os.environ["HOME"] = os.getcwd()
+    return os.getenv("HOME")
 
+HOME = set_env()
 
 def match_str(find_exp, where):
     """find_exp regexp is present in buffer where"""
@@ -128,13 +131,13 @@ def do_cmd(self, mock_msg, t_argv, expect_msg=None, outfile=None):
         udocker.Config.verbose_level = 3
         if outfile:
             (orig_stdout_fd, orig_stderr_fd) = open_outfile(outfile)
-        status = main.start()
+        status = main.start()  # start
         if outfile:
             close_outfile(orig_stdout_fd, orig_stderr_fd)
-        if status:
+        if expect_msg is None and outfile is None:
             # print "out:" + str(mock_msg.return_value.out.call_args_list)
             # print "err:" + str(mock_msg.return_value.err.call_args_list)
-            self.assertTrue(False, str(t_argv))
+            self.assertFalse(status, str(t_argv))
             return False
         elif expect_msg:
             find = choose_find(expect_msg[:1])
@@ -164,7 +167,7 @@ def do_run(self, mock_msg, t_argv, expect_msg=None, expect_out=None):
             if not find(expect_out[1:], [output_fp.read()]):
                 self.assertTrue(False, str(t_argv))
                 return False
-        os.remove(output_file)
+    os.remove(output_file)
     return status
 
 
@@ -199,8 +202,18 @@ class FuncTestBasic(unittest.TestCase):
         """Setup test"""
         set_env()
 
+    @classmethod
+    def tearDownClass(cls):
+        """Cleanup test"""
+        udocker.FileUtil().cleanup()
+
+    def tearDown(self):
+        """Cleanup test"""
+        udocker.FileUtil().cleanup()
+
+    @mock.patch('udocker.sys.exit')
     @mock.patch('udocker.Msg')
-    def test_01_noargs(self, mock_msg):
+    def test_01_noargs(self, mock_msg, mock_exit):
         """Test invoke command without arguments"""
         do_cmd(self, mock_msg,
                [UDOCKER],
@@ -213,8 +226,9 @@ class FuncTestBasic(unittest.TestCase):
                [UDOCKER, "help"],
                " Syntax")
 
+    @mock.patch('udocker.sys.exit')
     @mock.patch('udocker.Msg')
-    def test_03_help(self, mock_msg):
+    def test_03_help(self, mock_msg, mock_exit):
         """Test invoke --help option"""
         do_cmd(self, mock_msg,
                [UDOCKER, "--help"],
@@ -227,11 +241,12 @@ class FuncTestBasic(unittest.TestCase):
                [UDOCKER, "run", "--help"],
                "=run: .*--")
 
+    @mock.patch('udocker.sys.exit')
     @mock.patch('udocker.Msg')
-    def test_05_help_content(self, mock_msg):
+    def test_05_help_content(self, mock_msg, mock_exit):
         """Test verify help content"""
         do_cmd(self, mock_msg,
-               [UDOCKER, "--help"],
+               [UDOCKER, "help"],
                "=Commands.* search.* pull.* images.* create.* ps.* rm.* "
                "run.* inspect.* name.* rmname.* rmi.* rm.* import.* load.* "
                "verify.* protect.* unprotect.* protect.* unprotect.* "
@@ -264,7 +279,7 @@ class FuncTestRepo(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """Setup test"""
+        """Setup class"""
         set_env()
         do_action([UDOCKER, "rmi", "busybox:latest"])
         do_action([UDOCKER, "rm", "busyNAME"])
@@ -272,26 +287,41 @@ class FuncTestRepo(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        """Cleanup test"""
+        """Cleanup class"""
+        do_action([UDOCKER, "rmi", "busybox:latest"])
         do_action([UDOCKER, "rm", "busyNAME"])
         do_action([UDOCKER, "rm", "busyTEST"])
+        udocker.FileUtil().cleanup()
+
+    def tearDown(self):
+        """Cleanup test"""
+        udocker.FileUtil().cleanup()
 
     @mock.patch('udocker.Msg')
-    def test_00_pull(self, mock_msg):
+    def test_00_pull_insecure(self, mock_msg):
+        """Test pull image in insecure mode"""
+        # unsafe ssl requests --insecure (regression of #31)
+        do_cmd(self, mock_msg,
+               [UDOCKER, "--insecure", "pull", "busybox:latest"],
+               "!^Error:")
+        do_action([UDOCKER, "rmi", "busybox:latest"])
+
+    @mock.patch('udocker.Msg')
+    def test_01_pull(self, mock_msg):
         """Test pull image"""
         do_cmd(self, mock_msg,
                [UDOCKER, "pull", "busybox"],
                "!^Error:")
 
     @mock.patch('udocker.Msg')
-    def test_01_pull_again(self, mock_msg):
+    def test_02_pull_again(self, mock_msg):
         """Test pull image again"""
         do_cmd(self, mock_msg,
                [UDOCKER, "pull", "busybox"],
                "!^Error:")
 
     @mock.patch('udocker.Msg')
-    def test_02_rmi(self, mock_msg):
+    def test_03_rmi(self, mock_msg):
         """Test remove image"""
         if image_not_exists():
             self.skipTest("no image")
@@ -300,7 +330,7 @@ class FuncTestRepo(unittest.TestCase):
                "!^Error:")
 
     @mock.patch('udocker.Msg')
-    def test_03_pull_with_index(self, mock_msg):
+    def test_04_pull_with_index(self, mock_msg):
         """Test pull image specifying index and registry"""
         do_action([UDOCKER, "rmi", "busybox:latest"])
         do_cmd(self, mock_msg,
@@ -310,7 +340,7 @@ class FuncTestRepo(unittest.TestCase):
                 "busybox:latest"], "!^Error:")
 
     @mock.patch('udocker.Msg')
-    def test_04_images_short(self, mock_msg):
+    def test_05_images_short(self, mock_msg):
         """Test images listing"""
         if image_not_exists():
             self.skipTest("no image")
@@ -319,7 +349,7 @@ class FuncTestRepo(unittest.TestCase):
                " busybox:")
 
     @mock.patch('udocker.Msg')
-    def test_05_images_long(self, mock_msg):
+    def test_06_images_long(self, mock_msg):
         """Test images listing long format"""
         if image_not_exists():
             self.skipTest("no image")
@@ -328,7 +358,7 @@ class FuncTestRepo(unittest.TestCase):
                " MB)")
 
     @mock.patch('udocker.Msg')
-    def test_06_inspect_image(self, mock_msg):
+    def test_07_inspect_image(self, mock_msg):
         """Test if image is present"""
         if image_not_exists():
             self.skipTest("no image")
@@ -337,7 +367,7 @@ class FuncTestRepo(unittest.TestCase):
                "=architecture.*container.*created.*parent")
 
     @mock.patch('udocker.Msg')
-    def test_07_verify_image(self, mock_msg):
+    def test_08_verify_image(self, mock_msg):
         """Test verify image"""
         if image_not_exists():
             self.skipTest("no image")
@@ -346,7 +376,7 @@ class FuncTestRepo(unittest.TestCase):
                "mage Ok")
 
     @mock.patch('udocker.Msg')
-    def test_08_create_and_rename(self, mock_msg):
+    def test_09_create_and_rename(self, mock_msg):
         """Test creation and renaming of container"""
         if image_not_exists():
             self.skipTest("no image")
@@ -364,7 +394,7 @@ class FuncTestRepo(unittest.TestCase):
                    "!Error:")
 
     @mock.patch('udocker.Msg')
-    def test_09_create_with_name(self, mock_msg):
+    def test_10_create_with_name(self, mock_msg):
         """Test creation with name"""
         do_action([UDOCKER, "rm", "busyTEST"])
         do_cmd(self, mock_msg,
@@ -372,7 +402,7 @@ class FuncTestRepo(unittest.TestCase):
                 "busybox"], r"=(\w+)-(\w+)")
 
     @mock.patch('udocker.Msg')
-    def test_10_ps_find_container(self, mock_msg):
+    def test_11_ps_find_container(self, mock_msg):
         """Test ps and presence of container"""
         if container_not_exists():
             self.skipTest("no container")
@@ -381,7 +411,7 @@ class FuncTestRepo(unittest.TestCase):
                " busyTEST")
 
     @mock.patch('udocker.Msg')
-    def test_11_inspect_container(self, mock_msg):
+    def test_12_inspect_container(self, mock_msg):
         """Test inspect container"""
         if container_not_exists():
             self.skipTest("no container")
@@ -390,7 +420,7 @@ class FuncTestRepo(unittest.TestCase):
                "=architecture.*container.*created.*parent")
 
     @mock.patch('udocker.Msg')
-    def test_12_inspect_container_root(self, mock_msg):
+    def test_14_inspect_container_root(self, mock_msg):
         """Test inspect container obtain ROOT pathname"""
         if container_not_exists():
             self.skipTest("no container")
@@ -398,14 +428,34 @@ class FuncTestRepo(unittest.TestCase):
                [UDOCKER, "inspect", "-p", "busyTEST"],
                " /ROOT")
 
+    @mock.patch('udocker.Msg')
+    def test_15_create_with_large_name(self, mock_msg):
+        """Test creation with name"""
+        # create with long alphanumeric strings (regression of #52)
+        do_action([UDOCKER, "rm", "busylonglongLONGlonglong1234name"])
+        do_cmd(self, mock_msg,
+               [UDOCKER, "create", "--name=busylonglongLONGlonglong1234name",
+                "busybox"], r"=(\w+)-(\w+)")
+        do_cmd(self, mock_msg,
+               [UDOCKER, "rm", "busylonglongLONGlonglong1234name"], None)
+
+    @mock.patch('udocker.Msg')
+    def test_16_pull_with_registry(self, mock_msg):
+        """Test pull with registry"""
+        # disregard of --registry (regression of #29)
+        do_cmd(self, mock_msg,
+               [UDOCKER, "pull", "--registry=xxx://127.0.0.1:1",
+                "busybox:latest"], " not found")
+
 
 class FuncTestRun(unittest.TestCase):
     """Test container execution"""
 
     @classmethod
     def setUpClass(cls):
-        """Setup test"""
+        """Setup class"""
         set_env()
+        do_action([UDOCKER, "rm", "busyTMP"])
         do_action([UDOCKER, "rm", "busyRUN"])
         do_action([UDOCKER, "rm", "busyTEST"])
         do_action([UDOCKER, "pull", "busybox"])
@@ -413,8 +463,15 @@ class FuncTestRun(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        """Cleanup test"""
+        """Cleanup class"""
+        do_action([UDOCKER, "rm", "busyTMP"])
         do_action([UDOCKER, "rm", "busyRUN"])
+        do_action([UDOCKER, "rm", "busyTEST"])
+        udocker.FileUtil().cleanup()
+
+    def tearDown(self):
+        """Cleanup test"""
+        udocker.FileUtil().cleanup()
 
     @mock.patch('udocker.Msg')
     def test_01_run_helloworld(self, mock_msg):
@@ -424,6 +481,175 @@ class FuncTestRun(unittest.TestCase):
         do_run(self, mock_msg,
                [UDOCKER, "run", "busyRUN", "/bin/echo", "'hello world'"],
                None, " hello")
+
+    @mock.patch('udocker.Msg')
+    def test_02_run_volume_validation(self, mock_msg):
+        """Test run volume validation"""
+        # discrepancy of -v (regression of #43)
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "-v", "/tmp:aaa", "busyRUN",
+                "/bin/echo", "'hello'"], " Error", None)
+
+    @mock.patch('udocker.Msg')
+    def test_03_run_volume_validation(self, mock_msg):
+        """Test run volume validation"""
+        # discrepancy of -v (regression of #43)
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "-v", "/tmp:/aaa/tmp", "busyRUN",
+                "/bin/ls", "-d", "/aaa/tmp"], None, "!Error")
+
+    @mock.patch('udocker.Msg')
+    def test_04_run_env(self, mock_msg):
+        """Test run environment variables"""
+        # blank on env var (regression of #48)
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "-e", "AAA='BBB CCC'", "busyRUN",
+                "/bin/env"], None, " BBB CCC")
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--env='AAA=BBB CCC'", "busyRUN",
+                "/bin/env"], None, " BBB CCC")
+
+    @mock.patch('udocker.Msg')
+    def test_05_run_quiet(self, mock_msg):
+        """Test quiet"""
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        do_run(self, mock_msg,
+               [UDOCKER, "-q", "run", "busyRUN", "/bin/echo", "'hello'"],
+               None, r"!\*\*")
+
+    @mock.patch('udocker.Msg')
+    def test_06_run_debug(self, mock_msg):
+        """Test debug"""
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        do_run(self, mock_msg,
+               [UDOCKER, "-D", "run", "busyRUN", "/bin/echo", "'hello'"],
+               " CMD =", None)
+
+    @mock.patch('udocker.Msg')
+    def test_07_host_env(self, mock_msg):
+        """Test passing of host env"""
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        os.environ["UDOCKER_EXPORTED_VAR"] = "udocker exported var"
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--hostenv", "busyRUN", "/bin/env"],
+               None, " udocker exported var")
+        os.unsetenv("UDOCKER_EXPORTED_VAR")
+
+    @mock.patch('udocker.Msg')
+    def test_08_host_env(self, mock_msg):
+        """Test binding of home dir"""
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        if not HOME:
+            self.skipTest("no HOME dir")
+        udocker_test_dir = HOME + "/UDOCKER.TEST"
+        udocker.FileUtil(udocker_test_dir).mkdir()
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--bindhome", "busyRUN", "/bin/ls", "-d",
+                udocker_test_dir],
+               None, "!ls:")
+        udocker.FileUtil(udocker_test_dir).remove()
+
+    @mock.patch('udocker.Msg')
+    def test_09_run_chdir(self, mock_msg):
+        """Test run change dir"""
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--workdir=/bin", "busyRUN", "/bin/pwd"],
+               None, " /bin")
+
+    @mock.patch('udocker.Msg')
+    def test_10_run_chdir_to_vol(self, mock_msg):
+        """Test run change dir to volume"""
+        # workdir cannot be set to a volume (regression of #51)
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        udocker_test_dir = "/tmp/UDOCKER.TEST"
+        udocker.FileUtil(udocker_test_dir).mkdir()
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--workdir=/aaa/tmp/UDOCKER.TEST",
+                "-v", "/tmp:/aaa/tmp", "busyRUN", "/bin/pwd"],
+               None, " /aaa/tmp/UDOCKER.TEST")
+        udocker.FileUtil(udocker_test_dir).remove()
+
+    @mock.patch('udocker.Msg')
+    def test_11_run_novol(self, mock_msg):
+        """Test run --novol"""
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "-v", "/tmp:/aaa/tmp", "--novol=/tmp",
+                "busyRUN", "/bin/ls", "/aaa"],
+               None, " ls:")
+
+    @mock.patch('udocker.Msg')
+    def test_12_run_chdir_to_vol(self, mock_msg):
+        """Test run change dir to volume"""
+        # workdir cannot be set to a volume (regression of #51)
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        udocker_test_dir = "/tmp/UDOCKER.TEST"
+        udocker.FileUtil(udocker_test_dir).mkdir()
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--workdir=/aaa/tmp/UDOCKER.TEST",
+                "-v", "/tmp:/aaa/tmp", "busyRUN", "/bin/pwd"],
+               None, " /aaa/tmp/UDOCKER.TEST")
+        udocker.FileUtil(udocker_test_dir).remove()
+
+    @mock.patch('udocker.Msg')
+    def test_14_run_rm(self, mock_msg):
+        """Test run --rm"""
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--rm", "busyRUN", "/bin/ls"], None, None)
+        do_cmd(self, mock_msg,
+               [UDOCKER, "inspect", "-p", "busyRUN"], "")
+
+    @mock.patch('udocker.Msg')
+    def test_15_run_name(self, mock_msg):
+        """Test run --name"""
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--name=busyRUN", "busybox", "/bin/ls"],
+               None, None)
+        do_cmd(self, mock_msg,
+               [UDOCKER, "inspect", "-p", "busyRUN"], " /ROOT")
+
+    @mock.patch('udocker.Msg')
+    def test_16_run_user(self, mock_msg):
+        """Test run --user"""
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        user = pwd.getpwuid(os.getuid()).pw_name
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--user=" + user, "busyRUN", "/bin/id"],
+               None, " " + user)
+
+    @mock.patch('udocker.Msg')
+    def test_17_run_chdir(self, mock_msg):
+        """Test env var UDOCKER_CONTAINERS"""
+        os.environ["UDOCKER_CONTAINERS"] = "/tmp/udocker_containers"
+        do_action([UDOCKER, "rm", "busyTMP"])
+        do_run(self, mock_msg,
+               [UDOCKER, "create", "--name=busyTMP", "busybox"], None, None)
+        do_run(self, mock_msg,
+               [UDOCKER, "ps"], " busyTMP", None)
+        do_run(self, mock_msg,
+               [UDOCKER, "ps"], "!busyRUN", None)
+        # delete not owner (regression of #50)
+        do_run(self, mock_msg,
+               [UDOCKER, "rm", "busyTMP"], "!Error", None)
+        os.unsetenv("UDOCKER_CONTAINERS")
 
 
 if __name__ == '__main__':

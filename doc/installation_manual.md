@@ -153,31 +153,33 @@ example builds the tarball from the master repository.
 The binary executables and containers are usually kept in the user home directory
 under $HOME/.udocker this directory will contain:
 
-* Additional tools and modules for udocker such as proot.
-* Data from pulled container images (layers and metadata).
-* Directory trees for the containers extracted from the layers.
+ * Additional tools and modules for udocker such as proot.
+ * Data from pulled container images (layers and metadata).
+ * Directory trees for the containers extracted from the layers.
+ 
 
 8. ENVIRONMENT
 ==============
 The location of the udocker directory can be changed via environment variables.
 
-* UDOCKER_DIR : change the root directory of udocker usually $HOME/.udocker
-* UDOCKER_BIN : change the location of udocker related executables
-* UDOCKER_LIB : change the location of udocker related libraries
-* UDOCKER_CONTAINERS : change the location of container directory trees (not images)
+ * UDOCKER_DIR : change the root directory of udocker usually $HOME/.udocker
+ * UDOCKER_BIN : change the location of udocker related executables
+ * UDOCKER_LIB : change the location of udocker related libraries
+ * UDOCKER_CONTAINERS : change the location of container directory trees (not images)
 
 The docker index and registry and be overrided via environment variables.
 
-* UDOCKER_INDEX : https://...
-* UDOCKER_REGISTRY : https://...
+ * UDOCKER_INDEX : https://...
+ * UDOCKER_REGISTRY : https://...
+ 
 
 9. CONFIGURATION
 ================
 udocker loads the following configuration files:
 
-* /etc/udocker.conf
-* $UDOCKER_DIR/udocker.conf
-* $HOME/.udocker/udocker.conf (if different from the above)
+ * /etc/udocker.conf
+ * $UDOCKER_DIR/udocker.conf
+ * $HOME/.udocker/udocker.conf (if different from the above)
 
 The configuration files allow modification of the udocker Config class attributes.
 Example of the udocker.conf syntax:

@@ -253,7 +253,7 @@ create_source_tarball()
     /bin/rm $SOURCE_TARBALL 2> /dev/null
     pushd $TMP_DIR
     /bin/rm -Rf PRoot
-    git clone https://github.com/proot-me/PRoot 
+    git clone --depth=1 https://github.com/proot-me/PRoot 
     /bin/mv PRoot $BASE_DIR
     patch_proot_source2
     tar czvf $SOURCE_TARBALL $BASE_DIR
@@ -318,6 +318,8 @@ rm -rf %{buildroot}
 %doc README.rst AUTHORS COPYING
 
 %changelog
+* Wed Mar 22 2017 udocker maintainer <udocker@lip.pt> 1.0.3-1 
+- Repackaging for udocker 1.0.3
 * Tue Feb 14 2017 udocker maintainer <udocker@lip.pt> 1.0.2-1 
 - Fix accelerated seccomp on kernels >= 4.8.0
 * Mon Jan  9 2017 udocker maintainer <udocker@lip.pt> 1.0.1-1 
