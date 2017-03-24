@@ -2907,6 +2907,400 @@ class ContainerStructure(unittest.TestCase):
         self.assertEqual(status, ["A:1", "B:2"])
 
 
+class DockerLocalFileAPITestCase(unittest.TestCase):
+    """Test DockerLocalFileAPI() manipulate Docker images"""
+
+    def _init(self):
+        """Configure variables"""
+        udocker.Config = mock.MagicMock()
+        udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
+        udocker.Config.cmd = "/bin/bash"
+        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
+        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.return_value.username.return_value = "user"
+        udocker.Config.return_value.userhome.return_value = "/"
+        udocker.Config.return_value.oskernel.return_value = "4.8.13"
+        udocker.Config.location = ""
+        udocker.Config.keystore = "KEYSTORE"
+        udocker.Config.return_value.osversion.return_value = "OSVERSION"
+        udocker.Config.return_value.arch.return_value = "ARCH"
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test"""
+        set_env()
+
+    @mock.patch('udocker.LocalRepository')
+    def test_01_init(self, mock_local):
+        """Test DockerLocalFileAPI() constructor"""
+        self._init()
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        self.assertEqual(dlocapi.localrepo, mock_local)
+
+    @mock.patch('udocker.os.listdir')
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.LocalRepository')
+    def test_02__load_structure(self, mock_local, mock_futil, mock_ldir):
+        """Test DockerLocalFileAPI()._load_structure()"""
+        self._init()
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_futil.return_value.isdir.return_value = False
+        structure = dlocapi._load_structure("/tmp")
+        self.assertEqual(structure, {'layers': {}})
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_futil.return_value.isdir.return_value = True
+        mock_ldir.return_value = ["repositories", ]
+        mock_local.load_json.return_value = {"REPO": "", }
+        structure = dlocapi._load_structure("/tmp")
+        expected = {'layers': {}, 'repositories': {'REPO': ''}}
+        self.assertEqual(structure, expected)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_futil.return_value.isdir.return_value = True
+        mock_ldir.return_value = ["manifest.json", ]
+        structure = dlocapi._load_structure("/tmp")
+        expected = {'layers': {}}
+        self.assertEqual(structure, expected)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_futil.return_value.isdir.return_value = True
+        mock_ldir.return_value = ["x" * 64 + ".json", ]
+        structure = dlocapi._load_structure("/tmp")
+        expected = {'layers': {}}
+        self.assertEqual(structure, expected)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_futil.return_value.isdir.return_value = True
+        mock_ldir.side_effect = [["x" * 64, ], ["VERSION", ], ]
+        mock_local.load_json.return_value = {"X": "", }
+        structure = dlocapi._load_structure("/tmp")
+        expected = {'layers': {"x" * 64: {'VERSION': {'X': ''}}}}
+        self.assertEqual(structure, expected)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_futil.return_value.isdir.return_value = True
+        mock_ldir.side_effect = [["x" * 64, ], ["json", ], ]
+        mock_local.load_json.return_value = {"X": "", }
+        structure = dlocapi._load_structure("/tmp")
+        expected = {'layers': {"x" * 64: {'json': {'X': ''}, \
+            'json_f': '/tmp/' + "x" * 64 + '/json'}}}
+        self.assertEqual(structure, expected)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_futil.return_value.isdir.return_value = True
+        mock_ldir.side_effect = [["x" * 64, ], ["layer", ], ]
+        mock_local.load_json.return_value = {"X": "", }
+        structure = dlocapi._load_structure("/tmp")
+        expected = {'layers': {"x" * 64: { \
+            'layer_f': '/tmp/' + "x" * 64 + '/layer'}}}
+        self.assertEqual(structure, expected)
+
+    @mock.patch('udocker.LocalRepository')
+    def test_03__find_top_layer_id(self, mock_local):
+        """Test DockerLocalFileAPI()._find_top_layer_id()"""
+        self._init()
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        structure = {}
+        status = dlocapi._find_top_layer_id(structure)
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        structure = {'layers': {"LID": {"json": {}, }, }, }
+        status = dlocapi._find_top_layer_id(structure)
+        self.assertEqual(status, "LID")
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        structure = {'layers': {"LID": {"json": {"parent": "x", }, }, }, }
+        status = dlocapi._find_top_layer_id(structure)
+        self.assertEqual(status, "LID")
+
+    @mock.patch('udocker.LocalRepository')
+    def test_04__sorted_layers(self, mock_local):
+        """Test DockerLocalFileAPI()._sorted_layers()"""
+        self._init()
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        structure = {}
+        status = dlocapi._sorted_layers(structure, "")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        structure = {'layers': {"LID": {"json": {"parent": {}, }, }, }, }
+        status = dlocapi._sorted_layers(structure, "LID")
+        self.assertEqual(status, ["LID"])
+
+    @mock.patch('udocker.os.rename')
+    @mock.patch('udocker.LocalRepository')
+    def test_05__copy_layer_to_repo(self, mock_local, mock_rename):
+        """Test DockerLocalFileAPI()._copy_layer_to_repo()"""
+        self._init()
+        mock_local.layersdir = ""
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        status = dlocapi._copy_layer_to_repo("/", "LID")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        status = dlocapi._copy_layer_to_repo("/xxx.json", "LID")
+        self.assertTrue(status)
+
+    @mock.patch('udocker.DockerLocalFileAPI._copy_layer_to_repo')
+    @mock.patch('udocker.DockerLocalFileAPI._sorted_layers')
+    @mock.patch('udocker.DockerLocalFileAPI._find_top_layer_id')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_06__load_image(self, mock_local, mock_msg, mock_findtop,
+                            mock_slayers, mock_copylayer):
+        """Test DockerLocalFileAPI()._load_image()"""
+        self._init()
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_local.cd_imagerepo.return_value = True
+        structure = {}
+        status = dlocapi._load_image(structure, "IMAGE", "TAG")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_local.cd_imagerepo.return_value = False
+        mock_local.setup_tag.return_value = False
+        structure = {}
+        status = dlocapi._load_image(structure, "IMAGE", "TAG")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_local.cd_imagerepo.return_value = False
+        mock_local.setup_tag.return_value = "/dir"
+        mock_local.set_version.return_value = False
+        structure = {}
+        status = dlocapi._load_image(structure, "IMAGE", "TAG")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_local.cd_imagerepo.return_value = False
+        mock_local.setup_tag.return_value = "/dir"
+        mock_local.set_version.return_value = True
+        mock_findtop.return_value = "TLID"
+        mock_slayers.return_value = []
+        structure = {}
+        status = dlocapi._load_image(structure, "IMAGE", "TAG")
+        self.assertEqual(status, ['IMAGE:TAG'])
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_local.cd_imagerepo.return_value = False
+        mock_local.setup_tag.return_value = "/dir"
+        mock_local.set_version.return_value = True
+        mock_findtop.return_value = "TLID"
+        mock_slayers.return_value = ["LID", ]
+        mock_copylayer.return_value = False
+        structure = {'layers': {'LID': {'VERSION': "1.0",
+                                        'json_f': "f1",
+                                        'layer_f': "f1",}, }, }
+        status = dlocapi._load_image(structure, "IMAGE", "TAG")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_local.cd_imagerepo.return_value = False
+        mock_local.setup_tag.return_value = "/dir"
+        mock_local.set_version.return_value = True
+        mock_findtop.return_value = "TLID"
+        mock_slayers.return_value = ["LID", ]
+        mock_copylayer.return_value = True
+        structure = {'layers': {'LID': {'VERSION': "1.0",
+                                        'json_f': "f1",
+                                        'layer_f': "f1",}, }, }
+        status = dlocapi._load_image(structure, "IMAGE", "TAG")
+        self.assertEqual(status, ['IMAGE:TAG'])
+
+    @mock.patch('udocker.DockerLocalFileAPI._load_image')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_07__load_repositories(self, mock_local, mock_msg, mock_loadi):
+        """Test DockerLocalFileAPI()._load_repositories()"""
+        self._init()
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        structure = {}
+        status = dlocapi._load_repositories(structure)
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        structure = {'repositories': {'IMAGE': {'TAG': "tag", }, }, }
+        mock_loadi.return_value = False
+        status = dlocapi._load_repositories(structure)
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        structure = {'repositories': {'IMAGE': {'TAG': "tag", }, }, }
+        mock_loadi.return_value = True
+        status = dlocapi._load_repositories(structure)
+        self.assertTrue(status)
+
+    @mock.patch('udocker.subprocess.call')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_08__untar_saved_container(self, mock_local, mock_msg, mock_call):
+        """Test DockerLocalFileAPI()._untar_saved_container()"""
+        self._init()
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_call.return_value = True
+        status = dlocapi._untar_saved_container("TARFILE", "DESTDIR")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_call.return_value = False
+        status = dlocapi._untar_saved_container("TARFILE", "DESTDIR")
+        self.assertTrue(status)
+
+    @mock.patch('udocker.DockerLocalFileAPI._load_repositories')
+    @mock.patch('udocker.DockerLocalFileAPI._load_structure')
+    @mock.patch('udocker.DockerLocalFileAPI._untar_saved_container')
+    @mock.patch('udocker.os.makedirs')
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.os.path.exists')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_09_load(self, mock_local, mock_msg, mock_exists, mock_futil,
+                     mock_makedirs, mock_untar, mock_lstruct, mock_lrepo):
+        """Test DockerLocalFileAPI().load()"""
+        self._init()
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_exists.return_value = False
+        mock_futil.return_value.mktmp.return_value = "tmpfile"
+        status = dlocapi.load("IMAGEFILE")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_exists.return_value = True
+        mock_futil.return_value.mktmp.return_value = "tmpfile"
+        mock_untar.return_value = False
+        status = dlocapi.load("IMAGEFILE")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_exists.return_value = True
+        mock_futil.return_value.mktmp.return_value = "tmpfile"
+        mock_untar.return_value = True
+        structure = {}
+        mock_lstruct.return_value = structure
+        status = dlocapi.load("IMAGEFILE")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_exists.return_value = True
+        mock_futil.return_value.mktmp.return_value = "tmpfile"
+        mock_untar.return_value = True
+        structure = {'repositories': {'IMAGE': {'TAG': "tag", }, }, }
+        mock_lstruct.return_value = structure
+        mock_lrepo.return_value = ["R1", "R2", ]
+        status = dlocapi.load("IMAGEFILE")
+        self.assertEqual(status, ["R1", "R2", ])
+
+    @mock.patch('udocker.time.strftime')
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_10_create_container_meta(self, mock_local, mock_msg, mock_futil,
+                                      mock_stime):
+        """Test DockerLocalFileAPI().create_container_meta()"""
+        self._init()
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_futil.return_value.size.return_value = 123
+        mock_stime.return_value = "DATE"
+        status = dlocapi.create_container_meta("LID")
+        meta = {'comment': 'created by udocker',
+                'created': 'DATE',
+                'config': {'Env': None, 'Hostname': '', 'Entrypoint': None,
+                           'PortSpecs': None, 'Memory': 0, 'OnBuild': None,
+                           'OpenStdin': False, 'MacAddress': '', 'Cpuset': '',
+                           'NetworkDisable': False, 'User': '',
+                           'AttachStderr': False, 'AttachStdout': False,
+                           'Cmd': None, 'StdinOnce': False, 'CpusShares': 0,
+                           'WorkingDir': '', 'AttachStdin': False,
+                           'Volumes': None, 'MemorySwap': 0, 'Tty': False,
+                           'Domainname': '', 'Image': '', 'Labels': None,
+                           'ExposedPorts': None},
+                'container_config': {'Env': None, 'Hostname': '',
+                                     'Entrypoint': None, 'PortSpecs': None,
+                                     'Memory': 0, 'OnBuild': None,
+                                     'OpenStdin': False, 'MacAddress': '',
+                                     'Cpuset': '', 'NetworkDisable': False,
+                                     'User': '', 'AttachStderr': False,
+                                     'AttachStdout': False, 'Cmd': None,
+                                     'StdinOnce': False, 'CpusShares': 0,
+                                     'WorkingDir': '', 'AttachStdin': False,
+                                     'Volumes': None, 'MemorySwap': 0,
+                                     'Tty': False, 'Domainname': '',
+                                     'Image': '', 'Labels': None,
+                                     'ExposedPorts': None},
+                'architecture': 'ARCH', 'os': 'OSVERSION',
+                'id': 'LID', 'size': 123}
+        self.assertEqual(status, meta)
+
+    @mock.patch('udocker.Unique')
+    @mock.patch('udocker.os.rename')
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.os.path.exists')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_11_import_(self, mock_local, mock_msg, mock_exists, mock_futil,
+                        mock_rename, mock_unique):
+        """Test DockerLocalFileAPI().import_()"""
+        self._init()
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_exists.return_value = False
+        status = dlocapi.import_("TARFILE", "IMAGE", "TAG")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_exists.return_value = True
+        mock_local.cd_imagerepo.return_value = "TAGDIR"
+        status = dlocapi.import_("TARFILE", "IMAGE", "TAG")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_exists.return_value = True
+        mock_local.cd_imagerepo.return_value = ""
+        mock_local.setup_tag.return_value = ""
+        status = dlocapi.import_("TARFILE", "IMAGE", "TAG")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_exists.return_value = True
+        mock_local.cd_imagerepo.return_value = ""
+        mock_local.setup_tag.return_value = "TAGDIR"
+        mock_local.set_version.return_value = False
+        status = dlocapi.import_("TARFILE", "IMAGE", "TAG")
+        self.assertFalse(status)
+        #
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_exists.return_value = True
+        mock_local.cd_imagerepo.return_value = ""
+        mock_local.setup_tag.return_value = "TAGDIR"
+        mock_local.set_version.return_value = True
+        mock_unique.return_value.layer_v1.return_value = "LAYERID"
+        status = dlocapi.import_("TARFILE", "IMAGE", "TAG")
+        self.assertEqual(status, "LAYERID")
+        self.assertTrue(mock_rename.called)
+        #
+        mock_rename.reset_mock()
+        dlocapi = udocker.DockerLocalFileAPI(mock_local)
+        mock_exists.return_value = True
+        mock_local.cd_imagerepo.return_value = ""
+        mock_local.setup_tag.return_value = "TAGDIR"
+        mock_local.set_version.return_value = True
+        mock_unique.return_value.layer_v1.return_value = "LAYERID"
+        status = dlocapi.import_("TARFILE", "IMAGE", "TAG", False)
+        self.assertEqual(status, "LAYERID")
+        self.assertFalse(mock_rename.called)
+
+
 class UdockerTestCase(unittest.TestCase):
     """Test UdockerTestCase() command line interface"""
 
@@ -3231,6 +3625,701 @@ class UdockerTestCase(unittest.TestCase):
         mock_ks.return_value.put.return_value = True
         status = udoc.do_login(mock_cmdp)
         self.assertTrue(status)
+
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_09_do_logout(self, mock_local, mock_msg, mock_dioapi,
+                          mock_dlocapi, mock_ks, mock_cmdp):
+        """Test Udocker().do_logout()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_ks.return_value.delete.return_value = False
+        status = udoc.do_logout(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.get.side_effect = ["ALL", "", "" "", "", ]
+        mock_ks.return_value.delete.return_value = False
+        mock_ks.return_value.erase.return_value = True
+        status = udoc.do_logout(mock_cmdp)
+        self.assertTrue(status)
+        self.assertTrue(mock_ks.return_value.erase.called)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_ks.return_value.delete.return_value = True
+        status = udoc.do_logout(mock_cmdp)
+        self.assertTrue(status)
+        self.assertTrue(mock_ks.return_value.delete.called)
+
+    @mock.patch('udocker.Udocker._check_imagespec')
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_10_do_pull(self, mock_local, mock_msg, mock_dioapi,
+                        mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
+        """Test Udocker().do_pull()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("", "TAG")
+        status = udoc.do_pull(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_cmdp.missing_options.return_value = True
+        status = udoc.do_pull(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_cmdp.missing_options.return_value = False
+        mock_dioapi.return_value.get.return_value = []
+        status = udoc.do_pull(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_cmdp.missing_options.return_value = False
+        mock_dioapi.return_value.get.return_value = ["F1", "F2", ]
+        status = udoc.do_pull(mock_cmdp)
+        self.assertTrue(status)
+
+    @mock.patch('udocker.Udocker._create')
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_11_do_create(self, mock_local, mock_msg, mock_dioapi,
+                          mock_dlocapi, mock_ks, mock_cmdp, mock_create):
+        """Test Udocker().do_create()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_create.return_value = ""
+        status = udoc.do_create(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_create.return_value = ""
+        status = udoc.do_create(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_create.return_value = "CONTAINER_ID"
+        status = udoc.do_create(mock_cmdp)
+        self.assertTrue(status)
+
+    @mock.patch('udocker.ContainerStructure')
+    @mock.patch('udocker.Udocker._check_imagespec')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_12__create(self, mock_local, mock_msg, mock_dioapi, mock_chkimg,
+                        mock_cstruct):
+        """Test Udocker()._create()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_dioapi.return_value.is_repo_name.return_value = False
+        status = udoc._create("IMAGE:TAG")
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_dioapi.return_value.is_repo_name.return_value = True
+        mock_chkimg.return_value = ("", "TAG")
+        mock_cstruct.return_value.create.return_value = True
+        status = udoc._create("IMAGE:TAG")
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_dioapi.return_value.is_repo_name.return_value = True
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_cstruct.return_value.create.return_value = True
+        status = udoc._create("IMAGE:TAG")
+        self.assertTrue(status)
+
+#    @mock.patch('udocker.CmdParser')
+#    @mock.patch('udocker.LocalRepository')
+#    def test_14__get_run_options(self, mock_local, mock_cmdp):
+#        """Test Udocker()._get_run_options()"""
+#        self._init()
+#        #
+#        udoc = udocker.Udocker(mock_local)
+#        udocker.PRootEngine = mock.MagicMock()
+#        udocker.PRootEngine.opt = dict()
+#        udocker.PRootEngine.opt["vol"] = []
+#        udocker.PRootEngine.opt["env"] = []
+#        mock_cmdp.get.return_value = "VALUE"
+#        udoc._get_run_options(mock_cmdp, udocker.PRootEngine)
+#        self.assertEqual(udocker.PRootEngine.opt["dns"], "VALUE")
+
+    @mock.patch('udocker.Udocker._get_run_options')
+    @mock.patch('udocker.PRootEngine')
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_15_do_run(self, mock_local, mock_msg, mock_dioapi, mock_dlocapi,
+                       mock_ks, mock_cmdp, mock_eng, mock_getopt):
+        """Test Udocker().do_run()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", "", "", "", "", ]
+        status = udoc.do_run(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", "", "", "", "", ]
+        udocker.Config.location = "/"
+        mock_eng.return_value.run.return_value = True
+        status = udoc.do_run(mock_cmdp)
+        self.assertTrue(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", "", "", "", "", ]
+        udocker.Config.location = "/"
+        mock_eng.return_value.run.return_value = False
+        status = udoc.do_run(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "DELETE" "", "", "", "", "", "", ]
+        udocker.Config.location = "/"
+        mock_eng.return_value.run.return_value = False
+        mock_local.isprotected_container.return_value = True
+        status = udoc.do_run(mock_cmdp)
+        self.assertFalse(status)
+        self.assertFalse(mock_local.del_container.called)
+        #
+        mock_local.reset_mock()
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "DELETE" "", "", "", "", "", "", ]
+        udocker.Config.location = "/"
+        mock_eng.return_value.run.return_value = False
+        mock_local.isprotected_container.return_value = False
+        status = udoc.do_run(mock_cmdp)
+        self.assertFalse(status)
+        self.assertTrue(mock_local.del_container.called)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", "", "", "", "", ]
+        udocker.Config.location = ""
+        mock_local.get_container_id.return_value = ""
+        mock_eng.return_value.run.return_value = True
+        status = udoc.do_run(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", "", "", "", "", ]
+        udocker.Config.location = ""
+        mock_local.get_container_id.return_value = "CONTAINER_ID"
+        mock_eng.return_value.run.return_value = True
+        status = udoc.do_run(mock_cmdp)
+        self.assertTrue(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "NAME", "", "", "", "", ]
+        udocker.Config.location = ""
+        mock_local.get_container_id.return_value = "CONTAINER_ID"
+        mock_eng.return_value.run.return_value = True
+        mock_local.set_container_name.return_value = True
+        status = udoc.do_run(mock_cmdp)
+        self.assertTrue(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "NAME", "", "", "", "", ]
+        udocker.Config.location = ""
+        mock_local.get_container_id.return_value = "CONTAINER_ID"
+        mock_eng.return_value.run.return_value = True
+        mock_local.set_container_name.return_value = False
+        status = udoc.do_run(mock_cmdp)
+        self.assertFalse(status)
+
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_16_do_images(self, mock_local, mock_msg, mock_dioapi,
+                          mock_dlocapi, mock_ks, mock_cmdp):
+        """Test Udocker().do_images()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        status = udoc.do_images(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_local.get_imagerepos.return_values = []
+        status = udoc.do_images(mock_cmdp)
+        self.assertTrue(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_local.get_imagerepos.return_value = [("I1", "T1"), ("I2", "T2"), ]
+        mock_local.isprotected_imagerepo.return_value = True
+        status = udoc.do_images(mock_cmdp)
+        self.assertTrue(status)
+        self.assertTrue(mock_local.isprotected_imagerepo.called)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["LONG", "", "" "", "", ]
+        mock_local.get_imagerepos.return_value = [("I1", "T1"), ("I2", "T2"), ]
+        mock_local.isprotected_imagerepo.return_value = True
+        mock_local.get_layers.return_value = []
+        status = udoc.do_images(mock_cmdp)
+        self.assertTrue(status)
+        self.assertTrue(mock_local.get_layers.called)
+
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_17_do_ps(self, mock_local, mock_msg, mock_dioapi,
+                      mock_dlocapi, mock_ks, mock_cmdp):
+        """Test Udocker().do_ps()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        status = udoc.do_ps(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_local.get_containers_list.return_value = []
+        udoc.do_ps(mock_cmdp)
+        self.assertTrue(mock_local.get_containers_list.called)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_local.get_containers_list.return_value = [("ID", "NAME", ""), ]
+        mock_local.isprotected_container.return_value = True
+        mock_local.iswriteable_container.return_value = True
+        udoc.do_ps(mock_cmdp)
+        self.assertTrue(mock_local.isprotected_container.called)
+
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_18_do_rm(self, mock_local, mock_msg, mock_dioapi,
+                      mock_dlocapi, mock_ks, mock_cmdp):
+        """Test Udocker().do_rm()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        status = udoc.do_rm(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        status = udoc.do_rm(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["X", "12", "" "", "", ]
+        mock_local.get_container_id.return_value = ""
+        status = udoc.do_rm(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["X", "1", "" "", "", ]
+        mock_local.get_container_id.return_value = "1"
+        mock_local.isprotected_container.return_value = True
+        status = udoc.do_rm(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["X", "1", "" "", "", ]
+        mock_local.get_container_id.return_value = "1"
+        mock_local.isprotected_container.return_value = False
+        status = udoc.do_rm(mock_cmdp)
+        self.assertTrue(status)
+
+    @mock.patch('udocker.Udocker._check_imagespec')
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_19_do_rmi(self, mock_local, mock_msg, mock_dioapi,
+                       mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
+        """Test Udocker().do_rmi()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        status = udoc.do_rmi(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("", "TAG")
+        status = udoc.do_rmi(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.isprotected_imagerepo.return_value = True
+        status = udoc.do_rmi(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.isprotected_imagerepo.return_value = False
+        status = udoc.do_rmi(mock_cmdp)
+        self.assertTrue(status)
+
+    @mock.patch('udocker.Udocker._check_imagespec')
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_20_do_protect(self, mock_local, mock_msg, mock_dioapi,
+                           mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
+        """Test Udocker().do_protect()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        status = udoc.do_protect(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = "123"
+        mock_local.protect_container.return_value = False
+        status = udoc.do_protect(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = "123"
+        mock_local.protect_container.return_value = True
+        status = udoc.do_protect(mock_cmdp)
+        self.assertTrue(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("", "TAG")
+        mock_local.get_container_id.return_value = ""
+        mock_local.protect_imagerepo.return_value = True
+        status = udoc.do_protect(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = ""
+        mock_local.protect_imagerepo.return_value = True
+        status = udoc.do_protect(mock_cmdp)
+        self.assertTrue(status)
+
+    @mock.patch('udocker.Udocker._check_imagespec')
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_21_do_unprotect(self, mock_local, mock_msg, mock_dioapi,
+                             mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
+        """Test Udocker().do_unprotect()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        status = udoc.do_unprotect(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = "123"
+        mock_local.unprotect_container.return_value = False
+        status = udoc.do_unprotect(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = "123"
+        mock_local.unprotect_container.return_value = True
+        status = udoc.do_unprotect(mock_cmdp)
+        self.assertTrue(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = ""
+        mock_local.unprotect_imagerepo.return_value = True
+        status = udoc.do_unprotect(mock_cmdp)
+        self.assertTrue(status)
+        self.assertTrue(mock_local.unprotect_imagerepo.called)
+
+    @mock.patch('udocker.Udocker._check_imagespec')
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_22_do_name(self, mock_local, mock_msg, mock_dioapi,
+                        mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
+        """Test Udocker().do_name()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        status = udoc.do_name(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "NAME", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = ""
+        status = udoc.do_name(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "NAME", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = "123"
+        mock_local.set_container_name.return_value = False
+        status = udoc.do_name(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "NAME", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = "123"
+        mock_local.set_container_name.return_value = True
+        status = udoc.do_name(mock_cmdp)
+        self.assertTrue(status)
+
+    @mock.patch('udocker.Udocker._check_imagespec')
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_22_do_rmname(self, mock_local, mock_msg, mock_dioapi,
+                          mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
+        """Test Udocker().do_rmname()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        status = udoc.do_rmname(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["NAME", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.del_container_name.return_value = False
+        status = udoc.do_rmname(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["NAME", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.del_container_name.return_value = True
+        status = udoc.do_rmname(mock_cmdp)
+        self.assertTrue(status)
+
+    @mock.patch('udocker.json')
+    @mock.patch('udocker.ContainerStructure')
+    @mock.patch('udocker.Udocker._check_imagespec')
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_23_do_inspect(self, mock_local, mock_msg, mock_dioapi,
+                           mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg,
+                           mock_cstruct, mock_json):
+        """Test Udocker().do_inspect()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        status = udoc.do_inspect(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = "123"
+        mock_cstruct.return_value.get_container_attr.return_value = ("", "")
+        status = udoc.do_inspect(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "PRINT", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = "123"
+        mock_cstruct.return_value.get_container_attr.return_value = ("DIR", "")
+        status = udoc.do_inspect(mock_cmdp)
+        self.assertTrue(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = "123"
+        mock_cstruct.return_value.get_container_attr.return_value = ("", "JSON")
+        status = udoc.do_inspect(mock_cmdp)
+        self.assertTrue(status)
+
+    @mock.patch('udocker.Udocker._check_imagespec')
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_24_do_verify(self, mock_local, mock_msg, mock_dioapi,
+                          mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
+        """Test Udocker().do_verify()"""
+        self._init()
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        status = udoc.do_verify(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("", "")
+        status = udoc.do_verify(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.cd_imagerepo.return_value = False
+        status = udoc.do_verify(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.cd_imagerepo.return_value = True
+        mock_local.verify_image.return_value = True
+        status = udoc.do_verify(mock_cmdp)
+        self.assertTrue(status)
+
+#    @mock.patch('udocker.eval')
+#    @mock.patch('udocker.CmdParser')
+#    @mock.patch('udocker.Msg')
+#    @mock.patch('udocker.LocalRepository')
+#    def test_25_do_help(self, mock_local, mock_msg, mock_cmdp, mock_eval):
+#        """Test Udocker().do_help()"""
+#        self._init()
+#        #
+#        udoc = udocker.Udocker(mock_local)
+#        mock_cmdp.get.side_effect = ["run", "", "" "", "", ]
+#        status = udoc.do_help(mock_cmdp)
+#        self.assertTrue(mock_eval.called)
 
 
 if __name__ == '__main__':
