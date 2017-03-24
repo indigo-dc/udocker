@@ -189,7 +189,7 @@ udocker run --user jorge  myfed  /bin/id
 Firefox with audio and video
 ```
 ./udocker run --bindhome --hostauth --hostenv \
-   -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed
+   -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed  firefox
 ```
 
 ## Documentation
@@ -199,5 +199,5 @@ https://indigo-dc.gitbooks.io/udocker/content/
 
 ## Aknowlegments
 
-PRoot http://proot.me
-INDIGO DataCloud https://www.indigo-datacloud.eu
+* PRoot http://proot.me
+* INDIGO DataCloud https://www.indigo-datacloud.eu

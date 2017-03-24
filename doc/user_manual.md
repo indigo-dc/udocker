@@ -440,6 +440,7 @@ Options:
 * `--bindhome` attempt to make the user home directory appear inside the container
 * `--kernel=KERNELID` use a specific kernel id to emulate useful when the host kernel is too old
 * `--location=DIR` execute a container in a certain directory
+* `--noseccomp` disable seccomp in proot avoiding issues in newer kernels, affects performance
 
 Examples:
 ```
