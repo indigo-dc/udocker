@@ -34,7 +34,7 @@ __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "1.0.3"
-__date__ = "2016"
+__date__ = "2017"
 
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
