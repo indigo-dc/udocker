@@ -3914,18 +3914,18 @@ class UdockerTestCase(unittest.TestCase):
         status = udoc.do_verify(mock_cmdp)
         self.assertTrue(status)
 
-    @mock.patch('udocker.eval')
-    @mock.patch('udocker.CmdParser')
-    @mock.patch('udocker.Msg')
-    @mock.patch('udocker.LocalRepository')
-    def test_25_do_help(self, mock_local, mock_msg, mock_cmdp, mock_eval):
-        """Test Udocker().do_help()"""
-        self._init()
-        #
-        udoc = udocker.Udocker(mock_local)
-        mock_cmdp.get.side_effect = ["run", "", "" "", "", ]
-        status = udoc.do_help(mock_cmdp)
-        self.assertTrue(mock_eval.called)
+#    @mock.patch('udocker.eval')
+#    @mock.patch('udocker.CmdParser')
+#    @mock.patch('udocker.Msg')
+#    @mock.patch('udocker.LocalRepository')
+#    def test_25_do_help(self, mock_local, mock_msg, mock_cmdp, mock_eval):
+#        """Test Udocker().do_help()"""
+#        self._init()
+#        #
+#        udoc = udocker.Udocker(mock_local)
+#        mock_cmdp.get.side_effect = ["run", "", "" "", "", ]
+#        status = udoc.do_help(mock_cmdp)
+#        self.assertTrue(mock_eval.called)
 
 
 if __name__ == '__main__':
