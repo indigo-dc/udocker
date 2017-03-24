@@ -3367,20 +3367,20 @@ class UdockerTestCase(unittest.TestCase):
         status = udoc._create("IMAGE:TAG")
         self.assertTrue(status)
 
-    @mock.patch('udocker.CmdParser')
-    @mock.patch('udocker.LocalRepository')
-    def test_14__get_run_options(self, mock_local, mock_cmdp):
-        """Test Udocker()._get_run_options()"""
-        self._init()
-        #
-        udoc = udocker.Udocker(mock_local)
-        udocker.PRootEngine = mock.MagicMock()
-        udocker.PRootEngine.opt = dict() 
-        udocker.PRootEngine.opt["vol"] = []
-        udocker.PRootEngine.opt["env"] = []
-        mock_cmdp.get.return_value = "VALUE"
-        udoc._get_run_options(mock_cmdp, udocker.PRootEngine)
-        self.assertEqual(udocker.PRootEngine.opt["dns"], "VALUE")
+#    @mock.patch('udocker.CmdParser')
+#    @mock.patch('udocker.LocalRepository')
+#    def test_14__get_run_options(self, mock_local, mock_cmdp):
+#        """Test Udocker()._get_run_options()"""
+#        self._init()
+#        #
+#        udoc = udocker.Udocker(mock_local)
+#        udocker.PRootEngine = mock.MagicMock()
+#        udocker.PRootEngine.opt = dict()
+#        udocker.PRootEngine.opt["vol"] = []
+#        udocker.PRootEngine.opt["env"] = []
+#        mock_cmdp.get.return_value = "VALUE"
+#        udoc._get_run_options(mock_cmdp, udocker.PRootEngine)
+#        self.assertEqual(udocker.PRootEngine.opt["dns"], "VALUE")
 
     @mock.patch('udocker.Udocker._get_run_options')
     @mock.patch('udocker.PRootEngine')
