@@ -2513,6 +2513,7 @@ class PRootEngine(unittest.TestCase):
         udocker.Config.return_value.userhome.return_value = "/"
         udocker.Config.return_value.oskernel.return_value = "4.8.13"
         udocker.Config.location = ""
+        udocker.Config.proot_noseccomp = None
 
     @mock.patch('udocker.ExecutionEngine')
     @mock.patch('udocker.LocalRepository')
@@ -2552,8 +2553,9 @@ class PRootEngine(unittest.TestCase):
         udocker.Config.return_value.oskernel_isgreater.return_value = False
         mock_fimage.return_value = "proot-4_8_0"
         prex = udocker.PRootEngine(mock_local)
+        prex.opt["noseccomp"] = True
         prex._select_proot()
-        self.assertFalse(prex.proot_noseccomp)
+        self.assertTrue(prex.proot_noseccomp)
         #
         udocker.Config.return_value.oskernel_isgreater.return_value = True
         mock_fimage.return_value = "proot"
