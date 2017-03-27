@@ -4515,7 +4515,7 @@ class Main(object):
     def __init__(self):
         self.cmdp = CmdParser()
         if not self.cmdp.parse(sys.argv):
-            Msg().err("Error: parsing command line, use: udocker --help")
+            Msg().err("Error: parsing command line, use: udocker help")
             sys.exit(1)
         Config().user_init(self.cmdp.get("--config=", "GEN_OPT"))
         if (self.cmdp.get("--debug", "GEN_OPT") or
