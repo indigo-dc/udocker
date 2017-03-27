@@ -1588,13 +1588,10 @@ class PRootEngine(ExecutionEngine):
             else:
                 image_list = ["proot-arm", "proot"]
         self.proot_exec = self._find_image(image_list)
-        if conf.oskernel_isgreater((4, 8, 0)):
-            if not self.proot_exec.endswith("-4_8_0"):
-                self.proot_noseccomp = True
-            if conf.proot_noseccomp is not None:
-                self.proot_noseccomp = conf.proot_noseccomp
-            if self.opt["noseccomp"]:
-                self.proot_noseccomp = True
+        if conf.proot_noseccomp is not None:
+            self.proot_noseccomp = conf.proot_noseccomp
+        if self.opt["noseccomp"]:
+            self.proot_noseccomp = True
 
     def _set_uid_map(self):
         """Set the uid_map string for container run command"""
