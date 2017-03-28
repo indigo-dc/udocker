@@ -19,17 +19,17 @@ repository at `http://repo.indigo-datacloud.eu/` where is made available
 as a tarball to be deployed by the end user. Allways check for the latest
 official version released by INDIGO-DataCloud.
 
-Install udocker v1.0.1 or higher released by INDIGO-DataCloud:
+Install of udocker 1.0.1, 1.0.3 or higher released by INDIGO-DataCloud:
 
 ```
-  curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-1.0.1.tar.gz > udocker-tarball.tgz
+  curl http://repo.indigo-datacloud.eu/repository/indigo/2/centos7/x86_64/tgz/udocker-1.0.3.tar.gz > udocker-tarball.tgz
   export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
   tar xzvf $UDOCKER_TARBALL udocker
   ./udocker
   mv ./udocker $HOME   # move the executable to your preferred location for binaries
 ```
 
-Install the previous udocker 1.0.0 released by INDIGO-DataCloud:
+Install of the old udocker 1.0.0 released by INDIGO-DataCloud:
 
 ```
   cd $HOME
@@ -42,7 +42,7 @@ If using the setup.py provided in the releases install with:
 ```
   mkdir /tmp/somedir
   cd /tmp/somedir
-  curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.X.X.tar.gz | tar xzvf -
+  curl http://repo.indigo-datacloud.eu/repository/indigo/2/centos7/x86_64/tgz/udocker-v1.X.X.tar.gz | tar xzvf -
   python setup.py install --home /home/USER/bin
 ```
 
@@ -68,18 +68,18 @@ For the development branch:
 
 ## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
 
-RPMs for CentOS 7 are provided at http://repo.indigo-datacloud.eu
+RPMs for CentOS are provided at http://repo.indigo-datacloud.eu
 
 ```
-  rpm -i udocker-1.0.1-1.noarch.rpm 
-  rpm -i udocker-preng-1.0.1-1.x86_64.rpm
+  rpm -i udocker-1.0.3-1.noarch.rpm 
+  rpm -i udocker-preng-1.0.3-1.x86_64.rpm
 ```
 
-DEBs for Ubuntu 14.04 are provided at http://repo.indigo-datacloud.eu
+DEBs for Ubuntu are provided at http://repo.indigo-datacloud.eu
 
 ```
-  dpkg -i udocker_1.0.1-1_all.deb
-  dpkg -i udocker-preng_1.0.1-1_amd64.deb
+  dpkg -i udocker_1.0.3-1_all.deb
+  dpkg -i udocker-preng_1.0.3-1_amd64.deb
 ```
 
 ## 4. SYSTEM INSTALLATION WITH ANSIBLE AND PYTHON
