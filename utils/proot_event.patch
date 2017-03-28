@@ -1,6 +1,6 @@
 diff -Naur PRoot-orig/src/tracee/event.c PRoot/src/tracee/event.c
 --- PRoot-orig/src/tracee/event.c	2017-02-10 23:04:47.000000000 +0000
-+++ PRoot/src/tracee/event.c	2017-03-27 21:01:38.696872238 +0100
++++ PRoot/src/tracee/event.c	2017-03-28 20:50:19.484674195 +0100
 @@ -20,6 +20,7 @@
   * 02110-1301 USA.
   */
@@ -48,51 +48,74 @@ diff -Naur PRoot-orig/src/tracee/event.c PRoot/src/tracee/event.c
   * Check if this instance of PRoot can *technically* handle @tracee.
   */
  static void check_architecture(Tracee *tracee)
-@@ -442,7 +468,80 @@
+@@ -362,6 +388,7 @@
+ int handle_tracee_event(Tracee *tracee, int tracee_status)
+ {
+ 	static bool seccomp_detected = false;
++	static bool seccomp_enabled = false; /* added for 4.8.0 */
+ 	pid_t pid = tracee->pid;
+ 	long status;
+ 	int signal;
+@@ -432,6 +459,7 @@
+ 			status = ptrace(PTRACE_SETOPTIONS, tracee->pid, NULL,
+ 					default_ptrace_options | PTRACE_O_TRACESECCOMP);
+ 			if (status < 0) {
++				seccomp_enabled = false;
+ 				/* ... otherwise use default options only.  */
+ 				status = ptrace(PTRACE_SETOPTIONS, tracee->pid, NULL,
+ 						default_ptrace_options);
+@@ -440,19 +468,102 @@
+ 					exit(EXIT_FAILURE);
+ 				}
  			}
++			else {
++				if (getenv("PROOT_NO_SECCOMP") == NULL)
++					seccomp_enabled = true;
++			}
  		}
  			/* Fall through. */
 +		case SIGTRAP | PTRACE_EVENT_SECCOMP2 << 8:
 +		case SIGTRAP | PTRACE_EVENT_SECCOMP << 8:
++
++                	if (!seccomp_detected && seccomp_enabled && is_kernel_4_8()) {
++				VERBOSE(tracee, 1, "ptrace acceleration (seccomp mode 2) enabled");
++				tracee->seccomp = ENABLED;
++				seccomp_detected = true;
++			}
 +
 +			if (signal == (SIGTRAP | PTRACE_EVENT_SECCOMP2 << 8) ||
 +                            signal == (SIGTRAP | PTRACE_EVENT_SECCOMP << 8)) {
 +
 +				unsigned long flags = 0;
 +				signal = 0;
-+
-+				/* SECCOMP TRAP can only be received for
-+ 				 * sysenter events, ignore otherwise */
-+				if ((!IS_IN_SYSENTER(tracee)) && is_kernel_4_8())
-+					return 0;
-+
-+                	        if (!seccomp_detected) {
-+                        	        VERBOSE(tracee, 1, "ptrace acceleration (seccomp mode 2) enabled");
-+                                	tracee->seccomp = ENABLED;
-+         	                	seccomp_detected = true;
-+                	        }
-+
++	
 +				if (is_kernel_4_8()) {
++					/* SECCOMP TRAP can only be received for
++ 					 * sysenter events, ignore otherwise */
++					if (!IS_IN_SYSENTER(tracee)) {
++						tracee->restart_how = PTRACE_CONT;
++						return 0;
++                                	}
 +                                        status = ptrace(PTRACE_GETEVENTMSG, tracee->pid, NULL, &flags);
 +                                        if (status < 0)
 +                                                break;
 +
-+					/* handle the sysenter right now when
-+                                         * sysexit does not need to be handled.  */
 +                                        if (tracee->seccomp == ENABLED && (flags & FILTER_SYSEXIT) == 0) {
 +                        			tracee->restart_how = PTRACE_CONT;
 +                        			translate_syscall(tracee);
 +
-+                        			/* This syscall has disabled seccomp, so move
-+                        			 * the ptrace flow back to the common path to
-+                       				 * ensure its sysexit will be handled.  */
 +                        			if (tracee->seccomp == DISABLING)
 +                                			tracee->restart_how = PTRACE_SYSCALL;
 +                        			break;
 +                                        }
-+
 +				}
 +				else {
++                			if (!seccomp_detected) {
++						VERBOSE(tracee, 1, "ptrace acceleration (seccomp mode 2) enabled");
++						tracee->seccomp = ENABLED;
++						seccomp_detected = true;
++					}
++
 +                        		/* Use the common ptrace flow if seccomp was
 +					 * explicitely disabled for this tracee.  */
 +        	                	if (tracee->seccomp != ENABLED)
@@ -129,7 +152,24 @@ diff -Naur PRoot-orig/src/tracee/event.c PRoot/src/tracee/event.c
  			signal = 0;
  
  			/* This tracee got signaled then freed during the
-@@ -490,47 +589,6 @@
+ 			   sysenter stage but the kernel reports the sysexit
+ 			   stage; just discard this spurious tracee/event.  */
++                        
+ 			if (tracee->exe == NULL) {
+-				tracee->restart_how = PTRACE_CONT;
++				tracee->restart_how = PTRACE_CONT; /* SYSCALL OR CONT */
+ 				return 0;
+ 			}
+-
++/*
++			if (signal == ( SIGTRAP | 0x80))
++				fprintf(stderr, "SYSTRAP %d %d %d\n",
++                                  tracee->seccomp, tracee->sysexit_pending, IS_IN_SYSENTER(tracee));
++*/
+ 			switch (tracee->seccomp) {
+ 			case ENABLED:
+ 				if (IS_IN_SYSENTER(tracee)) {
+@@ -490,47 +601,6 @@
  			}
  			break;
  
