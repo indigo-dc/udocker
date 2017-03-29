@@ -1242,6 +1242,9 @@ class ExecutionEngine(object):
         self.opt["cmd"] = self._quote(self.opt["cmd"])
         if exec_name.startswith("/"):
             exec_path = container_root + exec_name
+        # exe started from work dir
+        elif exec_name.startswith("."):
+            exec_path = container_root + "/" + self.opt["cwd"] + exec_name[1:]
         else:
             exec_path = \
                 FileUtil(exec_name).find_inpath(path, container_root + "/")
