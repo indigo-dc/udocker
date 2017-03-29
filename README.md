@@ -56,9 +56,9 @@ udocker is mainly oriented at providing a run-time environment for
 containers execution in user space.
 
 ## Security
-Because of the limitations described in section 1.2 udocker does not offer
+Because of the limitations described in the previous section udocker does not offer
 isolation features such as the ones offered by docker. If the containers
-content is not trusted then they should not be executed with udocker as
+content is not trusted then these containers should not be executed with udocker as
 they will run inside the user environment.
 
 The containers data will be unpacked and stored in the user home directory or
