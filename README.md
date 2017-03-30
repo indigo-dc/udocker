@@ -57,10 +57,10 @@ udocker is mainly oriented at providing a run-time environment for
 containers execution in user space.
 
 ## Security
-Because of the limitations described in section 1.2 udocker does not offer
-isolation features such as the ones offered by docker. If the containers
-content is not trusted then they should not be executed with udocker as
-they will run inside the user environment.
+Because of the limitations described in the previous section udocker does
+not offer isolation features such as the ones offered by docker. If the
+containers content is not trusted then these containers should not be
+executed with udocker as they will run inside the user environment.
 
 The containers data will be unpacked and stored in the user home directory or
 other location of choice. Therefore the containers data will be subjected to
@@ -190,7 +190,7 @@ udocker run --user jorge  myfed  /bin/id
 Firefox with audio and video
 ```
 ./udocker run --bindhome --hostauth --hostenv \
-   -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed
+   -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed  firefox
 ```
 
 ## Documentation
@@ -200,6 +200,6 @@ https://indigo-dc.gitbooks.io/udocker/content/
 
 ## Aknowlegments
 
-PRoot http://proot.me
-fakechroot https://github.com/dex4er/fakechroot/wiki
-INDIGO DataCloud https://www.indigo-datacloud.eu
+* PRoot http://proot.me
+* fakechroot https://github.com/dex4er/fakechroot/wiki
+* INDIGO DataCloud https://www.indigo-datacloud.eu

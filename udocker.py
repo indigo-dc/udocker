@@ -34,8 +34,8 @@ import platform
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.0.2"
-__date__ = "2016"
+__version__ = "1.0.3"
+__date__ = "2017"
 
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
@@ -161,6 +161,10 @@ class Config(object):
     # defaults for container execution
     cmd = ["/bin/bash", "-i"]  # Comand to execute
 
+    # dafault path for executables
+    root_path = "/usr/sbin:/sbin:/usr/bin:/bin"
+    user_path = "/usr/local/bin:/usr/bin:/bin"
+
     # directories to be mapped in contaners with: run --sysdirs
     sysdirs_list = (
         "/dev", "/proc", "/sys",
@@ -220,6 +224,10 @@ class Config(object):
     # private repository v2
     # dockerio_registry_url = "http://localhost:5000"
 
+    # registries table
+    docker_registries = {"docker.io": ["https://registry-1.docker.io"
+                                       "https://index.docker.io"],
+                        }
     # -------------------------------------------------------------
 
     def _verify_config(self):
@@ -800,7 +808,7 @@ class FileUtil(object):
             for directory in path:
                 full_path = rootdir + directory + "/" + self.basename
                 if os.path.exists(full_path):
-                    return full_path
+                    return directory + "/" + self.basename
             return ""
         return ""
 
@@ -1484,18 +1492,32 @@ class ExecutionEngineCommon(object):
             self.opt["cpuset"] = ""
             return " "
 
-    def _is_in_volumes(self, pathname):
-        """Is pathaname in the volumes exported to the container"""
+    def _cont2host(self, pathname):
+        """Translate container path to host path"""
+        if not (pathname and pathname.startswith("/")):
+            return ""
+        path = ""
         for vol in self.opt["vol"]:
             if ":" in vol:
                 (host_path, cont_path) = vol.split(":")
                 if pathname.startswith(cont_path):
-                    if os.path.isdir(host_path + pathname[len(cont_path):]):
-                        return True
+                    path = host_path + pathname[len(cont_path):]
+                    break
             elif pathname.startswith(vol):
-                if os.path.isdir(pathname):
-                    return True
-        return False
+                path = pathname
+                break
+        if not path:
+            path = self.container_root + "/" + pathname
+        f_path = ""
+        for d_comp in path.split("/"):
+            f_path = f_path + "/" + d_comp
+            if os.path.islink(f_path):
+                real_path = os.readlink(f_path)
+                if real_path.startswith("/"):
+                    f_path = self.container_root + real_path
+                else:
+                    f_path = os.path.dirname(f_path) + "/" + real_path
+        return os.path.realpath(f_path)
 
     def _check_volumes(self):
         """Check volume paths"""
@@ -1553,24 +1575,21 @@ class ExecutionEngineCommon(object):
                           novolume, l=Msg.WAR)
         return self._check_volumes()
 
-    def _check_paths(self, container_root):
+    def _check_paths(self):
         """Make sure we have a reasonable default PATH and CWD"""
         if not self._getenv("PATH"):
             if self.opt["uid"] == "0":
-                path = "/usr/sbin:/sbin:/usr/bin:/bin"
+                path = Config.root_path
             else:
-                path = "/usr/bin:/bin"
+                path = Config.user_path
             self.opt["env"].append("PATH=%s" % path)
         # verify if the working directory is valid and fix it
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
-        if self.opt["cwd"] and not self._is_in_volumes(self.opt["cwd"]):
-            if (not (os.path.exists(container_root + "/" + self.opt["cwd"]) and
-                     os.path.isdir(container_root + "/" + self.opt["cwd"]))):
-                Msg().err("Error: invalid working directory: ",
-                          self.opt["cwd"])
-                return False
-        return True
+        if os.path.isdir(self._cont2host(self.opt["cwd"])):
+            return True
+        Msg().err("Error: invalid working directory: ", self.opt["cwd"])
+        return False
 
     def _quote(self, argv):
         """Iterate over argv and quote items containing spaces. This is
@@ -1584,7 +1603,7 @@ class ExecutionEngineCommon(object):
             _argv.append(arg)
         return _argv
 
-    def _check_executable(self, container_root):
+    def _check_executable(self):
         """Check if executable exists and has execute permissions"""
         path = self._getenv("PATH")
         if self.opt["entryp"] and isinstance(self.opt["entryp"], str):
@@ -1603,22 +1622,19 @@ class ExecutionEngineCommon(object):
         exec_name = self.opt["cmd"][0]            # exec pathname without args
         self.opt["cmd"] = self._quote(self.opt["cmd"])
         if exec_name.startswith("/"):
-            exec_path = container_root + exec_name
+            exec_path = exec_name
+        elif exec_name.startswith("./") or exec_name.startswith("../"):
+            exec_path = self.opt["cwd"] + "/" + exec_name
         else:
             exec_path = \
-                FileUtil(exec_name).find_inpath(path, container_root + "/")
-        while os.path.islink(exec_path):
-            real_path = os.readlink(exec_path)
-            if real_path.startswith("/"):
-                exec_path = container_root + real_path
-            else:
-                exec_path = os.path.dirname(exec_path) + "/" + real_path
-        if (not (exec_path and os.path.exists(exec_path) and
-                 os.path.isfile(exec_path) and os.access(exec_path, os.X_OK))):
-            Msg().err("Error: command not found or has no execute bit set: ",
-                      self.opt["cmd"])
-            return ""
-        return exec_path
+                FileUtil(exec_name).find_inpath(path, self.container_root + "/")
+        host_exec_path = self._cont2host(exec_path)
+        if (os.path.isfile(host_exec_path) and
+                os.access(host_exec_path, os.X_OK)):
+            return host_exec_path
+        Msg().err("Error: command not found or has no execute bit set: ",
+                  self.opt["cmd"])
+        return ""
 
     def _run_load_metadata(self, container_id):
         """Load container metadata from container JSON payload"""
@@ -1897,8 +1913,8 @@ class ExecutionEngineCommon(object):
         if not self._set_volume_bindings():
             return ""
 
-        exec_path = self._check_executable(self.container_root)
-        if not (self._check_paths(self.container_root) and exec_path):
+        exec_path = self._check_executable()
+        if not (self._check_paths() and exec_path):
             return ""
 
         return exec_path
@@ -1949,8 +1965,6 @@ class PRootEngine(ExecutionEngineCommon):
             Msg().err("Error: proot executable not found")
             sys.exit(1)
         if conf.oskernel_isgreater((4, 8, 0)):
-            if not self.proot_exec.endswith("-4_8_0"):
-                self.proot_noseccomp = True
             if conf.proot_noseccomp is not None:
                 self.proot_noseccomp = conf.proot_noseccomp
             if self.exec_mode.get_mode() == "P1":
@@ -2000,7 +2014,7 @@ class PRootEngine(ExecutionEngineCommon):
             return 4
 
         if Msg.level >= Msg.DBG:
-            proot_verbose = " -v 3 "
+            proot_verbose = " -v 9 "
         else:
             proot_verbose = ""
 
@@ -3905,18 +3919,52 @@ class DockerIoAPI(object):
         files = self.get_v1_layers_all(endpoint, ancestry)
         return files
 
+    def _parse_imagerepo(self, imagerepo):
+        """Parse imagerepo to extract registry"""
+        remoterepo = imagerepo
+        registry = ""
+        registry_url = ""
+        index_url = ""
+        components = imagerepo.split("/")
+        if '.' in components[0] and len(components) >= 2:
+            registry = components[0]
+            if components[1] == "library":
+                remoterepo = "/".join(components[2:])
+                del components[1]
+                imagerepo = "/".join(components)
+            else:
+                remoterepo = "/".join(components[1:])
+        else:
+            if components[0] == "library" and len(components) >= 1:
+                del components[0]
+                remoterepo = "/".join(components)
+                imagerepo = "/".join(components)
+        if registry:
+            try:
+                registry_url = Config.docker_registries[registry][0]
+                index_url = Config.docker_registries[registry][1]
+            except (KeyError, NameError, TypeError):
+                registry_url = "https://%s" % registry
+                index_url = registry_url
+            if registry_url:
+                self.registry_url = registry_url
+            if index_url:
+                self.index_url = index_url
+        return (imagerepo, remoterepo)
+
     def get(self, imagerepo, tag):
         """Pull a docker image from a v2 registry or v1 index"""
         Msg().out("get imagerepo: %s tag: %s" % (imagerepo, tag), l=Msg.DBG)
+        (imagerepo, remoterepo) = self._parse_imagerepo(imagerepo)
         if self.localrepo.cd_imagerepo(imagerepo, tag):
             new_repo = False
         else:
             self.localrepo.setup_imagerepo(imagerepo)
             new_repo = True
         if self.is_v2():
-            files = self.get_v2(imagerepo, tag)  # try v2
+            files = self.get_v2(remoterepo, tag)  # try v2
         else:
-            files = self.get_v1(imagerepo, tag)  # try v1
+            files = self.get_v1(remoterepo, tag)  # try v1
         if new_repo and not files:
             self.localrepo.del_imagerepo(imagerepo, tag, False)
         return files
@@ -5202,7 +5250,7 @@ class Main(object):
     def __init__(self):
         self.cmdp = CmdParser()
         if not self.cmdp.parse(sys.argv):
-            Msg().err("Error: parsing command line, use: udocker --help")
+            Msg().err("Error: parsing command line, use: udocker help")
             sys.exit(1)
         Config().user_init(self.cmdp.get("--config=", "GEN_OPT"))
         if (self.cmdp.get("--debug", "GEN_OPT") or

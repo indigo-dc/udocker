@@ -1933,6 +1933,9 @@ class ExecutionEngineCommon(unittest.TestCase):
         udocker.Config.location = ""
         udocker.Config.uid = 1000
         udocker.Config.sysdirs_list = ["/", ]
+        udocker.Config.root_path = "/usr/sbin:/sbin:/usr/bin:/bin"
+        udocker.Config.user_path = "/usr/bin:/bin:/usr/local/bin"
+
 
     @mock.patch('udocker.LocalRepository')
     def test_01_init(self, mock_local):
@@ -1999,32 +2002,32 @@ class ExecutionEngineCommon(unittest.TestCase):
 
     @mock.patch('udocker.os.path.isdir')
     @mock.patch('udocker.LocalRepository')
-    def test_04__is_in_volumes(self, mock_local, mock_isdir):
-        """Test ExecutionEngineCommon()._is_in_volumes()"""
+    def test_04__cont2host(self, mock_local, mock_isdir):
+        """Test ExecutionEngine()._cont2host()"""
         self._init()
         mock_isdir.return_value = True
         #
         ex_eng = udocker.ExecutionEngineCommon(mock_local)
         ex_eng.opt["vol"] = ("/opt/xxx:/mnt", )
-        status = ex_eng._is_in_volumes("/mnt")
-        self.assertTrue(status)
+        status = ex_eng._cont2host("/mnt")
+        self.assertEqual(status, "/opt/xxx")
         #
         ex_eng.opt["vol"] = ("/var/xxx:/mnt", )
-        status = ex_eng._is_in_volumes("/opt")
-        self.assertFalse(status)
+        status = ex_eng._cont2host("/opt")
+        self.assertEqual(status, "/opt")
         # change dir to volume (regression of #51)
         ex_eng.opt["vol"] = ("/var/xxx", )
-        status = ex_eng._is_in_volumes("/var/xxx/tt")
-        self.assertTrue(status)
+        status = ex_eng._cont2host("/var/xxx/tt")
+        self.assertEqual(status, "/var/xxx/tt")
         # change dir to volume (regression of #51)
         ex_eng.opt["vol"] = ("/var/xxx:/mnt", )
-        status = ex_eng._is_in_volumes("/mnt/tt")
-        self.assertTrue(status)
+        status = ex_eng._cont2host("/mnt/tt")
+        self.assertEqual(status, "/var/xxx/tt")
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.os.path.isdir')
     @mock.patch('udocker.os.path.exists')
-    @mock.patch('udocker.ExecutionEngineCommon._is_in_volumes')
+    @mock.patch('udocker.ExecutionEngineCommon._cont2host')
     @mock.patch('udocker.ExecutionEngineCommon._getenv')
     @mock.patch('udocker.LocalRepository')
     def test_05__check_paths(self, mock_local, mock_getenv, mock_isinvol,
@@ -2039,60 +2042,56 @@ class ExecutionEngineCommon(unittest.TestCase):
         ex_eng.opt["uid"] = "0"
         ex_eng.opt["cwd"] = ""
         ex_eng.opt["home"] = "/home/user"
-        status = ex_eng._check_paths("/containers/123/ROOT")
+        ex_eng.container_root = "/containers/123/ROOT"
+        status = ex_eng._check_paths()
         self.assertFalse(status)
         self.assertEqual(ex_eng.opt["env"][-1],
                          "PATH=/usr/sbin:/sbin:/usr/bin:/bin")
         self.assertEqual(ex_eng.opt["cwd"], ex_eng.opt["home"])
         #
         ex_eng.opt["uid"] = "1000"
-        status = ex_eng._check_paths("/containers/123/ROOT")
+        status = ex_eng._check_paths()
         self.assertFalse(status)
         self.assertEqual(ex_eng.opt["env"][-1],
-                         "PATH=/usr/bin:/bin")
+                "PATH=/usr/bin:/bin:/usr/local/bin")
         self.assertEqual(ex_eng.opt["cwd"], ex_eng.opt["home"])
         #
         mock_exists.return_value = True
         mock_isdir.return_value = True
-        status = ex_eng._check_paths("/containers/123/ROOT")
+        status = ex_eng._check_paths()
         self.assertTrue(status)
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.os.access')
     @mock.patch('udocker.os.readlink')
     @mock.patch('udocker.os.path.isfile')
-    @mock.patch('udocker.os.path.islink')
-    @mock.patch('udocker.os.path.exists')
     @mock.patch('udocker.ExecutionEngineCommon._getenv')
     @mock.patch('udocker.LocalRepository')
-    def test_06__check_executable(self, mock_local, mock_getenv,
-                                  mock_exists, mock_islink, mock_isfile,
+    def test_06__check_executable(self, mock_local, mock_getenv, mock_isfile,
                                   mock_readlink, mock_access, mock_msg):
         """Test ExecutionEngineCommon()._check_executable()"""
         self._init()
         ex_eng = udocker.ExecutionEngineCommon(mock_local)
         mock_getenv.return_value = ""
         ex_eng.opt["entryp"] = "/bin/shell -x -v"
-        mock_islink.return_value = False
-        mock_exists.return_value = False
-        status = ex_eng._check_executable("/containers/123/ROOT")
+        mock_isfile.return_value = False
+        ex_eng.container_root = "/containers/123/ROOT"
+        status = ex_eng._check_executable()
         self.assertFalse(status)
         #
-        mock_islink.return_value = False
-        mock_exists.return_value = True
         mock_isfile.return_value = True
         mock_access.return_value = True
-        status = ex_eng._check_executable("/containers/123/ROOT")
+        status = ex_eng._check_executable()
         self.assertTrue(status)
         #
         ex_eng.opt["entryp"] = ["/bin/shell", "-x", "-v"]
         ex_eng.opt["cmd"] = ""
-        status = ex_eng._check_executable("/containers/123/ROOT")
+        status = ex_eng._check_executable()
         self.assertEqual(ex_eng.opt["cmd"], ex_eng.opt["entryp"])
         #
         ex_eng.opt["entryp"] = ["/bin/shell", ]
         ex_eng.opt["cmd"] = ["-x", "-v"]
-        status = ex_eng._check_executable("/containers/123/ROOT")
+        status = ex_eng._check_executable()
         self.assertEqual(ex_eng.opt["cmd"], ["/bin/shell", "-x", "-v"])
 
     @mock.patch('udocker.ContainerStructure')
