@@ -123,6 +123,10 @@ class Config(object):
     # defaults for container execution
     cmd = ["/bin/bash", "-i"]  # Comand to execute
 
+    # dafault path for executables
+    root_path = "/usr/sbin:/sbin:/usr/bin:/bin"
+    user_path = "/usr/local/bin:/usr/bin:/bin"
+
     # directories to be mapped in contaners with: run --sysdirs
     sysdirs_list = (
         "/dev", "/proc", "/sys",
@@ -745,7 +749,7 @@ class FileUtil(object):
             for directory in path:
                 full_path = rootdir + directory + "/" + self.basename
                 if os.path.exists(full_path):
-                    return full_path
+                    return directory + "/" + self.basename
             return ""
         return ""
 
@@ -1121,18 +1125,32 @@ class ExecutionEngine(object):
             self.opt["cpuset"] = ""
             return " "
 
-    def _is_in_volumes(self, pathname):
-        """Is pathaname in the volumes exported to the container"""
+    def _cont2host(self, pathname):
+        """Translate container path to host path"""
+        if not (pathname and pathname.startswith("/")):
+            return ""
+        path = ""
         for vol in self.opt["vol"]:
             if ":" in vol:
                 (host_path, cont_path) = vol.split(":")
                 if pathname.startswith(cont_path):
-                    if os.path.isdir(host_path + pathname[len(cont_path):]):
-                        return True
+                    path = host_path + pathname[len(cont_path):]
+                    break
             elif pathname.startswith(vol):
-                if os.path.isdir(pathname):
-                    return True
-        return False
+                path = pathname
+                break
+        if not path:
+            path = self.container_root + "/" + pathname
+        f_path = ""
+        for d_comp in path.split("/"):
+            f_path = f_path + "/" + d_comp
+            if os.path.islink(f_path):
+                real_path = os.readlink(f_path)
+                if real_path.startswith("/"):
+                    f_path = self.container_root + real_path
+                else:
+                    f_path = os.path.dirname(f_path) + "/" + real_path
+        return os.path.realpath(f_path)
 
     def _check_volumes(self):
         """Check volume paths"""
@@ -1191,24 +1209,21 @@ class ExecutionEngine(object):
                           novolume, l=Msg.WAR)
         return self._check_volumes()
 
-    def _check_paths(self, container_root):
+    def _check_paths(self):
         """Make sure we have a reasonable default PATH and CWD"""
         if not self._getenv("PATH"):
             if self.opt["uid"] == "0":
-                path = "/usr/sbin:/sbin:/usr/bin:/bin"
+                path = Config.root_path
             else:
-                path = "/usr/bin:/bin"
+                path = Config.user_path
             self.opt["env"].append("PATH=%s" % path)
         # verify if the working directory is valid and fix it
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
-        if self.opt["cwd"] and not self._is_in_volumes(self.opt["cwd"]):
-            if (not (os.path.exists(container_root + "/" + self.opt["cwd"]) and
-                     os.path.isdir(container_root + "/" + self.opt["cwd"]))):
-                Msg().err("Error: invalid working directory: ",
-                          self.opt["cwd"])
-                return False
-        return True
+        if os.path.isdir(self._cont2host(self.opt["cwd"])):
+            return True
+        Msg().err("Error: invalid working directory: ", self.opt["cwd"])
+        return False
 
     def _quote(self, argv):
         """Iterate over argv and quote items containing spaces. This is
@@ -1222,7 +1237,7 @@ class ExecutionEngine(object):
             _argv.append(arg)
         return _argv
 
-    def _check_executable(self, container_root):
+    def _check_executable(self):
         """Check if executable exists and has execute permissions"""
         path = self._getenv("PATH")
         if self.opt["entryp"] and isinstance(self.opt["entryp"], str):
@@ -1241,22 +1256,19 @@ class ExecutionEngine(object):
         exec_name = self.opt["cmd"][0]            # exec pathname without args
         self.opt["cmd"] = self._quote(self.opt["cmd"])
         if exec_name.startswith("/"):
-            exec_path = container_root + exec_name
+            exec_path = exec_name
+        elif exec_name.startswith("./") or exec_name.startswith("../"):
+            exec_path = self.opt["cwd"] + "/" + exec_name
         else:
             exec_path = \
-                FileUtil(exec_name).find_inpath(path, container_root + "/")
-        while os.path.islink(exec_path):
-            real_path = os.readlink(exec_path)
-            if real_path.startswith("/"):
-                exec_path = container_root + real_path
-            else:
-                exec_path = os.path.dirname(exec_path) + "/" + real_path
-        if (not (exec_path and os.path.exists(exec_path) and
-                 os.path.isfile(exec_path) and os.access(exec_path, os.X_OK))):
-            Msg().err("Error: command not found or has no execute bit set: ",
-                      self.opt["cmd"])
-            return False
-        return True
+                FileUtil(exec_name).find_inpath(path, self.container_root + "/")
+        host_exec_path = self._cont2host(exec_path)
+        if (os.path.isfile(host_exec_path) and
+                os.access(host_exec_path, os.X_OK)):
+            return True
+        Msg().err("Error: command not found or has no execute bit set: ",
+                  self.opt["cmd"])
+        return False
 
     def _run_load_metadata(self, container_id):
         """Load container metadata from container JSON payload"""
@@ -1532,8 +1544,7 @@ class ExecutionEngine(object):
         if not self._set_volume_bindings():
             return False
 
-        if (not (self._check_paths(self.container_root) and
-                 self._check_executable(self.container_root))):
+        if not (self._check_paths() and self._check_executable()):
             return False
 
         return True
