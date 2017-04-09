@@ -48,7 +48,7 @@ create_source_tarball()
     /bin/rm $SOURCE_TARBALL 2> /dev/null
     pushd $TMP_DIR
     /bin/rm -Rf PRoot
-    git clone --depth=1 https://github.com/proot-me/PRoot 
+    git clone --branch v5.1.0 --depth=1 https://github.com/proot-me/PRoot 
     /bin/mv PRoot $BASE_DIR
     patch_proot_source2
     tar czvf $SOURCE_TARBALL $BASE_DIR

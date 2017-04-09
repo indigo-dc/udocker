@@ -1,3 +1,9 @@
+udocker (1.1.0) - EXPERIMENTAL
+
+  * support image names prefixed by registry similarly to docker 
+  * add execution driver for data and compute intensive applications
+  * add execution driver and execution mode selection logic
+
 udocker (1.0.3)
 
   * Support for import Docker containers in newer metadata structure
@@ -22,7 +28,7 @@ udocker (1.0.3)
 udocker (1.0.2)
 
   * Improve download on repositories that fail authentication on /v2
-  * Improve run verification binaries with recursive symbolic links
+  * Improve run verification of binaries with recursive symbolic links
   * Improve accelerated seccomp on kernels >= 4.8.0
     - closes: #40
 

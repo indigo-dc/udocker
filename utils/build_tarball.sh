@@ -1,9 +1,7 @@
 #!/bin/bash
 
 # ##################################################################
-#
 # Build binaries and create udocker tarball
-#
 # ##################################################################
 
 sanity_check() 
@@ -34,7 +32,8 @@ get_proot_static()
         return
     fi
 
-    git clone --depth=1 https://github.com/proot-me/proot-static-build 
+    git clone --depth=1 --branch v5.1.1 https://github.com/proot-me/proot-static-build 
+    /bin/rm -Rf $BUILD_DIR/proot-static-build/.git
 }
 
 prepare_proot_source()
@@ -48,7 +47,17 @@ prepare_proot_source()
         return
     fi
 
-    git clone --depth=1 https://github.com/proot-me/PRoot 
+    git clone --branch v5.1.0 --depth=1 https://github.com/proot-me/PRoot 
+    /bin/rm -Rf $BUILD_DIR/PRoot/.git
+    /bin/rm -Rf $BUILD_DIR/PRoot/static/care*
+    /bin/rm -Rf $BUILD_DIR/PRoot/packages/care*
+    /bin/rm -Rf $BUILD_DIR/PRoot/packages/cpio*
+    /bin/rm -Rf $BUILD_DIR/PRoot/packages/glib*
+    /bin/rm -Rf $BUILD_DIR/PRoot/packages/libarchive*
+    /bin/rm -Rf $BUILD_DIR/PRoot/packages/lzo*
+    /bin/rm -Rf $BUILD_DIR/PRoot/packages/zlib*
+    /bin/rm -Rf $BUILD_DIR/PRoot/packages/proot*
+    /bin/rm -Rf $BUILD_DIR/PRoot/packages/uthash-master*
     /bin/mv PRoot "$PROOT_SOURCE_DIR"
 }
 
@@ -64,27 +73,7 @@ patch_proot_source1()
         return
     fi
 
-    cat > GNUmakefile.patch <<'EOF_GNUmakefile.patch'
---- PRoot/src/GNUmakefile	2016-11-28 12:24:12.000000000 +0000
-+++ PRoot-static/src/GNUmakefile	2016-12-06 11:35:24.438382099 +0000
-@@ -14,11 +14,11 @@
- OBJCOPY  = $(CROSS_COMPILE)objcopy
- OBJDUMP  = $(CROSS_COMPILE)objdump
- 
--CPPFLAGS += -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I. -I$(VPATH)
--CFLAGS   += -Wall -Wextra -O2
--LDFLAGS  += -ltalloc
-+CPPFLAGS += -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I. -I$(VPATH) 
-+CFLAGS   += -Wall -Wextra -O2 
-+LDFLAGS  += -L. -ltalloc -static 
- 
--CARE_LDFLAGS = -larchive
-+CARE_LDFLAGS = -larchive -static 
- 
- OBJECTS += \
- 	cli/cli.o		\
-EOF_GNUmakefile.patch
-
+    cp ${utils_dir}/proot_make.patch GNUmakefile.patch
     patch < GNUmakefile.patch
 }
 
@@ -102,6 +91,86 @@ patch_proot_source2()
 
     cp ${utils_dir}/proot_event.patch event.patch
     patch < event.patch
+}
+
+prepare_patchelf_source()
+{
+    echo "prepare_patchelf_source : $1"
+    local PATCHELF_SOURCE_DIR="$1"
+    cd "$BUILD_DIR"
+
+    if [ -d "$PATCHELF_SOURCE_DIR" ] ; then
+        echo "patchelf source already exists: $PATCHELF_SOURCE_DIR"
+        return
+    fi
+
+    # tag for 0.10 not yet in github getting latest
+    git clone --depth=1 https://github.com/NixOS/patchelf.git
+    /bin/mv patchelf "$PATCHELF_SOURCE_DIR"
+}
+
+patch_patchelf_source1()
+{
+    echo "patch_patchelf_source1 : $1"
+    local PATCHELF_SOURCE_DIR="$1"
+
+    cd "$PATCHELF_SOURCE_DIR"
+
+    if [ -e "makefile.am.patch" ] ; then
+        echo "patch patchelf source1 already applied: $PATCHELF_SOURCE_DIR/makefile.am.patch"
+        return
+    fi
+
+    cp ${utils_dir}/patchelf_make.patch makefile.am.patch
+    patch -p1 < makefile.am.patch
+}
+
+patch_patchelf_source2()
+{
+    echo "patch_patchelf_source2 : $1"
+    local PATCHELF_SOURCE_DIR="$1"
+
+    cd "$PATCHELF_SOURCE_DIR"
+
+    if [ -e "patchelf.patch" ] ; then
+        echo "patch patchelf source1 already applied: $PATCHELF_SOURCE_DIR/patchelf.patch"
+        return
+    fi
+
+    cp ${utils_dir}/patchelf_code.patch patchelf.patch
+    patch -p1 < patchelf.patch
+}
+
+prepare_fakechroot_source()
+{
+    echo "prepare_fakechroot_source : $1"
+    local FAKECHROOT_SOURCE_DIR="$1"
+    cd "$BUILD_DIR"
+
+    if [ -d "$FAKECHROOT_SOURCE_DIR" ] ; then
+        echo "fakechroot source already exists: $FAKECHROOT_SOURCE_DIR"
+        return
+    fi
+
+    git clone --depth=1 --branch 2.18 https://github.com/dex4er/fakechroot.git
+    /bin/rm -Rf $BUILD_DIR/fakechroot/.git
+    /bin/mv fakechroot "$FAKECHROOT_SOURCE_DIR"
+}
+
+patch_fakechroot_source1()
+{
+    echo "patch_fakechroot_source1 : $1"
+    local FAKECHROOT_SOURCE_DIR="$1"
+
+    cd "$FAKECHROOT_SOURCE_DIR"
+
+    if [ -e "Fakechroot.patch" ] ; then
+        echo "patch fakechroot source1 already applied: $FAKECHROOT_SOURCE_DIR/Fakechroot.patch"
+        return
+    fi
+
+    cp ${utils_dir}/fakechroot_source.patch Fakechroot.patch
+    patch -p1 < Fakechroot.patch
 }
 
 prepare_package()
@@ -158,32 +227,9 @@ addto_package_other()
     /bin/cp -f "${REPO_DIR}/setup.py"             "${PACKAGE_DIR}/"
 }
 
-create_package_tarball()
-{
-    echo "create_package_tarball : $TARBALL_FILE"
-    if [ ! -f "${BUILD_DIR}/proot-source-x86/src/proot" ] ; then
-        echo "failed to compile : ${BUILD_DIR}/proot-source-x86/src/proot"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/proot-source-x86_64/src/proot" ] ; then
-        echo "failed to compile : ${BUILD_DIR}/proot-source-x86_64/src/proot"
-        return
-    fi
-
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86/src/proot"  "${PACKAGE_DIR}/udocker_dir/bin/proot-x86-4_8_0"
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/src/proot"  "${PACKAGE_DIR}/udocker_dir/bin/proot-x86_64-4_8_0"
-
-    find "${PACKAGE_DIR}" -type d -exec /bin/chmod u=rwx,og=rx  {} \;
-    find "${PACKAGE_DIR}" -type f -exec /bin/chmod u=+r+w,og=r  {} \;
-    find "${PACKAGE_DIR}/udocker_dir/bin" -type f -exec /bin/chmod u=rwx,og=rx  {} \;
-    /bin/chmod u=rwx,og=rx ${PACKAGE_DIR}/udocker
-    /bin/chmod u=rwx,og=rx ${PACKAGE_DIR}/setup.py
-
-    /bin/rm -f $TARBALL_FILE 2>&1 > /dev/null
-
-    cd "$PACKAGE_DIR"
-    tar --owner=root --group=root -czvf "$TARBALL_FILE" $(ls -A)
-}
+# #############################################################################
+# Fedora 25
+# #############################################################################
 
 fedora25_create_dnf()
 {
@@ -191,7 +237,7 @@ fedora25_create_dnf()
     local FILENAME="$1"
     local ARCH="$2"
 
-    cat > "$FILENAME" <<EOF_dnf
+    cat > "$FILENAME" <<EOF_fedora25_dnf
 [main]
 gpgcheck=0
 installonly_limit=3
@@ -219,24 +265,52 @@ metadata_expire=7d
 gpgcheck=0
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
 skip_if_unavailable=False
-
-[fedora-source]
-name=Fedora \$releasever - Source
-failovermethod=priority
-#baseurl=http://download.fedoraproject.org/pub/fedora/linux/releases/\$releasever/Everything/source/tree/
-metalink=https://mirrors.fedoraproject.org/metalink?repo=fedora-source-\$releasever&arch=$ARCH
-enabled=0
-metadata_expire=7d
-gpgcheck=0
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
-skip_if_unavailable=False
-EOF_dnf
+EOF_fedora25_dnf
 }
 
 
-fedora25_build()
+fedora25_setup()
 {
-    echo "fedora25_build : $1"
+    echo "fedora25_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="fedora"
+    local OS_RELVER="25"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/bin/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    /bin/mkdir -p "${OS_ROOTDIR}/tmp"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot-static-packages"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/dnf"
+    fedora25_create_dnf "${OS_ROOTDIR}/etc/dnf/dnf.conf" "$OS_ARCH"
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python gzip zlib
+
+    if [ "$OS_ARCH" = "x86_64" ]; then
+        $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+                autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
+    fi
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        clean packages
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+
+fedora25_build_proot()
+{
+    echo "fedora25_build_proot : $1"
     local OS_ARCH="$1"
     local PROOT_SOURCE_DIR="$2"
     local OS_NAME="fedora"
@@ -253,34 +327,16 @@ fedora25_build()
         exit 2
     fi
 
-    if [ -x "${PROOT_SOURCE_DIR}/src/proot" ] ; then
-        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/src/proot"
+    if [ -x "${PROOT_SOURCE_DIR}/proot-Fedora-25.so" ] ; then
+        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/proot-Fedora-25.so"
         return
     fi
 
     export PROOT_NO_SECCOMP=1
 
-    SUDO=sudo
-
-    /bin/mkdir -p "${OS_ROOTDIR}/tmp"
-    /bin/mkdir -p "${OS_ROOTDIR}/proot"
-    /bin/mkdir -p "${OS_ROOTDIR}/proot-static-packages"
-    /bin/mkdir -p "${OS_ROOTDIR}/etc/dnf"
-    fedora25_create_dnf "${OS_ROOTDIR}/etc/dnf/dnf.conf" "$OS_ARCH"
-
-    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-        group install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-        Core 
-
-    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-        gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python
-
-    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
-    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
-
+    # compile PRoot
     $PROOT -r "$OS_ROOTDIR" -b "${PROOT_SOURCE_DIR}:/proot" -w / -b /dev \
-                           -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_compile'
+                           -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora25_proot'
 cd /proot
 # BUILD TALLOC
 tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
@@ -290,14 +346,692 @@ make
 cp talloc.h /proot/src
 cd bin/default
 ar qf libtalloc.a talloc_3.o
-cp libtalloc.a /proot/src
+cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
 make
-EOF_compile
-
+cp proot /proot/proot-Fedora-25.so
+make clean
+EOF_fedora25_proot
 }
 
+
+fedora25_build_patchelf()
+{
+    echo "fedora25_build_patchelf : $1"
+    local OS_ARCH="$1"
+    local PATCHELF_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="25"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${PATCHELF_SOURCE_DIR}/patchelf-Fedora-25" ] ; then
+        echo "patchelf binary already compiled : ${PATCHELF_SOURCE_DIR}/patchelf-Fedora-25"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile patchelf
+    set -xv
+    (cd ${PATCHELF_SOURCE_DIR} ; bash ./bootstrap.sh)
+    $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
+                            /bin/bash <<'EOF_fedora25_patchelf'
+cd /patchelf
+make clean
+# BUILD PATCHELF
+#bash bootstrap.sh
+bash ./configure
+make
+cp src/patchelf /patchelf/patchelf-Fedora-25
+make clean
+EOF_fedora25_patchelf
+    set +xv
+}
+
+fedora25_build_fakechroot()
+{
+    echo "fedora25_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="25"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-Fedora-25.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-Fedora-25.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_fedora25_fakechroot'
+cd /fakechroot
+# BUILD FAKECHROOT
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-Fedora-25.so
+make clean
+EOF_fedora25_fakechroot
+    set +xv
+}
+
+# #############################################################################
+# CentOS 6
+# #############################################################################
+
+centos6_create_yum()
+{
+    echo "centos6_create_yum : $1"
+    local FILENAME="$1"
+    local ARCH="$2"
+
+    cat > "${FILENAME}" <<'EOF_centos6_yum_conf'
+[main]
+cachedir=/var/cache/yum/$basearch/$releasever
+keepcache=0
+debuglevel=2
+exactarch=1
+obsoletes=1
+gpgcheck=0
+plugins=1
+installonly_limit=5
+#logfile=/var/log/yum.log
+#bugtracker_url=http://bugs.centos.org/set_project.php?project_id=19&ref=http://bugs.centos.org/bug_report_page.php?category=yum
+distroverpkg=centos-release
+
+# PUT YOUR REPOS HERE OR IN separate files named file.repo
+# in /etc/yum.repos.d
+reposdir=
+
+[base]
+name=CentOS-$releasever - Base
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os&infra=$infra
+#baseurl=http://mirror.centos.org/centos/$releasever/os/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+
+#released updates 
+[updates]
+name=CentOS-$releasever - Updates
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=updates&infra=$infra
+#baseurl=http://mirror.centos.org/centos/$releasever/updates/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+
+#additional packages that may be useful
+[extras]
+name=CentOS-$releasever - Extras
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=extras&infra=$infra
+#baseurl=http://mirror.centos.org/centos/$releasever/extras/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+
+#additional packages that extend functionality of existing packages
+[centosplus]
+name=CentOS-$releasever - Plus
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=centosplus&infra=$infra
+#baseurl=http://mirror.centos.org/centos/$releasever/centosplus/$basearch/
+gpgcheck=0
+enabled=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+
+#contrib - packages by Centos Users
+[contrib]
+name=CentOS-$releasever - Contrib
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=contrib&infra=$infra
+#baseurl=http://mirror.centos.org/centos/$releasever/contrib/$basearch/
+gpgcheck=0
+enabled=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+
+[base-debuginfo]
+name=CentOS-6 - Debuginfo
+baseurl=http://debuginfo.centos.org/6/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-Debug-6
+enabled=0
+
+# EPEL
+
+[epel]
+name=Extra Packages for Enterprise Linux 6 - $basearch
+#baseurl=http://download.fedoraproject.org/pub/epel/6/$basearch
+mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-6&arch=$basearch
+failovermethod=priority
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
+
+[epel-debuginfo]
+name=Extra Packages for Enterprise Linux 6 - $basearch - Debug
+#baseurl=http://download.fedoraproject.org/pub/epel/6/$basearch/debug
+mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-debug-6&arch=$basearch
+failovermethod=priority
+enabled=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
+gpgcheck=1
+EOF_centos6_yum_conf
+}
+
+
+centos6_setup()
+{
+    echo "centos6_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="centos"
+    local OS_RELVER="6"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/usr/bin/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    /bin/mkdir -p "${OS_ROOTDIR}/tmp"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot-static-packages"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/yum"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/yum.repos.d"
+    centos6_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
+
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+            gcc make libtalloc libtalloc-devel glibc-static glibc-devel tar python gzip zlib
+
+    if [ "$OS_ARCH" = "x86_64" ]; then
+        $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+                autoconf m4 gcc-c++ automake gawk libtool
+    fi
+
+    $SUDO /usr/bin/ym -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        clean packages
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+
+centos6_build_fakechroot()
+{
+    echo "centos6_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="centos"
+    local OS_RELVER="6"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-CentOS-6.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-CentOS-6.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_centos6_fakechroot'
+cd /fakechroot
+# BUILD FAKECHROOT
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-CentOS-6.so
+make clean
+EOF_centos6_fakechroot
+    set +xv
+}
+
+# #############################################################################
+# CentOS 7
+# #############################################################################
+
+centos7_create_yum()
+{
+    echo "centos7_create_yum : $1"
+    local FILENAME="$1"
+    local ARCH="$2"
+
+    cat > "${FILENAME}" <<'EOF_centos7_yum_conf'
+[main]
+cachedir=/var/cache/yum/$basearch/$releasever
+keepcache=0
+debuglevel=2
+exactarch=1
+obsoletes=1
+gpgcheck=0
+plugins=1
+installonly_limit=5
+#logfile=/var/log/yum.log
+#bugtracker_url=http://bugs.centos.org/set_project.php?project_id=19&ref=http://bugs.centos.org/bug_report_page.php?category=yum
+distroverpkg=centos-release
+
+# PUT YOUR REPOS HERE OR IN separate files named file.repo
+# in /etc/yum.repos.d
+reposdir=
+
+[base]
+name=CentOS-$releasever - Base
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os&infra=$infra
+#baseurl=http://mirror.centos.org/centos/$releasever/os/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
+#released updates 
+[updates]
+name=CentOS-$releasever - Updates
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=updates&infra=$infra
+#baseurl=http://mirror.centos.org/centos/$releasever/updates/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
+#additional packages that may be useful
+[extras]
+name=CentOS-$releasever - Extras
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=extras&infra=$infra
+#baseurl=http://mirror.centos.org/centos/$releasever/extras/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
+#additional packages that extend functionality of existing packages
+[centosplus]
+name=CentOS-$releasever - Plus
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=centosplus&infra=$infra
+#baseurl=http://mirror.centos.org/centos/$releasever/centosplus/$basearch/
+gpgcheck=0
+enabled=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
+
+# EPEL
+
+[epel]
+name=Extra Packages for Enterprise Linux 7 - $basearch
+#baseurl=http://download.fedoraproject.org/pub/epel/7/$basearch
+mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch
+failovermethod=priority
+enabled=1
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
+
+[epel-debuginfo]
+name=Extra Packages for Enterprise Linux 7 - $basearch - Debug
+#baseurl=http://download.fedoraproject.org/pub/epel/7/$basearch/debug
+mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-debug-7&arch=$basearch
+failovermethod=priority
+enabled=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
+gpgcheck=0
+EOF_centos7_yum_conf
+}
+
+
+centos7_setup()
+{
+    echo "centos7_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="centos"
+    local OS_RELVER="7"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/bin/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    /bin/mkdir -p "${OS_ROOTDIR}/tmp"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot-static-packages"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/yum"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/yum.repos.d"
+    centos7_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
+
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+            gcc make libtalloc libtalloc-devel glibc-static glibc-devel tar python gzip zlib
+
+    if [ "$OS_ARCH" = "x86_64" ]; then
+        $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+                autoconf m4 gcc-c++ automake gawk libtool
+    fi
+
+    $SUDO /usr/bin/ym -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        clean packages
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+
+centos7_build_fakechroot()
+{
+    echo "centos7_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="centos"
+    local OS_RELVER="7"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-CentOS-7.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-CentOS-7.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_centos7_fakechroot'
+cd /fakechroot
+# BUILD FAKECHROOT
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-CentOS-7.so
+make clean
+EOF_centos7_fakechroot
+    set +xv
+}
+
+
+# #############################################################################
+# Ubuntu 14.04
+# #############################################################################
+
+ubuntu14_setup()
+{
+    echo "ubuntu14_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="ubuntu"
+    local OS_RELVER="14"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/usr/lib/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    $SUDO debootstrap --arch=$OS_ARCH --variant=buildd trusty $OS_ROOTDIR http://archive.ubuntu.com/ubuntu/
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+ubuntu14_build_fakechroot()
+{
+    echo "ubuntu14_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="ubuntu"
+    local OS_RELVER="14"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+    elif [ "$OS_ARCH" = "amd64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-Ubuntu-14.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-Ubuntu-14.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -0 -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            -b /etc/resolv.conf:/etc/resolv.conf /bin/bash <<'EOF_ubuntu14_packages'
+apt-get -y update
+apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
+apt-get -y update
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash
+EOF_ubuntu14_packages
+
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_ubuntu14_fakechroot'
+# BUILD FAKECHROOT
+export SHELL=/bin/bash
+export CONFIG_SHELL=/bin/bash
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib
+cd /fakechroot
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-Ubuntu-14.so
+make clean
+EOF_ubuntu14_fakechroot
+    set +xv
+}
+
+# #############################################################################
+# Ubuntu 16.04
+# #############################################################################
+
+ubuntu16_setup()
+{
+    echo "ubuntu16_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="ubuntu"
+    local OS_RELVER="16"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/usr/lib/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    $SUDO debootstrap --arch=$OS_ARCH --variant=buildd xenial $OS_ROOTDIR http://archive.ubuntu.com/ubuntu/
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+ubuntu16_build_fakechroot()
+{
+    echo "ubuntu16_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="ubuntu"
+    local OS_RELVER="16"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+    elif [ "$OS_ARCH" = "amd64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-Ubuntu-16.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-Ubuntu-16.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -0 -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            -b /etc/resolv.conf:/etc/resolv.conf /bin/bash <<'EOF_ubuntu16_packages'
+apt-get -y update
+apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
+apt-get -y update
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash
+EOF_ubuntu16_packages
+
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_ubuntu16_fakechroot'
+# BUILD FAKECHROOT
+export SHELL=/bin/bash
+export CONFIG_SHELL=/bin/bash
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib
+cd /fakechroot
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-Ubuntu-16.so
+make clean
+EOF_ubuntu16_fakechroot
+    set +xv
+}
+
+ostree_delete()
+{
+    local OS_ARCH="$1"
+    local OS_NAME="$2"
+    local OS_RELVER="$3"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    echo "ostree_delete : $OS_ROOTDIR"
+    [[ "$OS_ROOTDIR" =~ ^$BUILD_DIR/.+ ]] && /bin/rm -Rf "$OS_ROOTDIR"
+}
+
+# #############################################################################
+# CREATE TARBALL PACKAGE
+# #############################################################################
+
+create_package_tarball()
+{
+    echo "create_package_tarball : $TARBALL_FILE"
+    if [ ! -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-25.so" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/proot-source-x86/proot-Fedora-25.so"
+        return
+    fi
+    if [ ! -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25.so" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25.so"
+        return
+    fi
+    if [ ! -f "${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-25" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-25"
+        return
+    fi
+    if [ ! -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Fedora-25.so" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Fedora-25.so"
+        return
+    fi
+    if [ ! -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-CentOS-6.so" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-CentOS-6.so"
+        return
+    fi
+    if [ ! -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-CentOS-7.so" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-CentOS-7.so"
+        return
+    fi
+    if [ ! -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Ubuntu-14.so" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Ubuntu-14.so"
+        return
+    fi
+    if [ ! -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Ubuntu-16.so" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Ubuntu-16.so"
+        return
+    fi
+
+    /bin/cp -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-25.so" \
+               "${PACKAGE_DIR}/udocker_dir/bin/proot-x86-4_8_0"
+    /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25.so" \
+               "${PACKAGE_DIR}/udocker_dir/bin/proot-x86_64-4_8_0"
+    /bin/cp -f "${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-25" \
+               "${PACKAGE_DIR}/udocker_dir/bin/patchelf-x86_64"
+    /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Fedora-25.so" \
+               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Fedora-25-x86_64.so"
+    /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-CentOS-6.so" \
+               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-CentOS-6-x86_64.so"
+    /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-CentOS-7.so" \
+               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-CentOS-7-x86_64.so"
+    /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Ubuntu-14.so" \
+               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-14-x86_64.so"
+    /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Ubuntu-16.so" \
+               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-16-x86_64.so"
+
+    (cd "${PACKAGE_DIR}/udocker_dir/lib"; \
+        ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-x86_64.so ; \
+        ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-Ubuntu-x86_64.so ; \
+        ln -s libfakechroot-Fedora-25-x86_64.so libfakechroot-Fedora-x86_64.so ; \
+        ln -s libfakechroot-Ubuntu-16-x86_64.so libfakechroot-CentOS-x86_64.so)
+
+    find "${PACKAGE_DIR}" -type d -exec /bin/chmod u=rwx,og=rx  {} \;
+    find "${PACKAGE_DIR}" -type f -exec /bin/chmod u=+r+w,og=r  {} \;
+    find "${PACKAGE_DIR}/udocker_dir/bin" -type f -exec /bin/chmod u=rwx,og=rx  {} \;
+    /bin/chmod u=rwx,og=rx ${PACKAGE_DIR}/udocker
+    /bin/chmod u=rwx,og=rx ${PACKAGE_DIR}/setup.py
+
+    /bin/rm -f $TARBALL_FILE 2>&1 > /dev/null
+
+    cd "$PACKAGE_DIR"
+    tar --owner=root --group=root -czvf "$TARBALL_FILE" $(ls -A)
+}
 
 # ##################################################################
 # MAIN
@@ -308,7 +1042,7 @@ REPO_DIR="$(dirname $utils_dir)"
 
 sanity_check
 
-BUILD_DIR=/tmp/udocker-build
+BUILD_DIR=/tmp/udocker-fr-build
 S_PROOT_DIR="${BUILD_DIR}/proot-static-build/static"
 S_PROOT_PACKAGES_DIR="${BUILD_DIR}/proot-static-build/packages"
 PACKAGE_DIR="${BUILD_DIR}/package"
@@ -323,15 +1057,50 @@ addto_package_simplejson
 addto_package_udocker
 addto_package_other
 
+# #######
+# i386
+# #######
 prepare_proot_source "${BUILD_DIR}/proot-source-x86"
 patch_proot_source1 "${BUILD_DIR}/proot-source-x86"
 patch_proot_source2 "${BUILD_DIR}/proot-source-x86"
-fedora25_build "i386" "${BUILD_DIR}/proot-source-x86"
+#
+fedora25_setup "i386"
+fedora25_build_proot "i386" "${BUILD_DIR}/proot-source-x86"
+#ostree_delete "i386" "fedora" "25"
 
+# #######
+# x86_64
+# #######
 prepare_proot_source "${BUILD_DIR}/proot-source-x86_64"
 patch_proot_source1 "${BUILD_DIR}/proot-source-x86_64"
 patch_proot_source2 "${BUILD_DIR}/proot-source-x86_64"
-fedora25_build "x86_64" "${BUILD_DIR}/proot-source-x86_64"
+prepare_patchelf_source "${BUILD_DIR}/patchelf-source-x86_64"
+patch_patchelf_source1 "${BUILD_DIR}/patchelf-source-x86_64"
+patch_patchelf_source2 "${BUILD_DIR}/patchelf-source-x86_64"
+prepare_fakechroot_source "${BUILD_DIR}/fakechroot-source-x86_64"
+patch_fakechroot_source1 "${BUILD_DIR}/fakechroot-source-x86_64"
+#
+fedora25_setup "x86_64"
+fedora25_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
+fedora25_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
+fedora25_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-x86_64"
+#ostree_delete "x86_64" "fedora" "25"
+#
+centos6_setup "x86_64"
+centos6_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-x86_64"
+#ostree_delete "x86_64" "centos" "6"
+#
+centos7_setup "x86_64"
+centos7_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-x86_64"
+#ostree_delete "x86_64" "centos" "7"
+#
+ubuntu14_setup "amd64"
+ubuntu14_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-x86_64"
+#ostree_delete "amd64" "ubuntu" "14"
+
+ubuntu16_setup "amd64"
+ubuntu16_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-x86_64"
+#ostree_delete "amd64" "ubuntu" "16"
 
 create_package_tarball
 

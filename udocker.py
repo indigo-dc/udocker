@@ -34,7 +34,7 @@ import platform
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.0.3"
+__version__ = "1.1.0-RC1"
 __date__ = "2017"
 
 # Python version major.minor
@@ -148,7 +148,7 @@ class Config(object):
     # udocker installation tarball
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/jZmbZU9sNmgs1ah/download"
+        "/s/EBHOZQmxNYP5IC7/download"
     )
     autoinstall = True
 
@@ -187,11 +187,16 @@ class Config(object):
     # container execution mode if not set via setup
     default_execution_mode = "P1"
 
-    # PRoot seccomp
+    # PRoot override seccomp
+    # proot_noseccomp = True
     proot_noseccomp = None
 
     # fakechroot engine get ld_library_paths from ld.so.cache
     ld_so_cache = "/etc/ld.so.cache"
+
+    # fakechroot engine override fakechroot.so selection
+    # fakechroot_so = "libfakechroot-CentOS-7-x86_64.so"
+    fakechroot_so = None
 
     # fakechroot sharable library directories
     lib_dirs_list_essential = (
@@ -199,6 +204,14 @@ class Config(object):
         "/lib64", "/usr/lib64", "/lib", "/usr/lib",
     )
     lib_dirs_list_append = (".", )
+
+    # access files, used to circunvent openmpi init issues in fakechroot
+    access_files = (
+        "/sys/class/infiniband", "/dev/open-mx", "/dev/myri0", "/dev/myri1",
+        "/dev/myri2", "/dev/myri3", "/dev/myri4", "/dev/myri5", "/dev/myri6",
+        "/dev/myri7", "/dev/myri8", "/dev/myri9", "/dev/ipath", "/dev/kgni0",
+        "/dev/mic/scif", "/dev/scif",
+    )
 
     # Pass host env variables
     valid_host_env = ("TERM")
@@ -250,6 +263,8 @@ class Config(object):
         Config.dockerio_registry_url = os.getenv("UDOCKER_REGISTRY",
                                                  Config.dockerio_registry_url)
         Config.tarball = os.getenv("UDOCKER_TARBALL", Config.tarball)
+        Config.fakechroot_so = os.getenv("UDOCKER_FAKECHROOT_SO",
+                                         Config.fakechroot_so)
         Config.tmpdir = os.getenv("UDOCKER_TMP", Config.tmpdir)
 
     def _read_config(self, config_file):
@@ -338,7 +353,7 @@ class Config(object):
         try:
             return platform.release()
         except (NameError, AttributeError):
-            return "4.2.0"
+            return "3.2.1"
 
     def oskernel_isgreater(self, ref_version):
         """Compare kernel version is greater or equal than ref_version"""
@@ -843,12 +858,12 @@ class FileUtil(object):
                 return image_path
         return ""
 
-    def _link2rel_set(self, f_path, root_path, force):
-        """Actual convertion for a specific symbolic link"""
+    def _link_set(self, f_path, root_path, force):
+        """Actual convertion to container specific symbolic link"""
         l_path = os.readlink(f_path)
         if l_path.startswith("/") and not l_path.startswith(self.filename):
             p_path = os.path.realpath(os.path.dirname(f_path))
-            new_l_path = os.path.relpath(root_path + l_path, p_path)
+            new_l_path = root_path + l_path
             if force and not os.access(p_path, os.W_OK):
                 os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
                 os.remove(f_path)
@@ -860,7 +875,28 @@ class FileUtil(object):
             return True
         return False
 
-    def links2rel(self, force=False, root_path=""):
+    def _link_restore(self, f_path, root_path, force):
+        """Actual convertion for host specific symbolic link"""
+        l_path = os.readlink(f_path)
+        new_l_path = ""
+        if l_path.startswith(self.filename):
+            new_l_path = l_path.replace(self.filename, "", 1)
+        elif l_path.startswith(root_path):
+            new_l_path = l_path.replace(root_path, "", 1)
+        if new_l_path:
+            p_path = os.path.realpath(os.path.dirname(f_path))
+            if force and not os.access(p_path, os.W_OK):
+                os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
+                os.remove(f_path)
+                os.symlink(new_l_path, f_path)
+                os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) & ~stat.S_IWUSR)
+            else:
+                os.remove(f_path)
+                os.symlink(new_l_path, f_path)
+            return True
+        return False
+
+    def links_conv(self, force=False, to_container=True, root_path=""):
         """ Convert absolute symbolic links to relative symbolic links
         """
         if not root_path:
@@ -877,8 +913,12 @@ class FileUtil(object):
                     if os.lstat(f_path).st_uid != Config.uid:
                         continue
                     elif os.path.islink(f_path):
-                        if self._link2rel_set(f_path, root_path, force):
-                            links.append(f_path)
+                        if to_container:
+                            if self._link_set(f_path, root_path, force):
+                                links.append(f_path)
+                        else:
+                            if self._link_restore(f_path, root_path, force):
+                                links.append(f_path)
                 except OSError:
                     continue
         return links
@@ -931,6 +971,15 @@ class UdockerTools(object):
         FileUtil(tmpdir).mktmpdir()
         return status
 
+    def purge(self):
+        """Remove existing files in bin and lib"""
+        for f_name in os.listdir(self.localrepo.bindir):
+            FileUtil(self.localrepo.bindir + "/" + f_name).register_prefix()
+            FileUtil(self.localrepo.bindir + "/" + f_name).remove()
+        for f_name in os.listdir(self.localrepo.libdir):
+            FileUtil(self.localrepo.libdir + "/" + f_name).register_prefix()
+            FileUtil(self.localrepo.libdir + "/" + f_name).remove()
+
     def _install(self, tarball_file):
         """Install the tarball"""
         cmd = "cd " + self.localrepo.bindir + " ; "
@@ -975,17 +1024,17 @@ class UdockerTools(object):
 
         2) run udocker and installation will proceed
 
-          ./udocker
+          ./udocker version
 
         The correct tarball version for this udocker executable is:
         """
         Msg().out(self._instructions.__doc__, __version__, l=Msg.ERR)
 
-    def install(self):
+    def install(self, force=False):
         """Get the udocker tarball and install the binaries"""
-        if self.is_available():
+        if self.is_available() and not force:
             return True
-        elif not self._autoinstall:
+        elif not self._autoinstall and not force:
             Msg().out("Warning: no engine available and autoinstall disabled",
                       l=Msg.WAR)
             return None
@@ -998,6 +1047,7 @@ class UdockerTools(object):
                       l=Msg.INF)
             tarball_file = ""
             if "://" in self._tarball:
+                Msg().out("Info: downloading: %s" % (self._tarball), l=Msg.INF)
                 tarball_file = self._download()
             elif os.path.exists(self._tarball):
                 tarball_file = self._tarball
@@ -1038,16 +1088,13 @@ class ElfPatcher(object):
         if not self._container_dir:
             raise ValueError("invalid container id")
         self._container_root = self._container_dir + "/ROOT"
-        self._container_ld_so_meta = self._container_dir + "/ld.so.path"
+        self._container_ld_so_path = self._container_dir + "/ld.so.path"
         self._container_ld_so_orig = self._container_dir + "/ld.so.orig"
-        self._container_is_patched = self._container_dir + "/ld.so.is_patched"
         self._container_ld_libdirs = self._container_dir + "/ld.lib.dirs"
+        self._container_patch_time = self._container_dir + "/patch.time"
+        self._container_patch_path = self._container_dir + "/patch.path"
         self._shlib = re.compile(r"^lib\S+\.so(\.\d+)*$")
         self._uid = Config.uid
-
-    def is_patched(self):
-        """whether the container is patched"""
-        return os.path.exists(self._container_is_patched)
 
     def select_patchelf(self):
         """Set patchelf executable"""
@@ -1114,11 +1161,11 @@ class ElfPatcher(object):
 
     def get_original_loader(self):
         """Get the pathname of the original ld.so"""
-        if os.path.exists(self._container_ld_so_meta):
-            return FileUtil(self._container_ld_so_meta).getdata().strip()
+        if os.path.exists(self._container_ld_so_path):
+            return FileUtil(self._container_ld_so_path).getdata().strip()
         elf_loader = self.guess_elf_loader()
         if elf_loader:
-            FileUtil(self._container_ld_so_meta).putdata(elf_loader)
+            FileUtil(self._container_ld_so_path).putdata(elf_loader)
         return elf_loader
 
     def get_container_loader(self):
@@ -1127,47 +1174,75 @@ class ElfPatcher(object):
         if not elf_loader:
             return ""
         elf_loader = self._container_root + "/" + elf_loader
-        while os.path.islink(elf_loader):
-            real_path = os.readlink(elf_loader)
-            if real_path.startswith("/"):
-                elf_loader = self._container_root + real_path
-            else:
-                elf_loader = os.path.dirname(elf_loader) + "/" + real_path
-        if os.path.exists(elf_loader):
-            return os.path.realpath(elf_loader)
+        return elf_loader if os.path.exists(elf_loader) else ""
+
+    def get_patch_last_path(self):
+        """get last host pathname to the patched container"""
+        last_path = FileUtil(self._container_patch_path).getdata()
+        if last_path and isinstance(last_path, str):
+            return last_path.strip()
         else:
             return ""
 
-    def patch_binaries(self, force=False):
-        """Set all executables to the ld.so absolute pathname"""
-        if not self.is_patched() or force:
-            patchelf_exec = self.select_patchelf()
-            elf_loader = self.get_container_loader()
-            #cmd = "%s --set-interpreter %s --set-root-prefix %s #f" % \
-            #    (patchelf_exec, elf_loader, self._container_root)
-            cmd = "%s --set-root-prefix %s #f" % \
-                (patchelf_exec, self._container_root)
-            self._walk_fs(cmd, self._container_root, self.BIN | self.LIB)
-            newly_set = self.guess_elf_loader()
-            return newly_set == elf_loader
-        return True
+    def check_container(self):
+        """verify if path to container is ok"""
+        last_path = self.get_patch_last_path()
+        if last_path and last_path != self._container_dir:
+            Msg().err("Error: mismatch, convert execmode to P and then to F")
+            sys.exit(1)
 
-    def restore_binaries(self, force=False):
-        """Restore all executables to the original ld.so pathname"""
-        if self.is_patched() or force:
-            patchelf_exec = self.select_patchelf()
-            elf_loader = self.get_original_loader()
-            #cmd = "%s --set-interpreter %s --restore-root-prefix %s #f" % \
-            #    (patchelf_exec, elf_loader, self._container_root)
+    def get_patch_last_time(self):
+        """get time in seconds of last full patch of container"""
+        last_time = FileUtil(self._container_patch_time).getdata()
+        try:
+            return str(int(last_time))
+        except ValueError:
+            return "0"
+
+    def patch_binaries(self):
+        """Set all executables and libs to the ld.so absolute pathname"""
+        self.check_container()
+        last_time = "0"
+        patchelf_exec = self.select_patchelf()
+        elf_loader = self.get_container_loader()
+        #cmd = "%s --set-interpreter %s --set-root-prefix %s #f" % \
+        #    (patchelf_exec, elf_loader, self._container_root)
+        cmd = "%s --set-root-prefix %s #f" % \
+            (patchelf_exec, self._container_root)
+        self._walk_fs(cmd, self._container_root, self.BIN | self.LIB)
+        newly_set = self.guess_elf_loader()
+        if newly_set == elf_loader:
+            try:
+                last_time = str(int(time.time()))
+            except ValueError:
+                pass
+            return (FileUtil(self._container_patch_time).putdata(last_time) and
+                    FileUtil(self._container_patch_path).putdata(self._container_dir))
+        return False
+
+    def restore_binaries(self):
+        """Restore all executables and libs to the original ld.so pathname"""
+        patchelf_exec = self.select_patchelf()
+        elf_loader = self.get_original_loader()
+        last_path = self.get_patch_last_path()
+        #cmd = "%s --set-interpreter %s --restore-root-prefix %s #f" % \
+        #    (patchelf_exec, elf_loader, self._container_root)
+        if last_path:
+            cmd = "%s --restore-root-prefix %s #f" % \
+                (patchelf_exec, last_path + "/ROOT")
+        else:
             cmd = "%s --restore-root-prefix %s #f" % \
                 (patchelf_exec, self._container_root)
-            self._walk_fs(cmd, self._container_root, self.BIN | self.LIB)
-            newly_set = self.guess_elf_loader()
-            return newly_set == elf_loader
-        return True
+        self._walk_fs(cmd, self._container_root, self.BIN | self.LIB)
+        newly_set = self.guess_elf_loader()
+        if newly_set == elf_loader:
+            FileUtil(self._container_patch_path).remove()
+            FileUtil(self._container_patch_time).remove()
+        return newly_set == elf_loader
 
     def patch_ld(self, output_elf=None):
         """Patch ld.so"""
+        self.check_container()
         elf_loader = self.get_container_loader()
         if FileUtil(self._container_ld_so_orig).size() == -1:
             status = FileUtil(elf_loader).copyto(self._container_ld_so_orig)
@@ -1187,9 +1262,9 @@ class ElfPatcher(object):
         ld_library_path_new = "\x00LD_LIBRARY_REAL\x00"
         ld_data = ld_data.replace(ld_library_path_orig, ld_library_path_new)
         if output_elf is None:
-            return FileUtil(elf_loader).putdata(ld_data)
+            return bool(FileUtil(elf_loader).putdata(ld_data))
         else:
-            return FileUtil(output_elf).putdata(ld_data)
+            return bool(FileUtil(output_elf).putdata(ld_data))
 
     def restore_ld(self):
         """Restore ld.so"""
@@ -1199,30 +1274,7 @@ class ElfPatcher(object):
         else:
             return FileUtil(self._container_ld_so_orig).copyto(elf_loader)
 
-    def patch(self, what, force=False):
-        """Patch container"""
-        if what & (self.BIN | self.LIB):
-            status = self.patch_binaries(force)
-        if what & self.LOADER:
-            status = self.patch_ld()
-        if status:
-            return FileUtil(self._container_is_patched).putdata("IS PATCHED")
-        else:
-            return False
-
-    def restore(self, what, force=False):
-        """Revert patched container"""
-        status = True
-        if what & (self.BIN | self.LIB):
-            status = self.restore_binaries(force)
-        if what & self.LOADER:
-            status = self.restore_ld()
-        if status:
-            return FileUtil(self._container_is_patched).remove()
-        else:
-            return False
-
-    def get_ld_config(self):
+    def _get_ld_config(self):
         """Get get directories from container ld.so.cache"""
         cmd = "ldconfig -p -C %s/%s" % (self._container_root,
                                         Config.ld_so_cache)
@@ -1237,7 +1289,7 @@ class ElfPatcher(object):
                         os.path.dirname(match.group(2))] = True
         return ld_dict.keys()
 
-    def find_ld_libdirs(self, root_path=None):
+    def _find_ld_libdirs(self, root_path=None):
         """search for library directories in container"""
         if root_path is None:
             root_path = self._container_root
@@ -1258,8 +1310,9 @@ class ElfPatcher(object):
 
     def get_ld_libdirs(self, force=False):
         """Get ld library paths"""
+        self.check_container()
         if force or not os.path.exists(self._container_ld_libdirs):
-            ld_list = self.find_ld_libdirs()
+            ld_list = self._find_ld_libdirs()
             ld_str = ":".join(ld_list)
             FileUtil(self._container_ld_libdirs).putdata(ld_str)
             return ld_list
@@ -1269,7 +1322,7 @@ class ElfPatcher(object):
 
     def get_ld_library_path(self):
         """Get ld library paths"""
-        ld_list = self.get_ld_config()
+        ld_list = self._get_ld_config()
         ld_list.extend(self.get_ld_libdirs())
         for ld_dir in Config.lib_dirs_list_essential:
             ld_dir = self._container_root + "/" + ld_dir
@@ -1967,7 +2020,7 @@ class PRootEngine(ExecutionEngineCommon):
         if conf.oskernel_isgreater((4, 8, 0)):
             if conf.proot_noseccomp is not None:
                 self.proot_noseccomp = conf.proot_noseccomp
-            if self.exec_mode.get_mode() == "P1":
+            if self.exec_mode.get_mode() == "P2":
                 self.proot_noseccomp = True
 
     def _set_uid_map(self):
@@ -2060,27 +2113,40 @@ class FakechrootEngine(ExecutionEngineCommon):
 
     def _select_fakechroot_so(self):
         """Select fakechroot sharable object library"""
-        deflib = "libfakechroot.so"
         conf = Config()
-        arch = conf.arch()
-        (distro, version) = conf.osdistribution()
-        if arch == "amd64":
-            image_list = ["libfakechroot-%s-%s-x86_64.so" % (distro, version),
-                          "libfakechroot-x86_64.so", deflib]
-        elif arch == "i386":
-            image_list = ["libfakechroot-%s-%s-x86.so" % (distro, version),
-                          "libfakechroot-x86.so", deflib]
-        elif arch == "arm64":
-            image_list = ["libfakechroot-%s-%s-arm64.so" % (distro, version),
-                          "libfakechroot-arm64.so", deflib]
-        elif arch == "arm":
-            image_list = ["libfakechroot-%s-%s-arm.so" % (distro, version),
-                          "libfakechroot-arm.so", deflib]
+        if conf.fakechroot_so:
+            if isinstance(conf.fakechroot_so, list):
+                image_list = conf.fakechroot_so
+            elif isinstance(conf.fakechroot_so, str):
+                image_list = [conf.fakechroot_so, ]
+        else:
+            lib = "libfakechroot"
+            deflib = "libfakechroot.so"
+            arch = conf.arch()
+            (distro, version) = conf.osdistribution()
+            version = version.split(".")[0]
+            if arch == "amd64":
+                image_list = ["%s-%s-%s-x86_64.so" % (lib, distro, version),
+                              "%s-%s-x86_64.so" % (lib, distro),
+                              "%s-x86_64.so" % (lib), deflib]
+            elif arch == "i386":
+                image_list = ["%s-%s-%s-x86.so" % (lib, distro, version),
+                              "%s-%s-x86.so" % (lib, distro),
+                              "%s-x86.so" % (lib), deflib]
+            elif arch == "arm64":
+                image_list = ["%s-%s-%s-arm64.so" % (lib, distro, version),
+                              "%s-%s-arm64.so" % (lib, distro),
+                              "%s-arm64.so" % (lib), deflib]
+            elif arch == "arm":
+                image_list = ["%s-%s-%s-arm.so" % (lib, distro, version),
+                              "%s-%s-arm.so" % (lib, distro),
+                              "%s-arm.so" % (lib), deflib]
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
         if not fakechroot_so:
-            Msg().err("Error: libfakechroot not available for this os")
+            Msg().err("Error: no libfakechroot found for this host os")
             sys.exit(1)
+        Msg().out("fakechroot_so:", fakechroot_so, l=Msg.DBG)
         return fakechroot_so
 
     def _uid_check(self):
@@ -2161,10 +2227,23 @@ class FakechrootEngine(ExecutionEngineCommon):
             map_volumes_list.append(map_volumes_dict[cont_dir])
         return (":".join(host_volumes_list), ":".join(map_volumes_list))
 
+    def _get_access_filesok(self):
+        """
+        Circunvent mpi init issues when calling access()
+        A list of certain existing files is provided
+        """
+        file_list = []
+        for c_path in Config.access_files:
+            h_file = self._cont2host(c_path)
+            if h_file and os.path.exists(h_file):
+                file_list.append(c_path)
+        return ":".join(file_list)
+
     def _fakechroot_env_set(self):
         """fakechroot environment variables to set"""
         (host_volumes, map_volumes) = self._get_volume_bindings()
         self._fakechroot_so = self._select_fakechroot_so()
+        access_filesok = self._get_access_filesok()
         #
         self.opt["env"].append("FAKECHROOT_BASE=" +
                                os.path.realpath(self.container_root))
@@ -2178,6 +2257,9 @@ class FakechrootEngine(ExecutionEngineCommon):
         if Msg.level >= Msg.DBG:
             self.opt["env"].append("FAKECHROOT_DEBUG=true")
             self.opt["env"].append("LD_DEBUG=libs:files")
+        if access_filesok:
+            self.opt["env"].append("FAKECHROOT_ACCESS_FILESOK=" +
+                                   access_filesok)
         # execution mode
         ld_library_real = self._elfpatcher.get_ld_library_path()
         xmode = self.exec_mode.get_mode()
@@ -2205,6 +2287,8 @@ class FakechrootEngine(ExecutionEngineCommon):
                                        patchelf_exec)
                 self.opt["env"].append("FAKECHROOT_PATCH_ELFLOADER=" +
                                        self._elfpatcher.get_container_loader())
+                self.opt["env"].append("FAKECHROOT_PATCH_LAST_TIME=" +
+                                       self._elfpatcher.get_patch_last_time())
 
     def run(self, container_id):
         """Execute a Docker container using Fakechroot. This is the main
@@ -2226,12 +2310,14 @@ class FakechrootEngine(ExecutionEngineCommon):
         xmode = self.exec_mode.get_mode()
         self._elfpatcher = ElfPatcher(self.localrepo, self.container_id)
 
+        # verify if container pathnames are correct for this mode
+        self._elfpatcher.check_container()
+
         # set basic environment variables
         self._run_env_set()
         self._fakechroot_env_set()
         if not self._check_env():
             return 4
-
 
         # build the actual command
         self.opt["cmd"][0] = exec_path
@@ -2239,8 +2325,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                  r"PS1='%s[\W]\$ '; " % self.container_id[:8],
                  " export ",
                  "; export ".join(self.opt["env"]),
-                 "; ",
-                 " cd ", self.opt["cwd"], ";",)
+                 " ; export PWD=" + self.opt["cwd"] + " ;", )
         cmd = " ".join(cmd_t)
         if xmode in ("F1", "F2"):
             cmd += " " + self._elfpatcher.get_container_loader() + " "
@@ -2253,15 +2338,16 @@ class FakechrootEngine(ExecutionEngineCommon):
 
         # execute
         self._run_banner(self.opt["cmd"][0], "#")
-        status = subprocess.call(cmd, shell=True, close_fds=True)
+        cwd = self._cont2host(self.opt["cwd"])
+        status = subprocess.call(cmd, shell=True, close_fds=True, cwd=cwd)
         return status
 
 
 class ExecutionMode(object):
     """Generic execution engine class to encapsulate the specific
     execution engines and their execution modes.
-    P1: proot without seccomp
-    P2: proot with seccomp
+    P1: proot with seccomp
+    P2: proot without seccomp (slower)
     F1: fakeroot running executables via direct loader invocation
     F2: similar to F1 with protected environment and modified ld.so
     F3: fakeroot patching the executables elf headers
@@ -2297,23 +2383,29 @@ class ExecutionMode(object):
         if not (force or xmode != prev_xmode):
             return True
         if xmode.startswith("F"):
-            if elfpatcher.get_ld_libdirs(force):
-                status = FileUtil(self.container_root).links2rel(force)
+            if force or prev_xmode.startswith("P"):
+                status = (FileUtil(self.container_root).links_conv(force, True)
+                          and elfpatcher.get_ld_libdirs(force))
         if xmode in ("P1", "P2", "F1"):
             if force or prev_xmode in ("F2", "F3", "F4"):
-                status = elfpatcher.restore(elfpatcher.BIN |
-                                            elfpatcher.LOADER, force)
-            else:
+                status = (elfpatcher.restore_ld() and
+                          elfpatcher.restore_binaries())
+            elif prev_xmode in ("P1", "P2"):
                 status = True
         elif xmode in ("F2", ):
             if force or prev_xmode in ("F3", "F4"):
-                status = elfpatcher.restore(elfpatcher.BIN, force)
-            elif force or prev_xmode in ("P1", "P2", "F1"):
-                status = elfpatcher.patch(elfpatcher.LOADER, force)
+                status = elfpatcher.restore_binaries()
+            if force or prev_xmode in ("P1", "P2", "F1"):
+                status = elfpatcher.patch_ld()
         elif xmode in ("F3", "F4"):
             if force or prev_xmode in ("P1", "P2", "F1", "F2"):
-                status = elfpatcher.patch(elfpatcher.BIN |
-                                          elfpatcher.LOADER, force)
+                status = (elfpatcher.patch_ld() and
+                          elfpatcher.patch_binaries())
+            elif prev_xmode in ("F3", "F4"):
+                status = True
+        if xmode.startswith("P"):
+            if force or prev_xmode.startswith("F"):
+                status = FileUtil(self.container_root).links_conv(force, False)
         if status:
             status = FileUtil(self.container_execmode).putdata(xmode)
         if not status:
@@ -2322,20 +2414,11 @@ class ExecutionMode(object):
 
     def get_engine(self):
         """get execution engine instance"""
-        is_patched = ElfPatcher(self.localrepo, self.container_id).is_patched()
         xmode = self.get_mode()
         if xmode.startswith("P"):
-            if is_patched:
-                Msg().err("Error: execmode is", xmode, "but container is patched")
-                return None
-            else:
-                self.exec_engine = PRootEngine(self.localrepo)
+            self.exec_engine = PRootEngine(self.localrepo)
         elif xmode.startswith("F"):
-            if not is_patched and xmode in ("F2", "F3", "F4"):
-                Msg().err("Error: execmode is", xmode, "but container is not patched")
-                return None
-            else:
-                self.exec_engine = FakechrootEngine(self.localrepo)
+            self.exec_engine = FakechrootEngine(self.localrepo)
         return self.exec_engine
 
 
@@ -4974,8 +5057,19 @@ class Udocker(object):
     def do_setup(self, cmdp):
         """
         setup: change udocker settings for a container
-        setup <container-id>
-        --execmode=<1|2|3>            :select execution mode (default: 1)
+        setup [options] <container-id>
+        --execmode=<Pn>            :select execution mode
+        --execmode=<Fn>            :select execution mode
+        --force                    :force setup
+
+        execution engines and their execution modes:
+        P1: proot accelerated mode using seccomp
+        P2: proot accelerated mode disabled
+        F1: fakeroot starting executables via direct loader invocation
+        F2: similar to F1 with protected environment and modified ld.so
+        F3: fakeroot patching elf headers in libraries and executables
+        F4: similar to F3 with support for newly created executables via
+            dynamic patching elf headers of libraries and executables
         """
         container_id = cmdp.get("P1")
         xmode = cmdp.get("--execmode=")
@@ -4994,6 +5088,26 @@ class Udocker(object):
         else:
             Msg().out("execmode: %s" % (exec_mode.get_mode()))
             return True
+
+    def do_install(self, cmdp):
+        """
+        install: install udocker and its tools
+        install [options]
+        --force                    :force reinstall
+        --purge                    :remove files (be careful)
+        """
+        if cmdp is not None:
+            force = cmdp.get("--force")
+            purge = cmdp.get("--purge")
+        else:
+            force = False
+            purge = False
+        utools = UdockerTools(self.localrepo)
+        if purge:
+            utools.purge()
+        status = utools.install(force)
+        if status is not None and not status:
+            Msg().err("Error: install of udockertools failed")
 
     def do_version(self, dummy):
         """Print the version number"""
@@ -5273,9 +5387,9 @@ class Main(object):
             Msg().out("Info: creating repo: " + Config.topdir, l=Msg.INF)
             self.localrepo.create_repo()
         self.udocker = Udocker(self.localrepo)
-        status = UdockerTools(self.localrepo).install()
-        if status is not None and not status:
-            Msg().err("Error: install of udockertools failed")
+#        status = UdockerTools(self.localrepo).install()
+#        if status is not None and not status:
+#            Msg().err("Error: install of udockertools failed")
 
     def execute(self):
         """Command parsing and selection"""
@@ -5291,7 +5405,7 @@ class Main(object):
             "verify": self.udocker.do_verify, "logout": self.udocker.do_logout,
             "unprotect": self.udocker.do_unprotect,
             "inspect": self.udocker.do_inspect, "login": self.udocker.do_login,
-            "setup":self.udocker.do_setup,
+            "setup":self.udocker.do_setup, "install":self.udocker.do_install,
         }
         if (self.cmdp.get("--help", "GEN_OPT") or
                 self.cmdp.get("-h", "GEN_OPT")):
@@ -5300,6 +5414,8 @@ class Main(object):
         else:
             command = self.cmdp.get("", "CMD")
             if command in cmds:
+                if command != "install":
+                    cmds["install"](None)
                 if self.cmdp.get("--help") or self.cmdp.get("-h"):
                     self.udocker.do_help(self.cmdp)   # help on command
                     return 0

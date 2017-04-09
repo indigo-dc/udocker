@@ -8,51 +8,58 @@ docker containers in Linux batch systems and interactive clusters that
 are managed by other entities such as grid infrastructures or externaly 
 managed batch or interactive systems.
 
-udocker does not require any type of privileges nor the
-deployment of services by system administrators. It can be downloaded
-and executed entirely by the end user. 
+udocker does not require any type of privileges nor the deployment of 
+services by system administrators. It can be downloaded and executed 
+entirely by the end user. 
 
-udocker is a wrapper around several tools to mimic a subset of the
-docker capabilities including pulling images and running then with
-minimal functionality.
+udocker is a wrapper around several tools and technologies to mimic a 
+subset of the docker capabilities including pulling images and running 
+then with minimal functionality. It is nmainly meant to execute user 
+applications packaged in docker containers.
 
 ## 1. INTRODUCTION
 
 ### 1.1. How does it work
-udocker is a simple tool written in Python, it has a minimal set
-of dependencies so that can be executed in a wide range of Linux
-systems. udocker does not make use of docker nor requires its 
-installation.
+udocker is a simple tool written in Python, it has a minimal set of 
+dependencies so that can be executed in a wide range of Linux systems. 
+udocker does not make use of docker nor requires its installation.
 
 udocker "executes" the containers by simply providing a chroot like 
-environment to the extracted container. The current implementation 
-uses PRoot to mimic chroot without requiring privileges.
+environment to the extracted container. udocker is meant to integrate
+several technologies and approches hence providing an integrated 
+environment that offers several execution options. This version
+provides two different execution engines based on PRoot and Fakechroot.
+
 
 ### 1.2. Limitations
 Since root privileges are not involved any operation that really 
 requires privileges is not possible. The following are
 examples of operations that are not possible:
 
-* accessing host protected devices and files
-* listening on TCP/IP privileged ports (range below 1024)
-* mount file-systems
-* the su command will not work
-* change the system time
-* changing routing tables, firewall rules, or network interfaces
+* accessing host protected devices and files;
+* listening on TCP/IP privileged ports (range below 1024);
+* mount file-systems;
+* the su command will not work;
+* change the system time;
+* changing routing tables, firewall rules, or network interfaces.
 
 Other limitations:
 
-* The current implementation is limited to the pulling of docker images and its execution. 
-* The actual containers should be built using docker and dockerfiles. 
-* udocker does not provide all the docker features, and is not intended as a docker replacement.
-* Due to the way PRoot implements the chroot environment debugging and system call tracing inside of udocker will not work.
+* the current implementation is limited to the pulling of docker images and its execution;
+* the actual containers should be built using docker and dockerfiles;
+* udocker does not provide all the docker features, and is not intended as a docker replacement;
+* debugging and tracing in the PRoot engine will not work;
+* the Fakechroot engine does not support execution of statically linked executables;
 * udocker is mainly oriented at providing a run-time environment for containers execution in user space.
 
 ### 1.3. Security
 Because of the limitations described in section 1.2 udocker does not offer 
 isolation features such as the ones offered by docker. If the containers
-content is not trusted then they should not be executed with udocker as
+content is not trusted then they should not be executed within udocker as
 they will run inside the user environment. 
+
+Due to the lack of isolation features udocker must not be run by privileged 
+users.
 
 The containers data will be unpacked and stored in the user home directory or 
 other location of choice. Therefore the containers data will be subjected to
@@ -68,7 +75,10 @@ execute it from their own accounts without requiring system administration
 intervention. 
 
 udocker provides a chroot like environment for container execution. This is
-currently implemented by PRoot via the kernel ptrace system call.
+currently implemented:
+
+* in the PRoot engine via the kernel ptrace system call;
+* in the Fakechroot engine via shared library preload.
 
 udocker via PRoot offers the emulation of the root user. This emulation
 mimics a real root user (e.g getuid will return 0). This is just an emulation
@@ -76,13 +86,10 @@ no root privileges are involved. This feature enables tools that do not
 require privileges but that check the user id to work properly. This enables
 for instance software installation with rpm and yum inside the container.
 
-Due to the lack of isolation features udocker must not be run by privileged 
-users.
-
 Similarly to docker, the login credentials for private repositories are stored 
-in a file and can be easily stolen. Logout can be used to delete the credentials. 
-If the host system is not trustable the private repositoty login feature should 
-not be used as it may expose the credentials.
+in a file and can be easily accessed. Logout can be used to delete the credentials. 
+If the host system is not trustable the login feature should not be used as it may
+expose the login credentials.
 
 ### 1.4. Basic flow
 The basic flow with udocker is:
@@ -415,13 +422,15 @@ Examples:
   udocker run [OPTIONS] CONTAINER-ID|CONTAINER-NAME
   udocker run [OPTIONS] REPO/IMAGE:TAG
 ```
-Executes a container. The execution is performed using an external
-tool currently only PRoot is supported. The container can be specified
-using the container id or its associated name. Additionaly it is
-possible to invoke run with an image name, in this case the image is
-extracted and run is invoked over the newly extracted container. 
-Using this later approach will create multiple container directory
-trees possibly occuping considerable disk space.
+Executes a container. The execution several execution engines are
+provided. The container can be specified using the container id or its
+associated name. Additionaly it is possible to invoke run with an image
+name, in this case the image is extracted and run is invoked over the
+newly extracted container. Using this later approach will create multiple
+container directory trees possibly occuping considerable disk space, 
+therefore the recommended approach is to first extract a container using
+"udocker create" and only then execute with "udocker run". The same
+extracted container can then be executed as many times as required.
 
 Options:
 
@@ -477,7 +486,7 @@ Examples:
   # Run in a script
   udocker run ubuntu  /bin/bash <<EOF
 cd /etc
-ls -l
+cat motd
 cat lsb-release
 EOF
 
@@ -537,6 +546,45 @@ Examples:
   udocker logout -a
 ```
 
+### 3.23. Setup
+```
+  udocker setup [--execmode=XY] [--force] CONTAINER-ID|CONTAINER-NAME
+
+```
+Choose an execution mode to define how a given container will be executed.
+Enables selection of an execution engine and related execution modes.
+Without --execmode=XY, setup will print the current execution mode.
+
+Options:
+
+* `--execmode=XY` choose an execution mode
+* `--force` force the selection of the execution mode    
+
+|Mode| Engine     | Description                         | Changes container
+|----|:-----------|:------------------------------------|:------------------
+| P1 | PRoot      | accelerated mode using seccomp      | No
+| P2 | PRoot      | seccomp accelerated mode disabled   | No
+| F1 | Fakechroot | exec with direct loader invocation  | symbolic links
+| F2 | Fakechroot | F1 but using a modified loader      | F1 + ld.so
+| F3 | Fakechroot | fix ELF headers in binaries         | F2 + ELF headers
+| F4 | Fakechroot | F3 enables new executables and libs | same as F3
+
+The default execution mode is P1 which provides a good balance between
+performance and reliable execution, it uses PTRACE together with SECCOMP.
+
+The Fakechroot engine is in experimental status. It provides native host
+performance for most system calls.  It has four modes that offer increasing
+compatibility levels.  F1 is the least intrusive and only changes absolute
+symbolic links so that they point to the container. F2 adds changes to the
+loader to prevent loading of host shareable libraries. F3 adds changes to
+all binaries (ELF headers of executables and libraries) to remove absolute 
+references pointing to the host shareable libraries. These changes are
+performed once during the setup, executables added after setup will not have
+their ELF headers fixed. Notice that setup can be rerun with the --force 
+option to fix these binaries. F4 performs the ELF header changes dynamically
+(on-the-fly) thus enabling compilation and linking within the container and 
+new executables to be transferred to the container and executed.
+ 
 
 ## Aknowlegments
 

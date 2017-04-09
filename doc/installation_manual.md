@@ -2,9 +2,9 @@
 
 In most circumstances the end user can download and execute the tool without
 system administrator intervention. udocker itself is written in Python, but 
-also uses external statically compiled binaries to provide a chroot like
-environment where containers are executed. These tools do not require any
-privileges.
+also uses external binaries and libraries to provide a chroot like
+environment where containers are executed in user space. These tools do not
+require any privileges.
 
 ## 1. DEPENDENCIES
 
@@ -18,7 +18,10 @@ to download both the binaries and/or pull containers from repositories.
 The official release of udocker is available from the INDIGO-DataCloud
 repository at `http://repo.indigo-datacloud.eu/` where is made available
 as a tarball to be deployed by the end user. Allways check for the latest
-official version released by INDIGO-DataCloud.
+official version released by INDIGO-DataCloud. 
+
+The tarball installation method contains statically compiled binaries and 
+is built to the used across different hosts and OS distributions.
 
 Install udocker v1.0.1 or higher released by INDIGO-DataCloud:
 
@@ -68,6 +71,11 @@ For the development branch:
 ```
 
 ## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
+
+Beware that these packages contain dynamically linked binaries compiled for
+the target OS distributions and therefore cannot be execute sucessfully in 
+hosts running a different OS distribution. To execute the same udocker across 
+systems use the tarball installation method described above. 
 
 RPMs for CentOS 7 are provided at http://repo.indigo-datacloud.eu
 

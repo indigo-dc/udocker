@@ -1,0 +1,362 @@
+diff -Naur patchelf.orig/src/patchelf.cc patchelf/src/patchelf.cc
+--- patchelf.orig/src/patchelf.cc	2017-04-06 22:51:21.865700193 +0100
++++ patchelf/src/patchelf.cc	2017-04-07 01:23:45.504099178 +0100
+@@ -34,6 +34,7 @@
+ 
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#include <sys/file.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+ 
+@@ -41,6 +42,7 @@
+ 
+ 
+ static bool debugMode = false;
++static bool quietMode = false;
+ 
+ static bool forceRPath = false;
+ 
+@@ -49,6 +51,13 @@
+ 
+ typedef std::shared_ptr<std::vector<unsigned char>> FileContents;
+ 
++/* udocker */
++static std::string patchRootPath;
++static std::string restoreRootPath;
++static std::string gotRPath;
++static std::string patchRPath;
++static std::set<std::string> gotNeededLibs;
++static std::map<std::string, std::string> patchReplaceLibs;
+ 
+ #define ElfFileParams class Elf_Ehdr, class Elf_Phdr, class Elf_Shdr, class Elf_Addr, class Elf_Off, class Elf_Dyn, class Elf_Sym, class Elf_Verneed
+ #define ElfFileParamNames Elf_Ehdr, Elf_Phdr, Elf_Shdr, Elf_Addr, Elf_Off, Elf_Dyn, Elf_Sym, Elf_Verneed
+@@ -191,7 +200,7 @@
+ 
+     void setInterpreter(const std::string & newInterpreter);
+ 
+-    typedef enum { rpPrint, rpShrink, rpSet, rpRemove } RPathOp;
++    typedef enum { rpGet, rpPrint, rpShrink, rpSet, rpRemove } RPathOp;
+ 
+     void modifyRPath(RPathOp op, const std::vector<std::string> & allowedRpathPrefixes, std::string newRPath);
+ 
+@@ -205,6 +214,8 @@
+ 
+     void noDefaultLib();
+ 
++    void getNeededLibs();
++
+ private:
+ 
+     /* Convert an integer in big or little endian representation (as
+@@ -323,9 +334,14 @@
+     contents->reserve(size + 32 * 1024 * 1024);
+     contents->resize(size, 0);
+ 
+-    int fd = open(fileName.c_str(), O_RDONLY);
++    int fd = open(fileName.c_str(), O_RDONLY | O_EXCL);
+     if (fd == -1) throw SysError(fmt("opening '", fileName, "'"));
+ 
++    if (flock(fd, LOCK_EX | LOCK_NB) == -1)
++        if (errno == EWOULDBLOCK)
++            error(fmt("locked '", fileName, "'"));
++            
++
+     if ((size_t) read(fd, contents->data(), size) != size)
+         throw SysError(fmt("reading '", fileName, "'"));
+ 
+@@ -483,10 +499,15 @@
+ 
+ static void writeFile(std::string fileName, FileContents contents)
+ {
+-    int fd = open(fileName.c_str(), O_TRUNC | O_WRONLY);
++    int fd = open(fileName.c_str(), O_TRUNC | O_WRONLY | O_EXCL);
+     if (fd == -1)
+         error("open");
+ 
++    if (flock(fd, LOCK_EX | LOCK_NB) == -1)
++        if (errno == EWOULDBLOCK)
++            error(fmt("locked '", fileName, "'"));
++
++
+     if (write(fd, contents->data(), contents->size()) != (off_t) contents->size())
+         error("write");
+ 
+@@ -704,7 +725,9 @@
+         } else {
+             size_t hole = startPage - startOffset;
+             /* Print a warning, because the hole could be very big. */
+-            fprintf(stderr, "warning: working around a Linux kernel bug by creating a hole of %zu bytes in '%s'\n", hole, fileName.c_str());
++            if (debugMode || !quietMode)
++                fprintf(stderr, "warning: working around a Linux kernel bug by creating a hole of %zu bytes in '%s'\n",
++                        hole, fileName.c_str());
+             assert(hole % getPageSize() == 0);
+             /* !!! We could create an actual hole in the file here,
+                but it's probably not worth the effort. */
+@@ -971,7 +994,8 @@
+             unsigned int shndx = rdi(sym->st_shndx);
+             if (shndx != SHN_UNDEF && shndx < SHN_LORESERVE) {
+                 if (shndx >= sectionsByOldIndex.size()) {
+-                    fprintf(stderr, "warning: entry %d in symbol table refers to a non-existent section, skipping\n", shndx);
++                    if (debugMode || !quietMode)
++                        fprintf(stderr, "warning: entry %d in symbol table refers to a non-existent section, skipping\n", shndx);
+                     continue;
+                 }
+                 std::string section = sectionsByOldIndex.at(shndx);
+@@ -1148,6 +1172,11 @@
+         return;
+     }
+ 
++    if (op == rpGet) {
++        gotRPath = rpath ? rpath : "";
++        return;
++    }
++
+     if (op == rpShrink && !rpath) {
+         debug("no RPATH to shrink\n");
+         return;
+@@ -1477,6 +1506,26 @@
+     }
+ }
+ 
++/* udocker */
++template<ElfFileParams>
++void ElfFile<ElfFileParamNames>::getNeededLibs()
++{
++    Elf_Shdr & shdrDynamic = findSection(".dynamic");
++    Elf_Shdr & shdrDynStr = findSection(".dynstr");
++    char *strTab = (char *)contents + rdi(shdrDynStr.sh_offset);
++
++    Elf_Dyn *dyn = (Elf_Dyn *) (contents + rdi(shdrDynamic.sh_offset));
++
++    for (; rdi(dyn->d_tag) != DT_NULL; dyn++) {
++        if (rdi(dyn->d_tag) == DT_NEEDED) {
++            /*
++            char *name = strTab + rdi(dyn->d_un.d_val);
++            */
++            std::string name = strTab + rdi(dyn->d_un.d_val);
++            gotNeededLibs.insert(name);
++        }
++    }
++}
+ 
+ template<ElfFileParams>
+ void ElfFile<ElfFileParamNames>::noDefaultLib()
+@@ -1535,9 +1584,135 @@
+ static bool printNeeded = false;
+ static bool noDefaultLib = false;
+ 
++/* udocker */
++template<class ElfFile>
++void rootPatch(ElfFile && elfFile)
++{
++    if (patchRootPath == "")
++        return;
++
++    if (newInterpreter == "") {
++        try {
++            std::string oldInterpreter = elfFile.getInterpreter();
++            if (oldInterpreter != "" && oldInterpreter.compare(0, patchRootPath.length(), patchRootPath) != 0) {
++                elfFile.setInterpreter(patchRootPath + "/" + oldInterpreter);
++                elfFile.rewriteSections();
++            }
++        } catch (std::exception & e) {
++            if (debugMode || !quietMode)
++                fprintf(stderr, "patchelf: %s\n", e.what());
++            /* continue */ 
++        }
++    }
++
++   /* PATCH RPATCH MULTIPLE ENTRIES */ 
++    elfFile.modifyRPath(elfFile.rpGet, {}, "");
++    if (gotRPath != "") {
++        patchRPath = "";
++        for (auto & dirName : splitColonDelimitedString(gotRPath.c_str())) {
++            if (patchRPath != "")
++                 patchRPath += ":";
++            if (dirName.compare(0, patchRootPath.length(), patchRootPath) != 0) {
++                patchRPath += patchRootPath + "/" + dirName;
++            }
++            else {
++                patchRPath += dirName;
++            }
++        }
++        if (patchRPath != gotRPath) {
++            elfFile.modifyRPath(elfFile.rpSet, {}, patchRPath);
++            elfFile.rewriteSections();
++        }
++    }
++
++/*
++    if (gotRPath != "" && gotRPath.compare(0, patchRootPath.length(), patchRootPath) != 0) {
++        patchRPath = patchRootPath + "/" + gotRPath;
++        elfFile.modifyRPath(elfFile.rpSet, {}, patchRPath);
++        elfFile.rewriteSections();
++    }
++*/
++
++    elfFile.getNeededLibs();
++    for (auto & lib : gotNeededLibs) {
++        if (lib != "" && lib[0] == '/' && lib.compare(0, patchRootPath.length(), patchRootPath) != 0)
++            patchReplaceLibs[lib] = patchRootPath + "/" + lib;
++    } 
++    if (!patchReplaceLibs.empty()) {
++        elfFile.replaceNeeded(patchReplaceLibs);
++        elfFile.rewriteSections();
++    }
++}
++
++/* udocker */
++template<class ElfFile>
++void rootRestore(ElfFile && elfFile)
++{
++    if (restoreRootPath == "")
++        return;
++    restoreRootPath = restoreRootPath + "/";
++
++    if (newInterpreter == "") {
++        try {
++            std::string oldInterpreter = elfFile.getInterpreter();
++            if (oldInterpreter != "" && oldInterpreter.compare(0, restoreRootPath.length(), restoreRootPath) == 0) {
++                elfFile.setInterpreter(oldInterpreter.substr(restoreRootPath.length()));
++                elfFile.rewriteSections();
++            }
++        } catch (std::exception & e) {
++            if (debugMode || !quietMode)
++                fprintf(stderr, "patchelf: %s\n", e.what());
++            /* continue */ 
++        }
++    }
++
++   /* RESTORE RPATH MULTIPLE ENTRIES */
++    elfFile.modifyRPath(elfFile.rpGet, {}, "");
++    if (gotRPath != "") {
++        patchRPath = "";
++        for (auto & dirName : splitColonDelimitedString(gotRPath.c_str())) {
++            if (patchRPath != "")
++                 patchRPath += ":";
++            if (dirName.compare(0, restoreRootPath.length(), restoreRootPath) == 0) {
++                patchRPath += dirName.substr(restoreRootPath.length());
++            }
++            else {
++                patchRPath += dirName;
++            }
++        }
++        if (patchRPath != gotRPath) {
++            elfFile.modifyRPath(elfFile.rpSet, {}, patchRPath);
++            elfFile.rewriteSections();
++        }
++    }
++
++/*
++    elfFile.modifyRPath(elfFile.rpGet, {}, "");
++    if (gotRPath != "" && gotRPath.compare(0, restoreRootPath.length(), restoreRootPath) == 0) {
++        patchRPath = gotRPath.substr(restoreRootPath.length());
++        elfFile.modifyRPath(elfFile.rpSet, {}, patchRPath);
++        elfFile.rewriteSections();
++    }
++*/
++
++    elfFile.getNeededLibs();
++    for (auto & lib : gotNeededLibs) {
++        if (lib != "" && lib[0] == '/' && lib.compare(0, restoreRootPath.length(), restoreRootPath) == 0) 
++            patchReplaceLibs[lib] = lib.substr(restoreRootPath.length());
++    } 
++    if (!patchReplaceLibs.empty()) {
++        elfFile.replaceNeeded(patchReplaceLibs);
++        elfFile.rewriteSections();
++    }
++}
++
+ template<class ElfFile>
+ static void patchElf2(ElfFile && elfFile)
+ {
++    /* udocker */
++    rootPatch(elfFile);
++    rootRestore(elfFile);
++
+     if (printInterpreter)
+         printf("%s\n", elfFile.getInterpreter().c_str());
+ 
+@@ -1547,8 +1722,19 @@
+     if (setSoname)
+         elfFile.modifySoname(elfFile.replaceSoname, newSoname);
+ 
+-    if (newInterpreter != "")
+-        elfFile.setInterpreter(newInterpreter);
++    if (newInterpreter != "") {
++        try {
++            std::string oldInterpreter = elfFile.getInterpreter();
++            if (oldInterpreter != "" && newInterpreter != oldInterpreter) {
++                elfFile.setInterpreter(newInterpreter);
++                elfFile.rewriteSections();
++            }
++        } catch (std::exception & e) {
++            if (debugMode || !quietMode)
++                fprintf(stderr, "patchelf: %s\n", e.what());
++            /* continue */
++        }
++    }
+ 
+     if (printRPath)
+         elfFile.modifyRPath(elfFile.rpPrint, {}, "");
+@@ -1569,6 +1755,7 @@
+     if (noDefaultLib)
+         elfFile.noDefaultLib();
+ 
++
+     if (elfFile.isChanged()){
+         elfFile.rewriteSections();
+         writeFile(fileName, elfFile.fileContents);
+@@ -1611,6 +1798,8 @@
+   [--replace-needed LIBRARY NEW_LIBRARY]\n\
+   [--print-needed]\n\
+   [--no-default-lib]\n\
++  [--set-root-prefix PATH_PREFIX]\n\
++  [--restore-root-prefix PATH_PREFIX]\n\
+   [--debug]\n\
+   [--version]\n\
+   FILENAME\n", progName.c_str());
+@@ -1620,7 +1809,8 @@
+ int mainWrapped(int argc, char * * argv)
+ {
+     if (argc <= 1) {
+-        showHelp(argv[0]);
++        if (debugMode || !quietMode)
++            showHelp(argv[0]);
+         return 1;
+     }
+ 
+@@ -1703,7 +1893,21 @@
+         else if (arg == "--no-default-lib") {
+             noDefaultLib = true;
+         }
+-        else if (arg == "--help" || arg == "-h" ) {
++        /* udocker */
++        else if (arg == "--quiet" || arg == "-q") {
++            quietMode = true;
++        }
++        /* udocker */
++        else if (arg == "--set-root-prefix") {
++            if (++i == argc) error("missing argument");
++            patchRootPath = argv[i];
++        }
++        /* udocker */
++        else if (arg == "--restore-root-prefix") {
++            if (++i == argc) error("missing argument");
++            restoreRootPath = argv[i];
++        }
++        else if (arg == "--help" || arg == "-h") {
+             showHelp(argv[0]);
+             return 0;
+         }
+@@ -1727,7 +1931,8 @@
+     try {
+         return mainWrapped(argc, argv);
+     } catch (std::exception & e) {
+-        fprintf(stderr, "patchelf: %s\n", e.what());
++        if (debugMode || !quietMode)
++            fprintf(stderr, "patchelf: %s\n", e.what());
+         return 1;
+     }
+ }
