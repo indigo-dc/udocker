@@ -1,3 +1,12 @@
+NEW IN THIS BRANCH
+==================
+udocker now supports two methods for container execution using:
+
+* PRoot
+* fakechroot
+
+See the [User manual](doc/user_manual.md)
+
 udocker
 =======
 A basic user tool to execute simple docker containers in user space
@@ -127,14 +136,14 @@ Options common to all commands must appear before the command:
 ## Examples
 Some examples of usage:
 
-Search on dockerhub
+Search container images in dockerhub.
 ```
 udocker search  fedora
 udocker search  ubuntu
 udocker search  indigodatacloud
 ```
 
-Pull from docker hub and list the pulled images.
+Pull from dockerhub and list the pulled images.
 ```
 udocker pull  fedora
 udocker pull  busybox
@@ -175,22 +184,35 @@ be obfuscated.
 udocker run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
 ```
 
-Install software inside the container
+Install software inside the container.
 ```
 udocker run  --user=root myfed  yum install -y firefox pulseaudio gnash-plugin
 ```
 
-Run as some user. The usernames should exist in the container 
+Run as some user. The usernames should exist in the container.
 ```
 udocker run --user 1000:1001  myfed  /bin/id
 udocker run --user root   myfed  /bin/id
 udocker run --user jorge  myfed  /bin/id
 ```
 
-Firefox with audio and video
+Running Firefox.
 ```
 ./udocker run --bindhome --hostauth --hostenv \
    -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed  firefox
+```
+
+Change execution engine from PRoot to fakechroot and run.
+```
+./udocker setup  --execmode=F4  myfed
+
+./udocker run --bindhome --hostauth --hostenv \
+   -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed  firefox
+```
+
+Change execution engine back to PRoot.
+```
+./udocker setup  --execmode=P1  myfed
 ```
 
 ## Documentation

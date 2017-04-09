@@ -5056,7 +5056,7 @@ class Udocker(object):
 
     def do_setup(self, cmdp):
         """
-        setup: change udocker settings for a container
+        setup: change container execution settings
         setup [options] <container-id>
         --execmode=<Pn>            :select execution mode
         --execmode=<Fn>            :select execution mode
@@ -5146,6 +5146,7 @@ class Udocker(object):
           unprotect <container_id>    :Unprotect container
 
           mkrepo <topdir>             :Create repository in another location
+          setup                       :Change container execution settings
           login                       :Login into docker repository
           logout                      :Logout from docker repository
 
