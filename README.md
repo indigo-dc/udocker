@@ -124,6 +124,10 @@ Commands:
   unprotect <container_id>    :Unprotect container
 
   mkrepo <topdir>             :Create repository in another location
+  setup                       :Change container execution settings
+  login                       :Login into docker repository
+  logout                      :Logout from docker repository
+
 
   help                        :This help
   run --help                  :Command specific help

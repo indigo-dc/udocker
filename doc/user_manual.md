@@ -560,33 +560,56 @@ Options:
 * `--execmode=XY` choose an execution mode
 * `--force` force the selection of the execution mode    
 
-|Mode| Engine     | Description                         | Changes container
-|----|:-----------|:------------------------------------|:------------------
-| P1 | PRoot      | accelerated mode using seccomp      | No
-| P2 | PRoot      | seccomp accelerated mode disabled   | No
-| F1 | Fakechroot | exec with direct loader invocation  | symbolic links
-| F2 | Fakechroot | F1 but using a modified loader      | F1 + ld.so
-| F3 | Fakechroot | fix ELF headers in binaries         | F2 + ELF headers
-| F4 | Fakechroot | F3 enables new executables and libs | same as F3
+|Mode| Engine     | Description                              | Changes container
+|----|:-----------|:-----------------------------------------|:------------------
+| P1 | PRoot      | accelerated mode using seccomp           | No
+| P2 | PRoot      | seccomp accelerated mode disabled        | No
+| F1 | Fakechroot | exec with direct loader invocation       | symbolic links
+| F2 | Fakechroot | F1 plus modified loader                  | F1 + ld.so
+| F3 | Fakechroot | fix ELF headers in binaries              | F2 + ELF headers
+| F4 | Fakechroot | F3 plus enables new executables and libs | same as F3
 
-The default execution mode is P1 which provides a good balance between
-performance and reliable execution, it uses PTRACE together with SECCOMP.
+The default execution mode is P1 which uses PTRACE together with SECCOMP.
 
 The Fakechroot engine is in experimental status. It provides native host
 performance for most system calls.  It has four modes that offer increasing
-compatibility levels.  F1 is the least intrusive and only changes absolute
+compatibility levels. F1 is the least intrusive and only changes absolute
 symbolic links so that they point to the container. F2 adds changes to the
 loader to prevent loading of host shareable libraries. F3 adds changes to
 all binaries (ELF headers of executables and libraries) to remove absolute 
 references pointing to the host shareable libraries. These changes are
 performed once during the setup, executables added after setup will not have
-their ELF headers fixed. Notice that setup can be rerun with the --force 
-option to fix these binaries. F4 performs the ELF header changes dynamically
-(on-the-fly) thus enabling compilation and linking within the container and 
-new executables to be transferred to the container and executed.
+their ELF headers fixed and will fail to run. Notice that setup can be rerun 
+with the --force option to fix these binaries. F4 performs the ELF header
+changes dynamically (on-the-fly) thus enabling compilation and linking within
+the container and new executables to be transferred to the container and
+executed.
+
+Also notice that changes performed in Fn modes prevent the containers from
+running in hosts where the directory pathname to the container is different. 
+In this case convert back to P1, transfer to the host, and then convert again 
+from P1 to the intended Fn mode.
  
+Quick examples:
+
+```
+  udocker create --name=mycontainer  fedora:25
+
+  udocker setup --execmode=F3  mycontainer
+  udocker setup  mycontainer                 # prints the execution mode
+
+  udocker run  mycontainer /bin/ls
+
+  udocker setup  --execmode=F4  mycontainer
+  udocker run  mycontainer /bin/ls
+
+  udocker setup  --execmode=P1  mycontainer
+  udocker run  mycontainer  /bin/ls
+```
 
 ## Aknowlegments
 
 * PRoot http://proot.me
+* fakechroot https://github.com/dex4er/fakechroot/wiki
 * INDIGO DataCloud https://www.indigo-datacloud.eu
+
