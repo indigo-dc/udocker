@@ -29,7 +29,7 @@ Install udocker v1.0.1 or higher released by INDIGO-DataCloud:
   curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-1.0.1.tar.gz > udocker-tarball.tgz
   export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
   tar xzvf $UDOCKER_TARBALL udocker
-  ./udocker
+  ./udocker version
   mv ./udocker $HOME   # move the executable to your preferred location for binaries
 ```
 
@@ -38,7 +38,7 @@ Install the previous udocker 1.0.0 released by INDIGO-DataCloud:
 ```
   cd $HOME
   wget -O- http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.0.0.tar.gz | tar xzvf -
-  ./udocker.py
+  ./udocker.py version
 ```
 
 If using the setup.py provided in the releases install with:
@@ -59,7 +59,7 @@ For the master branch:
 ```
   curl https://raw.githubusercontent.com/indigo-dc/udocker/master/udocker > udocker
   chmod u+rx ./udocker
-  ./udocker
+  ./udocker version
 ```
 
 For the development branch:
@@ -67,7 +67,7 @@ For the development branch:
 ```
   curl https://raw.githubusercontent.com/indigo-dc/udocker/devel/udocker > udocker
   chmod u+rx ./udocker
-  ./udocker
+  ./udocker version
 ```
 
 ## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
