@@ -745,7 +745,7 @@ class FileUtil(object):
             if "=" in path:
                 path = "".join(path.split("=", 1)[1:])
             path = path.split(":")
-        if isinstance(path, list) or isinstance(path, tuple):
+        if isinstance(path, (list, tuple)):
             for directory in path:
                 full_path = rootdir + directory + "/" + self.basename
                 if os.path.exists(full_path):
@@ -804,8 +804,7 @@ class UdockerTools(object):
         (hdr, dummy) = self.curl.get(self._tarball, ofile=tarball_file)
         if hdr.data["X-ND-CURLSTATUS"]:
             return ""
-        else:
-            return tarball_file
+        return tarball_file
 
     def _verify_version(self, tarball_file):
         """verify the tarball version"""
@@ -1798,8 +1797,8 @@ class ContainerStructure(object):
         if param in container_json[confidx]:
             if container_json[confidx][param] is None:
                 return default
-            elif (isinstance(container_json[confidx][param], str) and (
-                    isinstance(default, list) or isinstance(default, tuple))):
+            elif (isinstance(container_json[confidx][param], str) and
+                  isinstance(default, (list, tuple))):
                 return container_json[confidx][param].strip().split()
             elif (isinstance(default, str) and (
                     isinstance(container_json[confidx][param], list) or
@@ -2295,7 +2294,7 @@ class LocalRepository(object):
                     FileUtil(directory + "/v2").remove()
                 except (IOError, OSError):
                     pass
-                if len(os.listdir(directory)) != 0:
+                if os.listdir(directory):
                     return False
         try:
             # Create version file
@@ -2599,7 +2598,6 @@ class GetURL(object):
         self.insecure = Config.http_insecure
         self._select_implementation()
 
-    # pylint: disable=redefined-variable-type
     # pylint: disable=locally-disabled
     def _select_implementation(self):
         """Select which implementation to use"""
@@ -3801,7 +3799,7 @@ class Udocker(object):
             username = raw_input("username: ")
         if not password:
             password = getpass("password: ")
-        if len(password) and password == password.upper():
+        if password and password == password.upper():
             Msg().out("Warning: password in uppercase",
                       "Caps Lock ?", l=Msg.WAR)
         v2_auth_token = \
@@ -4272,8 +4270,10 @@ class Udocker(object):
                     Msg().err("Error: image verification failure")
                     return False
 
-    def do_version(self, dummy):
+    def do_version(self, cmdp):
         """Print the version number"""
+        if cmdp.missing_options():               # syntax error
+            return False
         try:
             Msg().out("%s %s" % ("udocker", __version__))
         except NameError:
