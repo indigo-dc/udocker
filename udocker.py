@@ -1798,7 +1798,7 @@ class ContainerStructure(object):
             if container_json[confidx][param] is None:
                 return default
             elif (isinstance(container_json[confidx][param], str) and
-                    isinstance(default, (list, tuple))):
+                  isinstance(default, (list, tuple))):
                 return container_json[confidx][param].strip().split()
             elif (isinstance(default, str) and (
                     isinstance(container_json[confidx][param], list) or
