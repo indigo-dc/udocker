@@ -1,9 +1,10 @@
 NEW IN THIS BRANCH
 ==================
-udocker now supports two methods for container execution using:
+udocker now supports three methods for container execution using:
 
 * PRoot
-* fakechroot
+* Fakechroot
+* runC
 
 See the [User manual](doc/user_manual.md)
 
