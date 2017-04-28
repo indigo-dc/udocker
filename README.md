@@ -206,7 +206,7 @@ Running Firefox.
    -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed  firefox
 ```
 
-Change execution engine from PRoot to fakechroot and run.
+Change execution engine mode from PRoot to Fakechroot and run.
 ```
 ./udocker setup  --execmode=F4  myfed
 
@@ -214,7 +214,7 @@ Change execution engine from PRoot to fakechroot and run.
    -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed  firefox
 ```
 
-Change execution engine to accelerated PRoot.
+Change execution engine mode to accelerated PRoot.
 ```
 ./udocker setup  --execmode=P1  myfed
 ```
@@ -224,10 +224,13 @@ Change execution engine to runC.
 ./udocker setup  --execmode=R1  myfed
 ```
 
-## Moving containers
-Notice that when using execution engines other than PRoot created 
-containers cannot be moved across hosts. In this case convert back 
+## Other limitations
+Notice that when using execution engines other than PRoot (Pn modes) the
+created containers cannot be moved across hosts. In this case convert back 
 to a Pn mode before transfer.
+
+The accelerated mode of PRoot (mode P1) may exhibit failures in Linux kernels
+above 4.0 with some applications due to upstream issues in this case use mode P2.
 
 ## Documentation
 Documentation is available at gitbook.
