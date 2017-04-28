@@ -224,6 +224,11 @@ Change execution engine to runC.
 ./udocker setup  --execmode=R1  myfed
 ```
 
+## Moving containers
+Notice that when using execution engines other than PRoot created 
+containers cannot be moved across hosts. In this case convert back 
+to a Pn mode before transfer.
+
 ## Documentation
 Documentation is available at gitbook.
 
@@ -232,6 +237,6 @@ https://indigo-dc.gitbooks.io/udocker/content/
 ## Aknowlegments
 
 * PRoot http://proot.me
-* fakechroot https://github.com/dex4er/fakechroot/wiki
-* runc https://runc.io/
+* Fakechroot https://github.com/dex4er/fakechroot/wiki
+* runC https://runc.io/
 * INDIGO DataCloud https://www.indigo-datacloud.eu

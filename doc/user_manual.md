@@ -616,7 +616,7 @@ Quick examples:
 ## Aknowlegments
 
 * PRoot http://proot.me
-* fakechroot https://github.com/dex4er/fakechroot/wiki
+* Fakechroot https://github.com/dex4er/fakechroot/wiki
 * runC https://runc.io/
 * INDIGO DataCloud https://www.indigo-datacloud.eu
 
