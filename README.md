@@ -214,9 +214,14 @@ Change execution engine from PRoot to fakechroot and run.
    -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed  firefox
 ```
 
-Change execution engine back to PRoot.
+Change execution engine to accelerated PRoot.
 ```
 ./udocker setup  --execmode=P1  myfed
+```
+
+Change execution engine to runC.
+```
+./udocker setup  --execmode=R1  myfed
 ```
 
 ## Documentation
@@ -228,4 +233,5 @@ https://indigo-dc.gitbooks.io/udocker/content/
 
 * PRoot http://proot.me
 * fakechroot https://github.com/dex4er/fakechroot/wiki
+* runc https://runc.io/
 * INDIGO DataCloud https://www.indigo-datacloud.eu

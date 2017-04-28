@@ -75,10 +75,11 @@ execute it from their own accounts without requiring system administration
 intervention. 
 
 udocker provides a chroot like environment for container execution. This is
-currently implemented:
+currently implemented by:
 
-* in the PRoot engine via the kernel ptrace system call;
-* in the Fakechroot engine via shared library preload.
+* PRoot engine via the kernel ptrace system call;
+* Fakechroot engine via shared library preload;
+* runC engine using rootless namespaces.
 
 udocker via PRoot offers the emulation of the root user. This emulation
 mimics a real root user (e.g getuid will return 0). This is just an emulation
@@ -568,8 +569,9 @@ Options:
 | F2 | Fakechroot | F1 plus modified loader                  | F1 + ld.so
 | F3 | Fakechroot | fix ELF headers in binaries              | F2 + ELF headers
 | F4 | Fakechroot | F3 plus enables new executables and libs | same as F3
+| R1 | runC       | rootless user mode namespaces            | resolv.conf
 
-The default execution mode is P1 which uses PTRACE together with SECCOMP.
+The default execution mode is P2 which uses PTRACE without SECCOMP.
 
 The Fakechroot engine is in experimental status. It provides native host
 performance for most system calls.  It has four modes that offer increasing
@@ -585,10 +587,11 @@ changes dynamically (on-the-fly) thus enabling compilation and linking within
 the container and new executables to be transferred to the container and
 executed.
 
-Also notice that changes performed in Fn modes prevent the containers from
-running in hosts where the directory pathname to the container is different. 
-In this case convert back to P1, transfer to the host, and then convert again 
-from P1 to the intended Fn mode.
+Also notice that changes performed in Fn and Rn modes prevent the containers 
+from running in hosts where the directory pathname to the container is 
+different. 
+In this case convert back to P2, transfer to the host, and then convert again 
+from P2 to the intended Fn mode.
  
 Quick examples:
 
@@ -605,11 +608,15 @@ Quick examples:
 
   udocker setup  --execmode=P1  mycontainer
   udocker run  mycontainer  /bin/ls
+
+  udocker setup  --execmode=R1  mycontainer
+  udocker run  mycontainer  /bin/ls
 ```
 
 ## Aknowlegments
 
 * PRoot http://proot.me
 * fakechroot https://github.com/dex4er/fakechroot/wiki
+* runC https://runc.io/
 * INDIGO DataCloud https://www.indigo-datacloud.eu
 

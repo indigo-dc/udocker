@@ -173,6 +173,22 @@ patch_fakechroot_source1()
     patch -p1 < Fakechroot.patch
 }
 
+prepare_runc_source()
+{
+    echo "prepare_runc_source : $1"
+    local RUNC_SOURCE_DIR="$1"
+    cd "$BUILD_DIR"
+
+    if [ -d "$RUNC_SOURCE_DIR" ] ; then
+        echo "runc source already exists: $RUNC_SOURCE_DIR"
+        return
+    fi
+
+    git clone --depth=1 https://github.com/opencontainers/runc
+    /bin/rm -Rf $BUILD_DIR/runc/.git
+    /bin/mv runc "$RUNC_SOURCE_DIR"
+}
+
 prepare_package()
 {
     echo "prepare_package"
@@ -947,6 +963,52 @@ EOF_ubuntu16_fakechroot
     set +xv
 }
 
+ubuntu16_build_runc()
+{
+    echo "ubuntu16_build_runc : $1"
+    local OS_ARCH="$1"
+    local RUNC_SOURCE_DIR="$2"
+    local OS_NAME="ubuntu"
+    local OS_RELVER="16"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+    elif [ "$OS_ARCH" = "amd64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${RUNC_SOURCE_DIR}/runc" ] ; then
+        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile runc
+    mkdir -p ${OS_ROOTDIR}/go/src/github.com/opencontainers
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -0 -r "$OS_ROOTDIR" -b "${RUNC_SOURCE_DIR}:/go/src/github.com/opencontainers/runc" -w / -b /dev \
+            -b /etc/resolv.conf:/etc/resolv.conf /bin/bash <<'EOF_ubuntu16_runc'
+apt-get -y update
+apt-get -y install golang libseccomp-dev
+export GOPATH=/go
+cd /go/src/github.com/opencontainers/runc
+make static
+EOF_ubuntu16_runc
+
+    set +xv
+}
+
+# #############################################################################
+# TOOLS
+# #############################################################################
+
 ostree_delete()
 {
     local OS_ARCH="$1"
@@ -997,6 +1059,10 @@ create_package_tarball()
         echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Ubuntu-16.so"
         return
     fi
+    if [ ! -f "${BUILD_DIR}/runc-source-x86_64/runc" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/runc-source-x86_64/runc"
+        return
+    fi
 
     /bin/cp -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-25.so" \
                "${PACKAGE_DIR}/udocker_dir/bin/proot-x86-4_8_0"
@@ -1014,6 +1080,8 @@ create_package_tarball()
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-14-x86_64.so"
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Ubuntu-16.so" \
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-16-x86_64.so"
+    /bin/cp -f "${BUILD_DIR}/runc-source-x86_64/runc" \
+               "${PACKAGE_DIR}/udocker_dir/bin/runc-x86_64"
 
     (cd "${PACKAGE_DIR}/udocker_dir/lib"; \
         ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-x86_64.so ; \
@@ -1042,7 +1110,7 @@ REPO_DIR="$(dirname $utils_dir)"
 
 sanity_check
 
-BUILD_DIR=/tmp/udocker-fr-build
+BUILD_DIR=${HOME}/udocker-fr-build
 S_PROOT_DIR="${BUILD_DIR}/proot-static-build/static"
 S_PROOT_PACKAGES_DIR="${BUILD_DIR}/proot-static-build/packages"
 PACKAGE_DIR="${BUILD_DIR}/package"
@@ -1079,6 +1147,7 @@ patch_patchelf_source1 "${BUILD_DIR}/patchelf-source-x86_64"
 patch_patchelf_source2 "${BUILD_DIR}/patchelf-source-x86_64"
 prepare_fakechroot_source "${BUILD_DIR}/fakechroot-source-x86_64"
 patch_fakechroot_source1 "${BUILD_DIR}/fakechroot-source-x86_64"
+prepare_runc_source "${BUILD_DIR}/runc-source-x86_64"
 #
 fedora25_setup "x86_64"
 fedora25_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
@@ -1100,6 +1169,7 @@ ubuntu14_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-x86_64"
 
 ubuntu16_setup "amd64"
 ubuntu16_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-x86_64"
+ubuntu16_build_runc "amd64" "${BUILD_DIR}/runc-source-x86_64"
 #ostree_delete "amd64" "ubuntu" "16"
 
 create_package_tarball

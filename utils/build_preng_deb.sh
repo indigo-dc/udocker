@@ -181,7 +181,7 @@ Section: utils
 Priority: optional
 Maintainer: udocker maintainer <udocker@lip.pt>
 Build-Depends: debhelper (>= 9.0.0), libtalloc-dev
-Standards-Version: 3.9.7
+Standards-Version: 3.9.8
 Homepage: https://www.gitbook.com/book/indigo-dc/udocker/details
 
 Package: udocker-preng

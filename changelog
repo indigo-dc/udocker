@@ -1,8 +1,9 @@
 udocker (1.1.0) - EXPERIMENTAL
 
   * support image names prefixed by registry similarly to docker 
-  * add execution driver for data and compute intensive applications
-  * add execution driver and execution mode selection logic
+  * add execution engine selection logic
+  * add fr execution engine based on shared library interception
+  * add rc execution engine based on rootless namespaces
 
 udocker (1.0.3)
 

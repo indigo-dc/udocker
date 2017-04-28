@@ -173,7 +173,7 @@ Section: utils
 Priority: optional
 Maintainer: udocker maintainer <udocker@lip.pt>
 Build-Depends: debhelper (>= 9.0.0), python (>= 2.7)
-Standards-Version: 3.9.7
+Standards-Version: 3.9.8
 Homepage: https://github.com/indigo-dc/udocker
 
 Package: udocker
