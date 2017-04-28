@@ -1,6 +1,5 @@
-diff -Naur patchelf.orig/src/patchelf.cc patchelf/src/patchelf.cc
---- patchelf.orig/src/patchelf.cc	2017-04-06 22:51:21.865700193 +0100
-+++ patchelf/src/patchelf.cc	2017-04-07 01:23:45.504099178 +0100
+--- patchelf.orig/src/patchelf.cc	2017-04-07 12:01:30.478874080 +0100
++++ patchelf/src/patchelf.cc	2017-04-28 15:24:26.461332379 +0100
 @@ -34,6 +34,7 @@
  
  #include <sys/types.h>
@@ -142,7 +141,7 @@ diff -Naur patchelf.orig/src/patchelf.cc patchelf/src/patchelf.cc
  
  template<ElfFileParams>
  void ElfFile<ElfFileParamNames>::noDefaultLib()
-@@ -1535,9 +1584,135 @@
+@@ -1535,9 +1584,145 @@
  static bool printNeeded = false;
  static bool noDefaultLib = false;
  
@@ -172,9 +171,13 @@ diff -Naur patchelf.orig/src/patchelf.cc patchelf/src/patchelf.cc
 +    if (gotRPath != "") {
 +        patchRPath = "";
 +        for (auto & dirName : splitColonDelimitedString(gotRPath.c_str())) {
++	    if (dirName.compare(0, strlen("$ORIGIN"), "$ORIGIN") == 0) {
++		patchRPath += dirName;
++		continue;
++	    }
 +            if (patchRPath != "")
 +                 patchRPath += ":";
-+            if (dirName.compare(0, patchRootPath.length(), patchRootPath) != 0) {
++	    if (dirName.compare(0, patchRootPath.length(), patchRootPath) != 0) {
 +                patchRPath += patchRootPath + "/" + dirName;
 +            }
 +            else {
@@ -195,6 +198,7 @@ diff -Naur patchelf.orig/src/patchelf.cc patchelf/src/patchelf.cc
 +    }
 +*/
 +
++    elfFile.modifyRPath(elfFile.rpGet, {}, "");
 +    elfFile.getNeededLibs();
 +    for (auto & lib : gotNeededLibs) {
 +        if (lib != "" && lib[0] == '/' && lib.compare(0, patchRootPath.length(), patchRootPath) != 0)
@@ -233,6 +237,10 @@ diff -Naur patchelf.orig/src/patchelf.cc patchelf/src/patchelf.cc
 +    if (gotRPath != "") {
 +        patchRPath = "";
 +        for (auto & dirName : splitColonDelimitedString(gotRPath.c_str())) {
++	    if (dirName.compare(0, strlen("$ORIGIN"), "$ORIGIN") == 0) {
++                patchRPath += dirName;
++                continue;
++            }
 +            if (patchRPath != "")
 +                 patchRPath += ":";
 +            if (dirName.compare(0, restoreRootPath.length(), restoreRootPath) == 0) {
@@ -257,6 +265,7 @@ diff -Naur patchelf.orig/src/patchelf.cc patchelf/src/patchelf.cc
 +    }
 +*/
 +
++    elfFile.modifyRPath(elfFile.rpGet, {}, "");
 +    elfFile.getNeededLibs();
 +    for (auto & lib : gotNeededLibs) {
 +        if (lib != "" && lib[0] == '/' && lib.compare(0, restoreRootPath.length(), restoreRootPath) == 0) 
@@ -278,7 +287,7 @@ diff -Naur patchelf.orig/src/patchelf.cc patchelf/src/patchelf.cc
      if (printInterpreter)
          printf("%s\n", elfFile.getInterpreter().c_str());
  
-@@ -1547,8 +1722,19 @@
+@@ -1547,8 +1732,19 @@
      if (setSoname)
          elfFile.modifySoname(elfFile.replaceSoname, newSoname);
  
@@ -300,7 +309,7 @@ diff -Naur patchelf.orig/src/patchelf.cc patchelf/src/patchelf.cc
  
      if (printRPath)
          elfFile.modifyRPath(elfFile.rpPrint, {}, "");
-@@ -1569,6 +1755,7 @@
+@@ -1569,6 +1765,7 @@
      if (noDefaultLib)
          elfFile.noDefaultLib();
  
@@ -308,7 +317,7 @@ diff -Naur patchelf.orig/src/patchelf.cc patchelf/src/patchelf.cc
      if (elfFile.isChanged()){
          elfFile.rewriteSections();
          writeFile(fileName, elfFile.fileContents);
-@@ -1611,6 +1798,8 @@
+@@ -1611,6 +1808,8 @@
    [--replace-needed LIBRARY NEW_LIBRARY]\n\
    [--print-needed]\n\
    [--no-default-lib]\n\
@@ -317,7 +326,7 @@ diff -Naur patchelf.orig/src/patchelf.cc patchelf/src/patchelf.cc
    [--debug]\n\
    [--version]\n\
    FILENAME\n", progName.c_str());
-@@ -1620,7 +1809,8 @@
+@@ -1620,7 +1819,8 @@
  int mainWrapped(int argc, char * * argv)
  {
      if (argc <= 1) {
@@ -327,7 +336,7 @@ diff -Naur patchelf.orig/src/patchelf.cc patchelf/src/patchelf.cc
          return 1;
      }
  
-@@ -1703,7 +1893,21 @@
+@@ -1703,7 +1903,21 @@
          else if (arg == "--no-default-lib") {
              noDefaultLib = true;
          }
@@ -350,7 +359,7 @@ diff -Naur patchelf.orig/src/patchelf.cc patchelf/src/patchelf.cc
              showHelp(argv[0]);
              return 0;
          }
-@@ -1727,7 +1931,8 @@
+@@ -1727,7 +1941,8 @@
      try {
          return mainWrapped(argc, argv);
      } catch (std::exception & e) {
