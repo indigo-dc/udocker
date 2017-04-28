@@ -70,6 +70,12 @@ For the development branch:
 
 RPMs for CentOS are provided at http://repo.indigo-datacloud.eu
 
+Beware that these packages are intended to be used solely in the corresponding hosting
+operating systems as they are dynamically compiled against the host libraries.  If the
+same udocker is to be used across multiple operating systems then use the installation
+method described above in section 2. The tarball package is statically compiled and
+will work across different hosting operating systems.
+
 ```
   rpm -i udocker-1.0.3-1.noarch.rpm 
   rpm -i udocker-preng-1.0.3-1.x86_64.rpm

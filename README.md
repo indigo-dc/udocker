@@ -16,6 +16,17 @@ udocker is a wrapper around several tools to mimic a subset of the
 docker capabilities including pulling images and running then with
 minimal functionality.
 
+## Development version
+A development version with support for multiple execution methods
+is available in the udocker-fr branch on github. The development 
+version supports the following execution engines.
+
+* PRoot (default)
+* Fakechroot
+* runC
+
+See: https://github.com/indigo-dc/udocker/tree/udocker-fr
+
 ## How does it work
 udocker is a simple tool written in Python, it has a minimal set
 of dependencies so that can be executed in a wide range of Linux
@@ -190,6 +201,15 @@ Firefox with audio and video
 ```
 ./udocker run --bindhome --hostauth --hostenv \
    -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed  firefox
+```
+
+## Other limitations
+The accelerated mode of PRoot may exhibit failures in Linux kernels above 4.0 
+with some applications due to upstream issues, in this case use run with 
+--noseccomp.
+
+```
+udocker run --noseccomp mycontainer
 ```
 
 ## Documentation
