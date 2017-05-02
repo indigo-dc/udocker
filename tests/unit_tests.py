@@ -2024,6 +2024,7 @@ class ExecutionEngine(unittest.TestCase):
         mock_isdir.return_value = True
         #
         ex_eng = udocker.ExecutionEngine(mock_local)
+        ex_eng.container_root = "/"
         ex_eng.opt["vol"] = ("/opt/xxx:/mnt", )
         status = ex_eng._cont2host("/mnt")
         self.assertEqual(status, "/opt/xxx")
