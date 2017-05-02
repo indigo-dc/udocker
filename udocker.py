@@ -1804,9 +1804,8 @@ class ContainerStructure(object):
             elif (isinstance(container_json[confidx][param], str) and
                   isinstance(default, (list, tuple))):
                 return container_json[confidx][param].strip().split()
-            elif (isinstance(default, str) and (
-                    isinstance(container_json[confidx][param], list) or
-                    isinstance(container_json[confidx][param], tuple))):
+            elif (isinstance(default, str) and
+                  isinstance(container_json[confidx][param], (list, tuple))):
                 return " ".join(container_json[confidx][param])
             elif (isinstance(default, str) and (
                     isinstance(container_json[confidx][param], dict))):
