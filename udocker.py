@@ -918,15 +918,16 @@ class FileUtil(object):
             for f_name in files:
                 try:
                     f_path = dir_path + "/" + f_name
+                    if not os.path.islink(f_path):
+                        continue
                     if os.lstat(f_path).st_uid != Config.uid:
                         continue
-                    elif os.path.islink(f_path):
-                        if to_container:
-                            if self._link_set(f_path, root_path, force):
-                                links.append(f_path)
-                        else:
-                            if self._link_restore(f_path, root_path, force):
-                                links.append(f_path)
+                    if to_container:
+                        if self._link_set(f_path, root_path, force):
+                            links.append(f_path)
+                    else:
+                        if self._link_restore(f_path, root_path, force):
+                            links.append(f_path)
                 except OSError:
                     continue
         return links
@@ -1636,6 +1637,7 @@ class ExecutionEngineCommon(object):
         if not (pathname and pathname.startswith("/")):
             return ""
         path = ""
+        real_container_root = os.path.realpath(self.container_root)
         for vol in self.opt["vol"]:
             if ":" in vol:
                 (host_path, cont_path) = vol.split(":")
@@ -1646,14 +1648,17 @@ class ExecutionEngineCommon(object):
                 path = pathname
                 break
         if not path:
-            path = self.container_root + "/" + pathname
+            path = real_container_root + "/" + pathname
         f_path = ""
-        for d_comp in path.split("/"):
+        for d_comp in path.split("/")[1:]:
             f_path = f_path + "/" + d_comp
-            if os.path.islink(f_path):
+            while os.path.islink(f_path):
                 real_path = os.readlink(f_path)
                 if real_path.startswith("/"):
-                    f_path = self.container_root + real_path
+                    if f_path.startswith(real_container_root):
+                        f_path = real_container_root + real_path
+                    else:
+                        f_path = real_path
                 else:
                     f_path = os.path.dirname(f_path) + "/" + real_path
         return os.path.realpath(f_path)
@@ -3405,7 +3410,7 @@ class LocalRepository(object):
                     FileUtil(directory + "/v2").remove()
                 except (IOError, OSError):
                     pass
-                if len(os.listdir(directory)) != 0:
+                if os.listdir(directory):
                     return False
         try:
             # Create version file
@@ -4945,7 +4950,7 @@ class Udocker(object):
             username = raw_input("username: ")
         if not password:
             password = getpass("password: ")
-        if len(password) and password == password.upper():
+        if password and password == password.upper():
             Msg().out("Warning: password in uppercase",
                       "Caps Lock ?", l=Msg.WAR)
         v2_auth_token = \
@@ -5472,8 +5477,10 @@ class Udocker(object):
         if status is not None and not status:
             Msg().err("Error: install of udockertools failed")
 
-    def do_version(self, dummy):
+    def do_version(self, cmdp):
         """Print the version number"""
+        if cmdp.missing_options():               # syntax error
+            return False
         try:
             Msg().out("%s %s" % ("udocker", __version__))
         except NameError:
