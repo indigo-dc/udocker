@@ -33,7 +33,7 @@ import platform
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 __date__ = "2017"
 
 # Python version major.minor
@@ -110,7 +110,7 @@ class Config(object):
     # udocker installation tarball
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/rsGr1QF3Fb5c8SK/download"
+        "/s/2F1DRs4TMyexq6R/download"
     )
     autoinstall = True
 
