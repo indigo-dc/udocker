@@ -61,7 +61,7 @@ officially supported by INDIGO-DataCloud.
 For the master branch:
 
 ```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/master/udocker > udocker
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/master/udocker.py > udocker
   chmod u+rx ./udocker
   ./udocker version
 ```
@@ -69,7 +69,7 @@ For the master branch:
 For the development branch:
 
 ```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/devel/udocker > udocker
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/devel/udocker.py > udocker
   chmod u+rx ./udocker
   ./udocker version
 ```
@@ -78,7 +78,7 @@ For the development branch:
 For THIS development branch:
 
 ```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/udocker-fr/udocker > udocker
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/udocker-fr/udocker.py > udocker
   chmod u+rx ./udocker
   ./udocker version
 ```
