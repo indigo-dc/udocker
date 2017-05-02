@@ -57,6 +57,7 @@ Optionally just download and execute the udocker python script from the source a
 installation will be performed automatically. The installation from source code is not
 officially supported by INDIGO-DataCloud.
 
+<!--
 For the master branch:
 
 ```
@@ -72,6 +73,7 @@ For the development branch:
   chmod u+rx ./udocker
   ./udocker version
 ```
+-->
 
 For THIS development branch:
 
