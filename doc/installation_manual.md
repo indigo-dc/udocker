@@ -138,6 +138,14 @@ Optionally installation can be performed directly with pip:
 -->
 
 ## 5. SOURCE CODE
+To get this branch:
+
+```
+  git clone -b udocker-fr https://github.com/indigo-dc/udocker
+```
+
+
+<!--
 To get the latest udocker script from the github development branch without
 cloning the entire repository.
 ```
@@ -156,7 +164,7 @@ To get the udocker source code repository from the development branch.
 ```
   git clone -b devel https://github.com/indigo-dc/udocker
 ```
-
+-->
 
 ## 6. BUILD
 
