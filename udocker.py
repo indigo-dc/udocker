@@ -33,7 +33,7 @@ import platform
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 __date__ = "2017"
 
 # Python version major.minor
@@ -110,7 +110,7 @@ class Config(object):
     # udocker installation tarball
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/rsGr1QF3Fb5c8SK/download"
+        "/s/2F1DRs4TMyexq6R/download"
     )
     autoinstall = True
 
@@ -1129,6 +1129,7 @@ class ExecutionEngine(object):
         if not (pathname and pathname.startswith("/")):
             return ""
         path = ""
+        real_container_root = os.path.realpath(self.container_root)
         for vol in self.opt["vol"]:
             if ":" in vol:
                 (host_path, cont_path) = vol.split(":")
@@ -1139,14 +1140,17 @@ class ExecutionEngine(object):
                 path = pathname
                 break
         if not path:
-            path = self.container_root + "/" + pathname
+            path = real_container_root + "/" + pathname
         f_path = ""
-        for d_comp in path.split("/"):
+        for d_comp in path.split("/")[1:]:
             f_path = f_path + "/" + d_comp
-            if os.path.islink(f_path):
+            while os.path.islink(f_path):
                 real_path = os.readlink(f_path)
                 if real_path.startswith("/"):
-                    f_path = self.container_root + real_path
+                    if f_path.startswith(real_container_root):
+                        f_path = real_container_root + real_path
+                    else:
+                        f_path = real_path
                 else:
                     f_path = os.path.dirname(f_path) + "/" + real_path
         return os.path.realpath(f_path)
@@ -1800,9 +1804,8 @@ class ContainerStructure(object):
             elif (isinstance(container_json[confidx][param], str) and
                   isinstance(default, (list, tuple))):
                 return container_json[confidx][param].strip().split()
-            elif (isinstance(default, str) and (
-                    isinstance(container_json[confidx][param], list) or
-                    isinstance(container_json[confidx][param], tuple))):
+            elif (isinstance(default, str) and
+                  isinstance(container_json[confidx][param], (list, tuple))):
                 return " ".join(container_json[confidx][param])
             elif (isinstance(default, str) and (
                     isinstance(container_json[confidx][param], dict))):

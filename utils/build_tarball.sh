@@ -274,7 +274,7 @@ fedora25_build()
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-        gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python
+        gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python zlib gzip
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
