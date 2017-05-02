@@ -637,8 +637,11 @@ class FileUtil(object):
         if prefix not in FileUtil.safe_prefixes:
             filename = prefix
             if os.path.isdir(filename) and not filename.endswith("/"):
-                filename = filename + "/"
-            FileUtil.safe_prefixes.append(filename)
+                FileUtil.safe_prefixes.append(filename + "/")
+                FileUtil.safe_prefixes.append(os.path.realpath(filename) + "/")
+            else:
+                FileUtil.safe_prefixes.append(filename)
+                FileUtil.safe_prefixes.append(os.path.realpath(filename))
 
     def register_prefix(self):
         """Register self.filename as prefix where remove() is allowed"""
@@ -2287,7 +2290,7 @@ class RuncEngine(ExecutionEngineCommon):
     def _set_spec(self):
         """Set spec values"""
         json_obj = self._container_specjson
-        json_obj["root"]["path"] = self.container_root
+        json_obj["root"]["path"] = os.path.realpath(self.container_root)
         json_obj["root"]["readonly"] = False
         if "." in self.opt["hostname"]:
             json_obj["hostname"] = self.opt["hostname"]
