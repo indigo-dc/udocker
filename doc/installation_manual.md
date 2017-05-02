@@ -23,7 +23,7 @@ official version released by INDIGO-DataCloud.
 The tarball installation method contains statically compiled binaries and 
 is built to the used across different hosts and OS distributions.
 
-Install udocker v1.0.1 or higher released by INDIGO-DataCloud:
+~~Install udocker v1.0.1 or higher released by INDIGO-DataCloud:
 
 ```
   curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-1.0.1.tar.gz > udocker-tarball.tgz
@@ -49,6 +49,7 @@ If using the setup.py provided in the releases install with:
   curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.X.X.tar.gz | tar xzvf -
   python setup.py install --home /home/USER/bin
 ```
+~~
 
 Optionally just download and execute the udocker python script from the source and the
 installation will be performed automatically. The installation from source code is not
@@ -70,7 +71,16 @@ For the development branch:
   ./udocker version
 ```
 
-## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
+For THIS development branch:
+
+```
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/udocker-fr/udocker > udocker
+  chmod u+rx ./udocker
+  ./udocker version
+```
+
+
+~~## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
 
 Beware that these packages contain dynamically linked binaries compiled for
 the target OS distributions and therefore cannot be execute sucessfully in 
@@ -120,6 +130,7 @@ Optionally installation can be performed directly with pip:
 ```
   pip install git+https://github.com/indigo-dc/udocker
 ```
+~~
 
 ## 5. SOURCE CODE
 To get the latest udocker script from the github development branch without
