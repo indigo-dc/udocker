@@ -592,6 +592,9 @@ from running in hosts where the directory pathname to the container is
 different. 
 In this case convert back to P2, transfer to the host, and then convert again 
 from P2 to the intended Fn mode.
+
+Mode Rn only depends on kernel support for rootless containers and may not
+work on some distributions especially older ones.
  
 Quick examples:
 
