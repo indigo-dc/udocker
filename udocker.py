@@ -2326,19 +2326,26 @@ class RuncEngine(ExecutionEngineCommon):
 #        """
 #        return True
 
-    def _add_mount_spec(self, host_dir, cont_dir, rwmode=False):
+    def _add_mount_spec(self, host_source, cont_dest, rwmode=False):
         """Add one mount point"""
         if rwmode:
             mode = "rw"
         else:
             mode = "ro"
-        mount = {"destination": cont_dir,
+        mount = {"destination": cont_dest,
                  "type": "none",
-                 "source": host_dir,
+                 "source": host_source,
                  "options": ["rbind", "nosuid",
                              "noexec", "nodev",
                              mode, ], }
         self._container_specjson["mounts"].append(mount)
+
+    def _del_mount_spec(self, host_source, cont_dest):
+        """Remove one mount point"""
+        for (index, mount) in enumerate(self._container_specjson["mounts"]):
+            if (mount["destination"] == cont_dest and
+                    mount["source"] == host_source):
+                del self._container_specjson["mounts"][index] 
 
     def _add_volume_bindings(self):
         """Get the volume bindings string for runc"""
@@ -2351,6 +2358,10 @@ class RuncEngine(ExecutionEngineCommon):
                 host_dir = volume
                 cont_dir = volume
             if os.path.isdir(host_dir):
+                if host_dir == "/dev":
+                    Msg().out("Warning: this engine does not support -v",
+                              host_dir, l=Msg.WAR)
+                    continue
                 self._add_mount_spec(host_dir, cont_dir, rwmode=True)
             elif os.path.isfile(host_dir):
                 if cont_dir not in Config.sysdirs_list:
@@ -2442,6 +2453,7 @@ class RuncEngine(ExecutionEngineCommon):
             return 5
 
         self._set_spec()
+        self._del_mount_spec("mqueue", "/dev/mqueue")
         self._add_volume_bindings()
         self._save_spec()
 
