@@ -213,6 +213,9 @@ class Config(object):
         "/dev/mic/scif", "/dev/scif",
     )
 
+    # runc parameters
+    runc_nomqueue = None
+
     # Pass host env variables
     valid_host_env = ("TERM", "PATH", )
 
@@ -2345,7 +2348,7 @@ class RuncEngine(ExecutionEngineCommon):
         for (index, mount) in enumerate(self._container_specjson["mounts"]):
             if (mount["destination"] == cont_dest and
                     mount["source"] == host_source):
-                del self._container_specjson["mounts"][index] 
+                del self._container_specjson["mounts"][index]
 
     def _add_volume_bindings(self):
         """Get the volume bindings string for runc"""
@@ -2453,7 +2456,9 @@ class RuncEngine(ExecutionEngineCommon):
             return 5
 
         self._set_spec()
-        self._del_mount_spec("mqueue", "/dev/mqueue")
+        if (Config.runc_nomqueue or (Config.runc_nomqueue is None and not
+                                     Config().oskernel_isgreater("4.8.0"))):
+            self._del_mount_spec("mqueue", "/dev/mqueue")
         self._add_volume_bindings()
         self._save_spec()
 
