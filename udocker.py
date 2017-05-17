@@ -4058,25 +4058,24 @@ class DockerIoAPI(object):
              _get_url(url, ctimeout=5, timeout=5, header=[]):
         """
         url = str(args[0])
+        if "RETRY" not in kwargs:
+            kwargs["RETRY"] = 3
+        kwargs["RETRY"] -= 1
         (hdr, buf) = self.curl.get(*args, **kwargs)
         Msg().out("header: %s" % (hdr.data), l=Msg.DBG)
         if ("X-ND-HTTPSTATUS" in hdr.data and
                 "401" in hdr.data["X-ND-HTTPSTATUS"]):
             if "www-authenticate" in hdr.data and hdr.data["www-authenticate"]:
-                if "RETRY" not in kwargs:
-                    kwargs["RETRY"] = 3
                 if "RETRY" in kwargs and kwargs["RETRY"]:
                     auth_header = ""
                     if "/v2/" in url:
                         auth_header = self._get_v2_auth(
-                            hdr.data["www-authenticate"])
+                            hdr.data["www-authenticate"], kwargs["RETRY"])
                     elif "/v1/" in url:
                         auth_header = self._get_v1_auth(
                             hdr.data["www-authenticate"])
                     auth_kwargs = kwargs.copy()
                     auth_kwargs.update({"header": [auth_header]})
-                    retry = kwargs["RETRY"] - 1
-                    auth_kwargs.update({"RETRY": retry})
                     (hdr, buf) = self._get_url(*args, **auth_kwargs)
                 else:
                     hdr.data["X-ND-CURLSTATUS"] = 13  # Permission denied
@@ -4214,7 +4213,7 @@ class DockerIoAPI(object):
                 files.append(layer_id + ".layer")
         return files
 
-    def _get_v2_auth(self, www_authenticate):
+    def _get_v2_auth(self, www_authenticate, retry):
         """Authentication for v2 API"""
         auth_header = ""
         (bearer, auth_data) = www_authenticate.rsplit(" ", 1)
@@ -4228,7 +4227,7 @@ class DockerIoAPI(object):
                 header = []
                 if self.v2_auth_token:
                     header = ["Authorization: Basic %s" % (self.v2_auth_token)]
-                (dummy, auth_buf) = self._get_url(auth_url, header=header)
+                (dummy, auth_buf) = self._get_url(auth_url, header=header, RETRY=retry)
                 token_buf = auth_buf.getvalue()
                 if token_buf and "token" in token_buf:
                     try:
