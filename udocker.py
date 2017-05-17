@@ -5195,8 +5195,12 @@ class Udocker(object):
                         self.localrepo.cd_imagerepo(imagerepo, tag)):
                     container_id = self._create(imagerepo+":"+tag)
                 if not container_id:
-                    Msg().err("Error: image or container not available")
-                    return False
+                    self.do_pull(cmdp)
+                    self.localrepo.cd_imagerepo(imagerepo, tag)
+                    container_id = self._create(imagerepo+":"+tag)
+                    if not container_id:
+                        Msg().err("Error: image or container not available")
+                        return False
             if name and container_id:
                 if not self.localrepo.set_container_name(container_id, name):
                     Msg().err("Error: invalid container name format")
