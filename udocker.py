@@ -1669,14 +1669,29 @@ class ExecutionEngineCommon(object):
                     f_path = os.path.dirname(f_path) + "/" + real_path
         return os.path.realpath(f_path)
 
+    def _create_mountpoint(self, host_path, cont_path):
+        """Create mountpoint"""
+        mountpoint = self.container_root + cont_path
+        if not os.path.exists(host_path):
+            return False
+        if os.path.exists(mountpoint):
+            return True
+        if os.path.isfile(host_path):
+            status = FileUtil(mountpoint).putdata("")
+        elif os.path.isdir(host_path):
+            status = FileUtil(mountpoint).mkdir()
+        return status
+
     def _check_volumes(self):
         """Check volume paths"""
         for vol in list(self.opt["vol"]):
             if ":" in vol:
                 (host_path, cont_path) = vol.split(":")
+                self._create_mountpoint(host_path, cont_path)
             else:
                 host_path = vol
                 cont_path = ""
+                self._create_mountpoint(host_path, host_path)
             if cont_path and not cont_path.startswith("/"):
                 Msg().err("Error: invalid volume destination path:", cont_path)
                 return False
@@ -2153,6 +2168,10 @@ class PRootEngine(ExecutionEngineCommon):
                 " -i " + self.opt["uid"] + ":" + self.opt["gid"] + " "
         return uid_map
 
+    def _create_mountpoint(self, host_path, cont_path):
+        """Override create mountpoint"""
+        return True
+
     def _get_volume_bindings(self):
         """Get the volume bindings string for container run command"""
         if self.opt["vol"]:
@@ -2321,13 +2340,10 @@ class RuncEngine(ExecutionEngineCommon):
                 self.opt["user"] != "root"):
             Msg().out("Warning: this engine only supports execution as root",
                       l=Msg.WAR)
-        #self.opt["user"] = "root"
 
-#    def _set_volume_bindings(self):
-#        """Get the volume bindings string for runc
-#            Overload of parent ExecutionEngineCommon() class.
-#        """
-#        return True
+    def _create_mountpoint(self, host_path, cont_path):
+        """Override create mountpoint"""
+        return True
 
     def _add_mount_spec(self, host_source, cont_dest, rwmode=False):
         """Add one mount point"""
