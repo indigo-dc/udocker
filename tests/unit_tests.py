@@ -1941,6 +1941,7 @@ class ExecutionEngineCommon(unittest.TestCase):
         udocker.Config.sysdirs_list = ["/", ]
         udocker.Config.root_path = "/usr/sbin:/sbin:/usr/bin:/bin"
         udocker.Config.user_path = "/usr/bin:/bin:/usr/local/bin"
+        udocker.Config.tmpdir = "/tmp"
 
 
     @mock.patch('udocker.LocalRepository')
@@ -2405,7 +2406,8 @@ class ExecutionEngineCommon(unittest.TestCase):
         ex_eng.opt["user"] = "user"
         ex_eng.container_root = "/croot"
         ex_eng.container_id = "2717add4-e6f6-397c-9019-74fa67be439f"
-        ex_eng.container_names = ['cna[]me', ]
+        ex_eng.container_names = ['cname', ]
+        ex_eng.exec_mode = mock.MagicMock()
         ex_eng._run_env_set()
         self.assertTrue("HOME=" + ex_eng.opt["home"] in ex_eng.opt["env"])
         self.assertTrue("USER=" + ex_eng.opt["user"] in ex_eng.opt["env"])
@@ -2413,7 +2415,7 @@ class ExecutionEngineCommon(unittest.TestCase):
         self.assertTrue("USERNAME=" + ex_eng.opt["user"] in ex_eng.opt["env"])
         self.assertTrue("SHLVL=0" in ex_eng.opt["env"])
         self.assertTrue("container_root=/croot" in ex_eng.opt["env"])
-        self.assertTrue("container_names='cname'" in ex_eng.opt["env"])
+        self.assertTrue("container_names=cname" in ex_eng.opt["env"])
 
     @mock.patch('udocker.ExecutionMode')
     @mock.patch('udocker.ExecutionEngineCommon._check_executable')
