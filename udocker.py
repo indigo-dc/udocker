@@ -5203,6 +5203,7 @@ class Udocker(object):
         --bindhome                 :bind the home directory into the container
         --location=<path-to-dir>   :use root tree outside the repository
         --kernel=<kernel-id>       :use this Linux kernel identifier
+        --entrypoint=<entrypoint>  :overwrite the default entrypoint set by the image
         """
         self._get_run_options(cmdp)
         container_or_image = cmdp.get("P1")
