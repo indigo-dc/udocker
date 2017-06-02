@@ -789,7 +789,7 @@ class FileUtil(object):
         try:
             filep = open(self.filename, mode)
         except (IOError, OSError, TypeError):
-            return ""
+            return b""
         else:
             buf = filep.read()
             filep.close()
