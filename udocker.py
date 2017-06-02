@@ -43,9 +43,9 @@ PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
 START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 try:
-    import cStringIO
+    from cStringIO import StringIO
 except ImportError:
-    from io import BytesIO as cStringIO
+    from io import BytesIO as StringIO
 try:
     import pycurl
 except ImportError:
@@ -70,6 +70,14 @@ try:
     from getpass import getpass
 except ImportError:
     getpass = raw_input
+try:
+    long
+except:
+    long=int
+try:
+    raw_input
+except:
+    raw_input=input
 
 if PY_VER < "2.6":
     try:
@@ -119,7 +127,7 @@ class Uprocess(object):
                                         close_fds=True)
         except subprocess.CalledProcessError:
             return None
-        return content.strip()
+        return content.decode("utf-8").strip()
 
 
 class Config(object):
@@ -272,6 +280,8 @@ class Config(object):
 
     def _read_config(self, config_file):
         """Interpret config file content"""
+        if not config_file:
+            return False
         cfile = FileUtil(config_file)
         if cfile.size() == -1:
             return False
@@ -408,7 +418,7 @@ class KeyStore(object):
         try:
             size = os.stat(self.keystore_file).st_size
             with open(self.keystore_file, "rb+") as filep:
-                filep.write(" " * size)
+                filep.write((" " * size).encode())
         except (IOError, OSError):
             return False
         return True
@@ -792,7 +802,7 @@ class FileUtil(object):
         except (IOError, OSError, TypeError):
             return ""
         else:
-            filep.write(buf)
+            filep.write(buf.encode())
             filep.close()
             return buf
 
@@ -953,7 +963,7 @@ class UdockerTools(object):
 
     def _version_isequal(self, filename):
         """Is version inside file equal to this udocker version"""
-        version = FileUtil(filename).getdata().strip()
+        version = FileUtil(filename).getdata().strip().decode("utf-8")
         return version and version == __version__
 
     def is_available(self):
@@ -1452,8 +1462,9 @@ class NixAuthentication(object):
         except (IOError, OSError):
             return False
         else:
-            outpasswd.write("%s:%s:%s:%s:%s:%s:%s\n" %
-                            (user, passw, uid, gid, gecos, home, shell))
+            outpasswd.write(("%s:%s:%s:%s:%s:%s:%s\n" %
+                            (user, passw, uid, gid, gecos,
+                             home, shell)).encode())
             outpasswd.close()
             return True
 
@@ -1464,7 +1475,7 @@ class NixAuthentication(object):
         except (IOError, OSError):
             return False
         else:
-            outgroup.write("%s:x:%s:\n" % (group, gid))
+            outgroup.write(("%s:x:%s:\n" % (group, gid)).encode())
             outgroup.close()
             return True
 
@@ -1936,8 +1947,8 @@ class ExecutionEngineCommon(object):
         the container.
         """
         self.opt["user"] = "root"
-        self.opt["uid"] = "0"
-        self.opt["gid"] = "0"
+        self.opt["uid"] = 0
+        self.opt["gid"] = 0
         self.opt["home"] = "/"
         self.opt["gecos"] = ""
         self.opt["shell"] = ""
@@ -2064,7 +2075,8 @@ class ExecutionEngineCommon(object):
         self.opt["env"].append("container_root=" + self.container_root)
         self.opt["env"].append("container_uuid=" + self.container_id)
         self.opt["env"].append("container_execmode=" + self.exec_mode.get_mode())
-        names = str(self.container_names).translate(None, " '\"[]")
+        #names = str(self.container_names).translate(None, " '\"[]")
+        names = ",".join(self.container_names)
         self.opt["env"].append("container_names=" + names)
 
     def _run_init(self, container_id):
@@ -2416,7 +2428,7 @@ class RuncEngine(ExecutionEngineCommon):
             (env_var, dummy) = env_str.split("=", 1)
             if env_var:
                 container_env.append(env_var)
-        for (env_var, value) in os.environ.iteritems():
+        for (env_var, value) in os.environ.items():
             if not env_var:
                 continue
             if env_var in ("VTE_VERSION") or env_var in container_env:
@@ -2968,14 +2980,14 @@ class ContainerStructure(object):
     def _dict_to_str(self, in_dict):
         """Convert dict to str"""
         out_str = ""
-        for (key, val) in in_dict.iteritems():
+        for (key, val) in in_dict.items():
             out_str += "%s:%s " % (str(key), str(val))
         return out_str
 
     def _dict_to_list(self, in_dict):
         """Convert dict to list"""
         out_list = []
-        for (key, val) in in_dict.iteritems():
+        for (key, val) in in_dict.items():
             out_list.append("%s:%s" % (str(key), str(val)))
         return out_list
 
@@ -3701,13 +3713,13 @@ class CurlHeader(object):
 
     def write(self, buff):
         """Write is called by Curl()"""
-        pair = buff.split(":", 1)
+        pair = buff.decode("utf-8").split(":", 1)
         if len(pair) == 2:
             key = pair[0].strip().lower()
             if key:
                 self.data[key] = pair[1].strip()
         elif pair[0].startswith("HTTP/"):
-            self.data["X-ND-HTTPSTATUS"] = buff.strip()
+            self.data["X-ND-HTTPSTATUS"] = buff.decode("utf-8").strip()
         elif (self.sizeonly and
               pair[0].strip() == "" and
               "location" not in self.data):
@@ -3873,7 +3885,7 @@ class GetURLpyCurl(GetURL):
 
     def get(self, *args, **kwargs):
         """http get implementation using the PyCurl"""
-        buf = cStringIO.StringIO()
+        buf = StringIO()
         hdr = CurlHeader()
         pyc = pycurl.Curl()
         url = str(args[0])
@@ -3885,7 +3897,7 @@ class GetURLpyCurl(GetURL):
         except(IOError, OSError):
             return(None, None)
         except pycurl.error as error:
-            errno, errstr = error
+            errno, errstr = error.args
             hdr.data["X-ND-CURLSTATUS"] = errno
             if not hdr.data["X-ND-HTTPSTATUS"]:
                 hdr.data["X-ND-HTTPSTATUS"] = errstr
@@ -3901,8 +3913,7 @@ class GetURLpyCurl(GetURL):
                 kwargs["resume"] = False
                 (hdr, buf) = self.get(url, **kwargs)
             elif " 200" not in hdr.data["X-ND-HTTPSTATUS"]:
-                Msg().err("Error: in download: " + str(
-                    hdr.data["X-ND-HTTPSTATUS"]))
+                Msg().err("Error: in download: " + hdr.data["X-ND-HTTPSTATUS"])
                 FileUtil(output_file).remove()
         return(hdr, buf)
 
@@ -3983,7 +3994,7 @@ class GetURLexeCurl(GetURL):
     def get(self, *args, **kwargs):
         """http get implementation using the curl cli executable"""
         hdr = CurlHeader()
-        buf = cStringIO.StringIO()
+        buf = StringIO()
         self._set_defaults()
         cmd = self._mkcurlcmd(*args, **kwargs)
         status = subprocess.call(cmd, shell=True, close_fds=True)
@@ -4012,7 +4023,7 @@ class GetURLexeCurl(GetURL):
                 os.rename(self._files["output_file"], kwargs["ofile"])
         else:
             try:
-                buf = cStringIO.StringIO(open(self._files["output_file"],
+                buf = StringIO(open(self._files["output_file"],
                                               "r").read())
             except(IOError, OSError):
                 Msg().err("Error: reading curl output file to buffer")
@@ -4150,7 +4161,7 @@ class DockerIoAPI(object):
         try:
             self.v1_auth_header = "Authorization: Token " + \
                 hdr.data["x-docker-token"]
-            return hdr.data, json.loads(buf.getvalue())
+            return hdr.data, json.loads(buf.getvalue().decode("utf-8"))
         except (IOError, OSError, AttributeError,
                 ValueError, TypeError, KeyError):
             self.v1_auth_header = ""
@@ -4169,7 +4180,7 @@ class DockerIoAPI(object):
         Msg().out("tags url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return(hdr.data, json.loads(buf.getvalue()))
+            return(hdr.data, json.loads(buf.getvalue().decode("utf-8")))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, [])
 
@@ -4179,7 +4190,7 @@ class DockerIoAPI(object):
         Msg().out("tags url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return(hdr.data, json.loads(buf.getvalue()))
+            return(hdr.data, json.loads(buf.getvalue().decode("utf-8")))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, [])
 
@@ -4189,7 +4200,7 @@ class DockerIoAPI(object):
         Msg().out("ancestry url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return(hdr.data, json.loads(buf.getvalue()))
+            return(hdr.data, json.loads(buf.getvalue().decode("utf-8")))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, [])
 
@@ -4244,7 +4255,7 @@ class DockerIoAPI(object):
                 if self.v2_auth_token:
                     header = ["Authorization: Basic %s" % (self.v2_auth_token)]
                 (dummy, auth_buf) = self._get_url(auth_url, header=header, RETRY=retry)
-                token_buf = auth_buf.getvalue()
+                token_buf = auth_buf.getvalue().decode("utf-8")
                 if token_buf and "token" in token_buf:
                     try:
                         auth_token = json.loads(token_buf)
@@ -4295,7 +4306,7 @@ class DockerIoAPI(object):
         Msg().out("manifest url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return(hdr.data, json.loads(buf.getvalue()))
+            return(hdr.data, json.loads(buf.getvalue().decode("utf-8")))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, [])
 
@@ -4339,7 +4350,7 @@ class DockerIoAPI(object):
             Msg().out("v2 layers: %s" % (imagerepo), l=Msg.DBG)
             files = self.get_v2_layers_all(imagerepo,
                                            manifest["fsLayers"])
-        except (KeyError, AttributeError, IndexError, ValueError, TypeError):
+        except (KeyError, AttributeError, IndexError, ValueError, TypeError) as ex:
             pass
         return files
 
@@ -4470,7 +4481,7 @@ class DockerIoAPI(object):
         url += "&page=" + str(self.search_page)
         (dummy, buf) = self._get_url(url)
         try:
-            repo_list = json.loads(buf.getvalue())
+            repo_list = json.loads(buf.getvalue().decode("utf-8"))
             if repo_list["page"] == repo_list["num_pages"]:
                 self.search_ended = True
                 return []
@@ -4497,7 +4508,7 @@ class DockerIoAPI(object):
         except (AttributeError, NameError, KeyError):
             self.search_ended = True
         try:
-            return json.loads(buf.getvalue())
+            return json.loads(buf.getvalue().decode("utf-8"))
         except (IOError, OSError, AttributeError,
                 ValueError, TypeError):
             self.search_ended = True
@@ -5157,7 +5168,7 @@ class Udocker(object):
                 "p2": "CMD_OPT", "p3": False
             }
         }
-        for option, cmdp_args in cmd_options.iteritems():
+        for option, cmdp_args in cmd_options.items():
             last_value = None
             for cmdp_fl in cmdp_args["fl"]:
                 option_value = cmdp.get(cmdp_fl,
@@ -5634,7 +5645,7 @@ class CmdParser(object):
         step = 1
         for arg in argv[1:]:
             if step == 1:
-                if arg[0] in string.letters:
+                if arg[0] in string.ascii_letters:
                     self._argv_split['CMD'] = arg
                     step = 2
                 else:
