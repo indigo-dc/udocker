@@ -96,6 +96,18 @@ except ImportError:
     except ImportError:
         pass
 
+def decode(obj):
+    if not isinstance(obj, str):
+        return obj.decode("utf-8")
+    else:
+        return obj
+
+def encode(obj):
+    if isinstance(obj, str):
+        return obj.encode("utf-8")
+    else:
+        return obj
+
 
 class Uprocess(object):
     """Provide alternative implementations for subprocess"""
@@ -127,7 +139,7 @@ class Uprocess(object):
                                         close_fds=True)
         except subprocess.CalledProcessError:
             return None
-        return content.decode("utf-8").strip()
+        return decode(content).strip()
 
 
 class Config(object):
@@ -789,11 +801,11 @@ class FileUtil(object):
         try:
             filep = open(self.filename, mode)
         except (IOError, OSError, TypeError):
-            return b""
+            return ""
         else:
             buf = filep.read()
             filep.close()
-            return buf
+            return decode(buf)
 
     def putdata(self, buf, mode="wb"):
         """Write buffer to file"""
@@ -802,7 +814,7 @@ class FileUtil(object):
         except (IOError, OSError, TypeError):
             return ""
         else:
-            filep.write(buf.encode())
+            filep.write(encode(buf))
             filep.close()
             return buf
 
@@ -963,7 +975,7 @@ class UdockerTools(object):
 
     def _version_isequal(self, filename):
         """Is version inside file equal to this udocker version"""
-        version = FileUtil(filename).getdata().strip().decode("utf-8")
+        version = FileUtil(filename).getdata().strip()
         return version and version == __version__
 
     def is_available(self):
@@ -2907,7 +2919,7 @@ class ContainerStructure(object):
         proc = subprocess.Popen(cmd, shell=True, stderr=Msg.chlderr,
                                 stdout=subprocess.PIPE, close_fds=True)
         while True:
-            wh_filename = proc.stdout.readline().strip()
+            wh_filename = decode(proc.stdout.readline()).strip()
             if wh_filename:
                 wh_basename = os.path.basename(wh_filename)
                 if wh_basename.startswith(".wh."):
@@ -3596,7 +3608,7 @@ class LocalRepository(object):
             return []
         else:
             if not my_layer_id:
-                my_layer_id = structure["layers"].keys()[0]
+                my_layer_id = list(structure["layers"].keys())[0]
             found = ""
             for layer_id in structure["layers"]:
                 if "json" not in structure["layers"][layer_id]:   # v2
@@ -3713,13 +3725,13 @@ class CurlHeader(object):
 
     def write(self, buff):
         """Write is called by Curl()"""
-        pair = buff.decode("utf-8").split(":", 1)
+        pair = decode(buff).split(":", 1)
         if len(pair) == 2:
             key = pair[0].strip().lower()
             if key:
                 self.data[key] = pair[1].strip()
         elif pair[0].startswith("HTTP/"):
-            self.data["X-ND-HTTPSTATUS"] = buff.decode("utf-8").strip()
+            self.data["X-ND-HTTPSTATUS"] = decode(buff).strip()
         elif (self.sizeonly and
               pair[0].strip() == "" and
               "location" not in self.data):
@@ -4023,8 +4035,7 @@ class GetURLexeCurl(GetURL):
                 os.rename(self._files["output_file"], kwargs["ofile"])
         else:
             try:
-                buf = StringIO(open(self._files["output_file"],
-                                              "r").read())
+                buf = StringIO(encode(open(self._files["output_file"],"r").read()))
             except(IOError, OSError):
                 Msg().err("Error: reading curl output file to buffer")
             FileUtil(self._files["output_file"]).remove()
@@ -4161,7 +4172,7 @@ class DockerIoAPI(object):
         try:
             self.v1_auth_header = "Authorization: Token " + \
                 hdr.data["x-docker-token"]
-            return hdr.data, json.loads(buf.getvalue().decode("utf-8"))
+            return hdr.data, json.loads(decode(buf.getvalue()))
         except (IOError, OSError, AttributeError,
                 ValueError, TypeError, KeyError):
             self.v1_auth_header = ""
@@ -4180,7 +4191,7 @@ class DockerIoAPI(object):
         Msg().out("tags url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return(hdr.data, json.loads(buf.getvalue().decode("utf-8")))
+            return(hdr.data, json.loads(decode(buf.getvalue())))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, [])
 
@@ -4190,7 +4201,7 @@ class DockerIoAPI(object):
         Msg().out("tags url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return(hdr.data, json.loads(buf.getvalue().decode("utf-8")))
+            return(hdr.data, json.loads(decode(buf.getvalue())))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, [])
 
@@ -4200,7 +4211,7 @@ class DockerIoAPI(object):
         Msg().out("ancestry url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return(hdr.data, json.loads(buf.getvalue().decode("utf-8")))
+            return(hdr.data, json.loads(decode(buf.getvalue())))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, [])
 
@@ -4481,7 +4492,7 @@ class DockerIoAPI(object):
         url += "&page=" + str(self.search_page)
         (dummy, buf) = self._get_url(url)
         try:
-            repo_list = json.loads(buf.getvalue().decode("utf-8"))
+            repo_list = json.loads(decode(buf.getvalue()))
             if repo_list["page"] == repo_list["num_pages"]:
                 self.search_ended = True
                 return []
@@ -4508,7 +4519,7 @@ class DockerIoAPI(object):
         except (AttributeError, NameError, KeyError):
             self.search_ended = True
         try:
-            return json.loads(buf.getvalue().decode("utf-8"))
+            return json.loads(decode(buf.getvalue()))
         except (IOError, OSError, AttributeError,
                 ValueError, TypeError):
             self.search_ended = True
