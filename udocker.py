@@ -4268,7 +4268,7 @@ class DockerIoAPI(object):
                 if self.v2_auth_token:
                     header = ["Authorization: Basic %s" % (self.v2_auth_token)]
                 (dummy, auth_buf) = self._get_url(auth_url, header=header, RETRY=retry)
-                token_buf = auth_buf.getvalue().decode("utf-8")
+                token_buf = decode(auth_buf.getvalue())
                 if token_buf and "token" in token_buf:
                     try:
                         auth_token = json.loads(token_buf)
@@ -4319,7 +4319,7 @@ class DockerIoAPI(object):
         Msg().out("manifest url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return(hdr.data, json.loads(buf.getvalue().decode("utf-8")))
+            return(hdr.data, json.loads(decode(buf.getvalue())))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return(hdr.data, [])
 
@@ -4363,7 +4363,7 @@ class DockerIoAPI(object):
             Msg().out("v2 layers: %s" % (imagerepo), l=Msg.DBG)
             files = self.get_v2_layers_all(imagerepo,
                                            manifest["fsLayers"])
-        except (KeyError, AttributeError, IndexError, ValueError, TypeError) as ex:
+        except (KeyError, AttributeError, IndexError, ValueError, TypeError):
             pass
         return files
 
