@@ -1719,19 +1719,19 @@ class ChkSUMTestCase(unittest.TestCase):
         status = cksum.sha256("filename")
         self.assertFalse(status)
 
-#     @mock.patch('udocker.Msg')
-#     def test_02_hashlib_sha256(self, mock_msg):
-#         """Test ChkSUM()._hashlib_sha256()"""
-#         sha256sum = \
-#             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-#         self._init()
-#         cksum = udocker.ChkSUM()
-#         file_data = StringIO("qwerty")
-#         with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
-#             mopen.return_value.__iter__ = \
-#                 lambda self: iter(file_data.readline, '')
-#             status = cksum._hashlib_sha256("filename")
-#             self.assertEqual(status, sha256sum)
+    @mock.patch('udocker.Msg')
+    def test_02_hashlib_sha256(self, mock_msg):
+        """Test ChkSUM()._hashlib_sha256()"""
+        sha256sum = \
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        self._init()
+        cksum = udocker.ChkSUM()
+        file_data = StringIO("qwerty")
+        with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
+            mopen.return_value.__iter__ = \
+                lambda self: iter(file_data.readline, '')
+            status = cksum._hashlib_sha256("filename")
+            self.assertEqual(status, sha256sum)
 
     @mock.patch('udocker.Uprocess.get_output')
     @mock.patch('udocker.Msg')

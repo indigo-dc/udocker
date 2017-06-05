@@ -73,11 +73,11 @@ except ImportError:
 try:
     long
 except:
-    long=int
+    long = int
 try:
     raw_input
 except:
-    raw_input=input
+    raw_input = input
 
 if PY_VER < "2.6":
     try:
@@ -96,11 +96,13 @@ except ImportError:
     except ImportError:
         pass
 
+
 def decode(obj):
     if not isinstance(obj, str):
         return obj.decode("utf-8")
     else:
         return obj
+
 
 def encode(obj):
     if isinstance(obj, str):
