@@ -977,7 +977,7 @@ class UdockerTools(object):
 
     def _version_isequal(self, filename):
         """Is version inside file equal to this udocker version"""
-        version = FileUtil(filename).getdata().strip()
+        version = decode(FileUtil(filename).getdata().strip())
         return version and version == __version__
 
     def is_available(self):
