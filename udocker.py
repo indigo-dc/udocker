@@ -1564,7 +1564,8 @@ class FileBind(object):
             cont_file = self.container_root + "/" + f_name
             link_path = self.bind_dir + "/" + orig_file
             if not os.path.exists(orig_file_path):
-                os.rename(cont_file, orig_file_path)
+                if os.path.exists(cont_file):
+                    os.rename(cont_file, orig_file_path)
                 os.symlink(link_path, cont_file)
             FileUtil(orig_file_path).copyto(self.host_bind_dir)
         return (self.host_bind_dir, self.bind_dir)
