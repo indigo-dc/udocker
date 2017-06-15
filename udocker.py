@@ -30,6 +30,7 @@ import time
 import pwd
 import grp
 import platform
+from distutils.version import StrictVersion
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
@@ -385,13 +386,8 @@ class Config(object):
     def oskernel_isgreater(self, ref_version):
         """Compare kernel version is greater or equal than ref_version"""
         os_release = self.oskernel().split("-")[0]
-        os_version = [int(x) for x in os_release.split(".")]
-        for idx in (0, 1, 2):
-            if os_version[idx] > ref_version[idx]:
-                return True
-            elif os_version[idx] < ref_version[idx]:
-                return False
-        return True
+        return StrictVersion(os_release) >= StrictVersion(ref_version)
+
 
 class KeyStore(object):
     """Basic storage for authentication tokens to be used
@@ -2789,7 +2785,7 @@ class ExecutionMode(object):
 
     def get_mode(self):
         """Get execution mode"""
-        xmode = FileUtil(self.container_execmode).getdata()
+        xmode = decode(FileUtil(self.container_execmode).getdata())
         if not xmode:
             xmode = Config.default_execution_mode
         return xmode
