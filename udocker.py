@@ -807,7 +807,7 @@ class FileUtil(object):
         else:
             buf = filep.read()
             filep.close()
-            return decode(buf)
+            return buf
 
     def putdata(self, buf, mode="wb"):
         """Write buffer to file"""
@@ -816,7 +816,7 @@ class FileUtil(object):
         except (IOError, OSError, TypeError):
             return ""
         else:
-            filep.write(encode(buf))
+            filep.write(buf)
             filep.close()
             return buf
 
