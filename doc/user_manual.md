@@ -168,7 +168,7 @@ Examples:
 ```
   udocker pull [OPTIONS] REPO/IMAGE:TAG
 ```
-Pull a container image from a docker repository by defaulkt uses dockerhub. 
+Pull a container image from a docker repository by default uses dockerhub. 
 The associated layers and metadata are downloaded from dockerhub. Requires 
 python pycurl or the presence of the curl command.
 
