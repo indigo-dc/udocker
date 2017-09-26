@@ -603,8 +603,8 @@ by including this line in the batch script:
 /opt/cesga/openmpi/2.0.1/gcc/6.3.0/bin/mpiexec -np 128 \
 $LUSTRE/udocker-master/udocker run -e LD_LIBRARY_PATH=/usr/lib  \
 --hostenv --hostauth --user=cscdiica -v /tmp \
---workdir=$LUSTRE/openQCD-1.6/main openqcd \
-$LUSTRE/openQCD-1.6/main/ym1 -i ym1.in -noloc 
+--workdir=/op/projects/openQCD-1.6/main openqcd \
+/opt/projects/openQCD-1.6/main/ym1 -i ym1.in -noloc 
 ```
 (where $LUSTRE points to the appropriate user filesystem directory in the HPC system)
 
