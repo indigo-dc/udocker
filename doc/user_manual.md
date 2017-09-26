@@ -548,7 +548,8 @@ needed for this is a compliant C compiler and a local MPI installation such as O
 In what follows we describe the steps to execute openQCD using udocker in a HPC system with a batch system /eg. SLURM). 
 An analogous procedure can be followed for generic MPI applications
 
-A container version can be downloaded in the docker hub repository, and the image created by udocker as described above: 
+A container version can be downloaded in the docker hub repository, and the extract the container to the filesystem (udocker 
+create) as described above: 
 
 ```
 ./udocker pull iscampos/openqcd
@@ -556,7 +557,7 @@ A container version can be downloaded in the docker hub repository, and the imag
 fbeb130b-9f14-3a9d-9962-089b4acf3ea8
 ```
 
-Next enter in the container (notice we set the variable LD_LIBRARY_PATH explicitly):
+Next we execute the container in the filesystem image (notice we set the variable LD_LIBRARY_PATH explicitly):
 
 ```
 ./udocker run -e LD_LIBRARY_PATH=/usr/lib openqcd /bin/bash
