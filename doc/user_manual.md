@@ -542,8 +542,8 @@ Examples:
 ## 4. Running MPI Jobs
 
 Let us consider the Lattice QCD simulation software openQCD (http://luscher.web.cern.ch/luscher/openQCD). Lattice QCD
-simulations are performed on high-performance parallel computers with hundreds and thousands of processing units. All what is
-needed for this is a compliant C compiler and a local MPI installation such as Open MPI. 
+simulations are performed on high-performance parallel computers with hundreds and thousands of processing units. All the 
+software environment that is needed for is a compliant C compiler and a local MPI installation such as Open MPI. 
 
 In what follows we describe the steps to execute openQCD using udocker in a HPC system with a batch system /eg. SLURM). 
 An analogous procedure can be followed for generic MPI applications
