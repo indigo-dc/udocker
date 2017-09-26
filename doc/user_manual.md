@@ -550,10 +550,11 @@ for generic MPI applications
 
 A container version can be downloaded in the docker hub repository, and the image created by udocker as described above: 
 
+```
 ./udocker pull iscampos/openqcd
-
 ./udocker create --name=openqcd iscampos/openqcd
 fbeb130b-9f14-3a9d-9962-089b4acf3ea8
+```
 
 In the udocker approach mpiexec will submit the N MPI processes, as containers, in such a way that the containers 
 are able to commmunicate via the low latency interconnect (Infiniband in the case at hand)
@@ -566,18 +567,22 @@ In the case of the container of openQCD, we first need to uninstall the example 
 with the container by "yum remove openmpi". Then we download openMPI v.1.10.2 from https://www.open-mpi.org/software/ompi/v1.10
 and compile it. Openib and libibverbs need to be install to compile OpenMPI over Infiniband. For that, install the epel repository on the container:
 
+```
 yum install -y epel-release
 yum install *openib*
 yum install *libibverbs*
+```
 
 The we compile openMPI
 
+```
 cd /usr
 tar xvf openmpi-1.10.2.tgz 
 cd /usr/openmpi-1.10.2
 ./configure --with-verbs --prefix=/usr
 make
 make install
+```
 
 (to be continued... Isabel)
 
