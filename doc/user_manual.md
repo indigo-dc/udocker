@@ -556,35 +556,58 @@ A container version can be downloaded in the docker hub repository, and the imag
 fbeb130b-9f14-3a9d-9962-089b4acf3ea8
 ```
 
+Next enter in the container (notice we set the variable LD_LIBRARY_PATH explicitly):
+
+```
+./udocker run -e LD_LIBRARY_PATH=/usr/lib openqcd /bin/bash
+```
+
 In the udocker approach mpiexec will submit the N MPI processes, as containers, in such a way that the containers 
 are able to commmunicate via the low latency interconnect (Infiniband in the case at hand)
 
 For that approach to work, the code in the container needs to be compiled with the same version of MPI that is
-available in the HPC system. In our example this is Open MPI v1.10.2. Therefore we need to download this version and 
+available in the HPC system. In our example this is Open MPI v2.0.1. Therefore we need to download this version and 
 compile it.
 
-In the case of the container of openQCD, we first need to uninstall the example openMPI installation that comes 
-with the container by "yum remove openmpi". Then we download openMPI v.1.10.2 from https://www.open-mpi.org/software/ompi/v1.10
-and compile it. Openib and libibverbs need to be install to compile OpenMPI over Infiniband. For that, install the epel repository on the container:
+Note: we first need to uninstall the example openMPI installation that comes along with openqcd with the containe (yum remove openmpi). 
+
+We download openMPI v.2.0.1 from https://www.open-mpi.org/software/ompi/v2.0 and compile it. 
+
+Openib and libibverbs need to be install to compile OpenMPI over Infiniband. For that, install the epel repository on the
+container:
 
 ```
 yum install -y epel-release
 yum install *openib*
-yum install *libibverbs*
+yum install *openib-devel*
+yum install libibverbs*
+yum install libibverbs-devel*
 ```
 
-The we compile openMPI
+The we can compile openMPI and install it under /usr for convenience:
 
 ```
 cd /usr
-tar xvf openmpi-1.10.2.tgz 
-cd /usr/openmpi-1.10.2
+tar xvf openmpi-2.0.1.tgz 
+cd /usr/openmpi-2.0.1
 ./configure --with-verbs --prefix=/usr
 make
 make install
 ```
 
-(to be continued... Isabel)
+OpenQCD can then be compiled inside the udocker container in the usual way. The MPI job submission to the HPC cluster succeeds 
+by including this line in the batch script:
+
+```
+/opt/cesga/openmpi/2.0.1/gcc/6.3.0/bin/mpiexec -np 128 \
+$LUSTRE/udocker-master/udocker run -e LD_LIBRARY_PATH=/usr/lib  \
+--hostenv --hostauth --user=isabel -v /tmp \
+--workdir=$LUSTRE/openQCD-1.6/main openqcd \
+$LUSTRE/openQCD-1.6/main/ym1 -i ym1.in -noloc 
+```
+(where $LUSTRE points to the appropriate user filesystem directory in the HPC system)
+
+
 
 ## 5. Accessing GP/GPUs
 
