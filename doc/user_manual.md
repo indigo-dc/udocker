@@ -541,8 +541,45 @@ Examples:
 
 ## 4. Running MPI Jobs
 
+Let us consider the Lattice QCD simulation software openQCD (http://luscher.web.cern.ch/luscher/openQCD). Lattice QCD
+simulations are performed on high-performance parallel computers with hundreds and thousands of processing units. All what is
+needed for this is a compliant C compiler and a local MPI installation such as Open MPI. 
 
+In what follows we describe the steps to execute openQCD using udocker in a HPC system. An analogous procedure can be followed 
+for generic MPI applications
 
+A container version can be downloaded in the docker hub repository, and the image created by udocker as described above: 
+
+./udocker pull iscampos/openqcd
+
+./udocker create --name=openqcd iscampos/openqcd
+fbeb130b-9f14-3a9d-9962-089b4acf3ea8
+
+In the udocker approach mpiexec will submit the N MPI processes, as containers, in such a way that the containers 
+are able to commmunicate via the low latency interconnect (Infiniband in the case at hand)
+
+For that approach to work, the code in the container needs to be compiled with the same version of MPI that is
+available in the HPC system. In our example this is Open MPI v1.10.2. Therefore we need to download this version and 
+compile it.
+
+In the case of the container of openQCD, we first need to uninstall the example openMPI installation that comes 
+with the container by "yum remove openmpi". Then we download openMPI v.1.10.2 from https://www.open-mpi.org/software/ompi/v1.10
+and compile it. Openib and libibverbs need to be install to compile OpenMPI over Infiniband. For that, install the epel repository on the container:
+
+yum install -y epel-release
+yum install *openib*
+yum install *libibverbs*
+
+The we compile openMPI
+
+cd /usr
+tar xvf openmpi-1.10.2.tgz 
+cd /usr/openmpi-1.10.2
+./configure --with-verbs --prefix=/usr
+make
+make install
+
+(to be continued... Isabel)
 
 ## 5. Accessing GP/GPUs
 
