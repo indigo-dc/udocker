@@ -749,9 +749,57 @@ the previous sections
 
 ## 6. Transferring udocker containers
 
-In UDOCKER
+In udocker, images and created/extracted containers are stored in the filesystem
+usually in the user home directory under $HOME/.udocker. If this location is in
+a shared filesystem such as in a computing farm or cluster then its content will 
+be seen by all the hosts mounting the filesystem and can be used transparently by
+udocker across these hosts. If the home directory is not shared but some other
+location is then you may point the UDOCKER_DIR environment variable to such a 
+location and use it to store the udocker installation, images and containers.
 
-## Issues
+Across isolated hosts the correct way to transfer containers is to pull them from 
+a repository such as Docker Hub. However this may implies slow downloads from remote 
+locations and also the need to create the container again from the images.
+
+Alternatively you may move only the created container across locations. The container
+directory location in the filesystem can be obtained with:
+
+```
+udocker inspect -p <container-id>
+```
+
+This location will be the root of the actual directory containing the filesystem 
+tree of the container. You can modify, add, remove files in this location and these
+changes will be seen inside the container upon execution. With this directory you
+can also perform a backup of the container directory tree e.g. for backup purposes.
+
+For the purpose of transferring the container the best approach is to perform a
+backup atarting at the directory above the ROOT. The directory above ROOT contains 
+the control files for the container. If you then untar this backup into another 
+udocker installation the container will become visible. 
+
+The example below shows a container named MYCONTAINER that is in mode P1 or P2
+being transferred to another host and executed. Make sure the udocker executable
+is in your PATH on both the local and remote hosts.
+
+```
+MYC_ROOT=$(udocker inspect -p MYCONTAINER)
+MYC_PATH=$(dirname $MYC_ROOT)
+MYC_ID=$(basename $MYC_PATH)
+MYC_DIR=$(dirname $MYC_PATH)
+cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker version ; cd ~/.udocker/containers; tar xf -"
+ssh user@ahost "udocker name $MYC_ID MYCONTAINER; udocker run MYCONTAINER"
+```
+
+Backups for safeguard or transfer should only be performed when the container is
+not being executed (not locally nor in any other host if the filesystem is shared).
+
+Containers should only be copied in this manner when they are in the execution
+modes Pn or Rn. The modes Fn perform changes to the containers that will make
+them fail if they are execute in a different host. In this later case convert 
+to P1 before performing the backup.
+
+## 7. Issues
 
 When experiencing issues in the default execution mode you may try
 to setup the container to execute using mode P2 or one of the Fn or 
