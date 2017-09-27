@@ -5,7 +5,8 @@ udocker (1.1.0)
   * Add fr execution engine based on shared library interception
   * Add rc execution engine based on rootless namespaces
   * Improve proot tmp files cleanup on non ext filesystems
-  * Fix search returning empty on Docker repositories
+  * Improve search returning empty on Docker repositories
+  * Improve runC execution portability 
   * Add environment variable UDOCKER_KEYSTORE
     - closes: #75
   * Prevent creation of .udocker when UDOCKER_KEYSTORE is used
