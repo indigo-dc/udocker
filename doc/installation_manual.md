@@ -80,7 +80,7 @@ From the development branch:
 
 ### 2.3. OBTAINING THE LATEST TARBALL
 
-The udocker tarball used in the installation described in sections 2.2 can be
+The udocker tarball used in the installation described in section 2.2 can be
 obtained using the following method. First download udocker from the repository
 then run info.py which will display the URL of the lastest tarball used in the
 automated installation.
