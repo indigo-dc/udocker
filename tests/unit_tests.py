@@ -1974,8 +1974,9 @@ class DockerIoAPITestCase(unittest.TestCase):
         udocker.Config = mock.MagicMock()
         # udocker.Config.http_proxy
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.LocalRepository')
-    def test_01_init(self, mock_local):
+    def test_01_init(self, mock_local, mock_geturl):
         """Test DockerIoAPI()."""
         self._init()
         #
@@ -1987,7 +1988,6 @@ class DockerIoAPITestCase(unittest.TestCase):
         self.assertEqual(uia.v2_auth_header, "")
         self.assertEqual(uia.v2_auth_token, "")
         self.assertEqual(uia.localrepo, mock_local)
-        self.assertIsInstance(uia.curl, udocker.GetURL)
         self.assertEqual(uia.docker_registry_domain, "docker.io")
         self.assertEqual(uia.search_link, "")
         self.assertTrue(uia.search_pause)
@@ -1995,9 +1995,11 @@ class DockerIoAPITestCase(unittest.TestCase):
         self.assertEqual(uia.search_lines, 25)
         self.assertEqual(uia.search_link, "")
         self.assertFalse(uia.search_ended)
+        self.assertTrue(mock_geturl.called)
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.LocalRepository')
-    def test_02_set_proxy(self, mock_local):
+    def test_02_set_proxy(self, mock_local, mock_geturl):
         """Test DockerIoAPI().set_proxy()."""
         self._init()
         #
@@ -2005,8 +2007,9 @@ class DockerIoAPITestCase(unittest.TestCase):
         uia.set_proxy("socks5://user:pass@host:port")
         self.assertEqual(uia.curl.http_proxy, "socks5://user:pass@host:port")
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.LocalRepository')
-    def test_03_set_registry(self, mock_local):
+    def test_03_set_registry(self, mock_local, mock_geturl):
         """Test DockerIoAPI().set_registry()."""
         self._init()
         #
@@ -2014,8 +2017,9 @@ class DockerIoAPITestCase(unittest.TestCase):
         uia.set_registry("https://registry-1.docker.io")
         self.assertEqual(uia.registry_url, "https://registry-1.docker.io")
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.LocalRepository')
-    def test_04_set_index(self, mock_local):
+    def test_04_set_index(self, mock_local, mock_geturl):
         """Test DockerIoAPI().set_index()."""
         self._init()
         #
@@ -2023,9 +2027,10 @@ class DockerIoAPITestCase(unittest.TestCase):
         uia.set_index("https://index.docker.io/v1")
         self.assertEqual(uia.index_url, "https://index.docker.io/v1")
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.LocalRepository')
-    def test_05_is_repo_name(self, mock_local, mock_msg):
+    def test_05_is_repo_name(self, mock_local, mock_msg, mock_geturl):
         """Test DockerIoAPI().is_repo_name()."""
         self._init()
         mock_msg.level = 0
