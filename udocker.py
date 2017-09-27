@@ -2955,8 +2955,7 @@ class ContainerStructure(object):
             elif (isinstance(default, list) and (
                     isinstance(container_json[confidx][param], dict))):
                 return self._dict_to_list(container_json[confidx][param])
-            else:
-                return container_json[confidx][param]
+            return container_json[confidx][param]
 
     def _dict_to_str(self, in_dict):
         """Convert dict to str"""
@@ -5324,8 +5323,7 @@ class Udocker(object):
             if not self.localrepo.protect_container(arg):
                 Msg().err("Error: protect container failed")
                 return False
-            else:
-                return True
+            return True
         else:
             (imagerepo, tag) = self._check_imagespec(arg)
             if imagerepo:
