@@ -730,21 +730,22 @@ The host (either the physical machine or VM) where the container will run has to
 Moreover, the NVIDIA driver version has to be known apriori, since the docker image has to have the exact same version
 as the host
 
-Base docker images with with several version of the NVIDIA driver can be found in dockerhub:
+Base docker images with several version of the NVIDIA driver can be found in dockerhub:
 
 * https://hub.docker.com/r/lipcomputing/nvidia-ubuntu16.04/
 * https://hub.docker.com/r/lipcomputing/nvidia-centos7/
 
-In the tags tab one can chack which version are available. Dockerfiles and Ansible roles used to build these images are
-in the github repository at: https://github.com/LIP-Computing/ansible-role-nvidia 
+In the tags tab one can chack which versions are available. Dockerfiles and Ansible roles used to build these images are
+in the github repository: https://github.com/LIP-Computing/ansible-role-nvidia 
 
-Exemples of using those NVIDIA base images with a given application are the "disvis" and "powerfit" images whose Dockerfiles
-and ansible roles can be found in:
+Examples of using those NVIDIA base images with a given application are the "disvis" and "powerfit" images whose Dockerfiles
+and Ansible roles can be found in:
 
 * https://github.com/indigo-dc/ansible-role-disvis-powerfit
 
 In order to build your docker image with a given CUDA or OpenCL application, the abovementioned images can be used.
-When the docker image with your application has been built you can run the udocker with that image has described above
+When the docker image with your application has been built you can run the udocker with that image has described in
+the previous sections
 
 ## 6. Transferring udocker containers
 
