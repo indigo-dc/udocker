@@ -21,7 +21,7 @@ udocker is a simple tool written in Python, it has a minimal set
 of dependencies so that can be executed in a wide range of Linux
 systems.
 
-udocker does not make use of docker nor requires its installation.
+udocker does not make use of docker nor requires its presence.
 
 udocker "executes" the containers by simply providing a chroot like
 environment over the extracted container. The current implementation
