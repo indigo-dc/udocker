@@ -179,8 +179,8 @@ Examples:
 ```
   udocker pull [OPTIONS] REPO/IMAGE:TAG
 ```
-Pull a container image from a Docker repository by defaulkt uses Docker Hub. 
-The associated layers and metadata are downloaded from Docker Hub. Requires 
+Pull a container image from a docker repository by default uses dockerhub. 
+The associated layers and metadata are downloaded from dockerhub. Requires 
 python pycurl or the presence of the curl command.
 
 Options:
@@ -649,6 +649,7 @@ system (e.g. SLURM). An analogous procedure can be followed for other MPI applic
 A container image of openQCD can be downloaded from the Docker Hub repository. From this image a
 container can be extracted to the filesystem (using udocker create) as described below.
 
+
 ```
 ./udocker pull iscampos/openqcd
 ./udocker create --name=openqcd iscampos/openqcd
@@ -656,6 +657,7 @@ fbeb130b-9f14-3a9d-9962-089b4acf3ea8
 ```
 
 Next the created container is executed (notice that the variable LD_LIBRARY_PATH is explicitly set):
+
 
 ```
 ./udocker run -e LD_LIBRARY_PATH=/usr/lib openqcd /bin/bash
@@ -683,6 +685,7 @@ We download Open MPI v.2.0.1 from https://www.open-mpi.org/software/ompi/v2.0 an
 Openib and libibverbs need to be install to compile Open MPI over Infiniband. For that, install
 the epel repository on the container. This step is not required if running using TCP/IP is enough.
 
+
 ```
 yum install -y epel-release
 yum install *openib*
@@ -693,6 +696,7 @@ yum install libibverbs-devel*
 
 The Open MPI source is compiled and installed in the container under /usr for convenience:
 
+
 ```
 cd /usr
 tar xvf openmpi-2.0.1.tgz 
@@ -701,6 +705,7 @@ cd /usr/openmpi-2.0.1
 make
 make install
 ```
+
 
 OpenQCD can then be compiled inside the udocker container in the usual way. The MPI job
 submission to the HPC cluster succeeds by including this line in the batch script:
