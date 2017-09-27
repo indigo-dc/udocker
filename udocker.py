@@ -148,12 +148,6 @@ class Config(object):
     uid = os.getuid()
     gid = os.getgid()
 
-    # udocker installation tarball 1.1.0-RC2
-    # tarball = (
-    #    "https://owncloud.indigo-datacloud.eu/index.php"
-    #    "/s/lR6CsSP5HfEc5uZ/download"
-    # )
-
     # udocker installation tarball 1.1.0
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
