@@ -58,8 +58,9 @@ Optionally just download and execute the udocker python script from the source a
 installation will be performed automatically. The installation from source code is not
 officially supported by INDIGO-DataCloud.
 
-This method is very flexible, once you download the udocker python script from github
-you can move it around between systems and once you execute it it will install itself.
+This method is very flexible, once you download the udocker executable from github
+you can move it around between systems. Once you start it in a new syetm it will 
+install itself. The installation requires outbound network connectivity.
 
 From the master branch:
 
@@ -77,15 +78,20 @@ From the development branch:
   ./udocker version
 ```
 
-<!--
-From udocker-fr development branch:
+### 2.3. OBTAINING THE LATEST TARBALL
+
+The udocker tarball used in the installation described in sections 2.2 can be
+obtained using the following method. First download udocker from the repository
+then run info.py which will display the URL of the lastest tarball used in the
+automated installation.
 
 ```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/udocker-fr/udocker.py > udocker
-  chmod u+rx ./udocker
-  ./udocker version
+  git clone https://github.com/indigo-dc/udocker
+  cd udocker/utils
+  python2 ./info.py
 ```
--->
+
+You may then downlaod the tarball using tools such as curl or wget.
 
 
 ## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
