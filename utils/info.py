@@ -22,7 +22,7 @@ import os
 import sys
 
 __author__ = "udocker@lip.pt"
-__version__ = "0.0.1-1"
+__version__ = "1.1.0"
 __date__ = "2017"
 
 try:
