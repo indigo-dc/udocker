@@ -762,25 +762,25 @@ a repository such as Docker Hub. However this may implies slow downloads from re
 locations and also the need to create the container again from the images.
 
 Alternatively you may move only the created container across locations. The container
-directory location in the filesystem can be obtained with:
+directory pathname in the filesystem can be obtained with:
 
 ```
 udocker inspect -p <container-id>
 ```
 
-This location will be the root of the actual directory containing the filesystem 
-tree of the container. You can modify, add, remove files in this location and these
+This pathname will be the root of the actual directory containing the filesystem 
+tree of the container. You can modify, add, remove files at this location and these
 changes will be seen inside the container upon execution. With this directory you
 can also perform a backup of the container directory tree e.g. for backup purposes.
 
 For the purpose of transferring the container the best approach is to perform a
-backup atarting at the directory above the ROOT. The directory above ROOT contains 
+backup starting at the directory above the ROOT. The directory above ROOT contains 
 the control files for the container. If you then untar this backup into another 
-udocker installation the container will become visible. 
+udocker installation the container will become visible with the same alphanumeric id. 
 
-The example below shows a container named MYCONTAINER that is in mode P1 or P2
-being transferred to another host and executed. Make sure the udocker executable
-is in your PATH on both the local and remote hosts.
+The example below shows a container named MYCONTAINER being transferred to another 
+host and executed. Make sure the udocker executable is in your PATH on both the local
+and remote hosts.
 
 ```
 MYC_ROOT=$(udocker inspect -p MYCONTAINER)
