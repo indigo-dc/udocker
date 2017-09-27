@@ -613,7 +613,7 @@ is different. In this case convert back to P1 or P2, transfer to the target
 host, and then convert again from Pn to the intended Fn mode.
 
 Mode Rn only depends on kernels with support for rootless containers, thus
-it will not work on some distributions especially older ones.
+it will not work on some distributions (e.g. CentOS 6 and CentOS 7).
  
 Quick examples:
 

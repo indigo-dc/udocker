@@ -15,6 +15,7 @@ to download both the binaries and/or pull containers from repositories.
 
 ## 2. USER INSTALLATION
 
+### 2.1. INSTALL FROM OFFICIAL INDIGO REPOSITORIES
 <!--
 -->
 The official release of udocker is available from the INDIGO-DataCloud
@@ -51,10 +52,14 @@ When using the setup.py provided in the releases install with:
   python setup.py install --home /home/USER/bin
 ```
 
+### 2.2. INSTALL LATEST UDOCKER DIRECTLY FROM GITHUB
 
 Optionally just download and execute the udocker python script from the source and the
 installation will be performed automatically. The installation from source code is not
 officially supported by INDIGO-DataCloud.
+
+This method is very flexible, once you download the udocker python script from github
+you can move it around between systems and once you execute it it will install itself.
 
 From the master branch:
 
@@ -72,6 +77,7 @@ From the development branch:
   ./udocker version
 ```
 
+<!--
 From udocker-fr development branch:
 
 ```
@@ -79,6 +85,7 @@ From udocker-fr development branch:
   chmod u+rx ./udocker
   ./udocker version
 ```
+-->
 
 
 ## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
@@ -86,26 +93,31 @@ From udocker-fr development branch:
 Beware that these packages contain dynamically linked binaries compiled for
 the target OS distributions and therefore cannot be execute sucessfully in 
 hosts running a different OS distribution. To execute the same udocker across 
-systems use the tarball installation method described above. 
+systems use the tarball installation methods described above in section 2. 
 
 RPMs for CentOS 7 are provided at http://repo.indigo-datacloud.eu
 
 ```
-  rpm -i udocker-1.1.0-1.noarch.rpm 
-  rpm -i udocker-preng-1.1.0-1.x86_64.rpm
+  rpm -i udocker-1.1.0-1.noarch.rpm \
+         udocker-preng-1.1.0-1.x86_64.rpm \
+         udocker-freng-1.1.0-1.x86_64.rpm
 ```
 
-DEBs for Ubuntu 14.04 are provided at http://repo.indigo-datacloud.eu
+DEBs for Ubuntu 16 are provided at http://repo.indigo-datacloud.eu
 
 ```
-  dpkg -i udocker_1.1.0-1_all.deb
-  dpkg -i udocker-preng_1.1.0-1_amd64.deb
+  dpkg -i udocker_1.1.0-1_all.deb \
+          udocker-preng_1.1.0-1_amd64.deb \
+          udocker-freng_1.1.0-1_amd64.deb \
+          udocker-rceng_1.1.0-1_amd64.deb
 ```
+
+The rc engine (rceng) is only available for Ubuntu 14 and 16.
 
 ## 4. SYSTEM INSTALLATION WITH ANSIBLE AND PYTHON
 
-For system administrators wishing to provider udocker and its dependencies. 
-An ansible playbook is provided in the file ansible_install.yaml:
+For system administrators wishing to provider udocker and its dependencies, 
+an ansible playbook is provided in the file ansible_install.yaml:
 
 ```
   curl https://raw.githubusercontent.com/indigo-dc/udocker/master/ansible_install.yaml > ansible_install.yaml
@@ -138,7 +150,6 @@ To get the master branch:
 ```
   git clone https://github.com/indigo-dc/udocker
 ```
-
 
 To get the latest udocker script from the github devel branch without
 cloning the entire repository. This downloads udocker.py only.
