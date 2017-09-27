@@ -1,0 +1,8 @@
+--- patchelf-0.9.orig/src/Makefile.am	2017-09-15 00:39:20.793672647 +0100
++++ patchelf.devel/src/Makefile.am	2017-09-15 01:26:27.532975233 +0100
+@@ -1,4 +1,4 @@
+-AM_CXXFLAGS = -Wall
++AM_CXXFLAGS = -Wall -std=c++11 -D_FILE_OFFSET_BITS=64
+ 
+ bin_PROGRAMS = patchelf
+ 

@@ -63,6 +63,17 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker (1.1.0-1) trusty; urgency=low
+
+  * Support image names prefixed by registry similarly to docker
+  * Add execution engine selection logic
+  * Add fr execution engine based on shared library interception
+  * Add rc execution engine based on rootless namespaces
+  * Add environment variable UDOCKER_KEYSTORE
+  * Prevent creation of .udocker when UDOCKER_KEYSTORE is used
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Tue, 12 Sep 2017 00:14:00 +0000
+
 udocker (1.0.3-1) trusty; urgency=low
 
   * Support for import containers in newer Docker format
@@ -173,7 +184,7 @@ Section: utils
 Priority: optional
 Maintainer: udocker maintainer <udocker@lip.pt>
 Build-Depends: debhelper (>= 9.0.0), python (>= 2.7)
-Standards-Version: 3.9.7
+Standards-Version: 3.9.8
 Homepage: https://github.com/indigo-dc/udocker
 
 Package: udocker

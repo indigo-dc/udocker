@@ -23,9 +23,9 @@ import os
 import re
 import sys
 import uuid
+import pwd
 import unittest
 import mock
-import pwd
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]

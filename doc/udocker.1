@@ -1,17 +1,17 @@
 .\" Manpage for udocker
 .\" Contact udocker@lip.pt to correct errors or typos.
 .\" To read this man page use:   man -l udocker.1
-.TH udocker 1 "24 Mar 2017" "version 1.0.3" "udocker man page"
+.TH udocker 1 "12 Sep 2016" "version 1.1.0" "udocker man page"
 .SH NAME
-udocker \- execute docker containers in user space without privileges
+udocker \- execute Docker containers in user space without privileges
 .SH SYNOPSIS
 udocker [OPTIONS] COMMAND [CMDOPTIONS] [PARAMETERS]
 .SH DESCRIPTION
-udocker is a basic user tool to execute simple docker containers in user space without requiring root privileges. Enables basic download and execution of docker containers by non-privileged users in Linux systems were docker is not available. It can be used to access and execute the content of docker containers in Linux batch systems and interactive clusters that are managed by other entities such as grid infrastructures or externally managed batch or interactive systems.
+udocker is a basic user tool to execute simple Docker containers in user space without requiring root privileges. Enables basic download and execution of Docker containers by non-privileged users in Linux systems were Docker is not available. It can be used to access and execute the content of Docker containers in Linux batch systems and interactive clusters that are managed by other entities such as grid infrastructures or externally managed batch or interactive systems.
 
 udocker does not require any type of privileges nor the deployment of services by system administrators.
 
-udocker is a wrapper around several tools to mimic a subset of the docker capabilities including pulling images and running then with minimal functionality.
+udocker is a wrapper around several tools to mimic a subset of the Docker capabilities including pulling images and running then with minimal functionality.
 
 .SH OPTIONS
 Options common to all commands. These options must be specified before the udocker specific command. Example "udocker --insecure --debug pull myimage" performs an image "pull" with insecure and debug.
@@ -29,7 +29,7 @@ Specify alternate local repository location for images and containers. To overri
 Do not impose secure communication.
 
 .SH COMMANDS
-udocker supports a subset of docker commands and uses a similar syntax for IMAGE names. An IMAGE name is defined as REPOSITORY/IMAGE:TAG. By default udocker searches and pulls images from dockerhub. Private repositories are also supported. 
+udocker supports a subset of Docker commands and uses a similar syntax for IMAGE names. An IMAGE name is defined as REPOSITORY/IMAGE:TAG. By default udocker searches and pulls images from Docker Hub. Private repositories are also supported. 
 
 udocker manages a local repository stored by default under $HOME/.udocker. The local repository contains the pulled IMAGES and the CONTAINERS extracted from those IMAGES.
 
@@ -39,10 +39,10 @@ Supported commands:
 Prints a usage summary. Further help for specific udocker commands can be obtained with "udocker COMMAND -h | --help".
 .TP
 .BR search " " [ " " \-a " " ] " " STRING
-Search for IMAGES in a docker repository. The IMAGE name must match the given STRING. The \-a option displays all matching entries without pausing.
+Search for IMAGES in a Docker repository. The IMAGE name must match the given STRING. The \-a option displays all matching entries without pausing.
 .TP
 .BR pull " " [ " " \--httpproxy=PROXY " " | " " \--index=INDEX " " | " " \--registry=REGISTRY " " ] " " IMAGE
-Pull an IMAGE from dockerhub or from a private repository. The option INDEX defaults to https://index.docker.io. The option REGISTRY defaults to https://registry-1.docker.io. A socks4 or socks5 proxy can be specified with \--httpproxy the syntax of PROXY is socks[4|5]://user:pass@host:port.
+Pull an IMAGE from Docker Hub or from a private repository. The option INDEX defaults to https://index.docker.io. The option REGISTRY defaults to https://registry-1.docker.io. A socks4 or socks5 proxy can be specified with \--httpproxy the syntax of PROXY is socks[4|5]://user:pass@host:port.
 .TP
 .BR images " " [ " " \-l " " ]
 Lists IMAGES available in the local udocker repository. The \-l option provides additional details.
@@ -51,7 +51,7 @@ Lists IMAGES available in the local udocker repository. The \-l option provides 
 Extracts a container for execution from an IMAGE available in the local repository. Multiple containers can be extracted from a single image. Each created container is identified by a CONTAINER-ID which is printed upon successful extraction. The option --name allows an ALIAS name to be assigned to the newly created container to facilitate identification. The ALIAS can then be used instead of the CONTAINER-ID.
 .TP
 .BR ps
-List containers in the local repository. These are containers that have been extracted with the command "create" and which can be executed with the command "run". The list contains the CONTAINER-ID, protection against deletion, write status, ALIASEs, and the corresponding IMAGE. The command name "ps" has been kept for compatibility with the docker command line.
+List containers in the local repository. These are containers that have been extracted with the command "create" and which can be executed with the command "run". The list contains the CONTAINER-ID, protection against deletion, write status, ALIASEs, and the corresponding IMAGE. The command name "ps" has been kept for compatibility with the Docker command line.
 .TP
 .BR rm " " CONTAINER\-ID " " | " " ALIAS " " ...
 Delete containers using the CONTAINER\-ID or ALIAS.
@@ -72,7 +72,7 @@ Delete an IMAGE in the local repository. Any related CONTAINERS previously extra
 Import a tarball containing a filesystem directory tree into a new IMAGE. Can be used to import an operating system directory tree thus creating a new IMAGE in the local repository. Can also be used to import a filesystem directory tree previously exported by "docker export".
 .TP
 .BR load " " -i " " IMAGE\-TARBALL
-Load an IMAGE\-TARBALL previously saved by "docker save". The IMAGE\-TARBALL contains the several layers of a docker layered filesystem plus the associated metadata.
+Load an IMAGE\-TARBALL previously saved by "docker save". The IMAGE\-TARBALL contains the several layers of a Docker layered filesystem plus the associated metadata.
 .TP
 .BR verify " " IMAGE
 Verify the integrity of an IMAGE in the local repository.
@@ -87,10 +87,14 @@ Remove a protection flag placed by "protect".
 Setup a local repository in the host DIRECTORY. The required directory structure is created.
 .TP
 .BR login " " --username=USERNAME " " | " " --password=PASSWORD " " | " " --registry=REGISTRY
-Setup of authentication information for access to remote docker registries. Enables "pull" of IMAGES from private registries. The option --registry can be used to access registries other than the default "https://registry-1.docker.io". If USERNAME or PASSWORD are not provided in the command line, the user will be prompted to provide them.
+Setup of authentication information for access to remote Docker registries. Enables "pull" of IMAGES from private registries. The option --registry can be used to access registries other than the default "https://registry-1.docker.io". If USERNAME or PASSWORD are not provided in the command line, the user will be prompted to provide them.
 .TP
 .BR logout " " [ " " \-a " " ] " " | " " --registry=REGISTRY
 Remove authentication information created by "login". By default authentication is removed for the default REGISTRY. A specific REGISTRY can be specified with --registry. Alternatively ALL previously entered authentication information can be removed with the -a option.
+.TP
+.BR setup " "  --execmode=<Pn> " " | " " --execmode=<Fn> " " |  " " --execmode=<Rn> " " | " " --force " " | " " CONTAINER\-ID
+Change container execution settings. The option --execmode enables selection of an alternative execution engine. This feature is EXPERIMENTAL. 
+In certain cases when experiencing execution errors changing the execution mode to P1 may solve the problem.
 .TP
 .BR run " " [ " " RUNOPTIONS " " ] " " IMAGE " " | " " CONTAINER-ID " " | " " ALIAS " " [ " " COMMAND " " ARG1 " " ARG2 " " ... " " ]
 Execute a CONTAINER identified by CONTAINER-ID or ALIAS name. If an IMAGE name is provided instead of a CONTAINER-ID or ALIAS, then a CONTAINER will be automatically created from the specified IMAGE and executed. The "run" command will try to respect the execution information specified in the container or image metadata, if such information is not provided it will try to find a shell interpreter inside the container and execute it. Optionally a COMMAND to be executed inside the CONTAINER environment can be provided in the command line. The following RUNOPTIONS are available:
@@ -147,9 +151,6 @@ Use a directory tree directly. Instead of using a CONTAINER from the local repos
 .TP
 --kernel=N.N.N 
 Emulate a given kernel to enable execution in very old host kernels.
-.TP
---noseccomp
-Disable seccomp in proot.
 .RE
 
 .SH ENVIRONMENT
@@ -160,14 +161,30 @@ A number defining the verbosity of udocker. Zero is the least verbose.
 .BR UDOCKER_DIR
 Override the location of the local repository.
 .TP
+.BR UDOCKER_BIN
+Override location of udocker related executables.
+.TP
+.BR UDOCKER_LIB
+Override location of udocker related libraries.
+.TP
+.BR UDOCKER_CONTAINERS
+Override location of udocker containers.
+.TP
+.BR UDOCKER_TMP
+Override location of udocker temporary directory default is /tmp.
+.TP
+.BR UDOCKER_KEYSTORE
+Override location of udocker keystore default is $HOME/.udocker/keystore.
+.TP
 .BR UDOCKER_TARBALL
-Location of a tarball containing a udocker distribution for installation or upgrade. Example "export UDOCKER_TARBALL=udocker_1.0.3.tgz; tar xzvf $UDOCKER_TARBALL udocker; ./udocker".
+Location of a tarball containing a udocker distribution for installation or upgrade. Example "export UDOCKER_TARBALL=udocker_1.0.1.tgz; tar xzvf $UDOCKER_TARBALL udocker; ./udocker".
 .TP
 .BR UDOCKER_REGISTRY
-Override the default udocker registry pointing to dockerhub.
+Override the default udocker registry pointing to Docker Hub.
 .TP
 .BR UDOCKER_INDEX
-Override the default udocker index pointing to dockerhub.
+Override the default udocker index pointing to Docker Hub.
+
 
 .SH FILES
 .TP

@@ -92,7 +92,7 @@ class MainTestCase(unittest.TestCase):
         with mock.patch.object(sys, 'argv', t_argv):
             udocker.Main().start()
             self.assertTrue(mock_images.called)
-        t_argv = ['./udocker.py', "--config=/myconf"]
+        t_argv = ['./udocker.py', "--config=/myconf", "images"]
         with mock.patch.object(sys, 'argv', t_argv):
             udocker.Main().start()
             self.assertTrue(mock_user_init.called_with("/myconf"))

@@ -24,7 +24,7 @@ setup_env()
 
 udocker_version()
 {
-    grep "^__version__" "$REPO_DIR/udocker.py" | cut '-d"' -f2 
+    $REPO_DIR/utils/info.py | grep "udocker version:" | cut -f3- '-d ' | cut -f1 '-d-'
 }
 
 patch_proot_source2()
@@ -43,14 +43,35 @@ patch_proot_source2()
     popd
 }
 
+patch_proot_source3()
+{
+    echo "patch_proot_source3"
+
+    pushd "$TMP_DIR/$BASE_DIR/src/path"
+
+    if [ -e "temp.patch" ] ; then
+        echo "patch proot source3 already applied: $PWD/temp.patch"
+        return
+    fi
+
+    cp ${utils_dir}/proot_temp.patch temp.patch
+    patch < temp.patch
+    popd
+}
+
 create_source_tarball()
 {
     /bin/rm $SOURCE_TARBALL 2> /dev/null
     pushd $TMP_DIR
     /bin/rm -Rf PRoot
-    git clone --depth=1 https://github.com/proot-me/PRoot 
+    #git clone --branch v5.1.0 --depth=1 https://github.com/proot-me/PRoot 
+    git clone https://github.com/proot-me/PRoot
+    pushd PRoot
+    git checkout v5.1.0
+    popd
     /bin/mv PRoot $BASE_DIR
     patch_proot_source2
+    patch_proot_source3
     tar czvf $SOURCE_TARBALL $BASE_DIR
     /bin/rm -Rf $BASE_DIR
     popd
@@ -102,17 +123,19 @@ else
     PROOT="proot"
 fi
 install -m 755 -D %{_builddir}/%{name}/src/proot %{buildroot}/%{_libexecdir}/udocker/\$PROOT
-echo "%{_libexecdir}/udocker/\$PROOT" > %{_builddir}/files.lst
+echo "%{_libexecdir}/udocker/\$PROOT" > %{_builddir}/%{name}/files.lst
 
 %clean
 rm -rf %{buildroot}
 
-%files -f %{_builddir}/files.lst
+%files -f %{_builddir}/%{name}/files.lst
 %defattr(-,root,root)
 
 %doc README.rst AUTHORS COPYING
 
 %changelog
+* Tue Sep 12 2017 udocker maintainer <udocker@lip.pt> 1.1.0-1 
+- Repackaging for udocker 1.1.0
 * Wed Mar 22 2017 udocker maintainer <udocker@lip.pt> 1.0.3-1 
 - Repackaging for udocker 1.0.3
 * Tue Feb 14 2017 udocker maintainer <udocker@lip.pt> 1.0.2-1 
