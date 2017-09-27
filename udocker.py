@@ -1636,9 +1636,8 @@ class ExecutionEngineCommon(object):
         elif self.opt["cpuset"]:
             self.opt["cpuset"] = "'" + self.opt["cpuset"] + "'"
             return " %s %s " % (cpu_affinity_exec, self.opt["cpuset"])
-        else:
-            self.opt["cpuset"] = ""
-            return " "
+        self.opt["cpuset"] = ""
+        return " "
 
     def _cont2host(self, pathname):
         """Translate container path to host path"""
@@ -2945,11 +2944,10 @@ class ContainerStructure(object):
             if container_json[confidx][param] is None:
                 return default
             elif (isinstance(container_json[confidx][param], str) and (
-                    isinstance(default, list) or isinstance(default, tuple))):
+                    isinstance(default, (list, tuple)):
                 return container_json[confidx][param].strip().split()
             elif (isinstance(default, str) and (
-                    isinstance(container_json[confidx][param], list) or
-                    isinstance(container_json[confidx][param], tuple))):
+                    isinstance(container_json[confidx][param], (list, tuple)))):
                 return " ".join(container_json[confidx][param])
             elif (isinstance(default, str) and (
                     isinstance(container_json[confidx][param], dict))):
@@ -3338,8 +3336,7 @@ class LocalRepository(object):
             self.cur_repodir = ""
             self.cur_tagdir = ""
             return True
-        else:
-            return False
+        return False
 
     def _get_tags(self, tag_dir):
         """Get image tags from repository
@@ -4153,8 +4150,7 @@ class DockerIoAPI(object):
         """Authentication for v1 API"""
         if "Token" in www_authenticate:
             return self.v1_auth_header
-        else:
-            return ""
+        return ""
 
     def get_v1_image_tags(self, endpoint, imagerepo):
         """Get list of tags in a repo from Docker Hub"""
@@ -4954,9 +4950,8 @@ class Udocker(object):
             return False
         if self.dockerlocalfileapi.import_(tarfile, imagerepo, tag, move_tarball):
             return True
-        else:
-            Msg().err("Error: importing file")
-            return False
+        Msg().err("Error: importing file")
+        return False
 
     def do_login(self, cmdp):
         """
@@ -4981,9 +4976,8 @@ class Udocker(object):
             self.dockerioapi.get_v2_login_token(username, password)
         if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, ""):
             return True
-        else:
-            Msg().err("Error: invalid credentials")
-            return False
+        Msg().err("Error: invalid credentials")
+        return False
 
     def do_logout(self, cmdp):
         """
@@ -5055,8 +5049,7 @@ class Udocker(object):
                 Msg().err("Error: invalid container name may already exist "
                           "or wrong format")
                 return False
-            else:
-                return True
+            return True
         return False
 
     def _create(self, imagespec):
@@ -5353,8 +5346,7 @@ class Udocker(object):
             if not self.localrepo.unprotect_container(arg):
                 Msg().err("Error: unprotect container failed")
                 return False
-            else:
-                return True
+            return True
         else:
             (imagerepo, tag) = self._check_imagespec(arg)
             if imagerepo:
@@ -5445,9 +5437,8 @@ class Udocker(object):
             elif self.localrepo.verify_image():
                 Msg().out("Info: image Ok", l=Msg.INF)
                 return True
-            else:
-                Msg().err("Error: image verification failure")
-                return False
+            Msg().err("Error: image verification failure")
+            return False
 
     def do_setup(self, cmdp):
         """
@@ -5481,9 +5472,8 @@ class Udocker(object):
         exec_mode = ExecutionMode(self.localrepo, container_id)
         if xmode:
             return exec_mode.set_mode(xmode.upper(), force)
-        else:
-            Msg().out("execmode: %s" % (exec_mode.get_mode()))
-            return True
+        Msg().out("execmode: %s" % (exec_mode.get_mode()))
+        return True
 
     def do_install(self, cmdp):
         """
