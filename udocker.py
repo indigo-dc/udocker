@@ -111,8 +111,7 @@ class Uprocess(object):
         """Select check_output implementation"""
         if PY_VER >= "2.7":
             return subprocess.check_output(*popenargs, **kwargs)
-        else:
-            return self._check_output(*popenargs, **kwargs)
+        return self._check_output(*popenargs, **kwargs)
 
     def get_output(self, cmd):
         """Execute a shell command and get its output"""
@@ -754,8 +753,7 @@ class FileUtil(object):
             if subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
                                stdout=Msg.chldnul, close_fds=True):
                 return False
-            else:
-                return True
+            return True
 
     def cleanup(self):
         """Delete all temporary files"""
@@ -835,7 +833,7 @@ class FileUtil(object):
             if "=" in path:
                 path = "".join(path.split("=", 1)[1:])
             path = path.split(":")
-        if isinstance(path, list) or isinstance(path, tuple):
+        if isinstance(path, (list, tuple)):
             for directory in path:
                 full_path = rootdir + directory + "/" + self.basename
                 if os.path.exists(full_path):
@@ -976,8 +974,7 @@ class UdockerTools(object):
         (hdr, dummy) = self.curl.get(self._tarball, ofile=tarball_file)
         if hdr.data["X-ND-CURLSTATUS"]:
             return ""
-        else:
-            return tarball_file
+        return tarball_file
 
     def _verify_version(self, tarball_file):
         """verify the tarball version"""
@@ -1206,8 +1203,7 @@ class ElfPatcher(object):
         last_path = FileUtil(self._container_patch_path).getdata()
         if last_path and isinstance(last_path, str):
             return last_path.strip()
-        else:
-            return ""
+        return ""
 
     def check_container(self):
         """verify if path to container is ok"""
@@ -1288,16 +1284,14 @@ class ElfPatcher(object):
         ld_data = ld_data.replace(ld_library_path_orig, ld_library_path_new)
         if output_elf is None:
             return bool(FileUtil(elf_loader).putdata(ld_data))
-        else:
-            return bool(FileUtil(output_elf).putdata(ld_data))
+        return bool(FileUtil(output_elf).putdata(ld_data))
 
     def restore_ld(self):
         """Restore ld.so"""
         elf_loader = self.get_container_loader()
         if FileUtil(self._container_ld_so_orig).size() == -1:
             return False
-        else:
-            return FileUtil(self._container_ld_so_orig).copyto(elf_loader)
+        return FileUtil(self._container_ld_so_orig).copyto(elf_loader)
 
     def _get_ld_config(self):
         """Get get directories from container ld.so.cache"""
@@ -1314,6 +1308,7 @@ class ElfPatcher(object):
                         os.path.dirname(match.group(2))] = True
         return ld_dict.keys()
 
+    # pylint: disable=too-many-nested-blocks
     def _find_ld_libdirs(self, root_path=None):
         """search for library directories in container"""
         if root_path is None:
@@ -1341,9 +1336,8 @@ class ElfPatcher(object):
             ld_str = ":".join(ld_list)
             FileUtil(self._container_ld_libdirs).putdata(ld_str)
             return ld_list
-        else:
-            ld_str = FileUtil(self._container_ld_libdirs).getdata()
-            return ld_str.split(":")
+        ld_str = FileUtil(self._container_ld_libdirs).getdata()
+        return ld_str.split(":")
 
     def get_ld_library_path(self):
         """Get ld library paths"""
@@ -1482,15 +1476,13 @@ class NixAuthentication(object):
         """Get host or container user"""
         if self.passwd_file:
             return self._get_user_from_file(wanted_user)
-        else:
-            return self._get_user_from_host(wanted_user)
+        return self._get_user_from_host(wanted_user)
 
     def get_group(self, wanted_group):
         """Get host or container group"""
         if self.group_file:
             return self._get_group_from_file(wanted_group)
-        else:
-            return self._get_group_from_host(wanted_group)
+        return self._get_group_from_host(wanted_group)
 
 
 class FileBind(object):
@@ -3600,8 +3592,7 @@ class LocalRepository(object):
                     break
             if not found:
                 return my_layer_id
-            else:
-                return found
+            return found
 
     def _sorted_layers(self, structure, top_layer_id):
         """Return the image layers sorted"""
@@ -3753,7 +3744,6 @@ class GetURL(object):
         self.insecure = Config.http_insecure
         self._select_implementation()
 
-    # pylint: disable=redefined-variable-type
     # pylint: disable=locally-disabled
     def _select_implementation(self):
         """Select which implementation to use"""
@@ -4512,8 +4502,7 @@ class DockerIoAPI(object):
             self.search_page += 1
         if self.is_v2() and not self._is_docker_registry():
             return self.catalog_get_page_v2(self.search_lines)
-        else:
-            return self.search_get_page_v1(expression)
+        return self.search_get_page_v1(expression)
 
 
 class DockerLocalFileAPI(object):
@@ -4577,8 +4566,7 @@ class DockerLocalFileAPI(object):
                     break
             if not found:
                 return my_layer_id
-            else:
-                return found
+            return found
 
     def _sorted_layers(self, structure, top_layer_id):
         """Return the layers sorted"""
@@ -5733,8 +5721,7 @@ class CmdParser(object):
                     return opt_arg
         if opt_multiple:
             return all_args
-        else:
-            return False
+        return False
 
     def _get_param(self, opt_name, opt_list, consumed, consumed_params):
         """Get command line parameters
@@ -5765,8 +5752,7 @@ class CmdParser(object):
             return all_args
         elif opt_name[1] == '+':
             return all_args[1:]
-        else:
-            return None
+        return None
 
 
 class Main(object):
