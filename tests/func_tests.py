@@ -25,9 +25,12 @@ import unittest
 import mock
 
 __author__ = "udocker@lip.pt"
-__credits__ = ["PRoot http://proot.me"]
+__credits__ = ["PRoot http://proot.me",
+               "runC https://runc.io",
+               "Fakechroot https://github.com/dex4er/fakechroot"
+              ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "0.0.3"
+__version__ = "1.1.0"
 __date__ = "2016"
 
 try:
