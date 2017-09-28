@@ -2,41 +2,31 @@ udocker
 =======
 A basic user tool to execute simple docker containers in user space
 without requiring root privileges. Enables basic download and execution
-of docker containers by non-privileged users in Linux systems were docker
+of docker containers by non-privileged users in Linux systems where docker
 is not available. It can be used to access and execute the content of
 docker containers in Linux batch systems and interactive clusters that
 are managed by other entities such as grid infrastructures or externaly
 managed batch or interactive systems.
 
-The Indigo udocker does not require any type of privileges nor the
+The INDIGO udocker does not require any type of privileges nor the
 deployment of services by system administrators. It can be downloaded
 and executed entirely by the end user.
 
 udocker is a wrapper around several tools to mimic a subset of the
-docker capabilities including pulling images and running then with
+docker capabilities including pulling images and running them with
 minimal functionality.
-
-## Development version
-A development version with support for multiple execution methods
-is available in the udocker-fr branch on github. The development 
-version supports the following execution engines.
-
-* PRoot (default)
-* Fakechroot
-* runC
-
-See: https://github.com/indigo-dc/udocker/tree/udocker-fr
 
 ## How does it work
 udocker is a simple tool written in Python, it has a minimal set
 of dependencies so that can be executed in a wide range of Linux
 systems.
 
-udocker does not make use of docker nor requires its installation.
+udocker does not make use of docker nor requires its presence.
 
 udocker "executes" the containers by simply providing a chroot like
 environment over the extracted container. The current implementation
-uses PRoot to mimic chroot without requiring privileges.
+supports different methods to mimic chroot enabling execution of 
+containers without requiring privileges under a chroot like environment.
 
 ## Limitations
 Since root privileges are not involved any operation that really
@@ -60,17 +50,20 @@ and dockerfiles.
 udocker does not provide all the docker features, and is not intended
 as a docker replacement.
 
-Due to the way PRoot implements the chroot environment debugging inside
-of udocker will not work.
+Debugging inside of udocker with the PRoot engine will not work due to 
+the way PRoot implements the chroot environment
 
 udocker is mainly oriented at providing a run-time environment for
 containers execution in user space.
 
+udocker is particularly suited to run user applications encapsulated
+in docker containers.
+
 ## Security
-Because of the limitations described in the previous section udocker does not offer
-isolation features such as the ones offered by docker. If the containers
-content is not trusted then these containers should not be executed with udocker as
-they will run inside the user environment.
+Because of the limitations described in the previous section udocker does
+not offer isolation features such as the ones offered by docker. If the
+containers content is not trusted then these containers should not be
+executed with udocker as they will run inside the user environment.
 
 The containers data will be unpacked and stored in the user home directory or
 other location of choice. Therefore the containers data will be subjected to
@@ -86,8 +79,9 @@ administrators intervention.
 
 udocker via PRoot offers the emulation of the root user. This emulation
 mimics a real root user (e.g getuid will return 0). This is just an emulation
-no root privileges are involved. This feature enables some tools that do not
-require privileges but which check the user id. This enables for instance 
+no root privileges are involved. This feature makes possible the execution
+of some tools that do not require actual privileges but which refuse to
+work if the username or id are not root or 0. This enables for instance 
 software installation using rpm, yum or dnf inside the container.
 
 Due to the lack of isolation udocker must not be run by privileged users.
@@ -125,6 +119,10 @@ Commands:
   unprotect <container_id>    :Unprotect container
 
   mkrepo <topdir>             :Create repository in another location
+  setup                       :Change container execution settings
+  login                       :Login into docker repository
+  logout                      :Logout from docker repository
+
 
   help                        :This help
   run --help                  :Command specific help
@@ -137,16 +135,16 @@ Options common to all commands must appear before the command:
 ## Examples
 Some examples of usage:
 
-Search on dockerhub
+Search container images in dockerhub.
 ```
 udocker search  fedora
 udocker search  ubuntu
 udocker search  indigodatacloud
 ```
 
-Pull from docker hub and list the pulled images.
+Pull from dockerhub and list the pulled images.
 ```
-udocker pull  fedora
+udocker pull  fedora:25
 udocker pull  busybox
 udocker pull  iscampos/openqcd
 udocker images
@@ -161,7 +159,7 @@ udocker run rh7
 
 Create the container from a pulled image and run it.
 ```
-udocker create --name=myfed  fedora
+udocker create --name=myfed  fedora:25
 udocker run  myfed  cat /etc/redhat-release
 ```
 
@@ -185,32 +183,50 @@ be obfuscated.
 udocker run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
 ```
 
-Install software inside the container
+Install software inside the container.
 ```
 udocker run  --user=root myfed  yum install -y firefox pulseaudio gnash-plugin
 ```
 
-Run as some user. The usernames should exist in the container 
+Run as some user. The usernames should exist in the container.
 ```
 udocker run --user 1000:1001  myfed  /bin/id
 udocker run --user root   myfed  /bin/id
 udocker run --user jorge  myfed  /bin/id
 ```
 
-Firefox with audio and video
+Running Firefox.
 ```
 ./udocker run --bindhome --hostauth --hostenv \
    -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed  firefox
 ```
 
-## Other limitations
-The accelerated mode of PRoot may exhibit failures in Linux kernels above 4.0 
-with some applications due to upstream issues, in this case use run with 
---noseccomp.
+Change execution engine mode from PRoot to Fakechroot and run.
+```
+./udocker setup  --execmode=F4  myfed
 
+./udocker run --bindhome --hostauth --hostenv \
+   -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed  firefox
 ```
-udocker run --noseccomp mycontainer
+
+Change execution engine mode to accelerated PRoot.
 ```
+./udocker setup  --execmode=P1  myfed
+```
+
+Change execution engine to runC.
+```
+./udocker setup  --execmode=R1  myfed
+```
+
+## Other limitations
+Notice that when using execution engines other than PRoot (Pn modes) the
+created containers cannot be moved across hosts. In this case convert back 
+to a Pn mode before transfer.
+
+The accelerated mode of PRoot (mode P1) may exhibit failures in Linux kernels
+above 4.0 with some applications due to kernel changes and upstream issues in 
+this case use mode P2.
 
 ## Documentation
 Documentation is available at gitbook.
@@ -219,5 +235,9 @@ https://indigo-dc.gitbooks.io/udocker/content/
 
 ## Aknowlegments
 
+* Docker https://www.docker.com/
 * PRoot http://proot.me
+* Fakechroot https://github.com/dex4er/fakechroot/wiki
+* runC https://runc.io/
 * INDIGO DataCloud https://www.indigo-datacloud.eu
+

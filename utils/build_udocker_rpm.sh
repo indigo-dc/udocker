@@ -4,6 +4,18 @@
 #
 # Build udocker rpm package
 #
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 # ##################################################################
 
 sanity_check() 
@@ -24,7 +36,7 @@ setup_env()
 
 udocker_version()
 {
-    grep "^__version__" "$REPO_DIR/udocker.py" | cut '-d"' -f2 
+    $REPO_DIR/utils/info.py | grep "udocker version:" | cut -f3- '-d ' | cut -f1 '-d-'
 }
 
 create_source_tarball()
@@ -98,6 +110,13 @@ rm -rf %{buildroot}
 %doc %{_mandir}/man1/udocker.1*
 
 %changelog
+* Tue Sep 12 2017 udocker maintainer <udocker@lip.pt> 1.1.0-1
+- Support image names prefixed by registry similarly to docker
+- Add execution engine selection logic
+- Add fr execution engine based on shared library interception
+- Add rc execution engine based on rootless namespaces
+- Add environment variable UDOCKER_KEYSTORE
+- Prevent creation of .udocker when UDOCKER_KEYSTORE is used
 * Wed Mar 22 2017 udocker maintainer <udocker@lip.pt> 1.0.3-1 
 - Support for import containers in newer Docker format
 - Restructuring to support additional execution engines

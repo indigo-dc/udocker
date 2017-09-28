@@ -4,6 +4,18 @@
 #
 # Build udocker-preng debian package
 #
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 # ##################################################################
 
 sanity_check() 
@@ -21,7 +33,7 @@ setup_env()
 
 udocker_version()
 {
-    grep "^__version__" "$REPO_DIR/udocker.py" | cut '-d"' -f2 
+    $REPO_DIR/utils/info.py | grep "udocker version:" | cut -f3- '-d ' | cut -f1 '-d-'
 }
 
 patch_proot_source2()
@@ -40,14 +52,34 @@ patch_proot_source2()
     popd
 }
 
+patch_proot_source3()
+{
+    echo "patch_proot_source3"
+
+    pushd "$TMP_DIR/$BASE_DIR-${VERSION}/src/path"
+
+    if [ -e "temp.patch" ] ; then
+        echo "patch proot source3 already applied: $PWD/temp.patch"
+        return
+    fi
+
+    cp ${utils_dir}/proot_temp.patch temp.patch
+    patch < temp.patch
+    popd
+}
+
 create_source_tarball()
 {
     /bin/rm $SOURCE_TARBALL 2> /dev/null
     pushd $TMP_DIR
     /bin/rm -Rf PRoot ${BASE_DIR}-${VERSION}
-    git clone --depth=1 https://github.com/proot-me/PRoot
+    git clone https://github.com/proot-me/PRoot
+    pushd PRoot
+    git checkout v5.1.0
+    popd
     /bin/mv PRoot ${BASE_DIR}-${VERSION}
     patch_proot_source2
+    patch_proot_source3
     tar czvf $SOURCE_TARBALL ${BASE_DIR}-${VERSION}
     /bin/rm -Rf $BASE_DIR ${BASE_DIR}-${VERSION}
     popd
@@ -81,9 +113,15 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker-preng (1.1.0-1) trusty; urgency=low
+
+  * Repackaging for udocker 1.1.0
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Tue, 12 Sep 2017 10:20:00 +0000
+
 udocker-preng (1.0.3-1) trusty; urgency=low
 
-  * repackaging for udocker 1.0.3
+  * Repackaging for udocker 1.0.3
 
  -- $DEBFULLNAME <$DEBEMAIL>  Wed, 22 Mar 2017 14:37:40 +0000
 
@@ -150,25 +188,27 @@ create_rules()
 #!/usr/bin/make -f
 # -*- makefile -*-
 
+SHELL := /bin/bash
+
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
 
 %:
 	dh $@ --sourcedirectory=src
 
-.ONESHELL:
+#.ONESHELL:
 override_dh_auto_install:
-	if [ "$$DEB_TARGET_ARCH" = "amd64" ]; then 
-	    PROOT="proot-x86_64"
-	elif [ "$$DEB_TARGET_ARCH" = "i386" ]; then
-	    PROOT="proot-i386"
-	elif [ "$$DEB_TARGET_ARCH" = "arm64" ]; then
-	    PROOT="proot-arm64"
-	elif [ "$${DEB_TARGET_ARCH:0:3}" = "arm" ]; then
-	    PROOT="proot-arm"
-	else
-	    PROOT="proot"
-	fi
+	if [ "$$DEB_TARGET_ARCH" = "amd64" ]; then      \
+	    PROOT="proot-x86_64" ;                      \
+	elif [ "$$DEB_TARGET_ARCH" = "i386" ]; then     \
+	    PROOT="proot-i386"   ;                      \
+	elif [ "$$DEB_TARGET_ARCH" = "arm64" ]; then    \
+	    PROOT="proot-arm64"  ;                      \
+	elif [ "${DEB_TARGET_ARCH:0:3}" = "arm" ]; then \
+	    PROOT="proot-arm"    ;                      \
+	else                                            \
+	    PROOT="proot"        ;                      \
+	fi ;                                            \
 	install -g 0 -o 0 -m 755 -D src/proot debian/udocker-preng/usr/lib/udocker/$$PROOT
 M_RULES
 }
@@ -181,7 +221,7 @@ Section: utils
 Priority: optional
 Maintainer: udocker maintainer <udocker@lip.pt>
 Build-Depends: debhelper (>= 9.0.0), libtalloc-dev
-Standards-Version: 3.9.7
+Standards-Version: 3.9.8
 Homepage: https://www.gitbook.com/book/indigo-dc/udocker/details
 
 Package: udocker-preng

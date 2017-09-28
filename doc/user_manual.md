@@ -1,59 +1,69 @@
 # udocker USER MANUAL
 
-A basic user tool to execute simple docker containers in user space 
+A basic user tool to execute simple Docker containers in user space 
 without requiring root privileges. Enables basic download and execution 
-of docker containers by non-privileged users in Linux systems were docker 
+of Docker containers by non-privileged users in Linux systems where Docker 
 is not available. It can be used to access and execute the content of 
 docker containers in Linux batch systems and interactive clusters that 
-are managed by other entities such as grid infrastructures or externaly 
-managed batch or interactive systems.
+are managed by other entities such as grid infrastructures, HPC clusters
+or other externaly managed batch or interactive systems.
 
-udocker does not require any type of privileges nor the
-deployment of services by system administrators. It can be downloaded
-and executed entirely by the end user. 
+udocker does not require any type of privileges nor the deployment of 
+services by system administrators. It can be downloaded and executed 
+entirely by the end user. 
 
-udocker is a wrapper around several tools to mimic a subset of the
-docker capabilities including pulling images and running then with
-minimal functionality.
+udocker is a wrapper around several tools and technologies to mimic a 
+subset of the Docker capabilities including pulling images and running 
+then with minimal functionality. It is mainly meant to execute user 
+applications packaged in Docker containers. 
+
+We recommend the use of Docker whenever possible, but when it is 
+unavailable udocker can be the right tool to run your applications.
 
 ## 1. INTRODUCTION
 
-
 ### 1.1. How does it work
-udocker is a simple tool written in Python, it has a minimal set
-of dependencies so that can be executed in a wide range of Linux
-systems. udocker does not make use of docker nor requires its 
-installation.
+udocker is a simple tool written in Python, it has a minimal set of 
+dependencies so that can be executed in a wide range of Linux systems. 
+udocker does not make use of Docker nor requires its installation.
 
 udocker "executes" the containers by simply providing a chroot like 
-environment to the extracted container. The current implementation 
-uses PRoot to mimic chroot without requiring privileges.
+environment to the extracted container. udocker is meant to integrate
+several technologies and approches hence providing an integrated 
+environment that offers several execution options. This version
+provides execution engines based on PRoot, Fakechroot, and runC
+as methods to execute Docker containers without privileges.
+
 
 ### 1.2. Limitations
 Since root privileges are not involved any operation that really 
 requires privileges is not possible. The following are
 examples of operations that are not possible:
 
-* accessing host protected devices and files
-* listening on TCP/IP privileged ports (range below 1024)
-* mount file-systems
-* the su command will not work
-* change the system time
-* changing routing tables, firewall rules, or network interfaces
+* accessing host protected devices and files;
+* listening on TCP/IP privileged ports (range below 1024);
+* mount file-systems;
+* the su command will not work;
+* change the system time;
+* changing routing tables, firewall rules, or network interfaces.
 
 Other limitations:
 
-* The current implementation is limited to the pulling of docker images and its execution. 
-* The actual containers should be built using docker and dockerfiles. 
-* udocker does not provide all the docker features, and is not intended as a docker replacement.
-* Due to the way PRoot implements the chroot environment debugging and system call tracing inside of udocker will not work.
+* the current implementation is limited to the pulling of Docker images and its execution;
+* the actual containers should be built using Docker and dockerfiles;
+* udocker does not provide all the Docker features, and is not intended as a Docker replacement;
+* debugging and tracing in the PRoot engine will not work;
+* the Fakechroot engine does not support execution of statically linked executables;
 * udocker is mainly oriented at providing a run-time environment for containers execution in user space.
 
 ### 1.3. Security
 Because of the limitations described in section 1.2 udocker does not offer 
-isolation features such as the ones offered by docker. If the containers
-content is not trusted then they should not be executed with udocker as
+isolation features such as the ones offered by Docker. If the containers
+content is not trusted then they should not be executed within udocker as
 they will run inside the user environment. 
+
+Due to the lack of isolation features udocker must not be run by privileged 
+users.
 
 The containers data will be unpacked and stored in the user home directory or 
 other location of choice. Therefore the containers data will be subjected to
@@ -69,7 +79,11 @@ execute it from their own accounts without requiring system administration
 intervention. 
 
 udocker provides a chroot like environment for container execution. This is
-currently implemented by PRoot via the kernel ptrace system call.
+currently implemented by:
+
+* PRoot engine via the kernel ptrace system call;
+* Fakechroot engine via shared library preload;
+* runC engine using rootless namespaces.
 
 udocker via PRoot offers the emulation of the root user. This emulation
 mimics a real root user (e.g getuid will return 0). This is just an emulation
@@ -77,20 +91,17 @@ no root privileges are involved. This feature enables tools that do not
 require privileges but that check the user id to work properly. This enables
 for instance software installation with rpm and yum inside the container.
 
-Due to the lack of isolation features udocker must not be run by privileged 
-users.
-
-Similarly to docker, the login credentials for private repositories are stored 
-in a file and can be easily stolen. Logout can be used to delete the credentials. 
-If the host system is not trustable the private repositoty login feature should 
-not be used as it may expose the credentials.
+Similarly to Docker, the login credentials for private repositories are stored 
+in a file and can be easily accessed. Logout can be used to delete the credentials. 
+If the host system is not trustable the login feature should not be used as it may
+expose the login credentials.
 
 ### 1.4. Basic flow
 The basic flow with udocker is:
 
 1. The user downloads udocker to its home directory and executes it
 2. Upon the first execution udocker will download additional tools 
-3. Container images can be fetched from dockerhub with `pull`
+3. Container images can be fetched from Docker Hub with `pull`
 4. Containers can be created from the images with `create`
 5. Containers can then be executed with `run`
 
@@ -98,18 +109,18 @@ Additionally:
 
 * Containers saved with `docker save` can be loaded with `udocker load -i`
 * Tarballs created with `docker export` can be imported with `udocker import`
- 
+
 
 ## 2. INSTALLATION
+
 udocker can be placed in the user home directory and thus does not require
 system installation. For further information see the installation manual.
 
 
 ## 3. COMMANDS
-  
 
 ### 3.1. Syntax
-The udocker syntax is very similar to docker. Since version 1.0.1 the udocker
+The udocker syntax is very similar to Docker. Since version 1.0.1 the udocker
 preferred command name changed from udocker.py to udocker. A symbolic link
 between udocker and udocker.py is provided when installing with the distribution
 tarball.
@@ -150,7 +161,7 @@ Command specific help can be obtained with:
 ```
   udocker search [OPTIONS] REPO/IMAGE:TAG
 ```
-Search dockerhub for container images. The command displays containers one
+Search Docker Hub for container images. The command displays containers one
 page at a time and pauses for user input.
 
 Options:
@@ -195,7 +206,7 @@ Examples:
   udocker images [OPTIONS]
 ```
 List images available in the local repository, these are images pulled
-form dockerhub, and/or load or imported from files.
+form Docker Hub, and/or load or imported from files.
 
 Options:
 
@@ -212,7 +223,7 @@ Examples:
   udocker create [OPTIONS] REPO/IMAGE:TAG
 ```
 Extract a container from an image available in the local repository.
-Requires that the image has been previously pulled from dockerhub,
+Requires that the image has been previously pulled from Docker Hub,
 and/or load or imported into the local repository from a file.
 use `udocker images` to see the images available to create.
 If sucessful the comand prints the id of the extracted container.
@@ -338,7 +349,7 @@ Examples:
   udocker import [OPTIONS] TARBALL REPO/IMAGE:TAG
 ```
 Imports into the local repository a tarball containing a directory tree of
-a container. Can be used to import containers previously exported by docker
+a container. Can be used to import containers previously exported by Docker
 with `docker export`.
 
 Options:
@@ -355,10 +366,10 @@ Examples:
 ```
   udocker load -i IMAGE-FILE
 ```
-Loads into the local repository a tarball containing a docker image with
+Loads into the local repository a tarball containing a Docker image with
 its layers and metadata. This is equivallent to pulling an image from
-dockerhub but instead loading from a locally available file. It can be
-used to load a docker image saved with `docker save`. A typical saved
+Docker Hub but instead loading from a locally available file. It can be
+used to load a Docker image saved with `docker save`. A typical saved
 image is a tarball containing additional tar files corresponding to the
 layers and metadata.
 
@@ -416,13 +427,15 @@ Examples:
   udocker run [OPTIONS] CONTAINER-ID|CONTAINER-NAME
   udocker run [OPTIONS] REPO/IMAGE:TAG
 ```
-Executes a container. The execution is performed using an external
-tool currently only PRoot is supported. The container can be specified
-using the container id or its associated name. Additionaly it is
-possible to invoke run with an image name, in this case the image is
-extracted and run is invoked over the newly extracted container. 
-Using this later approach will create multiple container directory
-trees possibly occuping considerable disk space.
+Executes a container. The execution several execution engines are
+provided. The container can be specified using the container id or its
+associated name. Additionaly it is possible to invoke run with an image
+name, in this case the image is extracted and run is invoked over the
+newly extracted container. Using this later approach will create multiple
+container directory trees possibly occuping considerable disk space, 
+therefore the recommended approach is to first extract a container using
+"udocker create" and only then execute with "udocker run". The same
+extracted container can then be executed as many times as required.
 
 Options:
 
@@ -440,11 +453,10 @@ Options:
 * `--bindhome` attempt to make the user home directory appear inside the container
 * `--kernel=KERNELID` use a specific kernel id to emulate useful when the host kernel is too old
 * `--location=DIR` execute a container in a certain directory
-* `--noseccomp` disable seccomp in proot avoiding issues in newer kernels, affects performance
 
 Examples:
 ```
-  # Pull fedora from dockerhub
+  # Pull fedora from Docker Hub
   udocker pull fedora
 
   # create the container named myfed from the image named fedora
@@ -479,7 +491,7 @@ Examples:
   # Run in a script
   udocker run ubuntu  /bin/bash <<EOF
 cd /etc
-ls -l
+cat motd
 cat lsb-release
 EOF
 
@@ -499,7 +511,7 @@ Examples:
 ```
   udocker login [--username=USERNAME] [--password=PASSWORD] [--registry=REGISTRY]
 ```
-Login into a docker registry using v2 API. Only basic authentication
+Login into a Docker registry using v2 API. Only basic authentication
 using username and password is supported. The username and password
 can be prompted or specified in the command line. The username is the
 username in the repository, not the associated email address.
@@ -539,17 +551,104 @@ Examples:
   udocker logout -a
 ```
 
+### 3.23. Setup
+```
+  udocker setup [--execmode=XY] [--force] CONTAINER-ID|CONTAINER-NAME
+
+```
+Choose an execution mode to define how a given container will be executed.
+Enables selection of an execution engine and related execution modes.
+Without --execmode=XY, setup will print the current execution mode for the
+given container.
+
+Options:
+
+* `--execmode=XY` choose an execution mode
+* `--force` force the selection of the execution mode    
+
+|Mode| Engine     | Description                              | Changes container
+|----|:-----------|:-----------------------------------------|:------------------
+| P1 | PRoot      | accelerated mode using seccomp           | No
+| P2 | PRoot      | seccomp accelerated mode disabled        | No
+| F1 | Fakechroot | exec with direct loader invocation       | symbolic links
+| F2 | Fakechroot | F1 plus modified loader                  | F1 + ld.so
+| F3 | Fakechroot | fix ELF headers in binaries              | F2 + ELF headers
+| F4 | Fakechroot | F3 plus enables new executables and libs | same as F3
+| R1 | runC       | rootless user mode namespaces            | resolv.conf
+
+The default execution mode is P1.
+
+The mode P2 uses PRoot and provides the lowest performance but at
+the same time is also the most reliable. The mode P1 uses PRoot with 
+SECCOMP syscall filtering which provides higher performance in most 
+operating systems. PRoot is the most universal solution but may exhibit
+lower performance on older kernels such as in CentOS 6 hosts.
+
+The Fakechroot and runC engines are EXPERIMENTAL. They provide higher
+performance for most system calls, but only support a reduced set of
+operating systems. runC with rootless user mode namespaces requires a 
+recent Linux kernel and is known to work on Ubuntu and Fedora hosts.
+Fakechroot requires libraries compiled for each guest operating system,
+udocker provides these libraries for Ubuntu 14, Ubuntu 16, Fedora >= 25,
+CentOS 6 and CentOS 7. Other guests may or may not work with these 
+same libraries. 
+
+The udocker Fakechroot engine has four modes that offer increasing
+compatibility levels. F1 is the least intrusive mode and only changes 
+absolute symbolic links so that they point to locations inside the 
+container.  F2 adds changes to the loader to prevent loading of host 
+shareable libraries. F3 adds changes to all binaries (ELF headers of 
+executables and libraries) to remove absolute references pointing to 
+the host shareable libraries. These changes are performed once during 
+the setup, executables added after setup will not have their ELF headers 
+fixed and will fail to run. Notice that setup can be rerun with the 
+--force option to fix these binaries. F4 performs the ELF header
+changes dynamically (on-the-fly) thus enabling compilation and linking 
+within the container and new executables to be transferred to the 
+container and executed.
+
+Also notice that changes performed in Fn and Rn modes will prevent the
+containers from running in hosts where the directory path to the container
+is different. In this case convert back to P1 or P2, transfer to the target 
+host, and then convert again from Pn to the intended Fn mode.
+
+Mode Rn only depends on kernels with support for rootless containers, thus
+it will not work on some distributions (e.g. CentOS 6 and CentOS 7).
+ 
+Quick examples:
+
+```
+  udocker create --name=mycontainer  fedora:25
+
+  udocker setup --execmode=F3  mycontainer
+  udocker setup  mycontainer                 # prints the execution mode
+
+  udocker run  mycontainer /bin/ls
+
+  udocker setup  --execmode=F4  mycontainer
+  udocker run  mycontainer /bin/ls
+
+  udocker setup  --execmode=P1  mycontainer
+  udocker run  mycontainer  /bin/ls
+
+  udocker setup  --execmode=R1  mycontainer
+  udocker run  mycontainer  /bin/ls
+```
+
 ## 4. Running MPI Jobs
 
-Let us consider the Lattice QCD simulation software openQCD (http://luscher.web.cern.ch/luscher/openQCD). Lattice QCD
-simulations are performed on high-performance parallel computers with hundreds and thousands of processing units. All the 
-software environment that is needed for is a compliant C compiler and a local MPI installation such as Open MPI. 
+In this section we will use the Lattice QCD simulation software openQCD to demonstrate how to
+run Open MPI applications with udocker (http://luscher.web.cern.ch/luscher/openQCD). Lattice
+QCD simulations are performed on high-performance parallel computers with hundreds and thousands
+of processing units. All the software environment that is needed for openQCD is a compliant C 
+compiler and a local MPI installation such as Open MPI. 
 
-In what follows we describe the steps to execute openQCD using udocker in a HPC system with a batch system /eg. SLURM). 
-An analogous procedure can be followed for generic MPI applications
+In what follows we describe the steps to execute openQCD using udocker in a HPC system with a batch
+system (e.g. SLURM). An analogous procedure can be followed for other MPI applications.
 
-A container version can be downloaded in the docker hub repository, and the extract the container to the filesystem (udocker 
-create) as described above: 
+A container image of openQCD can be downloaded from the Docker Hub repository. From this image a
+container can be extracted to the filesystem (using udocker create) as described below.
+
 
 ```
 ./udocker pull iscampos/openqcd
@@ -557,25 +656,35 @@ create) as described above:
 fbeb130b-9f14-3a9d-9962-089b4acf3ea8
 ```
 
-Next we execute the container in the filesystem image (notice we set the variable LD_LIBRARY_PATH explicitly):
+Next the created container is executed (notice that the variable LD_LIBRARY_PATH is explicitly set):
+
 
 ```
 ./udocker run -e LD_LIBRARY_PATH=/usr/lib openqcd /bin/bash
 ```
 
-In the udocker approach mpiexec will submit the N MPI processes, as containers, in such a way that the containers 
-are able to commmunicate via the low latency interconnect (Infiniband in the case at hand)
+In this approach the host mpiexec will submit the N MPI process instances, as containers, in such a
+way that the containers are able to commmunicate via the low latency interconnect (Infiniband in the 
+case at hand).
 
-For that approach to work, the code in the container needs to be compiled with the same version of MPI that is
-available in the HPC system. In our example this is Open MPI v2.0.1. Therefore we need to download this version and 
-compile it.
+For this approach to work, the code in the container needs to be compiled with the same version of
+MPI that is available in the HPC system. This is necessary because the Open MPI versions of mpiexec
+and orted available in the host system need to match with the compiled program. In this example the
+Open MPI version is v2.0.1. Therefore we need to download this version and compile it inside the
+container.
 
-Note: we first need to uninstall the example openMPI installation that comes along with openqcd with the containe (yum remove openmpi). 
+Note: first the example Open MPI installation that comes along with the openqcd container are
+removed with: 
 
-We download openMPI v.2.0.1 from https://www.open-mpi.org/software/ompi/v2.0 and compile it. 
+```
+yum remove openmpi
+```
 
-Openib and libibverbs need to be install to compile OpenMPI over Infiniband. For that, install the epel repository on the
-container:
+We download Open MPI v.2.0.1 from https://www.open-mpi.org/software/ompi/v2.0 and compile it. 
+
+Openib and libibverbs need to be install to compile Open MPI over Infiniband. For that, install
+the epel repository on the container. This step is not required if running using TCP/IP is enough.
+
 
 ```
 yum install -y epel-release
@@ -585,7 +694,8 @@ yum install libibverbs*
 yum install libibverbs-devel*
 ```
 
-The we can compile openMPI and install it under /usr for convenience:
+The Open MPI source is compiled and installed in the container under /usr for convenience:
+
 
 ```
 cd /usr
@@ -596,8 +706,9 @@ make
 make install
 ```
 
-OpenQCD can then be compiled inside the udocker container in the usual way. The MPI job submission to the HPC cluster succeeds 
-by including this line in the batch script:
+
+OpenQCD can then be compiled inside the udocker container in the usual way. The MPI job
+submission to the HPC cluster succeeds by including this line in the batch script:
 
 ```
 /opt/cesga/openmpi/2.0.1/gcc/6.3.0/bin/mpiexec -np 128 \
@@ -608,11 +719,99 @@ $LUSTRE/udocker-master/udocker run -e LD_LIBRARY_PATH=/usr/lib  \
 ```
 (where $LUSTRE points to the appropriate user filesystem directory in the HPC system)
 
+Notice that depending on the application and host operating system a noticeable performance
+degradation may occur when using the default execution mode (Pn). In this situation other
+execution modes (Fn) may provide improved performance (see section 3.23).
 
 
 ## 5. Accessing GP/GPUs
 
+The host (either the physical machine or VM) where the container will run has to have the NVIDIA driver installed.
+Moreover, the NVIDIA driver version has to be known apriori, since the docker image has to have the exact same version
+as the host
+
+Base docker images with several version of the NVIDIA driver can be found in dockerhub:
+
+* https://hub.docker.com/r/lipcomputing/nvidia-ubuntu16.04/
+* https://hub.docker.com/r/lipcomputing/nvidia-centos7/
+
+In the tags tab one can chack which versions are available. Dockerfiles and Ansible roles used to build these images are
+in the github repository: https://github.com/LIP-Computing/ansible-role-nvidia 
+
+Examples of using those NVIDIA base images with a given application are the "disvis" and "powerfit" images whose Dockerfiles
+and Ansible roles can be found in:
+
+* https://github.com/indigo-dc/ansible-role-disvis-powerfit
+
+In order to build your docker image with a given CUDA or OpenCL application, the abovementioned images can be used.
+When the docker image with your application has been built you can run the udocker with that image has described in
+the previous sections
+
+## 6. Transferring udocker containers
+
+In udocker, images and created/extracted containers are stored in the filesystem
+usually in the user home directory under $HOME/.udocker. If this location is in
+a shared filesystem such as in a computing farm or cluster then its content will 
+be seen by all the hosts mounting the filesystem and can be used transparently by
+udocker across these hosts. If the home directory is not shared but some other
+location is then you may point the UDOCKER_DIR environment variable to such a 
+location and use it to store the udocker installation, images and containers.
+
+Across isolated hosts the correct way to transfer containers is to pull them from 
+a repository such as Docker Hub. However this may implies slow downloads from remote 
+locations and also the need to create the container again from the images.
+
+Alternatively you may move only the created container across locations. The container
+directory pathname in the filesystem can be obtained with:
+
+```
+udocker inspect -p <container-id>
+```
+
+This pathname will be the root of the actual directory containing the filesystem 
+tree of the container. You can modify, add, remove files at this location and these
+changes will be seen inside the container upon execution. With this directory you
+can also perform a backup of the container directory tree e.g. for backup purposes.
+
+For the purpose of transferring the container the best approach is to perform a
+backup starting at the directory above the ROOT. The directory above ROOT contains 
+the control files for the container. If you then untar this backup into another 
+udocker installation the container will become visible with the same alphanumeric id. 
+
+The example below shows a container named MYCONTAINER being transferred to another 
+host and executed. Make sure the udocker executable is in your PATH on both the local
+and remote hosts.
+
+```
+MYC_ROOT=$(udocker inspect -p MYCONTAINER)
+MYC_PATH=$(dirname $MYC_ROOT)
+MYC_ID=$(basename $MYC_PATH)
+MYC_DIR=$(dirname $MYC_PATH)
+cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker version ; cd ~/.udocker/containers; tar xf -"
+ssh user@ahost "udocker name $MYC_ID MYCONTAINER; udocker run MYCONTAINER"
+```
+
+Backups for safeguard or transfer should only be performed when the container is
+not being executed (not locally nor in any other host if the filesystem is shared).
+
+Containers should only be copied in this manner when they are in the execution
+modes Pn or Rn. The modes Fn perform changes to the containers that will make
+them fail if they are execute in a different host. In this later case convert 
+to P1 before performing the backup.
+
+## 7. Issues
+
+When experiencing issues in the default execution mode you may try
+to setup the container to execute using mode P2 or one of the Fn or 
+Rn modes. See section 3.23 for information on changing execution modes.
+
 ## Aknowlegments
 
+* Docker https://www.docker.com/
 * PRoot http://proot.me
+* Fakechroot https://github.com/dex4er/fakechroot/wiki
+* runC https://runc.io/
 * INDIGO DataCloud https://www.indigo-datacloud.eu
+* Open MPI https://www.open-mpi.org
+* openQCD http://luscher.web.cern.ch/luscher/openQCD
+

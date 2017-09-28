@@ -1,9 +1,27 @@
+udocker (1.1.0)
+
+  * Support image names prefixed by registry similarly to docker 
+  * Add execution engine selection logic
+  * Add fr execution engine based on shared library interception
+  * Add rc execution engine based on rootless namespaces
+  * Improve proot tmp files cleanup on non ext filesystems
+  * Improve search returning empty on Docker repositories
+  * Improve runC execution portability 
+  * Add environment variable UDOCKER_KEYSTORE
+    - closes: #75
+  * Prevent creation of .udocker when UDOCKER_KEYSTORE is used
+    - closes: #75
+
+udocker (1.0.4)
+
+  * Documentation fixes
+
 udocker (1.0.3)
 
   * Support for import Docker containers in newer metadata structure
   * Improve the command line parsing
   * Improve temporary file handling and removal
-  * Restructuring to support additional execution engines
+  * Support for additional execution engines to be provided in the future
   * Improved parsing of entrypoint and cmd metadata
     - closes: #53
   * Increase name alias length
@@ -22,7 +40,7 @@ udocker (1.0.3)
 udocker (1.0.2)
 
   * Improve download on repositories that fail authentication on /v2
-  * Improve run verification binaries with recursive symbolic links
+  * Improve run verification of binaries with recursive symbolic links
   * Improve accelerated seccomp on kernels >= 4.8.0
     - closes: #40
 

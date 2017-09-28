@@ -22,6 +22,7 @@ limitations under the License.
 """
 import sys
 import os
+import stat
 import string
 import re
 import subprocess
@@ -31,9 +32,12 @@ import grp
 import platform
 
 __author__ = "udocker@lip.pt"
-__credits__ = ["PRoot http://proot.me"]
+__credits__ = ["PRoot http://proot.me",
+               "runC https://runc.io",
+               "Fakechroot https://github.com/dex4er/fakechroot"
+              ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.0.4"
+__version__ = "1.1.0"
 __date__ = "2017"
 
 # Python version major.minor
@@ -75,6 +79,7 @@ if PY_VER < "2.6":
         import posixpath
     except ImportError:
         pass
+
 try:
     import json
 except ImportError:
@@ -85,6 +90,38 @@ except ImportError:
         import simplejson as json
     except ImportError:
         pass
+
+
+class Uprocess(object):
+    """Provide alternative implementations for subprocess"""
+
+    def _check_output(self, *popenargs, **kwargs):
+        """Alternative to subprocess.check_output"""
+        process = subprocess.Popen(*popenargs, stdout=subprocess.PIPE, **kwargs)
+        output, dummy = process.communicate()
+        retcode = process.poll()
+        if retcode:
+            cmd = kwargs.get("args")
+            if cmd is None:
+                cmd = popenargs[0]
+            raise subprocess.CalledProcessError(retcode, cmd)
+        return output
+
+    def check_output(self, *popenargs, **kwargs):
+        """Select check_output implementation"""
+        if PY_VER >= "2.7":
+            return subprocess.check_output(*popenargs, **kwargs)
+        return self._check_output(*popenargs, **kwargs)
+
+    def get_output(self, cmd):
+        """Execute a shell command and get its output"""
+        try:
+            content = self.check_output(cmd, shell=True,
+                                        stderr=Msg.chlderr,
+                                        close_fds=True)
+        except subprocess.CalledProcessError:
+            return None
+        return content.strip()
 
 
 class Config(object):
@@ -107,11 +144,15 @@ class Config(object):
     layersdir = None
     containersdir = None
 
-    # udocker installation tarball
+    uid = os.getuid()
+    gid = os.getgid()
+
+    # udocker installation tarball 1.1.0
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/2F1DRs4TMyexq6R/download"
+        "/s/xoWUtmeZw9fENaq/download"
     )
+
     autoinstall = True
 
     config = "udocker.conf"
@@ -142,15 +183,45 @@ class Config(object):
 
     # directories for DRI (direct rendering)
     dri_list = (
-        "/usr/lib/dri", "/lib/dri",
         "/usr/lib64/dri", "/lib64/dri",
+        "/usr/lib/dri", "/lib/dri",
     )
 
-    # PRoot seccomp
+    # container execution mode if not set via setup
+    # Change it to P2 if execution problems occur
+    default_execution_mode = "P1"
+
+    # PRoot override seccomp
+    # proot_noseccomp = True
     proot_noseccomp = None
 
+    # fakechroot engine get ld_library_paths from ld.so.cache
+    ld_so_cache = "/etc/ld.so.cache"
+
+    # fakechroot engine override fakechroot.so selection
+    # fakechroot_so = "libfakechroot-CentOS-7-x86_64.so"
+    fakechroot_so = None
+
+    # fakechroot sharable library directories
+    lib_dirs_list_essential = (
+        "/lib/x86_64-linux-gnu", "/usr/lib/x86_64-linux-gnu",
+        "/lib64", "/usr/lib64", "/lib", "/usr/lib",
+    )
+    lib_dirs_list_append = (".", )
+
+    # access files, used to circunvent openmpi init issues in fakechroot
+    access_files = (
+        "/sys/class/infiniband", "/dev/open-mx", "/dev/myri0", "/dev/myri1",
+        "/dev/myri2", "/dev/myri3", "/dev/myri4", "/dev/myri5", "/dev/myri6",
+        "/dev/myri7", "/dev/myri8", "/dev/myri9", "/dev/ipath", "/dev/kgni0",
+        "/dev/mic/scif", "/dev/scif",
+    )
+
+    # runc parameters
+    runc_nomqueue = None
+
     # Pass host env variables
-    valid_host_env = ("TERM")
+    valid_host_env = ("TERM", "PATH", )
 
     # CPU affinity executables to use with: run --cpuset-cpus="1,2,3-4"
     cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
@@ -173,6 +244,10 @@ class Config(object):
     # private repository v2
     # dockerio_registry_url = "http://localhost:5000"
 
+    # registries table
+    docker_registries = {"docker.io": ["https://registry-1.docker.io"
+                                       "https://index.docker.io"],
+                        }
     # -------------------------------------------------------------
 
     def _verify_config(self):
@@ -195,7 +270,10 @@ class Config(object):
         Config.dockerio_registry_url = os.getenv("UDOCKER_REGISTRY",
                                                  Config.dockerio_registry_url)
         Config.tarball = os.getenv("UDOCKER_TARBALL", Config.tarball)
+        Config.fakechroot_so = os.getenv("UDOCKER_FAKECHROOT_SO",
+                                         Config.fakechroot_so)
         Config.tmpdir = os.getenv("UDOCKER_TMP", Config.tmpdir)
+        Config.keystore = os.getenv("UDOCKER_KEYSTORE", Config.keystore)
 
     def _read_config(self, config_file):
         """Interpret config file content"""
@@ -239,11 +317,10 @@ class Config(object):
 
     def username(self):
         """Get username"""
-        return pwd.getpwuid(os.getuid()).pw_name
-
-    def userhome(self):
-        """Get user home dir"""
-        return pwd.getpwuid(os.getuid()).pw_dir
+        try:
+            return pwd.getpwuid(Config.uid).pw_name
+        except KeyError:
+            return ""
 
     def arch(self):
         """Get the host system architecture"""
@@ -274,12 +351,17 @@ class Config(object):
         except (NameError, AttributeError):
             return ""
 
+    def osdistribution(self):
+        """Get operating system distribution"""
+        (distribution, version, dummy) = platform.linux_distribution()
+        return (distribution.split(" ")[0], version.split(".")[0])
+
     def oskernel(self):
         """Get operating system"""
         try:
             return platform.release()
         except (NameError, AttributeError):
-            return "4.2.0"
+            return "3.2.1"
 
     def oskernel_isgreater(self, ref_version):
         """Compare kernel version is greater or equal than ref_version"""
@@ -291,7 +373,6 @@ class Config(object):
             elif os_version[idx] < ref_version[idx]:
                 return False
         return True
-
 
 class KeyStore(object):
     """Basic storage for authentication tokens to be used
@@ -306,11 +387,11 @@ class KeyStore(object):
     def _verify_keystore(self):
         """Verify the keystore file and directory"""
         keystore_uid = FileUtil(self.keystore_file).uid()
-        if keystore_uid != -1 and keystore_uid != os.getuid():
+        if keystore_uid != -1 and keystore_uid != Config.uid:
             raise IOError("not owner of keystore: %s" %
                           (self.keystore_file))
         keystore_dir = os.path.dirname(self.keystore_file)
-        if FileUtil(keystore_dir).uid() != os.getuid():
+        if FileUtil(keystore_dir).uid() != Config.uid:
             raise IOError("keystore dir not found or not owner: %s" %
                           (keystore_dir))
         if (keystore_uid != -1 and
@@ -527,15 +608,12 @@ class ChkSUM(object):
     def _openssl_sha256(self, filename):
         """sha256 calculation using openssl"""
         cmd = "openssl dgst -hex -r -sha256 %s" % (filename)
-        try:
-            output = subprocess.check_output(cmd, shell=True,
-                                             stderr=Msg().chlderr,
-                                             close_fds=True)
-        except subprocess.CalledProcessError:
+        output = Uprocess().get_output(cmd)
+        if output is None:
             return ""
-        matched = re.match("^(\\S+) ", output)
-        if matched:
-            return matched.group(1)
+        match = re.match("^(\\S+) ", output)
+        if match:
+            return match.group(1)
         return ""
 
     def sha256(self, filename):
@@ -567,8 +645,11 @@ class FileUtil(object):
         if prefix not in FileUtil.safe_prefixes:
             filename = prefix
             if os.path.isdir(filename) and not filename.endswith("/"):
-                filename = filename + "/"
-            FileUtil.safe_prefixes.append(filename)
+                FileUtil.safe_prefixes.append(filename + "/")
+                FileUtil.safe_prefixes.append(os.path.realpath(filename) + "/")
+            else:
+                FileUtil.safe_prefixes.append(filename)
+                FileUtil.safe_prefixes.append(os.path.realpath(filename))
 
     def register_prefix(self):
         """Register self.filename as prefix where remove() is allowed"""
@@ -636,7 +717,7 @@ class FileUtil(object):
         elif self.filename.count("/") < 2:
             Msg().err("Error: delete pathname too short: ", self.filename)
             return False
-        elif self.uid() != os.getuid():
+        elif self.uid() != Config.uid:
             Msg().err("Error: delete not owner: ", self.filename)
             return False
         elif (not force) and (not self._is_safe_prefix(self.filename)):
@@ -672,8 +753,7 @@ class FileUtil(object):
             if subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
                                stdout=Msg.chldnul, close_fds=True):
                 return False
-            else:
-                return True
+            return True
 
     def cleanup(self):
         """Delete all temporary files"""
@@ -698,10 +778,12 @@ class FileUtil(object):
         except (IOError, OSError, TypeError):
             return -1
 
-    def getdata(self):
+    def getdata(self, mode="rb"):
         """Read file content to a buffer"""
+        if not self.filename:
+            return ""
         try:
-            filep = open(self.filename, "r")
+            filep = open(self.filename, mode)
         except (IOError, OSError, TypeError):
             return ""
         else:
@@ -709,20 +791,26 @@ class FileUtil(object):
             filep.close()
             return buf
 
+    def putdata(self, buf, mode="wb"):
+        """Write buffer to file"""
+        if not self.filename:
+            return ""
+        try:
+            filep = open(self.filename, mode)
+        except (IOError, OSError, TypeError):
+            return ""
+        else:
+            filep.write(buf)
+            filep.close()
+            return buf
+
     def _find_exec(self, cmd_to_use):
         """This method is called by find_exec() invokes a command like
         /bin/which or type to obtain the full pathname of an executable
         """
-        out_file = FileUtil("findexec").mktmp()
-        try:
-            filep = open(out_file, "w")
-        except (IOError, OSError):
+        exec_pathname = Uprocess().get_output(cmd_to_use)
+        if exec_pathname is None:
             return ""
-        subprocess.call(cmd_to_use, shell=True, stderr=Msg.chlderr,
-                        stdout=filep, close_fds=True)
-        exec_pathname = FileUtil(out_file).getdata()
-        filep.close()
-        FileUtil(out_file).remove()
         if "not found" in exec_pathname:
             return ""
         if exec_pathname and exec_pathname.startswith("/"):
@@ -730,7 +818,7 @@ class FileUtil(object):
         return ""
 
     def find_exec(self):
-        """Find an executable pathname invoking which or type -p"""
+        """Find an executable pathname by using which or type -p"""
         cmd = self._find_exec("which " + self.basename)
         if cmd:
             return cmd
@@ -752,6 +840,14 @@ class FileUtil(object):
                     return directory + "/" + self.basename
             return ""
         return ""
+
+    def rename(self, dest_filename):
+        """Rename/move file"""
+        try:
+            os.rename(self.filename, dest_filename)
+        except (IOError, OSError):
+            return False
+        return True
 
     def copyto(self, dest_filename, mode="w"):
         """Copy self.filename to another file. We avoid shutil to have
@@ -775,6 +871,80 @@ class FileUtil(object):
         fpdst.close()
         return True
 
+    def find_file_in_dir(self, image_list):
+        """Find and return first file of list in dir"""
+        path_prefix = self.filename
+        for image in image_list:
+            image_path = path_prefix + "/" + image
+            if os.path.exists(image_path):
+                return image_path
+        return ""
+
+    def _link_set(self, f_path, root_path, force):
+        """Actual convertion to container specific symbolic link"""
+        l_path = os.readlink(f_path)
+        if l_path.startswith("/") and not l_path.startswith(self.filename):
+            p_path = os.path.realpath(os.path.dirname(f_path))
+            new_l_path = root_path + l_path
+            if force and not os.access(p_path, os.W_OK):
+                os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
+                os.remove(f_path)
+                os.symlink(new_l_path, f_path)
+                os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) & ~stat.S_IWUSR)
+            else:
+                os.remove(f_path)
+                os.symlink(new_l_path, f_path)
+            return True
+        return False
+
+    def _link_restore(self, f_path, root_path, force):
+        """Actual convertion for host specific symbolic link"""
+        l_path = os.readlink(f_path)
+        new_l_path = ""
+        if l_path.startswith(self.filename):
+            new_l_path = l_path.replace(self.filename, "", 1)
+        elif l_path.startswith(root_path):
+            new_l_path = l_path.replace(root_path, "", 1)
+        if new_l_path:
+            p_path = os.path.realpath(os.path.dirname(f_path))
+            if force and not os.access(p_path, os.W_OK):
+                os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
+                os.remove(f_path)
+                os.symlink(new_l_path, f_path)
+                os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) & ~stat.S_IWUSR)
+            else:
+                os.remove(f_path)
+                os.symlink(new_l_path, f_path)
+            return True
+        return False
+
+    def links_conv(self, force=False, to_container=True, root_path=""):
+        """ Convert absolute symbolic links to relative symbolic links
+        """
+        if not root_path:
+            root_path = os.path.realpath(self.filename)
+        links = []
+        if not self._is_safe_prefix(root_path):
+            Msg().err("Error: links convertion outside of directory tree: ",
+                      root_path)
+            return None
+        for dir_path, dummy, files in os.walk(root_path):
+            for f_name in files:
+                try:
+                    f_path = dir_path + "/" + f_name
+                    if not os.path.islink(f_path):
+                        continue
+                    if os.lstat(f_path).st_uid != Config.uid:
+                        continue
+                    if to_container:
+                        if self._link_set(f_path, root_path, force):
+                            links.append(f_path)
+                    else:
+                        if self._link_restore(f_path, root_path, force):
+                            links.append(f_path)
+                except OSError:
+                    continue
+        return links
 
 class UdockerTools(object):
     """Download and setup of the udocker supporting tools
@@ -820,8 +990,17 @@ class UdockerTools(object):
         if status:
             return False
         status = self._version_isequal(tmpdir + "/VERSION")
-        FileUtil(tmpdir).mktmpdir()
+        FileUtil(tmpdir).remove()
         return status
+
+    def purge(self):
+        """Remove existing files in bin and lib"""
+        for f_name in os.listdir(self.localrepo.bindir):
+            FileUtil(self.localrepo.bindir + "/" + f_name).register_prefix()
+            FileUtil(self.localrepo.bindir + "/" + f_name).remove()
+        for f_name in os.listdir(self.localrepo.libdir):
+            FileUtil(self.localrepo.libdir + "/" + f_name).register_prefix()
+            FileUtil(self.localrepo.libdir + "/" + f_name).remove()
 
     def _install(self, tarball_file):
         """Install the tarball"""
@@ -867,17 +1046,17 @@ class UdockerTools(object):
 
         2) run udocker and installation will proceed
 
-          ./udocker
+          ./udocker version
 
         The correct tarball version for this udocker executable is:
         """
         Msg().out(self._instructions.__doc__, __version__, l=Msg.ERR)
 
-    def install(self):
+    def install(self, force=False):
         """Get the udocker tarball and install the binaries"""
-        if self.is_available():
+        if self.is_available() and not force:
             return True
-        elif not self._autoinstall:
+        elif not self._autoinstall and not force:
             Msg().out("Warning: no engine available and autoinstall disabled",
                       l=Msg.WAR)
             return None
@@ -890,6 +1069,7 @@ class UdockerTools(object):
                       l=Msg.INF)
             tarball_file = ""
             if "://" in self._tarball:
+                Msg().out("Info: downloading: %s" % (self._tarball), l=Msg.INF)
                 tarball_file = self._download()
             elif os.path.exists(self._tarball):
                 tarball_file = self._tarball
@@ -911,6 +1091,264 @@ class UdockerTools(object):
                 if "://" in self._tarball:
                     FileUtil(tarball_file).remove()
         return False
+
+
+class ElfPatcher(object):
+    """Patch container executables"""
+
+    BIN = 1
+    LIB = 2
+    LOADER = 4
+    ABORT_ON_ERROR = 8
+    ONE_SUCCESS = 16
+    ONE_OUTPUT = 32
+
+    def __init__(self, localrepo, container_id):
+        self._localrepo = localrepo
+        self._container_dir = \
+            os.path.realpath(self._localrepo.cd_container(container_id))
+        if not self._container_dir:
+            raise ValueError("invalid container id")
+        self._container_root = self._container_dir + "/ROOT"
+        self._container_ld_so_path = self._container_dir + "/ld.so.path"
+        self._container_ld_so_orig = self._container_dir + "/ld.so.orig"
+        self._container_ld_libdirs = self._container_dir + "/ld.lib.dirs"
+        self._container_patch_time = self._container_dir + "/patch.time"
+        self._container_patch_path = self._container_dir + "/patch.path"
+        self._shlib = re.compile(r"^lib\S+\.so(\.\d+)*$")
+        self._uid = Config.uid
+
+    def select_patchelf(self):
+        """Set patchelf executable"""
+        conf = Config()
+        arch = conf.arch()
+        if arch == "amd64":
+            image_list = ["patchelf-x86_64", "patchelf"]
+        elif arch == "i386":
+            image_list = ["patchelf-x86", "patchelf"]
+        elif arch == "arm64":
+            image_list = ["patchelf-arm64", "patchelf"]
+        elif arch == "arm":
+            image_list = ["patchelf-arm", "patchelf"]
+        f_util = FileUtil(self._localrepo.bindir)
+        patchelf_exec = f_util.find_file_in_dir(image_list)
+        if not patchelf_exec:
+            Msg().err("Error: patchelf executable not found")
+            sys.exit(1)
+        return patchelf_exec
+
+    def _walk_fs(self, cmd, root_path, action=BIN):
+        """Execute a shell command over each executable file in a given
+        dir_path, action can be ABORT_ON_ERROR, return upon first success
+        ONE_SUCCESS, or return upon the first non empty output. #f is the
+        placeholder for the filename.
+        """
+        status = False
+        for dir_path, dummy, files in os.walk(root_path):
+            for f_name in files:
+                try:
+                    f_path = dir_path + "/" + f_name
+                    if os.path.islink(f_path):
+                        continue
+                    if os.stat(f_path).st_uid != self._uid:
+                        if action & self.ABORT_ON_ERROR:
+                            return None
+                        else:
+                            continue
+                    if ((action & self.BIN and os.access(f_path, os.X_OK)) or
+                            (action & self.LIB and self._shlib.match(f_name))):
+                        out = Uprocess().get_output(cmd.replace("#f", f_path))
+                        if out:
+                            status = out
+                    if action & self.ABORT_ON_ERROR and status is None:
+                        return None
+                    elif action & self.ONE_SUCCESS and status is not None:
+                        return status
+                    elif action & self.ONE_OUTPUT and status:
+                        return status
+                except OSError:
+                    pass
+        return status
+
+    def guess_elf_loader(self):
+        """Search for executables and try to read the ld.so pathname"""
+        patchelf_exec = self.select_patchelf()
+        cmd = "%s -q --print-interpreter #f" % (patchelf_exec)
+        for d_name in ("/bin", "/usr/bin", "/lib64"):
+            elf_loader = self._walk_fs(cmd, self._container_root + d_name,
+                                       self.ONE_OUTPUT | self.BIN)
+            if elf_loader and ".so" in elf_loader:
+                return elf_loader
+        return ""
+
+    def get_original_loader(self):
+        """Get the pathname of the original ld.so"""
+        if os.path.exists(self._container_ld_so_path):
+            return FileUtil(self._container_ld_so_path).getdata().strip()
+        elf_loader = self.guess_elf_loader()
+        if elf_loader:
+            FileUtil(self._container_ld_so_path).putdata(elf_loader)
+        return elf_loader
+
+    def get_container_loader(self):
+        """Get an absolute pathname to the container ld.so"""
+        elf_loader = self.get_original_loader()
+        if not elf_loader:
+            return ""
+        elf_loader = self._container_root + "/" + elf_loader
+        return elf_loader if os.path.exists(elf_loader) else ""
+
+    def get_patch_last_path(self):
+        """get last host pathname to the patched container"""
+        last_path = FileUtil(self._container_patch_path).getdata()
+        if last_path and isinstance(last_path, str):
+            return last_path.strip()
+        return ""
+
+    def check_container(self):
+        """verify if path to container is ok"""
+        last_path = self.get_patch_last_path()
+        if last_path and last_path != self._container_dir:
+            Msg().err("Error: mismatch, convert execmode to P and then to F")
+            sys.exit(1)
+
+    def get_patch_last_time(self):
+        """get time in seconds of last full patch of container"""
+        last_time = FileUtil(self._container_patch_time).getdata()
+        try:
+            return str(int(last_time))
+        except ValueError:
+            return "0"
+
+    def patch_binaries(self):
+        """Set all executables and libs to the ld.so absolute pathname"""
+        self.check_container()
+        last_time = "0"
+        patchelf_exec = self.select_patchelf()
+        elf_loader = self.get_container_loader()
+        #cmd = "%s --set-interpreter %s --set-root-prefix %s #f" % \
+        #    (patchelf_exec, elf_loader, self._container_root)
+        cmd = "%s --set-root-prefix %s #f" % \
+            (patchelf_exec, self._container_root)
+        self._walk_fs(cmd, self._container_root, self.BIN | self.LIB)
+        newly_set = self.guess_elf_loader()
+        if newly_set == elf_loader:
+            try:
+                last_time = str(int(time.time()))
+            except ValueError:
+                pass
+            return (FileUtil(self._container_patch_time).putdata(last_time) and
+                    FileUtil(self._container_patch_path).putdata(self._container_dir))
+        return False
+
+    def restore_binaries(self):
+        """Restore all executables and libs to the original ld.so pathname"""
+        patchelf_exec = self.select_patchelf()
+        elf_loader = self.get_original_loader()
+        last_path = self.get_patch_last_path()
+        #cmd = "%s --set-interpreter %s --restore-root-prefix %s #f" % \
+        #    (patchelf_exec, elf_loader, self._container_root)
+        if last_path:
+            cmd = "%s --restore-root-prefix %s #f" % \
+                (patchelf_exec, last_path + "/ROOT")
+        else:
+            cmd = "%s --restore-root-prefix %s #f" % \
+                (patchelf_exec, self._container_root)
+        self._walk_fs(cmd, self._container_root, self.BIN | self.LIB)
+        newly_set = self.guess_elf_loader()
+        if newly_set == elf_loader:
+            FileUtil(self._container_patch_path).remove()
+            FileUtil(self._container_patch_time).remove()
+        return newly_set == elf_loader
+
+    def patch_ld(self, output_elf=None):
+        """Patch ld.so"""
+        self.check_container()
+        elf_loader = self.get_container_loader()
+        if FileUtil(self._container_ld_so_orig).size() == -1:
+            status = FileUtil(elf_loader).copyto(self._container_ld_so_orig)
+            if not status:
+                return False
+        ld_data = FileUtil(self._container_ld_so_orig).getdata()
+        if not ld_data:
+            ld_data = FileUtil(elf_loader).getdata()
+            if not ld_data:
+                return False
+        nul = "\x00/\x00\x00\x00"
+        etc = "\x00/etc"
+        lib = "\x00/lib"
+        usr = "\x00/usr"
+        ld_data = ld_data.replace(etc, nul).replace(lib, nul).replace(usr, nul)
+        ld_library_path_orig = "\x00LD_LIBRARY_PATH\x00"
+        ld_library_path_new = "\x00LD_LIBRARY_REAL\x00"
+        ld_data = ld_data.replace(ld_library_path_orig, ld_library_path_new)
+        if output_elf is None:
+            return bool(FileUtil(elf_loader).putdata(ld_data))
+        return bool(FileUtil(output_elf).putdata(ld_data))
+
+    def restore_ld(self):
+        """Restore ld.so"""
+        elf_loader = self.get_container_loader()
+        if FileUtil(self._container_ld_so_orig).size() == -1:
+            return False
+        return FileUtil(self._container_ld_so_orig).copyto(elf_loader)
+
+    def _get_ld_config(self):
+        """Get get directories from container ld.so.cache"""
+        cmd = "ldconfig -p -C %s/%s" % (self._container_root,
+                                        Config.ld_so_cache)
+        ld_dict = dict()
+        ld_data = Uprocess().get_output(cmd)
+        if not ld_data:
+            return []
+        for line in ld_data.split("\n"):
+            match = re.search("([^ ]+) => ([^ ]+)", line)
+            if match:
+                ld_dict[self._container_root + \
+                        os.path.dirname(match.group(2))] = True
+        return ld_dict.keys()
+
+    # pylint: disable=too-many-nested-blocks
+    def _find_ld_libdirs(self, root_path=None):
+        """search for library directories in container"""
+        if root_path is None:
+            root_path = self._container_root
+        ld_list = []
+        for dir_path, dummy, files in os.walk(root_path):
+            for f_name in files:
+                try:
+                    f_path = dir_path + "/" + f_name
+                    if not os.access(f_path, os.R_OK):
+                        continue
+                    elif os.path.isfile(f_path):
+                        if self._shlib.match(f_name):
+                            if dir_path not in ld_list:
+                                ld_list.append(dir_path)
+                except OSError:
+                    continue
+        return ld_list
+
+    def get_ld_libdirs(self, force=False):
+        """Get ld library paths"""
+        self.check_container()
+        if force or not os.path.exists(self._container_ld_libdirs):
+            ld_list = self._find_ld_libdirs()
+            ld_str = ":".join(ld_list)
+            FileUtil(self._container_ld_libdirs).putdata(ld_str)
+            return ld_list
+        ld_str = FileUtil(self._container_ld_libdirs).getdata()
+        return ld_str.split(":")
+
+    def get_ld_library_path(self):
+        """Get ld library paths"""
+        ld_list = self._get_ld_config()
+        ld_list.extend(self.get_ld_libdirs())
+        for ld_dir in Config.lib_dirs_list_essential:
+            ld_dir = self._container_root + "/" + ld_dir
+            if ld_dir not in ld_list:
+                ld_list.insert(0, ld_dir)
+        ld_list.extend(Config.lib_dirs_list_append)
+        return ":".join(ld_list)
 
 
 class NixAuthentication(object):
@@ -1038,32 +1476,110 @@ class NixAuthentication(object):
         """Get host or container user"""
         if self.passwd_file:
             return self._get_user_from_file(wanted_user)
-        else:
-            return self._get_user_from_host(wanted_user)
+        return self._get_user_from_host(wanted_user)
 
     def get_group(self, wanted_group):
         """Get host or container group"""
         if self.group_file:
             return self._get_group_from_file(wanted_group)
-        else:
-            return self._get_group_from_host(wanted_group)
+        return self._get_group_from_host(wanted_group)
 
 
-class ExecutionEngine(object):
+class FileBind(object):
+    """Alternative method to allow host files to be visible inside
+    a container when binding of files is not possible such as when
+    using rootless namespaces.
+    """
+
+    bind_dir = "/.bind_host_files"
+    orig_dir = "/.bind_orig_files"
+
+    def __init__(self, localrepo, container_id):
+        self.localrepo = localrepo               # LocalRepository object
+        self.container_id = container_id         # Container id
+        self.container_dir = \
+            os.path.realpath(self.localrepo.cd_container(container_id))
+        self.container_root = self.container_dir + "/ROOT"
+        self.container_bind_dir = self.container_root + self.bind_dir
+        self.container_orig_dir = self.container_dir + self.orig_dir
+        self.host_bind_dir = None
+
+    def setup(self):
+        """Prepare container for FileBind"""
+        if not os.path.isdir(self.container_orig_dir):
+            if not FileUtil(self.container_orig_dir).mkdir():
+                Msg().err("Error: creating dir:", self.container_orig_dir)
+                return False
+        return True
+
+    def restore(self):
+        """Restore container files after FileBind"""
+        error = False
+        if not os.path.isdir(self.container_orig_dir):
+            return True
+        for f_name in os.listdir(self.container_orig_dir):
+            orig_file = self.container_orig_dir + "/" + f_name
+            if not os.path.isfile(orig_file):
+                continue
+            cont_file = os.path.basename(f_name).replace('#', '/')
+            cont_file = self.container_root + "/" + cont_file
+            if os.path.islink(cont_file):
+                FileUtil(cont_file).remove()
+            elif os.path.exists(cont_file):
+                continue
+            if not FileUtil(orig_file).rename(cont_file):
+                Msg().err("Error: restoring binded file:", cont_file)
+                error = True
+        if not error:
+            FileUtil(self.container_orig_dir).remove()
+        FileUtil(self.container_bind_dir).remove()
+
+    def start(self, files_list):
+        """Prepare to run"""
+        self.host_bind_dir = FileUtil("BIND_FILES").mktmpdir()
+        for f_name in files_list:
+            if not os.path.isfile(f_name):
+                continue
+            orig_file = f_name.replace('/', '#')
+            orig_file_path = self.container_orig_dir + "/" + orig_file
+            cont_file = self.container_root + "/" + f_name
+            link_path = self.bind_dir + "/" + orig_file
+            if not os.path.exists(orig_file_path):
+                os.rename(cont_file, orig_file_path)
+                os.symlink(link_path, cont_file)
+            FileUtil(orig_file_path).copyto(self.host_bind_dir)
+        return (self.host_bind_dir, self.bind_dir)
+
+    def finish(self):
+        """Cleanup after run"""
+        pass
+        #return FileUtil(self.host_bind_dir).remove()
+
+    def add(self, host_file, cont_file):
+        """Add file to be made available inside container"""
+        replace_file = cont_file.replace('/', '#')
+        replace_file = self.host_bind_dir + "/" + replace_file
+        FileUtil(replace_file).remove()
+        FileUtil(host_file).copyto(replace_file)
+
+
+class ExecutionEngineCommon(object):
     """Docker container execution engine parent class
     Provides the container execution methods that are common to
     the execution drivers.
     """
 
     def __init__(self, localrepo):
-        self.localrepo = localrepo               # LocalRepository object
+        self.localrepo = localrepo               # LocalRepository instance
         self.container_id = ""                   # Container id
-        self.container_root = ""                 # Container root dir
+        self.container_dir = ""                  # Container directory
+        self.container_root = ""                 # ROOT of container filesystem
         self.container_names = []                # Container names
         self.imagerepo = None                    # Imagerepo of container image
-        self.opt = dict()                        # Run options
-        self.hostauth_list = Config.hostauth_list # passwd and group
+        self.hostauth_list = Config.hostauth_list  # passwd and group
+        self.exec_mode = None                    # ExecutionMode instance
         # Metadata defaults
+        self.opt = dict()                        # Run options
         self.opt["nometa"] = False               # Don't load metadata
         self.opt["nosysdirs"] = False            # Bind host dirs
         self.opt["dri"] = False                  # Directories needed for DRI
@@ -1120,9 +1636,8 @@ class ExecutionEngine(object):
         elif self.opt["cpuset"]:
             self.opt["cpuset"] = "'" + self.opt["cpuset"] + "'"
             return " %s %s " % (cpu_affinity_exec, self.opt["cpuset"])
-        else:
-            self.opt["cpuset"] = ""
-            return " "
+        self.opt["cpuset"] = ""
+        return " "
 
     def _cont2host(self, pathname):
         """Translate container path to host path"""
@@ -1155,17 +1670,31 @@ class ExecutionEngine(object):
                     f_path = os.path.dirname(f_path) + "/" + real_path
         return os.path.realpath(f_path)
 
+    def _create_mountpoint(self, host_path, cont_path):
+        """Create mountpoint"""
+        mountpoint = self.container_root + cont_path
+        if not os.path.exists(host_path):
+            return False
+        if os.path.exists(mountpoint):
+            return True
+        if os.path.isfile(host_path):
+            status = FileUtil(mountpoint).putdata("")
+        elif os.path.isdir(host_path):
+            status = FileUtil(mountpoint).mkdir()
+        return status
+
     def _check_volumes(self):
         """Check volume paths"""
         for vol in list(self.opt["vol"]):
             if ":" in vol:
                 (host_path, cont_path) = vol.split(":")
+                self._create_mountpoint(host_path, cont_path)
             else:
                 host_path = vol
                 cont_path = ""
+                self._create_mountpoint(host_path, host_path)
             if cont_path and not cont_path.startswith("/"):
-                Msg().err("Error: volume destination must be absolute path:",
-                          cont_path)
+                Msg().err("Error: invalid volume destination path:", cont_path)
                 return False
             elif not (host_path and host_path.startswith("/")):
                 Msg().err("Error: invalid volume spec:", vol)
@@ -1183,7 +1712,7 @@ class ExecutionEngine(object):
         if self.opt["bindhome"]:
             host_auth = NixAuthentication()
             (r_user, dummy, dummy, dummy, r_home,
-             dummy) = host_auth.get_user(os.getuid())
+             dummy) = host_auth.get_user(Config.uid)
             if r_user:
                 return r_home
         return ""
@@ -1268,10 +1797,10 @@ class ExecutionEngine(object):
         host_exec_path = self._cont2host(exec_path)
         if (os.path.isfile(host_exec_path) and
                 os.access(host_exec_path, os.X_OK)):
-            return True
+            return host_exec_path
         Msg().err("Error: command not found or has no execute bit set: ",
                   self.opt["cmd"])
-        return False
+        return ""
 
     def _run_load_metadata(self, container_id):
         """Load container metadata from container JSON payload"""
@@ -1367,14 +1896,31 @@ class ExecutionEngine(object):
         uid = None
         gid = None
         try:
-            matched = re.match("^(\\d+):(\\d+)$", expression)
-            uid = matched.group(1)
-            gid = matched.group(2)
+            match = re.match("^(\\d+):(\\d+)$", expression)
+            uid = match.group(1)
+            gid = match.group(2)
         except AttributeError:
             Msg().err("Error: invalid syntax user must be uid:gid or username")
         return (uid, gid)
 
-    def _setup_container_user(self, user, container_root):
+    def _select_auth_files(self):
+        """Select authentication files to use /etc/passwd /etc/group"""
+        cont_passwd = self.container_root + "/etc/passwd"
+        cont_group = self.container_root + "/etc/group"
+        bind_passwd = self.container_dir + FileBind.orig_dir + "/#etc#passwd"
+        bind_group = self.container_dir + FileBind.orig_dir + "/#etc#group"
+        #
+        if os.path.islink(cont_passwd) and os.path.isfile(bind_passwd):
+            passwd = bind_passwd
+        else:
+            passwd = cont_passwd
+        if os.path.islink(cont_group) and os.path.isfile(bind_group):
+            group = bind_group
+        else:
+            group = cont_group
+        return (passwd, group)
+
+    def _setup_container_user(self, user):
         """Once we know which username to use inside the container
         we need to check if it exists in the passwd file that will
         be used inside the container. Since we can override the
@@ -1397,8 +1943,8 @@ class ExecutionEngine(object):
         self.opt["gecos"] = ""
         self.opt["shell"] = ""
         host_auth = NixAuthentication()
-        container_auth = NixAuthentication(container_root + "/etc/passwd",
-                                           container_root + "/etc/group")
+        (passwd, group) = self._select_auth_files()
+        container_auth = NixAuthentication(passwd, group)
         if not user:
             user = self.opt["user"]
         if ":" in user:
@@ -1457,9 +2003,9 @@ class ExecutionEngine(object):
         FileUtil(container_auth.group_file).copyto(tmp_group)
         FileUtil().umask()
         if not self.opt["uid"]:
-            self.opt["uid"] = str(os.getuid())
+            self.opt["uid"] = str(Config.uid)
         if not self.opt["gid"]:
-            self.opt["gid"] = str(os.getgid())
+            self.opt["gid"] = str(Config.gid)
         if not self.opt["user"]:
             self.opt["user"] = "udoc" + self.opt["uid"][0:4]
         if self.opt["user"] == "root":
@@ -1487,15 +2033,15 @@ class ExecutionEngine(object):
                               tmp_group + ":/etc/group")
         return True
 
-    def _run_banner(self, cmd=""):
+    def _run_banner(self, cmd, char="*"):
         """Print a container startup banner"""
         Msg().out("",
-                  "\n", "*" * 78,
-                  "\n", "*", " " * 74, "*",
-                  "\n", "*",
-                  ("STARTING " + self.container_id).center(74, " "), "*",
-                  "\n", "*", " " * 74, "*",
-                  "\n", "*" * 78, "\n",
+                  "\n", char * 78,
+                  "\n", char, " " * 74, char,
+                  "\n", char,
+                  ("STARTING " + self.container_id).center(74, " "), char,
+                  "\n", char, " " * 74, char,
+                  "\n", char * 78, "\n",
                   "executing:", os.path.basename(cmd), l=Msg.INF)
 
     def _run_env_cleanup(self):
@@ -1512,15 +2058,17 @@ class ExecutionEngine(object):
         self.opt["env"].append("LOGNAME=" + self.opt["user"])
         self.opt["env"].append("USERNAME=" + self.opt["user"])
 
+        self.opt["env"].append(r"PS1=%s[\W]\$ " % self.container_id[:8])
+
         self.opt["env"].append("SHLVL=0")
         self.opt["env"].append("container_ruser=" + Config().username())
-        self.opt["env"].append("container_rhome=" + Config().userhome())
         self.opt["env"].append("container_root=" + self.container_root)
         self.opt["env"].append("container_uuid=" + self.container_id)
-        names = str(self.container_names).translate(None, " '\"[]") + "'"
-        self.opt["env"].append("container_names='" + names)
+        self.opt["env"].append("container_execmode=" + self.exec_mode.get_mode())
+        names = str(self.container_names).translate(None, " '\"[]")
+        self.opt["env"].append("container_names=" + names)
 
-    def _run_ini(self, container_id):
+    def _run_init(self, container_id):
         """Prepare execution of the container
         To be called by the run() method of the actual ExecutionEngine
         """
@@ -1528,7 +2076,7 @@ class ExecutionEngine(object):
             (container_dir, dummy) = \
                 self._run_load_metadata(container_id)
         except (ValueError, TypeError):
-            return False
+            return ""
 
         if Config.location:                   # using specific root tree
             self.container_root = Config.location
@@ -1538,22 +2086,27 @@ class ExecutionEngine(object):
         # container name(s) from container_id
         self.container_names = self.localrepo.get_container_name(container_id)
         self.container_id = container_id
+        self.container_dir = container_dir
+
+        # Execution Mode
+        self.exec_mode = ExecutionMode(self.localrepo, self.container_id)
 
         # which user to use inside the container and setup its account
-        if not self._setup_container_user(self.opt["user"],
-                                          self.container_root):
-            return False
+        if not self._setup_container_user(self.opt["user"]):
+            return ""
 
         if not self._set_volume_bindings():
-            return False
+            return ""
 
-        if not (self._check_paths() and self._check_executable()):
-            return False
+        if not self._check_paths():
+            return ""
 
-        return True
+        exec_path = self._check_executable()
+
+        return exec_path
 
 
-class PRootEngine(ExecutionEngine):
+class PRootEngine(ExecutionEngineCommon):
     """Docker container execution engine using PRoot
     Provides a chroot like environment to run containers.
     Uses PRoot both as chroot alternative and as emulator of
@@ -1567,15 +2120,6 @@ class PRootEngine(ExecutionEngine):
         self.proot_exec = None                   # PRoot
         self.proot_noseccomp = False             # Noseccomp mode
         self._kernel = conf.oskernel()           # Emulate kernel
-
-    def _find_image(self, image_list):
-        """Find proot executable in list"""
-        for image in image_list:
-            image_path = self.localrepo.bindir + "/" + image
-            if os.path.exists(image_path):
-                return image_path
-        Msg().err("Error: proot executable not found")
-        sys.exit(1)
 
     def _select_proot(self):
         """Set proot executable and related variables"""
@@ -1601,11 +2145,16 @@ class PRootEngine(ExecutionEngine):
                 image_list = ["proot-arm-4_8_0", "proot-arm", "proot"]
             else:
                 image_list = ["proot-arm", "proot"]
-        self.proot_exec = self._find_image(image_list)
-        if conf.proot_noseccomp is not None:
-            self.proot_noseccomp = conf.proot_noseccomp
-        if self.opt["noseccomp"]:
-            self.proot_noseccomp = True
+        f_util = FileUtil(self.localrepo.bindir)
+        self.proot_exec = f_util.find_file_in_dir(image_list)
+        if not self.proot_exec:
+            Msg().err("Error: proot executable not found")
+            sys.exit(1)
+        if conf.oskernel_isgreater((4, 8, 0)):
+            if conf.proot_noseccomp is not None:
+                self.proot_noseccomp = conf.proot_noseccomp
+            if self.exec_mode.get_mode() == "P2":
+                self.proot_noseccomp = True
 
     def _set_uid_map(self):
         """Set the uid_map string for container run command"""
@@ -1615,6 +2164,10 @@ class PRootEngine(ExecutionEngine):
             uid_map = \
                 " -i " + self.opt["uid"] + ":" + self.opt["gid"] + " "
         return uid_map
+
+    def _create_mountpoint(self, host_path, cont_path):
+        """Override create mountpoint"""
+        return True
 
     def _get_volume_bindings(self):
         """Get the volume bindings string for container run command"""
@@ -1633,13 +2186,13 @@ class PRootEngine(ExecutionEngine):
         """
 
         # setup execution
-        if not self._run_ini(container_id):
+        if not self._run_init(container_id):
             return 2
 
         self._select_proot()
 
         # seccomp and ptrace behavior change on 4.8.0 onwards
-        if self.proot_noseccomp:
+        if self.proot_noseccomp or os.getenv("PROOT_NO_SECCOMP"):
             self.opt["env"].append("PROOT_NO_SECCOMP=1")
 
         if self.opt["kernel"]:
@@ -1650,12 +2203,17 @@ class PRootEngine(ExecutionEngine):
         if not self._check_env():
             return 4
 
+        if Msg.level >= Msg.DBG:
+            proot_verbose = " -v 9 "
+        else:
+            proot_verbose = ""
+
         # build the actual command
         cmd_t = (r"unset VTE_VERSION;",
-                 r"PS1='%s[\W]\$ ' " % self.container_id[:8],
                  " ".join(self.opt["env"]),
                  self._set_cpu_affinity(),
                  self.proot_exec,
+                 proot_verbose,
                  self._get_volume_bindings(),
                  self._set_uid_map(),
                  "-k", self._kernel,
@@ -1675,6 +2233,590 @@ class PRootEngine(ExecutionEngine):
         self._run_banner(self.opt["cmd"][0])
         status = subprocess.call(cmd, shell=True, close_fds=True)
         return status
+
+
+class RuncEngine(ExecutionEngineCommon):
+    """Docker container execution engine using runc
+    Provides a namespaces based user space container.
+    Inherits from ContainerEngine class
+    """
+
+    def __init__(self, localrepo):
+        super(RuncEngine, self).__init__(localrepo)
+        self.runc_exec = None                   # runc
+        self._container_specjson = None
+        self._container_specfile = None
+        self._filebind = None
+        self.execution_id = None
+
+    def _select_runc(self):
+        """Set runc executable and related variables"""
+        conf = Config()
+        arch = conf.arch()
+        if arch == "amd64":
+            image_list = ["runc-x86_64", "runc"]
+        elif arch == "i386":
+            image_list = ["runc-x86", "runc"]
+        elif arch == "arm64":
+            image_list = ["runc-arm64", "runc"]
+        elif arch == "arm":
+            image_list = ["runc-arm", "runc"]
+        f_util = FileUtil(self.localrepo.bindir)
+        self.runc_exec = f_util.find_file_in_dir(image_list)
+        if not self.runc_exec:
+            Msg().err("Error: runc executable not found")
+            sys.exit(1)
+
+    def _load_spec(self, new=False):
+        """Generate runc spec file"""
+        if FileUtil(self._container_specfile).size() != -1 and new:
+            FileUtil(self._container_specfile).remove()
+        if FileUtil(self._container_specfile).size() == -1:
+            cmd = self.runc_exec + " spec --rootless --bundle " \
+                 + os.path.realpath(self.container_dir)
+            status = subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
+                                     close_fds=True)
+            if status:
+                return False
+        json_obj = None
+        infile = None
+        try:
+            infile = open(self._container_specfile)
+            json_obj = json.load(infile)
+        except (IOError, OSError, AttributeError, ValueError, TypeError):
+            json_obj = None
+        if infile:
+            infile.close()
+        self._container_specjson = json_obj
+        return json_obj
+
+    def _save_spec(self):
+        """Save spec file"""
+        outfile = None
+        try:
+            outfile = open(self._container_specfile, 'w')
+            json.dump(self._container_specjson, outfile)
+        except (IOError, OSError, AttributeError, ValueError, TypeError):
+            if outfile:
+                outfile.close()
+            return False
+        outfile.close()
+        return True
+
+    def _set_spec(self):
+        """Set spec values"""
+        json_obj = self._container_specjson
+        json_obj["root"]["path"] = os.path.realpath(self.container_root)
+        json_obj["root"]["readonly"] = False
+        if "." in self.opt["hostname"]:
+            json_obj["hostname"] = self.opt["hostname"]
+        else:
+            json_obj["hostname"] = platform.node()
+        if self.opt["cwd"]:
+            json_obj["process"]["cwd"] = self.opt["cwd"]
+        json_obj["process"]["env"] = []
+        for env_str in self.opt["env"]:
+            (env_var, value) = env_str.split("=", 1)
+            if env_var:
+                json_obj["process"]["env"].append("%s=%s" % (env_var, value))
+        for idmap in json_obj["linux"]["uidMappings"]:
+            if "hostID" in idmap:
+                idmap["hostID"] = os.getuid()
+        for idmap in json_obj["linux"]["gidMappings"]:
+            if "hostID" in idmap:
+                idmap["hostID"] = os.getgid()
+        json_obj["process"]["args"] = self.opt["cmd"]
+        return json_obj
+
+    def _uid_check(self):
+        """Check the uid_map string for container run command"""
+        if ("user" in self.opt and self.opt["user"] != "0" and
+                self.opt["user"] != "root"):
+            Msg().out("Warning: this engine only supports execution as root",
+                      l=Msg.WAR)
+
+    def _create_mountpoint(self, host_path, cont_path):
+        """Override create mountpoint"""
+        return True
+
+    def _add_mount_spec(self, host_source, cont_dest, rwmode=False):
+        """Add one mount point"""
+        if rwmode:
+            mode = "rw"
+        else:
+            mode = "ro"
+        mount = {"destination": cont_dest,
+                 "type": "none",
+                 "source": host_source,
+                 "options": ["rbind", "nosuid",
+                             "noexec", "nodev",
+                             mode, ], }
+        self._container_specjson["mounts"].append(mount)
+
+    def _del_mount_spec(self, host_source, cont_dest):
+        """Remove one mount point"""
+        for (index, mount) in enumerate(self._container_specjson["mounts"]):
+            if (mount["destination"] == cont_dest and
+                    mount["source"] == host_source):
+                del self._container_specjson["mounts"][index]
+
+    def _add_volume_bindings(self):
+        """Get the volume bindings string for runc"""
+        (host_dir, cont_dir) = self._filebind.start(Config.sysdirs_list)
+        self._add_mount_spec(host_dir, cont_dir, rwmode=True)
+        for volume in self.opt["vol"]:
+            try:
+                (host_dir, cont_dir) = volume.split(":")
+            except ValueError:
+                host_dir = volume
+                cont_dir = volume
+            if os.path.isdir(host_dir):
+                if host_dir == "/dev":
+                    Msg().out("Warning: this engine does not support -v",
+                              host_dir, l=Msg.WAR)
+                    continue
+                self._add_mount_spec(host_dir, cont_dir, rwmode=True)
+            elif os.path.isfile(host_dir):
+                if cont_dir not in Config.sysdirs_list:
+                    Msg().err("Error: engine does not support file mounting:",
+                              host_dir)
+                else:
+                    self._filebind.add(host_dir, cont_dir)
+
+    def _check_env(self):
+        """Sanitize environment variables
+           Overriding parent ExecutionEngineCommon() class.
+        """
+        for pair in list(self.opt["env"]):
+            if not pair:
+                self.opt["env"].remove(pair)
+                continue
+            if "=" not in pair:
+                self.opt["env"].remove(pair)
+                val = os.getenv(pair, "")
+                if val:
+                    self.opt["env"].append('%s=%s' % (pair, val))
+                continue
+            (key, val) = pair.split("=", 1)
+            if " " in key or key[0] in string.digits:
+                Msg().err("Error: in environment:", pair)
+                return False
+        return True
+
+    def _run_env_addhost(self):
+        """Add host env to spec"""
+        container_env = []
+        for env_str in self.opt["env"]:
+            (env_var, dummy) = env_str.split("=", 1)
+            if env_var:
+                container_env.append(env_var)
+        for (env_var, value) in os.environ.iteritems():
+            if not env_var:
+                continue
+            if env_var in ("VTE_VERSION") or env_var in container_env:
+                continue
+            self.opt["env"].append("%s=%s" % (env_var, value))
+
+    def _run_env_cleanup(self):
+        """ Allow only to pass essential environment variables.
+            Overriding parent ExecutionEngineCommon() class.
+        """
+        for (index, env_str) in enumerate(self.opt["env"]):
+            (env_var, dummy) = env_str.split("=", 1)
+            if env_var not in Config.valid_host_env:
+                del self.opt["env"][index]
+
+    def run(self, container_id):
+        """Execute a Docker container using runc. This is the main method
+        invoked to run the a container with runc.
+
+          * argument: container_id or name
+          * options:  many via self.opt see the help
+        """
+
+        Config.sysdirs_list = (
+            "/etc/resolv.conf", "/etc/host.conf",
+            "/etc/passwd", "/etc/group",
+        )
+
+        # setup execution
+        if not self._run_init(container_id):
+            return 2
+
+        self._container_specfile = self.container_dir + "/config.json"
+        self._filebind = FileBind(self.localrepo, self.container_id)
+
+        self._select_runc()
+
+        # create new OCI spec file
+        if not self._load_spec(new=True):
+            return 4
+
+        self._uid_check()
+
+        # if not --hostenv clean the environment
+        if self.opt["hostenv"]:
+            self._run_env_addhost()
+        else:
+            self._run_env_cleanup()
+
+        # set environment variables
+        self._run_env_set()
+        if not self._check_env():
+            return 5
+
+        self._set_spec()
+        if (Config.runc_nomqueue or (Config.runc_nomqueue is None and not
+                                     Config().oskernel_isgreater("4.8.0"))):
+            self._del_mount_spec("mqueue", "/dev/mqueue")
+        self._add_volume_bindings()
+        self._save_spec()
+
+        if Msg.level >= Msg.DBG:
+            runc_debug = " --debug "
+        else:
+            runc_debug = ""
+
+        # build the actual command
+        self.execution_id = Unique().uuid(self.container_id)
+        cmd = self.runc_exec + runc_debug + " --root " + self.container_dir + \
+              " run --bundle " + self.container_dir + " " + self.execution_id
+        Msg().out("CMD = " + cmd, l=Msg.VER)
+
+        # execute
+        self._run_banner(self.opt["cmd"][0], '%')
+        status = subprocess.call(cmd, shell=True, close_fds=True)
+        self._filebind.finish()
+        return status
+
+
+class FakechrootEngine(ExecutionEngineCommon):
+    """Docker container execution engine using Fakechroot
+    Provides a chroot like environment to run containers.
+    Uses Fakechroot as chroot alternative.
+    Inherits from ContainerEngine class
+    """
+
+    def __init__(self, localrepo):
+        super(FakechrootEngine, self).__init__(localrepo)
+        self._fakechroot_so = ""
+        self._elfpatcher = None
+
+    def _select_fakechroot_so(self):
+        """Select fakechroot sharable object library"""
+        conf = Config()
+        if conf.fakechroot_so:
+            if isinstance(conf.fakechroot_so, list):
+                image_list = conf.fakechroot_so
+            elif isinstance(conf.fakechroot_so, str):
+                image_list = [conf.fakechroot_so, ]
+        else:
+            lib = "libfakechroot"
+            deflib = "libfakechroot.so"
+            arch = conf.arch()
+            (distro, version) = conf.osdistribution()
+            version = version.split(".")[0]
+            if arch == "amd64":
+                image_list = ["%s-%s-%s-x86_64.so" % (lib, distro, version),
+                              "%s-%s-x86_64.so" % (lib, distro),
+                              "%s-x86_64.so" % (lib), deflib]
+            elif arch == "i386":
+                image_list = ["%s-%s-%s-x86.so" % (lib, distro, version),
+                              "%s-%s-x86.so" % (lib, distro),
+                              "%s-x86.so" % (lib), deflib]
+            elif arch == "arm64":
+                image_list = ["%s-%s-%s-arm64.so" % (lib, distro, version),
+                              "%s-%s-arm64.so" % (lib, distro),
+                              "%s-arm64.so" % (lib), deflib]
+            elif arch == "arm":
+                image_list = ["%s-%s-%s-arm.so" % (lib, distro, version),
+                              "%s-%s-arm.so" % (lib, distro),
+                              "%s-arm.so" % (lib), deflib]
+        f_util = FileUtil(self.localrepo.libdir)
+        fakechroot_so = f_util.find_file_in_dir(image_list)
+        if not fakechroot_so:
+            Msg().err("Error: no libfakechroot found for this host os")
+            sys.exit(1)
+        Msg().out("fakechroot_so:", fakechroot_so, l=Msg.DBG)
+        return fakechroot_so
+
+    def _uid_check(self):
+        """Set the uid_map string for container run command"""
+        if ("user" not in self.opt or (not self.opt["user"]) or
+                self.opt["user"] == "root" or self.opt["user"] == "0"):
+            Msg().out("Warning: running as uid 0 is not supported by this engine",
+                      l=Msg.WAR)
+            self.opt["user"] = Config().username()
+
+    def _setup_container_user(self, user):
+        """ Override method ExecutionEngineCommon._setup_container_user()
+        """
+        self.opt["user"] = Config().username()
+        self.opt["uid"] = str(Config.uid)
+        self.opt["gid"] = str(Config.gid)
+        self.opt["home"] = "/"
+        #self.opt["home"] = os.path.expanduser("~")
+        self.opt["gecos"] = ""
+        self.opt["shell"] = ""
+        host_auth = NixAuthentication()
+        container_auth = NixAuthentication(self.container_root + "/etc/passwd",
+                                           self.container_root + "/etc/group")
+        if not user:
+            user = self.opt["user"]
+        if ":" in user:
+            (found_uid, found_gid) = self._uid_gid_from_str(user)
+            if found_gid is None:
+                return False
+            if "/etc/passwd" in self.opt["vol"] or self.opt["hostauth"]:
+                (found_user, dummy, dummy, found_gecos, found_home,
+                 found_shell) = host_auth.get_user(found_uid)
+            else:
+                (found_user, dummy, dummy,
+                 found_gecos, found_home, found_shell) = \
+                    container_auth.get_user(found_uid)
+        else:
+            if "/etc/passwd" in self.opt["vol"] or self.opt["hostauth"]:
+                (found_user, dummy, dummy, found_gecos, found_home,
+                 found_shell) = host_auth.get_user(user)
+            else:
+                (found_user, dummy, dummy,
+                 found_gecos, found_home, found_shell) = \
+                    container_auth.get_user(user)
+        if found_user:
+            self.opt["user"] = found_user
+            self.opt["home"] = found_home
+            self.opt["gecos"] = found_gecos
+            self.opt["shell"] = found_shell
+        else:
+            if "/etc/passwd" in self.opt["vol"] or self.opt["hostauth"]:
+                Msg().err("Error: user not found")
+                return False
+            else:
+                if ":" not in user:
+                    self.opt["user"] = user
+                Msg().out("Warning: non-existing user will be created",
+                          l=Msg.WAR)
+        self._create_user(container_auth, host_auth)
+        return True
+
+    def _get_volume_bindings(self):
+        """Get the volume bindings string for fakechroot run"""
+        host_volumes_list = []
+        map_volumes_list = []
+        map_volumes_dict = dict()
+        for volume in self.opt["vol"]:
+            try:
+                (host_dir, cont_dir) = volume.split(":")
+            except ValueError:
+                host_dir = volume
+                cont_dir = ""
+            if (not cont_dir) or host_dir == cont_dir:
+                host_volumes_list.append(host_dir)
+            else:
+                map_volumes_dict[cont_dir] = host_dir + "!" + cont_dir
+        for cont_dir in sorted(map_volumes_dict, reverse=True):
+            map_volumes_list.append(map_volumes_dict[cont_dir])
+        return (":".join(host_volumes_list), ":".join(map_volumes_list))
+
+    def _get_access_filesok(self):
+        """
+        Circunvent mpi init issues when calling access()
+        A list of certain existing files is provided
+        """
+        file_list = []
+        for c_path in Config.access_files:
+            h_file = self._cont2host(c_path)
+            if h_file and os.path.exists(h_file):
+                file_list.append(c_path)
+        return ":".join(file_list)
+
+    def _fakechroot_env_set(self):
+        """fakechroot environment variables to set"""
+        (host_volumes, map_volumes) = self._get_volume_bindings()
+        self._fakechroot_so = self._select_fakechroot_so()
+        access_filesok = self._get_access_filesok()
+        #
+        self.opt["env"].append("FAKECHROOT_BASE=" +
+                               os.path.realpath(self.container_root))
+        self.opt["env"].append("LD_PRELOAD=" + self._fakechroot_so)
+        self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" + Config.tmpdir)
+        #
+        if host_volumes:
+            self.opt["env"].append("FAKECHROOT_EXCLUDE_PATH=" + host_volumes)
+        if map_volumes:
+            self.opt["env"].append("FAKECHROOT_DIR_MAP=" + map_volumes)
+        if Msg.level >= Msg.DBG:
+            self.opt["env"].append("FAKECHROOT_DEBUG=true")
+            self.opt["env"].append("LD_DEBUG=libs:files")
+        if access_filesok:
+            self.opt["env"].append("FAKECHROOT_ACCESS_FILESOK=" +
+                                   access_filesok)
+        # execution mode
+        ld_library_real = self._elfpatcher.get_ld_library_path()
+        xmode = self.exec_mode.get_mode()
+        if xmode == "F1":
+            self.opt["env"].append("FAKECHROOT_ELFLOADER=" +
+                                   self._elfpatcher.get_container_loader())
+            self.opt["env"].append("LD_LIBRARY_PATH=" + ld_library_real)
+        elif xmode == "F2":
+            self.opt["env"].append("FAKECHROOT_ELFLOADER=" +
+                                   self._elfpatcher.get_container_loader())
+            self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
+            self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
+            self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
+        elif xmode == "F3":
+            self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
+            self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
+            self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
+        elif xmode == "F4":
+            self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
+            self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
+            self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
+            patchelf_exec = self._elfpatcher.select_patchelf()
+            if patchelf_exec:
+                self.opt["env"].append("FAKECHROOT_PATCH_PATCHELF=" +
+                                       patchelf_exec)
+                self.opt["env"].append("FAKECHROOT_PATCH_ELFLOADER=" +
+                                       self._elfpatcher.get_container_loader())
+                self.opt["env"].append("FAKECHROOT_PATCH_LAST_TIME=" +
+                                       self._elfpatcher.get_patch_last_time())
+
+    def run(self, container_id):
+        """Execute a Docker container using Fakechroot. This is the main
+        method invoked to run the a container with Fakechroot.
+
+          * argument: container_id or name
+          * options:  many via self.opt see the help
+        """
+
+        # this engine does not support root check and fix
+        self._uid_check()
+
+        # setup execution
+        exec_path = self._run_init(container_id)
+        if not exec_path:
+            return 2
+
+        # execution mode and get patcher
+        xmode = self.exec_mode.get_mode()
+        self._elfpatcher = ElfPatcher(self.localrepo, self.container_id)
+
+        # verify if container pathnames are correct for this mode
+        self._elfpatcher.check_container()
+
+        # set basic environment variables
+        self._run_env_set()
+        self._fakechroot_env_set()
+        if not self._check_env():
+            return 4
+
+        # build the actual command
+        self.opt["cmd"][0] = exec_path
+        cmd_t = (r"unset VTE_VERSION;",
+                 " export ",
+                 "; export ".join(self.opt["env"]),
+                 " ; export PWD=" + self.opt["cwd"] + " ;", )
+        cmd = " ".join(cmd_t)
+        if xmode in ("F1", "F2"):
+            cmd += " " + self._elfpatcher.get_container_loader() + " "
+        cmd += " ".join(self.opt["cmd"])
+        Msg().out("CMD = " + cmd, l=Msg.VER)
+
+        # if not --hostenv clean the environment
+        if not self.opt["hostenv"]:
+            self._run_env_cleanup()
+
+        # execute
+        self._run_banner(self.opt["cmd"][0], "#")
+        cwd = self._cont2host(self.opt["cwd"])
+        status = subprocess.call(cmd, shell=True, close_fds=True, cwd=cwd)
+        return status
+
+
+class ExecutionMode(object):
+    """Generic execution engine class to encapsulate the specific
+    execution engines and their execution modes.
+    P1: proot with seccomp
+    P2: proot without seccomp (slower)
+    F1: fakeroot running executables via direct loader invocation
+    F2: similar to F1 with protected environment and modified ld.so
+    F3: fakeroot patching the executables elf headers
+    F4: similar to F3 with support to newly created executables
+        dynamic patching of elf headers
+    """
+
+    def __init__(self, localrepo, container_id):
+        self.localrepo = localrepo               # LocalRepository object
+        self.container_id = container_id         # Container id
+        self.container_dir = \
+            os.path.realpath(self.localrepo.cd_container(container_id))
+        self.container_root = self.container_dir + "/ROOT"
+        self.container_execmode = self.container_dir + "/execmode"
+        self.exec_engine = None
+        self.valid_modes = ("P1", "P2", "F1", "F2", "F3", "F4", "R1")
+
+    def get_mode(self):
+        """Get execution mode"""
+        xmode = FileUtil(self.container_execmode).getdata()
+        if not xmode:
+            xmode = Config.default_execution_mode
+        return xmode
+
+    def set_mode(self, xmode, force=False):
+        """Set execution mode"""
+        status = False
+        prev_xmode = self.get_mode()
+        elfpatcher = ElfPatcher(self.localrepo, self.container_id)
+        filebind = FileBind(self.localrepo, self.container_id)
+        if xmode not in self.valid_modes:
+            Msg().err("Error: invalid execmode:", xmode)
+            return status
+        if not (force or xmode != prev_xmode):
+            return True
+        if prev_xmode in ("R1", ) and xmode not in ("R1", ):
+            filebind.restore()
+        if xmode.startswith("F"):
+            if force or prev_xmode[0] in ("P", "R"):
+                status = (FileUtil(self.container_root).links_conv(force, True)
+                          and elfpatcher.get_ld_libdirs(force))
+        if xmode in ("P1", "P2", "F1", "R1"):
+            if force or prev_xmode in ("F2", "F3", "F4"):
+                status = (elfpatcher.restore_ld() and
+                          elfpatcher.restore_binaries())
+            elif prev_xmode in ("P1", "P2", "R1"):
+                status = True
+            if xmode in ("R1", ):
+                filebind.setup()
+        elif xmode in ("F2", ):
+            if force or prev_xmode in ("F3", "F4"):
+                status = elfpatcher.restore_binaries()
+            if force or prev_xmode in ("P1", "P2", "F1", "R1"):
+                status = elfpatcher.patch_ld()
+        elif xmode in ("F3", "F4"):
+            if force or prev_xmode in ("P1", "P2", "F1", "F2", "R1"):
+                status = (elfpatcher.patch_ld() and
+                          elfpatcher.patch_binaries())
+            elif prev_xmode in ("F3", "F4"):
+                status = True
+        if xmode[0] in ("P", "R"):
+            if force or prev_xmode.startswith("F"):
+                status = FileUtil(self.container_root).links_conv(force, False)
+        if status:
+            status = FileUtil(self.container_execmode).putdata(xmode)
+        if not status:
+            Msg().err("Error: container setup failed")
+        return status
+
+    def get_engine(self):
+        """get execution engine instance"""
+        xmode = self.get_mode()
+        if xmode.startswith("P"):
+            self.exec_engine = PRootEngine(self.localrepo)
+        elif xmode.startswith("F"):
+            self.exec_engine = FakechrootEngine(self.localrepo)
+        elif xmode.startswith("R"):
+            self.exec_engine = RuncEngine(self.localrepo)
+        return self.exec_engine
 
 
 class ContainerStructure(object):
@@ -1801,11 +2943,11 @@ class ContainerStructure(object):
         if param in container_json[confidx]:
             if container_json[confidx][param] is None:
                 return default
-            elif (isinstance(container_json[confidx][param], str) and
-                  isinstance(default, (list, tuple))):
+            elif (isinstance(container_json[confidx][param], str) and (
+                    isinstance(default, (list, tuple)))):
                 return container_json[confidx][param].strip().split()
-            elif (isinstance(default, str) and
-                  isinstance(container_json[confidx][param], (list, tuple))):
+            elif (isinstance(default, str) and (
+                    isinstance(container_json[confidx][param], (list, tuple)))):
                 return " ".join(container_json[confidx][param])
             elif (isinstance(default, str) and (
                     isinstance(container_json[confidx][param], dict))):
@@ -1813,8 +2955,7 @@ class ContainerStructure(object):
             elif (isinstance(default, list) and (
                     isinstance(container_json[confidx][param], dict))):
                 return self._dict_to_list(container_json[confidx][param])
-            else:
-                return container_json[confidx][param]
+            return container_json[confidx][param]
 
     def _dict_to_str(self, in_dict):
         """Convert dict to str"""
@@ -1900,7 +3041,7 @@ class LocalRepository(object):
                 os.makedirs(self.bindir)
             if not os.path.exists(self.libdir):
                 os.makedirs(self.libdir)
-            if not os.path.exists(self.homedir):
+            if not (Config.keystore.startswith("/") or os.path.exists(self.homedir)):
                 os.makedirs(self.homedir)
         except(IOError, OSError):
             return False
@@ -2152,7 +3293,7 @@ class LocalRepository(object):
                     return self.cur_tagdir
         return ""
 
-    def _findfile(self, filename, in_dir):
+    def _find(self, filename, in_dir):
         """is a specific layer filename referenced by another image TAG"""
         found_list = []
         if FileUtil(in_dir).isdir():
@@ -2162,12 +3303,12 @@ class LocalRepository(object):
                     if filename in fullname:       # match .layer or .json
                         found_list.append(f_path)  # found reference to layer
                 elif os.path.isdir(f_path):
-                    found_list.extend(self._findfile(filename, f_path))
+                    found_list.extend(self._find(filename, f_path))
         return found_list
 
     def _inrepository(self, filename):
         """Check if a given file is in the repository"""
-        return self._findfile(filename, self.reposdir)
+        return self._find(filename, self.reposdir)
 
     def _remove_layers(self, tag_dir, force):
         """Remove link to image layer and corresponding layer
@@ -2194,8 +3335,7 @@ class LocalRepository(object):
             self.cur_repodir = ""
             self.cur_tagdir = ""
             return True
-        else:
-            return False
+        return False
 
     def _get_tags(self, tag_dir):
         """Get image tags from repository
@@ -2448,8 +3588,7 @@ class LocalRepository(object):
                     break
             if not found:
                 return my_layer_id
-            else:
-                return found
+            return found
 
     def _sorted_layers(self, structure, top_layer_id):
         """Return the image layers sorted"""
@@ -2482,10 +3621,10 @@ class LocalRepository(object):
         if not FileUtil(layer_f).verify_tar():
             Msg().err("Error: layer file not ok:", layer_f)
             return False
-        matched = re.search("/sha256:(\\S+)$", layer_f)
-        if matched:
+        match = re.search("/sha256:(\\S+)$", layer_f)
+        if match:
             layer_f_chksum = ChkSUM().sha256(layer_f)
-            if layer_f_chksum != matched.group(1):
+            if layer_f_chksum != match.group(1):
                 Msg().err("Error: layer file chksum error:", layer_f)
                 return False
         return True
@@ -2924,25 +4063,24 @@ class DockerIoAPI(object):
              _get_url(url, ctimeout=5, timeout=5, header=[]):
         """
         url = str(args[0])
+        if "RETRY" not in kwargs:
+            kwargs["RETRY"] = 3
+        kwargs["RETRY"] -= 1
         (hdr, buf) = self.curl.get(*args, **kwargs)
         Msg().out("header: %s" % (hdr.data), l=Msg.DBG)
         if ("X-ND-HTTPSTATUS" in hdr.data and
                 "401" in hdr.data["X-ND-HTTPSTATUS"]):
             if "www-authenticate" in hdr.data and hdr.data["www-authenticate"]:
-                if "RETRY" not in kwargs:
-                    kwargs["RETRY"] = 3
                 if "RETRY" in kwargs and kwargs["RETRY"]:
                     auth_header = ""
                     if "/v2/" in url:
                         auth_header = self._get_v2_auth(
-                            hdr.data["www-authenticate"])
+                            hdr.data["www-authenticate"], kwargs["RETRY"])
                     elif "/v1/" in url:
                         auth_header = self._get_v1_auth(
                             hdr.data["www-authenticate"])
                     auth_kwargs = kwargs.copy()
                     auth_kwargs.update({"header": [auth_header]})
-                    retry = kwargs["RETRY"] - 1
-                    auth_kwargs.update({"RETRY": retry})
                     (hdr, buf) = self._get_url(*args, **auth_kwargs)
                 else:
                     hdr.data["X-ND-CURLSTATUS"] = 13  # Permission denied
@@ -2954,10 +4092,10 @@ class DockerIoAPI(object):
         file already exists locally and whether its size is the
         same to avoid downloaded it again.
         """
-        matched = re.search("/sha256:(\\S+)$", filename)
-        if matched:
+        match = re.search("/sha256:(\\S+)$", filename)
+        if match:
             layer_f_chksum = ChkSUM().sha256(filename)
-            if layer_f_chksum == matched.group(1):
+            if layer_f_chksum == match.group(1):
                 return True             # is cached skip download
             else:
                 cache_mode = 0
@@ -3011,8 +4149,7 @@ class DockerIoAPI(object):
         """Authentication for v1 API"""
         if "Token" in www_authenticate:
             return self.v1_auth_header
-        else:
-            return ""
+        return ""
 
     def get_v1_image_tags(self, endpoint, imagerepo):
         """Get list of tags in a repo from Docker Hub"""
@@ -3080,7 +4217,7 @@ class DockerIoAPI(object):
                 files.append(layer_id + ".layer")
         return files
 
-    def _get_v2_auth(self, www_authenticate):
+    def _get_v2_auth(self, www_authenticate, retry):
         """Authentication for v2 API"""
         auth_header = ""
         (bearer, auth_data) = www_authenticate.rsplit(" ", 1)
@@ -3094,7 +4231,7 @@ class DockerIoAPI(object):
                 header = []
                 if self.v2_auth_token:
                     header = ["Authorization: Basic %s" % (self.v2_auth_token)]
-                (dummy, auth_buf) = self._get_url(auth_url, header=header)
+                (dummy, auth_buf) = self._get_url(auth_url, header=header, RETRY=retry)
                 token_buf = auth_buf.getvalue()
                 if token_buf and "token" in token_buf:
                     try:
@@ -3255,18 +4392,52 @@ class DockerIoAPI(object):
         files = self.get_v1_layers_all(endpoint, ancestry)
         return files
 
+    def _parse_imagerepo(self, imagerepo):
+        """Parse imagerepo to extract registry"""
+        remoterepo = imagerepo
+        registry = ""
+        registry_url = ""
+        index_url = ""
+        components = imagerepo.split("/")
+        if '.' in components[0] and len(components) >= 2:
+            registry = components[0]
+            if components[1] == "library":
+                remoterepo = "/".join(components[2:])
+                del components[1]
+                imagerepo = "/".join(components)
+            else:
+                remoterepo = "/".join(components[1:])
+        else:
+            if components[0] == "library" and len(components) >= 1:
+                del components[0]
+                remoterepo = "/".join(components)
+                imagerepo = "/".join(components)
+        if registry:
+            try:
+                registry_url = Config.docker_registries[registry][0]
+                index_url = Config.docker_registries[registry][1]
+            except (KeyError, NameError, TypeError):
+                registry_url = "https://%s" % registry
+                index_url = registry_url
+            if registry_url:
+                self.registry_url = registry_url
+            if index_url:
+                self.index_url = index_url
+        return (imagerepo, remoterepo)
+
     def get(self, imagerepo, tag):
         """Pull a docker image from a v2 registry or v1 index"""
         Msg().out("get imagerepo: %s tag: %s" % (imagerepo, tag), l=Msg.DBG)
+        (imagerepo, remoterepo) = self._parse_imagerepo(imagerepo)
         if self.localrepo.cd_imagerepo(imagerepo, tag):
             new_repo = False
         else:
             self.localrepo.setup_imagerepo(imagerepo)
             new_repo = True
         if self.is_v2():
-            files = self.get_v2(imagerepo, tag)  # try v2
+            files = self.get_v2(remoterepo, tag)  # try v2
         else:
-            files = self.get_v1(imagerepo, tag)  # try v1
+            files = self.get_v1(remoterepo, tag)  # try v1
         if new_repo and not files:
             self.localrepo.del_imagerepo(imagerepo, tag, False)
         return files
@@ -3290,9 +4461,7 @@ class DockerIoAPI(object):
             repo_list = json.loads(buf.getvalue())
             if repo_list["page"] == repo_list["num_pages"]:
                 self.search_ended = True
-                return []
-            else:
-                return repo_list
+            return repo_list
         except (IOError, OSError, AttributeError,
                 ValueError, TypeError):
             self.search_ended = True
@@ -3328,8 +4497,7 @@ class DockerIoAPI(object):
             self.search_page += 1
         if self.is_v2() and not self._is_docker_registry():
             return self.catalog_get_page_v2(self.search_lines)
-        else:
-            return self.search_get_page_v1(expression)
+        return self.search_get_page_v1(expression)
 
 
 class DockerLocalFileAPI(object):
@@ -3393,8 +4561,7 @@ class DockerLocalFileAPI(object):
                     break
             if not found:
                 return my_layer_id
-            else:
-                return found
+            return found
 
     def _sorted_layers(self, structure, top_layer_id):
         """Return the layers sorted"""
@@ -3782,9 +4949,8 @@ class Udocker(object):
             return False
         if self.dockerlocalfileapi.import_(tarfile, imagerepo, tag, move_tarball):
             return True
-        else:
-            Msg().err("Error: importing file")
-            return False
+        Msg().err("Error: importing file")
+        return False
 
     def do_login(self, cmdp):
         """
@@ -3809,9 +4975,8 @@ class Udocker(object):
             self.dockerioapi.get_v2_login_token(username, password)
         if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, ""):
             return True
-        else:
-            Msg().err("Error: invalid credentials")
-            return False
+        Msg().err("Error: invalid credentials")
+        return False
 
     def do_logout(self, cmdp):
         """
@@ -3883,8 +5048,7 @@ class Udocker(object):
                 Msg().err("Error: invalid container name may already exist "
                           "or wrong format")
                 return False
-            else:
-                return True
+            return True
         return False
 
     def _create(self, imagespec):
@@ -3897,7 +5061,7 @@ class Udocker(object):
             return ContainerStructure(self.localrepo).create(imagerepo, tag)
         return False
 
-    def _get_run_options(self, cmdp, exec_engine):
+    def _get_run_options(self, cmdp, exec_engine=None):
         """Read command line options into variables"""
         cmdp.declare_options("-v= -e= -w= -u= -i -t -a")
         cmd_options = {
@@ -3972,10 +5136,6 @@ class Udocker(object):
             "kernel": {
                 "fl": ("--kernel=",), "act": "R",
                 "p2": "CMD_OPT", "p3": False
-            },
-            "noseccomp": {
-                "fl": ("--noseccomp",), "act": "R",
-                "p2": "CMD_OPT", "p3": False
             }
         }
         for option, cmdp_args in cmd_options.iteritems():
@@ -3983,6 +5143,8 @@ class Udocker(object):
             for cmdp_fl in cmdp_args["fl"]:
                 option_value = cmdp.get(cmdp_fl,
                                         cmdp_args["p2"], cmdp_args["p3"])
+                if not exec_engine:
+                    continue
                 if cmdp_args["act"] == "R":   # action is replace
                     if option_value or last_value is None:
                         exec_engine.opt[option] = option_value
@@ -4011,10 +5173,8 @@ class Udocker(object):
         --bindhome                 :bind the home directory into the container
         --location=<path-to-dir>   :use root tree outside the repository
         --kernel=<kernel-id>       :use this Linux kernel identifier
-        --noseccomp                :disable proot seccomp
         """
-        exec_engine = PRootEngine(self.localrepo)
-        self._get_run_options(cmdp, exec_engine)
+        self._get_run_options(cmdp)
         container_or_image = cmdp.get("P1")
         Config.location = cmdp.get("--location=")
         delete = cmdp.get("--rm")
@@ -4032,12 +5192,21 @@ class Udocker(object):
                         self.localrepo.cd_imagerepo(imagerepo, tag)):
                     container_id = self._create(imagerepo+":"+tag)
                 if not container_id:
-                    Msg().err("Error: image or container not available")
-                    return False
+                    self.do_pull(cmdp)
+                    self.localrepo.cd_imagerepo(imagerepo, tag)
+                    container_id = self._create(imagerepo+":"+tag)
+                    if not container_id:
+                        Msg().err("Error: image or container not available")
+                        return False
             if name and container_id:
                 if not self.localrepo.set_container_name(container_id, name):
                     Msg().err("Error: invalid container name format")
                     return False
+        exec_engine = ExecutionMode(self.localrepo, container_id).get_engine()
+        if not exec_engine:
+            Msg().err("Error: no execution engine for this execmode")
+            return False
+        self._get_run_options(cmdp, exec_engine)
         status = exec_engine.run(container_id)
         if delete and not self.localrepo.isprotected_container(container_id):
             self.localrepo.del_container(container_id)
@@ -4154,8 +5323,7 @@ class Udocker(object):
             if not self.localrepo.protect_container(arg):
                 Msg().err("Error: protect container failed")
                 return False
-            else:
-                return True
+            return True
         else:
             (imagerepo, tag) = self._check_imagespec(arg)
             if imagerepo:
@@ -4176,8 +5344,7 @@ class Udocker(object):
             if not self.localrepo.unprotect_container(arg):
                 Msg().err("Error: unprotect container failed")
                 return False
-            else:
-                return True
+            return True
         else:
             (imagerepo, tag) = self._check_imagespec(arg)
             if imagerepo:
@@ -4265,13 +5432,66 @@ class Udocker(object):
             if not self.localrepo.cd_imagerepo(imagerepo, tag):
                 Msg().err("Error: selecting image and tag")
                 return False
-            else:
-                if self.localrepo.verify_image():
-                    Msg().out("Info: image Ok", l=Msg.INF)
-                    return True
-                else:
-                    Msg().err("Error: image verification failure")
-                    return False
+            elif self.localrepo.verify_image():
+                Msg().out("Info: image Ok", l=Msg.INF)
+                return True
+            Msg().err("Error: image verification failure")
+            return False
+
+    def do_setup(self, cmdp):
+        """
+        setup: change container execution settings
+        setup [options] <container-id>
+        --execmode=<Pn>            :select execution mode
+        --execmode=<Fn>            :select execution mode
+        --force                    :force setup
+
+        execution engines and their execution modes:
+        P1: proot accelerated mode using seccomp
+        P2: proot accelerated mode disabled
+        F1: fakeroot starting executables via direct loader invocation
+        F2: similar to F1 with protected environment and modified ld.so
+        F3: fakeroot patching elf headers in libraries and executables
+        F4: similar to F3 with support for newly created executables via
+            dynamic patching elf headers of libraries and executables
+        R1: runc rootless
+        """
+        container_id = cmdp.get("P1")
+        xmode = cmdp.get("--execmode=")
+        force = cmdp.get("--force")
+        if cmdp.missing_options():               # syntax error
+            return False
+        if not self.localrepo.cd_container(container_id):
+            Msg().err("Error: invalid container id")
+            return False
+        elif xmode and self.localrepo.isprotected_container(container_id):
+            Msg().err("Error: container is protected")
+            return False
+        exec_mode = ExecutionMode(self.localrepo, container_id)
+        if xmode:
+            return exec_mode.set_mode(xmode.upper(), force)
+        Msg().out("execmode: %s" % (exec_mode.get_mode()))
+        return True
+
+    def do_install(self, cmdp):
+        """
+        install: install udocker and its tools
+        install [options]
+        --force                    :force reinstall
+        --purge                    :remove files (be careful)
+        """
+        if cmdp is not None:
+            force = cmdp.get("--force")
+            purge = cmdp.get("--purge")
+        else:
+            force = False
+            purge = False
+        utools = UdockerTools(self.localrepo)
+        if purge:
+            utools.purge()
+        status = utools.install(force)
+        if status is not None and not status:
+            Msg().err("Error: install of udockertools failed")
 
     def do_version(self, cmdp):
         """Print the version number"""
@@ -4312,6 +5532,7 @@ class Udocker(object):
           unprotect <container_id>    :Unprotect container
 
           mkrepo <topdir>             :Create repository in another location
+          setup                       :Change container execution settings
           login                       :Login into docker repository
           logout                      :Logout from docker repository
 
@@ -4345,6 +5566,7 @@ class Udocker(object):
           2. to prevent the mount of the above directories use:
                run  --nosysdirs  <container_id>
           3. additional host directories to be mounted are specified with:
+
                run --volume=/data:/mnt --volume=/etc/hosts  <container_id>
                run --nosysdirs --volume=/dev --volume=/proc  <container_id>
         """
@@ -4389,7 +5611,7 @@ class CmdParser(object):
         step = 1
         for arg in argv[1:]:
             if step == 1:
-                if arg[0] in string.letters:
+                if arg[0] in string.ascii_letters:
                     self._argv_split['CMD'] = arg
                     step = 2
                 else:
@@ -4487,8 +5709,7 @@ class CmdParser(object):
                     return opt_arg
         if opt_multiple:
             return all_args
-        else:
-            return False
+        return False
 
     def _get_param(self, opt_name, opt_list, consumed, consumed_params):
         """Get command line parameters
@@ -4519,8 +5740,7 @@ class CmdParser(object):
             return all_args
         elif opt_name[1] == '+':
             return all_args[1:]
-        else:
-            return None
+        return None
 
 
 class Main(object):
@@ -4552,9 +5772,6 @@ class Main(object):
             Msg().out("Info: creating repo: " + Config.topdir, l=Msg.INF)
             self.localrepo.create_repo()
         self.udocker = Udocker(self.localrepo)
-        status = UdockerTools(self.localrepo).install()
-        if status is not None and not status:
-            Msg().err("Error: install of udockertools failed")
 
     def execute(self):
         """Command parsing and selection"""
@@ -4570,6 +5787,7 @@ class Main(object):
             "verify": self.udocker.do_verify, "logout": self.udocker.do_logout,
             "unprotect": self.udocker.do_unprotect,
             "inspect": self.udocker.do_inspect, "login": self.udocker.do_login,
+            "setup":self.udocker.do_setup, "install":self.udocker.do_install,
         }
         if (self.cmdp.get("--help", "GEN_OPT") or
                 self.cmdp.get("-h", "GEN_OPT")):
@@ -4578,6 +5796,8 @@ class Main(object):
         else:
             command = self.cmdp.get("", "CMD")
             if command in cmds:
+                if command != "install":
+                    cmds["install"](None)
                 if self.cmdp.get("--help") or self.cmdp.get("-h"):
                     self.udocker.do_help(self.cmdp)   # help on command
                     return 0

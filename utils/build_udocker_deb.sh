@@ -4,6 +4,18 @@
 #
 # Build udocker debian package
 #
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 # ##################################################################
 
 sanity_check() 
@@ -63,6 +75,17 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker (1.1.0-1) trusty; urgency=low
+
+  * Support image names prefixed by registry similarly to docker
+  * Add execution engine selection logic
+  * Add fr execution engine based on shared library interception
+  * Add rc execution engine based on rootless namespaces
+  * Add environment variable UDOCKER_KEYSTORE
+  * Prevent creation of .udocker when UDOCKER_KEYSTORE is used
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Tue, 12 Sep 2017 00:14:00 +0000
+
 udocker (1.0.3-1) trusty; urgency=low
 
   * Support for import containers in newer Docker format
@@ -173,7 +196,7 @@ Section: utils
 Priority: optional
 Maintainer: udocker maintainer <udocker@lip.pt>
 Build-Depends: debhelper (>= 9.0.0), python (>= 2.7)
-Standards-Version: 3.9.7
+Standards-Version: 3.9.8
 Homepage: https://github.com/indigo-dc/udocker
 
 Package: udocker
