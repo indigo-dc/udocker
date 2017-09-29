@@ -1762,7 +1762,7 @@ class LocalRepositoryTestCase(unittest.TestCase):
 
         mock_futil.return_value.remove.return_value = False
         status = localrepo._remove_layers(tag_dir, False)
-        # (FIXME lalves): This is not OK, it should be False.
+        # (FIXME lalves): This is not OK, it should be False. Review this test.
         self.assertTrue(status)
 
     @mock.patch.object(udocker.LocalRepository, '_get_tags')
@@ -2015,14 +2015,55 @@ class GetURLpyCurlTestCase(unittest.TestCase):
         """Test GetURL()._select_implementation()."""
         pass
 
-    def test_03__set_defaults(self):
-        pass
+    @mock.patch('udocker.GetURLpyCurl._select_implementation')
+    @mock.patch('udocker.Msg')
+    @mock.patch('pycurl.Curl')
+    @mock.patch('udocker.CurlHeader')
+    def test_03__set_defaults(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
+        """Test GetURL()._set_defaults()."""
+        self._init()
+        mock_sel.return_value.insecure.return_value = True
+        geturl = udocker.GetURLpyCurl()
+        geturl._set_defaults(mock_pyc, mock_hdr)
+        self.assertTrue(mock_pyc.setopt.called)
 
-    def test_04__mkpycurl(self):
-        pass
+        # when Msg.level >= Msg.DBG: AND insecure
+        mock_msg.DBG.return_value = 3
+        mock_msg.level.return_value = 3
+        geturl._set_defaults(mock_pyc, mock_hdr)
+        self.assertEqual(mock_pyc.setopt.call_count, 18)
 
-    def test_05_get(self):
-        pass
+        mock_sel.return_value.insecure.return_value = True
+
+        # when Msg.level < Msg.DBG: AND secure
+        mock_msg.DBG.return_value = 3
+        mock_msg.level.return_value = 2
+        geturl._set_defaults(mock_pyc, mock_hdr)
+        self.assertEqual(mock_pyc.setopt.call_count, 27)
+
+    @mock.patch('udocker.GetURLpyCurl._select_implementation')
+    @mock.patch('udocker.Msg')
+    @mock.patch('pycurl.Curl')
+    @mock.patch('udocker.CurlHeader')
+    def test_04__mkpycurl(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
+        """Test GetURL()._mkpycurl()."""
+        self._init()
+        mock_sel.return_value.insecure.return_value = True
+        geturl = udocker.GetURLpyCurl()
+        geturl._set_defaults(mock_pyc, mock_hdr)
+        self.assertTrue(mock_pyc.setopt.called)
+
+        # WIP(...)
+
+    @mock.patch('udocker.GetURLpyCurl._select_implementation')
+    def test_05_get(self, mock_sel):
+        """Test GetURLpyCurl().get() generic get."""
+        self._init()
+        #
+        geturl = udocker.GetURLpyCurl()
+        geturl._geturl = type('test', (object,), {})()
+        geturl.get = self._get
+        self.assertEqual(geturl.get("http://host"), "http://host")
 
 class GetURLexeCurlTestCase(unittest.TestCase):
 
@@ -2045,34 +2086,62 @@ class GetURLexeCurlTestCase(unittest.TestCase):
         """Mock for pycurl.get."""
         return args[0]
 
-    def test_01_init(self):
-        pass
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.GetURL')
+    def test_01_init(self, mock_gcurl, mock_msg):
+        self._init()
+        self.assertIsNone(udocker.GetURLexeCurl()._opts)
+        self.assertIsNone(udocker.GetURLexeCurl()._files)
 
     @mock.patch('udocker.Msg')
-    @mock.patch('udocker.GetURLpyCurl')
-    def test_02_is_available(self, mock_gupycurl, mock_msg):
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.GetURLexeCurl._select_implementation')
+    def test_02_is_available(self, mock_sel, mock_futil, mock_msg):
         self._init()
         mock_msg.level = 0
-        geturl = udocker.GetURLpyCurl()
-        geturl.is_available()
-        mock_gupycurl.return_value.is_available.return_value = True
+        geturl = udocker.GetURLexeCurl()
+        mock_futil.return_value.find_exec.return_value = "/tmp"
         self.assertTrue(geturl.is_available())
 
-        mock_gupycurl.return_value.is_available.return_value = False
+        mock_futil.return_value.find_exec.return_value = ""
         self.assertFalse(geturl.is_available())
 
     def test_03__select_implementation(self):
         pass
 
-    def test_04__set_defaults(self):
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.GetURLexeCurl._select_implementation')
+    @mock.patch('udocker.FileUtil')
+    def test_04__set_defaults(self, mock_sel, mock_futil, mock_msg):
         """Set defaults for curl command line options"""
-        pass
+        self._init()
+        geturl = udocker.GetURLexeCurl()
+        geturl._set_defaults()
+        self.assertEqual(geturl._opts["insecure"], "")
+
+        geturl.insecure = True
+        geturl._set_defaults()
+        self.assertEqual(geturl._opts["insecure"], "-k")
+
+        mock_msg.DBG = 0
+        mock_msg.level = 1
+        geturl._set_defaults()
+        self.assertEqual(geturl._opts["verbose"], "-v")
+
+        self.assertEqual(geturl._files["url"], "")
 
     def test_05__mkcurlcmd(self):
         pass
 
-    def test_06_get(self):
-        pass
+    @mock.patch('udocker.GetURLexeCurl._select_implementation')
+    def test_06_get(self, mock_sel):
+        """Test GetURLexeCurl().get() generic get."""
+        self._init()
+        #
+        geturl = udocker.GetURLexeCurl()
+        geturl._geturl = type('test', (object,), {})()
+        geturl.get = self._get
+        self.assertEqual(geturl.get("http://host"), "http://host")
 
 
 class DockerIoAPITestCase(unittest.TestCase):
