@@ -2117,7 +2117,7 @@ class GetURLpyCurlTestCase(unittest.TestCase):
 
     @mock.patch('udocker.GetURLpyCurl._select_implementation')
     @mock.patch('udocker.Msg')
-    @mock.patch('udocker.pycurl.Curl')
+    @mock.patch('udocker.pycurl')
     @mock.patch('udocker.CurlHeader')
     def test_03__set_defaults(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
         """Test GetURLpyCurl()._set_defaults()."""
@@ -2143,7 +2143,7 @@ class GetURLpyCurlTestCase(unittest.TestCase):
 
     @mock.patch('udocker.GetURLpyCurl._select_implementation')
     @mock.patch('udocker.Msg')
-    @mock.patch('udocker.pycurl.Curl')
+    @mock.patch('udocker.pycurl')
     @mock.patch('udocker.CurlHeader')
     def test_04__mkpycurl(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
         """Test GetURL()._mkpycurl()."""
@@ -2358,10 +2358,11 @@ class DockerIoAPITestCase(unittest.TestCase):
         uia.set_registry("docker.io")
         self.assertTrue(uia._is_docker_registry())
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.CurlHeader')
     @mock.patch('udocker.DockerIoAPI._get_url')
     @mock.patch('udocker.LocalRepository')
-    def test_07_get_v1_repo(self, mock_local, mock_dgu, mock_hdr):
+    def test_07_get_v1_repo(self, mock_local, mock_dgu, mock_hdr, mock_geturl):
         """Test."""
         self._init()
 
@@ -2372,10 +2373,11 @@ class DockerIoAPITestCase(unittest.TestCase):
         out = doia.get_v1_repo(imagerepo)
         self.assertIsInstance(out, tuple)
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.CurlHeader')
     @mock.patch('udocker.DockerIoAPI._get_url')
     @mock.patch('udocker.LocalRepository')
-    def test_08_get_v1_image_tags(self, mock_local, mock_dgu, mock_hdr):
+    def test_08_get_v1_image_tags(self, mock_local, mock_dgu, mock_hdr, mock_geturl):
         """Test."""
         self._init()
 
@@ -2386,10 +2388,11 @@ class DockerIoAPITestCase(unittest.TestCase):
         out = doia.get_v1_image_tags(endpoint, imagerepo)
         self.assertIsInstance(out, tuple)
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.CurlHeader')
     @mock.patch('udocker.DockerIoAPI._get_url')
     @mock.patch('udocker.LocalRepository')
-    def test_09_get_v1_image_tag(self, mock_local, mock_dgu, mock_hdr):
+    def test_09_get_v1_image_tag(self, mock_local, mock_dgu, mock_hdr, mock_geturl):
         """Test."""
         self._init()
 
@@ -2401,10 +2404,11 @@ class DockerIoAPITestCase(unittest.TestCase):
         out = doia.get_v1_image_tag(endpoint, imagerepo, tag)
         self.assertIsInstance(out, tuple)
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.CurlHeader')
     @mock.patch('udocker.DockerIoAPI._get_url')
     @mock.patch('udocker.LocalRepository')
-    def test_10_get_v1_image_ancestry(self, mock_local, mock_dgu, mock_hdr):
+    def test_10_get_v1_image_ancestry(self, mock_local, mock_dgu, mock_hdr, mock_geturl):
         """Test."""
         self._init()
 
@@ -2415,9 +2419,10 @@ class DockerIoAPITestCase(unittest.TestCase):
         out = doia.get_v1_image_ancestry(endpoint, image_id)
         self.assertIsInstance(out, tuple)
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.DockerIoAPI._get_file')
     @mock.patch('udocker.LocalRepository')
-    def test_11_get_v1_image_json(self, mock_local, mock_dgf):
+    def test_11_get_v1_image_json(self, mock_local, mock_dgf, mock_geturl):
         """Test."""
         self._init()
 
@@ -2432,9 +2437,10 @@ class DockerIoAPITestCase(unittest.TestCase):
         status = doia.get_v1_image_json(endpoint, layer_id)
         self.assertFalse(status)
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.DockerIoAPI._get_file')
     @mock.patch('udocker.LocalRepository')
-    def test_12_get_v1_image_layer(self, mock_local, mock_dgf):
+    def test_12_get_v1_image_layer(self, mock_local, mock_dgf, mock_geturl):
         """Test."""
         self._init()
 
@@ -2449,10 +2455,11 @@ class DockerIoAPITestCase(unittest.TestCase):
         status = doia.get_v1_image_layer(endpoint, layer_id)
         self.assertFalse(status)
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.DockerIoAPI._get_file')
     @mock.patch('udocker.LocalRepository')
-    def test_13_get_v1_layers_all(self, mock_local, mock_dgf, mock_msg):
+    def test_13_get_v1_layers_all(self, mock_local, mock_dgf, mock_msg, mock_geturl):
         """Test."""
         self._init()
 
@@ -2476,10 +2483,11 @@ class DockerIoAPITestCase(unittest.TestCase):
         """Test."""
         pass
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.CurlHeader')
     @mock.patch('udocker.DockerIoAPI._get_url')
     @mock.patch('udocker.LocalRepository')
-    def test_16_is_v2(self, mock_local, mock_dgu, mock_hdr):
+    def test_16_is_v2(self, mock_local, mock_dgu, mock_hdr, mock_geturl):
         """Test."""
         self._init()
 
@@ -2494,10 +2502,11 @@ class DockerIoAPITestCase(unittest.TestCase):
         out = doia.is_v2()
         # self.assertTrue(out)
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.CurlHeader')
     @mock.patch('udocker.DockerIoAPI._get_url')
     @mock.patch('udocker.LocalRepository')
-    def test_17_get_v2_image_manifest(self, mock_local, mock_dgu, mock_hdr):
+    def test_17_get_v2_image_manifest(self, mock_local, mock_dgu, mock_hdr, mock_geturl):
         """Test."""
         self._init()
         imagerepo = "REPO"
@@ -2509,10 +2518,11 @@ class DockerIoAPITestCase(unittest.TestCase):
         out = doia.get_v2_image_manifest(imagerepo, tag)
         self.assertIsInstance(out, tuple)
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.CurlHeader')
     @mock.patch('udocker.DockerIoAPI._get_file')
     @mock.patch('udocker.LocalRepository')
-    def test_18_get_v2_image_layer(self, mock_local, mock_dgf, mock_hdr):
+    def test_18_get_v2_image_layer(self, mock_local, mock_dgf, mock_hdr, mock_geturl):
         """Test."""
         self._init()
         imagerepo = "REPO"
@@ -2528,10 +2538,11 @@ class DockerIoAPITestCase(unittest.TestCase):
         out = doia.get_v2_image_layer(imagerepo, layer_id)
         self.assertFalse(out)
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.DockerIoAPI._get_file')
     @mock.patch('udocker.LocalRepository')
-    def test_19_get_v2_layers_all(self, mock_local, mock_dgf, mock_msg):
+    def test_19_get_v2_layers_all(self, mock_local, mock_dgf, mock_msg, mock_geturl):
         """Test."""
         self._init()
 
@@ -2547,12 +2558,14 @@ class DockerIoAPITestCase(unittest.TestCase):
         # out = doia.get_v2_layers_all(endpoint, fslayers)
         # self.assertEqual(out, ['b.json', 'b.layer', 'a.json', 'a.layer'])
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.CurlHeader')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.DockerIoAPI.get_v2_layers_all')
     @mock.patch('udocker.DockerIoAPI._get_url')
     @mock.patch('udocker.LocalRepository')
-    def test_20_get_v2(self, mock_local, mock_dgu, mock_dgv2, mock_msg, mock_hdr):
+    def test_20_get_v2(self, mock_local, mock_dgu, mock_dgv2,
+                       mock_msg, mock_hdr, mock_geturl):
         """Test."""
         self._init()
 
@@ -2569,12 +2582,14 @@ class DockerIoAPITestCase(unittest.TestCase):
         # out = doia.get_v2(imagerepo, tag)
         # self.assertEqual(out, [])
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.CurlHeader')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.DockerIoAPI.get_v1_layers_all')
     @mock.patch('udocker.DockerIoAPI._get_url')
     @mock.patch('udocker.LocalRepository')
-    def test_21_get_v1(self, mock_local, mock_dgu, mock_dgv1, mock_msg, mock_hdr):
+    def test_21_get_v1(self, mock_local, mock_dgu, mock_dgv1,
+                       mock_msg, mock_hdr, mock_geturl):
         """Test."""
         self._init()
 
