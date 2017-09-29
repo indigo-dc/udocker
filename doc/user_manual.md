@@ -682,8 +682,9 @@ yum remove openmpi
 
 We download Open MPI v.2.0.1 from https://www.open-mpi.org/software/ompi/v2.0 and compile it. 
 
-Openib and libibverbs need to be install to compile Open MPI over Infiniband. For that, install
-the epel repository on the container. This step is not required if running using TCP/IP is enough.
+Openib and libibverbs need to be install to compile Open MPI over Infiniband. For that,
+install the epel repository on the container. This step is not required if running using 
+TCP/IP is enough.
 
 
 ```
@@ -707,8 +708,9 @@ make install
 ```
 
 
-OpenQCD can then be compiled inside the udocker container in the usual way. The MPI job
-submission to the HPC cluster succeeds by including this line in the batch script:
+OpenQCD can then be compiled inside the udocker container in the usual way. 
+The MPI job submission to the HPC cluster succeeds by including this line in 
+the batch script:
 
 ```
 /opt/cesga/openmpi/2.0.1/gcc/6.3.0/bin/mpiexec -np 128 \
@@ -719,42 +721,44 @@ $LUSTRE/udocker-master/udocker run -e LD_LIBRARY_PATH=/usr/lib  \
 ```
 (where $LUSTRE points to the appropriate user filesystem directory in the HPC system)
 
-Notice that depending on the application and host operating system a noticeable performance
-degradation may occur when using the default execution mode (Pn). In this situation other
-execution modes (Fn) may provide improved performance (see section 3.23).
+Notice that depending on the application and host operating system a variable 
+performance degradation may occur when using the default execution mode (Pn). In 
+this situation other execution modes (such as Fn) may provide significantly higher
+performance (see section 3.23).
 
 
 ## 5. Accessing GP/GPUs
 
-The host (either the physical machine or VM) where the container will run has to have the NVIDIA driver installed.
-Moreover, the NVIDIA driver version has to be known apriori, since the docker image has to have the exact same version
-as the host
+The host (either the physical machine or VM) where the container will run has to have
+the NVIDIA driver installed. Moreover, the NVIDIA driver version has to be known apriori,
+since the docker image has to have the exact same version as the host
 
 Base docker images with several version of the NVIDIA driver can be found in dockerhub:
 
 * https://hub.docker.com/r/lipcomputing/nvidia-ubuntu16.04/
 * https://hub.docker.com/r/lipcomputing/nvidia-centos7/
 
-In the tags tab one can chack which versions are available. Dockerfiles and Ansible roles used to build these images are
-in the github repository: https://github.com/LIP-Computing/ansible-role-nvidia 
+In the tags tab one can chack which versions are available. Dockerfiles and Ansible roles 
+used to build these images are in the github repository: 
+https://github.com/LIP-Computing/ansible-role-nvidia 
 
-Examples of using those NVIDIA base images with a given application are the "disvis" and "powerfit" images whose Dockerfiles
-and Ansible roles can be found in:
+Examples of using those NVIDIA base images with a given application are the "disvis" and 
+"powerfit" images whose Dockerfiles and Ansible roles can be found in:
 
 * https://github.com/indigo-dc/ansible-role-disvis-powerfit
 
-In order to build your docker image with a given CUDA or OpenCL application, the abovementioned images can be used.
-When the docker image with your application has been built you can run the udocker with that image has described in
-the previous sections
+In order to build your docker image with a given CUDA or OpenCL application, the 
+abovementioned images can be used. When the docker image with your application has 
+been built you can run the udocker with that image has described in the previous sections.
 
-## 6. Transferring udocker containers
+## 6. Accessing and transferring udocker containers
 
 In udocker, images and created/extracted containers are stored in the filesystem
 usually in the user home directory under $HOME/.udocker. If this location is in
 a shared filesystem such as in a computing farm or cluster then its content will 
 be seen by all the hosts mounting the filesystem and can be used transparently by
 udocker across these hosts. If the home directory is not shared but some other
-location is then you may point the UDOCKER_DIR environment variable to such a 
+location is, then you may point the UDOCKER_DIR environment variable to such a 
 location and use it to store the udocker installation, images and containers.
 
 Across isolated hosts the correct way to transfer containers is to pull them from 
@@ -762,37 +766,46 @@ a repository such as Docker Hub. However this may implies slow downloads from re
 locations and also the need to create the container again from the images.
 
 Alternatively you may move only the created container across locations. The container
-directory pathname in the filesystem can be obtained with:
+directory pathname in the filesystem can be obtained as follows:
 
 ```
-udocker inspect -p <container-id>
+$ udocker inspect -p ubuntu17
+/home/user01/.udocker/containers/feb0041d-e1b6-3eee-89d8-2d0617feb13a/ROOT
 ```
 
-This pathname will be the root of the actual directory containing the filesystem 
-tree of the container. You can modify, add, remove files at this location and these
-changes will be seen inside the container upon execution. With this directory you
-can also perform a backup of the container directory tree e.g. for backup purposes.
+The pathname in the example is the root of the container filesystem tree.
+Below ROOT you will find all the files that comprise the container. udocker
+performs a fake chroot into this directory. You can modify, add, remove files 
+below this location and upon execution these changes will be seen inside the 
+container. This can be used to put or retrieve files to/from the container. 
+With this directory you may also perform copies of the container directory 
+tree e.g. for backup or other purposes.
 
-For the purpose of transferring the container the best approach is to perform a
-backup starting at the directory above the ROOT. The directory above ROOT contains 
-the control files for the container. If you then untar this backup into another 
-udocker installation the container will become visible with the same alphanumeric id. 
+All containers are stored under the directory "containers". Each container is
+under a separate directory whose name corresponds to its alphanumeric id. 
+This directory contains control files and the ROOT for the container filesystem. 
 
-The example below shows a container named MYCONTAINER being transferred to another 
-host and executed. Make sure the udocker executable is in your PATH on both the local
-and remote hosts.
+For the purpose of transferring the container and execute it with udocker in
+another system the best approach is to transfer the container directory including
+the control files and the ROOT with the container file system. 
+
+If you then untar this backup into another udocker installation under "containers" 
+this container will become visible with the same alphanumeric id.  The example below 
+shows a container named MYCONTAINER being transferred to another host and executed. 
+Make sure the udocker executable is in your PATH on both the local and remote hosts.
 
 ```
-MYC_ROOT=$(udocker inspect -p MYCONTAINER)
-MYC_PATH=$(dirname $MYC_ROOT)
-MYC_ID=$(basename $MYC_PATH)
-MYC_DIR=$(dirname $MYC_PATH)
-cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker version ; cd ~/.udocker/containers; tar xf -"
-ssh user@ahost "udocker name $MYC_ID MYCONTAINER; udocker run MYCONTAINER"
+$ MYC_ROOT=$(udocker inspect -p MYCONTAINER)
+$ MYC_PATH=$(dirname $MYC_ROOT)
+$ MYC_ID=$(basename $MYC_PATH)
+$ MYC_DIR=$(dirname $MYC_PATH)
+$ cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker version ; cd ~/.udocker/containers; tar xf -"
+$ ssh user@ahost "udocker name $MYC_ID MYCONTAINER; udocker run MYCONTAINER"
 ```
 
-Backups for safeguard or transfer should only be performed when the container is
-not being executed (not locally nor in any other host if the filesystem is shared).
+To avoid corruption backups for safeguard or transfer should only be performed 
+when the container is not being executed (not locally nor in any other host if 
+the filesystem is shared).
 
 Containers should only be copied in this manner when they are in the execution
 modes Pn or Rn. The modes Fn perform changes to the containers that will make
