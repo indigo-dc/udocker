@@ -32,6 +32,7 @@ except ImportError:
     from io import StringIO
 
 import mock
+import pycurl 
 
 try:
     import udocker
@@ -1978,6 +1979,7 @@ class GetURLTestCase(unittest.TestCase):
                                      {"DATA": 1, }), "http://host")
 
 class GetURLpyCurlTestCase(unittest.TestCase):
+    """GetURLpyCurl TestCase."""
 
     @classmethod
     def setUpClass(cls):
@@ -2001,6 +2003,7 @@ class GetURLpyCurlTestCase(unittest.TestCase):
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.GetURLpyCurl')
     def test_01_is_available(self, mock_gupycurl, mock_msg):
+        """Test GetURLpyCurl()._is_available()."""
         self._init()
         mock_msg.level = 0
         geturl = udocker.GetURLpyCurl()
@@ -2012,7 +2015,7 @@ class GetURLpyCurlTestCase(unittest.TestCase):
         self.assertFalse(geturl.is_available())
 
     def test_02__select_implementation(self):
-        """Test GetURL()._select_implementation()."""
+        """Test GetURLpyCurl()._select_implementation()."""
         pass
 
     @mock.patch('udocker.GetURLpyCurl._select_implementation')
@@ -2020,7 +2023,7 @@ class GetURLpyCurlTestCase(unittest.TestCase):
     @mock.patch('pycurl.Curl')
     @mock.patch('udocker.CurlHeader')
     def test_03__set_defaults(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
-        """Test GetURL()._set_defaults()."""
+        """Test GetURLpyCurl()._set_defaults()."""
         self._init()
         mock_sel.return_value.insecure.return_value = True
         geturl = udocker.GetURLpyCurl()
@@ -2066,6 +2069,7 @@ class GetURLpyCurlTestCase(unittest.TestCase):
         self.assertEqual(geturl.get("http://host"), "http://host")
 
 class GetURLexeCurlTestCase(unittest.TestCase):
+    """GetURLexeCurl TestCase."""
 
     @classmethod
     def setUpClass(cls):
@@ -2089,6 +2093,7 @@ class GetURLexeCurlTestCase(unittest.TestCase):
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.GetURL')
     def test_01_init(self, mock_gcurl, mock_msg):
+        """Test GetURLexeCurl().__init__()."""
         self._init()
         self.assertIsNone(udocker.GetURLexeCurl()._opts)
         self.assertIsNone(udocker.GetURLexeCurl()._files)
@@ -2097,6 +2102,7 @@ class GetURLexeCurlTestCase(unittest.TestCase):
     @mock.patch('udocker.FileUtil')
     @mock.patch('udocker.GetURLexeCurl._select_implementation')
     def test_02_is_available(self, mock_sel, mock_futil, mock_msg):
+        """Test GetURLexeCurl()._is_available()."""
         self._init()
         mock_msg.level = 0
         geturl = udocker.GetURLexeCurl()
@@ -2107,6 +2113,7 @@ class GetURLexeCurlTestCase(unittest.TestCase):
         self.assertFalse(geturl.is_available())
 
     def test_03__select_implementation(self):
+        """Test GetURLexeCurl()._select_implementation()."""
         pass
 
     @mock.patch('udocker.Msg')
@@ -2131,6 +2138,7 @@ class GetURLexeCurlTestCase(unittest.TestCase):
         self.assertEqual(geturl._files["url"], "")
 
     def test_05__mkcurlcmd(self):
+        """Test GetURLexeCurl()._mkcurlcmd()."""
         pass
 
     @mock.patch('udocker.GetURLexeCurl._select_implementation')
@@ -2255,7 +2263,7 @@ class DockerIoAPITestCase(unittest.TestCase):
     @mock.patch('udocker.GetURL')
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.UdockerTools.__init__')
-    def test_07_get_v1_repo(self, mock_init,  mock_local, mock_geturl):
+    def test_07_get_v1_repo(self, mock_init, mock_local, mock_geturl):
         """Get list of images in a repo from Docker Hub."""
         # self._init()
         # #
