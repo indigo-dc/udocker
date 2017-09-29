@@ -744,6 +744,28 @@ class FileUtilTestCase(unittest.TestCase):
         status = mock_futil.mkdir()
         self.assertTrue(status)
 
+    @mock.patch('udocker.os.umask')
+    def test_17_umask(self, mock_umask):
+        """Test FileUtil.umask()."""
+        mock_umask.return_value = 0
+        futil = udocker.FileUtil("somedir")
+        status = futil.umask()
+        self.assertTrue(status)
+        #
+        mock_umask.return_value = 0
+        futil = udocker.FileUtil("somedir")
+        udocker.FileUtil.orig_umask = 0
+        status = futil.umask(1)
+        self.assertTrue(status)
+        self.assertEqual(udocker.FileUtil.orig_umask, 0)
+        #
+        mock_umask.return_value = 0
+        futil = udocker.FileUtil("somedir")
+        udocker.FileUtil.orig_umask = None
+        status = futil.umask(1)
+        self.assertTrue(status)
+        self.assertEqual(udocker.FileUtil.orig_umask, 0)
+        
 
 class UdockerToolsTestCase(unittest.TestCase):
     """Test UdockerTools() download and setup of tools needed by udocker."""
