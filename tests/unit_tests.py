@@ -2476,29 +2476,120 @@ class DockerIoAPITestCase(unittest.TestCase):
         """Test."""
         pass
 
-    def test_16_is_v2(self):
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.LocalRepository')
+    def test_16_is_v2(self, mock_local, mock_dgu, mock_hdr):
         """Test."""
-        pass
+        self._init()
 
-    def test_17_get_v2_image_manifest(self):
-        """Test."""
-        pass
+        mock_dgu.return_value = (mock_hdr, [])
+        doia = udocker.DockerIoAPI(mock_local)
+        doia.registry_url = "http://www.docker.io"
+        out = doia.is_v2()
+        self.assertFalse(out)
 
-    def test_18_get_v2_image_layer(self):
-        """Test."""
-        pass
+        # needs auth to be working before
+        doia.registry_url = "https://registry-1.docker.io"
+        out = doia.is_v2()
+        # self.assertTrue(out)
 
-    def test_19_get_v2_layers_all(self):
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.LocalRepository')
+    def test_17_get_v2_image_manifest(self, mock_local, mock_dgu, mock_hdr):
         """Test."""
-        pass
+        self._init()
+        imagerepo = "REPO"
+        tag = "TAG"
 
-    def test_20_get_v2(self):
-        """Test."""
-        pass
+        mock_dgu.return_value = (mock_hdr, [])
+        doia = udocker.DockerIoAPI(mock_local)
+        doia.registry_url = "https://registry-1.docker.io"
+        out = doia.get_v2_image_manifest(imagerepo, tag)
+        self.assertIsInstance(out, tuple)
 
-    def test_21_get_v1(self):
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.DockerIoAPI._get_file')
+    @mock.patch('udocker.LocalRepository')
+    def test_18_get_v2_image_layer(self, mock_local, mock_dgf, mock_hdr):
         """Test."""
-        pass
+        self._init()
+        imagerepo = "REPO"
+        layer_id = "LAYERID"
+        doia = udocker.DockerIoAPI(mock_local)
+        doia.registry_url = "https://registry-1.docker.io"
+
+        mock_dgf.return_value = True
+        out = doia.get_v2_image_layer(imagerepo, layer_id)
+        self.assertTrue(out)
+
+        mock_dgf.return_value = False
+        out = doia.get_v2_image_layer(imagerepo, layer_id)
+        self.assertFalse(out)
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.DockerIoAPI._get_file')
+    @mock.patch('udocker.LocalRepository')
+    def test_19_get_v2_layers_all(self, mock_local, mock_dgf, mock_msg):
+        """Test."""
+        self._init()
+
+        mock_dgf.return_value = True
+        endpoint = "docker.io"
+        fslayers = []
+        doia = udocker.DockerIoAPI(mock_local)
+        out = doia.get_v2_layers_all(endpoint, fslayers)
+        self.assertEqual(out, [])
+
+        # fslayers = ["a", "b"]
+        # doia = udocker.DockerIoAPI(mock_local)
+        # out = doia.get_v2_layers_all(endpoint, fslayers)
+        # self.assertEqual(out, ['b.json', 'b.layer', 'a.json', 'a.layer'])
+
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.DockerIoAPI.get_v2_layers_all')
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.LocalRepository')
+    def test_20_get_v2(self, mock_local, mock_dgu, mock_dgv2, mock_msg, mock_hdr):
+        """Test."""
+        self._init()
+
+        mock_dgv2.return_value = []
+        mock_dgu.return_value = (mock_hdr, [])
+        imagerepo = "REPO"
+        tag = "TAG"
+        doia = udocker.DockerIoAPI(mock_local)
+        doia.registry_url = "https://registry-1.docker.io"
+        out = doia.get_v2(imagerepo, tag)
+        self.assertEqual(out, [])
+
+        # mock_dgv2.return_value = ["a", "b"]
+        # out = doia.get_v2(imagerepo, tag)
+        # self.assertEqual(out, [])
+
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.DockerIoAPI.get_v1_layers_all')
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.LocalRepository')
+    def test_21_get_v1(self, mock_local, mock_dgu, mock_dgv1, mock_msg, mock_hdr):
+        """Test."""
+        self._init()
+
+        mock_dgv1.return_value = []
+        mock_dgu.return_value = (mock_hdr, [])
+        imagerepo = "REPO"
+        tag = "TAG"
+        doia = udocker.DockerIoAPI(mock_local)
+        doia.registry_url = "https://registry-1.docker.io"
+        out = doia.get_v1(imagerepo, tag)
+        self.assertEqual(out, [])
+
+        # mock_dgv1.return_value = ["a", "b"]
+        # out = doia.get_v1(imagerepo, tag)
+        # self.assertEqual(out, [])
 
     def test_22_get(self):
         """Test."""
