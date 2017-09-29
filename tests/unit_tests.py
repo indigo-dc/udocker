@@ -431,6 +431,9 @@ class KeyStoreTestCase(unittest.TestCase):
         kstore.delete(self.url)
         mock_writeall.assert_called_once_with({})
 
+        mock_verks.side_effect = KeyError
+        self.assertFalse(kstore.delete(self.url))
+
     @mock.patch('udocker.Config')
     @mock.patch('udocker.KeyStore._verify_keystore')
     @mock.patch('udocker.os.unlink')
@@ -444,6 +447,9 @@ class KeyStoreTestCase(unittest.TestCase):
         kstore = udocker.KeyStore("filename")
         self.assertTrue(kstore.erase())
         mock_unlink.assert_called_once_with("filename")
+
+        mock_unlink.side_effect = IOError
+        self.assertFalse(kstore.erase())
 
 
 class UniqueTestCase(unittest.TestCase):
@@ -515,6 +521,11 @@ class FileUtilTestCase(unittest.TestCase):
         futil = udocker.FileUtil("filename.txt")
         self.assertEqual(futil.filename, os.path.abspath("filename.txt"))
         self.assertTrue(udocker.Config.tmpdir)
+
+        mock_config.side_effect = AttributeError("abc")
+        futil = udocker.FileUtil()
+        self.assertEqual(futil.filename, None)
+
 
     def test_02_mktmp(self):
         """Test FileUtil.mktmp()."""
@@ -721,6 +732,18 @@ class FileUtilTestCase(unittest.TestCase):
             status = udocker.FileUtil("source").copyto("dest", "a")
             self.assertTrue(status)
 
+    @mock.patch('udocker.os.makedirs')
+    @mock.patch('udocker.FileUtil')
+    def test_16_mkdir(self, mock_mkdirs, mock_futil):
+        """Create directory"""
+        mock_mkdirs.return_value = True
+        status = mock_futil.mkdir()
+        self.assertTrue(status)
+
+        mock_mkdirs.side_effect = OSError("fail")
+        status = mock_futil.mkdir()
+        self.assertTrue(status)
+
 
 class UdockerToolsTestCase(unittest.TestCase):
     """Test UdockerTools() download and setup of tools needed by udocker."""
@@ -896,6 +919,82 @@ class UdockerToolsTestCase(unittest.TestCase):
         status = utools._install("tarballfile")
         self.assertTrue(status)
 
+
+class ElfPatcherTestCase(unittest.TestCase):
+    """."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test."""
+        set_env()
+
+    def _init(self):
+        """."""
+        pass
+
+    def test_02_select_patchelf(self):
+        """."""
+        pass
+
+    def test__walk_fs(self):
+        """."""
+        pass
+
+    def test_guess_elf_loader(self):
+        """."""
+        pass
+
+    def test_get_original_loader(self):
+        """."""
+        pass
+
+    def test_get_container_loader(self):
+        """."""
+        pass
+
+    def test_get_patch_last_path(self):
+        """."""
+        pass
+
+    def test_check_container(self):
+        """."""
+        pass
+
+    def test_get_patch_last_time(self):
+        """."""
+        pass
+
+    def test_patch_binaries(self):
+        """."""
+        pass
+
+    def test_restore_binaries(self):
+        """."""
+        pass
+
+    def test_patch_ld(self):
+        """."""
+        pass
+
+    def test_restore_ld(self):
+        """."""
+        pass
+
+    def test__get_ld_config(self):
+        """."""
+        pass
+
+    def test__find_ld_libdirs(self):
+        """."""
+        pass
+
+    def test_get_ld_libdirs(self):
+        """."""
+        pass
+
+    def test_get_ld_library_path(self):
+        """."""
+        pass
 
 class LocalRepositoryTestCase(unittest.TestCase):
     """Test LocalRepositoryTestCase().
@@ -1975,6 +2074,7 @@ class GetURLTestCase(unittest.TestCase):
         self.assertEqual(geturl.post("http://host",
                                      {"DATA": 1, }), "http://host")
 
+
 class GetURLpyCurlTestCase(unittest.TestCase):
     """GetURLpyCurl TestCase."""
 
@@ -2064,6 +2164,7 @@ class GetURLpyCurlTestCase(unittest.TestCase):
         geturl._geturl = type('test', (object,), {})()
         geturl.get = self._get
         self.assertEqual(geturl.get("http://host"), "http://host")
+
 
 class GetURLexeCurlTestCase(unittest.TestCase):
     """GetURLexeCurl TestCase."""
@@ -2257,53 +2358,115 @@ class DockerIoAPITestCase(unittest.TestCase):
         uia.set_registry("docker.io")
         self.assertTrue(uia._is_docker_registry())
 
-    @mock.patch('udocker.GetURL')
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.DockerIoAPI._get_url')
     @mock.patch('udocker.LocalRepository')
-    @mock.patch('udocker.UdockerTools.__init__')
-    def test_07_get_v1_repo(self, mock_init, mock_local, mock_geturl):
-        """Get list of images in a repo from Docker Hub."""
-        # self._init()
-        # #
-        # mock_init.return_value = None
-        # utools = udocker.UdockerTools(None)
-        # utools.curl = mock_geturl
-        # hdr = udocker.CurlHeader()
-        # hdr.data["X-ND-CURLSTATUS"] = 0
-        # mock_geturl.get.return_value = (hdr, "")
-        #
-        # uia = udocker.DockerIoAPI(mock_local)
-        # uia.set_index("https://index.docker.io/v1/")
-        #
-        # imagerepo = "REPOIMAGE"
-        # out = uia.get_v1_repo(imagerepo)
-        #
-        # self.assertIsInstance(out, tuple)
-
-        pass
-
-    def test_08_get_v1_image_tags(self):
+    def test_07_get_v1_repo(self, mock_local, mock_dgu, mock_hdr):
         """Test."""
-        pass
+        self._init()
 
-    def test_09_get_v1_image_tag(self):
-        """Test."""
-        pass
+        mock_dgu.return_value = (mock_hdr, [])
+        imagerepo = "REPO"
+        doia = udocker.DockerIoAPI(mock_local)
+        doia.index_url = "docker.io"
+        out = doia.get_v1_repo(imagerepo)
+        self.assertIsInstance(out, tuple)
 
-    def test_10_get_v1_image_ancestry(self):
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.LocalRepository')
+    def test_08_get_v1_image_tags(self, mock_local, mock_dgu, mock_hdr):
         """Test."""
-        pass
+        self._init()
 
-    def test_11_get_v1_image_json(self):
-        """Test."""
-        pass
+        mock_dgu.return_value = (mock_hdr, [])
+        endpoint = "docker.io"
+        imagerepo = "REPO"
+        doia = udocker.DockerIoAPI(mock_local)
+        out = doia.get_v1_image_tags(endpoint, imagerepo)
+        self.assertIsInstance(out, tuple)
 
-    def test_12_get_v1_image_layer(self):
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.LocalRepository')
+    def test_09_get_v1_image_tag(self, mock_local, mock_dgu, mock_hdr):
         """Test."""
-        pass
+        self._init()
 
-    def test_13_get_v1_layers_all(self):
+        mock_dgu.return_value = (mock_hdr, [])
+        endpoint = "docker.io"
+        imagerepo = "REPO"
+        tag = "TAG"
+        doia = udocker.DockerIoAPI(mock_local)
+        out = doia.get_v1_image_tag(endpoint, imagerepo, tag)
+        self.assertIsInstance(out, tuple)
+
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.LocalRepository')
+    def test_10_get_v1_image_ancestry(self, mock_local, mock_dgu, mock_hdr):
         """Test."""
-        pass
+        self._init()
+
+        mock_dgu.return_value = (mock_hdr, [])
+        endpoint = "docker.io"
+        image_id = "IMAGEID"
+        doia = udocker.DockerIoAPI(mock_local)
+        out = doia.get_v1_image_ancestry(endpoint, image_id)
+        self.assertIsInstance(out, tuple)
+
+    @mock.patch('udocker.DockerIoAPI._get_file')
+    @mock.patch('udocker.LocalRepository')
+    def test_11_get_v1_image_json(self, mock_local, mock_dgf):
+        """Test."""
+        self._init()
+
+        mock_dgf.return_value = True
+        endpoint = "docker.io"
+        layer_id = "LAYERID"
+        doia = udocker.DockerIoAPI(mock_local)
+        status = doia.get_v1_image_json(endpoint, layer_id)
+        self.assertTrue(status)
+
+        mock_dgf.return_value = False
+        status = doia.get_v1_image_json(endpoint, layer_id)
+        self.assertFalse(status)
+
+    @mock.patch('udocker.DockerIoAPI._get_file')
+    @mock.patch('udocker.LocalRepository')
+    def test_12_get_v1_image_layer(self, mock_local, mock_dgf):
+        """Test."""
+        self._init()
+
+        mock_dgf.return_value = True
+        endpoint = "docker.io"
+        layer_id = "LAYERID"
+        doia = udocker.DockerIoAPI(mock_local)
+        status = doia.get_v1_image_layer(endpoint, layer_id)
+        self.assertTrue(status)
+
+        mock_dgf.return_value = False
+        status = doia.get_v1_image_layer(endpoint, layer_id)
+        self.assertFalse(status)
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.DockerIoAPI._get_file')
+    @mock.patch('udocker.LocalRepository')
+    def test_13_get_v1_layers_all(self, mock_local, mock_dgf, mock_msg):
+        """Test."""
+        self._init()
+
+        mock_dgf.return_value = True
+        endpoint = "docker.io"
+        layer_list = []
+        doia = udocker.DockerIoAPI(mock_local)
+        out = doia.get_v1_layers_all(endpoint, layer_list)
+        self.assertEqual(out, [])
+
+        layer_list = ["a", "b"]
+        doia = udocker.DockerIoAPI(mock_local)
+        out = doia.get_v1_layers_all(endpoint, layer_list)
+        self.assertEqual(out, ['b.json', 'b.layer', 'a.json', 'a.layer'])
 
     def test_14_get_v2_login_token(self):
         """Test."""
