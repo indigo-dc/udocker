@@ -25,14 +25,12 @@ import subprocess
 import sys
 import unittest
 
-
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
 
 import mock
-import pycurl 
 
 try:
     import udocker
@@ -181,7 +179,6 @@ class ConfigTestCase(unittest.TestCase):
 
         self.assertIsInstance(conf.dockerio_index_url, str)
         self.assertIsInstance(conf.dockerio_registry_url, str)
-
 
     def test_01_init(self):
         """Test Config() constructor."""
@@ -2020,7 +2017,7 @@ class GetURLpyCurlTestCase(unittest.TestCase):
 
     @mock.patch('udocker.GetURLpyCurl._select_implementation')
     @mock.patch('udocker.Msg')
-    @mock.patch('pycurl.Curl')
+    @mock.patch('udocker.pycurl.Curl')
     @mock.patch('udocker.CurlHeader')
     def test_03__set_defaults(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
         """Test GetURLpyCurl()._set_defaults()."""
@@ -2046,7 +2043,7 @@ class GetURLpyCurlTestCase(unittest.TestCase):
 
     @mock.patch('udocker.GetURLpyCurl._select_implementation')
     @mock.patch('udocker.Msg')
-    @mock.patch('pycurl.Curl')
+    @mock.patch('udocker.pycurl.Curl')
     @mock.patch('udocker.CurlHeader')
     def test_04__mkpycurl(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
         """Test GetURL()._mkpycurl()."""
