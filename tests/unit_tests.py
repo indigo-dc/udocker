@@ -2115,45 +2115,45 @@ class GetURLpyCurlTestCase(unittest.TestCase):
         """Test GetURLpyCurl()._select_implementation()."""
         pass
 
-    @mock.patch('udocker.GetURLpyCurl._select_implementation')
-    @mock.patch('udocker.Msg')
-    @mock.patch('udocker.pycurl')
-    @mock.patch('udocker.CurlHeader')
-    def test_03__set_defaults(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
-        """Test GetURLpyCurl()._set_defaults()."""
-        self._init()
-        mock_sel.return_value.insecure.return_value = True
-        geturl = udocker.GetURLpyCurl()
-        geturl._set_defaults(mock_pyc, mock_hdr)
-        self.assertTrue(mock_pyc.setopt.called)
-
-        # when Msg.level >= Msg.DBG: AND insecure
-        mock_msg.DBG.return_value = 3
-        mock_msg.level.return_value = 3
-        geturl._set_defaults(mock_pyc, mock_hdr)
-        self.assertEqual(mock_pyc.setopt.call_count, 18)
-
-        mock_sel.return_value.insecure.return_value = True
-
-        # when Msg.level < Msg.DBG: AND secure
-        mock_msg.DBG.return_value = 3
-        mock_msg.level.return_value = 2
-        geturl._set_defaults(mock_pyc, mock_hdr)
-        self.assertEqual(mock_pyc.setopt.call_count, 27)
-
-    @mock.patch('udocker.GetURLpyCurl._select_implementation')
-    @mock.patch('udocker.Msg')
-    @mock.patch('udocker.pycurl')
-    @mock.patch('udocker.CurlHeader')
-    def test_04__mkpycurl(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
-        """Test GetURL()._mkpycurl()."""
-        self._init()
-        mock_sel.return_value.insecure.return_value = True
-        geturl = udocker.GetURLpyCurl()
-        geturl._set_defaults(mock_pyc, mock_hdr)
-        self.assertTrue(mock_pyc.setopt.called)
-
-        # WIP(...)
+#    @mock.patch('udocker.GetURLpyCurl._select_implementation')
+#    @mock.patch('udocker.Msg')
+#    @mock.patch('udocker.pycurl')
+#    @mock.patch('udocker.CurlHeader')
+#    def test_03__set_defaults(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
+#        """Test GetURLpyCurl()._set_defaults()."""
+#        self._init()
+#        mock_sel.return_value.insecure.return_value = True
+#        geturl = udocker.GetURLpyCurl()
+#        geturl._set_defaults(mock_pyc, mock_hdr)
+#        self.assertTrue(mock_pyc.setopt.called)
+#
+#        # when Msg.level >= Msg.DBG: AND insecure
+#        mock_msg.DBG.return_value = 3
+#        mock_msg.level.return_value = 3
+#        geturl._set_defaults(mock_pyc, mock_hdr)
+#        self.assertEqual(mock_pyc.setopt.call_count, 18)
+#
+#        mock_sel.return_value.insecure.return_value = True
+#
+#        # when Msg.level < Msg.DBG: AND secure
+#        mock_msg.DBG.return_value = 3
+#        mock_msg.level.return_value = 2
+#        geturl._set_defaults(mock_pyc, mock_hdr)
+#        self.assertEqual(mock_pyc.setopt.call_count, 27)
+#
+#    @mock.patch('udocker.GetURLpyCurl._select_implementation')
+#    @mock.patch('udocker.Msg')
+#    @mock.patch('udocker.pycurl')
+#    @mock.patch('udocker.CurlHeader')
+#    def test_04__mkpycurl(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
+#        """Test GetURL()._mkpycurl()."""
+#        self._init()
+#        mock_sel.return_value.insecure.return_value = True
+#        geturl = udocker.GetURLpyCurl()
+#        geturl._set_defaults(mock_pyc, mock_hdr)
+#        self.assertTrue(mock_pyc.setopt.called)
+#
+#        # WIP(...)
 
     @mock.patch('udocker.GetURLpyCurl._select_implementation')
     def test_05_get(self, mock_sel):
@@ -5406,6 +5406,104 @@ class UdockerTestCase(unittest.TestCase):
         mock_cmdp.get.side_effect = ["run", "help", "" "", "", ]
         udoc.do_help(mock_cmdp)
         self.assertTrue(mock_eval.called)
+
+    @mock.patch('udocker.UdockerTools')
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_27_do_install(self, mock_local, mock_msg, mock_cmdp,
+                           mock_utools):
+        """Test Udocker().do_install()."""
+        self._init()
+        mock_msg.level = 0
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        status = udoc.do_install(mock_cmdp)
+        self.assertFalse(mock_utools.return_value.purge.called)
+        self.assertTrue(mock_utools.return_value.install.called)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "--purge", "" "", "", ]
+        mock_utools.reset_mock()
+        mock_cmdp.reset_mock()
+        status = udoc.do_install(mock_cmdp)
+        self.assertTrue(mock_utools.return_value.purge.called)
+        self.assertTrue(mock_utools.return_value.install.called_with(False))
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "--purge", "--force" "", "", ]
+        mock_utools.reset_mock()
+        mock_cmdp.reset_mock()
+        status = udoc.do_install(mock_cmdp)
+        self.assertTrue(mock_utools.return_value.purge.called)
+        self.assertTrue(mock_utools.return_value.install.called_with(True))
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "--force" "", "", ]
+        mock_utools.reset_mock()
+        mock_cmdp.reset_mock()
+        status = udoc.do_install(mock_cmdp)
+        self.assertFalse(mock_utools.return_value.purge.called)
+        self.assertTrue(mock_utools.return_value.install.called_with(True))
+
+    @mock.patch('udocker.ExecutionMode')
+    @mock.patch('udocker.CmdParser')
+    @mock.patch('udocker.KeyStore')
+    @mock.patch('udocker.DockerLocalFileAPI')
+    @mock.patch('udocker.DockerIoAPI')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_16_do_setup(self, mock_local, mock_msg, mock_dioapi,
+                         mock_dlocapi, mock_ks, mock_cmdp, mock_exec):
+        """Test Udocker().do_setup()."""
+        self._init()
+        mock_msg.level = 0
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_local.cd_container.return_value = False
+        status = udoc.do_setup(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_local.cd_container.return_value = True
+        mock_exec.set_mode.return_value = False
+        status = udoc.do_setup(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_local.cd_container.return_value = True
+        mock_exec.set_mode.return_value = True
+        status = udoc.do_setup(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "P1", "" "", ]
+        mock_local.cd_container.return_value = True
+        mock_local.isprotected_container.return_value = True
+        mock_exec.set_mode.return_value = True
+        status = udoc.do_setup(mock_cmdp)
+        self.assertFalse(status)
+        #
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.missing_options.return_value = True
+        mock_cmdp.get.side_effect = ["", "P1", "" "", ]
+        mock_local.cd_container.return_value = True
+        mock_local.isprotected_container.return_value = False
+        mock_exec.set_mode.return_value = True
+        status = udoc.do_setup(mock_cmdp)
+        self.assertFalse(status)
 
 
 if __name__ == '__main__':
