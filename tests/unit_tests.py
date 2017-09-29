@@ -113,11 +113,19 @@ class UprocessTestCase(unittest.TestCase):
         """Test check_output()."""
         uproc = udocker.Uprocess()
         uproc.check_output("CMD")
-        udocker.PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
-        if udocker.PY_VER >= "2.7":
-            self.assertTrue(mock_subp_chkout.called)
-        else:
-            self.assertTrue(mock_uproc_chkout.called)
+        # udocker.PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
+        # if udocker.PY_VER >= "2.7":
+        #     self.assertTrue(mock_subp_chkout.called)
+        # else:
+        #     self.assertTrue(mock_uproc_chkout.called)
+
+        # Making sure we cover both cases
+        udocker.PY_VER = "3.5"
+        uproc.check_output("CMD")
+        self.assertTrue(mock_subp_chkout.called)
+        udocker.PY_VER = "2.6"
+        uproc.check_output("CMD")
+        self.assertTrue(mock_uproc_chkout.called)
 
     @mock.patch('udocker.Uprocess.check_output')
     def test_03_get_output(self, mock_uproc_chkout):
@@ -172,6 +180,7 @@ class ConfigTestCase(unittest.TestCase):
 
         self.assertIsInstance(conf.dockerio_index_url, str)
         self.assertIsInstance(conf.dockerio_registry_url, str)
+
 
     def test_01_init(self):
         """Test Config() constructor."""
@@ -253,6 +262,13 @@ class ConfigTestCase(unittest.TestCase):
         status = conf.oskernel_isgreater([1, 1, 1])
         self.assertFalse(status)
 
+    @mock.patch('udocker.FileUtil')
+    def test_07__read_config(self, mock_futil):
+        """Test Config._read_config()."""
+        conf = udocker.Config()
+        mock_futil.return_value.size.return_value = -1
+        status = conf._read_config(conf)
+        self.assertFalse(status)
 
 class MsgTestCase(unittest.TestCase):
     """Test Msg() class screen error and info messages."""
@@ -1961,6 +1977,103 @@ class GetURLTestCase(unittest.TestCase):
         self.assertEqual(geturl.post("http://host",
                                      {"DATA": 1, }), "http://host")
 
+class GetURLpyCurlTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test."""
+        set_env()
+
+    def _init(self):
+        """Configure variables."""
+        udocker.Config = mock.patch('udocker.Config').start()
+        udocker.Config.timeout = 1
+        udocker.Config.ctimeout = 1
+        udocker.Config.download_timeout = 1
+        udocker.Config.http_agent = ""
+        udocker.Config.http_proxy = ""
+        udocker.Config.http_insecure = 0
+
+    def _get(self, *args, **kwargs):
+        """Mock for pycurl.get."""
+        return args[0]
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.GetURLpyCurl')
+    def test_01_is_available(self, mock_gupycurl, mock_msg):
+        self._init()
+        mock_msg.level = 0
+        geturl = udocker.GetURLpyCurl()
+        geturl.is_available()
+        mock_gupycurl.return_value.is_available.return_value = True
+        self.assertTrue(geturl.is_available())
+
+        mock_gupycurl.return_value.is_available.return_value = False
+        self.assertFalse(geturl.is_available())
+
+    def test_02__select_implementation(self):
+        """Test GetURL()._select_implementation()."""
+        pass
+
+    def test_03__set_defaults(self):
+        pass
+
+    def test_04__mkpycurl(self):
+        pass
+
+    def test_05_get(self):
+        pass
+
+class GetURLexeCurlTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test."""
+        set_env()
+
+    def _init(self):
+        """Configure variables."""
+        udocker.Config = mock.patch('udocker.Config').start()
+        udocker.Config.timeout = 1
+        udocker.Config.ctimeout = 1
+        udocker.Config.download_timeout = 1
+        udocker.Config.http_agent = ""
+        udocker.Config.http_proxy = ""
+        udocker.Config.http_insecure = 0
+
+    def _get(self, *args, **kwargs):
+        """Mock for pycurl.get."""
+        return args[0]
+
+    def test_01_init(self):
+        pass
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.GetURLpyCurl')
+    def test_02_is_available(self, mock_gupycurl, mock_msg):
+        self._init()
+        mock_msg.level = 0
+        geturl = udocker.GetURLpyCurl()
+        geturl.is_available()
+        mock_gupycurl.return_value.is_available.return_value = True
+        self.assertTrue(geturl.is_available())
+
+        mock_gupycurl.return_value.is_available.return_value = False
+        self.assertFalse(geturl.is_available())
+
+    def test_03__select_implementation(self):
+        pass
+
+    def test_04__set_defaults(self):
+        """Set defaults for curl command line options"""
+        pass
+
+    def test_05__mkcurlcmd(self):
+        pass
+
+    def test_06_get(self):
+        pass
+
 
 class DockerIoAPITestCase(unittest.TestCase):
     """Test DockerIoAPITest().
@@ -2070,16 +2183,28 @@ class DockerIoAPITestCase(unittest.TestCase):
         uia.set_registry("docker.io")
         self.assertTrue(uia._is_docker_registry())
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.LocalRepository')
-    def test_07_get_v1_repo(self, mock_local):
+    @mock.patch('udocker.UdockerTools.__init__')
+    def test_07_get_v1_repo(self, mock_init,  mock_local, mock_geturl):
         """Get list of images in a repo from Docker Hub."""
         # self._init()
         # #
+        # mock_init.return_value = None
+        # utools = udocker.UdockerTools(None)
+        # utools.curl = mock_geturl
+        # hdr = udocker.CurlHeader()
+        # hdr.data["X-ND-CURLSTATUS"] = 0
+        # mock_geturl.get.return_value = (hdr, "")
+        #
         # uia = udocker.DockerIoAPI(mock_local)
-        # uia.set_index("https://index.docker.io")
-        # imagerepo = "IMAGEREPONAME"
+        # uia.set_index("https://index.docker.io/v1/")
+        #
+        # imagerepo = "REPOIMAGE"
         # out = uia.get_v1_repo(imagerepo)
+        #
         # self.assertIsInstance(out, tuple)
+
         pass
 
     def test_08_get_v1_image_tags(self):
