@@ -4201,6 +4201,123 @@ class PRootEngineTestCase(unittest.TestCase):
         self.assertEqual(status, 5)
 
 
+class RuncEngineTestCase(unittest.TestCase):
+    """Test RuncEngine() containers execution with runC."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test."""
+        set_env()
+
+    def _init(self):
+        """Configure variables."""
+        udocker.Config = mock.MagicMock()
+        udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
+        udocker.Config.cmd = "/bin/bash"
+        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
+        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.return_value.username.return_value = "user"
+        udocker.Config.return_value.userhome.return_value = "/"
+        udocker.Config.return_value.oskernel.return_value = "4.8.13"
+        udocker.Config.location = ""
+
+    @mock.patch('udocker.ExecutionEngineCommon')
+    @mock.patch('udocker.LocalRepository')
+    def test_01_init(self, mock_local, mock_exeng):
+        """Test RuncEngine()."""
+        self._init()
+        rcex = udocker.RuncEngine(mock_local)
+        self.assertEqual(rcex.runc_exec, None)
+
+    @mock.patch('udocker.Config')
+    @mock.patch('udocker.ExecutionMode')
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.LocalRepository')
+    def test_03__select_runc(self, mock_local, mock_futil, mock_execmode,
+                             mock_config):
+        """Test RuncEngine()._select_runc()."""
+        self._init()
+        udocker.Config.return_value.arch.return_value = "amd64"
+        udocker.Config.return_value.oskernel_isgreater.return_value = False
+        mock_futil.return_value.find_file_in_dir.return_value = "runc-x86_64"
+        mock_execmode.return_value.get_mode.return_value = ""
+        rcex = udocker.RuncEngine(mock_local)
+        rcex.exec_mode = mock_execmode
+        rcex._select_runc()
+        self.assertEqual(rcex.runc_exec, "runc-x86_64")
+
+    @mock.patch('udocker.json.load')
+    @mock.patch('udocker.subprocess.call')
+    @mock.patch('udocker.os.path.realpath')
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.LocalRepository')
+    def test_04__load_spec(self, mock_local, mock_futil, mock_realpath,
+                           mock_call, mock_jsonload):
+        """Test RuncEngine()._load_spec()."""
+        self._init()
+        mock_futil.reset()
+        mock_futil.return_value.size.return_value = 1
+        rcex = udocker.RuncEngine(mock_local)
+        rcex._load_spec(False)
+        self.assertFalse(mock_futil.return_value.remove.called)
+        #
+        mock_futil.reset()
+        mock_futil.return_value.size.return_value = 1
+        rcex = udocker.RuncEngine(mock_local)
+        rcex._load_spec(True)
+        self.assertTrue(mock_futil.return_value.remove.called)
+        #
+        mock_futil.reset()
+        mock_futil.return_value.size.return_value = -1
+        mock_realpath.return_value = "/.udocker/containers/aaaaa"
+        mock_call.return_value = True
+        rcex = udocker.RuncEngine(mock_local)
+        rcex.runc_exec = "runc"
+        status = rcex._load_spec(False)
+        self.assertFalse(status)
+        #
+        mock_futil.reset()
+        mock_futil.return_value.size.return_value = -1
+        mock_realpath.return_value = "/.udocker/containers/aaaaa"
+        mock_call.return_value = False        # ok
+        mock_jsonload.return_value = "JSON"
+        rcex = udocker.RuncEngine(mock_local)
+        rcex.runc_exec = "runc"
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
+            status = rcex._load_spec(False)
+        self.assertEqual(status, "JSON")
+        #
+        mock_futil.reset()
+        mock_futil.return_value.size.return_value = -1
+        mock_realpath.return_value = "/.udocker/containers/aaaaa"
+        mock_call.return_value = False        # ok
+        mock_jsonload.return_value = "JSON"
+        mock_jsonload.side_effect = OSError("reading json")
+        rcex = udocker.RuncEngine(mock_local)
+        rcex.runc_exec = "runc"
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
+            status = rcex._load_spec(False)
+        self.assertEqual(status, None)
+
+    @mock.patch('udocker.json.dump')
+    @mock.patch('udocker.LocalRepository')
+    def test_05__save_spec(self, mock_local, mock_jsondump):
+        """Test RuncEngine()._save_spec()."""
+        self._init()
+        rcex = udocker.RuncEngine(mock_local)
+        rcex._container_specjson = "JSON"
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
+            status = rcex._save_spec()
+        self.assertTrue(status)
+        #
+        mock_jsondump.side_effect = OSError("in open")
+        rcex = udocker.RuncEngine(mock_local)
+        rcex._container_specjson = "JSON"
+        with mock.patch(BUILTINS + '.open', mock.mock_open()):
+            status = rcex._save_spec()
+        self.assertFalse(status)
+
+
 class ContainerStructureTestCase(unittest.TestCase):
     """Test ContainerStructure() class for containers structure."""
 
