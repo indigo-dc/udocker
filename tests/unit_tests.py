@@ -765,7 +765,255 @@ class FileUtilTestCase(unittest.TestCase):
         status = futil.umask(1)
         self.assertTrue(status)
         self.assertEqual(udocker.FileUtil.orig_umask, 0)
-        
+
+    @mock.patch('udocker.FileUtil.mktmp')
+    @mock.patch('udocker.FileUtil.mkdir')
+    def test_18_mktmpdir(self, mock_umkdir, mock_umktmp):
+        """Test FileUtil.mktmpdir()."""
+        mock_umktmp.return_value = "/dir"
+        mock_umkdir.return_value = True
+        futil = udocker.FileUtil("somedir")
+        status = futil.mktmpdir()
+        self.assertEqual(status, "/dir")
+        #
+        mock_umktmp.return_value = "/dir"
+        mock_umkdir.return_value = False
+        futil = udocker.FileUtil("somedir")
+        status = futil.mktmpdir()
+        self.assertEqual(status, None)
+
+    @mock.patch('udocker.FileUtil.mktmp')
+    @mock.patch('udocker.FileUtil.mkdir')
+    def test_19__is_safe_prefix(self, mock_umkdir, mock_umktmp):
+        """Test FileUtil._is_safe_prefix()."""
+        futil = udocker.FileUtil("somedir")
+        udocker.FileUtil.safe_prefixes = []
+        status = futil._is_safe_prefix("/AAA")
+        self.assertFalse(status)
+        #
+        futil = udocker.FileUtil("somedir")
+        udocker.FileUtil.safe_prefixes = ["/AAA", ]
+        status = futil._is_safe_prefix("/AAA")
+        self.assertTrue(status)
+
+    def test_20_putdata(self):
+        """Test FileUtil.putdata()"""
+        futil = udocker.FileUtil("somefile")
+        futil.filename = ""
+        data = futil.putdata("qwerty")
+        self.assertFalse(data)
+        #
+        with mock.patch(BUILTINS + '.open',
+                        mock.mock_open()):
+            data = udocker.FileUtil("somefile").putdata("qwerty")
+            self.assertEqual(data, 'qwerty')
+
+    @mock.patch('udocker.os.rename')
+    def test_21_rename(self, mock_rename):
+        """Test FileUtil.rename()."""
+        status = udocker.FileUtil("somefile").rename("otherfile")
+        self.assertTrue(status)
+
+    @mock.patch('udocker.os.path.exists')
+    def test_22_find_file_in_dir(self, mock_exists):
+        """Test FileUtil.find_file_in_dir()."""
+        file_list = []
+        status = udocker.FileUtil("/dir").find_file_in_dir(file_list)
+        self.assertEqual(status, "")
+        #
+        file_list = ["F1", "F2"]
+        mock_exists.side_effect = [False, False]
+        status = udocker.FileUtil("/dir").find_file_in_dir(file_list)
+        self.assertEqual(status, "")
+        #
+        file_list = ["F1", "F2"]
+        mock_exists.side_effect = [False, True]
+        status = udocker.FileUtil("/dir").find_file_in_dir(file_list)
+        self.assertEqual(status, "/dir/F2")
+
+    @mock.patch('udocker.os.symlink')
+    @mock.patch('udocker.os.remove')
+    @mock.patch('udocker.os.stat')
+    @mock.patch('udocker.os.chmod')
+    @mock.patch('udocker.os.access')
+    @mock.patch('udocker.os.path.dirname')
+    @mock.patch('udocker.os.path.realpath')
+    @mock.patch('udocker.os.readlink')
+    def test_23__link_set(self, mock_readlink, mock_realpath, mock_dirname,
+                          mock_access, mock_chmod, mock_stat, mock_remove,
+                          mock_symlink):
+        """Test FileUtil._link_set()."""
+        mock_readlink.return_value = "X"
+        status = udocker.FileUtil("/con")._link_set("/con/lnk", "/con", False)
+        self.assertFalse(status)
+        #
+        mock_readlink.return_value = "/con"
+        status = udocker.FileUtil("/con")._link_set("/con/lnk", "/con", False)
+        self.assertFalse(status)
+        #
+        mock_readlink.return_value = "/HOST/DIR"
+        mock_realpath.return_value = "/HOST/DIR"
+        mock_remove.reset_mock()
+        mock_symlink.reset_mock()
+        mock_chmod.reset_mock()
+        status = udocker.FileUtil("/con")._link_set("/con/lnk", "/con", False)
+        self.assertTrue(mock_remove.called)
+        self.assertTrue(mock_symlink.called)
+        self.assertFalse(mock_chmod.called)
+        self.assertTrue(status)
+        #
+        mock_readlink.return_value = "/HOST/DIR"
+        mock_realpath.return_value = "/HOST/DIR"
+        mock_access.return_value = True
+        mock_remove.reset_mock()
+        mock_symlink.reset_mock()
+        mock_chmod.reset_mock()
+        status = udocker.FileUtil("/con")._link_set("/con/lnk", "/con", True)
+        self.assertTrue(mock_remove.called)
+        self.assertTrue(mock_symlink.called)
+        self.assertFalse(mock_chmod.called)
+        self.assertTrue(status)
+        #
+        mock_readlink.return_value = "/HOST/DIR"
+        mock_realpath.return_value = "/HOST/DIR"
+        mock_access.return_value = False
+        mock_remove.reset_mock()
+        mock_symlink.reset_mock()
+        mock_chmod.reset_mock()
+        status = udocker.FileUtil("/con")._link_set("/con/lnk", "/con", True)
+        self.assertTrue(mock_remove.called)
+        self.assertTrue(mock_symlink.called)
+        self.assertTrue(mock_chmod.called)
+        self.assertTrue(status)
+
+    @mock.patch('udocker.os.symlink')
+    @mock.patch('udocker.os.remove')
+    @mock.patch('udocker.os.stat')
+    @mock.patch('udocker.os.chmod')
+    @mock.patch('udocker.os.access')
+    @mock.patch('udocker.os.path.dirname')
+    @mock.patch('udocker.os.path.realpath')
+    @mock.patch('udocker.os.readlink')
+    def test_24__link_restore(self, mock_readlink, mock_realpath, mock_dirname,
+                              mock_access, mock_chmod, mock_stat, mock_remove,
+                              mock_symlink):
+        """Test FileUtil._link_restore()."""
+        mock_readlink.return_value = "/con/AAA"
+        status = udocker.FileUtil("/con")._link_restore("/con/lnk",
+                                                        "/root", False)
+        self.assertTrue(status)
+        #
+        mock_readlink.return_value = "/con/AAA"
+        mock_symlink.reset_mock()
+        mock_chmod.reset_mock()
+        status = udocker.FileUtil("/con")._link_restore("/con/lnk",
+                                                        "/root", False)
+        self.assertTrue(status)
+        self.assertTrue(mock_symlink.called_with("/con/lnk", "/AAA"))
+        #
+        mock_readlink.return_value = "/root/BBB"
+        mock_symlink.reset_mock()
+        mock_chmod.reset_mock()
+        status = udocker.FileUtil("/con")._link_restore("/con/lnk",
+                                                        "/root", False)
+        self.assertTrue(status)
+        self.assertTrue(mock_symlink.called_with("/con/lnk", "/BBB"))
+        #
+        mock_readlink.return_value = "/XXX"
+        status = udocker.FileUtil("/con")._link_restore("/con/lnk",
+                                                        "/root", False)
+        self.assertFalse(status)
+        #
+        mock_readlink.return_value = "/root/BBB"
+        mock_symlink.reset_mock()
+        mock_chmod.reset_mock()
+        status = udocker.FileUtil("/con")._link_restore("/con/lnk",
+                                                        "/root", True)
+        self.assertTrue(status)
+        self.assertTrue(mock_symlink.called_with("/con/lnk", "/BBB"))
+        self.assertFalse(mock_chmod.called)
+        #
+        mock_readlink.return_value = "/root/BBB"
+        mock_access.return_value = False
+        mock_symlink.reset_mock()
+        mock_chmod.reset_mock()
+        status = udocker.FileUtil("/con")._link_restore("/con/lnk",
+                                                        "/root", True)
+        self.assertTrue(status)
+        self.assertTrue(mock_symlink.called_with("/con/lnk", "/BBB"))
+        self.assertTrue(mock_chmod.called)
+        self.assertTrue(mock_remove.called)
+        self.assertTrue(mock_symlink.called)
+
+    @mock.patch('udocker.FileUtil._link_restore')
+    @mock.patch('udocker.FileUtil._link_set')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.FileUtil._is_safe_prefix')
+    @mock.patch('udocker.os.lstat')
+    @mock.patch('udocker.os.path.islink')
+    @mock.patch('udocker.os.walk')
+    @mock.patch('udocker.os.path.realpath')
+    def test_25_links_conv(self, mock_realpath, mock_walk, mock_islink,
+                           mock_lstat, mock_is_safe_prefix, mock_msg,
+                           mock_link_set, mock_link_restore):
+        """Test FileUtil.links_conv()."""
+        mock_realpath.return_value = "/ROOT"
+        mock_is_safe_prefix.return_value = False
+        status = udocker.FileUtil("/ROOT").links_conv(False, True, "")
+        self.assertEqual(status, None)
+        #
+        mock_realpath.return_value = "/ROOT"
+        mock_is_safe_prefix.return_value = True
+        mock_walk.return_value = []
+        status = udocker.FileUtil("/ROOT").links_conv(False, True, "")
+        self.assertEqual(status, [])
+        #
+        mock_realpath.return_value = "/ROOT"
+        mock_is_safe_prefix.return_value = True
+        mock_walk.return_value = [("/", "", []), ]
+        status = udocker.FileUtil("/ROOT").links_conv(False, True, "")
+        self.assertEqual(status, [])
+        #
+        mock_realpath.return_value = "/ROOT"
+        mock_is_safe_prefix.return_value = True
+        mock_islink = False
+        mock_walk.return_value = [("/", "", ["F1", "F2"]), ]
+        status = udocker.FileUtil("/ROOT").links_conv(False, True, "")
+        self.assertEqual(status, [])
+        #
+        mock_realpath.return_value = "/ROOT"
+        mock_is_safe_prefix.return_value = True
+        mock_islink = True
+        mock_lstat.return_value.st_uid = 1
+        udocker.Config.uid = 0
+        mock_walk.return_value = [("/", "", ["F1", "F2"]), ]
+        status = udocker.FileUtil("/ROOT").links_conv(False, True, "")
+        self.assertEqual(status, [])
+        #
+        mock_realpath.return_value = "/ROOT"
+        mock_is_safe_prefix.return_value = True
+        mock_islink = True
+        mock_lstat.return_value.st_uid = 1
+        mock_link_set.reset_mock()
+        mock_link_restore.reset_mock()
+        udocker.Config.uid = 1
+        mock_walk.return_value = [("/", "", ["F1", "F2"]), ]
+        status = udocker.FileUtil("/ROOT").links_conv(False, True, "")
+        self.assertTrue(mock_link_set.called)
+        self.assertFalse(mock_link_restore.called)
+        #
+        mock_realpath.return_value = "/ROOT"
+        mock_is_safe_prefix.return_value = True
+        mock_islink = True
+        mock_lstat.return_value.st_uid = 1
+        mock_link_set.reset_mock()
+        mock_link_restore.reset_mock()
+        udocker.Config.uid = 1
+        mock_walk.return_value = [("/", "", ["F1", "F2"]), ]
+        status = udocker.FileUtil("/ROOT").links_conv(False, False, "")
+        self.assertFalse(mock_link_set.called)
+        self.assertTrue(mock_link_restore.called)
+
 
 class UdockerToolsTestCase(unittest.TestCase):
     """Test UdockerTools() download and setup of tools needed by udocker."""
