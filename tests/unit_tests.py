@@ -1225,12 +1225,12 @@ class UdockerToolsTestCase(unittest.TestCase):
         mock_listdir.return_value = []
         utools = udocker.UdockerTools(mock_localrepo)
         utools.purge()
-        self.assertFalse(mock_futil.called)
+        self.assertFalse(mock_futil.return_value.remove.called)
         #
         mock_listdir.return_value = ["F1", "F2"]
         utools = udocker.UdockerTools(mock_localrepo)
         utools.purge()
-        self.assertTrue(mock_futil.called)
+        self.assertTrue(mock_futil.return_value.remove.called)
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.LocalRepository')
