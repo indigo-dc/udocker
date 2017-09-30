@@ -1036,6 +1036,34 @@ class UdockerToolsTestCase(unittest.TestCase):
         utools = udocker.UdockerTools(localrepo)
         self.assertEqual(utools.localrepo, localrepo)
 
+    @mock.patch('udocker.LocalRepository')
+    @mock.patch('udocker.FileUtil')
+    def test_02__version_isequal(self, futil, mock_localrepo):
+        """Test UdockerTools._version_isequal()."""
+        futil.return_value.getdata.return_value = udocker.__version__
+        utools = udocker.UdockerTools(mock_localrepo)
+        status = utools._version_isequal("versionfile")
+        self.assertTrue(status)
+        #
+        futil.return_value.getdata.return_value = "0.0.0"
+        utools = udocker.UdockerTools(mock_localrepo)
+        status = utools._version_isequal("versionfile")
+        self.assertFalse(status)
+
+    @mock.patch('udocker.UdockerTools._version_isequal')
+    @mock.patch('udocker.LocalRepository')
+    def test_02_is_available(self, mock_localrepo, mock_version_isequal):
+        """Test UdockerTools.is_available()."""
+        mock_version_isequal.return_value = False
+        utools = udocker.UdockerTools(mock_localrepo)
+        status = utools.is_available()
+        self.assertFalse(status)
+        #
+        mock_version_isequal.return_value = True
+        utools = udocker.UdockerTools(mock_localrepo)
+        status = utools.is_available()
+        self.assertTrue(status)
+
     @mock.patch('udocker.os.path.exists')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.LocalRepository')
@@ -1050,7 +1078,7 @@ class UdockerToolsTestCase(unittest.TestCase):
     def test_03__install(self, mock_is, mock_down, mock_instr, mock_ver,
                          mock_install, mock_geturl, mock_futil, mock_init,
                          mock_localrepo, mock_msg, mock_exists):
-        """Test UdockerTools.install()."""
+        """Test UdockerTools.install()"""
         mock_msg.level = 0
         mock_futil.return_value.mktmp.return_value = "filename_tmp"
         mock_init.return_value = None
@@ -1188,6 +1216,29 @@ class UdockerToolsTestCase(unittest.TestCase):
         mock_call.return_value = 0
         status = utools._install("tarballfile")
         self.assertTrue(status)
+
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.os.listdir')
+    @mock.patch('udocker.LocalRepository')
+    def test_05_purge(self, mock_localrepo, mock_listdir, mock_futil):
+        """Test UdockerTools.purge()."""
+        mock_listdir.return_value = []
+        utools = udocker.UdockerTools(mock_localrepo)
+        utools.purge()
+        self.assertFalse(mock_futil.called)
+        #
+        mock_listdir.return_value = ["F1", "F2"]
+        utools = udocker.UdockerTools(mock_localrepo)
+        utools.purge()
+        self.assertTrue(mock_futil.called)
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_06__instructions(self, mock_localrepo, mock_msg):
+        """Test UdockerTools._instructions()."""
+        utools = udocker.UdockerTools(mock_localrepo)
+        utools._instructions()
+        self.assertTrue(mock_msg.return_value.out.called)
 
 
 class ElfPatcherTestCase(unittest.TestCase):
