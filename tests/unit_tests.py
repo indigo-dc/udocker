@@ -268,6 +268,110 @@ class ConfigTestCase(unittest.TestCase):
         status = conf._read_config(conf)
         self.assertFalse(status)
 
+    @mock.patch('udocker.Config.__init__')
+    @mock.patch('udocker.Msg')
+    def test_00__verify_config(self, mock_msg, mock_conf_init):
+        """Test Config._verify_config()."""
+        mock_conf_init.return_value = None
+        udocker.Config.topdir = "/.udocker"
+        conf = udocker.Config()
+        conf._verify_config()
+        self.assertFalse(mock_msg.return_value.err.called)
+        #
+        mock_conf_init.return_value = None
+        udocker.Config.topdir = ""
+        conf = udocker.Config()
+        with self.assertRaises(SystemExit) as confexpt:
+            conf._verify_config()
+        self.assertEqual(confexpt.exception.code, 1)
+
+    @mock.patch('udocker.Config.__init__')
+    @mock.patch('udocker.platform.architecture')
+    @mock.patch('udocker.platform.machine')
+    def test_00_arch(self, mock_machine, mock_architecture, mock_conf_init):
+        """Test Config.arch()."""
+        mock_conf_init.return_value = None
+        mock_machine.return_value = "x86_64"
+        mock_architecture.return_value = ["32bit", ]
+        conf = udocker.Config()
+        status = conf.arch()
+        self.assertEqual(status, "i386")
+        #
+        mock_conf_init.return_value = None
+        mock_machine.return_value = "x86_64"
+        mock_architecture.return_value = ["", ]
+        conf = udocker.Config()
+        status = conf.arch()
+        self.assertEqual(status, "amd64")
+        #
+        mock_conf_init.return_value = None
+        mock_machine.return_value = "i686"
+        mock_architecture.return_value = ["", ]
+        conf = udocker.Config()
+        status = conf.arch()
+        self.assertEqual(status, "i386")
+        #
+        mock_conf_init.return_value = None
+        mock_machine.return_value = "armXX"
+        mock_architecture.return_value = ["32bit", ]
+        conf = udocker.Config()
+        status = conf.arch()
+        self.assertEqual(status, "arm")
+        #
+        mock_conf_init.return_value = None
+        mock_machine.return_value = "armXX"
+        mock_architecture.return_value = ["", ]
+        conf = udocker.Config()
+        status = conf.arch()
+        self.assertEqual(status, "arm64")
+
+    @mock.patch('udocker.Config.__init__')
+    @mock.patch('udocker.platform.system')
+    def test_00_osversion(self, mock_system, mock_conf_init):
+        """Test Config.osversion()."""
+        mock_conf_init.return_value = None
+        mock_system.return_value = "Linux"
+        conf = udocker.Config()
+        status = conf.osversion()
+        self.assertEqual(status, "linux")
+        #
+        mock_conf_init.return_value = None
+        mock_system.return_value = "Linux"
+        mock_system.side_effect = NameError('platform system')
+        conf = udocker.Config()
+        status = conf.osversion()
+        self.assertEqual(status, "")
+
+
+    @mock.patch('udocker.Config.__init__')
+    @mock.patch('udocker.platform.linux_distribution')
+    def test_00_osdistribution(self, mock_distribution, mock_conf_init):
+        """Test Config.osdistribution()."""
+        mock_conf_init.return_value = None
+        mock_distribution.return_value = ("DISTRO XX", "1.0", "DUMMY")
+        conf = udocker.Config()
+        status = conf.osdistribution()
+        self.assertEqual(status, ("DISTRO", "1"))
+
+
+    @mock.patch('udocker.Config.__init__')
+    @mock.patch('udocker.platform.release')
+    def test_00_oskernel(self, mock_release, mock_conf_init):
+        """Test Config.oskernel()."""
+        mock_conf_init.return_value = None
+        mock_release.return_value = "1.2.3"
+        conf = udocker.Config()
+        status = conf.oskernel()
+        self.assertEqual(status, "1.2.3")
+        #
+        mock_conf_init.return_value = None
+        mock_release.return_value = "1.2.3"
+        mock_release.side_effect = NameError('platform release')
+        conf = udocker.Config()
+        status = conf.oskernel()
+        self.assertEqual(status, "3.2.1")
+
+
 class MsgTestCase(unittest.TestCase):
     """Test Msg() class screen error and info messages."""
 
