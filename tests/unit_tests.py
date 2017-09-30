@@ -4137,6 +4137,69 @@ class PRootEngineTestCase(unittest.TestCase):
         status = prex._get_volume_bindings()
         self.assertEqual(status, " -b /tmp -b /bbb")
 
+    @mock.patch('udocker.LocalRepository')
+    def test_06__create_mountpoint(self, mock_local):
+        """Test PRootEngine()._create_mountpoint()."""
+        self._init()
+        prex = udocker.PRootEngine(mock_local)
+        status = prex._create_mountpoint("", "")
+        self.assertTrue(status)
+
+    @mock.patch('udocker.subprocess.call')
+    @mock.patch('udocker.PRootEngine._run_banner')
+    @mock.patch('udocker.PRootEngine._run_env_cleanup')
+    @mock.patch('udocker.PRootEngine._set_uid_map')
+    @mock.patch('udocker.PRootEngine._get_volume_bindings')
+    @mock.patch('udocker.PRootEngine._set_cpu_affinity')
+    @mock.patch('udocker.PRootEngine._check_env')
+    @mock.patch('udocker.PRootEngine._run_env_set')
+    @mock.patch('udocker.os.getenv')
+    @mock.patch('udocker.PRootEngine._select_proot')
+    @mock.patch('udocker.ExecutionEngineCommon._run_init')
+    @mock.patch('udocker.LocalRepository')
+    def test_07_run(self, mock_local, mock_run_init, mock_sel_proot,
+                    mock_getenv, mock_run_env_set, mock_check_env,
+                    mock_set_cpu_aff, mock_get_vol_bind, mock_set_uid_map,
+                    mock_env_cleanup, mock_run_banner, mock_call):
+        """Test PRootEngine().run()."""
+        mock_run_init.return_value = False
+        self._init()
+        prex = udocker.PRootEngine(mock_local)
+        status = prex.run("CONTAINERID")
+        self.assertEqual(status, 2)
+        #
+        mock_run_init.return_value = True
+        self._init()
+        mock_check_env.return_value = False
+        prex = udocker.PRootEngine(mock_local)
+        prex.proot_noseccomp = False
+        prex.opt = dict()
+        prex.opt["env"] = []
+        prex.opt["kernel"] = ""
+        status = prex.run("CONTAINERID")
+        self.assertEqual(status, 4)
+        #
+        mock_run_init.return_value = True
+        self._init()
+        mock_check_env.return_value = True
+        mock_set_cpu_aff.return_value = ""
+        mock_get_vol_bind.return_value = ""
+        mock_set_uid_map.return_value = ""
+        mock_call.return_value = 5
+        prex = udocker.PRootEngine(mock_local)
+        prex.proot_noseccomp = False
+        prex.opt = dict()
+        prex.opt["env"] = []
+        prex.opt["kernel"] = ""
+        prex.opt["hostenv"] = ""
+        prex.opt["cwd"] = "/"
+        prex.opt["cmd"] = "/bin/bash"
+        prex._kernel = ""
+        prex.proot_exec = "/.udocker/bin/proot"
+        prex.container_root = ""
+        status = prex.run("CONTAINERID")
+        self.assertEqual(status, 5)
+
 
 class ContainerStructureTestCase(unittest.TestCase):
     """Test ContainerStructure() class for containers structure."""
