@@ -4318,6 +4318,107 @@ class RuncEngineTestCase(unittest.TestCase):
         self.assertFalse(status)
 
 
+    @mock.patch('udocker.os.getgid')
+    @mock.patch('udocker.os.getuid')
+    @mock.patch('udocker.platform.node')
+    @mock.patch('udocker.os.path.realpath')
+    @mock.patch('udocker.LocalRepository')
+    def test_06__set_spec(self, mock_local, mock_realpath, mock_node,
+                          mock_getuid, mock_getgid):
+        """Test RuncEngine()._set_spec()."""
+        self._init()
+        # rcex.opt["hostname"] has nodename
+        mock_realpath.return_value = "/.udocker/containers/aaaaaa/ROOT"
+        mock_node.return_value = "nodename.local"
+        rcex = udocker.RuncEngine(mock_local)
+        rcex.opt = dict()
+        rcex._container_specjson = dict()
+        rcex._container_specjson["root"] = dict()
+        rcex._container_specjson["process"] = dict()
+        rcex._container_specjson["linux"] = dict()
+        rcex._container_specjson["linux"]["uidMappings"] = dict()
+        rcex._container_specjson["linux"]["gidMappings"] = dict()
+        rcex.opt["cwd"] = "/"
+        rcex.opt["env"] = []
+        rcex.opt["cmd"] = "bash"
+        rcex.opt["hostname"] = "node.domain"
+        json_obj = rcex._set_spec()
+        self.assertEqual(json_obj["hostname"], "node.domain")
+        # empty rcex.opt["hostname"]
+        mock_realpath.return_value = "/.udocker/containers/aaaaaa/ROOT"
+        mock_node.return_value = "nodename.local"
+        rcex = udocker.RuncEngine(mock_local)
+        rcex.opt = dict()
+        rcex._container_specjson = dict()
+        rcex._container_specjson["root"] = dict()
+        rcex._container_specjson["process"] = dict()
+        rcex._container_specjson["linux"] = dict()
+        rcex._container_specjson["linux"]["uidMappings"] = dict()
+        rcex._container_specjson["linux"]["gidMappings"] = dict()
+        rcex.opt["cwd"] = "/"
+        rcex.opt["env"] = []
+        rcex.opt["cmd"] = "bash"
+        rcex.opt["hostname"] = ""
+        json_obj = rcex._set_spec()
+        self.assertEqual(json_obj["hostname"], "nodename.local")
+        # environment passes to container json
+        mock_realpath.return_value = "/.udocker/containers/aaaaaa/ROOT"
+        mock_node.return_value = "nodename.local"
+        rcex = udocker.RuncEngine(mock_local)
+        rcex.opt = dict()
+        rcex._container_specjson = dict()
+        rcex._container_specjson["root"] = dict()
+        rcex._container_specjson["process"] = dict()
+        rcex._container_specjson["linux"] = dict()
+        rcex._container_specjson["linux"]["uidMappings"] = dict()
+        rcex._container_specjson["linux"]["gidMappings"] = dict()
+        rcex.opt["cwd"] = "/"
+        rcex.opt["env"] = ["AA=aa", "BB=bb"]
+        rcex.opt["cmd"] = "bash"
+        rcex.opt["hostname"] = ""
+        json_obj = rcex._set_spec()
+        self.assertIn("AA=aa", json_obj["process"]["env"])
+        # environment syntax error
+        mock_realpath.return_value = "/.udocker/containers/aaaaaa/ROOT"
+        mock_node.return_value = "nodename.local"
+        rcex = udocker.RuncEngine(mock_local)
+        rcex.opt = dict()
+        rcex._container_specjson = dict()
+        rcex._container_specjson["root"] = dict()
+        rcex._container_specjson["process"] = dict()
+        rcex._container_specjson["linux"] = dict()
+        rcex._container_specjson["linux"]["uidMappings"] = dict()
+        rcex._container_specjson["linux"]["gidMappings"] = dict()
+        rcex.opt["cwd"] = "/"
+        rcex.opt["env"] = ["=aa", "BB=bb"]
+        rcex.opt["cmd"] = "bash"
+        rcex.opt["hostname"] = ""
+        json_obj = rcex._set_spec()
+        self.assertNotIn("AA=aa", json_obj["process"]["env"])
+        # uid and gid mappings
+        mock_realpath.return_value = "/.udocker/containers/aaaaaa/ROOT"
+        mock_node.return_value = "nodename.local"
+        mock_getuid.return_value = 10000
+        mock_getgid.return_value = 10000
+        rcex = udocker.RuncEngine(mock_local)
+        rcex.opt = dict()
+        rcex._container_specjson = dict()
+        rcex._container_specjson["root"] = dict()
+        rcex._container_specjson["process"] = dict()
+        rcex._container_specjson["linux"] = dict()
+        rcex._container_specjson["linux"]["uidMappings"] = dict()
+        rcex._container_specjson["linux"]["gidMappings"] = dict()
+        rcex._container_specjson["linux"]["uidMappings"]["XXX"] = 0
+        rcex._container_specjson["linux"]["gidMappings"]["XXX"] = 0
+        rcex.opt["cwd"] = "/"
+        rcex.opt["env"] = ["AA=aa", "BB=bb"]
+        rcex.opt["cmd"] = "bash"
+        rcex.opt["hostname"] = ""
+        json_obj = rcex._set_spec()
+        self.assertFalse(mock_getuid.called)
+        self.assertFalse(mock_getgid.called)
+
+
 class ContainerStructureTestCase(unittest.TestCase):
     """Test ContainerStructure() class for containers structure."""
 
