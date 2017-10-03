@@ -1626,14 +1626,21 @@ class ElfPatcherTestCase(unittest.TestCase):
         # self.assertIsInstance(status, list)
 
     @mock.patch('udocker.os.path')
+    @mock.patch('udocker.os.access')
+    @mock.patch('udocker.os.walk')
     @mock.patch('udocker.os.path.exists')
     @mock.patch('udocker.LocalRepository')
-    def test_15__find_ld_libdirs(self, mock_local,
-                                 mock_exists, mock_path):
+    def test_15__find_ld_libdirs(self, mock_local, mock_exists,
+                                 mock_walk, mock_access, mock_path):
         """Test ElfPatcher()._find_ld_libdirs().
 
         search for library directories in container"""
-        pass
+        self._init()
+        container_id = "SOME-RANDOM-ID"
+
+        elfp = udocker.ElfPatcher(mock_local, container_id)
+        status = elfp._find_ld_libdirs()
+        self.assertEqual(status, [])
 
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.os.path.exists')
