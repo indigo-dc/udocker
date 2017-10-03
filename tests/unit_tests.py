@@ -6764,6 +6764,83 @@ class UdockerTestCase(unittest.TestCase):
         self.assertFalse(status)
 
 
+class CmdParserTestCase(unittest.TestCase):
+    """Test CmdParserTestCase() command line interface."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test."""
+        set_env()
+
+    def test_01__init(self):
+        """Test CmdParser() Constructor."""
+
+        cmdp = udocker.CmdParser()
+        self.assertEqual(cmdp._argv, "")
+        self.assertIsInstance(cmdp._argv_split, dict)
+        self.assertIsInstance(cmdp._argv_consumed_options, dict)
+        self.assertIsInstance(cmdp._argv_consumed_params, dict)
+        self.assertEqual(cmdp._argv_split['CMD'], "")
+        self.assertEqual(cmdp._argv_split['GEN_OPT'], [])
+        self.assertEqual(cmdp._argv_split['CMD_OPT'], [])
+        self.assertEqual(cmdp._argv_consumed_options['GEN_OPT'], [])
+        self.assertEqual(cmdp._argv_consumed_options['CMD_OPT'], [])
+        self.assertEqual(cmdp._argv_consumed_params['GEN_OPT'], [])
+        self.assertEqual(cmdp._argv_consumed_params['CMD_OPT'], [])
+
+    def test_02_parse(self):
+        """Test CmdParser().parse()."""
+
+        cmdp = udocker.CmdParser()
+        status = cmdp.parse("udocker run --bindhome "
+                            "--hostauth --hostenv -v /sys"
+                            " -v /proc -v /var/run -v /dev"
+                            " --user=jorge --dri myfed  firefox")
+        self.assertTrue(status)
+
+
+    def test_03_missing_options(self):
+        """Test CmdParser().missing_options()."""
+
+        cmdp = udocker.CmdParser()
+        cmdp.parse("udocker run --bindhome "
+                   "--hostauth --hostenv -v /sys"
+                   " -v /proc -v /var/run -v /dev"
+                   " --user=jorge --dri myfed  firefox")
+        out = cmdp.missing_options()
+        self.assertIsInstance(out, list)
+
+    def test_04_get(self):
+        """Test CmdParser().get()."""
+
+        cmdp = udocker.CmdParser()
+        cmdp.declare_options("-v= -e= -w= -u= -i -t -a")
+        cmdp.parse("udocker run --bindhome "
+                   "--hostauth --hostenv -v /sys"
+                   " -v /proc -v /var/run -v /dev --debug"
+                   " -u=jorge --dri myfed  firefox")
+        out = cmdp.get("xyz")
+        self.assertIsNone(out)
+
+        # out = cmdp.get("--user=")
+        # self.assertEqual(out, "jorge")
+
+        # out = cmdp.get("--debug", "GEN_OPT")
+        # self.assertTrue(out)
+
+    def test_05_declare_options(self):
+        """Test CmdParser().declare_options()."""
+        pass
+
+    def test_06__get_options(self):
+        """Test CmdParser()._get_options()."""
+        pass
+
+    def test_07__get_params(self):
+        """Test CmdParser()._get_params()."""
+        pass
+
+
 class MainTestCase(unittest.TestCase):
     """Test Main() class main udocker program."""
 
