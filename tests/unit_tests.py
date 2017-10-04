@@ -4479,14 +4479,14 @@ class RuncEngineTestCase(unittest.TestCase):
                              mock_config):
         """Test RuncEngine()._select_runc()."""
         self._init()
-        udocker.Config.return_value.arch.return_value = "amd64"
+        udocker.Config.return_value.arch.return_value = "arm"
         udocker.Config.return_value.oskernel_isgreater.return_value = False
-        mock_futil.return_value.find_file_in_dir.return_value = "runc-x86_64"
+        mock_futil.return_value.find_file_in_dir.return_value = "runc-arm"
         mock_execmode.return_value.get_mode.return_value = ""
         rcex = udocker.RuncEngine(mock_local)
         rcex.exec_mode = mock_execmode
         rcex._select_runc()
-        self.assertEqual(rcex.runc_exec, "runc-x86_64")
+        self.assertEqual(rcex.runc_exec, "runc-arm")
 
     @mock.patch('udocker.json.load')
     @mock.patch('udocker.subprocess.call')
@@ -5038,13 +5038,18 @@ class ExecutionModeTestCase(unittest.TestCase):
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.FileBind')
     @mock.patch('udocker.ElfPatcher')
-    def test_03_set_mode(self, mock_elfp, mock_fbind, mock_local,
+    @mock.patch('udocker.FileUtil.links_conv')
+    @mock.patch('udocker.FileUtil.putdata')
+    def test_03_set_mode(self, mock_putdata, mock_links,
+                         mock_elfp,mock_fbind, mock_local,
                          mock_path, mock_getmode, mock_msg):
         """Set execution mode."""
 
         self._init()
         container_id = "CONTAINER_ID"
-        mock_getmode.return_value = "P1"
+        mock_getmode.side_effect = \
+            ["", "P1", "R1", "R1", "F4", "P1", "F3", "P2", "P2", "F4", "F4"]
+        mock_putdata.return_value = True
 
         uexm = udocker.ExecutionMode(mock_local, container_id)
         status = uexm.set_mode("")
@@ -5053,6 +5058,34 @@ class ExecutionModeTestCase(unittest.TestCase):
         status = uexm.set_mode("P1")
         self.assertTrue(status)
 
+        uexm.set_mode("P1")
+        self.assertTrue(mock_fbind.return_value.restore.called)
+
+        uexm.set_mode("F1")
+        self.assertTrue(mock_links.called)
+
+        uexm.set_mode("P2")
+        self.assertTrue(mock_elfp.return_value.restore_ld.called)
+
+        uexm.set_mode("R1")
+        self.assertTrue(mock_fbind.return_value.setup.called)
+
+        uexm.set_mode("F2")
+        self.assertTrue(mock_elfp.return_value.restore_binaries.called)
+
+        uexm.set_mode("F2")
+        self.assertTrue(mock_elfp.return_value.patch_ld.called)
+
+        uexm.set_mode("F3")
+        self.assertTrue(mock_elfp.return_value.patch_ld.called and
+                        mock_elfp.return_value.patch_binaries.called)
+
+        status = uexm.set_mode("F3")
+        self.assertTrue(status)
+
+        mock_putdata.return_value = ""
+        uexm.set_mode("F3")
+        self.assertTrue(mock_msg.return_value.err.called)
 
     @mock.patch('udocker.ExecutionMode.get_mode')
     @mock.patch('udocker.os.path')
@@ -5073,6 +5106,7 @@ class ExecutionModeTestCase(unittest.TestCase):
 
         exec_engine = uexm.get_engine()
         self.assertIsInstance(exec_engine, udocker.PRootEngine)
+
 
 class ContainerStructureTestCase(unittest.TestCase):
     """Test ContainerStructure() class for containers structure."""
