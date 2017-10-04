@@ -3147,13 +3147,26 @@ class DockerIoAPITestCase(unittest.TestCase):
         out = doia.get_v1_layers_all(endpoint, layer_list)
         self.assertEqual(out, ['b.json', 'b.layer', 'a.json', 'a.layer'])
 
-    def test_14_get_v2_login_token(self):
+    @mock.patch('udocker.LocalRepository')
+    def test_14_get_v2_login_token(self, mock_local):
         """Test."""
-        pass
+        self._init()
 
-    def test_15_set_v2_login_token(self):
+        doia = udocker.DockerIoAPI(mock_local)
+        out = doia.get_v2_login_token("username", "password")
+        self.assertIsInstance(out, str)
+
+        out = doia.get_v2_login_token("", "")
+        self.assertEqual(out, "")
+
+    @mock.patch('udocker.LocalRepository')
+    def test_15_set_v2_login_token(self, mock_local):
         """Test."""
-        pass
+        self._init()
+
+        doia = udocker.DockerIoAPI(mock_local)
+        doia.set_v2_login_token("BIG-FAT-TOKEN")
+        self.assertEqual(doia.v2_auth_token, "BIG-FAT-TOKEN")
 
     @mock.patch('udocker.GetURL')
     @mock.patch('udocker.CurlHeader')
@@ -3278,13 +3291,40 @@ class DockerIoAPITestCase(unittest.TestCase):
         # out = doia.get_v1(imagerepo, tag)
         # self.assertEqual(out, [])
 
-    def test_22_get(self):
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.GetURL')
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.DockerIoAPI._parse_imagerepo')
+    @mock.patch('udocker.LocalRepository')
+    @mock.patch('udocker.LocalRepository.cd_imagerepo')
+    def test_22_get(self, mock_cdir, mock_local, mock_parse,
+                    mock_msg, mock_hdr, mock_geturl, mock_dgu):
         """Test."""
-        pass
+        self._init()
 
-    def test_23_search_init(self):
+        # mock_cdir.return_value = False
+        # mock_parse.return_value = ()
+        # mock_dgu.return_value = (mock_hdr, [])
+        #
+        # imagerepo = "REPO"
+        # tag = "TAG"
+        # doia = udocker.DockerIoAPI(mock_local)
+        # doia.registry_url = "https://registry-1.docker.io"
+        # out = doia.get(imagerepo, tag)
+        # self.assertEqual(out, [])
+
+    @mock.patch('udocker.LocalRepository')
+    def test_23_search_init(self, mock_local):
         """Test."""
-        pass
+        self._init()
+
+        doia = udocker.DockerIoAPI(mock_local)
+        doia.search_init("PAUSE")
+        self.assertEqual(doia.search_pause, "PAUSE")
+        self.assertEqual(doia.search_page, 0)
+        self.assertEqual(doia.search_link, "")
+        self.assertEqual(doia.search_ended, False)
 
     def test_24_search_get_page_v1(self):
         """Test."""
