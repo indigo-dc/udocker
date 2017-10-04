@@ -652,8 +652,9 @@ class FileUtilTestCase(unittest.TestCase):
     @mock.patch('udocker.os.path.isfile')
     @mock.patch('udocker.os.path.isdir')
     @mock.patch('udocker.FileUtil.uid')
-    def test_04_remove_file(self, mock_uid, mock_isdir, mock_isfile,
-                            mock_islink, mock_remove, mock_msg,
+    @mock.patch('udocker.FileUtil._is_safe_prefix')
+    def test_04_remove_file(self, mock_safe, mock_uid, mock_isdir,
+                            mock_isfile, mock_islink, mock_remove, mock_msg,
                             mock_exists, mock_realpath, mock_config):
         """Test FileUtil.remove() with plain files."""
         mock_uid.return_value = os.getuid()
@@ -661,6 +662,7 @@ class FileUtilTestCase(unittest.TestCase):
         mock_isdir.return_value = True
         mock_isfile.return_value = True
         mock_exists.return_value = True
+        mock_safe.return_value = True
         udocker.Config = mock_config
         udocker.Config.uid = os.getuid()
         udocker.Config.tmpdir = "/tmp"
@@ -685,6 +687,7 @@ class FileUtilTestCase(unittest.TestCase):
         status = futil.remove()
         self.assertTrue(status)
         # outside of scope 1
+        mock_safe.return_value = False
         futil = udocker.FileUtil("/etc/filename4.txt")
         futil.safe_prefixes = []
         status = futil.remove()
@@ -698,15 +701,17 @@ class FileUtilTestCase(unittest.TestCase):
     @mock.patch('udocker.os.path.islink')
     @mock.patch('udocker.os.path.isfile')
     @mock.patch('udocker.FileUtil.uid')
-    def test_05_remove_dir(self, mock_uid, mock_isfile, mock_islink,
-                           mock_isdir, mock_call, mock_msg, mock_exists,
-                           mock_config):
+    @mock.patch('udocker.FileUtil._is_safe_prefix')
+    def test_05_remove_dir(self, mock_safe, mock_uid, mock_isfile,
+                           mock_islink, mock_isdir, mock_call,
+                           mock_msg, mock_exists, mock_config):
         """Test FileUtil.remove() with directories."""
         mock_uid.return_value = os.getuid()
         mock_isfile.return_value = False
         mock_islink.return_value = False
         mock_isdir.return_value = True
         mock_exists.return_value = True
+        mock_safe.return_value = True
         mock_call.return_value = 0
         udocker.Config = mock_config
         udocker.Config.uid = os.getuid()
@@ -4971,6 +4976,125 @@ class RuncEngineTestCase(unittest.TestCase):
         self.assertTrue(mock_call.called)
 
 
+class FakechrootEngineTestCase(unittest.TestCase):
+    """Docker container execution engine using Fakechroot
+    Provides a chroot like environment to run containers.
+    Uses Fakechroot as chroot alternative.
+    Inherits from ContainerEngine class
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test."""
+        set_env()
+
+    def _init(self):
+        """Configure variables."""
+        udocker.Config = mock.MagicMock()
+        udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
+        udocker.Config.cmd = "/bin/bash"
+        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
+        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.return_value.username.return_value = "user"
+        udocker.Config.return_value.userhome.return_value = "/"
+        udocker.Config.return_value.oskernel.return_value = "4.8.13"
+        udocker.Config.location = ""
+
+    @mock.patch('udocker.LocalRepository')
+    def test_01__init(self, mock_local):
+        """Test FakechrootEngine Constructor."""
+        self._init()
+
+        ufake = udocker.FakechrootEngine(mock_local)
+        self.assertEqual(ufake._fakechroot_so, "")
+        self.assertIsNone(ufake._elfpatcher)
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.os.path')
+    @mock.patch('udocker.Config')
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.LocalRepository')
+    def test_02__select_fakechroot_so(self, mock_local, mock_futil,
+                                      mock_config, mock_path, mock_msg):
+        """Select fakechroot sharable object library."""
+
+        self._init()
+
+        #ufake = udocker.FakechrootEngine(mock_local)
+        #out = ufake._select_fakechroot_so()
+        #self.assertTrue(mock_msg.return_value.err.called)
+
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_03__uid_check(self, mock_local, mock_msg):
+        """Set the uid_map string for container run command"""
+        self._init()
+
+        ufake = udocker.FakechrootEngine(mock_local)
+        ufake._uid_check()
+        self.assertTrue(mock_msg.return_value.out.called)
+
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    @mock.patch('udocker.NixAuthentication')
+    @mock.patch('udocker.ExecutionEngineCommon')
+    def test_04__setup_container_user(self, mock_eecom, mock_auth,
+                                      mock_local, mock_msg):
+        """ Override method ExecutionEngineCommon._setup_container_user()."""
+        self._init()
+
+        mock_eecom.return_value._uid_gid_from_str.side_effect = (None, None)
+        ufake = udocker.FakechrootEngine(mock_local)
+        status = ufake._setup_container_user(":lalves")
+        self.assertFalse(status)
+
+    @mock.patch('udocker.LocalRepository')
+    def test_05__get_volume_bindings(self, mock_local):
+        """Get the volume bindings string for fakechroot run."""
+        self._init()
+
+        ufake = udocker.FakechrootEngine(mock_local)
+        out = ufake._get_volume_bindings()
+        self.assertEqual(out, ("", ""))
+
+    @mock.patch('udocker.LocalRepository')
+    def test_06__get_access_filesok(self, mock_local):
+        """Circumvent mpi init issues when calling access().
+
+        A list of certain existing files is provided
+        """
+        self._init()
+
+        ufake = udocker.FakechrootEngine(mock_local)
+        out = ufake._get_access_filesok()
+        self.assertEqual(out, "")
+
+    @mock.patch('udocker.ExecutionEngineCommon')
+    @mock.patch('udocker.Config')
+    @mock.patch('udocker.FileUtil')
+    @mock.patch('udocker.os.path')
+    @mock.patch('udocker.LocalRepository')
+    def test_07__fakechroot_env_set(self, mock_local, mock_path,
+                                    mock_futil, mock_config, mock_eecom,):
+        """fakechroot environment variables to set."""
+        self._init()
+
+        # ufake = udocker.FakechrootEngine(mock_local)
+        # ufake._fakechroot_env_set()
+        # self.assertTrue(mock_eecom.return_value.exec_mode.called)
+
+    def test_08_run(self):
+        """Execute a Docker container using Fakechroot.
+
+        This is the main
+        method invoked to run the a container with Fakechroot.
+          * argument: container_id or name
+          * options:  many via self.opt see the help
+        """
+        pass
+
+
 class ExecutionModeTestCase(unittest.TestCase):
     """Test ExecutionMode()."""
 
@@ -5038,10 +5162,10 @@ class ExecutionModeTestCase(unittest.TestCase):
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.FileBind')
     @mock.patch('udocker.ElfPatcher')
-    @mock.patch('udocker.FileUtil.links_conv')
+    @mock.patch('udocker.FileUtil')
     @mock.patch('udocker.FileUtil.putdata')
-    def test_03_set_mode(self, mock_putdata, mock_links,
-                         mock_elfp,mock_fbind, mock_local,
+    def test_03_set_mode(self, mock_putdata, mock_futil,
+                         mock_elfp, mock_fbind, mock_local,
                          mock_path, mock_getmode, mock_msg):
         """Set execution mode."""
 
@@ -5062,7 +5186,7 @@ class ExecutionModeTestCase(unittest.TestCase):
         self.assertTrue(mock_fbind.return_value.restore.called)
 
         uexm.set_mode("F1")
-        self.assertTrue(mock_links.called)
+        self.assertTrue(mock_futil.return_value.links_conv.called)
 
         uexm.set_mode("P2")
         self.assertTrue(mock_elfp.return_value.restore_ld.called)
@@ -5083,7 +5207,7 @@ class ExecutionModeTestCase(unittest.TestCase):
         status = uexm.set_mode("F3")
         self.assertTrue(status)
 
-        mock_putdata.return_value = ""
+        mock_putdata.return_value = False
         uexm.set_mode("F3")
         self.assertTrue(mock_msg.return_value.err.called)
 
