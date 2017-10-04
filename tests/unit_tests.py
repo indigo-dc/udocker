@@ -4979,11 +4979,28 @@ class ExecutionModeTestCase(unittest.TestCase):
         """Setup test."""
         set_env()
 
+    def _init(self):
+        """Configure variables."""
+        udocker.Config = mock.MagicMock()
+        udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
+        udocker.Config.cmd = "/bin/bash"
+        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
+        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.return_value.username.return_value = "user"
+        udocker.Config.return_value.userhome.return_value = "/"
+        udocker.Config.return_value.oskernel.return_value = "4.8.13"
+        udocker.Config.location = ""
+        udocker.Config.keystore = "KEYSTORE"
+        udocker.Config.return_value.osversion.return_value = "OSVERSION"
+        udocker.Config.return_value.arch.return_value = "ARCH"
+        udocker.Config.default_execution_mode = "P1"
+
     @mock.patch('udocker.os.path.realpath')
     @mock.patch('udocker.LocalRepository')
-    def _init(self, mock_local, mock_realpath):
-        """Configure variables."""
+    def test_01_init(self, mock_local, mock_realpath):
+        """Test __init__()."""
 
+        self._init()
         container_id = "CONTAINER_ID"
         mock_realpath.return_value = "/tmp"
         uexm = udocker.ExecutionMode(mock_local, container_id)
@@ -4994,18 +5011,18 @@ class ExecutionModeTestCase(unittest.TestCase):
         self.assertEqual(uexm.container_root, "/tmp/ROOT")
         self.assertEqual(uexm.container_execmode, "/tmp/execmode")
         self.assertIsNone(uexm.exec_engine)
-        self.assertListEqual(uexm.valid_modes,
-                             ("P1", "P2", "F1", "F2", "F3", "F4", "R1"))
+        self.assertEqual(uexm.valid_modes,
+                         ("P1", "P2", "F1", "F2", "F3", "F4", "R1"))
 
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.FileUtil')
     @mock.patch('udocker.LocalRepository')
-    def test_01_get_mode(self, mock_local, mock_futil, mock_path):
+    def test_02_get_mode(self, mock_local, mock_futil, mock_path):
         """Get execution mode"""
 
+        self._init()
         container_id = "CONTAINER_ID"
-        mock_futil.return_value.getdata.return_value = ""
-        mock_futil.return_value.filename.return_value = None
+        mock_futil.return_value.getdata.return_value = None
         uexm = udocker.ExecutionMode(mock_local, container_id)
         status = uexm.get_mode()
         self.assertEqual(status, "P1")
@@ -5021,9 +5038,11 @@ class ExecutionModeTestCase(unittest.TestCase):
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.FileBind')
     @mock.patch('udocker.ElfPatcher')
-    def test_02_set_mode(self, mock_elfp, mock_fbind, mock_local,
+    def test_03_set_mode(self, mock_elfp, mock_fbind, mock_local,
                          mock_path, mock_getmode, mock_msg):
         """Set execution mode."""
+
+        self._init()
         container_id = "CONTAINER_ID"
         mock_getmode.return_value = "P1"
 
@@ -5038,9 +5057,10 @@ class ExecutionModeTestCase(unittest.TestCase):
     @mock.patch('udocker.ExecutionMode.get_mode')
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.LocalRepository')
-    def test_03_get_engine(self, mock_local, mock_path, mock_getmode):
+    def test_04_get_engine(self, mock_local, mock_path, mock_getmode):
         """get execution engine instance"""
 
+        self._init()
         container_id = "CONTAINER_ID"
         mock_getmode.side_effect = ["R1", "F2", "P2"]
         uexm = udocker.ExecutionMode(mock_local, container_id)
