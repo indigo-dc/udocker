@@ -880,49 +880,64 @@ class FileUtil(object):
                 return image_path
         return ""
 
-    def _link_set(self, f_path, root_path, force):
-        """Actual convertion to container specific symbolic link"""
+    def _link_change_apply(self, new_l_path, f_path, force):
+        """Actually apply the link convertion"""
+        p_path = os.path.realpath(os.path.dirname(f_path))
+        if force and not os.access(p_path, os.W_OK):
+            os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
+            os.remove(f_path)
+            os.symlink(new_l_path, f_path)
+            os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) & ~stat.S_IWUSR)
+        else:
+            os.remove(f_path)
+            os.symlink(new_l_path, f_path)
+
+    def _link_set(self, f_path, orig_path, root_path, force):
+        """Convertion to container specific symbolic link"""
         l_path = os.readlink(f_path)
-        if l_path.startswith("/") and not l_path.startswith(self.filename):
-            p_path = os.path.realpath(os.path.dirname(f_path))
+        if not l_path.startswith("/"):
+            return False 
+        new_l_path = ""
+        regexp_id = "[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+"
+        recomp = re.compile("(/.*/containers/" + regexp_id + "/ROOT)(/.*)")
+        if orig_path == "":
+            match = recomp.match(l_path)
+            if match: 
+                orig_path = match.group(1)
+        if (orig_path and l_path.startswith(orig_path) and orig_path != root_path):
+            new_l_path = l_path.replace(orig_path, root_path, 1)
+        elif not l_path.startswith(root_path):
             new_l_path = root_path + l_path
-            if force and not os.access(p_path, os.W_OK):
-                os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
-                os.remove(f_path)
-                os.symlink(new_l_path, f_path)
-                os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) & ~stat.S_IWUSR)
-            else:
-                os.remove(f_path)
-                os.symlink(new_l_path, f_path)
+        if new_l_path:
+            self._link_change_apply(new_l_path, f_path, force)
             return True
         return False
 
-    def _link_restore(self, f_path, root_path, force):
-        """Actual convertion for host specific symbolic link"""
+    def _link_restore(self, f_path, orig_path, root_path, force):
+        """Convertion for host specific symbolic link"""
         l_path = os.readlink(f_path)
         new_l_path = ""
-        if l_path.startswith(self.filename):
-            new_l_path = l_path.replace(self.filename, "", 1)
+        if not l_path.startswith("/"):
+            return False 
+        regexp_id = "[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+"
+        recomp = re.compile("(/.*/containers/" + regexp_id + "/ROOT)(/.*)")
+        if orig_path and l_path.startswith(orig_path):
+            new_l_path = l_path.replace(orig_path, "", 1)
         elif l_path.startswith(root_path):
             new_l_path = l_path.replace(root_path, "", 1)
+        elif orig_path == "":
+            match = recomp.match(l_path)
+            if match: 
+                new_l_path = l_path.replace(match.group(1), "", 1)
         if new_l_path:
-            p_path = os.path.realpath(os.path.dirname(f_path))
-            if force and not os.access(p_path, os.W_OK):
-                os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
-                os.remove(f_path)
-                os.symlink(new_l_path, f_path)
-                os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) & ~stat.S_IWUSR)
-            else:
-                os.remove(f_path)
-                os.symlink(new_l_path, f_path)
+            self._link_change_apply(new_l_path, f_path, force)
             return True
         return False
 
-    def links_conv(self, force=False, to_container=True, root_path=""):
+    def links_conv(self, force=False, to_container=True, orig_path=""):
         """ Convert absolute symbolic links to relative symbolic links
         """
-        if not root_path:
-            root_path = os.path.realpath(self.filename)
+        root_path = os.path.realpath(self.filename)
         links = []
         if not self._is_safe_prefix(root_path):
             Msg().err("Error: links convertion outside of directory tree: ",
@@ -937,10 +952,10 @@ class FileUtil(object):
                     if os.lstat(f_path).st_uid != Config.uid:
                         continue
                     if to_container:
-                        if self._link_set(f_path, root_path, force):
+                        if self._link_set(f_path, orig_path, root_path, force):
                             links.append(f_path)
                     else:
-                        if self._link_restore(f_path, root_path, force):
+                        if self._link_restore(f_path, orig_path, root_path, force):
                             links.append(f_path)
                 except OSError:
                     continue
@@ -1209,8 +1224,11 @@ class ElfPatcher(object):
         """verify if path to container is ok"""
         last_path = self.get_patch_last_path()
         if last_path and last_path != self._container_dir:
-            Msg().err("Error: mismatch, convert execmode to P and then to F")
-            sys.exit(1)
+        #    Msg().err("Error: mismatch, convert execmode to P and then to F")
+        #    sys.exit(1)
+            Msg().out("Warning: container root mismatch", l=Msg.WAR)
+            return False
+        return True
 
     def get_patch_last_time(self):
         """get time in seconds of last full patch of container"""
@@ -1222,7 +1240,8 @@ class ElfPatcher(object):
 
     def patch_binaries(self):
         """Set all executables and libs to the ld.so absolute pathname"""
-        self.check_container()
+        if not self.check_container():
+            self.restore_binaries()
         last_time = "0"
         patchelf_exec = self.select_patchelf()
         elf_loader = self.get_container_loader()
@@ -1263,7 +1282,7 @@ class ElfPatcher(object):
 
     def patch_ld(self, output_elf=None):
         """Patch ld.so"""
-        self.check_container()
+        #self.check_container()
         elf_loader = self.get_container_loader()
         if FileUtil(self._container_ld_so_orig).size() == -1:
             status = FileUtil(elf_loader).copyto(self._container_ld_so_orig)
@@ -1330,7 +1349,7 @@ class ElfPatcher(object):
 
     def get_ld_libdirs(self, force=False):
         """Get ld library paths"""
-        self.check_container()
+        #self.check_container()
         if force or not os.path.exists(self._container_ld_libdirs):
             ld_list = self._find_ld_libdirs()
             ld_str = ":".join(ld_list)
@@ -1717,6 +1736,17 @@ class ExecutionEngineCommon(object):
                 return r_home
         return ""
 
+    def _is_volume(self, path):
+        """Is path a host_path in the volumes list"""
+        for vol in list(self.opt["vol"]):
+            if ":" in vol:
+                (host_path, dummy) = vol.split(":")
+            else:
+                host_path = vol
+            if host_path and host_path == path:
+                return True
+        return False
+
     def _set_volume_bindings(self):
         """Set the volume bindings string for container run command"""
         # predefined volume bindings --sysdirs --hostauth --dri
@@ -1765,7 +1795,8 @@ class ExecutionEngineCommon(object):
         _argv = []
         for arg in argv:
             if ' ' in arg:
-                arg = "'{}'".format(arg)
+                arg = "'%s'" % (arg)
+                #arg = "'{}'".format(arg)
             _argv.append(arg)
         return _argv
 
@@ -2639,7 +2670,8 @@ class FakechrootEngine(ExecutionEngineCommon):
         self.opt["env"].append("FAKECHROOT_BASE=" +
                                os.path.realpath(self.container_root))
         self.opt["env"].append("LD_PRELOAD=" + self._fakechroot_so)
-        self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" + Config.tmpdir)
+        if not self._is_volume("/tmp"):
+            self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" + Config.tmpdir)
         #
         if host_volumes:
             self.opt["env"].append("FAKECHROOT_EXCLUDE_PATH=" + host_volumes)
@@ -2748,16 +2780,16 @@ class ExecutionMode(object):
     def __init__(self, localrepo, container_id):
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = container_id         # Container id
-        self.container_dir = \
-            os.path.realpath(self.localrepo.cd_container(container_id))
+        self.container_dir = self.localrepo.cd_container(container_id)
         self.container_root = self.container_dir + "/ROOT"
         self.container_execmode = self.container_dir + "/execmode"
+        self.container_orig_root = self.container_dir + "/root.path"
         self.exec_engine = None
         self.valid_modes = ("P1", "P2", "F1", "F2", "F3", "F4", "R1")
 
     def get_mode(self):
         """Get execution mode"""
-        xmode = FileUtil(self.container_execmode).getdata()
+        xmode = FileUtil(self.container_execmode).getdata().strip()
         if not xmode:
             xmode = Config.default_execution_mode
         return xmode
@@ -2768,6 +2800,7 @@ class ExecutionMode(object):
         prev_xmode = self.get_mode()
         elfpatcher = ElfPatcher(self.localrepo, self.container_id)
         filebind = FileBind(self.localrepo, self.container_id)
+        orig_path = FileUtil(self.container_orig_root).getdata().strip()
         if xmode not in self.valid_modes:
             Msg().err("Error: invalid execmode:", xmode)
             return status
@@ -2777,14 +2810,15 @@ class ExecutionMode(object):
             filebind.restore()
         if xmode.startswith("F"):
             if force or prev_xmode[0] in ("P", "R"):
-                status = (FileUtil(self.container_root).links_conv(force, True)
+                status = (FileUtil(self.container_root).links_conv(force, True,
+                                                                   orig_path)
                           and elfpatcher.get_ld_libdirs(force))
         if xmode in ("P1", "P2", "F1", "R1"):
-            if force or prev_xmode in ("F2", "F3", "F4"):
+            if prev_xmode in ("P1", "P2", "R1", "F1"):
+                status = True
+            elif force or prev_xmode in ("F2", "F3", "F4"):
                 status = (elfpatcher.restore_ld() and
                           elfpatcher.restore_binaries())
-            elif prev_xmode in ("P1", "P2", "R1"):
-                status = True
             if xmode in ("R1", ):
                 filebind.setup()
         elif xmode in ("F2", ):
@@ -2800,10 +2834,13 @@ class ExecutionMode(object):
                 status = True
         if xmode[0] in ("P", "R"):
             if force or prev_xmode.startswith("F"):
-                status = FileUtil(self.container_root).links_conv(force, False)
-        if status:
+                status = FileUtil(self.container_root).links_conv(force, False,
+                                                                  orig_path)
+        if status or force:
             status = FileUtil(self.container_execmode).putdata(xmode)
-        if not status:
+        if status or force:
+            status = FileUtil(self.container_orig_root).putdata(self.container_root)
+        if (not status) and (not force):
             Msg().err("Error: container setup failed")
         return status
 
