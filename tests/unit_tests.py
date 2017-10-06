@@ -950,11 +950,11 @@ class FileUtilTestCase(unittest.TestCase):
                           mock_symlink):
         """Test FileUtil._link_set()."""
         mock_readlink.return_value = "X"
-        status = udocker.FileUtil("/con")._link_set("/con/lnk", "/con", False)
+        status = udocker.FileUtil("/con")._link_set("/con/lnk", "", "/con", False)
         self.assertFalse(status)
         #
         mock_readlink.return_value = "/con"
-        status = udocker.FileUtil("/con")._link_set("/con/lnk", "/con", False)
+        status = udocker.FileUtil("/con")._link_set("/con/lnk", "", "/con", False)
         self.assertFalse(status)
         #
         mock_readlink.return_value = "/HOST/DIR"
@@ -962,7 +962,7 @@ class FileUtilTestCase(unittest.TestCase):
         mock_remove.reset_mock()
         mock_symlink.reset_mock()
         mock_chmod.reset_mock()
-        status = udocker.FileUtil("/con")._link_set("/con/lnk", "/con", False)
+        status = udocker.FileUtil("/con")._link_set("/con/lnk", "", "/con", False)
         self.assertTrue(mock_remove.called)
         self.assertTrue(mock_symlink.called)
         self.assertFalse(mock_chmod.called)
@@ -974,7 +974,7 @@ class FileUtilTestCase(unittest.TestCase):
         mock_remove.reset_mock()
         mock_symlink.reset_mock()
         mock_chmod.reset_mock()
-        status = udocker.FileUtil("/con")._link_set("/con/lnk", "/con", True)
+        status = udocker.FileUtil("/con")._link_set("/con/lnk", "", "/con", True)
         self.assertTrue(mock_remove.called)
         self.assertTrue(mock_symlink.called)
         self.assertFalse(mock_chmod.called)
@@ -986,7 +986,7 @@ class FileUtilTestCase(unittest.TestCase):
         mock_remove.reset_mock()
         mock_symlink.reset_mock()
         mock_chmod.reset_mock()
-        status = udocker.FileUtil("/con")._link_set("/con/lnk", "/con", True)
+        status = udocker.FileUtil("/con")._link_set("/con/lnk", "", "/con", True)
         self.assertTrue(mock_remove.called)
         self.assertTrue(mock_symlink.called)
         self.assertTrue(mock_chmod.called)
@@ -1005,14 +1005,14 @@ class FileUtilTestCase(unittest.TestCase):
                               mock_symlink):
         """Test FileUtil._link_restore()."""
         mock_readlink.return_value = "/con/AAA"
-        status = udocker.FileUtil("/con")._link_restore("/con/lnk",
+        status = udocker.FileUtil("/con")._link_restore("/con/lnk", "/con",
                                                         "/root", False)
         self.assertTrue(status)
         #
         mock_readlink.return_value = "/con/AAA"
         mock_symlink.reset_mock()
         mock_chmod.reset_mock()
-        status = udocker.FileUtil("/con")._link_restore("/con/lnk",
+        status = udocker.FileUtil("/con")._link_restore("/con/lnk", "/con",
                                                         "/root", False)
         self.assertTrue(status)
         self.assertTrue(mock_symlink.called_with("/con/lnk", "/AAA"))
@@ -1020,20 +1020,20 @@ class FileUtilTestCase(unittest.TestCase):
         mock_readlink.return_value = "/root/BBB"
         mock_symlink.reset_mock()
         mock_chmod.reset_mock()
-        status = udocker.FileUtil("/con")._link_restore("/con/lnk",
+        status = udocker.FileUtil("/con")._link_restore("/con/lnk", "/con",
                                                         "/root", False)
         self.assertTrue(status)
         self.assertTrue(mock_symlink.called_with("/con/lnk", "/BBB"))
         #
         mock_readlink.return_value = "/XXX"
-        status = udocker.FileUtil("/con")._link_restore("/con/lnk",
+        status = udocker.FileUtil("/con")._link_restore("/con/lnk", "/con",
                                                         "/root", False)
         self.assertFalse(status)
         #
         mock_readlink.return_value = "/root/BBB"
         mock_symlink.reset_mock()
         mock_chmod.reset_mock()
-        status = udocker.FileUtil("/con")._link_restore("/con/lnk",
+        status = udocker.FileUtil("/con")._link_restore("/con/lnk", "/con",
                                                         "/root", True)
         self.assertTrue(status)
         self.assertTrue(mock_symlink.called_with("/con/lnk", "/BBB"))
@@ -1043,7 +1043,7 @@ class FileUtilTestCase(unittest.TestCase):
         mock_access.return_value = False
         mock_symlink.reset_mock()
         mock_chmod.reset_mock()
-        status = udocker.FileUtil("/con")._link_restore("/con/lnk",
+        status = udocker.FileUtil("/con")._link_restore("/con/lnk", "",
                                                         "/root", True)
         self.assertTrue(status)
         self.assertTrue(mock_symlink.called_with("/con/lnk", "/BBB"))
@@ -1508,9 +1508,9 @@ class ElfPatcherTestCase(unittest.TestCase):
         container_id = "SOME-RANDOM-ID"
         mock_lpath.return_value = "/tmp"
         elfp = udocker.ElfPatcher(mock_local, container_id)
-        with self.assertRaises(SystemExit) as epexpt:
-            elfp.check_container()
-        self.assertEqual(epexpt.exception.code, 1)
+        # with self.assertRaises(SystemExit) as epexpt:
+        #     elfp.check_container()
+        # self.assertEqual(epexpt.exception.code, 1)
 
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.os.path.exists')
@@ -3326,9 +3326,22 @@ class DockerIoAPITestCase(unittest.TestCase):
         self.assertEqual(doia.search_link, "")
         self.assertEqual(doia.search_ended, False)
 
-    def test_24_search_get_page_v1(self):
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.GetURL')
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_24_search_get_page_v1(self, mock_msg, mock_hdr,
+                                   mock_geturl, mock_dgu, mock_local):
         """Test."""
-        pass
+        self._init()
+
+        # mock_dgu.return_value = (mock_hdr, [])
+        #
+        # doia = udocker.DockerIoAPI(mock_local)
+        # doia.set_index("index.docker.io")
+        # out = doia.search_get_page_v1("SOMETHING")
+        # self.assertEqual(out, [])
 
     def test_25_catalog_get_page_v2(self):
         """Test."""
@@ -5167,6 +5180,7 @@ class ExecutionModeTestCase(unittest.TestCase):
         self._init()
         container_id = "CONTAINER_ID"
         mock_realpath.return_value = "/tmp"
+        mock_local.cd_container.return_value = "/tmp"
         uexm = udocker.ExecutionMode(mock_local, container_id)
 
         self.assertEqual(uexm.localrepo, mock_local)
@@ -5186,7 +5200,7 @@ class ExecutionModeTestCase(unittest.TestCase):
 
         self._init()
         container_id = "CONTAINER_ID"
-        mock_futil.return_value.getdata.return_value = None
+        mock_futil.return_value.getdata.return_value.strip.return_value = None
         uexm = udocker.ExecutionMode(mock_local, container_id)
         status = uexm.get_mode()
         self.assertEqual(status, "P1")
