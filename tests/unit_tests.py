@@ -945,7 +945,37 @@ class FileUtilTestCase(unittest.TestCase):
     @mock.patch('udocker.os.path.dirname')
     @mock.patch('udocker.os.path.realpath')
     @mock.patch('udocker.os.readlink')
-    def test_23__link_set(self, mock_readlink, mock_realpath, mock_dirname,
+    def test_23__link_change_apply(self, mock_readlink,
+                                   mock_realpath, mock_dirname,
+                                   mock_access, mock_chmod, mock_stat,
+                                   mock_remove, mock_symlink):
+        """Actually apply the link convertion."""
+        mock_readlink.return_value = "/HOST/DIR"
+        mock_realpath.return_value = "/HOST/DIR"
+        mock_access.return_value = True
+        udocker.FileUtil("/con").\
+            _link_change_apply("/con/lnk_new", "/con/lnk", False)
+        self.assertTrue(mock_remove.called)
+        self.assertTrue(mock_symlink.called)
+
+        mock_access.return_value = False
+        mock_remove.reset_mock()
+        mock_symlink.reset_mock()
+        udocker.FileUtil("/con").\
+            _link_change_apply("/con/lnk_new", "/con/lnk", True)
+        self.assertTrue(mock_chmod.called)
+        self.assertTrue(mock_remove.called)
+        self.assertTrue(mock_symlink.called)
+
+    @mock.patch('udocker.os.symlink')
+    @mock.patch('udocker.os.remove')
+    @mock.patch('udocker.os.stat')
+    @mock.patch('udocker.os.chmod')
+    @mock.patch('udocker.os.access')
+    @mock.patch('udocker.os.path.dirname')
+    @mock.patch('udocker.os.path.realpath')
+    @mock.patch('udocker.os.readlink')
+    def test_24__link_set(self, mock_readlink, mock_realpath, mock_dirname,
                           mock_access, mock_chmod, mock_stat, mock_remove,
                           mock_symlink):
         """Test FileUtil._link_set()."""
@@ -1000,7 +1030,7 @@ class FileUtilTestCase(unittest.TestCase):
     @mock.patch('udocker.os.path.dirname')
     @mock.patch('udocker.os.path.realpath')
     @mock.patch('udocker.os.readlink')
-    def test_24__link_restore(self, mock_readlink, mock_realpath, mock_dirname,
+    def test_25__link_restore(self, mock_readlink, mock_realpath, mock_dirname,
                               mock_access, mock_chmod, mock_stat, mock_remove,
                               mock_symlink):
         """Test FileUtil._link_restore()."""
@@ -1059,7 +1089,7 @@ class FileUtilTestCase(unittest.TestCase):
     @mock.patch('udocker.os.path.islink')
     @mock.patch('udocker.os.walk')
     @mock.patch('udocker.os.path.realpath')
-    def test_25_links_conv(self, mock_realpath, mock_walk, mock_islink,
+    def test_26_links_conv(self, mock_realpath, mock_walk, mock_islink,
                            mock_lstat, mock_is_safe_prefix, mock_msg,
                            mock_link_set, mock_link_restore):
         """Test FileUtil.links_conv()."""
@@ -2549,12 +2579,28 @@ class LocalRepositoryTestCase(unittest.TestCase):
         localrepo.get_layers("IMAGE", "TAG")
         self.assertTrue(mock_cd.called)
 
-    def test_44__load_structure(self):
+    @mock.patch('udocker.FileUtil.isdir')
+    @mock.patch('udocker.LocalRepository')
+    @mock.patch('udocker.LocalRepository.load_json')
+    @mock.patch('udocker.os.listdir')
+    def test_44__load_structure(self, mock_listdir, mock_json,
+                                mock_local, mock_isdir):
         """Test LocalRepository()._load_structure().
 
         Scan the repository structure of a given image tag.
         """
-        pass
+        localrepo = self._localrepo(UDOCKER_TOPDIR)
+        mock_isdir.return_value = False
+        structure = localrepo._load_structure("IMAGETAGDIR")
+        self.assertTrue(structure["layers"])
+
+        mock_isdir.return_value = True
+        mock_listdir.return_value = ["ancestry"]
+        localrepo.return_value = "JSON"
+        structure = localrepo._load_structure("IMAGETAGDIR")
+        # WIP
+        # self.assertTrue("JSON" in structure["ancestry"])
+
 
     def test_45__find_top_layer_id(self):
         """Test."""
