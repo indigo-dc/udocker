@@ -896,15 +896,15 @@ class FileUtil(object):
         """Convertion to container specific symbolic link"""
         l_path = os.readlink(f_path)
         if not l_path.startswith("/"):
-            return False 
+            return False
         new_l_path = ""
         regexp_id = "[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+"
         recomp = re.compile("(/.*/containers/" + regexp_id + "/ROOT)(/.*)")
         if orig_path == "":
             match = recomp.match(l_path)
-            if match: 
+            if match:
                 orig_path = match.group(1)
-        if (orig_path and l_path.startswith(orig_path) and orig_path != root_path):
+        if orig_path and l_path.startswith(orig_path) and orig_path != root_path:
             new_l_path = l_path.replace(orig_path, root_path, 1)
         elif not l_path.startswith(root_path):
             new_l_path = root_path + l_path
@@ -918,7 +918,7 @@ class FileUtil(object):
         l_path = os.readlink(f_path)
         new_l_path = ""
         if not l_path.startswith("/"):
-            return False 
+            return False
         regexp_id = "[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+"
         recomp = re.compile("(/.*/containers/" + regexp_id + "/ROOT)(/.*)")
         if orig_path and l_path.startswith(orig_path):
@@ -927,7 +927,7 @@ class FileUtil(object):
             new_l_path = l_path.replace(root_path, "", 1)
         elif orig_path == "":
             match = recomp.match(l_path)
-            if match: 
+            if match:
                 new_l_path = l_path.replace(match.group(1), "", 1)
         if new_l_path:
             self._link_change_apply(new_l_path, f_path, force)
