@@ -3147,8 +3147,9 @@ class DockerIoAPITestCase(unittest.TestCase):
         out = doia.get_v1_layers_all(endpoint, layer_list)
         self.assertEqual(out, ['b.json', 'b.layer', 'a.json', 'a.layer'])
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.LocalRepository')
-    def test_14_get_v2_login_token(self, mock_local):
+    def test_14_get_v2_login_token(self, mock_local, mock_geturl):
         """Test."""
         self._init()
 
@@ -3159,8 +3160,9 @@ class DockerIoAPITestCase(unittest.TestCase):
         out = doia.get_v2_login_token("", "")
         self.assertEqual(out, "")
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.LocalRepository')
-    def test_15_set_v2_login_token(self, mock_local):
+    def test_15_set_v2_login_token(self, mock_local, mock_geturl):
         """Test."""
         self._init()
 
@@ -3314,8 +3316,9 @@ class DockerIoAPITestCase(unittest.TestCase):
         # out = doia.get(imagerepo, tag)
         # self.assertEqual(out, [])
 
+    @mock.patch('udocker.GetURL')
     @mock.patch('udocker.LocalRepository')
-    def test_23_search_init(self, mock_local):
+    def test_23_search_init(self, mock_local, mock_geturl):
         """Test."""
         self._init()
 
