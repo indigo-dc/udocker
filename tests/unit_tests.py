@@ -1608,11 +1608,39 @@ class ElfPatcherTestCase(unittest.TestCase):
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.os.path.exists')
     @mock.patch('udocker.LocalRepository')
-    def test_12_patch_ld(self, mock_local, mock_exists, mock_path):
+    @mock.patch('udocker.ElfPatcher.get_container_loader')
+    @mock.patch('udocker.FileUtil.size')
+    @mock.patch('udocker.FileUtil.copyto')
+    @mock.patch('udocker.FileUtil.getdata')
+    def test_12_patch_ld(self, mock_getdata,
+                         mock_copyto, mock_size,
+                         mock_gcl, mock_local,
+                         mock_exists, mock_path):
         """Test ElfPatcher().patch_ld().
 
         Patch ld.so"""
-        pass
+        self._init()
+        container_id = "SOME-RANDOM-ID"
+        mock_size.return_value = -1
+        elfp = udocker.ElfPatcher(mock_local, container_id)
+        self.assertFalse(elfp.patch_ld())
+
+        mock_size.return_value = 20
+        mock_copyto.return_value = False
+        elfp = udocker.ElfPatcher(mock_local, container_id)
+        self.assertFalse(elfp.patch_ld())
+
+        mock_size.return_value = 20
+        mock_copyto.return_value = True
+        mock_getdata.return_value = []
+        elfp = udocker.ElfPatcher(mock_local, container_id)
+        self.assertFalse(elfp.patch_ld())
+
+        mock_size.return_value = 20
+        mock_copyto.return_value = True
+        mock_getdata.return_value = []
+        elfp = udocker.ElfPatcher(mock_local, container_id)
+        self.assertFalse(elfp.patch_ld("OUTPUT_ELF"))
 
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.os.path.exists')
@@ -1685,7 +1713,12 @@ class ElfPatcherTestCase(unittest.TestCase):
         """Test ElfPatcher().get_ld_libdirs().
 
         Get ld library paths"""
-        pass
+        self._init()
+        container_id = "SOME-RANDOM-ID"
+
+        elfp = udocker.ElfPatcher(mock_local, container_id)
+        status = elfp.get_ld_libdirs()
+        self.assertEqual(status, [''])
 
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.os.path.exists')
@@ -1695,7 +1728,12 @@ class ElfPatcherTestCase(unittest.TestCase):
         """Test ElfPatcher().get_ld_library_path().
 
         Get ld library paths"""
-        pass
+        self._init()
+        container_id = "SOME-RANDOM-ID"
+
+        elfp = udocker.ElfPatcher(mock_local, container_id)
+        # status = elfp.get_ld_library_path()
+        # self.assertEqual(status, [''])
 
 
 class LocalRepositoryTestCase(unittest.TestCase):
@@ -2413,8 +2451,8 @@ class LocalRepositoryTestCase(unittest.TestCase):
         status = localrepo.del_container(container_id)
         self.assertTrue(status)
 
-    def test_35__realpath(self):
-        """Test LocalRepository()._realpath()."""
+    def test_35__relpath(self):
+        """Test LocalRepository()._relpath()."""
         pass
 
     def test_36__name_is_valid(self):
@@ -3380,8 +3418,25 @@ class DockerIoAPITestCase(unittest.TestCase):
     @mock.patch('udocker.CurlHeader')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.LocalRepository')
-    def test_24_search_get_page_v1(self, mock_msg, mock_hdr,
-                                   mock_geturl, mock_dgu, mock_local):
+    def test_24_search_get_page_v1(self, mock_local, mock_msg, mock_hdr,
+                                   mock_geturl, mock_dgu):
+        """Test."""
+        self._init()
+
+        mock_dgu.return_value = (mock_hdr, [])
+
+        doia = udocker.DockerIoAPI(mock_local)
+        doia.set_index("index.docker.io")
+        out = doia.search_get_page_v1("SOMETHING")
+        self.assertEqual(out, [])
+
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.GetURL')
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_25_catalog_get_page_v2(self, mock_local, mock_msg, mock_hdr,
+                                    mock_geturl, mock_dgu):
         """Test."""
         self._init()
 
@@ -3389,16 +3444,25 @@ class DockerIoAPITestCase(unittest.TestCase):
         #
         # doia = udocker.DockerIoAPI(mock_local)
         # doia.set_index("index.docker.io")
-        # out = doia.search_get_page_v1("SOMETHING")
+        # out = doia.catalog_get_page_v2("lines")
         # self.assertEqual(out, [])
 
-    def test_25_catalog_get_page_v2(self):
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.GetURL')
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_26_search_get_page(self, mock_local, mock_msg, mock_hdr,
+                                mock_geturl, mock_dgu):
         """Test."""
-        pass
+        self._init()
 
-    def test_26_search_get_page(self):
-        """Test."""
-        pass
+        mock_dgu.return_value = (mock_hdr, [])
+
+        doia = udocker.DockerIoAPI(mock_local)
+        doia.set_index("index.docker.io")
+        out = doia.search_get_page("SOMETHING")
+        self.assertEqual(out, [])
 
 
 class ChkSUMTestCase(unittest.TestCase):
@@ -6467,8 +6531,9 @@ class UdockerTestCase(unittest.TestCase):
     @mock.patch('udocker.DockerIoAPI')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.LocalRepository')
+    @mock.patch('udocker.LocalRepository.del_container')
     @mock.patch('udocker.os.path.realpath')
-    def test_15_do_run(self, mock_realpath, mock_local,
+    def test_15_do_run(self, mock_realpath, mock_del, mock_local,
                        mock_msg, mock_dioapi, mock_dlocapi,
                        mock_ks, mock_cmdp, mock_eng, mock_getopt):
         """Test Udocker().do_run()."""
@@ -6477,83 +6542,110 @@ class UdockerTestCase(unittest.TestCase):
         mock_realpath.return_value = "/tmp"
         #
         udoc = udocker.Udocker(mock_local)
-        mock_cmdp.missing_options.return_value = True
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_cmdp.return_value.missing_options.return_value = True
+        mock_cmdp.return_value.get.side_effect = ["", "", "" "", "", ]
         status = udoc.do_run(mock_cmdp)
         self.assertFalse(status)
 
-        # udoc = udocker.Udocker(mock_local)
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        # udocker.Config.location = "/"
-        # mock_eng.return_value.run.return_value = True
-        # status = udoc.do_run(mock_cmdp)
-        # self.assertTrue(status)
-        #
-        # udoc = udocker.Udocker(mock_local)
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        # udocker.Config.location = "/"
-        # mock_eng.return_value.run.return_value = False
-        # status = udoc.do_run(mock_cmdp)
-        # self.assertFalse(status)
-        #
-        # udoc = udocker.Udocker(mock_local)
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["", "", "DELETE" "", "", ]
-        # udocker.Config.location = "/"
-        # mock_eng.return_value.run.return_value = False
-        # mock_local.isprotected_container.return_value = True
-        # status = udoc.do_run(mock_cmdp)
-        # self.assertFalse(status)
-        # self.assertFalse(mock_local.del_container.called)
-        # #
+        mock_local.reset_mock()
+        mock_cmdp.reset_mock()
+        mock_eng.reset_mock()
+        udoc = udocker.Udocker(mock_local)
+        mock_cmdp.return_value.missing_options.return_value = False
+        mock_cmdp.return_value.get.side_effect = ["", "", "" "", "", ]
+        udocker.Config.location = "/"
+        mock_eng.return_value.run.return_value = True
+        status = udoc.do_run(mock_cmdp)
+        self.assertFalse(status)
+
         # mock_local.reset_mock()
+        # mock_cmdp.reset_mock()
+        # mock_eng.reset_mock()
         # udoc = udocker.Udocker(mock_local)
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["", "", "DELETE" "", "", ]
+        # mock_cmdp.return_value.missing_options.return_value = False
+        # mock_cmdp.return_value.get.side_effect = ["", "", "" "", "", ]
         # udocker.Config.location = "/"
         # mock_eng.return_value.run.return_value = False
-        # mock_local.isprotected_container.return_value = False
         # status = udoc.do_run(mock_cmdp)
         # self.assertFalse(status)
-        # self.assertTrue(mock_local.del_container.called)
-        # #
+        #
+        # mock_local.reset_mock()
+        # mock_cmdp.reset_mock()
+        # mock_eng.reset_mock()
+        # mock_del.reset_mock()
         # udoc = udocker.Udocker(mock_local)
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        # mock_cmdp.return_value.missing_options.return_value = False
+        # mock_cmdp.return_value.get.side_effect = ["", "", "--rm" "", "", ]
+        # udocker.Config.location = "/"
+        # mock_eng.return_value.run.return_value = False
+        # mock_local.return_value.isprotected_container.return_value = True
+        # mock_del.return_value = True
+        # status = udoc.do_run(mock_cmdp)
+        # self.assertFalse(mock_del.called)
+        # self.assertFalse(status)
+        #
+        # mock_local.reset_mock()
+        # mock_cmdp.reset_mock()
+        # mock_eng.reset_mock()
+        # mock_del.reset_mock()
+        # udoc = udocker.Udocker(mock_local)
+        # mock_cmdp.return_value.missing_options.return_value = False
+        # mock_cmdp.return_value.get.side_effect = ["", "", "--rm" "", "", ]
+        # udocker.Config.location = "/"
+        # mock_eng.return_value.run.return_value = False
+        # mock_local.return_value.isprotected_container.return_value = False
+        # mock_del.return_value = True
+        # status = udoc.do_run(mock_cmdp)
+        # # self.assertTrue(mock_del.called)
+        # self.assertFalse(status)
+        #
+        # mock_local.reset_mock()
+        # mock_cmdp.reset_mock()
+        # mock_eng.reset_mock()
+        # udoc = udocker.Udocker(mock_local)
+        # mock_cmdp.return_value.missing_options.return_value = False
+        # mock_cmdp.return_value.get.side_effect = ["", "", "" "", "", ]
         # udocker.Config.location = ""
-        # mock_local.get_container_id.return_value = ""
+        # mock_local.return_value.get_container_id.return_value = ""
         # mock_eng.return_value.run.return_value = True
         # status = udoc.do_run(mock_cmdp)
         # self.assertFalse(status)
-        # #
+        #
+        # mock_local.reset_mock()
+        # mock_cmdp.reset_mock()
+        # mock_eng.reset_mock()
         # udoc = udocker.Udocker(mock_local)
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        # mock_cmdp.return_value.missing_options.return_value = False
+        # mock_cmdp.return_value.get.side_effect = ["", "", "" "", "", ]
         # udocker.Config.location = ""
-        # mock_local.get_container_id.return_value = "CONTAINER_ID"
+        # mock_local.return_value.get_container_id.return_value = "CONTAINER_ID"
         # mock_eng.return_value.run.return_value = True
         # status = udoc.do_run(mock_cmdp)
         # self.assertTrue(status)
-        # #
+        #
+        # mock_local.reset_mock()
+        # mock_cmdp.reset_mock()
+        # mock_eng.reset_mock()
         # udoc = udocker.Udocker(mock_local)
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["", "", "" "", "NAME", ]
+        # mock_cmdp.return_value.missing_options.return_value = False
+        # mock_cmdp.return_value.get.side_effect = ["", "", "" "", "NAME", ]
         # udocker.Config.location = ""
-        # mock_local.get_container_id.return_value = "CONTAINER_ID"
+        # mock_local.return_value.get_container_id.return_value = "CONTAINER_ID"
         # mock_eng.return_value.run.return_value = True
-        # mock_local.set_container_name.return_value = True
+        # mock_local.return_value.set_container_name.return_value = True
         # status = udoc.do_run(mock_cmdp)
         # self.assertTrue(status)
-        # #
+        #
+        # mock_local.reset_mock()
+        # mock_cmdp.reset_mock()
+        # mock_eng.reset_mock()
         # udoc = udocker.Udocker(mock_local)
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["", "", "" "", "NAME", ]
+        # mock_cmdp.return_value.missing_options.return_value = False
+        # mock_cmdp.return_value.get.side_effect = ["", "", "" "", "NAME", ]
         # udocker.Config.location = ""
-        # mock_local.get_container_id.return_value = "CONTAINER_ID"
+        # mock_local.return_value.get_container_id.return_value = "CONTAINER_ID"
         # mock_eng.return_value.run.return_value = True
-        # mock_local.set_container_name.return_value = False
+        # mock_local.return_value.set_container_name.return_value = False
         # status = udoc.do_run(mock_cmdp)
         # self.assertFalse(status)
 
@@ -7161,7 +7253,6 @@ class CmdParserTestCase(unittest.TestCase):
                             " -v /proc -v /var/run -v /dev"
                             " --user=jorge --dri myfed  firefox")
         self.assertTrue(status)
-
 
     def test_03_missing_options(self):
         """Test CmdParser().missing_options()."""
