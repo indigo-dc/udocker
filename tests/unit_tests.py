@@ -2511,13 +2511,11 @@ class LocalRepositoryTestCase(unittest.TestCase):
         self.assertFalse(status)
 
     @mock.patch('udocker.LocalRepository')
-    @mock.patch('udocker.os.path.exists')
-    def test_38_cd_imagerepo(self, mock_local, mock_exists):
+    def test_38_cd_imagerepo(self, mock_local):
         """Test LocalRepository().cd_imagerepo()."""
         localrepo = self._localrepo(UDOCKER_TOPDIR)
         localrepo.reposdir = "/tmp"
         out = localrepo.cd_imagerepo("IMAGE", "TAG")
-        self.assertTrue(mock_exists.called)
         self.assertNotEqual(out, "")
 
     @mock.patch('udocker.FileUtil')
@@ -3464,6 +3462,78 @@ class DockerIoAPITestCase(unittest.TestCase):
         out = doia.search_get_page("SOMETHING")
         self.assertEqual(out, [])
 
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.GetURL')
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_27__get_url(self, mock_local, mock_msg, mock_hdr,
+                         mock_geturl, mock_dgu):
+        """."""
+        self._init()
+
+        mock_dgu.return_value = (mock_hdr, [])
+
+        doia = udocker.DockerIoAPI(mock_local)
+
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.GetURL')
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_28__get_file(self, mock_local, mock_msg, mock_hdr,
+                          mock_geturl, mock_dgu):
+        """."""
+        self._init()
+
+        mock_dgu.return_value = (mock_hdr, [])
+
+        doia = udocker.DockerIoAPI(mock_local)
+
+
+    @mock.patch('udocker.GetURL')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_29__get_v1_auth(self, mock_local, mock_msg, mock_geturl):
+        """."""
+        self._init()
+
+        doia = udocker.DockerIoAPI(mock_local)
+        doia.v1_auth_header = "Not Empty"
+
+        www_authenticate = ['Other Stuff']
+        out = doia._get_v1_auth(www_authenticate)
+        self.assertEqual(out, "")
+
+        www_authenticate = ['Token']
+        out = doia._get_v1_auth(www_authenticate)
+        self.assertEqual(out, "Not Empty")
+
+    @mock.patch('udocker.DockerIoAPI._get_url')
+    @mock.patch('udocker.CurlHeader')
+    @mock.patch('udocker.json.loads')
+    @mock.patch('udocker.GetURL')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.LocalRepository')
+    def test_30__get_v2_auth(self, mock_local, mock_msg, mock_geturl,
+                             mock_jloads, mock_hdr, mock_dgu):
+        """."""
+        self._init()
+
+        fakedata = StringIO('token')
+        mock_dgu.return_value = (mock_hdr, fakedata)
+        mock_jloads.return_value = {'token': 'YYY'}
+        doia = udocker.DockerIoAPI(mock_local)
+        doia.v2_auth_header = "v2 Auth Header"
+        doia.v2_auth_token = "v2 Auth Token"
+
+        www_authenticate = 'Other Stuff'
+        out = doia._get_v2_auth(www_authenticate, False)
+        self.assertEqual(out, "")
+
+        www_authenticate = "Bearer realm=REALM"
+        out = doia._get_v2_auth(www_authenticate, False)
+        self.assertEqual(out, "Authorization: Bearer YYY")
 
 class ChkSUMTestCase(unittest.TestCase):
     """Test ChkSUM() performs checksums portably."""
@@ -4407,7 +4477,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
 
     @mock.patch('udocker.NixAuthentication')
     @mock.patch('udocker.LocalRepository')
-    def test_06__get_bindhome(self, mock_local, mock_nixauth):
+    def test_17__get_bindhome(self, mock_local, mock_nixauth):
         """Test ExecutionEngine()._get_bindhome()."""
         self._init()
         #
@@ -4432,6 +4502,51 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         status = prex._get_bindhome()
         self.assertEqual(status, "")
 
+    @mock.patch('udocker.os.path.exists')
+    @mock.patch('udocker.LocalRepository')
+    def test_18__create_mountpoint(self, mock_local, mock_exists):
+        """Test ExecutionEngine()._create_mountpoint()."""
+        self._init()
+        mock_exists.return_value = False
+        exc = udocker.ExecutionEngineCommon(mock_local)
+        status = exc._create_mountpoint("", "")
+        self.assertFalse(status)
+
+        mock_exists.return_value = True
+        exc = udocker.ExecutionEngineCommon(mock_local)
+        status = exc._create_mountpoint("", "")
+        self.assertTrue(status)
+
+    @mock.patch('udocker.os.path.exists')
+    @mock.patch('udocker.LocalRepository')
+    def test_19__check_volumes(self, mock_local, mock_exists):
+        """."""
+        self._init()
+
+        exc = udocker.ExecutionEngineCommon(mock_local)
+        exc.opt["vol"] = ()
+        status = exc._check_volumes()
+        self.assertTrue(status)
+
+        mock_exists.return_value = False
+        exc = udocker.ExecutionEngineCommon(mock_local)
+        status = exc._check_volumes()
+        self.assertTrue(status)
+
+    @mock.patch('udocker.LocalRepository')
+    def test_19__is_volume(self, mock_local):
+        """."""
+        self._init()
+
+        exc = udocker.ExecutionEngineCommon(mock_local)
+        exc.opt["vol"] = ["/tmp"]
+        status = exc._is_volume("/tmp")
+        self.assertTrue(status)
+
+        exc = udocker.ExecutionEngineCommon(mock_local)
+        exc.opt["vol"] = [""]
+        status = exc._is_volume("/tmp")
+        self.assertFalse(status)
 
 class PRootEngineTestCase(unittest.TestCase):
     """Test PRootEngine() class for containers execution."""
@@ -5236,21 +5351,25 @@ class FakechrootEngineTestCase(unittest.TestCase):
         out = ufake._get_access_filesok()
         self.assertEqual(out, "")
 
-    @mock.patch('udocker.ExecutionEngineCommon')
-    @mock.patch('udocker.Config')
     @mock.patch('udocker.FileUtil')
-    @mock.patch('udocker.os.path')
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.ContainerStructure')
     @mock.patch('udocker.LocalRepository')
-    def test_07__fakechroot_env_set(self, mock_local, mock_path,
-                                    mock_futil, mock_config, mock_eecom,):
+    def test_07__fakechroot_env_set(self, mock_local, mock_struct,
+                                    mock_msg, mock_futil):
         """fakechroot environment variables to set."""
         self._init()
 
+        # mock_futil.return_value.find_file_in_dir.return_value = True
         # ufake = udocker.FakechrootEngine(mock_local)
+        #
         # ufake._fakechroot_env_set()
         # self.assertTrue(mock_eecom.return_value.exec_mode.called)
 
-    def test_08_run(self):
+    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.ContainerStructure')
+    @mock.patch('udocker.LocalRepository')
+    def test_08_run(self, mock_local, mock_struct, mock_msg):
         """Execute a Docker container using Fakechroot.
 
         This is the main
@@ -5258,7 +5377,11 @@ class FakechrootEngineTestCase(unittest.TestCase):
           * argument: container_id or name
           * options:  many via self.opt see the help
         """
-        pass
+        self._init()
+
+        ufake = udocker.FakechrootEngine(mock_local)
+        status = ufake.run("container_id")
+        self.assertEqual(status, 2)
 
 
 class ExecutionModeTestCase(unittest.TestCase):
