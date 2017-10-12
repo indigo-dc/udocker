@@ -2035,7 +2035,7 @@ class ExecutionEngineCommon(object):
 
     def _run_banner(self, cmd, char="*"):
         """Print a container startup banner"""
-        Msg().out("",
+        Msg().err("",
                   "\n", char * 78,
                   "\n", char, " " * 74, char,
                   "\n", char,
