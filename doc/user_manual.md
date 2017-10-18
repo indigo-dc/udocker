@@ -696,9 +696,13 @@ The list of packages to be installed is:
 ```
 openib
 libibverbs
+libibverbs-utils
+libibverbs-devel
 libnes
 libibumad
 librdmacm
+libfabric
+libfabric-devel
 opensm-libs
 swig
 ibutils-libs
@@ -706,8 +710,6 @@ ibutils
 opensm
 libibmad
 infiniband-diags
-libibverbs-utils
-libibverbs-devel
 ```
 
 The Open MPI source is compiled and installed in the container under /usr for convenience:
