@@ -698,6 +698,7 @@ openib
 libibverbs
 libnes
 libibumad
+librdmacm
 opensm-libs
 swig
 ibutils-libs
