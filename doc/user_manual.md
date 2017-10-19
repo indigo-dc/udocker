@@ -711,6 +711,12 @@ opensm
 libibmad
 infiniband-diags
 ```
+The driver needs to be installed as well, in our examples the Mellanox driver
+
+```
+yum install mlx4*x86_64
+```
+The installation of both, i686 and x86_64 versions might be conflictive, and lead to an error ("libibverbs: Warning: no userspace device-specific driver found for /sys/class/infiniband_verbs/uverbs0) if for example the i686 is used. Best is installing only the version for the architecture we have.
 
 The Open MPI source is compiled and installed in the container under /usr for convenience:
 
