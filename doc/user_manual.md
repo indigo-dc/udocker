@@ -695,18 +695,14 @@ yum install -y epel-release
 The list of packages to be installed is:
 ```
 openib
-libibverbs
-libibverbs-utils
-libibverbs-devel
+libibverbs, libibverbs-utils, libibverbs-devel
+librdmacm, librdmacm-utils, ibacm
 libnes
 libibumad
-librdmacm
-libfabric
-libfabric-devel
+libfabric, libfabric-devel
 opensm-libs
 swig
-ibutils-libs
-ibutils
+ibutils-libs, ibutils
 opensm
 libibmad
 infiniband-diags
