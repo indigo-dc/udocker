@@ -2035,7 +2035,7 @@ class ExecutionEngineCommon(object):
 
     def _run_banner(self, cmd, char="*"):
         """Print a container startup banner"""
-        Msg().out("",
+        Msg().err("",
                   "\n", char * 78,
                   "\n", char, " " * 74, char,
                   "\n", char,
@@ -2053,7 +2053,8 @@ class ExecutionEngineCommon(object):
 
     def _run_env_set(self):
         """Environment variables to set"""
-        self.opt["env"].append("HOME=" + self.opt["home"])
+        if not any(entry.startswith("HOME=") for entry in self.opt["env"]):
+            self.opt["env"].append("HOME=" + self.opt["home"])
         self.opt["env"].append("USER=" + self.opt["user"])
         self.opt["env"].append("LOGNAME=" + self.opt["user"])
         self.opt["env"].append("USERNAME=" + self.opt["user"])
