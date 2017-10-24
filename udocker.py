@@ -5344,8 +5344,8 @@ class Udocker(object):
                     container_id = self._create(imagerepo+":"+tag)
                 if not container_id:
                     self.do_pull(cmdp)
-                    self.localrepo.cd_imagerepo(imagerepo, tag)
-                    container_id = self._create(imagerepo+":"+tag)
+                    if self.localrepo.cd_imagerepo(imagerepo, tag):
+                        container_id = self._create(imagerepo+":"+tag)
                     if not container_id:
                         Msg().err("Error: image or container not available")
                         return False
