@@ -1055,7 +1055,7 @@ class FileUtil(object):
         return links
 
     def match(self):
-        """Find matching file in wildcard matching expression"""
+        """Find matching file with wildcard matching expression"""
         directory = os.path.dirname(self.filename)
         matching_expression = os.path.basename(self.filename)
         matching_files = []
