@@ -383,7 +383,7 @@ class GuestInfo(object):
                    "/lib64/ld-linux-x86-64.so.3",
                    "/lib/ld-linux.so.2",
                    "/lib/ld-linux.so",
-                   "/bin/sh", "/bin/bash", "/bin/zsh", "/bin/ash", "/bin/csh",
+                   "/bin/sh", "/bin/bash", "/bin/zsh", "/bin/csh", "/bin/tcsh",
                    "/bin/ls", "/sbin/ldconfig",
                    "/system/bin/sh", "/system/bin/ls",
                   ]
