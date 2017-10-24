@@ -1893,6 +1893,16 @@ class ExecutionEngineCommon(object):
         Msg().err("Error: invalid working directory: ", self.opt["cwd"])
         return False
 
+    def _getquote(self, arg):
+        """Obtain the quote character from string"""
+        double_p = arg.find('"')
+        single_p = arg.find("'")
+        if double_p != -1 and (double_p < single_p or single_p == -1):
+            return "'"
+        if single_p != -1 and (single_p < double_p or double_p == -1):
+            return '"'
+        return "'"
+
     def _quote(self, argv):
         """Iterate over argv and quote items containing spaces. This is
         useful in case an interpreter is used in the command e.g.:
@@ -1900,9 +1910,10 @@ class ExecutionEngineCommon(object):
         """
         _argv = []
         for arg in argv:
+            quote_ch = self._getquote(arg)
             if ' ' in arg:
-                arg = "'%s'" % (arg)
-                #arg = "'{}'".format(arg)
+                #arg = "'%s'" % (arg)
+                arg = '%s%s%s' % (quote_ch, arg, quote_ch)
             _argv.append(arg)
         return _argv
 
@@ -5755,8 +5766,8 @@ class CmdParser(object):
         self._argv_consumed_params['CMD_OPT'] = []
 
     def parse(self, argv):
-        """Parse a command line string passed to the constructor
-        divides the string in three blocks: general_options,
+        """Parse a command line string.
+        Divides the string in three blocks: general_options,
         command name, and command options+arguments
         """
         step = 1
@@ -5839,7 +5850,6 @@ class CmdParser(object):
                 break        # end of options and start of arguments
             elif opt_name.endswith("="):
                 if opt_list[pos].startswith(opt_name):
-                    #opt_arg = opt_list[pos].split("=", 1)[1].strip().strip('"')
                     opt_arg = opt_list[pos].split("=", 1)[1].strip()
                 elif (opt_list[pos] == opt_name[:-1] and
                       not opt_list[pos + 1].startswith("-")):
