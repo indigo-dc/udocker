@@ -2643,14 +2643,13 @@ class FakechrootEngine(ExecutionEngineCommon):
         """Select fakechroot sharable object library"""
         conf = Config()
         if conf.fakechroot_so:
-            if conf.fakechroot_so.startswith("/"):
+            if isinstance(conf.fakechroot_so, list):
+                image_list = conf.fakechroot_so
+            elif isinstance(conf.fakechroot_so, str):
+                image_list = [conf.fakechroot_so, ]
+            if "/" in conf.fakechroot_so:
                 if os.path.exists(conf.fakechroot_so):
-                    return conf.fakechroot_so
-            else:
-                if isinstance(conf.fakechroot_so, list):
-                    image_list = conf.fakechroot_so
-                elif isinstance(conf.fakechroot_so, str):
-                    image_list = [conf.fakechroot_so, ]
+                    return os.path.realpath(conf.fakechroot_so)
         elif os.path.exists(self.container_dir + "/libfakechroot.so"):
             return self.container_dir + "/libfakechroot.so"
         else:
@@ -2679,7 +2678,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
         if not fakechroot_so:
-            Msg().err("Error: no libfakechroot found")
+            Msg().err("Error: no libfakechroot found", image_list)
             sys.exit(1)
         Msg().out("fakechroot_so:", fakechroot_so, l=Msg.DBG)
         return fakechroot_so
