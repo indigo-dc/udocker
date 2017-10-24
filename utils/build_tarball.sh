@@ -1165,6 +1165,7 @@ create_package_tarball()
         ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-x86_64.so ; \
         ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-Ubuntu-x86_64.so ; \
         ln -s libfakechroot-Fedora-25-x86_64.so libfakechroot-Fedora-x86_64.so ; \
+        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-Debian-7-x86_64.so ; \
         ln -s libfakechroot-Ubuntu-16-x86_64.so libfakechroot-CentOS-x86_64.so)
 
     find "${PACKAGE_DIR}" -type d -exec /bin/chmod u=rwx,og=rx  {} \;

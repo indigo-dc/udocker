@@ -374,6 +374,99 @@ class Config(object):
                 return False
         return True
 
+
+class GuestInfo(object):
+    """Get os information from a directory tree"""
+
+    _binarylist = ["/lib64/ld-linux-x86-64.so",
+                   "/lib64/ld-linux-x86-64.so.2",
+                   "/lib64/ld-linux-x86-64.so.3",
+                   "/lib/ld-linux.so.2",
+                   "/lib/ld-linux.so",
+                   "/bin/sh", "/bin/bash", "/bin/zsh", "/bin/ash", "/bin/csh",
+                   "/bin/ls", "/sbin/ldconfig",
+                   "/system/bin/sh", "/system/bin/ls",
+                  ]
+
+    def __init__(self, root_dir):
+        self._root_dir = root_dir
+
+    def _get_arch(self, filename):
+        """Get the file architecture"""
+        if os.path.islink(filename):
+            fpath = self._root_dir + os.readlink(filename)
+            return self._get_arch(fpath)
+        if os.path.isfile(filename):
+            cmd = "file %s" % (filename)
+            return Uprocess().get_output(cmd)
+        return ""
+
+    def arch(self):
+        """Get guest system architecture"""
+        for filename in GuestInfo._binarylist:
+            fpath = self._root_dir + filename
+            data = self._get_arch(fpath)
+            if not data:
+                continue
+            if "x86-64," in data:
+                return "amd64"
+            if "80386," in data:
+                return "i386"
+            if "ARM," in data:
+                if "64-bit" in data:
+                    return "arm64"
+                else:
+                    return "arm"
+        return ""
+
+    def osdistribution(self):
+        """Get guest operating system distribution"""
+        fpath = self._root_dir + "/etc/lsb-release"
+        if os.path.exists(fpath):
+            distribution = ""
+            version = ""
+            osinfo = FileUtil(fpath).getdata()
+            match = re.search(r"DISTRIB_ID=(.+)(\n|$)",
+                              osinfo, re.MULTILINE)
+            if match:
+                distribution = match.group(1).split(" ")[0]
+            match = re.search(r"DISTRIB_RELEASE=(.+)(\n|$)",
+                              osinfo, re.MULTILINE)
+            if match:
+                version = match.group(1).split(".")[0]
+            if distribution and version:
+                return (distribution, version)
+        fpath = self._root_dir + "/etc/os-release"
+        if os.path.exists(fpath):
+            distribution = ""
+            version = ""
+            osinfo = FileUtil(fpath).getdata()
+            match = re.search(r"NAME=\"?(.+)\"?(\n|$)",
+                              osinfo, re.MULTILINE)
+            if match:
+                distribution = match.group(1).split(" ")[0]
+            match = re.search(r"VERSION_ID=\"?(\d+)\"?(\n|$)",
+                              osinfo, re.MULTILINE)
+            if match:
+                version = match.group(1).split(".")[0]
+            if distribution and version:
+                return (distribution, version)
+        for fpath in FileUtil(self._root_dir + "/etc/.+-release").match():
+            if os.path.exists(fpath):
+                osinfo = FileUtil(fpath).getdata()
+                match = re.match(r"([^=]+) release (\d+)", osinfo)
+                if match and match.group(1):
+                    return (match.group(1).split(" ")[0],
+                            match.group(2).split(".")[0])
+        return ("", "")
+
+    def osversion(self):
+        """Get guest operating system"""
+        if self.osdistribution()[0]:
+            return "linux"
+        return ""
+
+
 class KeyStore(object):
     """Basic storage for authentication tokens to be used
     with dockerhub and private repositories
@@ -960,6 +1053,19 @@ class FileUtil(object):
                 except OSError:
                     continue
         return links
+
+    def match(self):
+        """Find matching file in wildcard matching expression"""
+        directory = os.path.dirname(self.filename)
+        matching_expression = os.path.basename(self.filename)
+        matching_files = []
+        if not os.path.isdir(directory):
+            return []
+        for f_name in os.listdir(directory):
+            if re.match(matching_expression, f_name):
+                matching_files.append(directory + "/" + f_name)
+        return matching_files
+
 
 class UdockerTools(object):
     """Download and setup of the udocker supporting tools
@@ -2544,8 +2650,9 @@ class FakechrootEngine(ExecutionEngineCommon):
         else:
             lib = "libfakechroot"
             deflib = "libfakechroot.so"
-            arch = conf.arch()
-            (distro, version) = conf.osdistribution()
+            guest = GuestInfo(self.container_root)
+            arch = guest.arch()
+            (distro, version) = guest.osdistribution()
             version = version.split(".")[0]
             if arch == "amd64":
                 image_list = ["%s-%s-%s-x86_64.so" % (lib, distro, version),
@@ -5217,7 +5324,8 @@ class Udocker(object):
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
         #
-        if cmdp.missing_options():               # syntax error
+        if cmdp.missing_options() or not container_or_image: # syntax error
+            Msg().err("Error: must specify container_id or image:tag")
             return False
         if Config.location:
             container_id = ""
