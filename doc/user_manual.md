@@ -689,11 +689,35 @@ TCP/IP is enough.
 
 ```
 yum install -y epel-release
-yum install *openib*
-yum install *openib-devel*
-yum install libibverbs*
-yum install libibverbs-devel*
 ```
+
+The list of packages to be installed is:
+
+```
+openib
+libibverbs, libibverbs-utils, libibverbs-devel
+librdmacm, librdmacm-utils, ibacm
+libnes
+libibumad
+libfabric, libfabric-devel
+opensm-libs
+swig
+ibutils-libs, ibutils
+opensm
+libibmad
+infiniband-diags
+```
+
+The driver needs to be installed as well, in our examples the Mellanox driver.
+
+```
+yum install mlx4*x86_64
+```
+
+The installation of both, i686 and x86_64 versions might be conflictive, and lead to an 
+error ("libibverbs: Warning: no userspace device-specific driver found for 
+/sys/class/infiniband_verbs/uverbs0) if for example the i686 is used. The best approach 
+is to install only the version for the architecture of the machine in this case x86_64.
 
 The Open MPI source is compiled and installed in the container under /usr for convenience:
 
@@ -778,8 +802,8 @@ Below ROOT you will find all the files that comprise the container. udocker
 performs a fake chroot into this directory. You can modify, add, remove files 
 below this location and upon execution these changes will be seen inside the 
 container. This can be used to put or retrieve files to/from the container. 
-With this directory you may also perform copies of the container directory 
-tree e.g. for backup or other purposes.
+By acessing this directory from the host you may also perform copies of the 
+container directory tree e.g. for backup or other purposes.
 
 All containers are stored under the directory "containers". Each container is
 under a separate directory whose name corresponds to its alphanumeric id. 
@@ -809,12 +833,13 @@ the filesystem is shared).
 
 Containers should only be copied in this manner when they are in the execution
 modes Pn or Rn. The modes Fn perform changes to the containers that will make
-them fail if they are execute in a different host. In this later case convert 
-to P1 before performing the backup.
+them fail if they are execute in a different host if the absolute pathname to 
+the container location is different. In this later case convert back to P1 
+(using:  udocker setup --execmode=P1) before performing the backup.
 
 ## 7. Issues
 
-When experiencing issues in the default execution mode you may try
+When experiencing issues in the default execution mode (P1) you may try
 to setup the container to execute using mode P2 or one of the Fn or 
 Rn modes. See section 3.23 for information on changing execution modes.
 
