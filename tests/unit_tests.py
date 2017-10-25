@@ -5313,8 +5313,9 @@ class FakechrootEngineTestCase(unittest.TestCase):
         self._init()
 
         ufake = udocker.FakechrootEngine(mock_local)
+        ufake.opt["user"] = "root"
         ufake._uid_check()
-        self.assertTrue(mock_msg.return_value.out.called)
+        self.assertTrue(mock_msg.return_value.err.called)
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.LocalRepository')
