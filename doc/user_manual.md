@@ -698,6 +698,7 @@ Openib and libibverbs need to be install to compile Open MPI over Infiniband. Fo
 install the epel repository on the container. This step is not required if running using 
 TCP/IP is enough.
 
+To install the Infiniband drivers one needs to install the epel repository.
 
 ```
 yum install -y epel-release
