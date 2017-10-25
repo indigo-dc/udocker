@@ -201,7 +201,7 @@ under $HOME/.udocker this directory will contain:
 
 ## 8. ENVIRONMENT
 
-The location of the udocker directory can be changed via environment variables.
+The location of the udocker directories can be changed via environment variables.
 
  * UDOCKER_DIR : root directory of udocker usually $HOME/.udocker
  * UDOCKER_BIN : location of udocker related executables
@@ -216,6 +216,10 @@ The Docker index and registry and be overrided via environment variables.
  * UDOCKER_INDEX : https://...
  * UDOCKER_REGISTRY : https://...
 
+The verbosity level of udocker can be enforced. Removing banners and most messages
+can be achieved by executing with UDOCKER_LOGLEVEL=2
+
+ * UDOCKER_LOGLEVEL : set verbosity level from 0 to 5 (MIN to MAX verbosity)
 
 ## 9. CONFIGURATION
 

@@ -498,7 +498,7 @@ EOF
 ```
 
 
-### 3.20. Debug
+### 3.20. Debug and Verbosity
 Further debugging information can be obtaining by running with `-D`.
 
 Examples:
@@ -506,6 +506,18 @@ Examples:
   udocker -D pull busybox:latest
   udocker -D run busybox:latest
 ```
+
+The options '-q' or '--quiet' can be specified before each command 
+to reduce verbosity. The verbosity level can also be specified by 
+assigning a value between 0 and 5 to the environment variable 
+UDOCKER_LOGLEVEL.
+
+Examples:
+```
+  udocker -q run busybox:latest /bin/ls
+  UDOCKER_LOGLEVEL=2 udocker run busybox:latest /bin/ls
+```
+
 
 ### 3.21. Login
 ```
