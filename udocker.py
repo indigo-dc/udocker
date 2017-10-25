@@ -286,7 +286,7 @@ class Config(object):
                 continue
             (key, val) = line.strip().split("=", 1)
             key = key.strip()
-            Msg().out(config_file, ":", key, "=", val, l=Msg.DBG)
+            Msg().err(config_file, ":", key, "=", val, l=Msg.DBG)
             try:
                 exec('Config.%s=%s' % (key, val))
             except(NameError, AttributeError, TypeError, IndexError,
@@ -1178,7 +1178,7 @@ class UdockerTools(object):
         if self.is_available() and not force:
             return True
         elif not self._autoinstall and not force:
-            Msg().out("Warning: no engine available and autoinstall disabled",
+            Msg().err("Warning: no engine available and autoinstall disabled",
                       l=Msg.WAR)
             return None
         elif not self._tarball:
@@ -1186,11 +1186,11 @@ class UdockerTools(object):
             self._instructions()
             return False
         else:
-            Msg().out("Info: installing from tarball", __version__,
+            Msg().err("Info: installing from tarball", __version__,
                       l=Msg.INF)
             tarball_file = ""
             if "://" in self._tarball:
-                Msg().out("Info: downloading: %s" % (self._tarball), l=Msg.INF)
+                Msg().err("Info: downloading: %s" % (self._tarball), l=Msg.INF)
                 tarball_file = self._download()
             elif os.path.exists(self._tarball):
                 tarball_file = self._tarball
@@ -1330,9 +1330,8 @@ class ElfPatcher(object):
         """verify if path to container is ok"""
         last_path = self.get_patch_last_path()
         if last_path and last_path != self._container_dir:
-        #    Msg().err("Error: mismatch, convert execmode to P and then to F")
-        #    sys.exit(1)
-            Msg().out("Warning: container root mismatch", l=Msg.WAR)
+            Msg().err("Warning: container path mismatch, use setup to convert",
+                      l=Msg.WAR)
             return False
         return True
 
@@ -1740,7 +1739,7 @@ class ExecutionEngineCommon(object):
                                   " TCP/IP ports (< 1024) not supported")
                         return True
         if port_number != -1:
-            Msg().out("Warning: this container exposes TCP/IP"
+            Msg().err("Warning: this container exposes TCP/IP"
                       " ports this may not work", l=Msg.WAR)
         return False
 
@@ -1873,7 +1872,7 @@ class ExecutionEngineCommon(object):
                     self.opt["vol"].remove(vol)
                     found = True
             if not found:
-                Msg().out("Warning: --novol %s not in volumes list" %
+                Msg().err("Warning: --novol %s not in volumes list" %
                           novolume, l=Msg.WAR)
         return self._check_volumes()
 
@@ -1931,7 +1930,7 @@ class ExecutionEngineCommon(object):
                 self.opt["cmd"] = self.opt["entryp"]
         if not self.opt["cmd"]:
             self.opt["cmd"] = Config.cmd
-            Msg().out("Warning: no command assuming:", self.opt["cmd"],
+            Msg().err("Warning: no command assuming:", self.opt["cmd"],
                       l=Msg.WAR)
         exec_name = self.opt["cmd"][0]            # exec pathname without args
         self.opt["cmd"] = self._quote(self.opt["cmd"])
@@ -2132,7 +2131,7 @@ class ExecutionEngineCommon(object):
                     self.opt["gid"] = ""
                 elif self.opt["uid"] > 0:
                     self.opt["user"] = ""
-                Msg().out("Warning: non-existing user will be created",
+                Msg().err("Warning: non-existing user will be created",
                           l=Msg.WAR)
         self._create_user(container_auth, host_auth)
         return True
@@ -2183,7 +2182,7 @@ class ExecutionEngineCommon(object):
 
     def _run_banner(self, cmd, char="*"):
         """Print a container startup banner"""
-        Msg().out("",
+        Msg().err("",
                   "\n", char * 78,
                   "\n", char, " " * 74, char,
                   "\n", char,
@@ -2372,7 +2371,7 @@ class PRootEngine(ExecutionEngineCommon):
         if self.opt["cwd"]:  # set current working directory
             cmd += " -w " + self.opt["cwd"] + " "
         cmd += " ".join(self.opt["cmd"])
-        Msg().out("CMD = " + cmd, l=Msg.VER)
+        Msg().err("CMD = " + cmd, l=Msg.VER)
 
         # if not --hostenv clean the environment
         if not self.opt["hostenv"]:
@@ -2481,7 +2480,7 @@ class RuncEngine(ExecutionEngineCommon):
         """Check the uid_map string for container run command"""
         if ("user" in self.opt and self.opt["user"] != "0" and
                 self.opt["user"] != "root"):
-            Msg().out("Warning: this engine only supports execution as root",
+            Msg().err("Warning: this engine only supports execution as root",
                       l=Msg.WAR)
 
     def _create_mountpoint(self, host_path, cont_path):
@@ -2521,7 +2520,7 @@ class RuncEngine(ExecutionEngineCommon):
                 cont_dir = volume
             if os.path.isdir(host_dir):
                 if host_dir == "/dev":
-                    Msg().out("Warning: this engine does not support -v",
+                    Msg().err("Warning: this engine does not support -v",
                               host_dir, l=Msg.WAR)
                     continue
                 self._add_mount_spec(host_dir, cont_dir, rwmode=True)
@@ -2630,7 +2629,7 @@ class RuncEngine(ExecutionEngineCommon):
         self.execution_id = Unique().uuid(self.container_id)
         cmd = self.runc_exec + runc_debug + " --root " + self.container_dir + \
               " run --bundle " + self.container_dir + " " + self.execution_id
-        Msg().out("CMD = " + cmd, l=Msg.VER)
+        Msg().err("CMD = " + cmd, l=Msg.VER)
 
         # execute
         self._run_banner(self.opt["cmd"][0], '%')
@@ -2692,14 +2691,14 @@ class FakechrootEngine(ExecutionEngineCommon):
         if not fakechroot_so:
             Msg().err("Error: no libfakechroot found", image_list)
             sys.exit(1)
-        Msg().out("fakechroot_so:", fakechroot_so, l=Msg.DBG)
+        Msg().err("fakechroot_so:", fakechroot_so, l=Msg.DBG)
         return fakechroot_so
 
     def _uid_check(self):
         """Set the uid_map string for container run command"""
         if ("user" not in self.opt or (not self.opt["user"]) or
                 self.opt["user"] == "root" or self.opt["user"] == "0"):
-            Msg().out("Warning: running as uid 0 is not supported by this engine",
+            Msg().err("Warning: running as uid 0 is not supported by this engine",
                       l=Msg.WAR)
             self.opt["user"] = Config().username()
 
@@ -2749,7 +2748,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             else:
                 if ":" not in user:
                     self.opt["user"] = user
-                Msg().out("Warning: non-existing user will be created",
+                Msg().err("Warning: non-existing user will be created",
                           l=Msg.WAR)
         self._create_user(container_auth, host_auth)
         return True
@@ -2876,7 +2875,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         if xmode in ("F1", "F2"):
             cmd += " " + self._elfpatcher.get_container_loader() + " "
         cmd += " ".join(self.opt["cmd"])
-        Msg().out("CMD = " + cmd, l=Msg.VER)
+        Msg().err("CMD = " + cmd, l=Msg.VER)
 
         # if not --hostenv clean the environment
         if not self.opt["hostenv"]:
@@ -3719,12 +3718,12 @@ class LocalRepository(object):
                     elif fname.startswith("sha"):
                         structure["layers"][layer_id]["layer_f"] = f_path
                     else:
-                        Msg().out("Warning: unkwnon file in layer:", f_path,
+                        err().err("Warning: unkwnon file in layer:", f_path,
                                   l=Msg.WAR)
                 elif fname in ("TAG", "v1", "v2", "PROTECT"):
                     pass
                 else:
-                    Msg().out("Warning: unkwnon file in image:", f_path,
+                    Msg().err("Warning: unkwnon file in image:", f_path,
                               l=Msg.WAR)
         return structure
 
@@ -4228,7 +4227,7 @@ class DockerIoAPI(object):
             kwargs["RETRY"] = 3
         kwargs["RETRY"] -= 1
         (hdr, buf) = self.curl.get(*args, **kwargs)
-        Msg().out("header: %s" % (hdr.data), l=Msg.DBG)
+        Msg().err("header: %s" % (hdr.data), l=Msg.DBG)
         if ("X-ND-HTTPSTATUS" in hdr.data and
                 "401" in hdr.data["X-ND-HTTPSTATUS"]):
             if "www-authenticate" in hdr.data and hdr.data["www-authenticate"]:
@@ -4295,7 +4294,7 @@ class DockerIoAPI(object):
     def get_v1_repo(self, imagerepo):
         """Get list of images in a repo from Docker Hub"""
         url = self.index_url + "/v1/repositories/" + imagerepo + "/images"
-        Msg().out("repo url:", url, l=Msg.DBG)
+        Msg().err("repo url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url, header=["X-Docker-Token: true"])
         try:
             self.v1_auth_header = "Authorization: Token " + \
@@ -4315,7 +4314,7 @@ class DockerIoAPI(object):
     def get_v1_image_tags(self, endpoint, imagerepo):
         """Get list of tags in a repo from Docker Hub"""
         url = endpoint + "/v1/repositories/" + imagerepo + "/tags"
-        Msg().out("tags url:", url, l=Msg.DBG)
+        Msg().err("tags url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
             return(hdr.data, json.loads(buf.getvalue()))
@@ -4325,7 +4324,7 @@ class DockerIoAPI(object):
     def get_v1_image_tag(self, endpoint, imagerepo, tag):
         """Get list of tags in a repo from Docker Hub"""
         url = endpoint + "/v1/repositories/" + imagerepo + "/tags/" + tag
-        Msg().out("tags url:", url, l=Msg.DBG)
+        Msg().err("tags url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
             return(hdr.data, json.loads(buf.getvalue()))
@@ -4335,7 +4334,7 @@ class DockerIoAPI(object):
     def get_v1_image_ancestry(self, endpoint, image_id):
         """Get the ancestry which is an ordered list of layers"""
         url = endpoint + "/v1/images/" + image_id + "/ancestry"
-        Msg().out("ancestry url:", url, l=Msg.DBG)
+        Msg().err("ancestry url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
             return(hdr.data, json.loads(buf.getvalue()))
@@ -4345,7 +4344,7 @@ class DockerIoAPI(object):
     def get_v1_image_json(self, endpoint, layer_id):
         """Get the JSON metadata for a specific layer"""
         url = endpoint + "/v1/images/" + layer_id + "/json"
-        Msg().out("json url:", url, l=Msg.DBG)
+        Msg().err("json url:", url, l=Msg.DBG)
         filename = self.localrepo.layersdir + "/" + layer_id + ".json"
         if self._get_file(url, filename, 0):
             self.localrepo.add_image_layer(filename)
@@ -4355,7 +4354,7 @@ class DockerIoAPI(object):
     def get_v1_image_layer(self, endpoint, layer_id):
         """Get a specific layer data file (layer files are tarballs)"""
         url = endpoint + "/v1/images/" + layer_id + "/layer"
-        Msg().out("layer url:", url, l=Msg.DBG)
+        Msg().err("layer url:", url, l=Msg.DBG)
         filename = self.localrepo.layersdir + "/" + layer_id + ".layer"
         if self._get_file(url, filename, 3):
             self.localrepo.add_image_layer(filename)
@@ -4441,7 +4440,7 @@ class DockerIoAPI(object):
         else:
             url = self.registry_url + "/v2/" + imagerepo + \
                 "/manifests/" + tag
-        Msg().out("manifest url:", url, l=Msg.DBG)
+        Msg().err("manifest url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
             return(hdr.data, json.loads(buf.getvalue()))
@@ -4456,7 +4455,7 @@ class DockerIoAPI(object):
         else:
             url = self.registry_url + "/v2/" + imagerepo + \
                 "/blobs/" + layer_id
-        Msg().out("layer url:", url, l=Msg.DBG)
+        Msg().err("layer url:", url, l=Msg.DBG)
         filename = self.localrepo.layersdir + "/" + layer_id
         if self._get_file(url, filename, 3):
             self.localrepo.add_image_layer(filename)
@@ -4485,7 +4484,7 @@ class DockerIoAPI(object):
                 Msg().err("Error: setting localrepo v2 tag and version")
                 return []
             self.localrepo.save_json("manifest", manifest)
-            Msg().out("v2 layers: %s" % (imagerepo), l=Msg.DBG)
+            Msg().err("v2 layers: %s" % (imagerepo), l=Msg.DBG)
             files = self.get_v2_layers_all(imagerepo,
                                            manifest["fsLayers"])
         except (KeyError, AttributeError, IndexError, ValueError, TypeError):
@@ -4520,7 +4519,7 @@ class DockerIoAPI(object):
 
     def get_v1(self, imagerepo, tag):
         """Pull container with v1 API"""
-        Msg().out("v1 image id: %s" % (imagerepo), l=Msg.DBG)
+        Msg().err("v1 image id: %s" % (imagerepo), l=Msg.DBG)
         (hdr, images_array) = self.get_v1_repo(imagerepo)
         if not images_array:
             Msg().err("Error: image not found")
@@ -4543,13 +4542,13 @@ class DockerIoAPI(object):
                 self.localrepo.set_version("v1")):
             Msg().err("Error: setting localrepo v1 tag and version")
             return []
-        Msg().out("v1 ancestry: %s" % image_id, l=Msg.DBG)
+        Msg().err("v1 ancestry: %s" % image_id, l=Msg.DBG)
         (dummy, ancestry) = self.get_v1_image_ancestry(endpoint, image_id)
         if not ancestry:
             Msg().err("Error: ancestry not found")
             return []
         self.localrepo.save_json("ancestry", ancestry)
-        Msg().out("v1 layers: %s" % image_id, l=Msg.DBG)
+        Msg().err("v1 layers: %s" % image_id, l=Msg.DBG)
         files = self.get_v1_layers_all(endpoint, ancestry)
         return files
 
@@ -4588,7 +4587,7 @@ class DockerIoAPI(object):
 
     def get(self, imagerepo, tag):
         """Pull a docker image from a v2 registry or v1 index"""
-        Msg().out("get imagerepo: %s tag: %s" % (imagerepo, tag), l=Msg.DBG)
+        Msg().err("get imagerepo: %s tag: %s" % (imagerepo, tag), l=Msg.DBG)
         (imagerepo, remoterepo) = self._parse_imagerepo(imagerepo)
         if self.localrepo.cd_imagerepo(imagerepo, tag):
             new_repo = False
@@ -4698,10 +4697,10 @@ class DockerLocalFileAPI(object):
                             structure["layers"][layer_id]["layer_f"] = (
                                 layer_f_path)
                         else:
-                            Msg().out("Warning: unkwnon file in layer:",
+                            Msg().err("Warning: unkwnon file in layer:",
                                       f_path, l=Msg.WAR)
                 else:
-                    Msg().out("Warning: unkwnon file in image:", f_path,
+                    Msg().err("Warning: unkwnon file in image:", f_path,
                               l=Msg.WAR)
         return structure
 
@@ -4979,7 +4978,7 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         if not FileUtil(topdir).isdir():
-            Msg().out("Warning: localrepo directory is invalid: ", topdir,
+            Msg().err("Warning: localrepo directory is invalid: ", topdir,
                       l=Msg.WAR)
             return False
         self.localrepo.setup(topdir)
@@ -5130,7 +5129,7 @@ class Udocker(object):
         if not password:
             password = getpass("password: ")
         if password and password == password.upper():
-            Msg().out("Warning: password in uppercase",
+            Msg().err("Warning: password in uppercase",
                       "Caps Lock ?", l=Msg.WAR)
         v2_auth_token = \
             self.dockerioapi.get_v2_login_token(username, password)
