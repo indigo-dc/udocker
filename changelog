@@ -1,3 +1,15 @@
+udocker (1.1.1-RC1)
+  * Updated documentation with OpenMPI information and examples
+  * More complete unit test coverage
+  * Redirect messages to stderr
+  * Improved parsing of quotes in the command line
+  * Allow overring of the HOME environment variable
+  * Allow override of libfakechroot.so at the container level
+  * Automatic selection of libfakechroot.so from container info
+  * Improve automatic install
+  * Enable reseting prefix paths in Fn modes in remote hosts
+  * Do not set AF_UNIX_PATH in Fn modes when the host /tmp is a volume
+
 udocker (1.1.0)
 
   * Support image names prefixed by registry similarly to docker 
