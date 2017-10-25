@@ -233,6 +233,10 @@ Documentation is available at gitbook.
 
 https://indigo-dc.gitbooks.io/udocker/content/
 
+## Contributing
+
+See: [Contributing](CONTRIBUTING.md)
+
 ## Aknowlegments
 
 * Docker https://www.docker.com/
