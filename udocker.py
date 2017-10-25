@@ -3718,7 +3718,7 @@ class LocalRepository(object):
                     elif fname.startswith("sha"):
                         structure["layers"][layer_id]["layer_f"] = f_path
                     else:
-                        err().err("Warning: unkwnon file in layer:", f_path,
+                        Msg().err("Warning: unkwnon file in layer:", f_path,
                                   l=Msg.WAR)
                 elif fname in ("TAG", "v1", "v2", "PROTECT"):
                     pass
