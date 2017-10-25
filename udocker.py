@@ -724,13 +724,17 @@ class FileUtil(object):
     orig_umask = None
 
     def __init__(self, filename=None):
+        self._tmpdir = Config.tmpdir
+        if filename == "-":
+            self.filename = "-"
+            self.basename = "-"
+            return
         try:
             self.filename = os.path.abspath(filename)
             self.basename = os.path.basename(self.filename)
         except (AttributeError, TypeError):
             self.filename = filename
             self.basename = filename
-        self._tmpdir = Config.tmpdir
         self._register_prefix(self._tmpdir)
 
     def _register_prefix(self, prefix):
@@ -942,7 +946,39 @@ class FileUtil(object):
             return False
         return True
 
-    def copyto(self, dest_filename, mode="w"):
+    def _stream2file(self, dest_filename, mode="w"):
+        """Copy from stdin to another file. We avoid shutil to have
+        the fewest possible dependencies on other Python modules.
+        """
+        try:
+            fpdst = open(dest_filename, mode + "b")
+        except (IOError, OSError):
+            return False
+        while True:
+            copy_buffer = sys.stdin.read(1024 * 1024)
+            if not copy_buffer:
+                break
+            fpdst.write(copy_buffer)
+        fpdst.close()
+        return True
+
+    def _file2stream(self):
+        """Copy self.filename to stdout. We avoid shutil to have
+        the fewest possible dependencies on other Python modules.
+        """
+        try:
+            fpsrc = open(self.filename, "rb")
+        except (IOError, OSError):
+            return False
+        while True:
+            copy_buffer = fpsrc.read(1024 * 1024)
+            if not copy_buffer:
+                break
+            sys.stdout.write(copy_buffer)
+        fpsrc.close()
+        return True
+
+    def _file2file(self, dest_filename, mode="w"):
         """Copy self.filename to another file. We avoid shutil to have
         the fewest possible dependencies on other Python modules.
         """
@@ -963,6 +999,19 @@ class FileUtil(object):
         fpsrc.close()
         fpdst.close()
         return True
+
+    def copyto(self, dest_filename, mode="w"):
+        """Copy self.filename to another file. We avoid shutil to have
+        the fewest possible dependencies on other Python modules.
+        """
+        if self.filename == "-" and dest_filename != "-":
+            return self._stream2file(dest_filename, mode)
+        elif self.filename != "-" and dest_filename == "-":
+            return self._file2stream()
+        elif self.filename != "-" and dest_filename != "-":
+            return self._file2file(dest_filename, mode)
+        else:
+            return False
 
     def find_file_in_dir(self, image_list):
         """Find and return first file of list in dir"""
@@ -4818,7 +4867,7 @@ class DockerLocalFileAPI(object):
         layer has metadata and data content (directory tree) stored
         as a tar file.
         """
-        if not os.path.exists(imagefile):
+        if not os.path.exists(imagefile) and imagefile != "-":
             Msg().err("Error: image file does not exist: ", imagefile)
             return False
         tmp_imagedir = FileUtil("import").mktmp()
@@ -4917,10 +4966,10 @@ class DockerLocalFileAPI(object):
         }
         return container_json
 
-    def import_(self, tarfile, imagerepo, tag, move_tarball=True):
+    def import_image(self, tarfile, imagerepo, tag, move_tarball=True):
         """Import a tar file containing a simple directory tree possibly
         created with Docker export"""
-        if not os.path.exists(tarfile):
+        if not os.path.exists(tarfile) and tarfile != "-":
             Msg().err("Error: tar file does not exist: ", tarfile)
             return False
         self.localrepo.setup_imagerepo(imagerepo)
@@ -5075,10 +5124,13 @@ class Udocker(object):
         load: load a container image saved by docker with 'docker save'
         load --input=<docker-saved-container-file>
         load -i <docker-saved-container-file>
+        load < <docker-saved-container-file>
         """
         imagefile = cmdp.get("--input=")
         if not imagefile:
             imagefile = cmdp.get("-i=")
+            if imagefile is False:
+                imagefile = "-"
         if cmdp.missing_options():  # syntax error
             return False
         if not imagefile:
@@ -5095,19 +5147,28 @@ class Udocker(object):
 
     def do_import(self, cmdp):
         """
-        import : import image (directory tree) from tar file
+        import : import image (directory tree) from tar file or stdin
         import <tar-file> <repo/image:tag>
+        import - <repo/image:tag>
         --mv                       :if possible move tar-file instead of copy
         """
-        tarfile = cmdp.get("P1")
         move_tarball = cmdp.get("--mv")
+        from_stdin = cmdp.get("-")
+        if from_stdin:
+            tarfile = "-"
+            imagespec = cmdp.get("P1")
+            move_tarball = False
+        else:
+            tarfile = cmdp.get("P1")
+            imagespec = cmdp.get("P2")
         if not tarfile:
             Msg().err("Error: must specify tar filename")
             return False
-        (imagerepo, tag) = self._check_imagespec(cmdp.get("P2"))
+        (imagerepo, tag) = self._check_imagespec(imagespec)
         if (not imagerepo) or cmdp.missing_options():  # syntax error
             return False
-        if self.dockerlocalfileapi.import_(tarfile, imagerepo, tag, move_tarball):
+        if self.dockerlocalfileapi.import_image(tarfile,
+                                                imagerepo, tag, move_tarball):
             return True
         Msg().err("Error: importing file")
         return False
@@ -5669,41 +5730,43 @@ class Udocker(object):
           udocker  <command>  [command_options]  <command_args>
 
         Commands:
-          search <repo/image:tag>     :Search dockerhub for container images
-          pull <repo/image:tag>       :Pull container image from dockerhub
-          images                      :List container images
-          create <repo/image:tag>     :Create container from a pulled image
-          ps                          :List created containers
-          rm  <container_id>          :Delete container
-          run <container_id>          :Execute container
-          inspect <container_id>      :Low level information on container
-          name <container_id> <name>  :Give name to container
-          rmname <name>               :Delete name from container
+          search <repo/image:tag>       :Search dockerhub for container images
+          pull <repo/image:tag>         :Pull container image from dockerhub
+          images                        :List container images
+          create <repo/image:tag>       :Create container from a pulled image
+          ps                            :List created containers
+          rm  <container_id>            :Delete container
+          run <container_id>            :Execute container
+          inspect <container_id>        :Low level information on container
+          name <container_id> <name>    :Give name to container
+          rmname <name>                 :Delete name from container
 
-          rmi <repo/image:tag>        :Delete image
-          rm <container-id>           :Delete container
-          import <container-id>       :Import tar file (exported by docker)
-          load -i <exported-image>    :Load container image saved by docker
-          inspect <repo/image:tag>    :Return low level information on image
-          verify <repo/image:tag>     :Verify a pulled image
+          rmi <repo/image:tag>          :Delete image
+          rm <container-id>             :Delete container
+          import <tar> <repo/image:tag> :Import tar file (exported by docker)
+          import - <repo/image:tag>     :Import from stdin (exported by docker)
+          load -i <exported-image>      :Load image from file (saved by docker)
+          load                          :Load image from stdin (saved by docker)
+          inspect <repo/image:tag>      :Return low level information on image
+          verify <repo/image:tag>       :Verify a pulled image
 
-          protect <repo/image:tag>    :Protect repository
-          unprotect <repo/image:tag>  :Unprotect repository
-          protect <container_id>      :Protect container
-          unprotect <container_id>    :Unprotect container
+          protect <repo/image:tag>      :Protect repository
+          unprotect <repo/image:tag>    :Unprotect repository
+          protect <container_id>        :Protect container
+          unprotect <container_id>      :Unprotect container
 
-          mkrepo <topdir>             :Create repository in another location
-          setup                       :Change container execution settings
-          login                       :Login into docker repository
-          logout                      :Logout from docker repository
+          mkrepo <topdir>               :Create repository in another location
+          setup                         :Change container execution settings
+          login                         :Login into docker repository
+          logout                        :Logout from docker repository
 
-          help                        :This help
-          run --help                  :Command specific help
+          help                          :This help
+          run --help                    :Command specific help
 
         Options common to all commands must appear before the command:
-          -D                          :Debug
-          --quiet                     :Less verbosity
-          --repo=<directory>          :Use repository at directory
+          -D                            :Debug
+          --quiet                       :Less verbosity
+          --repo=<directory>            :Use repository at directory
 
         Examples:
           1. udocker search fedora

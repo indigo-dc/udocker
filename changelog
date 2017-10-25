@@ -1,6 +1,6 @@
 udocker (1.1.1-RC1)
   * Updated documentation with OpenMPI information and examples
-  * More complete unit test coverage
+  * Additional unit tests
   * Redirect messages to stderr
   * Improved parsing of quotes in the command line
   * Allow overring of the HOME environment variable
@@ -9,6 +9,7 @@ udocker (1.1.1-RC1)
   * Improve automatic install
   * Enable reseting prefix paths in Fn modes in remote hosts
   * Do not set AF_UNIX_PATH in Fn modes when the host /tmp is a volume
+  * Load and import from stdin
 
 udocker (1.1.0)
 
