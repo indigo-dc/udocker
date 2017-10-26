@@ -363,7 +363,7 @@ and udocker execution modes.
 
 Options:
 
-* `--mv` move the container file instead of copy to save space.
+* `--mv` move the container tarball instead of copy to save space.
 * `--tocontainer` import directly into a container.
 * `--clone` use with `--tocontainer` to import a udocker container clone.
 * `--name=ALIAS` use with `--tocontainer` to add an alias to the container id.
@@ -380,6 +380,7 @@ Examples:
 ### 3.15. load
 ```
   udocker load -i IMAGE-FILE
+  udocker load -
 ```
 Loads into the local repository a tarball containing a Docker image with
 its layers and metadata. This is equivallent to pulling an image from
@@ -391,6 +392,7 @@ layers and metadata.
 Examples:
 ```
   udocker load -i docker-image.tar
+  udocker load - < docker-image.tar
 ```
 
 ### 3.16. protect
@@ -805,20 +807,26 @@ been built you can run the udocker with that image has described in the previous
 
 ## 6. Accessing and transferring udocker containers
 
-In udocker, images and created/extracted containers are stored in the filesystem
+In udocker, images and containers are stored in the filesystem
 usually in the user home directory under $HOME/.udocker. If this location is in
-a shared filesystem such as in a computing farm or cluster then its content will 
+a shared filesystem such as in a computing farm or cluster then the content will 
 be seen by all the hosts mounting the filesystem and can be used transparently by
 udocker across these hosts. If the home directory is not shared but some other
 location is, then you may point the UDOCKER_DIR environment variable to such a 
 location and use it to store the udocker installation, images and containers.
 
-Across isolated hosts the correct way to transfer containers is to pull them from 
-a repository such as Docker Hub. However this may implies slow downloads from remote 
-locations and also the need to create the container again from the images.
+### 6.1. Directory structure
 
-Alternatively you may move only the created container across locations. The container
-directory pathname in the filesystem can be obtained as follows:
+The directory structure of .udocker (or UDOCKER_DIR) is a as follows:
+
+* `bin/` udocker executables
+* `lib/` udocker libraries
+* `repos/` images pulled or imported by udocker
+* `layers` image layers so that they can be shared by several images saving space
+* `containers/` containers extracted from images or imported
+
+For a given container its directory pathname in the filesystem can be obtained
+as follows:
 
 ```
 $ udocker inspect -p ubuntu17
@@ -835,16 +843,38 @@ container directory tree e.g. for backup or other purposes.
 
 All containers are stored under the directory "containers". Each container is
 under a separate directory whose name corresponds to its alphanumeric id. 
-This directory contains control files and the ROOT for the container filesystem. 
+This directory contains control files and the ROOT directory for the container 
+filesystem. 
 
-For the purpose of transferring the container and execute it with udocker in
-another system the best approach is to transfer the container directory including
-the control files and the ROOT with the container file system. 
+### 6.2. Transfer containers with import
 
-If you then untar this backup into another udocker installation under "containers" 
-this container will become visible with the same alphanumeric id.  The example below 
-shows a container named MYCONTAINER being transferred to another host and executed. 
-Make sure the udocker executable is in your PATH on both the local and remote hosts.
+Across isolated hosts the correct way to transfer containers is to pull them from
+a repository such as Docker Hub. However this may implies slow downloads from remote
+locations and also the need to create the container again from the pulled image.
+
+udocker provides limited support for loading images and importing containers.
+Containers exported to a file by Docker with `docker export` can be imported by
+udocker using:
+
+* `udocker import EXPORTED-CONTAINER-FILE NEWIMAGE:NEWTAG` import the 
+   container file into a new image (not into a new container).
+* `udocker import --tocontainer EXPORTED-CONTAINER-FILE` import the
+   container file directly into a new container (without creating an image)
+* `udocker import --tocontainer --clone EXPORTED-CONTAINER-FILE` import the
+   container file directly into a new container (without creating an image).
+   This assumes the container was initially exported by udocker with 
+   `udocker export --clone` and thus contains not only the ROOT tree of
+   the container but also all metadata, and control files of udocker.
+   This is udocker specific.
+
+Images saved by Docker using `docker save` can be imported by udocker using
+`udocker load`.
+
+### 6.3. Manual transfer
+
+The example below shows a container named MYCONTAINER being manually transferred 
+to another host and executed. Make sure the udocker executable is in your PATH on 
+both the local and remote hosts.
 
 ```
 $ MYC_ROOT=$(udocker inspect -p MYCONTAINER)
@@ -855,17 +885,17 @@ $ cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker version ; cd ~/.udock
 $ ssh user@ahost "udocker name $MYC_ID MYCONTAINER; udocker run MYCONTAINER"
 ```
 
+## 7. Issues
+
 To avoid corruption backups for safeguard or transfer should only be performed 
 when the container is not being executed (not locally nor in any other host if 
 the filesystem is shared).
 
-Containers should only be copied in this manner when they are in the execution
+Containers should only be copied when they are in the execution
 modes Pn or Rn. The modes Fn perform changes to the containers that will make
 them fail if they are execute in a different host if the absolute pathname to 
 the container location is different. In this later case convert back to P1 
 (using:  udocker setup --execmode=P1) before performing the backup.
-
-## 7. Issues
 
 When experiencing issues in the default execution mode (P1) you may try
 to setup the container to execute using mode P2 or one of the Fn or 

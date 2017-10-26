@@ -3203,6 +3203,21 @@ class ContainerStructure(object):
                 Msg().err("Error: while extracting image layer")
         return not status
 
+    def _tar(self, tarfile, sourcedir):
+        """Create a tar file for a given sourcedir
+        """
+        cmd = "tar -C %s -c " % sourcedir
+        if Msg.level >= Msg.VER:
+            cmd += " -v "
+        cmd += r" --one-file-system "
+        cmd += r" --xform 's:^\./::' "
+        cmd += r" -S --xattrs -f " + tarfile + " . "
+        status = subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
+                                 close_fds=True)
+        if status:
+            Msg().err("Error: creating tar file:", tarfile)
+        return not status
+
     def get_container_meta(self, param, default, container_json):
         """Get the container metadata from the container"""
         if "config" in container_json:
@@ -3239,6 +3254,31 @@ class ContainerStructure(object):
         for (key, val) in in_dict.iteritems():
             out_list.append("%s:%s" % (str(key), str(val)))
         return out_list
+
+    def export_tofile(self, clone_file):
+        """Export a container creating a tar file of the rootfs
+        """
+        container_dir = self.localrepo.cd_container(self.container_id)
+        if not container_dir:
+            Msg().err("Error: container not found:", self.container_id)
+            return False
+        status = self._tar(clone_file, container_dir + "/ROOT")
+        if not status:
+            Msg().err("Error: exporting container file system:", self.container_id)
+        return self.container_id
+
+    def clone_tofile(self, clone_file):
+        """Create a cloned container tar file containing both the rootfs
+        and all udocker control files. This is udocker specific.
+        """
+        container_dir = self.localrepo.cd_container(self.container_id)
+        if not container_dir:
+            Msg().err("Error: container not found:", self.container_id)
+            return False
+        status = self._tar(clone_file, container_dir)
+        if not status:
+            Msg().err("Error: exporting container as clone:", self.container_id)
+        return self.container_id
 
 
 class LocalRepository(object):
@@ -5294,7 +5334,41 @@ class Udocker(object):
             if self.dockerlocalfileapi.import_toimage(tarfile, imagerepo, tag,
                                                       move_tarball):
                 return True
-        Msg().err("Error: importing file")
+        Msg().err("Error: importing")
+        return False
+
+    def do_export(self, cmdp):
+        """
+        export : export container (directory tree) to a tar file or stdin
+        export -o <tar-file> <container-id>
+        export - <container-id>
+        -o                         :export to file, instead of stdout
+        --clone                    :export in clone (udocker) format
+        """
+        to_file = cmdp.get("-o")
+        clone = cmdp.get("--clone")
+        if to_file:
+            tarfile = cmdp.get("P1")
+            container_id = cmdp.get("P2")
+        else:
+            tarfile = "-"
+            container_id = cmdp.get("P1")
+        container_id = self.localrepo.get_container_id(container_id)
+        if not tarfile:
+            Msg().err("Error: invalid output file name", tarfile)
+            return False
+        if not container_id:
+            Msg().err("Error: invalid container id", container_id)
+            return False
+        if clone:
+            if ContainerStructure(self.localrepo,
+                                  container_id).clone_tofile(tarfile):
+                return True
+        else:
+            if ContainerStructure(self.localrepo,
+                                  container_id).export_tofile(tarfile):
+                return True
+        Msg().err("Error: exporting")
         return False
 
     def do_login(self, cmdp):
@@ -6135,6 +6209,7 @@ class Main(object):
             "run": self.udocker.do_run, "version": self.udocker.do_version,
             "rmi": self.udocker.do_rmi, "mkrepo": self.udocker.do_mkrepo,
             "import": self.udocker.do_import, "load": self.udocker.do_load,
+            "export": self.udocker.do_export,
             "protect": self.udocker.do_protect, "rm": self.udocker.do_rm,
             "name": self.udocker.do_name, "rmname": self.udocker.do_rmname,
             "verify": self.udocker.do_verify, "logout": self.udocker.do_logout,

@@ -68,11 +68,17 @@ Remove an ALIAS. The CONTAINER itself is not affected and can be used via its CO
 .BR rmi " " [ " " -f " " ] " " IMAGE
 Delete an IMAGE in the local repository. Any related CONTAINERS previously extracted are NOT affected by the parent IMAGE removal. The option \-f forces the deletion, and can be used when the IMAGE structure is damaged.
 .TP
-.BR import " "  TARBALL " " IMAGE
-Import a tarball containing a filesystem directory tree into a new IMAGE. Can be used to import an operating system directory tree thus creating a new IMAGE in the local repository. Can also be used to import a filesystem directory tree previously exported by "docker export".
+.BR import " " TARBALL " " IMAGE " " | " " - " " IMAGE 
+.TP
+.BR import " " --tocontainer " " --name=ALIAS " " TARBALL " " | " " --tocontainer " " --name=ALIAS " " - " "
+.TP
+.BR import " " --tocontainer " " --name=ALIAS " " --clone " " TARBALL " " | " " --tocontainer " " --name=ALIAS " " --clone " " - " "
+Import a tarball from file or stdin. The tarball can be imported into a new image or container. The first form can be used to import a container exported by docker into a new image. The second form uses --tocontainer to import directly into a container without creating an image. The third form uses --tocontainer --clone to import a udocker container (e.g. exported with udocker export --clone) into a new container without creating an image, preserving the container metadata and execution modes.
+.TP
+.BR load " " - " "
 .TP
 .BR load " " -i " " IMAGE\-TARBALL
-Load an IMAGE\-TARBALL previously saved by "docker save". The IMAGE\-TARBALL contains the several layers of a Docker layered filesystem plus the associated metadata.
+Load an IMAGE\-TARBALL previously saved by "docker save". The IMAGE\-TARBALL contains the several layers of a Docker layered filesystem plus the associated metadata. The image and its layers are loaded into the local images repository.
 .TP
 .BR verify " " IMAGE
 Verify the integrity of an IMAGE in the local repository.
