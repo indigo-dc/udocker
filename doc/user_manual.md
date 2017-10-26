@@ -348,9 +348,19 @@ Examples:
 ```
   udocker import [OPTIONS] TARBALL REPO/IMAGE:TAG
 ```
-Imports into the local repository a tarball containing a directory tree of
-a container. Can be used to import containers previously exported by Docker
-with `docker export`.
+
+Import a tarball from file or stdin. The tarball can be imported into a new
+image or container. The first form can be used to import a container exported 
+by docker (with `docker export`) into a new image. 
+The second and third forms import directly into containers without creating
+images in the repository.
+The second form uses `--tocontainer` to import a container exported 
+by docker (with `docker export`) into a new container without creating an 
+image. 
+The third form uses `--tocontainer --clone` to import a udocker container 
+(e.g. exported with `udocker export --clone`) into a new container also 
+without creating an image allowing to preserve the container metadata and 
+udocker execution modes.
 
 Options:
 
