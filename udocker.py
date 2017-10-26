@@ -5951,6 +5951,8 @@ class Udocker(object):
           import - <repo/image:tag>     :Import from stdin (exported by docker)
           load -i <exported-image>      :Load image from file (saved by docker)
           load                          :Load image from stdin (saved by docker)
+          export -o <tar> <container_id>:Export container rootfs to file
+          export - <container_id>       :Export container rootfs to stdin
           inspect <repo/image:tag>      :Return low level information on image
           verify <repo/image:tag>       :Verify a pulled image
 
