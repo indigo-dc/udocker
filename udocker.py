@@ -1375,12 +1375,10 @@ class ElfPatcher(object):
             return last_path.strip()
         return ""
 
-    def check_container(self):
+    def check_container_path(self):
         """verify if path to container is ok"""
         last_path = self.get_patch_last_path()
         if last_path and last_path != self._container_dir:
-            Msg().err("Warning: container path mismatch, use setup to convert",
-                      l=Msg.WAR)
             return False
         return True
 
@@ -1394,7 +1392,7 @@ class ElfPatcher(object):
 
     def patch_binaries(self):
         """Set all executables and libs to the ld.so absolute pathname"""
-        if not self.check_container():
+        if not self.check_container_path():
             self.restore_binaries()
         last_time = "0"
         patchelf_exec = self.select_patchelf()
@@ -1436,7 +1434,7 @@ class ElfPatcher(object):
 
     def patch_ld(self, output_elf=None):
         """Patch ld.so"""
-        #self.check_container()
+        #self.check_container_path()
         elf_loader = self.get_container_loader()
         if FileUtil(self._container_ld_so_orig).size() == -1:
             status = FileUtil(elf_loader).copyto(self._container_ld_so_orig)
@@ -1503,7 +1501,7 @@ class ElfPatcher(object):
 
     def get_ld_libdirs(self, force=False):
         """Get ld library paths"""
-        #self.check_container()
+        #self.check_container_path()
         if force or not os.path.exists(self._container_ld_libdirs):
             ld_list = self._find_ld_libdirs()
             ld_str = ":".join(ld_list)
@@ -2906,7 +2904,9 @@ class FakechrootEngine(ExecutionEngineCommon):
         self._elfpatcher = ElfPatcher(self.localrepo, self.container_id)
 
         # verify if container pathnames are correct for this mode
-        self._elfpatcher.check_container()
+        if not self._elfpatcher.check_container_path():
+            Msg().err("Warning: container path mismatch, use setup to convert",
+                      l=Msg.WAR)
 
         # set basic environment variables
         self._run_env_set()
@@ -3011,7 +3011,8 @@ class ExecutionMode(object):
         if status or force:
             status = FileUtil(self.container_execmode).putdata(xmode)
         if status or force:
-            status = FileUtil(self.container_orig_root).putdata(self.container_root)
+            status = FileUtil(self.container_orig_root).putdata(
+                os.path.realpath(self.container_root))
         if (not status) and (not force):
             Msg().err("Error: container setup failed")
         return status
@@ -3031,6 +3032,7 @@ class ExecutionMode(object):
 class ContainerStructure(object):
     """Docker container structure.
     Creation of a container filesystem from a repository image.
+    Creation of a container filesystem from a layer tar file.
     Access to container metadata.
     """
 
@@ -3057,7 +3059,21 @@ class ContainerStructure(object):
                 return(False, False)
         return(container_dir, container_json)
 
-    def create(self, imagerepo, tag):
+    def _chk_container_root(self):
+        """Check container ROOT sanity"""
+        container_dir = self.localrepo.cd_container(self.container_id)
+        if not container_dir:
+            return 0
+        container_root = container_dir + "/ROOT"
+        check_list = ["/lib", "/bin", "/etc", "/tmp", "/var", "/usr", "/sys",
+                      "/dev", "/data", "/home", "/system", "/root", "/proc", ]
+        found = 0
+        for f_path in check_list:
+            if os.path.exists(container_root + f_path):
+                found += 1
+        return found
+
+    def create_fromimage(self, imagerepo, tag):
         """Create a container from an image in the repository.
         Since images are stored as layers in tar files, this
         step consists in extracting those layers into a ROOT
@@ -3075,9 +3091,10 @@ class ContainerStructure(object):
         if not container_json:
             Msg().err("Error: create container: getting layers or json")
             return False
-        container_id = Unique().uuid(os.path.basename(self.imagerepo))
+        if not self.container_id:
+            self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
         container_dir = self.localrepo.setup_container(
-            self.imagerepo, self.tag, container_id)
+            self.imagerepo, self.tag, self.container_id)
         if not container_dir:
             Msg().err("Error: create container: setting up container")
             return False
@@ -3085,9 +3102,52 @@ class ContainerStructure(object):
             container_dir + "/container.json", container_json)
         status = self._untar_layers(layer_files, container_dir + "/ROOT")
         if not status:
-            Msg().err("Error: creating container:", container_id)
-        self.container_id = container_id
-        return container_id
+            Msg().err("Error: creating container:", self.container_id)
+        elif not self._chk_container_root():
+            Msg().err("Warning: check container content:", self.container_id)
+        return self.container_id
+
+    def create_fromlayer(self, imagerepo, tag, layer_file, container_json):
+        """Create a container from a layer file exported by Docker.
+        """
+        self.imagerepo = imagerepo
+        self.tag = tag
+        if not self.container_id:
+            self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
+        if not container_json:
+            Msg().err("Error: create container: getting json")
+            return False
+        container_dir = self.localrepo.setup_container(
+            self.imagerepo, self.tag, self.container_id)
+        if not container_dir:
+            Msg().err("Error: create container: setting up container")
+            return False
+        self.localrepo.save_json(
+            container_dir + "/container.json", container_json)
+        status = self._untar_layers([layer_file, ], container_dir + "/ROOT")
+        if not status:
+            Msg().err("Error: creating container:", self.container_id)
+        elif not self._chk_container_root():
+            Msg().err("Warning: check container content:", self.container_id)
+        return self.container_id
+
+    def clone_fromfile(self, clone_file):
+        """Create a cloned container from a file containing a cloned container
+        exported by udocker.
+        """
+        if not self.container_id:
+            self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
+        container_dir = self.localrepo.setup_container(
+            "CLONING", "inprogress", self.container_id)
+        if not container_dir:
+            Msg().err("Error: create container: setting up container")
+            return False
+        status = self._untar_layers([clone_file, ], container_dir)
+        if not status:
+            Msg().err("Error: creating container clone:", self.container_id)
+        elif not self._chk_container_root():
+            Msg().err("Warning: check container content:", self.container_id)
+        return self.container_id
 
     def _apply_whiteouts(self, tarf, destdir):
         """The layered filesystem od docker uses whiteout files
@@ -3123,8 +3183,8 @@ class ContainerStructure(object):
         status = True
         gid = str(os.getgid())
         for tarf in tarfiles:
-            self._apply_whiteouts(tarf, destdir)
-            # cmd = "umask 022 ; tar -C %s -x --delay-directory-restore " % \
+            if tarf != "-":
+                self._apply_whiteouts(tarf, destdir)
             cmd = "umask 022 ; tar -C %s -x " % destdir
             if Msg.level >= Msg.VER:
                 cmd += " -v "
@@ -4966,9 +5026,9 @@ class DockerLocalFileAPI(object):
         }
         return container_json
 
-    def import_image(self, tarfile, imagerepo, tag, move_tarball=True):
+    def import_toimage(self, tarfile, imagerepo, tag, move_tarball=True):
         """Import a tar file containing a simple directory tree possibly
-        created with Docker export"""
+        created with Docker export and create local image"""
         if not os.path.exists(tarfile) and tarfile != "-":
             Msg().err("Error: tar file does not exist: ", tarfile)
             return False
@@ -5004,6 +5064,47 @@ class DockerLocalFileAPI(object):
         Msg().out("Info: added layer", layer_id, l=Msg.INF)
         return layer_id
 
+    def import_tocontainer(self, tarfile, imagerepo, tag, container_name):
+        """Import a tar file containing a simple directory tree possibly
+        created with Docker export and create local container ready to use"""
+        if not imagerepo:
+            imagerepo = "IMPORTED"
+            tag = "latest"
+        if not os.path.exists(tarfile) and tarfile != "-":
+            Msg().err("Error: tar file does not exist: ", tarfile)
+            return False
+        if container_name:
+            if self.localrepo.get_container_id(container_name):
+                Msg().err("Error: container name already exists: ",
+                          container_name)
+                return False
+        layer_id = Unique().layer_v1()
+        container_json = self.create_container_meta(layer_id)
+        container_id = ContainerStructure(self.localrepo).create_fromlayer(
+            imagerepo, tag, tarfile, container_json)
+        if container_name:
+            self.localrepo.set_container_name(container_id, container_name)
+        return container_id
+
+    def import_clone(self, tarfile, container_name):
+        """Import a tar file containing a clone of a udocker container
+        created with export --clone and create local cloned container
+        ready to use
+        """
+        if not os.path.exists(tarfile) and tarfile != "-":
+            Msg().err("Error: tar file does not exist: ", tarfile)
+            return False
+        if container_name:
+            if self.localrepo.get_container_id(container_name):
+                Msg().err("Error: container name already exists: ",
+                          container_name)
+                return False
+        container_id = ContainerStructure(self.localrepo).clone_fromfile(
+            tarfile)
+        if container_name:
+            self.localrepo.set_container_name(container_id, container_name)
+        return container_id
+
 
 class Udocker(object):
     """Implements most of the command line interface.
@@ -5033,8 +5134,10 @@ class Udocker(object):
         self.localrepo.setup(topdir)
         return True
 
-    def _check_imagespec(self, imagespec):
+    def _check_imagespec(self, imagespec, def_imagespec=None):
         """Perform the image verification"""
+        if (not imagespec) and def_imagespec:
+            imagespec = def_imagespec
         try:
             (imagerepo, tag) = imagespec.rsplit(":", 1)
         except (ValueError, AttributeError):
@@ -5151,8 +5254,13 @@ class Udocker(object):
         import <tar-file> <repo/image:tag>
         import - <repo/image:tag>
         --mv                       :if possible move tar-file instead of copy
+        --tocontainer              :import to new container image is not created
+        --name=<container-name>    :use with --tocontainer to create an alias
         """
         move_tarball = cmdp.get("--mv")
+        to_container = cmdp.get("--tocontainer")
+        name = cmdp.get("--name=")
+        clone = cmdp.get("--clone")
         from_stdin = cmdp.get("-")
         if from_stdin:
             tarfile = "-"
@@ -5164,12 +5272,27 @@ class Udocker(object):
         if not tarfile:
             Msg().err("Error: must specify tar filename")
             return False
-        (imagerepo, tag) = self._check_imagespec(imagespec)
-        if (not imagerepo) or cmdp.missing_options():  # syntax error
+        if cmdp.missing_options():  # syntax error
             return False
-        if self.dockerlocalfileapi.import_image(tarfile,
-                                                imagerepo, tag, move_tarball):
-            return True
+        if to_container:
+            if clone:
+                container_id = self.dockerlocalfileapi.import_clone(
+                    tarfile, name)
+            else:
+                (imagerepo, tag) = self._check_imagespec(imagespec,
+                                                         "IMPORTED:unknown")
+                container_id = self.dockerlocalfileapi.import_tocontainer(
+                    tarfile, imagerepo, tag, name)
+            if container_id:
+                Msg().out(container_id)
+                return True
+        else:
+            (imagerepo, tag) = self._check_imagespec(imagespec)
+            if not imagerepo:
+                return False
+            if self.dockerlocalfileapi.import_toimage(tarfile, imagerepo, tag,
+                                                      move_tarball):
+                return True
         Msg().err("Error: importing file")
         return False
 
@@ -5279,7 +5402,8 @@ class Udocker(object):
             return False
         (imagerepo, tag) = self._check_imagespec(imagespec)
         if imagerepo:
-            return ContainerStructure(self.localrepo).create(imagerepo, tag)
+            return ContainerStructure(self.localrepo).create_fromimage(
+                imagerepo, tag)
         return False
 
     def _get_run_options(self, cmdp, exec_engine=None):
@@ -5377,6 +5501,7 @@ class Udocker(object):
         """
         run: execute a container
         run [options] <container-id-or-name>
+        run [options] <repo/image:tag>
         --rm                       :delete container upon exit
         --workdir=/home/userXX     :working directory set to /home/userXX
         --user=userXX              :run as userXX
@@ -5394,6 +5519,10 @@ class Udocker(object):
         --bindhome                 :bind the home directory into the container
         --location=<path-to-dir>   :use root tree outside the repository
         --kernel=<kernel-id>       :use this Linux kernel identifier
+
+        run with <container-id-or-name> executes a previously create container.
+        run with <repo/image:tag> always creates a new container from the image
+        this is slow and may waste storage space, if needed the image is pulled.
         """
         self._get_run_options(cmdp)
         container_or_image = cmdp.get("P1")

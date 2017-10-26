@@ -62,7 +62,7 @@ def set_env():
 
 
 def find_str(self, find_exp, where):
-    """Find string in test ouput messages."""
+    """Find string in test output messages."""
     found = False
     for item in where:
         if find_exp in str(item):
@@ -5605,20 +5605,20 @@ class ContainerStructureTestCase(unittest.TestCase):
         #
         prex = udocker.ContainerStructure(mock_local)
         mock_local.cd_imagerepo.return_value = ""
-        status = prex.create("imagerepo", "tag")
+        status = prex.create_fromimage("imagerepo", "tag")
         self.assertFalse(status)
         #
         prex = udocker.ContainerStructure(mock_local)
         mock_local.cd_imagerepo.return_value = "/"
         mock_local.get_image_attributes.return_value = ([], [])
-        status = prex.create("imagerepo", "tag")
+        status = prex.create_fromimage("imagerepo", "tag")
         self.assertFalse(status)
         #
         prex = udocker.ContainerStructure(mock_local)
         mock_local.cd_imagerepo.return_value = "/"
         mock_local.get_image_attributes.return_value = (["value", ], [])
         mock_local.setup_container.return_value = ""
-        status = prex.create("imagerepo", "tag")
+        status = prex.create_fromimage("imagerepo", "tag")
         self.assertFalse(status)
         #
         prex = udocker.ContainerStructure(mock_local)
@@ -5627,7 +5627,7 @@ class ContainerStructureTestCase(unittest.TestCase):
         mock_local.setup_container.return_value = "/"
         mock_untar.return_value = False
         mock_unique.return_value.uuid.return_value = "123456"
-        status = prex.create("imagerepo", "tag")
+        status = prex.create_fromimage("imagerepo", "tag")
         self.assertEqual(status, "123456")
 
     @mock.patch('udocker.FileUtil')
@@ -6109,28 +6109,28 @@ class DockerLocalFileAPITestCase(unittest.TestCase):
     @mock.patch('udocker.os.path.exists')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.LocalRepository')
-    def test_11_import_(self, mock_local, mock_msg, mock_exists, mock_futil,
-                        mock_rename, mock_unique):
-        """Test DockerLocalFileAPI().import_()."""
+    def test_11_import_toimage(self, mock_local, mock_msg, mock_exists,
+                               mock_futil, mock_rename, mock_unique):
+        """Test DockerLocalFileAPI().import_toimage()."""
         self._init()
         mock_msg.level = 0
         #
         dlocapi = udocker.DockerLocalFileAPI(mock_local)
         mock_exists.return_value = False
-        status = dlocapi.import_image("TARFILE", "IMAGE", "TAG")
+        status = dlocapi.import_toimage("TARFILE", "IMAGE", "TAG")
         self.assertFalse(status)
         #
         dlocapi = udocker.DockerLocalFileAPI(mock_local)
         mock_exists.return_value = True
         mock_local.cd_imagerepo.return_value = "TAGDIR"
-        status = dlocapi.import_image("TARFILE", "IMAGE", "TAG")
+        status = dlocapi.import_toimage("TARFILE", "IMAGE", "TAG")
         self.assertFalse(status)
         #
         dlocapi = udocker.DockerLocalFileAPI(mock_local)
         mock_exists.return_value = True
         mock_local.cd_imagerepo.return_value = ""
         mock_local.setup_tag.return_value = ""
-        status = dlocapi.import_image("TARFILE", "IMAGE", "TAG")
+        status = dlocapi.import_toimage("TARFILE", "IMAGE", "TAG")
         self.assertFalse(status)
         #
         dlocapi = udocker.DockerLocalFileAPI(mock_local)
@@ -6138,7 +6138,7 @@ class DockerLocalFileAPITestCase(unittest.TestCase):
         mock_local.cd_imagerepo.return_value = ""
         mock_local.setup_tag.return_value = "TAGDIR"
         mock_local.set_version.return_value = False
-        status = dlocapi.import_image("TARFILE", "IMAGE", "TAG")
+        status = dlocapi.import_toimage("TARFILE", "IMAGE", "TAG")
         self.assertFalse(status)
         #
         dlocapi = udocker.DockerLocalFileAPI(mock_local)
@@ -6147,7 +6147,7 @@ class DockerLocalFileAPITestCase(unittest.TestCase):
         mock_local.setup_tag.return_value = "TAGDIR"
         mock_local.set_version.return_value = True
         mock_unique.return_value.layer_v1.return_value = "LAYERID"
-        status = dlocapi.import_image("TARFILE", "IMAGE", "TAG")
+        status = dlocapi.import_toimage("TARFILE", "IMAGE", "TAG")
         self.assertEqual(status, "LAYERID")
         self.assertTrue(mock_rename.called)
         #
@@ -6158,7 +6158,7 @@ class DockerLocalFileAPITestCase(unittest.TestCase):
         mock_local.setup_tag.return_value = "TAGDIR"
         mock_local.set_version.return_value = True
         mock_unique.return_value.layer_v1.return_value = "LAYERID"
-        status = dlocapi.import_image("TARFILE", "IMAGE", "TAG", False)
+        status = dlocapi.import_toimage("TARFILE", "IMAGE", "TAG", False)
         self.assertEqual(status, "LAYERID")
         self.assertFalse(mock_rename.called)
 
@@ -6412,39 +6412,40 @@ class UdockerTestCase(unittest.TestCase):
         """Test Udocker().do_import()."""
         self._init()
         mock_msg.level = 0
+        cmd_options = [False, False, "", "False", "INFILE", "IMAGE", "" "", ]
         #
         udoc = udocker.Udocker(mock_local)
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_cmdp.get.side_effect = ["", "", "", "", "", "", "", "", "", ]
         status = udoc.do_import(mock_cmdp)
         self.assertFalse(status)
         #
         udoc = udocker.Udocker(mock_local)
-        mock_cmdp.get.side_effect = [False, False, "INFILE", "IMAGE", "" "", ]
+        mock_cmdp.get.side_effect = cmd_options
         mock_chkimg.return_value = ("", "")
         mock_cmdp.missing_options.return_value = False
         status = udoc.do_import(mock_cmdp)
         self.assertFalse(status)
         #
         udoc = udocker.Udocker(mock_local)
-        mock_cmdp.get.side_effect = [False, False, "INFILE", "IMAGE", "" "", ]
+        mock_cmdp.get.side_effect = cmd_options
         mock_chkimg.return_value = ("IMAGE", "")
         mock_cmdp.missing_options.return_value = True
         status = udoc.do_import(mock_cmdp)
         self.assertFalse(status)
         #
         udoc = udocker.Udocker(mock_local)
-        mock_cmdp.get.side_effect = [False, False, "INFILE", "IMAGE", "" "", ]
+        mock_cmdp.get.side_effect = cmd_options
         mock_chkimg.return_value = ("IMAGE", "TAG")
         mock_cmdp.missing_options.return_value = False
-        mock_dlocapi.return_value.import_image.return_value = False
+        mock_dlocapi.return_value.import_toimage.return_value = False
         status = udoc.do_import(mock_cmdp)
         self.assertFalse(status)
         #
         udoc = udocker.Udocker(mock_local)
-        mock_cmdp.get.side_effect = [False, False, "INFILE", "IMAGE", "" "", ]
+        mock_cmdp.get.side_effect = cmd_options
         mock_chkimg.return_value = ("IMAGE", "TAG")
         mock_cmdp.missing_options.return_value = False
-        mock_dlocapi.return_value.import_image.return_value = True
+        mock_dlocapi.return_value.import_toimage.return_value = True
         status = udoc.do_import(mock_cmdp)
         self.assertTrue(status)
 
