@@ -346,30 +346,35 @@ Examples:
 
 ### 3.14. import
 ```
-  udocker import [OPTIONS] TARBALL REPO/IMAGE:TAG
+  udocker import [OPTIONS] TARBALL|- REPO/IMAGE:TAG
 ```
 
 Import a tarball from file or stdin. The tarball can be imported into a new
-image or container. The first form can be used to import a container exported 
-by docker (with `docker export`) into a new image. 
-The second and third forms import directly into containers without creating
-images in the repository.
-The second form uses `--tocontainer` to import a container exported 
-by docker (with `docker export`) into a new container without creating an 
-image. 
-The third form uses `--tocontainer --clone` to import a udocker container 
+image or container. Without options can be used to import a container exported 
+by Docker (with `docker export`) creating a new image in the local repository. 
+When using `--tocontainer`  allows importing directly into containers without 
+creating images in the local repository.
+Use `--tocontainer` alone to import a container exported by docker 
+(with `docker export`) into a new container without creating an image. 
+Use `--tocontainer --clone` to import a udocker container 
 (e.g. exported with `udocker export --clone`) into a new container also 
-without creating an image allowing to preserve the container metadata and 
-udocker execution modes.
+without creating an image and allowing to preserve the container metadata
+and udocker execution modes.
 
 Options:
 
-* `--mv` move the container file instead to copy to save space.
+* `--mv` move the container file instead of copy to save space.
+* `--tocontainer` import directly into a container.
+* `--clone` use with `--tocontainer` to import a udocker container clone.
+* `--name=ALIAS` use with `--tocontainer` to add an alias to the container id.
 
 Examples:
 ```
-  udocker import container.tar myrepo:latest
-  udocker import --mv container.tar myrepo:latest
+  udocker import dcontainer.tar myrepo:latest
+  udocker import - myrepo:latest < dcontainer.tar
+  udocker import --mv dcontainer.tar myrepo:latest
+  udocker import --tocontainer --name=BLUE dcontainer.tar 
+  udocker import --tocontainer --clone --name=RED ucontainer.tar 
 ```
 
 ### 3.15. load
