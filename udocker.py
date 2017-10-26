@@ -5254,8 +5254,9 @@ class Udocker(object):
         import <tar-file> <repo/image:tag>
         import - <repo/image:tag>
         --mv                       :if possible move tar-file instead of copy
-        --tocontainer              :import to new container image is not created
+        --tocontainer              :import to container, no image is created
         --name=<container-name>    :use with --tocontainer to create an alias
+        --clone                    :use with --tocontainer import udocker clone
         """
         move_tarball = cmdp.get("--mv")
         to_container = cmdp.get("--tocontainer")
