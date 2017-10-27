@@ -6412,13 +6412,15 @@ class UdockerTestCase(unittest.TestCase):
         """Test Udocker().do_import()."""
         self._init()
         mock_msg.level = 0
-        cmd_options = [False, False, "", "False", "INFILE", "IMAGE", "" "", ]
+        cmd_options = [False, False, "", False,
+                       "INFILE", "IMAGE", "" "", "", ]
         #
         udoc = udocker.Udocker(mock_local)
         mock_cmdp.get.side_effect = ["", "", "", "", "", "", "", "", "", ]
         status = udoc.do_import(mock_cmdp)
         self.assertFalse(status)
         #
+        mock_cmdp.reset_mock()
         udoc = udocker.Udocker(mock_local)
         mock_cmdp.get.side_effect = cmd_options
         mock_chkimg.return_value = ("", "")
@@ -6426,6 +6428,7 @@ class UdockerTestCase(unittest.TestCase):
         status = udoc.do_import(mock_cmdp)
         self.assertFalse(status)
         #
+        mock_cmdp.reset_mock()
         udoc = udocker.Udocker(mock_local)
         mock_cmdp.get.side_effect = cmd_options
         mock_chkimg.return_value = ("IMAGE", "")
@@ -6433,6 +6436,7 @@ class UdockerTestCase(unittest.TestCase):
         status = udoc.do_import(mock_cmdp)
         self.assertFalse(status)
         #
+        mock_cmdp.reset_mock()
         udoc = udocker.Udocker(mock_local)
         mock_cmdp.get.side_effect = cmd_options
         mock_chkimg.return_value = ("IMAGE", "TAG")
@@ -6441,6 +6445,7 @@ class UdockerTestCase(unittest.TestCase):
         status = udoc.do_import(mock_cmdp)
         self.assertFalse(status)
         #
+        mock_cmdp.reset_mock()
         udoc = udocker.Udocker(mock_local)
         mock_cmdp.get.side_effect = cmd_options
         mock_chkimg.return_value = ("IMAGE", "TAG")
