@@ -3108,6 +3108,7 @@ class ContainerStructure(object):
             Msg().err("Error: creating container:", self.container_id)
         elif not self._chk_container_root():
             Msg().err("Warning: check container content:", self.container_id)
+            Msg().err("Warning: possibly corrupted or wrong import format")
         return self.container_id
 
     def create_fromlayer(self, imagerepo, tag, layer_file, container_json):
@@ -3132,6 +3133,7 @@ class ContainerStructure(object):
             Msg().err("Error: creating container:", self.container_id)
         elif not self._chk_container_root():
             Msg().err("Warning: check container content:", self.container_id)
+            Msg().err("Warning: possibly corrupted or wrong import format")
         return self.container_id
 
     def clone_fromfile(self, clone_file):
@@ -3150,6 +3152,7 @@ class ContainerStructure(object):
             Msg().err("Error: creating container clone:", self.container_id)
         elif not self._chk_container_root():
             Msg().err("Warning: check container content:", self.container_id)
+            Msg().err("Warning: possibly corrupted or wrong import format")
         return self.container_id
 
     def _apply_whiteouts(self, tarf, destdir):
@@ -3195,7 +3198,7 @@ class ContainerStructure(object):
             cmd += r"--no-same-permissions --overwrite -f " + tarf
             cmd += r"; find " + destdir
             cmd += r" \( -type d ! -perm -u=x -exec /bin/chmod u+x {} \; \) , "
-            cmd += r" \( ! -perm -u=w -exec /bin/chmod u+w {} \; \) , "
+            cmd += r" \( ! -perm -u=wr -exec /bin/chmod u+wr {} \; \) , "
             cmd += r" \( ! -gid " + gid + r" -exec /bin/chgrp " + gid
             cmd += r" {} \; \) , "
             cmd += r" \( -name '.wh.*' -exec "
@@ -3281,8 +3284,14 @@ class ContainerStructure(object):
             Msg().err("Error: container not found:", self.container_id)
             return False
         status = self._tar(clone_file, container_dir + "/ROOT")
-        if not status:
-            Msg().err("Error: exporting container file system:", self.container_id)
+        if status:
+            xmode = ExecutionMode(self.localrepo, self.container_id).get_mode()
+            if xmode.startswith("F"):
+                Msg().err("Warning: exported execution mode is:", xmode)
+                Msg().err("Warning: may need reconvertion after being imported")
+                Msg().err("Warning: use:",
+                          "udocker setup --execmode=%s --force <container>" %
+                          xmode)
         return self.container_id
 
     def clone_tofile(self, clone_file):
@@ -3294,8 +3303,14 @@ class ContainerStructure(object):
             Msg().err("Error: container not found:", self.container_id)
             return False
         status = self._tar(clone_file, container_dir)
-        if not status:
-            Msg().err("Error: exporting container as clone:", self.container_id)
+        if status:
+            xmode = ExecutionMode(self.localrepo, self.container_id).get_mode()
+            if xmode.startswith("F"):
+                Msg().err("Warning: exported execution mode is:", xmode)
+                Msg().err("Warning: may need reconvertion after being imported")
+                Msg().err("Warning: use:",
+                          "udocker setup --execmode=%s --force <container>" %
+                          xmode)
         return self.container_id
 
     def clone(self):
@@ -3312,9 +3327,12 @@ class ContainerStructure(object):
             Msg().err("Error: create destination container: setting up")
             return False
         status = self._copy(source_container_dir, dest_container_dir)
-        if not status:
-            Msg().err("Error: creating container:", dest_container_id)
-        elif not self._chk_container_root(dest_container_id):
+        if status:
+            exec_mode = ExecutionMode(self.localrepo, dest_container_id)
+            xmode = exec_mode.get_mode()
+            if xmode.startswith("F"):
+                exec_mode.set_mode(xmode, True)
+        if not self._chk_container_root(dest_container_id):
             Msg().err("Warning: check container content:", dest_container_id)
         return dest_container_id
 
@@ -5198,10 +5216,6 @@ class DockerLocalFileAPI(object):
         if container_name:
             self.localrepo.set_container_name(dest_container_id,
                                               container_name)
-        exec_mode = ExecutionMode(self.localrepo, dest_container_id)
-        xmode = exec_mode.get_mode()
-        if xmode.startswith("F"):
-            exec_mode.set_mode(xmode, True)
         return dest_container_id
 
 
@@ -5369,10 +5383,10 @@ class Udocker(object):
         else:
             tarfile = cmdp.get("P1")
             imagespec = cmdp.get("P2")
+        if cmdp.missing_options():  # syntax error
+            return False
         if not tarfile:
             Msg().err("Error: must specify tar filename")
-            return False
-        if cmdp.missing_options():  # syntax error
             return False
         if to_container or clone:
             if clone:
@@ -5406,12 +5420,15 @@ class Udocker(object):
         """
         to_file = cmdp.get("-o")
         clone = cmdp.get("--clone")
+        to_stdout = cmdp.get("-")
         if to_file:
             tarfile = cmdp.get("P1")
             container_id = cmdp.get("P2")
-        else:
+        elif to_stdout:
             tarfile = "-"
             container_id = cmdp.get("P1")
+        if cmdp.missing_options():  # syntax error
+            return False
         container_id = self.localrepo.get_container_id(container_id)
         if not container_id:
             Msg().err("Error: invalid container id", container_id)
@@ -5439,6 +5456,8 @@ class Udocker(object):
         name = cmdp.get("--name=")
         container_id = cmdp.get("P1")
         container_id = self.localrepo.get_container_id(container_id)
+        if cmdp.missing_options():  # syntax error
+            return False
         if not container_id:
             Msg().err("Error: invalid container id", container_id)
             return False
