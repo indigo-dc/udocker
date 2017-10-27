@@ -639,7 +639,18 @@ class FuncTestRun(unittest.TestCase):
                None, " " + user)
 
     @mock.patch('udocker.Msg')
-    def test_17_run_chdir(self, mock_msg):
+    def test_17_run_quotes(self, mock_msg):
+        """Test run /bin/bash -c "'/bin/id; /bin/id'" """
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        user = pwd.getpwuid(os.getuid()).pw_name
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--user=" + user, "busyRUN",
+                "/bin/sh", "-c", "/bin/id; /bin/id"],
+               None, " " + user)
+
+    @mock.patch('udocker.Msg')
+    def test_18_run_chdir(self, mock_msg):
         """Test env var UDOCKER_CONTAINERS"""
         os.environ["UDOCKER_CONTAINERS"] = "/tmp/udocker_containers"
         do_action([UDOCKER, "rm", "busyTMP"])

@@ -356,25 +356,26 @@ When using `--tocontainer`  allows importing directly into containers without
 creating images in the local repository.
 Use `--tocontainer` alone to import a container exported by docker 
 (with `docker export`) into a new container without creating an image. 
-Use `--tocontainer --clone` to import a udocker container 
+Use `--clone` to import a udocker container 
 (e.g. exported with `udocker export --clone`) into a new container also 
 without creating an image and allowing to preserve the container metadata
-and udocker execution modes.
+and udocker execution modes. The option `--name=` adds a name alias to the
+created container, is used in conjunction with `--tocontainer` or `--clone`.
 
 Options:
 
 * `--mv` move the container tarball instead of copy to save space.
 * `--tocontainer` import directly into a container.
-* `--clone` use with `--tocontainer` to import a udocker container clone.
-* `--name=ALIAS` use with `--tocontainer` to add an alias to the container id.
+* `--clone` import udocker container format with both metadata and container
+* `--name=ALIAS` with `--tocontainer` or `--clone` to add an alias
 
 Examples:
 ```
-  udocker import dcontainer.tar myrepo:latest
-  udocker import - myrepo:latest < dcontainer.tar
-  udocker import --mv dcontainer.tar myrepo:latest
-  udocker import --tocontainer --name=BLUE dcontainer.tar 
-  udocker import --tocontainer --clone --name=RED ucontainer.tar 
+  udocker import docker_container.tar myrepo:latest
+  udocker import - myrepo:latest < docker_container.tar
+  udocker import --mv docker_container.tar myrepo:latest
+  udocker import --tocontainer --name=BLUE docker_container.tar 
+  udocker import --clone --name=RED udocker_container.tar 
 ```
 
 ### 3.15. load
@@ -580,10 +581,26 @@ Examples:
   udocker logout -a
 ```
 
-### 3.23. Setup
+### 3.23. Clone
+```
+  udocker clone [--name=NAME] CONTAINER-ID|CONTAINER-NAME
+```
+Duplicate an existing container creating a complete replica. The replica receives a different CONTAINER-ID. An alias can be assigned to the newly created container by using `--name=NAME`.
+
+Options:
+
+* `--name=NAME` assign a name alias to the newly created container
+
+Examples:
+```
+  udocker clone f24771be-f0bb-3046-80f0-db301e099517
+  udocker clone --name=RED  f24771be-f0bb-3046-80f0-db301e099517
+  udocker clone --name=RED  BLUE
+```
+
+### 3.24. Setup
 ```
   udocker setup [--execmode=XY] [--force] CONTAINER-ID|CONTAINER-NAME
-
 ```
 Choose an execution mode to define how a given container will be executed.
 Enables selection of an execution engine and related execution modes.

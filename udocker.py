@@ -3059,9 +3059,12 @@ class ContainerStructure(object):
                 return(False, False)
         return(container_dir, container_json)
 
-    def _chk_container_root(self):
+    def _chk_container_root(self, container_id=None):
         """Check container ROOT sanity"""
-        container_dir = self.localrepo.cd_container(self.container_id)
+        if container_id:
+            container_dir = self.localrepo.cd_container(container_id)
+        else:
+            container_dir = self.localrepo.cd_container(self.container_id)
         if not container_dir:
             return 0
         container_root = container_dir + "/ROOT"
@@ -3120,7 +3123,7 @@ class ContainerStructure(object):
         container_dir = self.localrepo.setup_container(
             self.imagerepo, self.tag, self.container_id)
         if not container_dir:
-            Msg().err("Error: create container: setting up container")
+            Msg().err("Error: create container: setting up")
             return False
         self.localrepo.save_json(
             container_dir + "/container.json", container_json)
@@ -3140,7 +3143,7 @@ class ContainerStructure(object):
         container_dir = self.localrepo.setup_container(
             "CLONING", "inprogress", self.container_id)
         if not container_dir:
-            Msg().err("Error: create container: setting up container")
+            Msg().err("Error: create container: setting up")
             return False
         status = self._untar_layers([clone_file, ], container_dir)
         if not status:
@@ -3210,12 +3213,27 @@ class ContainerStructure(object):
         if Msg.level >= Msg.VER:
             cmd += " -v "
         cmd += r" --one-file-system "
-        cmd += r" --xform 's:^\./::' "
+        #cmd += r" --xform 's:^\./::' "
         cmd += r" -S --xattrs -f " + tarfile + " . "
         status = subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
                                  close_fds=True)
         if status:
             Msg().err("Error: creating tar file:", tarfile)
+        return not status
+
+    def _copy(self, sourcedir, destdir):
+        """Copy directories
+        """
+        cmd = "tar -C %s -c " % sourcedir
+        if Msg.level >= Msg.VER:
+            cmd += " -v "
+        cmd += r" --one-file-system -S --xattrs -f - . "
+        cmd += r"|tar -C %s -x " % destdir
+        cmd += r" -f - "
+        status = subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
+                                 close_fds=True)
+        if status:
+            Msg().err("Error: copying:", sourcedir, " to ", destdir)
         return not status
 
     def get_container_meta(self, param, default, container_json):
@@ -3279,6 +3297,26 @@ class ContainerStructure(object):
         if not status:
             Msg().err("Error: exporting container as clone:", self.container_id)
         return self.container_id
+
+    def clone(self):
+        """Clone a container by creating a complete copy
+        """
+        source_container_dir = self.localrepo.cd_container(self.container_id)
+        if not source_container_dir:
+            Msg().err("Error: source container not found:", self.container_id)
+            return False
+        dest_container_id = Unique().uuid(os.path.basename(self.imagerepo))
+        dest_container_dir = self.localrepo.setup_container(
+            "CLONING", "inprogress", dest_container_id)
+        if not dest_container_dir:
+            Msg().err("Error: create destination container: setting up")
+            return False
+        status = self._copy(source_container_dir, dest_container_dir)
+        if not status:
+            Msg().err("Error: creating container:", dest_container_id)
+        elif not self._chk_container_root(dest_container_id):
+            Msg().err("Warning: check container content:", dest_container_id)
+        return dest_container_id
 
 
 class LocalRepository(object):
@@ -4968,7 +5006,7 @@ class DockerLocalFileAPI(object):
         as a tar file.
         """
         if not os.path.exists(imagefile) and imagefile != "-":
-            Msg().err("Error: image file does not exist: ", imagefile)
+            Msg().err("Error: image file does not exist:", imagefile)
             return False
         tmp_imagedir = FileUtil("import").mktmp()
         try:
@@ -5075,7 +5113,7 @@ class DockerLocalFileAPI(object):
         self.localrepo.setup_imagerepo(imagerepo)
         tag_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
         if tag_dir:
-            Msg().err("Error: tag already exists in repo: ", tag)
+            Msg().err("Error: tag already exists in repo:", tag)
             return False
         tag_dir = self.localrepo.setup_tag(tag)
         if not tag_dir:
@@ -5111,11 +5149,11 @@ class DockerLocalFileAPI(object):
             imagerepo = "IMPORTED"
             tag = "latest"
         if not os.path.exists(tarfile) and tarfile != "-":
-            Msg().err("Error: tar file does not exist: ", tarfile)
+            Msg().err("Error: tar file does not exist:", tarfile)
             return False
         if container_name:
             if self.localrepo.get_container_id(container_name):
-                Msg().err("Error: container name already exists: ",
+                Msg().err("Error: container name already exists:",
                           container_name)
                 return False
         layer_id = Unique().layer_v1()
@@ -5132,11 +5170,11 @@ class DockerLocalFileAPI(object):
         ready to use
         """
         if not os.path.exists(tarfile) and tarfile != "-":
-            Msg().err("Error: tar file does not exist: ", tarfile)
+            Msg().err("Error: tar file does not exist:", tarfile)
             return False
         if container_name:
             if self.localrepo.get_container_id(container_name):
-                Msg().err("Error: container name already exists: ",
+                Msg().err("Error: container name already exists:",
                           container_name)
                 return False
         container_id = ContainerStructure(self.localrepo).clone_fromfile(
@@ -5144,6 +5182,27 @@ class DockerLocalFileAPI(object):
         if container_name:
             self.localrepo.set_container_name(container_id, container_name)
         return container_id
+
+    def clone_container(self, container_id, container_name):
+        """Clone/duplicate an existing container creating a complete
+        copy including metadata, control files, and rootfs, The copy
+        will have a new id.
+        """
+        if container_name:
+            if self.localrepo.get_container_id(container_name):
+                Msg().err("Error: container name already exists:",
+                          container_name)
+                return False
+        dest_container_id = ContainerStructure(self.localrepo,
+                                               container_id).clone()
+        if container_name:
+            self.localrepo.set_container_name(dest_container_id,
+                                              container_name)
+        exec_mode = ExecutionMode(self.localrepo, dest_container_id)
+        xmode = exec_mode.get_mode()
+        if xmode.startswith("F"):
+            exec_mode.set_mode(xmode, True)
+        return dest_container_id
 
 
 class Udocker(object):
@@ -5295,8 +5354,8 @@ class Udocker(object):
         import - <repo/image:tag>
         --mv                       :if possible move tar-file instead of copy
         --tocontainer              :import to container, no image is created
-        --name=<container-name>    :use with --tocontainer to create an alias
-        --clone                    :use with --tocontainer import udocker clone
+        --clone                    :import udocker container format with metadata
+        --name=<container-name>    :with --tocontainer or --clone to add an alias
         """
         move_tarball = cmdp.get("--mv")
         to_container = cmdp.get("--tocontainer")
@@ -5315,7 +5374,7 @@ class Udocker(object):
             return False
         if cmdp.missing_options():  # syntax error
             return False
-        if to_container:
+        if to_container or clone:
             if clone:
                 container_id = self.dockerlocalfileapi.import_clone(
                     tarfile, name)
@@ -5354,11 +5413,11 @@ class Udocker(object):
             tarfile = "-"
             container_id = cmdp.get("P1")
         container_id = self.localrepo.get_container_id(container_id)
-        if not tarfile:
-            Msg().err("Error: invalid output file name", tarfile)
-            return False
         if not container_id:
             Msg().err("Error: invalid container id", container_id)
+            return False
+        if not tarfile:
+            Msg().err("Error: invalid output file name", tarfile)
             return False
         if clone:
             if ContainerStructure(self.localrepo,
@@ -5369,6 +5428,24 @@ class Udocker(object):
                                   container_id).export_tofile(tarfile):
                 return True
         Msg().err("Error: exporting")
+        return False
+
+    def do_clone(self, cmdp):
+        """
+        clone : create a duplicate copy of an existing container
+        clone <source-container-id>
+        --name=<container-name>    :add an alias to the cloned container
+        """
+        name = cmdp.get("--name=")
+        container_id = cmdp.get("P1")
+        container_id = self.localrepo.get_container_id(container_id)
+        if not container_id:
+            Msg().err("Error: invalid container id", container_id)
+            return False
+        if self.dockerlocalfileapi.clone_container(container_id, name):
+            Msg().out(container_id)
+            return True
+        Msg().err("Error: cloning")
         return False
 
     def do_login(self, cmdp):
@@ -5939,9 +6016,9 @@ class Udocker(object):
           images                        :List container images
           create <repo/image:tag>       :Create container from a pulled image
           ps                            :List created containers
-          rm  <container_id>            :Delete container
-          run <container_id>            :Execute container
-          inspect <container_id>        :Low level information on container
+          rm  <container>               :Delete container
+          run <container>               :Execute container
+          inspect <container>           :Low level information on container
           name <container_id> <name>    :Give name to container
           rmname <name>                 :Delete name from container
 
@@ -5951,15 +6028,16 @@ class Udocker(object):
           import - <repo/image:tag>     :Import from stdin (exported by docker)
           load -i <exported-image>      :Load image from file (saved by docker)
           load                          :Load image from stdin (saved by docker)
-          export -o <tar> <container_id>:Export container rootfs to file
-          export - <container_id>       :Export container rootfs to stdin
+          export -o <tar> <container>   :Export container rootfs to file
+          export - <container>          :Export container rootfs to stdin
           inspect <repo/image:tag>      :Return low level information on image
           verify <repo/image:tag>       :Verify a pulled image
+          clone <container>             :duplicate container
 
           protect <repo/image:tag>      :Protect repository
           unprotect <repo/image:tag>    :Unprotect repository
-          protect <container_id>        :Protect container
-          unprotect <container_id>      :Unprotect container
+          protect <container>           :Protect container
+          unprotect <container>         :Unprotect container
 
           mkrepo <topdir>               :Create repository in another location
           setup                         :Change container execution settings
@@ -5975,30 +6053,35 @@ class Udocker(object):
           --repo=<directory>            :Use repository at directory
 
         Examples:
-          1. udocker search fedora
-          2. udocker pull fedora
-          3. udocker create --name=fed  fedora
-          4. udocker run  fed  cat /etc/redhat-release
-          5. udocker run --hostauth --hostenv --bindhome  fed
-          6. udocker run --user=root  fed  yum install firefox
-          7. udocker run --hostauth --hostenv --bindhome fed   firefox
-          8. udocker run --hostauth --hostenv --bindhome fed   /bin/bash -i
-          9. udocker run --user=root  fed  yum install cheese
-         10. udocker run --hostauth --hostenv --bindhome --dri fed  cheese
-         11. udocker --repo=/home/x/.udocker  images
-         12. udocker -D run --user=1001:5001  fedora
+         *  udocker search fedora
+         *  udocker pull fedora
+         *  udocker create --name=fed  fedora
+         *  udocker run  fed  cat /etc/redhat-release
+         *  udocker run --hostauth --hostenv --bindhome  fed
+         *  udocker run --user=root  fed  yum install firefox
+         *  udocker run --hostauth --hostenv --bindhome fed   firefox
+         *  udocker run --hostauth --hostenv --bindhome fed   /bin/bash -i
+         *  udocker run --user=root  fed  yum install cheese
+         *  udocker run --hostauth --hostenv --bindhome --dri fed  cheese
+         *  udocker --repo=/home/x/.udocker  images
+         *  udocker -D run --user=1001:5001  fedora
+         *  udocker export -o fedora.tar fedora
+         *  udocker import fedora.tar myfedoraimage
+         *  udocker create --name=myfedoracontainer myfedoraimage
+         *  udocker export -o fedora_all.tar --clone fedora
+         *  udocker import --clone fedora_all.tar
 
         Notes:
-          1. by default the following host directories are mounted in the
-             container:
+          * by default the following host directories are mounted in the
+            container:
                /dev /proc /sys
                /etc/resolv.conf /etc/host.conf /etc/hostname
-          2. to prevent the mount of the above directories use:
-               run  --nosysdirs  <container_id>
-          3. additional host directories to be mounted are specified with:
+          * to prevent the mount of the above directories use:
+               run  --nosysdirs  <container>
+          * additional host directories to be mounted are specified with:
 
-               run --volume=/data:/mnt --volume=/etc/hosts  <container_id>
-               run --nosysdirs --volume=/dev --volume=/proc  <container_id>
+               run --volume=/data:/mnt --volume=/etc/hosts  <container>
+               run --nosysdirs --volume=/dev --volume=/proc  <container>
         """
         cmd_help = cmdp.get("", "CMD")
         try:
@@ -6211,7 +6294,7 @@ class Main(object):
             "run": self.udocker.do_run, "version": self.udocker.do_version,
             "rmi": self.udocker.do_rmi, "mkrepo": self.udocker.do_mkrepo,
             "import": self.udocker.do_import, "load": self.udocker.do_load,
-            "export": self.udocker.do_export,
+            "export": self.udocker.do_export, "clone": self.udocker.do_clone,
             "protect": self.udocker.do_protect, "rm": self.udocker.do_rm,
             "name": self.udocker.do_name, "rmname": self.udocker.do_rmname,
             "verify": self.udocker.do_verify, "logout": self.udocker.do_logout,
