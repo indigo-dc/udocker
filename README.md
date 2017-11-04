@@ -244,8 +244,9 @@ system.
 ## Documentation
 The full documentation is available at:
 
-* https://indigo-dc.gitbooks.io/udocker/content/
-* https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
+* GitBook: https://indigo-dc.gitbooks.io/udocker/content/
+* master: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
+* devel: https://github.com/indigo-dc/udocker/blob/devel/SUMMARY.md
 
 ## Contributing
 
