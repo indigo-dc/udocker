@@ -63,7 +63,6 @@ def match_str(find_exp, where):
             return True
     return False
 
-
 def not_match_str(find_exp, where):
     """find_exp regexp is not present in buffer where"""
     return not match_str(find_exp, where)
@@ -120,7 +119,7 @@ def close_outfile(orig_stdout_fd, orig_stderr_fd):
     os.close(out_fd)
 
 
-def do_cmd(self, mock_msg, t_argv, expect_msg=None, outfile=None):
+def do_cmd(self, mock_msg, t_argv, expect_msg=None, outfile=None, debug=False):
     """Execute a udocker command as called in the command line"""
     set_msglevels(mock_msg)
     udocker.Msg = mock_msg
@@ -137,9 +136,10 @@ def do_cmd(self, mock_msg, t_argv, expect_msg=None, outfile=None):
         status = main.start()  # start
         if outfile:
             close_outfile(orig_stdout_fd, orig_stderr_fd)
+        if debug and expect_msg:
+            print "out:" + str(mock_msg.return_value.out.call_args_list)
+            print "err:" + str(mock_msg.return_value.err.call_args_list)
         if expect_msg is None and outfile is None:
-            # print "out:" + str(mock_msg.return_value.out.call_args_list)
-            # print "err:" + str(mock_msg.return_value.err.call_args_list)
             self.assertFalse(status, str(t_argv))
             return False
         elif expect_msg:
@@ -151,8 +151,6 @@ def do_cmd(self, mock_msg, t_argv, expect_msg=None, outfile=None):
                 self.assertTrue(True, str(t_argv))
                 return True
             else:
-                # print "out:" + str(mock_msg.return_value.out.call_args_list)
-                # print "err:" + str(mock_msg.return_value.err.call_args_list)
                 self.assertTrue(False, str(t_argv))
                 return False
         else:
@@ -160,14 +158,18 @@ def do_cmd(self, mock_msg, t_argv, expect_msg=None, outfile=None):
             return True
 
 
-def do_run(self, mock_msg, t_argv, expect_msg=None, expect_out=None):
+def do_run(self, mock_msg, t_argv, expect_msg=None, expect_out=None,
+           debug=False):
     """Execute run a command and capture stdout"""
     output_file = str(uuid.uuid4())
-    status = do_cmd(self, mock_msg, t_argv, expect_msg, output_file)
+    status = do_cmd(self, mock_msg, t_argv, expect_msg, output_file, debug)
     if status and expect_out:
         find = choose_find(expect_out[:1])
         with open(output_file) as output_fp:
-            if not find(expect_out[1:], [output_fp.read()]):
+            output = output_fp.read()
+            if debug:
+                print "file:" + str(output)
+            if not find(expect_out[1:], [output]):
                 self.assertTrue(False, str(t_argv))
                 return False
     os.remove(output_file)
@@ -650,8 +652,93 @@ class FuncTestRun(unittest.TestCase):
                None, " " + user)
 
     @mock.patch('udocker.Msg')
-    def test_18_run_chdir(self, mock_msg):
-        """Test env var UDOCKER_CONTAINERS"""
+    def test_18_run_mode_f1(self, mock_msg):
+        """Test setup --execmode=F1 --force; run """
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        user = pwd.getpwuid(os.getuid()).pw_name
+        do_run(self, mock_msg,
+               [UDOCKER, "setup", "--execmode=F1", "--force", "busyRUN"],
+               None, "!Error")
+        do_run(self, mock_msg,
+               [UDOCKER, "setup", "busyRUN"],
+               " F1", None)
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--user=" + user, "busyRUN",
+                "/bin/id"],
+               None, " " + user)
+
+    @mock.patch('udocker.Msg')
+    def test_19_run_mode_r1(self, mock_msg):
+        """Test setup --execmode=R1 --force; run """
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        user = pwd.getpwuid(os.getuid()).pw_name
+        do_run(self, mock_msg,
+               [UDOCKER, "setup", "--execmode=R1", "--force", "busyRUN"],
+               None, "!Error")
+        do_run(self, mock_msg,
+               [UDOCKER, "setup", "busyRUN"],
+               " R1", None)
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--user=root", "busyRUN",
+                "/bin/id"],
+               None, " root")
+
+    @mock.patch('udocker.Msg')
+    def test_20_run_mode_p2(self, mock_msg):
+        """Test setup --execmode=P2 --force; run """
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        user = pwd.getpwuid(os.getuid()).pw_name
+        do_run(self, mock_msg,
+               [UDOCKER, "setup", "--execmode=P2", "--force", "busyRUN"],
+               None, "!Error")
+        do_run(self, mock_msg,
+               [UDOCKER, "setup", "busyRUN"],
+               " P2", None)
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--user=" + user, "busyRUN",
+                "/bin/id"],
+               None, " " + user)
+
+    @mock.patch('udocker.Msg')
+    def test_21_run_mode_p1(self, mock_msg):
+        """Test setup --execmode=P1 --force; run """
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        user = pwd.getpwuid(os.getuid()).pw_name
+        do_run(self, mock_msg,
+               [UDOCKER, "setup", "--execmode=P1", "--force", "busyRUN"],
+               None, "!Error")
+        do_run(self, mock_msg,
+               [UDOCKER, "setup", "busyRUN"],
+               " P1", None)
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--user=" + user, "busyRUN",
+                "/bin/id"],
+               None, " " + user)
+
+    @mock.patch('udocker.Msg')
+    def test_22_run_mode_p1_force(self, mock_msg):
+        """Test setup --execmode=P1 --force; run """
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        user = pwd.getpwuid(os.getuid()).pw_name
+        do_run(self, mock_msg,
+               [UDOCKER, "setup", "--execmode=P1", "--force", "busyRUN"],
+               None, "!Error")
+        do_run(self, mock_msg,
+               [UDOCKER, "setup", "busyRUN"],
+               " P1", None)
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--user=" + user, "busyRUN",
+                "/bin/id"],
+               None, " " + user)
+
+    @mock.patch('udocker.Msg')
+    def test_23_run_reg50(self, mock_msg):
+        """Test create, ps, rm"""
         os.environ["UDOCKER_CONTAINERS"] = "/tmp/udocker_containers"
         do_action([UDOCKER, "rm", "busyTMP"])
         do_run(self, mock_msg,

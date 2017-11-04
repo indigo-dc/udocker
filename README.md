@@ -5,7 +5,7 @@ without requiring root privileges. Enables basic download and execution
 of docker containers by non-privileged users in Linux systems where docker
 is not available. It can be used to access and execute the content of
 docker containers in Linux batch systems and interactive clusters that
-are managed by other entities such as grid infrastructures or externaly
+are managed by other entities such as grid infrastructures or externally
 managed batch or interactive systems.
 
 The INDIGO udocker does not require any type of privileges nor the
@@ -87,45 +87,47 @@ software installation using rpm, yum or dnf inside the container.
 Due to the lack of isolation udocker must not be run by privileged users.
 
 ## Installation
-The installation tarball available from the INDIGO-DataCloud repositories
-at https://repo.indigo-datacloud.eu please check for the latest version.
-
 See the [Installation manual](doc/installation_manual.md)
 
 ## Syntax
 ```
 Commands:
-  search <repo/image:tag>     :Search dockerhub for container images
-  pull <repo/image:tag>       :Pull container image from dockerhub
-  images                      :List container images
-  create <repo/image:tag>     :Create container from a pulled image
-  ps                          :List created containers
-  rm  <container_id>          :Delete container
-  run <container_id>          :Execute container
-  inspect <container_id>      :Low level information on container
-  name <container_id> <name>  :Give name to container
-  rmname <name>               :Delete name from container
+  search <repo/image:tag>       :Search dockerhub for container images
+  pull <repo/image:tag>         :Pull container image from dockerhub
+  images                        :List container images
+  create <repo/image:tag>       :Create container from a pulled image
+  ps                            :List created containers
+  rm  <container>               :Delete container
+  run <container>               :Execute container
+  inspect <container>           :Low level information on container
+  name <container_id> <name>    :Give name to container
+  rmname <name>                 :Delete name from container
 
-  rmi <repo/image:tag>        :Delete image
-  rm <container-id>           :Delete container
-  import <container-id>       :Import tar file (exported by docker)
-  load -i <exported-image>    :Load container image saved by docker
-  inspect <repo/image:tag>    :Return low level information on image
-  verify <repo/image:tag>     :Verify a pulled image
+  rmi <repo/image:tag>          :Delete image
+  rm <container-id>             :Delete container
+  import <tar> <repo/image:tag> :Import tar file (exported by docker)
+  import - <repo/image:tag>     :Import from stdin (exported by docker)
+  load -i <exported-image>      :Load image from file (saved by docker)
+  load                          :Load image from stdin (saved by docker)
+  export -o <tar> <container>   :Export container rootfs to file
+  export - <container>          :Export container rootfs to stdin
+  inspect <repo/image:tag>      :Return low level information on image
+  verify <repo/image:tag>       :Verify a pulled image
+  clone <container>             :duplicate container
 
-  protect <repo/image:tag>    :Protect repository
-  unprotect <repo/image:tag>  :Unprotect repository
-  protect <container_id>      :Protect container
-  unprotect <container_id>    :Unprotect container
+  protect <repo/image:tag>      :Protect repository
+  unprotect <repo/image:tag>    :Unprotect repository
+  protect <container>           :Protect container
+  unprotect <container>         :Unprotect container
 
-  mkrepo <topdir>             :Create repository in another location
-  setup                       :Change container execution settings
-  login                       :Login into docker repository
-  logout                      :Logout from docker repository
+  mkrepo <topdir>               :Create repository in another location
+  setup                         :Change container execution settings
+  login                         :Login into docker repository
+  logout                        :Logout from docker repository
 
+  help                          :This help
+  run --help                    :Command specific help
 
-  help                        :This help
-  run --help                  :Command specific help
 
 Options common to all commands must appear before the command:
   -D                          :Debug
@@ -219,6 +221,12 @@ Change execution engine to runC.
 ./udocker setup  --execmode=R1  myfed
 ```
 
+Change execution engine to Singularity. Requires the availability of
+Singularity in the host system.
+```
+./udocker setup  --execmode=S1  myfed
+```
+
 ## Other limitations
 Notice that when using execution engines other than PRoot (Pn modes) the
 created containers cannot be moved across hosts. In this case convert back 
@@ -226,18 +234,24 @@ to a Pn mode before transfer.
 
 The accelerated mode of PRoot (mode P1) may exhibit failures in Linux kernels
 above 4.0 with some applications due to kernel changes and upstream issues in 
-this case use mode P2.
+this case use mode P2 or any of the other modes.
+
+The runC mode requires a recent kernel with user namespaces enabled.
+
+The singularity mode requires the availability of Singularity in the host
+system.
 
 ## Documentation
-Documentation is available at gitbook.
+The full documentation is available at:
 
-https://indigo-dc.gitbooks.io/udocker/content/
+* https://indigo-dc.gitbooks.io/udocker/content/
+* https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
 
 ## Contributing
 
 See: [Contributing](CONTRIBUTING.md)
 
-## Aknowlegments
+## Acknowledgements
 
 * Docker https://www.docker.com/
 * PRoot http://proot.me

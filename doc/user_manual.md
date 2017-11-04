@@ -6,7 +6,7 @@ of Docker containers by non-privileged users in Linux systems where Docker
 is not available. It can be used to access and execute the content of 
 docker containers in Linux batch systems and interactive clusters that 
 are managed by other entities such as grid infrastructures, HPC clusters
-or other externaly managed batch or interactive systems.
+or other externally managed batch or interactive systems.
 
 udocker does not require any type of privileges nor the deployment of 
 services by system administrators. It can be downloaded and executed 
@@ -29,14 +29,14 @@ udocker does not make use of Docker nor requires its installation.
 
 udocker "executes" the containers by simply providing a chroot like 
 environment to the extracted container. udocker is meant to integrate
-several technologies and approches hence providing an integrated 
-environment that offers several execution options. This version
-provides execution engines based on PRoot, Fakechroot, and runC
-as methods to execute Docker containers without privileges.
+several technologies and approaches hence providing an integrated environment
+that offers several execution options. This version provides execution engines
+based on PRoot, Fakechroot, runC and Singularity as methods to execute Docker
+containers without privileges.
 
 
 ### 1.2. Limitations
-Since root privileges are not involved any operation that really 
+Since root privileges are not involved, any operation that really 
 requires privileges is not possible. The following are
 examples of operations that are not possible:
 
@@ -83,7 +83,8 @@ currently implemented by:
 
 * PRoot engine via the kernel ptrace system call;
 * Fakechroot engine via shared library preload;
-* runC engine using rootless namespaces.
+* runC engine using rootless namespaces;
+* Singularity if available in the host system.
 
 udocker via PRoot offers the emulation of the root user. This emulation
 mimics a real root user (e.g getuid will return 0). This is just an emulation
@@ -166,7 +167,7 @@ page at a time and pauses for user input.
 
 Options:
 
-* `-a` display pages continously without pause.
+* `-a` display pages continuously without pause.
 
 Examples:
 ```
@@ -226,7 +227,7 @@ Extract a container from an image available in the local repository.
 Requires that the image has been previously pulled from Docker Hub,
 and/or load or imported into the local repository from a file.
 use `udocker images` to see the images available to create.
-If sucessful the comand prints the id of the extracted container.
+If successful the command prints the id of the extracted container.
 An easier to remember name can also be given with `--name`.
 
 Options:
@@ -249,7 +250,7 @@ The command displays:
 * container id
 * protection mode (e.g. whether can be removed with `udocker rm`)
 * whether the container tree is writable (is in a R/W location)
-* the easier to remeber name(s)
+* the easier to remember name(s)
 * the name of the container image from which it was extracted
 
 Examples:
@@ -313,7 +314,7 @@ Examples:
 ```
   udocker name CONTAINER-ID NAME
 ```
-Give an easier to remeber name to an extracted container.
+Give an easier to remember name to an extracted container.
 This is an alternative to the use of `create --name=`
 
 Examples:
@@ -384,7 +385,7 @@ Examples:
   udocker load -
 ```
 Loads into the local repository a tarball containing a Docker image with
-its layers and metadata. This is equivallent to pulling an image from
+its layers and metadata. This is equivalent to pulling an image from
 Docker Hub but instead loading from a locally available file. It can be
 used to load a Docker image saved with `docker save`. A typical saved
 image is a tarball containing additional tar files corresponding to the
@@ -416,7 +417,7 @@ Examples:
   udocker unprotect REPO/IMAGE:TAG
   udocker unprotect CONTAINER-ID
 ```
-Removes a mark agains deletion placed by `udocker protect`.
+Removes a mark against deletion placed by `udocker protect`.
 
 Examples:
 ```
@@ -447,10 +448,10 @@ Examples:
 ```
 Executes a container. The execution several execution engines are
 provided. The container can be specified using the container id or its
-associated name. Additionaly it is possible to invoke run with an image
+associated name. Additionally it is possible to invoke run with an image
 name, in this case the image is extracted and run is invoked over the
 newly extracted container. Using this later approach will create multiple
-container directory trees possibly occuping considerable disk space, 
+container directory trees possibly occupying considerable disk space, 
 therefore the recommended approach is to first extract a container using
 "udocker create" and only then execute with "udocker run". The same
 extracted container can then be executed as many times as required.
@@ -610,34 +611,43 @@ given container.
 Options:
 
 * `--execmode=XY` choose an execution mode
-* `--force` force the selection of the execution mode    
+* `--force` force the selection of the execution mode, can be used to
+  force the change of an execution mode when it fails namely if it is
+  transferred to a remote host while in one of the Fn modes.
 
-|Mode| Engine     | Description                              | Changes container
-|----|:-----------|:-----------------------------------------|:------------------
-| P1 | PRoot      | accelerated mode using seccomp           | No
-| P2 | PRoot      | seccomp accelerated mode disabled        | No
-| F1 | Fakechroot | exec with direct loader invocation       | symbolic links
-| F2 | Fakechroot | F1 plus modified loader                  | F1 + ld.so
-| F3 | Fakechroot | fix ELF headers in binaries              | F2 + ELF headers
-| F4 | Fakechroot | F3 plus enables new executables and libs | same as F3
-| R1 | runC       | rootless user mode namespaces            | resolv.conf
+|Mode| Engine      | Description                               | Changes container
+|----|:------------|:------------------------------------------|:------------------
+| P1 | PRoot       | accelerated mode using seccomp            | No
+| P2 | PRoot       | seccomp accelerated mode disabled         | No
+| F1 | Fakechroot  | exec with direct loader invocation        | symbolic links
+| F2 | Fakechroot  | F1 plus modified loader                   | F1 + ld.so
+| F3 | Fakechroot  | fix ELF headers in binaries               | F2 + ELF headers
+| F4 | Fakechroot  | F3 plus enables new executables and libs  | same as F3
+| R1 | runC        | rootless user mode namespaces             | resolv, passwd
+| S1 | Singularity | uses singularity if available in the host | passwd
 
 The default execution mode is P1.
 
 The mode P2 uses PRoot and provides the lowest performance but at
-the same time is also the most reliable. The mode P1 uses PRoot with 
+the same time is also more reliable. The mode P1 uses PRoot with 
 SECCOMP syscall filtering which provides higher performance in most 
-operating systems. PRoot is the most universal solution but may exhibit
-lower performance on older kernels such as in CentOS 6 hosts.
+operating systems. PRoot is the most universal execution mode but may
+exhibit lower performance on older kernels such as in CentOS 6 hosts.
 
-The Fakechroot and runC engines are EXPERIMENTAL. They provide higher
-performance for most system calls, but only support a reduced set of
-operating systems. runC with rootless user mode namespaces requires a 
-recent Linux kernel and is known to work on Ubuntu and Fedora hosts.
+The Fakechroot, runC and Singularity engines are EXPERIMENTAL. They 
+provide higher performance for most system calls, but only support a 
+reduced set of operating systems. runC with rootless user mode namespaces 
+requires a recent Linux kernel and is known to work on Ubuntu and Fedora 
+hosts.
 Fakechroot requires libraries compiled for each guest operating system,
 udocker provides these libraries for Ubuntu 14, Ubuntu 16, Fedora >= 25,
 CentOS 6 and CentOS 7. Other guests may or may not work with these 
 same libraries. 
+Singularity must be available in the host system for udocker to use it.
+Newer versions of Singularity may run without requiring privileges but
+need a recent kernel in the host system with support for rootless user 
+mode namespaces like runC in mode R1. In CentOS 6 and CentOS 7 
+Singularity must be installed with privileges by a system administrator.
 
 The udocker Fakechroot engine has four modes that offer increasing
 compatibility levels. F1 is the least intrusive mode and only changes 
@@ -658,7 +668,7 @@ containers from running in hosts where the directory path to the container
 is different. In this case convert back to P1 or P2, transfer to the target 
 host, and then convert again from Pn to the intended Fn mode.
 
-Mode Rn only depends on kernels with support for rootless containers, thus
+Mode Rn requires kernels with support for rootless containers, thus
 it will not work on some distributions (e.g. CentOS 6 and CentOS 7).
  
 Quick examples:
@@ -678,6 +688,9 @@ Quick examples:
   udocker run  mycontainer  /bin/ls
 
   udocker setup  --execmode=R1  mycontainer
+  udocker run  mycontainer  /bin/ls
+
+  udocker setup  --execmode=S1  mycontainer
   udocker run  mycontainer  /bin/ls
 ```
 
@@ -710,7 +723,7 @@ Next the created container is executed (notice that the variable LD_LIBRARY_PATH
 ```
 
 In this approach the host mpiexec will submit the N MPI process instances, as containers, in such a
-way that the containers are able to commmunicate via the low latency interconnect (Infiniband in the 
+way that the containers are able to communicate via the low latency interconnect (Infiniband in the 
 case at hand).
 
 For this approach to work, the code in the container needs to be compiled with the same version of
@@ -809,8 +822,8 @@ Base docker images with several version of the NVIDIA driver can be found in doc
 * https://hub.docker.com/r/lipcomputing/nvidia-ubuntu16.04/
 * https://hub.docker.com/r/lipcomputing/nvidia-centos7/
 
-In the tags tab one can chack which versions are available. Dockerfiles and Ansible roles 
-used to build these images are in the github repository: 
+In the tags tab one can check which versions are available. Dockerfiles and Ansible
+roles used to build these images are in the github repository: 
 https://github.com/LIP-Computing/ansible-role-nvidia 
 
 Examples of using those NVIDIA base images with a given application are the "disvis" and 
@@ -819,7 +832,7 @@ Examples of using those NVIDIA base images with a given application are the "dis
 * https://github.com/indigo-dc/ansible-role-disvis-powerfit
 
 In order to build your docker image with a given CUDA or OpenCL application, the 
-abovementioned images can be used. When the docker image with your application has 
+aforementioned images can be used. When the docker image with your application has 
 been built you can run the udocker with that image has described in the previous sections.
 
 ## 6. Accessing and transferring udocker containers
@@ -855,7 +868,7 @@ Below ROOT you will find all the files that comprise the container. udocker
 performs a fake chroot into this directory. You can modify, add, remove files 
 below this location and upon execution these changes will be seen inside the 
 container. This can be used to put or retrieve files to/from the container. 
-By acessing this directory from the host you may also perform copies of the 
+By accessing this directory from the host you may also perform copies of the 
 container directory tree e.g. for backup or other purposes.
 
 All containers are stored under the directory "containers". Each container is
@@ -918,7 +931,7 @@ When experiencing issues in the default execution mode (P1) you may try
 to setup the container to execute using mode P2 or one of the Fn or 
 Rn modes. See section 3.23 for information on changing execution modes.
 
-## Aknowlegments
+## Acknowledgements
 
 * Docker https://www.docker.com/
 * PRoot http://proot.me

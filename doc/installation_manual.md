@@ -59,7 +59,7 @@ installation will be performed automatically. The installation from source code 
 officially supported by INDIGO-DataCloud.
 
 This method is very flexible, once you download the udocker executable from github
-you can move it around between systems. Once you start it in a new syetm it will 
+you can move it around between systems. Once you start it in a new system it will 
 install itself. The installation requires outbound network connectivity.
 
 From the master branch:
@@ -82,7 +82,7 @@ From the development branch:
 
 The udocker tarball used in the installation described in section 2.2 can be
 obtained using the following method. First download udocker from the repository
-then run info.py which will display the URL of the lastest tarball used in the
+then run info.py which will display the URL of the latest tarball used in the
 automated installation.
 
 ```
@@ -91,13 +91,13 @@ automated installation.
   python2 ./info.py
 ```
 
-You may then downlaod the tarball using tools such as curl or wget.
+You may then download the tarball using tools such as curl or wget.
 
 
 ## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
 
 Beware that these packages contain dynamically linked binaries compiled for
-the target OS distributions and therefore cannot be execute sucessfully in 
+the target OS distributions and therefore cannot be execute successfully in 
 hosts running a different OS distribution. To execute the same udocker across 
 systems use the tarball installation methods described above in section 2. 
 

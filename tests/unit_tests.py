@@ -4481,22 +4481,19 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         """Test ExecutionEngine()._get_bindhome()."""
         self._init()
         #
+        mock_nixauth.return_value.get_home.return_value = ""
         prex = udocker.ExecutionEngineCommon(mock_local)
         prex.opt["bindhome"] = False
         status = prex._get_bindhome()
         self.assertEqual(status, "")
         #
-        mock_nixauth.return_value.get_user.return_value = (
-            "user", "dummy", "dummy", "dummy", "/home/user", "dummy",
-        )
+        mock_nixauth.return_value.get_home.return_value = "/home/user"
         prex = udocker.ExecutionEngineCommon(mock_local)
         prex.opt["bindhome"] = True
         status = prex._get_bindhome()
         self.assertEqual(status, "/home/user")
         #
-        mock_nixauth.return_value.get_user.return_value = (
-            "", "dummy", "dummy", "dummy", "", "dummy",
-        )
+        mock_nixauth.return_value.get_home.return_value = ""
         prex = udocker.ExecutionEngineCommon(mock_local)
         prex.opt["bindhome"] = True
         status = prex._get_bindhome()
@@ -5314,7 +5311,7 @@ class FakechrootEngineTestCase(unittest.TestCase):
 
         ufake = udocker.FakechrootEngine(mock_local)
         ufake.opt["user"] = "root"
-        ufake._uid_check()
+        ufake._uid_check_noroot()
         self.assertTrue(mock_msg.return_value.err.called)
 
     @mock.patch('udocker.Msg')
@@ -5427,7 +5424,7 @@ class ExecutionModeTestCase(unittest.TestCase):
         self.assertEqual(uexm.container_execmode, "/tmp/execmode")
         self.assertIsNone(uexm.exec_engine)
         self.assertEqual(uexm.valid_modes,
-                         ("P1", "P2", "F1", "F2", "F3", "F4", "R1"))
+                         ("P1", "P2", "F1", "F2", "F3", "F4", "R1", "S1"))
 
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.FileUtil')
