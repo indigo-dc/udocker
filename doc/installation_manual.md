@@ -25,10 +25,10 @@ as a tarball to be deployed by the end user.
 The tarball installation method contains statically compiled binaries and 
 is built to be used across different hosts and OS distributions.
 
-Install of udocker v1.0.1 or higher released by INDIGO-DataCloud:
+Install of udocker v1.1.0 or released by INDIGO-DataCloud:
 
 ```
-  curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-1.1.0.tar.gz > udocker-tarball.tgz
+  curl http://repo.indigo-datacloud.eu/repository/indigo/2/centos7/x86_64/tgz/udocker-1.1.0.tar.gz > udocker-tarball.tgz
   export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
   tar xzvf $UDOCKER_TARBALL udocker
   ./udocker version
