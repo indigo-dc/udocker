@@ -936,7 +936,7 @@ class FileUtil(object):
         if isinstance(path, (list, tuple)):
             for directory in path:
                 full_path = rootdir + directory + "/" + self.basename
-                if os.path.exists(full_path):
+                if os.path.lexists(full_path):
                     return directory + "/" + self.basename
             return ""
         return ""
