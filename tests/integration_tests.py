@@ -631,13 +631,24 @@ class FuncTestRun(unittest.TestCase):
                [UDOCKER, "inspect", "-p", "busyRUN"], " /ROOT")
 
     @mock.patch('udocker.Msg')
-    def test_16_run_user(self, mock_msg):
+    def test_16_run_user_fullname(self, mock_msg):
         """Test run --user"""
         if container_not_exists("busyRUN"):
             self.skipTest("no container")
         user = pwd.getpwuid(os.getuid()).pw_name
         do_run(self, mock_msg,
                [UDOCKER, "run", "--user=" + user, "busyRUN", "/bin/id"],
+               None, " " + user)
+
+    # run with basenames failing (regression of #89)
+    @mock.patch('udocker.Msg')
+    def test_16_run_user_basename(self, mock_msg):
+        """Test run --user"""
+        if container_not_exists("busyRUN"):
+            self.skipTest("no container")
+        user = pwd.getpwuid(os.getuid()).pw_name
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--user=" + user, "busyRUN", "id"],
                None, " " + user)
 
     @mock.patch('udocker.Msg')

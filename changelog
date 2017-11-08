@@ -14,6 +14,8 @@ udocker (1.1.1-RC1)
   * Import containers docker and udocker format
   * Load, import and export to/from stdin/stdout
   * Clone existing containers
+  * Fix run with basenames failing
+    - closes: #89
 
 udocker (1.1.0)
 
