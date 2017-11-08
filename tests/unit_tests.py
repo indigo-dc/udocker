@@ -1298,11 +1298,11 @@ class UdockerToolsTestCase(unittest.TestCase):
         hdr.data["X-ND-CURLSTATUS"] = 0
         mock_futil.return_value.mktmp.return_value = "tmptarball"
         mock_gurl.get.return_value = (hdr, "")
-        status = utools._download()
+        status = utools._download(utools._tarball)
         self.assertEqual(status, "tmptarball")
         #
         hdr.data["X-ND-CURLSTATUS"] = 1
-        status = utools._download()
+        status = utools._download(utools._tarball)
         self.assertEqual(status, "")
 
     @mock.patch('udocker.UdockerTools._version_isequal')

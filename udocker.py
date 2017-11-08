@@ -1141,10 +1141,10 @@ class UdockerTools(object):
         """Are the tools already installed"""
         return self._version_isequal(self.localrepo.libdir + "/VERSION")
 
-    def _download(self):
+    def _download(self, tarball_url):
         """Get the tools tarball containing the binaries"""
         tarball_file = FileUtil("udockertools").mktmp()
-        (hdr, dummy) = self.curl.get(self._tarball, ofile=tarball_file)
+        (hdr, dummy) = self.curl.get(tarball_url, ofile=tarball_file)
         if hdr.data["X-ND-CURLSTATUS"]:
             return ""
         return tarball_file
@@ -1235,34 +1235,30 @@ class UdockerTools(object):
             return None
         elif not self._tarball:
             Msg().err("Error: UDOCKER_TARBALL not defined")
-            self._instructions()
-            return False
         else:
-            Msg().err("Info: installing from tarball", __version__,
+            Msg().err("Info: installing", __version__,
                       l=Msg.INF)
-            tarball_file = ""
-            if "://" in self._tarball:
-                Msg().err("Info: downloading: %s" % (self._tarball), l=Msg.INF)
-                tarball_file = self._download()
-            elif os.path.exists(self._tarball):
-                tarball_file = self._tarball
-            if not tarball_file:
-                Msg().err("Error: accessing tarball:",
-                          self._tarball)
-                self._instructions()
-            else:
-                if not self._verify_version(tarball_file):
-                    Msg().err("Error: wrong tarball version:",
-                              self._tarball)
-                    self._instructions()
-                elif self._install(tarball_file):
-                    return True
-                else:
-                    Msg().err("Error: installing tarball:",
-                              self._tarball)
-                    self._instructions()
-                if "://" in self._tarball:
-                    FileUtil(tarball_file).remove()
+            for tarball in self._tarball.split(";"):
+                Msg().err("Info: installing from:", tarball)
+                tarball_file = ""
+                if "://" in tarball:
+                    tarball_file = self._download(tarball)
+                elif os.path.exists(tarball):
+                    tarball_file = tarball
+                if tarball_file:
+                    status = False
+                    if not self._verify_version(tarball_file):
+                        Msg().err("Error: wrong tarball version:",
+                                  tarball)
+                    else:
+                        status = self._install(tarball_file)
+                    if "://" in tarball:
+                        FileUtil(tarball_file).remove()
+                    if status:
+                        return True
+            Msg().err("Error: installing tarball:",
+                      self._tarball)
+        self._instructions()
         return False
 
 

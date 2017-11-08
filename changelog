@@ -1,4 +1,4 @@
-udocker (1.1.1-RC1)
+udocker (1.1.1)
   * New execution engine using singularity
   * Updated documentation with OpenMPI information and examples
   * Additional unit tests

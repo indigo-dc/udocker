@@ -38,7 +38,7 @@ udocker_version()
 
 udocker_tarball_url()
 {
-    $REPO_DIR/utils/info.py | grep "udocker tarball:" | cut -f3- '-d '
+    $REPO_DIR/utils/info.py | grep "udocker tarball:" | cut -f3- '-d ' | cut -f1- '-d;'
 }
 
 patch_fakechroot_source()
