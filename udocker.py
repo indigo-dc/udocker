@@ -2875,7 +2875,7 @@ class SingularityEngine(ExecutionEngineCommon):
         # setup execution
         if not self._run_init(container_id):
             return 2
-      
+
         self._make_container_directories()
 
         self._filebind = FileBind(self.localrepo, self.container_id)
