@@ -643,11 +643,15 @@ Fakechroot requires libraries compiled for each guest operating system,
 udocker provides these libraries for Ubuntu 14, Ubuntu 16, Fedora >= 25,
 CentOS 6 and CentOS 7. Other guests may or may not work with these 
 same libraries. 
+
 Singularity must be available in the host system for udocker to use it.
 Newer versions of Singularity may run without requiring privileges but
 need a recent kernel in the host system with support for rootless user 
-mode namespaces like runC in mode R1. In CentOS 6 and CentOS 7 
-Singularity must be installed with privileges by a system administrator.
+mode namespaces similar to runC in mode R1. 
+Singularity cannot be compiled statically due to dependencies on NSS
+dynamic libraries and therefore is not provided with udocker.
+In CentOS 6 and CentOS 7 Singularity must be installed with privileges
+by a system administrator as it requires suid.
 
 The udocker Fakechroot engine has four modes that offer increasing
 compatibility levels. F1 is the least intrusive mode and only changes 
