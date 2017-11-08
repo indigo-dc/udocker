@@ -2851,6 +2851,13 @@ class SingularityEngine(ExecutionEngineCommon):
         """Override of _setup_container_user()"""
         return self._setup_container_user_noroot(user)
 
+    def _make_container_directories(self):
+        """Create directories expected by Singularity"""
+        FileUtil(self.container_root + "/var/tmp").mkdir()
+        FileUtil(self.container_root + "/tmp").mkdir()
+        FileUtil(self.container_root + "/proc").mkdir()
+        FileUtil(self.container_root + "/dev").mkdir()
+
     def run(self, container_id):
         """Execute a Docker container using singularity.
         This is the main method invoked to run a container with singularity.
@@ -2868,8 +2875,9 @@ class SingularityEngine(ExecutionEngineCommon):
         # setup execution
         if not self._run_init(container_id):
             return 2
+      
+        self._make_container_directories()
 
-        #self._container_specfile = self.container_dir + "/config.json"
         self._filebind = FileBind(self.localrepo, self.container_id)
 
         self._select_singularity()
