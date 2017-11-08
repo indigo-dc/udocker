@@ -172,6 +172,8 @@ install -m 755 -D %{_builddir}/%{name}-%{version}/udocker_dir/bin/patchelf-x86_6
 echo "%{_libexecdir}/udocker/patchelf-x86_64" > %{_builddir}/%{name}-%{version}/files.lst
 install -m 755 -D %{_builddir}/%{name}-%{version}/udocker_dir/lib/libfakechroot-CentOS-6-x86_64.so %{buildroot}/%{_datarootdir}/udocker/lib/libfakechroot-CentOS-6-x86_64.so
 echo "%{_datarootdir}/udocker/lib/libfakechroot-CentOS-6-x86_64.so" >> %{_builddir}/%{name}-%{version}/files.lst
+install -m 755 -D %{_builddir}/%{name}-%{version}/udocker_dir/lib/libfakechroot-CentOS-6-x86_64.so %{buildroot}/%{_datarootdir}/udocker/lib/libfakechroot-Debian-7-x86_64.so
+echo "%{_datarootdir}/udocker/lib/libfakechroot-Debian-7-x86_64.so" >> %{_builddir}/%{name}-%{version}/files.lst
 install -m 755 -D %{_builddir}/%{name}-%{version}/udocker_dir/lib/libfakechroot-CentOS-7-x86_64.so %{buildroot}/%{_datarootdir}/udocker/lib/libfakechroot-CentOS-7-x86_64.so
 echo "%{_datarootdir}/udocker/lib/libfakechroot-CentOS-7-x86_64.so" >> %{_builddir}/%{name}-%{version}/files.lst
 install -m 755 -D %{_builddir}/%{name}-%{version}/udocker_dir/lib/libfakechroot-Fedora-25-x86_64.so %{buildroot}/%{_datarootdir}/udocker/lib/libfakechroot-Fedora-25-x86_64.so
