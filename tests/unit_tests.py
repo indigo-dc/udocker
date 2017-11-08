@@ -808,7 +808,7 @@ class FileUtilTestCase(unittest.TestCase):
         filename = udocker.FileUtil("executable").find_exec()
         self.assertEqual(filename, "")
 
-    @mock.patch('udocker.os.path.exists')
+    @mock.patch('udocker.os.path.lexists')
     def test_14_find_inpath(self, mock_exists):
         """Test FileUtil.find_inpath() file is in a path."""
         # exist
