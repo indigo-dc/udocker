@@ -200,6 +200,8 @@ rm -rf %{buildroot}
 %doc %{name}-%{version}/LICENSE-fakechroot %{name}-%{version}/COPYING-fakechroot %{name}-%{version}/THANKS-fakechroot %{name}-%{version}/COPYING-patchelf %{name}-%{version}/README-patchelf
 
 %changelog
+* Wed Nov  8 2017 udocker maintainer <udocker@lip.pt> 1.1.1-1
+- Repackaging for udocker 1.1.1
 * Tue Sep 12 2017 udocker maintainer <udocker@lip.pt> 1.1.0-1 
 - Initial rpm package version
 

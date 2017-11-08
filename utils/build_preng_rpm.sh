@@ -146,6 +146,8 @@ rm -rf %{buildroot}
 %doc README.rst AUTHORS COPYING
 
 %changelog
+* Wed Nov  8 2017 udocker maintainer <udocker@lip.pt> 1.1.1-1
+- Repackaging for udocker 1.1.1
 * Tue Sep 12 2017 udocker maintainer <udocker@lip.pt> 1.1.0-1 
 - Repackaging for udocker 1.1.0
 * Wed Mar 22 2017 udocker maintainer <udocker@lip.pt> 1.0.3-1 

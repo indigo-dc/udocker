@@ -113,6 +113,12 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker-preng (1.1.1-1) trusty; urgency=low
+
+  * Repackaging for udocker 1.1.1
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Wed, 8 Nov 2017 12:35:00 +0000
+
 udocker-preng (1.1.0-1) trusty; urgency=low
 
   * Repackaging for udocker 1.1.0

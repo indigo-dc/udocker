@@ -110,6 +110,23 @@ rm -rf %{buildroot}
 %doc %{_mandir}/man1/udocker.1*
 
 %changelog
+* Wed Nov  8 udocker maintainer <udocker@lip.pt> 1.1.1-1
+- New execution engine using singularity
+- Updated documentation with OpenMPI information and examples
+- Additional unit tests
+- Redirect messages to stderr
+- Improved parsing of quotes in the command line
+- Allow override of the HOME environment variable
+- Allow override of libfakechroot.so at the container level
+- Automatic selection of libfakechroot.so from container info
+- Improve automatic install
+- Enable resetting prefix paths in Fn modes in remote hosts
+- Do not set AF_UNIX_PATH in Fn modes when the host /tmp is a volume
+- Export containers in both docker and udocker format
+- Import containers docker and udocker format
+- Load, import and export to/from stdin/stdout
+- Clone existing containers
+- Fix run with basenames failing
 * Tue Sep 12 2017 udocker maintainer <udocker@lip.pt> 1.1.0-1
 - Support image names prefixed by registry similarly to docker
 - Add execution engine selection logic
