@@ -6470,6 +6470,9 @@ class Main(object):
         if not self.cmdp.parse(sys.argv):
             Msg().err("Error: parsing command line, use: udocker help")
             sys.exit(1)
+        if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
+            Msg().err("Error: do not run as root !")
+            sys.exit(1)
         Config().user_init(self.cmdp.get("--config=", "GEN_OPT"))
         if (self.cmdp.get("--debug", "GEN_OPT") or
                 self.cmdp.get("-D", "GEN_OPT")):
@@ -6549,7 +6552,4 @@ class Main(object):
             return exit_status
 
 if __name__ == "__main__":
-    if not os.geteuid():
-        Msg().err("Error: do not run as root !")
-        sys.exit(1)
     sys.exit(Main().start())
