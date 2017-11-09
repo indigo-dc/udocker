@@ -63,7 +63,8 @@ prepare_proot_source()
         return
     fi
 
-    git clone --branch v5.1.0 --depth=1 https://github.com/proot-me/PRoot 
+    #git clone --branch v5.1.0 --depth=1 https://github.com/proot-me/PRoot 
+    git clone --branch udocker-1.1.1 --depth=1 https://github.com/jorge-lip/PRoot.git
     /bin/rm -Rf $BUILD_DIR/PRoot/.git
     /bin/rm -Rf $BUILD_DIR/PRoot/static/care*
     /bin/rm -Rf $BUILD_DIR/PRoot/packages/care*
@@ -75,54 +76,6 @@ prepare_proot_source()
     /bin/rm -Rf $BUILD_DIR/PRoot/packages/proot*
     /bin/rm -Rf $BUILD_DIR/PRoot/packages/uthash-master*
     /bin/mv PRoot "$PROOT_SOURCE_DIR"
-}
-
-patch_proot_source1()
-{
-    echo "patch_proot_source1 : $1"
-    local PROOT_SOURCE_DIR="$1"
-
-    cd "$PROOT_SOURCE_DIR/src"
-
-    if [ -e "GNUmakefile.patch" ] ; then
-        echo "patch proot source1 already applied: $PROOT_SOURCE_DIR/src/GNUmakefile"
-        return
-    fi
-
-    cp ${utils_dir}/proot_make.patch GNUmakefile.patch
-    patch < GNUmakefile.patch
-}
-
-patch_proot_source2()
-{
-    echo "patch_proot_source2 : $1"
-    local PROOT_SOURCE_DIR="$1"
-
-    cd "$PROOT_SOURCE_DIR/src/tracee"
-
-    if [ -e "event.patch" ] ; then
-        echo "patch proot source2 already applied: $PROOT_SOURCE_DIR/src/tracee/event.patch"
-        return
-    fi
-
-    cp ${utils_dir}/proot_event.patch event.patch
-    patch < event.patch
-}
-
-patch_proot_source3()
-{
-    echo "patch_proot_source3 : $1"
-    local PROOT_SOURCE_DIR="$1"
-
-    cd "$PROOT_SOURCE_DIR/src/path"
-
-    if [ -e "temp.patch" ] ; then
-        echo "patch proot source3 already applied: $PROOT_SOURCE_DIR/src/path/temp.patch"
-        return
-    fi
-
-    cp ${utils_dir}/proot_temp.patch temp.patch
-    patch < temp.patch
 }
 
 prepare_patchelf_source()
@@ -377,12 +330,10 @@ fedora25_build_proot()
 
     export PROOT_NO_SECCOMP=1
 
-    if [ -x "${PROOT_SOURCE_DIR}/proot-Fedora-25-ORIG.bin" ] ; then
-        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/proot-Fedora-25-ORIG.bin"
+    if [ -x "${PROOT_SOURCE_DIR}/proot-Fedora-25.bin" ] ; then
+        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/proot-Fedora-25.bin"
     else
-        patch_proot_source1 "${PROOT_SOURCE_DIR}"
-        patch_proot_source3 "${PROOT_SOURCE_DIR}"
-        # compile PRoot step 1
+        # compile PRoot
         $PROOT -r "$OS_ROOTDIR" -b "${PROOT_SOURCE_DIR}:/proot" -w / -b /dev \
                            -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora25_proot_1'
 cd /proot
@@ -398,38 +349,16 @@ ar qf libtalloc.a talloc_3.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
+make clean
 make
-mv proot /proot/proot-Fedora-25-ORIG.bin
+mv proot /proot/proot-Fedora-25.bin
 EOF_fedora25_proot_1
     fi
 
-    if [ ! -e "${PROOT_SOURCE_DIR}/proot-Fedora-25-ORIG.bin" ]; then
-        echo "proot compilation failed ${PROOT_SOURCE_DIR}/proot-Fedora-25-ORIG.bin not found"
+    if [ ! -e "${PROOT_SOURCE_DIR}/proot-Fedora-25.bin" ]; then
+        echo "proot compilation failed ${PROOT_SOURCE_DIR}/proot-Fedora-25.bin not found"
         exit 1
     fi
-
-    if [ -x "${PROOT_SOURCE_DIR}/proot-Fedora-25-4_8_0.bin" ] ; then
-        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/proot-Fedora-25-4_8_0.bin"
-    else
-        patch_proot_source2 "${PROOT_SOURCE_DIR}"
-        # compile PRoot step 2
-        $PROOT -r "$OS_ROOTDIR" -b "${PROOT_SOURCE_DIR}:/proot" -w / -b /dev \
-                           -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora25_proot_2'
-cd /proot
-/bin/rm -f src/proot
-# BUILD PROOT
-cd /proot/src
-make
-mv proot /proot/proot-Fedora-25-4_8_0.bin
-make clean
-EOF_fedora25_proot_2
-    fi
-
-    if [ ! -e "${PROOT_SOURCE_DIR}/proot-Fedora-25-4_8_0.bin" ]; then
-        echo "proot compilation failed ${PROOT_SOURCE_DIR}/proot-Fedora-25-4_8_0.bin not found"
-        exit 1
-    fi
-
 }
 
 
@@ -1093,20 +1022,12 @@ ostree_delete()
 create_package_tarball()
 {
     echo "create_package_tarball : $TARBALL_FILE"
-    if [ ! -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-25-ORIG.bin" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/proot-source-x86/proot-Fedora-25-ORIG.bin"
+    if [ ! -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-25.bin" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/proot-source-x86/proot-Fedora-25.bin"
         return
     fi
-    if [ ! -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-25-4_8_0.bin" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/proot-source-x86/proot-Fedora-25-4_8_0.bin"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25-ORIG.bin" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25-ORIG.bin"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25-4_8_0.bin" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25-4_8_0.bin"
+    if [ ! -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25.bin" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25.bin"
         return
     fi
     if [ ! -f "${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-25" ] ; then
@@ -1138,14 +1059,10 @@ create_package_tarball()
         return
     fi
 
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-25-ORIG.bin" \
+    /bin/cp -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-25.bin" \
                "${PACKAGE_DIR}/udocker_dir/bin/proot-x86"
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-25-4_8_0.bin" \
-               "${PACKAGE_DIR}/udocker_dir/bin/proot-x86-4_8_0"
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25-ORIG.bin" \
+    /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25.bin" \
                "${PACKAGE_DIR}/udocker_dir/bin/proot-x86_64"
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25-4_8_0.bin" \
-               "${PACKAGE_DIR}/udocker_dir/bin/proot-x86_64-4_8_0"
     /bin/cp -f "${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-25" \
                "${PACKAGE_DIR}/udocker_dir/bin/patchelf-x86_64"
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Fedora-25.so" \
@@ -1160,6 +1077,10 @@ create_package_tarball()
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-16-x86_64.so"
     /bin/cp -f "${BUILD_DIR}/runc-source-x86_64/runc" \
                "${PACKAGE_DIR}/udocker_dir/bin/runc-x86_64"
+
+    (cd "${PACKAGE_DIR}/udocker_dir/bin"; \
+	ln -s proot-x86 proot-x86-4_8_0 ; \
+	ln -s proot-x86_64 proot-x86_64-4_8_0)
 
     (cd "${PACKAGE_DIR}/udocker_dir/lib"; \
         ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-x86_64.so ; \
@@ -1189,7 +1110,7 @@ REPO_DIR="$(dirname $utils_dir)"
 
 sanity_check
 
-BUILD_DIR=${HOME}/udocker-build
+BUILD_DIR=${HOME}/udocker-build-$(udocker_version)
 S_PROOT_DIR="${BUILD_DIR}/proot-static-build/static"
 S_PROOT_PACKAGES_DIR="${BUILD_DIR}/proot-static-build/packages"
 PACKAGE_DIR="${BUILD_DIR}/package"

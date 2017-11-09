@@ -37,7 +37,7 @@ __credits__ = ["PRoot http://proot.me",
                "Fakechroot https://github.com/dex4er/fakechroot"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 __date__ = "2017"
 
 # Python version major.minor
@@ -147,10 +147,13 @@ class Config(object):
     uid = os.getuid()
     gid = os.getgid()
 
-    # udocker installation tarball 1.1.0
+    # udocker installation tarball
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
         "/s/xoWUtmeZw9fENaq/download"
+        ";"
+        "https://cernbox.cern.ch/index.php"
+        "/s/VC7GuVWA7mYRAiy/download"
     )
 
     autoinstall = True

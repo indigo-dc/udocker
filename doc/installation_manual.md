@@ -25,13 +25,13 @@ as a tarball to be deployed by the end user.
 The tarball installation method contains statically compiled binaries and 
 is built to be used across different hosts and OS distributions.
 
-Install of udocker v1.0.1 or higher released by INDIGO-DataCloud:
+Install of udocker v1.1.1 or higher released by INDIGO-DataCloud:
 
 ```
-  curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-1.1.0.tar.gz > udocker-tarball.tgz
+  curl http://repo.indigo-datacloud.eu/repository/indigo/2/centos7/x86_64/tgz/udocker-1.1.1.tar.gz > udocker-tarball.tgz
   export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
   tar xzvf $UDOCKER_TARBALL udocker
-  ./udocker version
+  ./udocker install
   mv ./udocker $HOME   # move the executable to your preferred location for binaries
 ```
 
@@ -78,7 +78,7 @@ From the development branch:
   ./udocker version
 ```
 
-### 2.3. OBTAINING THE LATEST TARBALL
+### 2.3. OBTAINING THE URL OF THE LATEST TARBALL
 
 The udocker tarball used in the installation described in section 2.2 can be
 obtained using the following method. First download udocker from the repository
@@ -104,18 +104,18 @@ systems use the tarball installation methods described above in section 2.
 RPMs for CentOS 7 are provided at http://repo.indigo-datacloud.eu
 
 ```
-  rpm -i udocker-1.1.0-1.noarch.rpm \
-         udocker-preng-1.1.0-1.x86_64.rpm \
-         udocker-freng-1.1.0-1.x86_64.rpm
+  rpm -i udocker-1.1.1-1.noarch.rpm \
+         udocker-preng-1.1.1-1.x86_64.rpm \
+         udocker-freng-1.1.1-1.x86_64.rpm
 ```
 
 DEBs for Ubuntu 16 are provided at http://repo.indigo-datacloud.eu
 
 ```
-  dpkg -i udocker_1.1.0-1_all.deb \
-          udocker-preng_1.1.0-1_amd64.deb \
-          udocker-freng_1.1.0-1_amd64.deb \
-          udocker-rceng_1.1.0-1_amd64.deb
+  dpkg -i udocker_1.1.1-1_all.deb \
+          udocker-preng_1.1.1-1_amd64.deb \
+          udocker-freng_1.1.1-1_amd64.deb \
+          udocker-rceng_1.1.1-1_amd64.deb
 ```
 
 The rc engine (rceng) is only available for Ubuntu 14 and 16.
