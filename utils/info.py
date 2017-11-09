@@ -28,11 +28,11 @@ __date__ = "2017"
 try:
     import udocker
 except ImportError:
+    sys.path.append(os.path.dirname(os.path.dirname(sys.argv[0])))
+    sys.path.append(os.path.dirname(sys.argv[0]))
     sys.path.append(".")
     sys.path.append("..")
     sys.path.append(os.getenv("REPO_DIR", ""))
-    sys.path.append(os.path.dirname(sys.argv[0]))
-    sys.path.append(os.path.dirname(os.path.dirname(sys.argv[0])))
     import udocker
 
 print "udocker version: %s" % udocker.__version__
