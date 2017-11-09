@@ -2835,7 +2835,7 @@ class SingularityEngine(ExecutionEngineCommon):
                 else:
                     self._filebind.add(host_dir, cont_dir)
         if not home_is_binded:
-            vol_str += " --home %s:%s " % (self.container_root, "/")
+            vol_str += " --home %s/root:%s " % (self.container_root, "/root")
         if not tmp_is_binded:
             vol_str += " -B %s/tmp:/tmp " % (self.container_root)
         if not vartmp_is_binded:
@@ -2862,6 +2862,8 @@ class SingularityEngine(ExecutionEngineCommon):
         FileUtil(self.container_root + "/tmp").mkdir()
         FileUtil(self.container_root + "/proc").mkdir()
         FileUtil(self.container_root + "/dev").mkdir()
+        FileUtil(self.container_root + "/sys").mkdir()
+        FileUtil(self.container_root + "/root").mkdir()
 
     def run(self, container_id):
         """Execute a Docker container using singularity.
