@@ -188,8 +188,6 @@ prepare_package()
     #/bin/cp -f "${S_PROOT_DIR}/proot-x86_64" "${PACKAGE_DIR}/udocker_dir/bin/"
     /bin/cp -f "${S_PROOT_DIR}/proot-arm"    "${PACKAGE_DIR}/udocker_dir/bin/"
     /bin/cp -f "${S_PROOT_DIR}/proot-arm64"  "${PACKAGE_DIR}/udocker_dir/bin/"
-
-    echo $(udocker_version) > "${PACKAGE_DIR}/udocker_dir/lib/VERSION"
 }
 
 addto_package_simplejson()
@@ -1058,6 +1056,9 @@ create_package_tarball()
         echo "ERROR: failed to compile : ${BUILD_DIR}/runc-source-x86_64/runc"
         return
     fi
+
+    echo $(udocker_version)
+    echo $(udocker_version) > "${PACKAGE_DIR}/udocker_dir/lib/VERSION"
 
     /bin/cp -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-25.bin" \
                "${PACKAGE_DIR}/udocker_dir/bin/proot-x86"

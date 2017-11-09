@@ -149,9 +149,6 @@ class Config(object):
 
     # udocker installation tarball
     tarball = (
-        "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/xoWUtmeZw9fENaq/download"
-        ";"
         "https://cernbox.cern.ch/index.php"
         "/s/VC7GuVWA7mYRAiy/download"
     )
@@ -1228,6 +1225,15 @@ class UdockerTools(object):
         """
         Msg().out(self._instructions.__doc__, __version__, l=Msg.ERR)
 
+    def _get_mirrors(self):
+        """Get shuffled list of tarball mirrors"""
+        mirrors = self._tarball.split(";")
+        try:
+            random.shuffle(mirrors)
+        except NameError:
+            pass
+        return mirrors
+
     def install(self, force=False):
         """Get the udocker tarball and install the binaries"""
         if self.is_available() and not force:
@@ -1241,7 +1247,7 @@ class UdockerTools(object):
         else:
             Msg().err("Info: installing", __version__,
                       l=Msg.INF)
-            for tarball in self._tarball.split(";"):
+            for tarball in self._get_mirrors():
                 Msg().err("Info: installing from:", tarball)
                 tarball_file = ""
                 if "://" in tarball:
