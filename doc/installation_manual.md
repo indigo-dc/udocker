@@ -80,18 +80,18 @@ From the development branch:
 
 ### 2.3. OBTAINING THE URL OF THE LATEST TARBALL
 
-The udocker tarball used in the installation described in section 2.2 can be
-obtained using the following method. First download udocker from the repository
-then run info.py which will display the URL of the latest tarball used in the
-automated installation.
+The udocker installation tarball mentioned in section 2.2 can be obtained using the 
+following method. First download udocker. Second use udocker itself to display the
+installation tarball URL by invoking the `version` command. The tarball location may 
+contain several URLs pointing to mirrors.
 
 ```
   git clone https://github.com/indigo-dc/udocker
-  cd udocker/utils
-  python2 ./info.py
+  cd udocker
+  python2 udocker version
 ```
 
-You may then download the tarball using tools such as curl or wget.
+Third, pick one URL and download the tarball using tools such as curl or wget.
 
 
 ## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
