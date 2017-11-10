@@ -5964,7 +5964,7 @@ class Udocker(object):
         --kernel=<kernel-id>       :use this Linux kernel identifier
 
         Only available in Pn execution modes:
-        --publish=<hport:cport>    :map TCP/IP port from cport to hport
+        --publish=<hport:cport>    :map container TCP/IP <cport> into <hport>
         --publish-all              :bind and connect to random ports
 
         run <container-id-or-name> executes an existing container, previously
@@ -6257,7 +6257,7 @@ class Udocker(object):
             dynamic patching of elf headers in binaries and libs
         R1: runc using rootless namespaces, requires recent kernel
         S1: singularity, requires a local installation of singularity,
-            if singularity is available and in the PATH udocker will use
+            if singularity is available in the PATH udocker will use
             it to execute the container
         """
         container_id = cmdp.get("P1")
@@ -6296,15 +6296,6 @@ class Udocker(object):
         status = utools.install(force)
         if status is not None and not status:
             Msg().err("Error: install of udockertools failed")
-
-    def do_version(self, cmdp):
-        """Print the version number"""
-        if cmdp.missing_options():               # syntax error
-            return False
-        try:
-            Msg().out("%s %s" % ("udocker", __version__))
-        except NameError:
-            pass
 
     def do_help(self, cmdp):
         """
@@ -6568,7 +6559,11 @@ class Main(object):
 
     def __init__(self):
         self.cmdp = CmdParser()
-        if not self.cmdp.parse(sys.argv):
+        parseok = self.cmdp.parse(sys.argv)
+        if self.cmdp.get("", "CMD") == "version":
+            self._version()
+            sys.exit(1)
+        if not parseok:
             Msg().err("Error: parsing command line, use: udocker help")
             sys.exit(1)
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
@@ -6596,13 +6591,21 @@ class Main(object):
             self.localrepo.create_repo()
         self.udocker = Udocker(self.localrepo)
 
+    def _version(self):
+        """Print the version information"""
+        try:
+            Msg().out("%s %s" % ("version:", __version__))
+            Msg().out("%s %s" % ("tarball:", Config.tarball))
+        except NameError:
+            pass
+
     def execute(self):
         """Command parsing and selection"""
         cmds = {
             "help": self.udocker.do_help, "search": self.udocker.do_search,
             "images": self.udocker.do_images, "pull": self.udocker.do_pull,
             "create": self.udocker.do_create, "ps": self.udocker.do_ps,
-            "run": self.udocker.do_run, "version": self.udocker.do_version,
+            "run": self.udocker.do_run,
             "rmi": self.udocker.do_rmi, "mkrepo": self.udocker.do_mkrepo,
             "import": self.udocker.do_import, "load": self.udocker.do_load,
             "export": self.udocker.do_export, "clone": self.udocker.do_clone,

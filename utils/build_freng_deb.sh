@@ -33,12 +33,12 @@ setup_env()
 
 udocker_version()
 {
-    $REPO_DIR/utils/info.py | grep "udocker version:" | cut -f3- '-d ' | cut -f1 '-d-'
+    $REPO_DIR/udocker.py version | grep "version:" | cut -f2- '-d ' | cut -f1 '-d-'
 }
 
 udocker_tarball_url()
 {
-    $REPO_DIR/utils/info.py | grep "udocker tarball:" | cut -f3- '-d ' | cut -f1- '-d;'
+    $REPO_DIR/utils/udocker.py version | grep "tarball:" | cut -f2- '-d ' | cut -f1 '-d '
 }
 
 patch_fakechroot_source()
