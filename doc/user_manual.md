@@ -472,6 +472,8 @@ Options:
 * `--bindhome` attempt to make the user home directory appear inside the container
 * `--kernel=KERNELID` use a specific kernel id to emulate useful when the host kernel is too old
 * `--location=DIR` execute a container in a certain directory
+* `--publish=HOST_PORT:CONT_PORT` map a container port to another host port
+* `--publish-all` map all container ports to random different ones
 
 Examples:
 ```
