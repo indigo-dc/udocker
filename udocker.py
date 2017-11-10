@@ -34,7 +34,8 @@ import platform
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me",
                "runC https://runc.io",
-               "Fakechroot https://github.com/dex4er/fakechroot"
+               "Fakechroot https://github.com/dex4er/fakechroot",
+               "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "1.1.1"
@@ -151,6 +152,9 @@ class Config(object):
     tarball = (
         "https://cernbox.cern.ch/index.php"
         "/s/VC7GuVWA7mYRAiy/download"
+        " "
+        "http://repo.indigo-datacloud.eu/repository"
+        "/indigo/2/centos7/x86_64/tgz/udocker-1.1.1.tar.gz"
     )
 
     autoinstall = True
@@ -1151,6 +1155,8 @@ class UdockerTools(object):
 
     def _verify_version(self, tarball_file):
         """verify the tarball version"""
+        if not (tarball_file and os.path.isfile(tarball_file)):
+            return False
         tmpdir = FileUtil("VERSION").mktmpdir()
         if not tmpdir:
             return False
@@ -1177,6 +1183,8 @@ class UdockerTools(object):
 
     def _install(self, tarball_file):
         """Install the tarball"""
+        if not (tarball_file and os.path.isfile(tarball_file)):
+            return False
         cmd = "cd " + self.localrepo.bindir + " ; "
         cmd += "tar --strip-components=2 -x"
         if Msg.level >= Msg.VER:
@@ -1227,7 +1235,7 @@ class UdockerTools(object):
 
     def _get_mirrors(self):
         """Get shuffled list of tarball mirrors"""
-        mirrors = self._tarball.split(";")
+        mirrors = self._tarball.split(" ")
         try:
             random.shuffle(mirrors)
         except NameError:
@@ -1254,7 +1262,7 @@ class UdockerTools(object):
                     tarball_file = self._download(tarball)
                 elif os.path.exists(tarball):
                     tarball_file = tarball
-                if tarball_file:
+                if tarball_file and os.path.isfile(tarball_file):
                     status = False
                     if not self._verify_version(tarball_file):
                         Msg().err("Error: wrong tarball version:",
@@ -1405,8 +1413,6 @@ class ElfPatcher(object):
         last_time = "0"
         patchelf_exec = self.select_patchelf()
         elf_loader = self.get_container_loader()
-        #cmd = "%s --set-interpreter %s --set-root-prefix %s #f" % \
-        #    (patchelf_exec, elf_loader, self._container_root)
         cmd = "%s --set-root-prefix %s #f" % \
             (patchelf_exec, self._container_root)
         self._walk_fs(cmd, self._container_root, self.BIN | self.LIB)
@@ -1425,8 +1431,6 @@ class ElfPatcher(object):
         patchelf_exec = self.select_patchelf()
         elf_loader = self.get_original_loader()
         last_path = self.get_patch_last_path()
-        #cmd = "%s --set-interpreter %s --restore-root-prefix %s #f" % \
-        #    (patchelf_exec, elf_loader, self._container_root)
         if last_path:
             cmd = "%s --restore-root-prefix %s #f" % \
                 (patchelf_exec, last_path + "/ROOT")
@@ -1442,7 +1446,6 @@ class ElfPatcher(object):
 
     def patch_ld(self, output_elf=None):
         """Patch ld.so"""
-        #self.check_container_path()
         elf_loader = self.get_container_loader()
         if FileUtil(self._container_ld_so_orig).size() == -1:
             status = FileUtil(elf_loader).copyto(self._container_ld_so_orig)
@@ -1509,7 +1512,6 @@ class ElfPatcher(object):
 
     def get_ld_libdirs(self, force=False):
         """Get ld library paths"""
-        #self.check_container_path()
         if force or not os.path.exists(self._container_ld_libdirs):
             ld_list = self._find_ld_libdirs()
             ld_str = ":".join(ld_list)
@@ -1788,27 +1790,56 @@ class ExecutionEngineCommon(object):
         self.opt["hostname"] = ""                # Hostname TBD
         self.opt["domain"] = ""                  # Host domainname TBD
         self.opt["volfrom"] = []                 # Mount vol from container TBD
+        self.opt["portsmap"] = []                # Ports mapped in container
+        self.opt["portsexp"] = []                # Ports exposed by container
 
-    def _check_exposed_ports(self, exposed_ports):
+    def _get_portsmap(self, by_container=True):
+        """List of TCP/IP ports mapped indexed by container port"""
+        indexed_portmap = dict()
+        for portmap in self.opt["portsmap"]:
+            pmap = portmap.split(":")
+            try:
+                host_port = int(pmap[0])
+                cont_port = int(pmap[1])
+            except (ValueError, TypeError):
+                try:
+                    host_port = int(pmap[1])
+                    cont_port = int(pmap[2])
+                except (ValueError, TypeError):
+                    host_port = None
+                    cont_port = None
+            if host_port:
+                if by_container:
+                    indexed_portmap[cont_port] = host_port
+                else:
+                    indexed_portmap[host_port] = cont_port
+        return indexed_portmap
+
+    def _check_exposed_ports(self):
         """TCP/UDP ports < 1024 in ExposedPorts JSON metadata
         The exposed ports format is  ExposedPorts:{ "80/tcp":{}, }
         """
-        port_number = -1
-        if exposed_ports:
-            for port in exposed_ports:
-                try:
-                    port_number = int(port.split("/")[0])
-                except (ValueError, TypeError):
-                    pass
-                else:
-                    if port_number < 1024:
-                        Msg().err("Error: this container exposes privileged"
-                                  " TCP/IP ports (< 1024) not supported")
-                        return True
-        if port_number != -1:
-            Msg().err("Warning: this container exposes TCP/IP"
-                      " ports this may not work", l=Msg.WAR)
-        return False
+        mapped_ports = self._get_portsmap()
+        exposes_priv = False
+        exposes_port = False
+        for port in self.opt["portsexp"]:
+            try:
+                port_number = int(port.split("/")[0])
+                exposes_port = True
+            except (ValueError, TypeError):
+                pass
+            else:
+                if port_number < 1024:
+                    if port_number in mapped_ports.keys():
+                        if mapped_ports[port_number] >= 1024:
+                            continue
+                    exposes_priv = True
+        if exposes_priv and Config.uid != 0:
+            Msg().err("Error: this container exposes privileged TCP/IP ports")
+            return False
+        if exposes_port:
+            Msg().err("Warning: this container exposes TCP/IP ports", l=Msg.WAR)
+        return True
 
     def _set_cpu_affinity(self):
         """set the cpu affinity string for container run command"""
@@ -2055,10 +2086,9 @@ class ExecutionEngineCommon(object):
                 self.opt["vol"].extend(
                     container_structure.get_container_meta(
                         "Volumes", [], container_json))
-                exposed_ports = \
+                self.opt["portsexp"].extend(
                     container_structure.get_container_meta(
-                        "ExposedPorts", [], container_json)
-                self._check_exposed_ports(exposed_ports)
+                        "ExposedPorts", [], container_json))
                 meta_env = \
                     container_structure.get_container_meta(
                         "Env", [], container_json)
@@ -2359,8 +2389,11 @@ class ExecutionEngineCommon(object):
         self.container_id = container_id
         self.container_dir = container_dir
 
-        # Execution Mode
+        # execution mode
         self.exec_mode = ExecutionMode(self.localrepo, self.container_id)
+
+        # check if exposing privileged ports
+        self._check_exposed_ports()
 
         # which user to use inside the container and setup its account
         if not self._setup_container_user(self.opt["user"]):
@@ -2448,6 +2481,15 @@ class PRootEngine(ExecutionEngineCommon):
             vol_str = " "
         return vol_str
 
+    def _get_network_map(self):
+        """Get mapping of TCP/IP ports"""
+        proot_options = ""
+        for (cont_port, host_port) in self._get_portsmap().iteritems():
+            proot_options += " -p %d:%d " % (cont_port, host_port)
+        if self.opt["netcoop"]:
+            proot_options += " -n "
+        return proot_options
+
     def run(self, container_id):
         """Execute a Docker container using PRoot. This is the main method
         invoked to run the a container with PRoot.
@@ -2488,6 +2530,7 @@ class PRootEngine(ExecutionEngineCommon):
                  self._get_volume_bindings(),
                  self._set_uid_map(),
                  "-k", self._kernel,
+                 self._get_network_map(),
                  "-r", self.container_root,
                  " ",)
         cmd = " ".join(cmd_t)
@@ -2707,6 +2750,15 @@ class RuncEngine(ExecutionEngineCommon):
             if env_var not in Config.valid_host_env:
                 del self.opt["env"][index]
 
+    def _run_invalid_options(self):
+        """check -p --publish -P --publish-all --net-coop"""
+        if self.opt["portsmap"]:
+            Msg().err("Warning: this execution mode does not support "
+                      "-p --publish", l=Msg.WAR)
+        if self.opt["netcoop"]:
+            Msg().err("Warning: this execution mode does not support "
+                      "-P --netcoop --publish-all", l=Msg.WAR)
+
     def run(self, container_id):
         """Execute a Docker container using runc. This is the main method
         invoked to run the a container with runc.
@@ -2723,6 +2775,8 @@ class RuncEngine(ExecutionEngineCommon):
         # setup execution
         if not self._run_init(container_id):
             return 2
+
+        self._run_invalid_options()
 
         self._container_specfile = self.container_dir + "/config.json"
         self._filebind = FileBind(self.localrepo, self.container_id)
@@ -2865,6 +2919,15 @@ class SingularityEngine(ExecutionEngineCommon):
         FileUtil(self.container_root + "/sys").mkdir()
         FileUtil(self.container_root + "/root").mkdir()
 
+    def _run_invalid_options(self):
+        """check -p --publish -P --publish-all --net-coop"""
+        if self.opt["portsmap"]:
+            Msg().err("Warning: this execution mode does not support "
+                      "-p --publish", l=Msg.WAR)
+        if self.opt["netcoop"]:
+            Msg().err("Warning: this execution mode does not support "
+                      "-P --netcoop --publish-all", l=Msg.WAR)
+
     def run(self, container_id):
         """Execute a Docker container using singularity.
         This is the main method invoked to run a container with singularity.
@@ -2882,6 +2945,8 @@ class SingularityEngine(ExecutionEngineCommon):
         # setup execution
         if not self._run_init(container_id):
             return 2
+
+        self._run_invalid_options()
 
         self._make_container_directories()
 
@@ -3080,6 +3145,15 @@ class FakechrootEngine(ExecutionEngineCommon):
                 self.opt["env"].append("FAKECHROOT_PATCH_LAST_TIME=" +
                                        self._elfpatcher.get_patch_last_time())
 
+    def _run_invalid_options(self):
+        """check -p --publish -P --publish-all --net-coop"""
+        if self.opt["portsmap"]:
+            Msg().err("Warning: this execution mode does not support "
+                      "-p --publish", l=Msg.WAR)
+        if self.opt["netcoop"]:
+            Msg().err("Warning: this execution mode does not support "
+                      "-P --netcoop --publish-all", l=Msg.WAR)
+
     def run(self, container_id):
         """Execute a Docker container using Fakechroot. This is the main
         method invoked to run the a container with Fakechroot.
@@ -3095,6 +3169,8 @@ class FakechrootEngine(ExecutionEngineCommon):
         exec_path = self._run_init(container_id)
         if not exec_path:
             return 2
+
+        self._run_invalid_options()
 
         # execution mode and get patcher
         xmode = self.exec_mode.get_mode()
@@ -3449,7 +3525,7 @@ class ContainerStructure(object):
             confidx = "container_config"
         if param in container_json[confidx]:
             if container_json[confidx][param] is None:
-                return default
+                pass
             elif (isinstance(container_json[confidx][param], str) and (
                     isinstance(default, (list, tuple)))):
                 return container_json[confidx][param].strip().split()
@@ -3462,7 +3538,9 @@ class ContainerStructure(object):
             elif (isinstance(default, list) and (
                     isinstance(container_json[confidx][param], dict))):
                 return self._dict_to_list(container_json[confidx][param])
-            return container_json[confidx][param]
+            else:
+                return container_json[confidx][param]
+        return default
 
     def _dict_to_str(self, in_dict):
         """Convert dict to str"""
@@ -5765,8 +5843,16 @@ class Udocker(object):
 
     def _get_run_options(self, cmdp, exec_engine=None):
         """Read command line options into variables"""
-        cmdp.declare_options("-v= -e= -w= -u= -i -t -a")
+        cmdp.declare_options("-v= -e= -w= -u= -p= -i -t -a -P")
         cmd_options = {
+            "netcoop": {
+                "fl": ("-P", "--publish-all", "--netcoop",), "act": "R",
+                "p2": "CMD_OPT", "p3": False
+            },
+            "portsmap": {
+                "fl": ("-p=", "--publish=",), "act": "E",
+                "p2": "CMD_OPT", "p3": True
+            },
             "novol": {
                 "fl": ("--novol=",), "act": "R",
                 "p2": "CMD_OPT", "p3": True
@@ -5876,6 +5962,10 @@ class Udocker(object):
         --bindhome                 :bind the home directory into the container
         --location=<path-to-dir>   :use root tree outside the repository
         --kernel=<kernel-id>       :use this Linux kernel identifier
+
+        Only available in Pn execution modes:
+        --publish=<hport:cport>    :map TCP/IP port from cport to hport
+        --publish-all              :bind and connect to random ports
 
         run <container-id-or-name> executes an existing container, previously
         created from an image by using: create <repo/image:tag>
