@@ -5801,9 +5801,7 @@ class Udocker(object):
                 self.dockerioapi.set_registry(registry_url)
             v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
             self.dockerioapi.set_v2_login_token(v2_auth_token)
-            files = self.dockerioapi.get(imagerepo, tag)
-            if files:
-                Msg().out(files)
+            if self.dockerioapi.get(imagerepo, tag):
                 return True
             else:
                 Msg().err("Error: no files downloaded")
