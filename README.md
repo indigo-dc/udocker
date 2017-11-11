@@ -258,5 +258,6 @@ See: [Contributing](CONTRIBUTING.md)
 * PRoot http://proot.me
 * Fakechroot https://github.com/dex4er/fakechroot/wiki
 * runC https://runc.io/
+* Singularity http://singularity.lbl.gov
 * INDIGO DataCloud https://www.indigo-datacloud.eu
 
