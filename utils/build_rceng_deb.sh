@@ -41,7 +41,14 @@ create_source_tarball()
     /bin/rm $SOURCE_TARBALL 2> /dev/null
     pushd $TMP_DIR
     /bin/rm -Rf runc ${BASE_DIR}-${VERSION}
-    git clone --depth=1 https://github.com/opencontainers/runc
+    git clone https://github.com/opencontainers/runc
+    pushd runc
+    if grep -q "14.04" /etc/lsb-release; then
+        git checkout v1.0.0-rc3
+    else
+        git checkout v1.0.0-rc4
+    fi
+    popd
     /bin/mv runc ${BASE_DIR}-${VERSION}
     tar czvf $SOURCE_TARBALL ${BASE_DIR}-${VERSION}
     /bin/rm -Rf ${BASE_DIR}-${VERSION}

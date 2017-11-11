@@ -1062,8 +1062,14 @@ create_package_tarball()
                "${PACKAGE_DIR}/udocker_dir/bin/proot-x86"
     /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25.bin" \
                "${PACKAGE_DIR}/udocker_dir/bin/proot-x86_64"
+    /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/COPYING" \
+               "${PACKAGE_DIR}/udocker_dir/doc/COPYING.proot"
+
     /bin/cp -f "${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-25" \
                "${PACKAGE_DIR}/udocker_dir/bin/patchelf-x86_64"
+    /bin/cp -f "${BUILD_DIR}/patchelf-source-x86_64/COPYING" \
+               "${PACKAGE_DIR}/udocker_dir/doc/COPYING.patchelf"
+
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Fedora-25.so" \
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Fedora-25-x86_64.so"
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-CentOS-6.so" \
@@ -1074,8 +1080,13 @@ create_package_tarball()
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-14-x86_64.so"
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Ubuntu-16.so" \
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-16-x86_64.so"
+    /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/LICENSE" \
+               "${PACKAGE_DIR}/udocker_dir/doc/LICENSE.fakechroot"
+
     /bin/cp -f "${BUILD_DIR}/runc-source-x86_64/runc" \
                "${PACKAGE_DIR}/udocker_dir/bin/runc-x86_64"
+    /bin/cp -f "${BUILD_DIR}/runc-source-x86_64/LICENSE" \
+               "${PACKAGE_DIR}/udocker_dir/doc/LICENSE.runc"
 
     (cd "${PACKAGE_DIR}/udocker_dir/bin"; \
 	ln -s proot-x86 proot-x86-4_8_0 ; \

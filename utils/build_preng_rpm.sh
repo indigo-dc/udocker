@@ -85,6 +85,7 @@ Engine to provide chroot and mount like capabilities for containers execution in
 %setup -q -n $BASE_DIR
 
 %build
+make -C src clean
 make -C src
 
 %install

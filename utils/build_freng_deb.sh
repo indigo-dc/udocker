@@ -38,7 +38,7 @@ udocker_version()
 
 udocker_tarball_url()
 {
-    $REPO_DIR/utils/udocker.py version | grep "tarball:" | cut -f2- '-d ' | cut -f1 '-d '
+    $REPO_DIR/udocker.py version | grep "tarball:" | cut -f2- '-d ' | cut -f1 '-d '
 }
 
 patch_fakechroot_source()
@@ -378,9 +378,6 @@ override_dh_auto_install:
 	install -g 0 -o 0 -m 755 -D udocker_dir/lib/libfakechroot-Ubuntu-14-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-x86_64.so
 	install -g 0 -o 0 -m 755 -D udocker_dir/lib/libfakechroot-Ubuntu-16-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-Ubuntu-16-x86_64.so
 
-
-
-ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-Debian-7-x86_64.so ; \
 M_RULES
 }
 

@@ -46,7 +46,8 @@ create_source_tarball()
     /bin/rm -Rf $BASE_DIR
     /bin/mkdir -p $BASE_DIR/go/src/github.com/opencontainers
     cd $TMP_DIR/$BASE_DIR/go/src/github.com/opencontainers
-    git clone --depth=1 https://github.com/opencontainers/runc
+    git clone https://github.com/opencontainers/runc
+    git checkout v1.0.0-rc4
     cd $TMP_DIR
     tar czvf $SOURCE_TARBALL $BASE_DIR
     /bin/rm -Rf $BASE_DIR

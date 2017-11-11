@@ -41,7 +41,7 @@ udocker_version()
 
 udocker_tarball_url()
 {
-    $REPO_DIR/utils/udocker.py version | grep "tarball:" | cut -f2- '-d ' | cut -f1 '-d '
+    $REPO_DIR/udocker.py version | grep "tarball:" | cut -f2- '-d ' | cut -f1 '-d '
 }
 
 patch_fakechroot_source()
@@ -226,6 +226,7 @@ SOURCE_TARBALL="${RPM_DIR}/SOURCES/udocker-freng-${VERSION}.tar.gz"
 SPECFILE="${RPM_DIR}/SPECS/udocker-freng.spec"
 
 UDOCKER_TARBALL_URL=$(udocker_tarball_url)
+echo $UDOCKER_TARBALL_URL
 
 cd $REPO_DIR
 sanity_check

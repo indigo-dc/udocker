@@ -36,7 +36,7 @@ setup_env()
 
 udocker_version()
 {
-    $REPO_DIR/utils/info.py | grep "udocker version:" | cut -f3- '-d ' | cut -f1 '-d-'
+    $REPO_DIR/udocker.py version | grep "version:" | cut -f2- '-d ' | cut -f1 '-d-'
 }
 
 create_source_tarball()
@@ -110,7 +110,7 @@ rm -rf %{buildroot}
 %doc %{_mandir}/man1/udocker.1*
 
 %changelog
-* Wed Nov  8 udocker maintainer <udocker@lip.pt> 1.1.1-1
+* Wed Nov 8 2017 udocker maintainer <udocker@lip.pt> 1.1.1-1
 - New execution engine using singularity
 - Updated documentation with OpenMPI information and examples
 - Additional unit tests
