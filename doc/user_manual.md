@@ -158,7 +158,27 @@ Command specific help can be obtained with:
   udocker COMMAND --help
 ```
 
-### 3.3. search
+### 3.3. install
+```
+  udocker install [OPTIONS]
+```
+Install of udocker tools. Pulls the tools and installs them in the user
+home directory under `$HOME/.udocker` or in a location defined by the
+environment variable `UDOCKER_DIR`. The pulling may attempt several 
+mirrors.
+
+Options:
+
+* `--force` force installation, useful to reintall.
+* `--purge` remove files from older installations. 
+
+Examples:
+```
+  udocker install
+  udocker install --force --purge
+```
+
+### 3.4. search
 ```
   udocker search [OPTIONS] REPO/IMAGE:TAG
 ```
@@ -176,7 +196,7 @@ Examples:
   udocker search iscampos/openqcd
 ```
 
-### 3.4. pull
+### 3.5. pull
 ```
   udocker pull [OPTIONS] REPO/IMAGE:TAG
 ```
@@ -202,7 +222,7 @@ Examples:
   udocker pull --httpproxy=socks5://user:pass@host:port busybox
 ```
 
-### 3.5. images
+### 3.6. images
 ```
   udocker images [OPTIONS]
 ```
@@ -219,7 +239,7 @@ Examples:
   udocker images -l
 ```
 
-### 3.6. create
+### 3.7. create
 ```
   udocker create [OPTIONS] REPO/IMAGE:TAG
 ```
@@ -239,7 +259,7 @@ Examples:
   udocker create --name=mycontainer indigodatacloud/disvis:latest
 ```
 
-### 3.7. ps
+### 3.8. ps
 ```
   udocker ps
 ```
@@ -258,7 +278,7 @@ Examples:
   udocker ps
 ```
 
-### 3.8. rmi
+### 3.9. rmi
 ```
   udocker rmi [OPTIONS] REPO/IMAGE:TAG
 ```
@@ -276,7 +296,7 @@ Examples:
   udocker rmi -f indigodatacloud/ambertools\_app:latest
 ```
 
-### 3.9. rm
+### 3.10. rm
 ```
   udocker rm CONTAINER-ID
 ```
@@ -290,7 +310,7 @@ Examples:
   udocker rm mycontainer
 ```
 
-### 3.10. inspect
+### 3.11. inspect
 ```
   udocker inspect REPO/IMAGE:TAG
   udocker inspect [OPTIONS] CONTAINER-ID
@@ -310,7 +330,7 @@ Examples:
   udocker inspect -p d2578feb-acfc-37e0-8561-47335f85e46d
 ```
 
-### 3.11. name
+### 3.12. name
 ```
   udocker name CONTAINER-ID NAME
 ```
@@ -322,7 +342,7 @@ Examples:
   udocker name d2578feb-acfc-37e0-8561-47335f85e46d BLUE
 ```
 
-### 3.12. rmname
+### 3.13. rmname
 ```
   udocker rmname NAME
 ```
@@ -334,7 +354,7 @@ Examples:
   udocker rmname BLUE
 ```
 
-### 3.13. verify
+### 3.14. verify
 ```
   udocker verify REPO/IMAGE:TAG
 ```
@@ -345,7 +365,7 @@ Examples:
   udocker verify indigodatacloud/powerfit:latest
 ```
 
-### 3.14. import
+### 3.15. import
 ```
   udocker import [OPTIONS] TARBALL|- REPO/IMAGE:TAG
 ```
@@ -379,7 +399,7 @@ Examples:
   udocker import --clone --name=RED udocker_container.tar 
 ```
 
-### 3.15. load
+### 3.16. load
 ```
   udocker load -i IMAGE-FILE
   udocker load -
@@ -397,7 +417,7 @@ Examples:
   udocker load - < docker-image.tar
 ```
 
-### 3.16. protect
+### 3.17. protect
 ```
   udocker protect REPO/IMAGE:TAG
   udocker protect CONTAINER-ID
@@ -412,7 +432,7 @@ Examples:
   udocker protect 3d528987-a51e-331a-94a0-d278bacf79d9
 ```
 
-### 3.17. unprotect
+### 3.18. unprotect
 ```
   udocker unprotect REPO/IMAGE:TAG
   udocker unprotect CONTAINER-ID
@@ -425,7 +445,7 @@ Examples:
   udocker unprotect 3d528987-a51e-331a-94a0-d278bacf79d9
 ```
 
-### 3.18. mkrepo
+### 3.19. mkrepo
 ```
   udocker mkrepo DIRECTORY
 ```
@@ -441,7 +461,7 @@ Examples:
   udocker --repo=/tmp/myrepo images
 ```
 
-### 3.19. run
+### 3.20. run
 ```
   udocker run [OPTIONS] CONTAINER-ID|CONTAINER-NAME
   udocker run [OPTIONS] REPO/IMAGE:TAG
@@ -519,7 +539,7 @@ EOF
 ```
 
 
-### 3.20. Debug and Verbosity
+### 3.21. Debug and Verbosity
 Further debugging information can be obtaining by running with `-D`.
 
 Examples:
@@ -540,7 +560,7 @@ Examples:
 ```
 
 
-### 3.21. Login
+### 3.22. Login
 ```
   udocker login [--username=USERNAME] [--password=PASSWORD] [--registry=REGISTRY]
 ```
@@ -564,7 +584,7 @@ Examples:
   password: ****
 ```
 
-### 3.22. Logout
+### 3.23. Logout
 ```
   udocker logout [-a]
 ```
@@ -584,7 +604,7 @@ Examples:
   udocker logout -a
 ```
 
-### 3.23. Clone
+### 3.24. Clone
 ```
   udocker clone [--name=NAME] CONTAINER-ID|CONTAINER-NAME
 ```
@@ -601,7 +621,7 @@ Examples:
   udocker clone --name=RED  BLUE
 ```
 
-### 3.24. Setup
+### 3.25. Setup
 ```
   udocker setup [--execmode=XY] [--force] CONTAINER-ID|CONTAINER-NAME
 ```
