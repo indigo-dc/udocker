@@ -150,6 +150,9 @@ class Config(object):
 
     # udocker installation tarball
     tarball = (
+        "https://owncloud.indigo-datacloud.eu/index.php"
+        "/s/AFImjw8ii0X72xf/download"
+        " "
         "https://cernbox.cern.ch/index.php"
         "/s/VC7GuVWA7mYRAiy/download"
         " "
