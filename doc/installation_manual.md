@@ -25,22 +25,14 @@ as a tarball to be deployed by the end user.
 The tarball installation method contains statically compiled binaries and 
 is built to be used across different hosts and OS distributions.
 
-Install of udocker v1.1.0 released by INDIGO-DataCloud:
+Install of udocker v1.1.0 or higher released by INDIGO-DataCloud:
 
 ```
   curl http://repo.indigo-datacloud.eu/repository/indigo/2/centos7/x86_64/tgz/udocker-1.1.0.tar.gz > udocker-tarball.tgz
   export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
   tar xzvf $UDOCKER_TARBALL udocker
-  ./udocker version
+  ./udocker install
   mv ./udocker $HOME   # move the executable to your preferred location for binaries
-```
-
-Install of the old udocker 1.0.0 released by INDIGO-DataCloud:
-
-```
-  cd $HOME
-  wget -O- http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.0.0.tar.gz | tar xzvf -
-  ./udocker.py version
 ```
 
 When using the setup.py provided in the releases install with:
@@ -59,7 +51,7 @@ installation will be performed automatically. The installation from source code 
 officially supported by INDIGO-DataCloud.
 
 This method is very flexible, once you download the udocker executable from github
-you can move it around between systems. Once you start it in a new syetm it will 
+you can move it around between systems. Once you start it in a new system it will 
 install itself. The installation requires outbound network connectivity.
 
 From the master branch:
@@ -78,30 +70,38 @@ From the development branch:
   ./udocker version
 ```
 
-### 2.3. OBTAINING THE LATEST TARBALL
+### 2.3. OBTAINING THE URL OF THE LATEST TARBALL
 
-The udocker tarball used in the installation described in section 2.2 can be
-obtained using the following method. First download udocker from the repository
-then run info.py which will display the URL of the lastest tarball used in the
-automated installation.
+The udocker installation tarball mentioned in section 2.2 can be obtained using the 
+following method. First download udocker. Second use udocker itself to display the
+installation tarball URL by invoking the `version` command. The tarball location may 
+contain several URLs pointing to mirrors.
 
 ```
   git clone https://github.com/indigo-dc/udocker
-  cd udocker/utils
-  python2 ./info.py
+  cd udocker
+  chmod u+rx udocker
+  ./udocker version
 ```
 
-You may then downlaod the tarball using tools such as curl or wget.
+Third, pick one URL and download the tarball using tools such as curl or wget.
 
+### 2.4. FORCE INSTALLATION
+
+To force reinstallation invoke udocker install with the flag `--force`:
+
+```
+  ./udocker install --force
+```
 
 ## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
 
 Beware that these packages contain dynamically linked binaries compiled for
-the target OS distributions and therefore cannot be execute sucessfully in 
+the target OS distributions and therefore cannot be execute successfully in 
 hosts running a different OS distribution. To execute the same udocker across 
 systems use the tarball installation methods described above in section 2. 
 
-RPMs for CentOS 7 are provided at http://repo.indigo-datacloud.eu
+RPMs are provided at http://repo.indigo-datacloud.eu
 
 ```
   rpm -i udocker-1.1.0-1.noarch.rpm \
@@ -109,7 +109,7 @@ RPMs for CentOS 7 are provided at http://repo.indigo-datacloud.eu
          udocker-freng-1.1.0-1.x86_64.rpm
 ```
 
-DEBs for Ubuntu 16 are provided at http://repo.indigo-datacloud.eu
+DEBs are provided at http://repo.indigo-datacloud.eu
 
 ```
   dpkg -i udocker_1.1.0-1_all.deb \
@@ -117,8 +117,8 @@ DEBs for Ubuntu 16 are provided at http://repo.indigo-datacloud.eu
           udocker-freng_1.1.0-1_amd64.deb \
           udocker-rceng_1.1.0-1_amd64.deb
 ```
-
-The rc engine (rceng) is only available for Ubuntu 14 and 16.
+Check the INDIGO-DataCloud repository for the latest versions and supported distributions.
+Notice that the rc engine (udocker-rceng) package is only available for Ubuntu 14 and 16.
 
 ## 4. SYSTEM INSTALLATION WITH ANSIBLE AND PYTHON
 
@@ -173,7 +173,8 @@ repository, or use a web browser to access github at `https://github.com/indigo-
 To get the udocker source code repository from the devel branch.
 
 ```
-  git clone -b devel https://github.com/indigo-dc/udocker
+  git clone https://github.com/indigo-dc/udocker
+  checkout devel
 ```
 
 ## 6. BUILD
@@ -201,7 +202,7 @@ under $HOME/.udocker this directory will contain:
 
 ## 8. ENVIRONMENT
 
-The location of the udocker directory can be changed via environment variables.
+The location of the udocker directories can be changed via environment variables.
 
  * UDOCKER_DIR : root directory of udocker usually $HOME/.udocker
  * UDOCKER_BIN : location of udocker related executables
@@ -216,6 +217,10 @@ The Docker index and registry and be overrided via environment variables.
  * UDOCKER_INDEX : https://...
  * UDOCKER_REGISTRY : https://...
 
+The verbosity level of udocker can be enforced. Removing banners and most messages
+can be achieved by executing with UDOCKER_LOGLEVEL=2
+
+ * UDOCKER_LOGLEVEL : set verbosity level from 0 to 5 (MIN to MAX verbosity)
 
 ## 9. CONFIGURATION
 

@@ -33,12 +33,12 @@ setup_env()
 
 udocker_version()
 {
-    $REPO_DIR/utils/info.py | grep "udocker version:" | cut -f3- '-d ' | cut -f1 '-d-'
+    $REPO_DIR/udocker.py version | grep "version:" | cut -f2- '-d ' | cut -f1 '-d-'
 }
 
 udocker_tarball_url()
 {
-    $REPO_DIR/utils/info.py | grep "udocker tarball:" | cut -f3- '-d '
+    $REPO_DIR/udocker.py version | grep "tarball:" | cut -f2- '-d ' | cut -f1 '-d '
 }
 
 patch_fakechroot_source()
@@ -148,6 +148,12 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker-freng (1.1.1-1) trusty; urgency=low
+
+  * Repackaging for udocker 1.1.1
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Wed, 8 Nov 2017 12:35:00 +0000
+
 udocker-freng (1.1.0-1) trusty; urgency=low
 
   * Initial debian package
@@ -362,6 +368,7 @@ override_dh_auto_configure:
 override_dh_auto_install:
 	install -g 0 -o 0 -m 755 -D patchelf/src/patchelf debian/udocker-freng/usr/lib/udocker/patchelf-x86_64
 	install -g 0 -o 0 -m 755 -D udocker_dir/lib/libfakechroot-CentOS-6-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-CentOS-6-x86_64.so
+	install -g 0 -o 0 -m 755 -D udocker_dir/lib/libfakechroot-CentOS-6-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-Debian-7-x86_64.so
 	install -g 0 -o 0 -m 755 -D udocker_dir/lib/libfakechroot-CentOS-7-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-CentOS-7-x86_64.so
 	install -g 0 -o 0 -m 755 -D udocker_dir/lib/libfakechroot-Fedora-25-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-Fedora-25-x86_64.so
 	install -g 0 -o 0 -m 755 -D udocker_dir/lib/libfakechroot-Fedora-25-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-Fedora-x86_64.so

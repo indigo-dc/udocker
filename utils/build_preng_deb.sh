@@ -33,39 +33,7 @@ setup_env()
 
 udocker_version()
 {
-    $REPO_DIR/utils/info.py | grep "udocker version:" | cut -f3- '-d ' | cut -f1 '-d-'
-}
-
-patch_proot_source2()
-{
-    echo "patch_proot_source2"
-
-    pushd "$TMP_DIR/${BASE_DIR}-${VERSION}/src/tracee"
-
-    if [ -e "event.patch" ] ; then
-        echo "patch proot source2 already applied: $PWD/event.patch"
-        return
-    fi
-
-    cp ${utils_dir}/proot_event.patch event.patch
-    patch < event.patch
-    popd
-}
-
-patch_proot_source3()
-{
-    echo "patch_proot_source3"
-
-    pushd "$TMP_DIR/$BASE_DIR-${VERSION}/src/path"
-
-    if [ -e "temp.patch" ] ; then
-        echo "patch proot source3 already applied: $PWD/temp.patch"
-        return
-    fi
-
-    cp ${utils_dir}/proot_temp.patch temp.patch
-    patch < temp.patch
-    popd
+    $REPO_DIR/udocker.py version | grep "version:" | cut -f2- '-d ' | cut -f1 '-d-'
 }
 
 create_source_tarball()
@@ -73,13 +41,15 @@ create_source_tarball()
     /bin/rm $SOURCE_TARBALL 2> /dev/null
     pushd $TMP_DIR
     /bin/rm -Rf PRoot ${BASE_DIR}-${VERSION}
-    git clone https://github.com/proot-me/PRoot
+    #git clone https://github.com/proot-me/PRoot
+    #pushd PRoot
+    #git checkout v5.1.0
+    #popd
+    git clone https://github.com/jorge-lip/PRoot.git
     pushd PRoot
-    git checkout v5.1.0
+    git checkout udocker-1.1.1-dyn
     popd
     /bin/mv PRoot ${BASE_DIR}-${VERSION}
-    patch_proot_source2
-    patch_proot_source3
     tar czvf $SOURCE_TARBALL ${BASE_DIR}-${VERSION}
     /bin/rm -Rf $BASE_DIR ${BASE_DIR}-${VERSION}
     popd
@@ -113,6 +83,12 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker-preng (1.1.1-1) trusty; urgency=low
+
+  * Repackaging for udocker 1.1.1
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Wed, 8 Nov 2017 12:35:00 +0000
+
 udocker-preng (1.1.0-1) trusty; urgency=low
 
   * Repackaging for udocker 1.1.0

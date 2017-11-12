@@ -33,7 +33,7 @@ setup_env()
 
 udocker_version()
 {
-    grep "^__version__" "$REPO_DIR/udocker.py" | cut '-d"' -f2 
+    $REPO_DIR/udocker.py version | grep "version:" | cut -f2- '-d ' | cut -f1 '-d-'
 }
 
 create_source_tarball()
@@ -75,6 +75,27 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker (1.1.1-1) trusty; urgency=low
+
+  * New execution engine using singularity
+  * Updated documentation with OpenMPI information and examples
+  * Additional unit tests
+  * Redirect messages to stderr
+  * Improved parsing of quotes in the command line
+  * Allow override of the HOME environment variable
+  * Allow override of libfakechroot.so at the container level
+  * Automatic selection of libfakechroot.so from container info
+  * Improve automatic install
+  * Enable resetting prefix paths in Fn modes in remote hosts
+  * Do not set AF_UNIX_PATH in Fn modes when the host /tmp is a volume
+  * Export containers in both docker and udocker format
+  * Import containers docker and udocker format
+  * Load, import and export to/from stdin/stdout
+  * Clone existing containers
+  * Fix run with basenames failing
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Wed, 8 Nov 2017 12:28:00 +0000
+
 udocker (1.1.0-1) trusty; urgency=low
 
   * Support image names prefixed by registry similarly to docker

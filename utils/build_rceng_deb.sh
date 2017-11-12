@@ -33,7 +33,7 @@ setup_env()
 
 udocker_version()
 {
-    $REPO_DIR/utils/info.py | grep "udocker version:" | cut -f3- '-d ' | cut -f1 '-d-'
+    $REPO_DIR/udocker.py version | grep "version:" | cut -f2- '-d ' | cut -f1 '-d-'
 }
 
 create_source_tarball()
@@ -41,7 +41,14 @@ create_source_tarball()
     /bin/rm $SOURCE_TARBALL 2> /dev/null
     pushd $TMP_DIR
     /bin/rm -Rf runc ${BASE_DIR}-${VERSION}
-    git clone --depth=1 https://github.com/opencontainers/runc
+    git clone https://github.com/opencontainers/runc
+    pushd runc
+    if grep -q "14.04" /etc/lsb-release; then
+        git checkout v1.0.0-rc3
+    else
+        git checkout v1.0.0-rc4
+    fi
+    popd
     /bin/mv runc ${BASE_DIR}-${VERSION}
     tar czvf $SOURCE_TARBALL ${BASE_DIR}-${VERSION}
     /bin/rm -Rf ${BASE_DIR}-${VERSION}
@@ -76,6 +83,12 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker-rceng (1.1.1-1) trusty; urgency=low
+
+  * Repackaging for udocker 1.1.1
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Wed, 8 Nov 2017 12:36:00 +0000
+
 udocker-rceng (1.1.0-1) trusty; urgency=low
 
   * Initial debian package

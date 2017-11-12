@@ -36,12 +36,12 @@ setup_env()
 
 udocker_version()
 {
-    $REPO_DIR/utils/info.py | grep "udocker version:" | cut -f3- '-d ' | cut -f1 '-d-'
+    $REPO_DIR/udocker.py version | grep "version:" | cut -f2- '-d ' | cut -f1 '-d-'
 }
 
 udocker_tarball_url()
 {
-    $REPO_DIR/utils/info.py | grep "udocker tarball:" | cut -f3- '-d '
+    $REPO_DIR/udocker.py version | grep "tarball:" | cut -f2- '-d ' | cut -f1 '-d '
 }
 
 patch_fakechroot_source()
@@ -172,6 +172,8 @@ install -m 755 -D %{_builddir}/%{name}-%{version}/udocker_dir/bin/patchelf-x86_6
 echo "%{_libexecdir}/udocker/patchelf-x86_64" > %{_builddir}/%{name}-%{version}/files.lst
 install -m 755 -D %{_builddir}/%{name}-%{version}/udocker_dir/lib/libfakechroot-CentOS-6-x86_64.so %{buildroot}/%{_datarootdir}/udocker/lib/libfakechroot-CentOS-6-x86_64.so
 echo "%{_datarootdir}/udocker/lib/libfakechroot-CentOS-6-x86_64.so" >> %{_builddir}/%{name}-%{version}/files.lst
+install -m 755 -D %{_builddir}/%{name}-%{version}/udocker_dir/lib/libfakechroot-CentOS-6-x86_64.so %{buildroot}/%{_datarootdir}/udocker/lib/libfakechroot-Debian-7-x86_64.so
+echo "%{_datarootdir}/udocker/lib/libfakechroot-Debian-7-x86_64.so" >> %{_builddir}/%{name}-%{version}/files.lst
 install -m 755 -D %{_builddir}/%{name}-%{version}/udocker_dir/lib/libfakechroot-CentOS-7-x86_64.so %{buildroot}/%{_datarootdir}/udocker/lib/libfakechroot-CentOS-7-x86_64.so
 echo "%{_datarootdir}/udocker/lib/libfakechroot-CentOS-7-x86_64.so" >> %{_builddir}/%{name}-%{version}/files.lst
 install -m 755 -D %{_builddir}/%{name}-%{version}/udocker_dir/lib/libfakechroot-Fedora-25-x86_64.so %{buildroot}/%{_datarootdir}/udocker/lib/libfakechroot-Fedora-25-x86_64.so
@@ -198,6 +200,8 @@ rm -rf %{buildroot}
 %doc %{name}-%{version}/LICENSE-fakechroot %{name}-%{version}/COPYING-fakechroot %{name}-%{version}/THANKS-fakechroot %{name}-%{version}/COPYING-patchelf %{name}-%{version}/README-patchelf
 
 %changelog
+* Wed Nov  8 2017 udocker maintainer <udocker@lip.pt> 1.1.1-1
+- Repackaging for udocker 1.1.1
 * Tue Sep 12 2017 udocker maintainer <udocker@lip.pt> 1.1.0-1 
 - Initial rpm package version
 
@@ -222,6 +226,7 @@ SOURCE_TARBALL="${RPM_DIR}/SOURCES/udocker-freng-${VERSION}.tar.gz"
 SPECFILE="${RPM_DIR}/SPECS/udocker-freng.spec"
 
 UDOCKER_TARBALL_URL=$(udocker_tarball_url)
+echo $UDOCKER_TARBALL_URL
 
 cd $REPO_DIR
 sanity_check

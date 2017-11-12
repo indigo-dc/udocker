@@ -1,3 +1,23 @@
+udocker (1.1.1)
+  * New execution engine using singularity
+  * Updated documentation with OpenMPI information and examples
+  * Additional unit tests
+  * Redirect messages to stderr
+  * Improved parsing of quotes in the command line
+  * Allow override of the HOME environment variable
+  * Allow override of libfakechroot.so at the container level
+  * Automatic selection of libfakechroot.so from container info
+  * Improve automatic install
+  * Enable resetting prefix paths in Fn modes in remote hosts
+  * Do not set AF_UNIX_PATH in Fn modes when the host /tmp is a volume
+  * Export containers in both docker and udocker format
+  * Import containers docker and udocker format
+  * Load, import and export to/from stdin/stdout
+  * Clone existing containers
+  * Support for TCP/IP port remap in execution modes Pn
+  * Fix run with basenames failing
+    - closes: #89
+
 udocker (1.1.0)
 
   * Support image names prefixed by registry similarly to docker 

@@ -36,7 +36,7 @@ setup_env()
 
 udocker_version()
 {
-    $REPO_DIR/utils/info.py | grep "udocker version:" | cut -f3- '-d ' | cut -f1 '-d-'
+    $REPO_DIR/udocker.py version | grep "version:" | cut -f2- '-d ' | cut -f1 '-d-'
 }
 
 create_source_tarball()
@@ -46,7 +46,8 @@ create_source_tarball()
     /bin/rm -Rf $BASE_DIR
     /bin/mkdir -p $BASE_DIR/go/src/github.com/opencontainers
     cd $TMP_DIR/$BASE_DIR/go/src/github.com/opencontainers
-    git clone --depth=1 https://github.com/opencontainers/runc
+    git clone https://github.com/opencontainers/runc
+    git checkout v1.0.0-rc4
     cd $TMP_DIR
     tar czvf $SOURCE_TARBALL $BASE_DIR
     /bin/rm -Rf $BASE_DIR
@@ -112,6 +113,8 @@ rm -rf %{buildroot}
 %doc go/src/github.com/opencontainers/runc/LICENSE go/src/github.com/opencontainers/runc/README.md go/src/github.com/opencontainers/runc/NOTICE
 
 %changelog
+* Wed Nov  8 2017 udocker maintainer <udocker@lip.pt> 1.1.1-1
+- Repackaging for udocker 1.1.1
 * Thu Sep 12 2017 udocker maintainer <udocker@lip.pt> 1.1.0-1
 - Initial rpm package version
 
