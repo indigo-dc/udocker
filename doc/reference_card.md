@@ -54,6 +54,6 @@ Invoke udocker with `-D` for debugging.
 
 ## Documentation
 
-https://www.gitbook.com/book/indigo-dc/udocker/details
-https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md 
+* https://www.gitbook.com/book/indigo-dc/udocker/details
+* https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md 
 
