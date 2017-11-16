@@ -9,6 +9,16 @@ containers were docker is unavailable or cannot be used safely.
 * $UDOCKER_DIR/udocker.conf
 * $HOME/.udocker/udocker.conf
 
+All attributes of the udocker::Config class can be modified via the
+configuration files. Example:
+
+```
+# do not verify digital certificates
+http_insecure = True
+# set default verbose level
+verbose_level = 5
+```
+
 ## Environment variables
 
  * UDOCKER_DIR : root directory of udocker usually $HOME/.udocker
