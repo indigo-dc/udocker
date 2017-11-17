@@ -4,6 +4,7 @@ udocker (1.1.1)
   * Additional unit tests
   * Redirect messages to stderr
   * Improved parsing of quotes in the command line
+    - closes: #87
   * Allow override of the HOME environment variable
   * Allow override of libfakechroot.so at the container level
   * Automatic selection of libfakechroot.so from container info
@@ -17,6 +18,8 @@ udocker (1.1.1)
   * Support for TCP/IP port remap in execution modes Pn
   * Fix run with basenames failing
     - closes: #89
+  * Allow run as root flag
+    - closes: #91
 
 udocker (1.1.0)
 

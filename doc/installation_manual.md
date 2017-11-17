@@ -25,22 +25,22 @@ as a tarball to be deployed by the end user.
 The tarball installation method contains statically compiled binaries and 
 is built to be used across different hosts and OS distributions.
 
-Install of udocker v1.1.0 or higher released by INDIGO-DataCloud:
+Install or upgrade of udocker v1.1.1 or higher released by INDIGO-DataCloud:
 
 ```
-  curl http://repo.indigo-datacloud.eu/repository/indigo/2/centos7/x86_64/tgz/udocker-1.1.0.tar.gz > udocker-tarball.tgz
+  curl http://repo.indigo-datacloud.eu/repository/indigo/2/centos7/x86_64/tgz/udocker-1.1.1.tar.gz > udocker-tarball.tgz
   export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
   tar xzvf $UDOCKER_TARBALL udocker
   ./udocker install
   mv ./udocker $HOME   # move the executable to your preferred location for binaries
 ```
 
-When using the setup.py provided in the releases install with:
+When using the setup.py provided in the release use:
 
 ```
   mkdir /tmp/somedir
   cd /tmp/somedir
-  curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.X.X.tar.gz | tar xzvf -
+  curl http://repo.indigo-datacloud.eu/repository/indigo/2/centos7/x86_64/tgz/udocker-1.1.1.tar.gz | tar xzvf -
   python setup.py install --home /home/USER/bin
 ```
 
@@ -52,7 +52,7 @@ officially supported by INDIGO-DataCloud.
 
 This method is very flexible, once you download the udocker executable from github
 you can move it around between systems. Once you start it in a new system it will 
-install itself. The installation requires outbound network connectivity.
+install or upgrade itself. The installation requires outbound network connectivity.
 
 From the master branch:
 
@@ -83,7 +83,7 @@ contain several URLs pointing to mirrors.
 
 Third, pick one URL and download the tarball using tools such as curl or wget.
 
-### 2.4. FORCE INSTALLATION
+### 2.4. FORCE REINSTALLATION
 
 To force download and reinstallation of the udocker tools. Invoke udocker install with the flag `--force`:
 
@@ -101,18 +101,18 @@ systems use the tarball installation methods described above in section 2.
 RPMs are provided at http://repo.indigo-datacloud.eu
 
 ```
-  rpm -i udocker-1.1.0-1.noarch.rpm \
-         udocker-preng-1.1.0-1.x86_64.rpm \
-         udocker-freng-1.1.0-1.x86_64.rpm
+  rpm -i udocker-1.1.1-1.noarch.rpm \
+         udocker-preng-1.1.1-1.x86_64.rpm \
+         udocker-freng-1.1.1-1.x86_64.rpm
 ```
 
 DEBs are provided at http://repo.indigo-datacloud.eu
 
 ```
-  dpkg -i udocker_1.1.0-1_all.deb \
-          udocker-preng_1.1.0-1_amd64.deb \
-          udocker-freng_1.1.0-1_amd64.deb \
-          udocker-rceng_1.1.0-1_amd64.deb
+  dpkg -i udocker_1.1.1-1_all.deb \
+          udocker-preng_1.1.1-1_amd64.deb \
+          udocker-freng_1.1.1-1_amd64.deb \
+          udocker-rceng_1.1.1-1_amd64.deb
 ```
 Check the INDIGO-DataCloud repository for the latest versions and supported distributions.
 Notice that the rc engine (udocker-rceng) package is only available for Ubuntu 14 and 16.
