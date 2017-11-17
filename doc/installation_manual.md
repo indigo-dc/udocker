@@ -59,7 +59,7 @@ From the master branch:
 ```
   curl https://raw.githubusercontent.com/indigo-dc/udocker/master/udocker.py > udocker
   chmod u+rx ./udocker
-  ./udocker version
+  ./udocker install
 ```
 
 From the development branch:
@@ -67,7 +67,7 @@ From the development branch:
 ```
   curl https://raw.githubusercontent.com/indigo-dc/udocker/devel/udocker.py > udocker
   chmod u+rx ./udocker
-  ./udocker version
+  ./udocker install
 ```
 
 ### 2.3. OBTAINING THE URL OF THE LATEST TARBALL
@@ -78,9 +78,6 @@ installation tarball URL by invoking the `version` command. The tarball location
 contain several URLs pointing to mirrors.
 
 ```
-  git clone https://github.com/indigo-dc/udocker
-  cd udocker
-  chmod u+rx udocker
   ./udocker version
 ```
 
@@ -88,7 +85,7 @@ Third, pick one URL and download the tarball using tools such as curl or wget.
 
 ### 2.4. FORCE INSTALLATION
 
-To force reinstallation invoke udocker install with the flag `--force`:
+To force download and reinstallation of the udocker tools. Invoke udocker install with the flag `--force`:
 
 ```
   ./udocker install --force
@@ -174,6 +171,7 @@ To get the udocker source code repository from the devel branch.
 
 ```
   git clone https://github.com/indigo-dc/udocker
+  cd udocker
   checkout devel
 ```
 
