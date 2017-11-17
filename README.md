@@ -35,6 +35,20 @@ using tools and libraries such as:
 * runC
 * Singularity
 
+## Advantages
+* Provides a docker like command line interface
+* Supports a subset of docker commands:
+  search, pull, import, export, load, create and run
+* Understands docker container metadata
+* Can be deployed by the end-user
+* Does not require privileges for installation
+* Does not require privileges for execution
+* Does not require compilation, just transfer the Python script and run
+* Encapsulates several execution methods
+* Includes the required tools already compiled to work across systems
+* Tested with GPGPU and MPI applications
+* Runs both on new and older Linux distributions (including: CentOS 6, CentOS 7, Ubuntu 14, Ubuntu 16, Fedora, etc)
+
 ## Installation
 See the [Installation manual](doc/installation_manual.md)
 
