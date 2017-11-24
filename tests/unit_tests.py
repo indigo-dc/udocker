@@ -4449,6 +4449,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         ex_eng = udocker.ExecutionEngineCommon(mock_local)
         ex_eng.opt["home"] = "/"
         ex_eng.opt["user"] = "user"
+        ex_eng.opt["uid"] = "1000"
         ex_eng.container_root = "/croot"
         ex_eng.container_id = "2717add4-e6f6-397c-9019-74fa67be439f"
         ex_eng.container_names = ['cna[]me', ]
