@@ -15,15 +15,43 @@ to download both the binaries and/or pull containers from repositories.
 
 ## 2. USER INSTALLATION
 
-### 2.1. INSTALL FROM OFFICIAL INDIGO REPOSITORIES
+### 2.1. INSTALL LATEST UDOCKER DIRECTLY FROM GITHUB
+
+Just download and execute the udocker and the installation will be performed
+automatically.
+
+This installation method contains statically compiled binaries and is built 
+to be used across different hosts and OS distributions.
+
+Once you download the udocker executable from github you can move it around 
+between systems. Once you start it in a new system it will install the
+required tools. The installation requires outbound network connectivity.
+
+From the master branch:
+
+```
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/master/udocker.py > udocker
+  chmod u+rx ./udocker
+  ./udocker install
+```
+
+From the development branch:
+
+```
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/devel/udocker.py > udocker
+  chmod u+rx ./udocker
+  ./udocker install
+```
+
+### 2.2. INSTALL FROM OFFICIAL INDIGO REPOSITORIES
 <!--
 -->
 The official release of udocker is available from the INDIGO-DataCloud
 repository at `http://repo.indigo-datacloud.eu/` where is made available
 as a tarball to be deployed by the end user.
 
-The tarball installation method contains statically compiled binaries and 
-is built to be used across different hosts and OS distributions.
+This installation method contains statically compiled binaries and is built
+to be used across different hosts and OS distributions.
 
 Install or upgrade of udocker v1.1.1 or higher released by INDIGO-DataCloud:
 
@@ -44,31 +72,6 @@ When using the setup.py provided in the release use:
   python setup.py install --home /home/USER/bin
 ```
 
-### 2.2. INSTALL LATEST UDOCKER DIRECTLY FROM GITHUB
-
-Optionally just download and execute the udocker python script from the source and the
-installation will be performed automatically. The installation from source code is not
-officially supported by INDIGO-DataCloud.
-
-This method is very flexible, once you download the udocker executable from github
-you can move it around between systems. Once you start it in a new system it will 
-install or upgrade itself. The installation requires outbound network connectivity.
-
-From the master branch:
-
-```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/master/udocker.py > udocker
-  chmod u+rx ./udocker
-  ./udocker install
-```
-
-From the development branch:
-
-```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/devel/udocker.py > udocker
-  chmod u+rx ./udocker
-  ./udocker install
-```
 
 ### 2.3. OBTAINING THE URL OF THE LATEST TARBALL
 
@@ -85,7 +88,8 @@ Third, pick one URL and download the tarball using tools such as curl or wget.
 
 ### 2.4. FORCE REINSTALLATION
 
-To force download and reinstallation of the udocker tools. Invoke udocker install with the flag `--force`:
+To force download and reinstallation of the udocker tools. Invoke udocker install 
+with the flag `--force`:
 
 ```
   ./udocker install --force
