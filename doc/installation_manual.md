@@ -15,44 +15,17 @@ to download both the binaries and/or pull containers from repositories.
 
 ## 2. USER INSTALLATION
 
-### 2.1. INSTALL FROM OFFICIAL INDIGO REPOSITORIES
-<!--
--->
-The official release of udocker is available from the INDIGO-DataCloud
-repository at `http://repo.indigo-datacloud.eu/` where is made available
-as a tarball to be deployed by the end user.
+### 2.1. INSTALL LATEST VERSIONS DIRECTLY FROM GITHUB
 
-The tarball installation method contains statically compiled binaries and 
-is built to be used across different hosts and OS distributions.
+Just download and execute the udocker and the installation will be performed
+automatically.
 
-Install of udocker v1.1.0 or higher released by INDIGO-DataCloud:
+This installation method contains statically compiled binaries and is built 
+to be used across different hosts and OS distributions.
 
-```
-  curl http://repo.indigo-datacloud.eu/repository/indigo/2/centos7/x86_64/tgz/udocker-1.1.0.tar.gz > udocker-tarball.tgz
-  export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
-  tar xzvf $UDOCKER_TARBALL udocker
-  ./udocker install
-  mv ./udocker $HOME   # move the executable to your preferred location for binaries
-```
-
-When using the setup.py provided in the releases install with:
-
-```
-  mkdir /tmp/somedir
-  cd /tmp/somedir
-  curl http://repo.indigo-datacloud.eu/repository/indigo/1/centos7/x86_64/tgz/udocker-v1.X.X.tar.gz | tar xzvf -
-  python setup.py install --home /home/USER/bin
-```
-
-### 2.2. INSTALL LATEST UDOCKER DIRECTLY FROM GITHUB
-
-Optionally just download and execute the udocker python script from the source and the
-installation will be performed automatically. The installation from source code is not
-officially supported by INDIGO-DataCloud.
-
-This method is very flexible, once you download the udocker executable from github
-you can move it around between systems. Once you start it in a new system it will 
-install itself. The installation requires outbound network connectivity.
+Once you download the udocker executable from github you can move it around 
+between systems. Once you start it in a new system it will install the
+required tools. The installation requires outbound network connectivity.
 
 From the master branch:
 
@@ -70,7 +43,35 @@ From the development branch:
   ./udocker install
 ```
 
-### 2.3. OBTAINING THE URL OF THE LATEST TARBALL
+### 2.2. INSTALL FROM INDIGO-DATACLOUD REPOSITORIES
+<!--
+-->
+The official release of udocker is available from the INDIGO-DataCloud
+repository at `http://repo.indigo-datacloud.eu/` where is made available
+as a tarball to be deployed by the end user.
+
+This installation method contains statically compiled binaries and is built
+to be used across different hosts and OS distributions. Please check the
+repositories for the latest release.
+
+Install or upgrade of udocker v1.1.0 or higher released by INDIGO-DataCloud:
+
+```
+  curl http://repo.indigo-datacloud.eu/repository/indigo/2/centos7/x86_64/tgz/udocker-1.1.0.tar.gz > udocker-tarball.tgz
+  export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
+  tar xzvf $UDOCKER_TARBALL udocker
+  ./udocker install
+  mv ./udocker $HOME/bin/   # move the executable to your preferred location for binaries
+```
+
+When using the setup.py provided in the release after downloading use:
+
+```
+  python setup.py install --home $HOME/bin/
+```
+
+
+### 2.3. OBTAINING THE URL OF THE TARBALL
 
 The udocker installation tarball mentioned in section 2.2 can be obtained using the 
 following method. First download udocker. Second use udocker itself to display the
@@ -81,11 +82,16 @@ contain several URLs pointing to mirrors.
   ./udocker version
 ```
 
-Third, pick one URL and download the tarball using tools such as curl or wget.
+Then, pick one URL and download the tarball using tools such as curl or wget.
+By using a previously downloaded tarball and the UDOCKER_TARBALL environment variable 
+as explained in section 2.2, udocker can be deployed without having to downloaded it 
+everytime from the official repositories. The UDOCKER_TARBALL environment variable
+can also be pointed to an http or https URL.
 
-### 2.4. FORCE INSTALLATION
+### 2.4. FORCE REINSTALLATION
 
-To force download and reinstallation of the udocker tools. Invoke udocker install with the flag `--force`:
+To force download and reinstallation of the udocker tools. Invoke udocker install 
+with the flag `--force`:
 
 ```
   ./udocker install --force
@@ -101,20 +107,21 @@ systems use the tarball installation methods described above in section 2.
 RPMs are provided at http://repo.indigo-datacloud.eu
 
 ```
-  rpm -i udocker-1.1.0-1.noarch.rpm \
-         udocker-preng-1.1.0-1.x86_64.rpm \
-         udocker-freng-1.1.0-1.x86_64.rpm
+  rpm -i udocker-1.1.X-1.noarch.rpm \
+         udocker-preng-1.1.X-1.x86_64.rpm \
+         udocker-freng-1.1.X-1.x86_64.rpm
 ```
 
 DEBs are provided at http://repo.indigo-datacloud.eu
 
 ```
-  dpkg -i udocker_1.1.0-1_all.deb \
-          udocker-preng_1.1.0-1_amd64.deb \
-          udocker-freng_1.1.0-1_amd64.deb \
-          udocker-rceng_1.1.0-1_amd64.deb
+  dpkg -i udocker_1.1.X-1_all.deb \
+          udocker-preng_1.1.X-1_amd64.deb \
+          udocker-freng_1.1.X-1_amd64.deb \
+          udocker-rceng_1.1.X-1_amd64.deb
 ```
 Check the INDIGO-DataCloud repository for the latest versions and supported distributions.
+Replace `X` in the examples with the latest version.
 Notice that the rc engine (udocker-rceng) package is only available for Ubuntu 14 and 16.
 
 ## 4. SYSTEM INSTALLATION WITH ANSIBLE AND PYTHON
@@ -236,5 +243,4 @@ Example of the udocker.conf syntax:
   http_insecure = True
   verbose_level = 5
 ```
-
 

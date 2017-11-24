@@ -181,11 +181,6 @@ prepare_package()
         /bin/mkdir -p "${PACKAGE_DIR}/udocker_dir/bin"
         /bin/mkdir -p "${PACKAGE_DIR}/udocker_dir/lib"
     fi
-
-    #/bin/cp -f "${S_PROOT_DIR}/proot-x86"    "${PACKAGE_DIR}/udocker_dir/bin/"
-    #/bin/cp -f "${S_PROOT_DIR}/proot-x86_64" "${PACKAGE_DIR}/udocker_dir/bin/"
-    /bin/cp -f "${S_PROOT_DIR}/proot-arm"    "${PACKAGE_DIR}/udocker_dir/bin/"
-    /bin/cp -f "${S_PROOT_DIR}/proot-arm64"  "${PACKAGE_DIR}/udocker_dir/bin/"
 }
 
 addto_package_simplejson()
@@ -222,6 +217,11 @@ addto_package_other()
 
     /bin/cp -f "${REPO_DIR}/ansible_install.yaml" "${PACKAGE_DIR}/"
     /bin/cp -f "${REPO_DIR}/setup.py"             "${PACKAGE_DIR}/"
+
+    #/bin/cp -f "${S_PROOT_DIR}/proot-x86"    "${PACKAGE_DIR}/udocker_dir/bin/"
+    #/bin/cp -f "${S_PROOT_DIR}/proot-x86_64" "${PACKAGE_DIR}/udocker_dir/bin/"
+    /bin/cp -f "${S_PROOT_DIR}/proot-arm"    "${PACKAGE_DIR}/udocker_dir/bin/"
+    /bin/cp -f "${S_PROOT_DIR}/proot-arm64"  "${PACKAGE_DIR}/udocker_dir/bin/"
 }
 
 # #############################################################################
@@ -1131,9 +1131,6 @@ TARBALL_FILE="${BUILD_DIR}/udocker-$(udocker_version).tar.gz"
 
 get_proot_static 
 prepare_package
-addto_package_simplejson
-addto_package_udocker
-addto_package_other
 
 # #######
 # i386
@@ -1175,5 +1172,8 @@ ubuntu16_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-x86_64"
 ubuntu16_build_runc "amd64" "${BUILD_DIR}/runc-source-x86_64"
 #ostree_delete "amd64" "ubuntu" "16"
 
+addto_package_simplejson
+addto_package_udocker
+addto_package_other
 create_package_tarball
 
