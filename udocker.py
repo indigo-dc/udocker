@@ -1989,16 +1989,6 @@ class ExecutionEngineCommon(object):
         Msg().err("Error: invalid working directory: ", self.opt["cwd"])
         return False
 
-    def _getquote(self, arg):
-        """Obtain the quote character from string"""
-        double_p = arg.find('"')
-        single_p = arg.find("'")
-        if double_p != -1 and (double_p < single_p or single_p == -1):
-            return "'"
-        if single_p != -1 and (single_p < double_p or double_p == -1):
-            return '"'
-        return "'"
-
     def _quote(self, argv):
         """Iterate over argv and quote items containing spaces. This is
         useful in case an interpreter is used in the command e.g.:
@@ -2006,10 +1996,9 @@ class ExecutionEngineCommon(object):
         """
         _argv = []
         for arg in argv:
-            quote_ch = self._getquote(arg)
+            quote_ch = '"'
             if ' ' in arg:
-                #arg = "'%s'" % (arg)
-                arg = '%s%s%s' % (quote_ch, arg, quote_ch)
+                arg = '%s%s%s' % (quote_ch, arg.replace('"', '\\"'), quote_ch)
             _argv.append(arg)
         return _argv
 
