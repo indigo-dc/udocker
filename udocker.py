@@ -202,6 +202,9 @@ class Config(object):
     # proot_noseccomp = True
     proot_noseccomp = None
 
+    # PRoot kill-on-exit
+    proot_killonexit = True
+
     # fakechroot engine get ld_library_paths from ld.so.cache
     ld_so_cache = "/etc/ld.so.cache"
 
@@ -2516,7 +2519,10 @@ class PRootEngine(ExecutionEngineCommon):
         else:
             proot_verbose = ""
 
-        proot_kill_on_exit = "--kill-on-exit"
+        if Config.proot_killonexit:
+            proot_kill_on_exit = "--kill-on-exit"
+        else:
+            proot_kill_on_exit = ""
 
         # build the actual command
         cmd_t = (r"unset VTE_VERSION;",
