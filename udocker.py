@@ -2516,12 +2516,15 @@ class PRootEngine(ExecutionEngineCommon):
         else:
             proot_verbose = ""
 
+        proot_kill_on_exit = "--kill-on-exit"
+
         # build the actual command
         cmd_t = (r"unset VTE_VERSION;",
                  " ".join(self.opt["env"]),
                  self._set_cpu_affinity(),
                  self.proot_exec,
                  proot_verbose,
+                 proot_kill_on_exit,
                  self._get_volume_bindings(),
                  self._set_uid_map(),
                  "-k", self._kernel,
