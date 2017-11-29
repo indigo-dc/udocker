@@ -397,18 +397,18 @@ class GuestInfo(object):
                    "/lib/ld-linux.so.2",
                    "/lib/ld-linux.so",
                    "/bin/sh", "/bin/bash", "/bin/zsh", "/bin/csh", "/bin/tcsh",
-                   "/bin/ls", "/sbin/ldconfig",
+                   "/bin/ls", "/bin/busybox",
                    "/system/bin/sh", "/system/bin/ls",
                   ]
 
     def __init__(self, root_dir):
         self._root_dir = root_dir
 
-    def _get_arch(self, filename):
+    def _get_filetype(self, filename):
         """Get the file architecture"""
         if os.path.islink(filename):
             fpath = self._root_dir + os.readlink(filename)
-            return self._get_arch(fpath)
+            return self._get_filetype(fpath)
         if os.path.isfile(filename):
             cmd = "file %s" % (filename)
             return Uprocess().get_output(cmd)
@@ -418,15 +418,15 @@ class GuestInfo(object):
         """Get guest system architecture"""
         for filename in GuestInfo._binarylist:
             fpath = self._root_dir + filename
-            data = self._get_arch(fpath)
-            if not data:
+            filetype = self._get_filetype(fpath)
+            if not filetype:
                 continue
-            if "x86-64," in data:
+            if "x86-64," in filetype:
                 return "amd64"
-            if "80386," in data:
+            if "80386," in filetype:
                 return "i386"
-            if "ARM," in data:
-                if "64-bit" in data:
+            if "ARM," in filetype:
+                if "64-bit" in filetype:
                     return "arm64"
                 else:
                     return "arm"
@@ -458,7 +458,7 @@ class GuestInfo(object):
                               osinfo, re.MULTILINE)
             if match:
                 distribution = match.group(1).split(" ")[0]
-            match = re.search(r"VERSION_ID=\"?(\d+)\"?(\n|$)",
+            match = re.search(r"VERSION_ID=\"?(.+)\"?(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
                 version = match.group(1).split(".")[0]
@@ -1906,10 +1906,10 @@ class ExecutionEngineCommon(object):
         if os.path.exists(mountpoint):
             return True
         if os.path.isfile(host_path):
-            status = FileUtil(mountpoint).putdata("")
+            return FileUtil(mountpoint).putdata("")
         elif os.path.isdir(host_path):
-            status = FileUtil(mountpoint).mkdir()
-        return status
+            return FileUtil(mountpoint).mkdir()
+        return False
 
     def _check_volumes(self):
         """Check volume paths"""
@@ -2001,7 +2001,9 @@ class ExecutionEngineCommon(object):
         for arg in argv:
             quote_ch = '"'
             if ' ' in arg:
-                arg = '%s%s%s' % (quote_ch, arg.replace('"', '\\"'), quote_ch)
+                arg = '%s%s%s' % (quote_ch,
+                                  arg.replace('"', '\\"').replace("$", r"\$"),
+                                  quote_ch)
             _argv.append(arg)
         return _argv
 
@@ -2932,6 +2934,12 @@ class SingularityEngine(ExecutionEngineCommon):
             Msg().err("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
 
+    def _has_option(self, option):
+        """Check if singularity has a given cli option"""
+        if option in Uprocess().get_output("singularity --help"):
+            return True
+        return False
+
     def run(self, container_id):
         """Execute a Docker container using singularity.
         This is the main method invoked to run a container with singularity.
@@ -2967,14 +2975,18 @@ class SingularityEngine(ExecutionEngineCommon):
 
         if Msg.level >= Msg.DBG:
             singularity_debug = " --debug -x -v "
+        elif self._has_option("--silent"):
+            singularity_debug = " --silent "
+        elif self._has_option("--quiet"):
+            singularity_debug = " --quiet "
         else:
-            singularity_debug = " -s "
+            singularity_debug = " "
 
         if self.singularity_exec.startswith(self.localrepo.bindir):
             Config.singularity_options += " -u "
 
-        if FileUtil("nvidia-smi").find_exec():
-            Config.singularity_options += " --nv "
+        #if FileUtil("nvidia-smi").find_exec():
+        #    Config.singularity_options += " --nv "
 
         vol_str = self._get_volume_bindings()
 

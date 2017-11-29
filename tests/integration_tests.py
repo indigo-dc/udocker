@@ -657,10 +657,16 @@ class FuncTestRun(unittest.TestCase):
         if container_not_exists("busyRUN"):
             self.skipTest("no container")
         user = pwd.getpwuid(os.getuid()).pw_name
+        # issue #87
         do_run(self, mock_msg,
                [UDOCKER, "run", "--user=" + user, "busyRUN",
                 "/bin/sh", "-c", "/bin/id; /bin/id"],
                None, " " + user)
+        # issue #98
+        do_run(self, mock_msg,
+               [UDOCKER, "run", "--user=" + user, "busyRUN",
+                "/bin/sh", "-c", "/bin/echo \"test\" + 'test'"],
+               None, " test + test")
 
     @mock.patch('udocker.Msg')
     def test_18_run_mode_f1(self, mock_msg):
