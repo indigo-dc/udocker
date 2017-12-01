@@ -169,7 +169,7 @@ mirrors.
 
 Options:
 
-* `--force` force installation, useful to reintall.
+* `--force` force installation, useful to reinstall.
 * `--purge` remove files from older installations. 
 
 Examples:
