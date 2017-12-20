@@ -231,13 +231,15 @@ class Config(object):
     runc_nomqueue = None
 
     # singularity options -u --nv -w
-    singularity_options = " -w "
+    singularity_options = ["-w", ]
 
     # Pass host env variables
     valid_host_env = ("TERM", "PATH", )
+    invalid_host_env = ("VTE_VERSION", )
 
     # CPU affinity executables to use with: run --cpuset-cpus="1,2,3-4"
-    cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
+    cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
+                               ["taskset", "-c", "%s", ])
 
     # Containers execution defaults
     location = ""         # run container in this location
@@ -404,11 +406,15 @@ class GuestInfo(object):
     def __init__(self, root_dir):
         self._root_dir = root_dir
 
-    def _get_filetype(self, filename):
+    def get_filetype(self, filename):
         """Get the file architecture"""
+        if not filename.startswith(self._root_dir):
+            filename = self._root_dir + "/" + filename
         if os.path.islink(filename):
-            fpath = self._root_dir + os.readlink(filename)
-            return self._get_filetype(fpath)
+            f_path = os.readlink(filename)
+            if not f_path.startswith("/"):
+                f_path = os.path.dirname(filename) + "/" + f_path
+            return self.get_filetype(f_path)
         if os.path.isfile(filename):
             cmd = "file %s" % (filename)
             return Uprocess().get_output(cmd)
@@ -417,8 +423,8 @@ class GuestInfo(object):
     def arch(self):
         """Get guest system architecture"""
         for filename in GuestInfo._binarylist:
-            fpath = self._root_dir + filename
-            filetype = self._get_filetype(fpath)
+            f_path = self._root_dir + filename
+            filetype = self.get_filetype(f_path)
             if not filetype:
                 continue
             if "x86-64," in filetype:
@@ -434,11 +440,18 @@ class GuestInfo(object):
 
     def osdistribution(self):
         """Get guest operating system distribution"""
-        fpath = self._root_dir + "/etc/lsb-release"
-        if os.path.exists(fpath):
+        for f_path in FileUtil(self._root_dir + "/etc/.+-release").match():
+            if os.path.exists(f_path):
+                osinfo = FileUtil(f_path).getdata()
+                match = re.match(r"([^=]+) release (\d+)", osinfo)
+                if match and match.group(1):
+                    return (match.group(1).split(" ")[0],
+                            match.group(2).split(".")[0])
+        f_path = self._root_dir + "/etc/lsb-release"
+        if os.path.exists(f_path):
             distribution = ""
             version = ""
-            osinfo = FileUtil(fpath).getdata()
+            osinfo = FileUtil(f_path).getdata()
             match = re.search(r"DISTRIB_ID=(.+)(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
@@ -449,11 +462,11 @@ class GuestInfo(object):
                 version = match.group(1).split(".")[0]
             if distribution and version:
                 return (distribution, version)
-        fpath = self._root_dir + "/etc/os-release"
-        if os.path.exists(fpath):
+        f_path = self._root_dir + "/etc/os-release"
+        if os.path.exists(f_path):
             distribution = ""
             version = ""
-            osinfo = FileUtil(fpath).getdata()
+            osinfo = FileUtil(f_path).getdata()
             match = re.search(r"NAME=\"?(.+)\"?(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
@@ -464,13 +477,6 @@ class GuestInfo(object):
                 version = match.group(1).split(".")[0]
             if distribution and version:
                 return (distribution, version)
-        for fpath in FileUtil(self._root_dir + "/etc/.+-release").match():
-            if os.path.exists(fpath):
-                osinfo = FileUtil(fpath).getdata()
-                match = re.match(r"([^=]+) release (\d+)", osinfo)
-                if match and match.group(1):
-                    return (match.group(1).split(" ")[0],
-                            match.group(2).split(".")[0])
         return ("", "")
 
     def osversion(self):
@@ -587,6 +593,7 @@ class Msg(object):
     file descriptor should be redirected to /dev/null
     """
 
+    NIL = -1
     ERR = 0
     MSG = 1
     WAR = 2
@@ -595,6 +602,7 @@ class Msg(object):
     DBG = 5
     DEF = INF
     level = DEF
+    previous = DEF
     nullfp = None
     chlderr = sys.stderr
     chldout = sys.stdout
@@ -619,8 +627,12 @@ class Msg(object):
             Msg.chldout = Msg.nullfp
             Msg.chldnul = Msg.nullfp
 
-    def setlevel(self, new_level):
+    def setlevel(self, new_level=None):
         """Define debug level"""
+        if new_level is None:
+            new_level = Msg.previous
+        else:
+            Msg.previous = Msg.level
         Msg.level = new_level
         if Msg.level >= Msg.DBG:
             Msg.chlderr = sys.stderr
@@ -628,6 +640,7 @@ class Msg(object):
         else:
             Msg.chlderr = Msg.nullfp
             Msg.chldout = Msg.nullfp
+        return Msg.previous
 
     def out(self, *args, **kwargs):
         """Write text to stdout respecting verbose level"""
@@ -890,8 +903,6 @@ class FileUtil(object):
 
     def getdata(self, mode="rb"):
         """Read file content to a buffer"""
-        if not self.filename:
-            return ""
         try:
             filep = open(self.filename, mode)
         except (IOError, OSError, TypeError):
@@ -901,10 +912,19 @@ class FileUtil(object):
             filep.close()
             return buf
 
+    def get1stline(self, mode="rb"):
+        """Read file 1st line to a buffer"""
+        try:
+            filep = open(self.filename, mode)
+        except (IOError, OSError, TypeError):
+            return ""
+        else:
+            buf = filep.readline().strip()
+            filep.close()
+            return buf
+
     def putdata(self, buf, mode="wb"):
         """Write buffer to file"""
-        if not self.filename:
-            return ""
         try:
             filep = open(self.filename, mode)
         except (IOError, OSError, TypeError):
@@ -1154,7 +1174,11 @@ class UdockerTools(object):
     def _download(self, tarball_url):
         """Get the tools tarball containing the binaries"""
         tarball_file = FileUtil("udockertools").mktmp()
+        if Msg.level <= Msg.DEF:
+            Msg().setlevel(Msg.NIL)
         (hdr, dummy) = self.curl.get(tarball_url, ofile=tarball_file)
+        if Msg.level == Msg.NIL:
+            Msg().setlevel()
         if hdr.data["X-ND-CURLSTATUS"]:
             return ""
         return tarball_file
@@ -1262,7 +1286,7 @@ class UdockerTools(object):
             Msg().err("Info: installing", __version__,
                       l=Msg.INF)
             for tarball in self._get_mirrors():
-                Msg().err("Info: installing from:", tarball)
+                Msg().err("Info: installing from:", tarball, l=Msg.VER)
                 tarball_file = ""
                 if "://" in tarball:
                     tarball_file = self._download(tarball)
@@ -1462,11 +1486,14 @@ class ElfPatcher(object):
             ld_data = FileUtil(elf_loader).getdata()
             if not ld_data:
                 return False
-        nul = "\x00/\x00\x00\x00"
-        etc = "\x00/etc"
+        nul_etc = "\x00/\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        nul_lib = "\x00/\x00\x00\x00"
+        nul_usr = "\x00/\x00\x00\x00"
+        etc = "\x00/etc/ld.so"
         lib = "\x00/lib"
         usr = "\x00/usr"
-        ld_data = ld_data.replace(etc, nul).replace(lib, nul).replace(usr, nul)
+        ld_data = ld_data.replace(etc, nul_etc).\
+            replace(lib, nul_lib).replace(usr, nul_usr)
         ld_library_path_orig = "\x00LD_LIBRARY_PATH\x00"
         ld_library_path_new = "\x00LD_LIBRARY_REAL\x00"
         ld_data = ld_data.replace(ld_library_path_orig, ld_library_path_new)
@@ -1744,7 +1771,10 @@ class FileBind(object):
             cont_file = self.container_root + "/" + f_name
             link_path = self.bind_dir + "/" + orig_file
             if not os.path.exists(orig_file_path):
-                os.rename(cont_file, orig_file_path)
+                if os.path.exists(cont_file):
+                    os.rename(cont_file, orig_file_path)
+                else:
+                    FileUtil(orig_file_path).putdata("")
                 os.symlink(link_path, cont_file)
             FileUtil(orig_file_path).copyto(self.host_bind_dir)
         return (self.host_bind_dir, self.bind_dir)
@@ -1850,22 +1880,20 @@ class ExecutionEngineCommon(object):
     def _set_cpu_affinity(self):
         """set the cpu affinity string for container run command"""
         # find set affinity executable
-        cpu_affinity_exec = ""
+        if not self.opt["cpuset"]:
+            return []
+        exec_cmd = []
         for exec_cmd in Config.cpu_affinity_exec_tools:
             exec_name = \
-                FileUtil(exec_cmd.split(" ", 1)[0]).find_exec()
+                FileUtil(exec_cmd[0]).find_exec()
             if exec_name:
-                cpu_affinity_exec = exec_name + \
-                    " " + exec_cmd.split(" ", 1)[1]
-        # if no cpu affinity executable available ignore affinity set
-        if not cpu_affinity_exec:
-            self.opt["cpuset"] = ""
-            return " "
-        elif self.opt["cpuset"]:
-            self.opt["cpuset"] = "'" + self.opt["cpuset"] + "'"
-            return " %s %s " % (cpu_affinity_exec, self.opt["cpuset"])
+                exec_cmd[0] = exec_name
+                for (index, arg) in enumerate(exec_cmd):
+                    if arg == "%s":
+                        exec_cmd[index] = self.opt["cpuset"]
+                return exec_cmd
         self.opt["cpuset"] = ""
-        return " "
+        return []
 
     def _cont2host(self, pathname):
         """Translate container path to host path"""
@@ -1873,9 +1901,10 @@ class ExecutionEngineCommon(object):
             return ""
         path = ""
         real_container_root = os.path.realpath(self.container_root)
+        pathname = re.sub("/+", "/", os.path.normpath(pathname))
         for vol in self.opt["vol"]:
             if ":" in vol:
-                (host_path, cont_path) = vol.split(":")
+                (host_path, cont_path) = vol.split(":", 1)
                 if pathname.startswith(cont_path):
                     path = host_path + pathname[len(cont_path):]
                     break
@@ -1890,8 +1919,11 @@ class ExecutionEngineCommon(object):
             while os.path.islink(f_path):
                 real_path = os.readlink(f_path)
                 if real_path.startswith("/"):
-                    if f_path.startswith(real_container_root):
-                        f_path = real_container_root + real_path
+                    if f_path.startswith(real_container_root): # in container
+                        if real_path.startswith(real_container_root):
+                            f_path = real_path
+                        else:
+                            f_path = real_container_root + real_path
                     else:
                         f_path = real_path
                 else:
@@ -1915,20 +1947,24 @@ class ExecutionEngineCommon(object):
         """Check volume paths"""
         for vol in list(self.opt["vol"]):
             if ":" in vol:
-                (host_path, cont_path) = vol.split(":")
+                (host_path, cont_path) = vol.split(":", 1)
                 self._create_mountpoint(host_path, cont_path)
             else:
                 host_path = vol
                 cont_path = ""
                 self._create_mountpoint(host_path, host_path)
-            if cont_path and not cont_path.startswith("/"):
+            if cont_path and (cont_path.endswith("/") or
+                              not cont_path.startswith("/")):
                 Msg().err("Error: invalid volume destination path:", cont_path)
                 return False
-            elif not (host_path and host_path.startswith("/")):
+            elif not (host_path and host_path.startswith("/") and
+                      not host_path.endswith("/")):
                 Msg().err("Error: invalid volume spec:", vol)
                 return False
             elif not os.path.exists(host_path):
-                if host_path in Config.dri_list:
+                if (host_path in Config.dri_list or
+                        host_path in Config.sysdirs_list or
+                        host_path in Config.hostauth_list):
                     self.opt["vol"].remove(vol)
                 else:
                     Msg().err("Error: invalid host volume path:", host_path)
@@ -1945,7 +1981,7 @@ class ExecutionEngineCommon(object):
         """Is path a host_path in the volumes list"""
         for vol in list(self.opt["vol"]):
             if ":" in vol:
-                (host_path, dummy) = vol.split(":")
+                (host_path, dummy) = vol.split(":", 1)
             else:
                 host_path = vol
             if host_path and host_path == path:
@@ -1992,21 +2028,6 @@ class ExecutionEngineCommon(object):
         Msg().err("Error: invalid working directory: ", self.opt["cwd"])
         return False
 
-    def _quote(self, argv):
-        """Iterate over argv and quote items containing spaces. This is
-        useful in case an interpreter is used in the command e.g.:
-        $ udocker.py run container bash -c 'echo hello'
-        """
-        _argv = []
-        for arg in argv:
-            quote_ch = '"'
-            if ' ' in arg:
-                arg = '%s%s%s' % (quote_ch,
-                                  arg.replace('"', '\\"').replace("$", r"\$"),
-                                  quote_ch)
-            _argv.append(arg)
-        return _argv
-
     def _check_executable(self):
         """Check if executable exists and has execute permissions"""
         path = self._getenv("PATH")
@@ -2024,7 +2045,6 @@ class ExecutionEngineCommon(object):
             Msg().err("Warning: no command assuming:", self.opt["cmd"],
                       l=Msg.WAR)
         exec_name = self.opt["cmd"][0]            # exec pathname without args
-        self.opt["cmd"] = self._quote(self.opt["cmd"])
         if exec_name.startswith("/"):
             exec_path = exec_name
         elif exec_name.startswith("./") or exec_name.startswith("../"):
@@ -2035,7 +2055,7 @@ class ExecutionEngineCommon(object):
         host_exec_path = self._cont2host(exec_path)
         if (os.path.isfile(host_exec_path) and
                 os.access(host_exec_path, os.X_OK)):
-            return host_exec_path
+            return self.container_root + "/" + exec_path
         Msg().err("Error: command not found or has no execute bit set: ",
                   self.opt["cmd"])
         return ""
@@ -2080,9 +2100,9 @@ class ExecutionEngineCommon(object):
                     self.opt["entryp"] = \
                         container_structure.get_container_meta(
                             "Entrypoint", [], container_json)
-                self.opt["vol"].extend(
+                self.opt["Volumes"] = \
                     container_structure.get_container_meta(
-                        "Volumes", [], container_json))
+                        "Volumes", [], container_json)
                 self.opt["portsexp"].extend(
                     container_structure.get_container_meta(
                         "ExposedPorts", [], container_json))
@@ -2104,7 +2124,7 @@ class ExecutionEngineCommon(object):
                 self.opt["env"].remove(pair)
                 val = os.getenv(pair, "")
                 if val:
-                    self.opt["env"].append('%s="%s"' % (pair, val))
+                    self.opt["env"].append('%s=%s' % (pair, val))
                 continue
             (key, val) = pair.split("=", 1)
             if " " in key or key[0] in string.digits:
@@ -2112,7 +2132,7 @@ class ExecutionEngineCommon(object):
                 return False
             if " " in pair and "'" not in pair and '"' not in pair:
                 self.opt["env"].remove(pair)
-                self.opt["env"].append('%s="%s"' % (key, val))
+                self.opt["env"].append('%s=%s' % (key, val))
         return True
 
     def _getenv(self, search_key):
@@ -2341,12 +2361,43 @@ class ExecutionEngineCommon(object):
                   "\n", char * 78, "\n",
                   "executing:", os.path.basename(cmd), l=Msg.INF)
 
-    def _run_env_cleanup(self):
+    def _run_env_cleanup_dict(self):
         """Allow only to pass essential environment variables."""
         environ_copy = os.environ.copy()
         for env_var in environ_copy:
-            if env_var not in Config.valid_host_env:
+            if env_var in Config.invalid_host_env:
                 del os.environ[env_var]
+                continue
+            if not self.opt["hostenv"]:
+                if env_var not in Config.valid_host_env:
+                    del os.environ[env_var]
+
+    def _run_env_cleanup_list(self):
+        """ Allow only to pass essential environment variables.
+            Overriding parent ExecutionEngineCommon() class.
+        """
+        container_env = []
+        for env_str in self.opt["env"]:
+            (env_var, dummy) = env_str.split("=", 1)
+            if env_var:
+                container_env.append(env_var)
+        for (env_var, value) in os.environ.iteritems():
+            if not env_var:
+                continue
+            if env_var in Config.invalid_host_env or env_var in container_env:
+                continue
+            if ((not self.opt["hostenv"]) and
+                    env_var not in Config.valid_host_env):
+                continue
+            self.opt["env"].append("%s=%s" % (env_var, value))
+
+    def _run_env_get(self):
+        """Get environment list"""
+        env_dict = dict()
+        for env_pair in self.opt["env"]:
+            (key, val) = env_pair.split("=", 1)
+            env_dict[key] = val
+        return env_dict
 
     def _run_env_set(self):
         """Environment variables to set"""
@@ -2463,11 +2514,11 @@ class PRootEngine(ExecutionEngineCommon):
     def _set_uid_map(self):
         """Set the uid_map string for container run command"""
         if self.opt["uid"] == "0":
-            uid_map = " -0 "
+            uid_map_list = ["-0", ]
         else:
-            uid_map = \
-                " -i " + self.opt["uid"] + ":" + self.opt["gid"] + " "
-        return uid_map
+            uid_map_list = \
+                ["-i", self.opt["uid"] + ":" + self.opt["gid"], ]
+        return uid_map_list
 
     def _create_mountpoint(self, host_path, cont_path):
         """Override create mountpoint"""
@@ -2475,20 +2526,19 @@ class PRootEngine(ExecutionEngineCommon):
 
     def _get_volume_bindings(self):
         """Get the volume bindings string for container run command"""
-        if self.opt["vol"]:
-            vol_str = " -b " + " -b ".join(self.opt["vol"])
-        else:
-            vol_str = " "
-        return vol_str
+        proot_vol_list = []
+        for vol in self.opt["vol"]:
+            proot_vol_list.extend(["-b", vol])
+        return proot_vol_list
 
     def _get_network_map(self):
         """Get mapping of TCP/IP ports"""
-        proot_options = ""
+        proot_netmap_list = []
         for (cont_port, host_port) in self._get_portsmap().iteritems():
-            proot_options += " -p %d:%d " % (cont_port, host_port)
+            proot_netmap_list.extend(["-p", "%d:%d " % (cont_port, host_port)])
         if self.opt["netcoop"]:
-            proot_options += " -n "
-        return proot_options
+            proot_netmap_list.extend(["-n", ])
+        return proot_netmap_list
 
     def run(self, container_id):
         """Execute a Docker container using PRoot. This is the main method
@@ -2517,41 +2567,38 @@ class PRootEngine(ExecutionEngineCommon):
             return 4
 
         if Msg.level >= Msg.DBG:
-            proot_verbose = " -v 9 "
+            proot_verbose = ["-v", "9", ]
         else:
-            proot_verbose = ""
+            proot_verbose = []
 
         if Config.proot_killonexit:
-            proot_kill_on_exit = "--kill-on-exit"
+            proot_kill_on_exit = ["--kill-on-exit", ]
         else:
-            proot_kill_on_exit = ""
+            proot_kill_on_exit = []
 
         # build the actual command
-        cmd_t = (r"unset VTE_VERSION;",
-                 " ".join(self.opt["env"]),
-                 self._set_cpu_affinity(),
-                 self.proot_exec,
-                 proot_verbose,
-                 proot_kill_on_exit,
-                 self._get_volume_bindings(),
-                 self._set_uid_map(),
-                 "-k", self._kernel,
-                 self._get_network_map(),
-                 "-r", self.container_root,
-                 " ",)
-        cmd = " ".join(cmd_t)
-        if self.opt["cwd"]:  # set current working directory
-            cmd += " -w " + self.opt["cwd"] + " "
-        cmd += " ".join(self.opt["cmd"])
-        Msg().err("CMD = " + cmd, l=Msg.VER)
+        cmd_l = self._set_cpu_affinity()
+        cmd_l.append(self.proot_exec)
+        cmd_l.extend(proot_verbose)
+        cmd_l.extend(proot_kill_on_exit)
+        cmd_l.extend(self._get_volume_bindings())
+        cmd_l.extend(self._set_uid_map())
+        cmd_l.extend(["-k", self._kernel, ])
+        cmd_l.extend(self._get_network_map())
+        cmd_l.extend(["-r", self.container_root, ])
 
-        # if not --hostenv clean the environment
-        if not self.opt["hostenv"]:
-            self._run_env_cleanup()
+        if self.opt["cwd"]:  # set current working directory
+            cmd_l.extend(["-w", self.opt["cwd"], ])
+        cmd_l.extend(self.opt["cmd"])
+        Msg().err("CMD =", cmd_l, l=Msg.VER)
+
+        # cleanup the environment
+        self._run_env_cleanup_dict()
 
         # execute
         self._run_banner(self.opt["cmd"][0])
-        status = subprocess.call(cmd, shell=True, close_fds=True)
+        status = subprocess.call(cmd_l, shell=False, close_fds=True,
+                                 env=os.environ.update(self._run_env_get()))
         return status
 
 
@@ -2592,9 +2639,9 @@ class RuncEngine(ExecutionEngineCommon):
         if FileUtil(self._container_specfile).size() != -1 and new:
             FileUtil(self._container_specfile).remove()
         if FileUtil(self._container_specfile).size() == -1:
-            cmd = self.runc_exec + " spec --rootless --bundle " \
-                 + os.path.realpath(self.container_dir)
-            status = subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
+            cmd_l = [self.runc_exec, "spec", "--rootless", "--bundle",
+                     os.path.realpath(self.container_dir)]
+            status = subprocess.call(cmd_l, shell=False, stderr=Msg.chlderr,
                                      close_fds=True)
             if status:
                 return False
@@ -2655,7 +2702,8 @@ class RuncEngine(ExecutionEngineCommon):
         for idmap in json_obj["linux"]["gidMappings"]:
             if "hostID" in idmap:
                 idmap["hostID"] = Config.gid
-        json_obj["process"]["args"] = self._remove_quotes(self.opt["cmd"])
+        #json_obj["process"]["args"] = self._remove_quotes(self.opt["cmd"])
+        json_obj["process"]["args"] = self.opt["cmd"]
         return json_obj
 
     def _uid_check(self):
@@ -2696,7 +2744,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._add_mount_spec(host_dir, cont_dir, rwmode=True)
         for volume in self.opt["vol"]:
             try:
-                (host_dir, cont_dir) = volume.split(":")
+                (host_dir, cont_dir) = volume.split(":", 1)
             except ValueError:
                 host_dir = volume
                 cont_dir = volume
@@ -2732,29 +2780,6 @@ class RuncEngine(ExecutionEngineCommon):
                 Msg().err("Error: in environment:", pair)
                 return False
         return True
-
-    def _run_env_addhost(self):
-        """Add host env to spec"""
-        container_env = []
-        for env_str in self.opt["env"]:
-            (env_var, dummy) = env_str.split("=", 1)
-            if env_var:
-                container_env.append(env_var)
-        for (env_var, value) in os.environ.iteritems():
-            if not env_var:
-                continue
-            if env_var in ("VTE_VERSION") or env_var in container_env:
-                continue
-            self.opt["env"].append("%s=%s" % (env_var, value))
-
-    def _run_env_cleanup(self):
-        """ Allow only to pass essential environment variables.
-            Overriding parent ExecutionEngineCommon() class.
-        """
-        for (index, env_str) in enumerate(self.opt["env"]):
-            (env_var, dummy) = env_str.split("=", 1)
-            if env_var not in Config.valid_host_env:
-                del self.opt["env"][index]
 
     def _run_invalid_options(self):
         """check -p --publish -P --publish-all --net-coop"""
@@ -2796,10 +2821,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._uid_check()
 
         # if not --hostenv clean the environment
-        if self.opt["hostenv"]:
-            self._run_env_addhost()
-        else:
-            self._run_env_cleanup()
+        self._run_env_cleanup_list()
 
         # set environment variables
         self._run_env_set()
@@ -2814,20 +2836,22 @@ class RuncEngine(ExecutionEngineCommon):
         self._save_spec()
 
         if Msg.level >= Msg.DBG:
-            runc_debug = " --debug "
+            runc_debug = ["--debug", ]
         else:
-            runc_debug = ""
+            runc_debug = []
 
         # build the actual command
         self.execution_id = Unique().uuid(self.container_id)
-        cmd = self._set_cpu_affinity() + self.runc_exec + runc_debug + \
-              " --root " + self.container_dir + \
-              " run --bundle " + self.container_dir + " " + self.execution_id
-        Msg().err("CMD = " + cmd, l=Msg.VER)
+        cmd_l = self._set_cpu_affinity()
+        cmd_l.append(self.runc_exec)
+        cmd_l.extend(runc_debug)
+        cmd_l.extend(["--root", self.container_dir, "run"])
+        cmd_l.extend(["--bundle", self.container_dir, self.execution_id])
+        Msg().err("CMD =", cmd_l, l=Msg.VER)
 
         # execute
         self._run_banner(self.opt["cmd"][0], '%')
-        status = subprocess.call(cmd, shell=True, close_fds=True)
+        status = subprocess.call(cmd_l, shell=False, close_fds=True)
         self._filebind.finish()
         return status
 
@@ -2866,16 +2890,16 @@ class SingularityEngine(ExecutionEngineCommon):
 
     def _get_volume_bindings(self):
         """Get the volume bindings string for singularity exec"""
-        vol_str = ""
+        vol_list = []
         (host_dir, cont_dir) = self._filebind.start(Config.sysdirs_list)
-        vol_str = " -B %s:%s " % (host_dir, cont_dir)
+        vol_list.extend(["-B", "%s:%s" % (host_dir, cont_dir), ])
         home_dir = NixAuthentication().get_home()
         home_is_binded = False
         tmp_is_binded = False
         vartmp_is_binded = False
         for volume in self.opt["vol"]:
             try:
-                (host_dir, cont_dir) = volume.split(":")
+                (host_dir, cont_dir) = volume.split(":", 1)
             except ValueError:
                 host_dir = volume
                 cont_dir = volume
@@ -2887,7 +2911,7 @@ class SingularityEngine(ExecutionEngineCommon):
                 elif host_dir == "/var/tmp" and cont_dir in ("", "/var/tmp"):
                     vartmp_is_binded = True
                 else:
-                    vol_str += " -B %s " % volume
+                    vol_list.extend(["-B", volume, ])
             elif os.path.isfile(host_dir):
                 if cont_dir not in Config.sysdirs_list:
                     Msg().err("Error: engine does not support file mounting:",
@@ -2895,21 +2919,21 @@ class SingularityEngine(ExecutionEngineCommon):
                 else:
                     self._filebind.add(host_dir, cont_dir)
         if not home_is_binded:
-            vol_str += " --home %s/root:%s " % (self.container_root, "/root")
+            vol_list.extend(["--home", "%s/root:%s" % (self.container_root, "/root"), ])
         if not tmp_is_binded:
-            vol_str += " -B %s/tmp:/tmp " % (self.container_root)
+            vol_list.extend(["-B", "%s/tmp:/tmp" % (self.container_root), ])
         if not vartmp_is_binded:
-            vol_str += " -B %s/var/tmp:/var/tmp " % (self.container_root)
-        return vol_str
+            vol_list.extend(["-B", "%s/var/tmp:/var/tmp" % (self.container_root), ])
+        return vol_list
 
-    def _singularityenv_get(self):
+    def _singularity_env_get(self):
         """Build environment string with user specified environment in
         the form SINGULARITYENV_var=value
         """
-        singularityenv = ""
+        singularityenv = dict()
         for pair in list(self.opt["env"]):
             (key, val) = pair.split("=", 1)
-            singularityenv += 'SINGULARITYENV_%s=%s ' % (key, val)
+            singularityenv['SINGULARITYENV_%s' % key] = val
         return singularityenv
 
     def _setup_container_user(self, user):
@@ -2974,46 +2998,43 @@ class SingularityEngine(ExecutionEngineCommon):
             return 5
 
         if Msg.level >= Msg.DBG:
-            singularity_debug = " --debug -x -v "
+            singularity_debug = ["--debug", "-x", "-v", ]
         elif self._has_option("--silent"):
-            singularity_debug = " --silent "
+            singularity_debug = ["--silent", ]
         elif self._has_option("--quiet"):
-            singularity_debug = " --quiet "
+            singularity_debug = ["--quiet", ]
         else:
-            singularity_debug = " "
+            singularity_debug = []
 
         if self.singularity_exec.startswith(self.localrepo.bindir):
-            Config.singularity_options += " -u "
+            Config.singularity_options.extend(["-u", ])
 
         #if FileUtil("nvidia-smi").find_exec():
-        #    Config.singularity_options += " --nv "
+        #    Config.singularity_options.extend(["--nv", ])
 
-        vol_str = self._get_volume_bindings()
+        singularity_vol_list = self._get_volume_bindings()
 
         # build the actual command
         self.execution_id = Unique().uuid(self.container_id)
-        cmd = self._set_cpu_affinity()
-        cmd += self.singularity_exec + singularity_debug + " exec "
-        if Config.singularity_options:
-            cmd += Config.singularity_options
+        cmd_l = self._set_cpu_affinity()
+        cmd_l.append(self.singularity_exec)
+        cmd_l.extend(singularity_debug)
+        cmd_l.append("exec")
+        cmd_l.extend(Config.singularity_options)
         if self.opt["cwd"]:
-            cmd += " --pwd " + self.opt["cwd"]
-        #if not self.opt["hostenv"]:
-        #    cmd += " -e "
-        cmd += vol_str
-        cmd += self.container_root + " "
-        cmd += " ".join(self.opt["cmd"])
-        Msg().err("CMD = " + cmd, l=Msg.VER)
+            cmd_l.extend(["--pwd", self.opt["cwd"], ])
+        cmd_l.extend(singularity_vol_list)
+        cmd_l.append(self.container_root)
+        cmd_l.extend(self.opt["cmd"])
+        Msg().err("CMD =", cmd_l, l=Msg.VER)
 
         # if not --hostenv clean the environment
-        if not self.opt["hostenv"]:
-            self._run_env_cleanup()
-
-        cmd = "%s %s" % (self._singularityenv_get(), cmd)
+        self._run_env_cleanup_dict()
 
         # execute
         self._run_banner(self.opt["cmd"][0], '/')
-        status = subprocess.call(cmd, shell=True, close_fds=True)
+        status = subprocess.call(cmd_l, shell=False, close_fds=True, \
+            env=os.environ.update(self._singularity_env_get()))
         self._filebind.finish()
         return status
 
@@ -3046,6 +3067,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         else:
             lib = "libfakechroot"
             deflib = "libfakechroot.so"
+            image_list = [deflib, ]
             guest = GuestInfo(self.container_root)
             arch = guest.arch()
             (distro, version) = guest.osdistribution()
@@ -3085,7 +3107,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         map_volumes_dict = dict()
         for volume in self.opt["vol"]:
             try:
-                (host_dir, cont_dir) = volume.split(":")
+                (host_dir, cont_dir) = volume.split(":", 1)
             except ValueError:
                 host_dir = volume
                 cont_dir = ""
@@ -3115,6 +3137,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         self._fakechroot_so = self._select_fakechroot_so()
         access_filesok = self._get_access_filesok()
         #
+        self.opt["env"].append("PWD=" + self.opt["cwd"])
         self.opt["env"].append("FAKECHROOT_BASE=" +
                                os.path.realpath(self.container_root))
         self.opt["env"].append("LD_PRELOAD=" + self._fakechroot_so)
@@ -3170,6 +3193,36 @@ class FakechrootEngine(ExecutionEngineCommon):
             Msg().err("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
 
+    def _run_add_script_support(self, exec_path):
+        """Add an interpreter for non binary executables (scripts)"""
+        filetype = GuestInfo(self.container_root).get_filetype(exec_path)
+        if "ELF" in filetype and ("static" in filetype or
+                                  "dynamic" in filetype):
+            self.opt["cmd"][0] = exec_path
+            return []
+        env_exec = FileUtil("env").find_inpath("/bin:/usr/bin",
+                                               self.container_root)
+        if  env_exec:
+            return [self.container_root + "/" + env_exec, ]
+        real_path = self._cont2host(exec_path.split(self.container_root, 1)[-1])
+        hashbang = FileUtil(real_path).get1stline()
+        match = re.match("#! *([^ ]+)(.*)", hashbang)
+        if match and not match.group(1).startswith("/"):
+            Msg().err("Error: no such file", match.group(1), "in", exec_path)
+            sys.exit(1)
+        elif match:
+            interpreter = [self.container_root + "/" + match.group(1), ]
+            if match.group(2):
+                interpreter.extend(match.group(2).strip().split(" "))
+            self.opt["cmd"][0] = exec_path.split(self.container_root, 1)[-1]
+            return interpreter
+        sh_exec = FileUtil("sh").find_inpath(self._getenv("PATH"),
+                                             self.container_root)
+        if sh_exec:
+            return [self.container_root + "/" + sh_exec, ]
+        Msg().err("Error: sh not found")
+        sys.exit(1)
+
     def run(self, container_id):
         """Execute a Docker container using Fakechroot. This is the main
         method invoked to run the a container with Fakechroot.
@@ -3203,31 +3256,23 @@ class FakechrootEngine(ExecutionEngineCommon):
         if not self._check_env():
             return 4
 
-        # build the actual command
-        self.opt["cmd"][0] = exec_path
-        cmd_t = (r"unset VTE_VERSION;",
-                 " export ",
-                 "; export ".join(self.opt["env"]),
-                 " ; export PWD=" + self.opt["cwd"] + " ;", )
-        cmd = " ".join(cmd_t)
-        if xmode in ("F1", "F2"):
-            cmd += " " + self._elfpatcher.get_container_loader() + " "
-        cmd += " ".join(self.opt["cmd"])
-        Msg().err("CMD = " + cmd, l=Msg.VER)
-
-        # set affinity
-        affinity = self._set_cpu_affinity()
-        if self.opt["cpuset"]:
-            cmd = "%s /bin/sh -c '%s'" % (affinity, cmd)
-
         # if not --hostenv clean the environment
-        if not self.opt["hostenv"]:
-            self._run_env_cleanup()
+        self._run_env_cleanup_list()
+
+        # build the actual command
+        cmd_l = self._set_cpu_affinity()
+        cmd_l.extend(["env", "-i", ])
+        cmd_l.extend(self.opt["env"])
+        if xmode in ("F1", "F2"):
+            cmd_l.append(self._elfpatcher.get_container_loader())
+        cmd_l.extend(self._run_add_script_support(exec_path))
+        cmd_l.extend(self.opt["cmd"])
+        Msg().err("CMD =", cmd_l, l=Msg.VER)
 
         # execute
         self._run_banner(self.opt["cmd"][0], "#")
         cwd = self._cont2host(self.opt["cwd"])
-        status = subprocess.call(cmd, shell=True, close_fds=True, cwd=cwd)
+        status = subprocess.call(cmd_l, shell=False, close_fds=True, cwd=cwd)
         return status
 
 
@@ -4478,7 +4523,10 @@ class GetURLpyCurl(GetURL):
         if "header" in kwargs:  # avoid known pycurl bug
             clean_header_list = []
             for header_item in kwargs["header"]:
-                clean_header_list.append(str(header_item))
+                # in case of redirection do not add the Authorization header
+                if (not str(header_item).startswith("Authorization: Bearer")
+                        or "redirected" not in kwargs):
+                    clean_header_list.append(str(header_item))
             pyc.setopt(pyc.HTTPHEADER, clean_header_list)
         if "v" in kwargs:
             pyc.setopt(pyc.VERBOSE, kwargs["v"])
@@ -4516,7 +4564,9 @@ class GetURLpyCurl(GetURL):
         self._set_defaults(pyc, hdr)
         try:
             (output_file, filep) = self._mkpycurl(pyc, hdr, buf, **kwargs)
-            pyc.perform()
+            Msg().err("curl url: ", url, l=Msg.DBG)
+            Msg().err("curl arg: ", kwargs, l=Msg.DBG)
+            pyc.perform()     # call pyculr
         except(IOError, OSError):
             return(None, None)
         except pycurl.error as error:
@@ -4599,7 +4649,9 @@ class GetURLexeCurl(GetURL):
             self._opts["proxy"] = "--proxy '%s'" % (self.http_proxy)
         if "header" in kwargs:
             for header_item in kwargs["header"]:
-                self._opts["header"] += "-H '%s'" % (str(header_item))
+                if (not str(header_item).startswith("Authorization: Bearer") or
+                        "redirected" not in kwargs):
+                    self._opts["header"] += "-H '%s'" % (str(header_item))
         if "v" in kwargs and kwargs["v"]:
             self._opts["verbose"] = "-v"
         if "nobody" in kwargs and kwargs["nobody"]:
@@ -4621,7 +4673,7 @@ class GetURLexeCurl(GetURL):
         buf = cStringIO.StringIO()
         self._set_defaults()
         cmd = self._mkcurlcmd(*args, **kwargs)
-        status = subprocess.call(cmd, shell=True, close_fds=True)
+        status = subprocess.call(cmd, shell=True, close_fds=True) # call curl
         hdr.setvalue_from_file(self._files["header_file"])
         hdr.data["X-ND-CURLSTATUS"] = status
         if status:
@@ -6251,8 +6303,8 @@ class Udocker(object):
             elif self.localrepo.verify_image():
                 Msg().out("Info: image Ok", l=Msg.INF)
                 return True
-            Msg().err("Error: image verification failure")
-            return False
+        Msg().err("Error: image verification failure")
+        return False
 
     def do_setup(self, cmdp):
         """
@@ -6396,7 +6448,7 @@ class Udocker(object):
             if text:
                 Msg().out(text)
                 return
-        except AttributeError:
+        except (AttributeError, SyntaxError):
             pass
         Msg().out(self.do_help.__doc__)
 
@@ -6576,7 +6628,7 @@ class Main(object):
         parseok = self.cmdp.parse(sys.argv)
         if self.cmdp.get("", "CMD") == "version":
             self._version()
-            sys.exit(1)
+            sys.exit(0)
         if not parseok:
             Msg().err("Error: parsing command line, use: udocker help")
             sys.exit(1)

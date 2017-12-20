@@ -18,9 +18,11 @@ to batch systems, that's why we have everything in a single Python script.
 
 How to report a bug
 ===================
-If you find a security vulnerability, do NOT open an issue. Email udocker@lip.pt instead.
+If you find a security vulnerability, do NOT open an issue.
+Email udocker@lip.pt instead.
 
-Other issues and or feature enhancements can be communicated on GitHub https://github.com/indigo-dc/udocker/issues
+Other issues and or feature enhancements can be communicated on GitHub 
+https://github.com/indigo-dc/udocker/issues
 
 Code contributions
 ==================
