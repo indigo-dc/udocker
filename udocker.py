@@ -260,7 +260,7 @@ class Config(object):
     # dockerio_registry_url = "http://localhost:5000"
 
     # registries table
-    docker_registries = {"docker.io": ["https://registry-1.docker.io"
+    docker_registries = {"docker.io": ["https://registry-1.docker.io",
                                        "https://index.docker.io"],
                         }
     # -------------------------------------------------------------
