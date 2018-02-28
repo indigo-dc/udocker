@@ -6312,6 +6312,7 @@ class Udocker(object):
         setup [options] <container-id>
         --execmode=<mode>          :select execution mode from below
         --force                    :force setup change
+        --nv                       :load NVIDIA libraries and binaries
 
         <mode> is one of the following execution modes:
         P1: proot accelerated mode using seccomp filtering (default)
@@ -6329,6 +6330,7 @@ class Udocker(object):
         container_id = cmdp.get("P1")
         xmode = cmdp.get("--execmode=")
         force = cmdp.get("--force")
+        nvidia = cmdp.get("--nv")
         if cmdp.missing_options():               # syntax error
             return False
         if not self.localrepo.cd_container(container_id):
@@ -6337,6 +6339,12 @@ class Udocker(object):
         elif xmode and self.localrepo.isprotected_container(container_id):
             Msg().err("Error: container is protected")
             return False
+
+        ### Implement here the NVIDIA lib copy: mariojmdavid@gmail.com
+        if nvidia:
+            pass
+
+        #####
         exec_mode = ExecutionMode(self.localrepo, container_id)
         if xmode:
             return exec_mode.set_mode(xmode.upper(), force)
