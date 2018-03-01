@@ -6340,13 +6340,18 @@ class Udocker(object):
             Msg().err("Error: container is protected")
             return False
 
-        ### Implement here the NVIDIA lib copy: mariojmdavid@gmail.com
+        # Implement here the NVIDIA lib copy: mariojmdavid@gmail.com
+        container_dir = ''
+        container_json = {}
         if container_id:
             (container_dir, container_json) = ContainerStructure(
                 self.localrepo, container_id).get_container_attr()
 
+        Msg().out("container_dir ",  container_dir)
+        Msg().out("container_json ", container_json)
+
         if nvidia:
-            pass
+            Msg().out("NVIDIA Option set")
 
         #####
 
