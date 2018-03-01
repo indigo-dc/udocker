@@ -6373,8 +6373,13 @@ class Udocker(object):
 
         # files from /etc
         for file_etc in list_etc:
-            if os.path.isfile(etc_dir + os.sep + file_etc):
-                Msg().out(etc_dir + os.sep + file_etc)
+            f = etc_dir + os.sep + file_etc
+            if os.path.isfile(f):
+                dirname = os.path.dirname(f)
+                imgdir = container_dir + os.sep + 'ROOT' + dirname
+                os.makedirs(imgdir, exist_ok=True)
+
+                Msg().out(f)
 
 
         # TODO: try except
@@ -6392,7 +6397,6 @@ class Udocker(object):
         cont_env = container_json['config']['Env']
         Msg().out("Image ENV", cont_env)
         #####
-
 
     def do_install(self, cmdp):
         """
