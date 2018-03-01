@@ -6341,16 +6341,8 @@ class Udocker(object):
             return False
 
         # Implement here the NVIDIA lib copy: mariojmdavid@gmail.com
-        container_dir = ''
-        container_json = {}
-        if container_id:
-            (container_dir, container_json) = ContainerStructure(
-                self.localrepo, container_id).get_container_attr()
-
-        Msg().out("container_dir ",  container_dir)
-        Msg().out("container_json ", container_json)
-
         if nvidia:
+            self._set_nvidia(container_id)
             Msg().out("NVIDIA Option set")
 
         #####
@@ -6360,6 +6352,47 @@ class Udocker(object):
             return exec_mode.set_mode(xmode.upper(), force)
         Msg().out("execmode: %s" % (exec_mode.get_mode()))
         return True
+
+    # Implement here the NVIDIA lib copy: mariojmdavid@gmail.com
+    def _set_nvidia(self, container_id):
+        bin_dir = '/usr/bin'
+        etc_dir = '/etc'
+        lib_dir_host = '/usr/lib/x86_64-linux-gnu'  # libdir for debian/ubuntu host OS
+        lib_dir_image = '/usr/lib/x86_64-linux-gnu'  # libdir for debian/ubuntu docker OS
+        os_type = 'debian'  # default OS type of host
+        list_etc = ['vulkan/icd.d/nvidia_icd.json', 'OpenCL/vendors/nvidia.icd']
+
+        container_dir = ''
+        container_json = {}
+        if container_id:
+            (container_dir, container_json) = ContainerStructure(
+                self.localrepo, container_id).get_container_attr()
+
+        Msg().out("container_dir",  container_dir)
+        Msg().out("container_json", container_json)
+
+        # files from /etc
+        for file_etc in list_etc:
+            if os.path.isfile(etc_dir + os.sep + file_etc):
+                Msg().out(etc_dir + os.sep + file_etc)
+
+
+        # TODO: try except
+        os_file = open('/etc/os-release', 'r')
+        for line in os_file:
+            line = line.rstrip()
+            if re.search('^ID_LIKE=', line):
+                (dummy, os_type) = line.split('=')
+                Msg().out("Host OS type", os_type)
+
+        if re.search('rhel', os_type):
+            lib_dir_host = '/usr/lib64'
+
+        Msg().out("Host libdir", lib_dir_host)
+        cont_env = container_json['config']['Env']
+        Msg().out("Image ENV", cont_env)
+        #####
+
 
     def do_install(self, cmdp):
         """
