@@ -6341,10 +6341,15 @@ class Udocker(object):
             return False
 
         ### Implement here the NVIDIA lib copy: mariojmdavid@gmail.com
+        if container_id:
+            (container_dir, container_json) = ContainerStructure(
+                self.localrepo, container_id).get_container_attr()
+
         if nvidia:
             pass
 
         #####
+
         exec_mode = ExecutionMode(self.localrepo, container_id)
         if xmode:
             return exec_mode.set_mode(xmode.upper(), force)
