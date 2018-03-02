@@ -30,6 +30,7 @@ import time
 import pwd
 import grp
 import platform
+import shutil
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me",
@@ -6312,7 +6313,7 @@ class Udocker(object):
         setup [options] <container-id>
         --execmode=<mode>          :select execution mode from below
         --force                    :force setup change
-        --nv                       :load NVIDIA libraries and binaries
+        --nvidia                   :load NVIDIA libraries and binaries
 
         <mode> is one of the following execution modes:
         P1: proot accelerated mode using seccomp filtering (default)
@@ -6330,7 +6331,9 @@ class Udocker(object):
         container_id = cmdp.get("P1")
         xmode = cmdp.get("--execmode=")
         force = cmdp.get("--force")
-        nvidia = cmdp.get("--nv")
+        nvidia = cmdp.get("--nvidia")
+
+        # TODO if nvidia and execmode singularity gives error
         if cmdp.missing_options():               # syntax error
             return False
         if not self.localrepo.cd_container(container_id):
@@ -6377,12 +6380,20 @@ class Udocker(object):
             if os.path.isfile(f):
                 dirname = os.path.dirname(f)
                 imgdir = container_dir + os.sep + 'ROOT' + dirname
-                os.makedirs(imgdir, exist_ok=True)
+                if not os.path.isdir(imgdir):
+                    try:
+                        os.makedirs(imgdir, 0755)
+                    except OSError:
+                        pass
 
+                target = container_dir + os.sep + 'ROOT' + f
+                try:
+                    shutil.copy(f, target)
+                except IOError as e:
+                    print("Unable to copy file. %s" % e)
                 Msg().out(f)
 
-
-        # TODO: try except
+        # TODO: try except - implemented above with another class and method
         os_file = open('/etc/os-release', 'r')
         for line in os_file:
             line = line.rstrip()
