@@ -6404,10 +6404,31 @@ class Udocker(object):
         if re.search('rhel', os_type):
             lib_dir_host = '/usr/lib64'
 
+        # files from /usr/bin and from lib
+        (list_bin, list_lib) = self._list_nvidia_files(lib_dir_host)
+
+        for file_bin in list_bin:
+            f = bin_dir + os.sep + file_bin
+            if os.path.isfile(f):
+                target = container_dir + os.sep + 'ROOT' + f
+                try:
+                    shutil.copy(f, target)
+                except IOError as e:
+                    print("Unable to copy file. %s" % e)
+                Msg().out(f)
+
         Msg().out("Host libdir", lib_dir_host)
         cont_env = container_json['config']['Env']
         Msg().out("Image ENV", cont_env)
         #####
+
+    def _list_nvidia_files(self, lib_dir_host):
+        list_bin = ["nvidia-bug-report.sh", "nvidia-cuda-mps-control", "nvidia-cuda-mps-server",
+                    "nvidia-debugdump", "nvidia-installer", "nvidia-modprobe", "nvidia-persistenced",
+                    "nvidia-settings", "nvidia-smi", "nvidia-uninstall", "nvidia-xconfig"]
+        list_lib = []
+
+        return list_bin, list_lib
 
     def do_install(self, cmdp):
         """
