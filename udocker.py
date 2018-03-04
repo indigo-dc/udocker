@@ -31,6 +31,7 @@ import pwd
 import grp
 import platform
 import shutil
+import glob
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me",
@@ -6358,8 +6359,10 @@ class Udocker(object):
 
     # Implement here the NVIDIA lib copy: mariojmdavid@gmail.com
     def _set_nvidia(self, container_id):
-        bin_dir = '/usr/bin'
         etc_dir = '/etc'
+
+        # TODO searh for these dirs instead of hardwired
+        bin_dir = '/usr/bin'
         lib_dir_host = '/usr/lib/x86_64-linux-gnu'  # libdir for debian/ubuntu host OS
         lib_dir_image = '/usr/lib/x86_64-linux-gnu'  # libdir for debian/ubuntu docker OS
         os_type = 'debian'  # default OS type of host
@@ -6404,11 +6407,49 @@ class Udocker(object):
         if re.search('rhel', os_type):
             lib_dir_host = '/usr/lib64'
 
-        # files from /usr/bin and from lib
-        (list_bin, list_lib) = self._list_nvidia_files(lib_dir_host)
+        basedir = '/usr/bin'
+        filepattern = '^nvidia'
+        exclpattern = '(container|docker|modprobe|xconfig)'
+        list_bin = self._get_file_list(basedir, filepattern, exclpattern)
+        self._copy_files(list_bin, container_dir)
+        for f in list_bin:
+            Msg().out(f)
 
-        for file_bin in list_bin:
-            f = bin_dir + os.sep + file_bin
+        Msg().out(40*'-')
+        basedir = lib_dir_host
+        filepattern = '(libnv|libOpenCL|libcuda|libvdpau)'
+        exclpattern = '(xorg|container)'
+        list_lib = self._get_file_list(basedir, filepattern, exclpattern)
+        for f in list_lib:
+            Msg().out(f)
+
+        Msg().out(40*'-')
+        basedir = lib_dir_host
+        filepattern = 'lib[a-z,0-9]*GL'
+        exclpattern = '(mesa|GLU)'
+        list_lib = self._get_file_list(basedir, filepattern, exclpattern)
+        for f in list_lib:
+            Msg().out(f)
+
+        '''
+        Msg().out("Host libdir", lib_dir_host)
+        cont_env = container_json['config']['Env']
+        Msg().out("Image ENV", cont_env)
+        '''
+        #####
+
+    def _get_file_list(self, basedir, filepattern, exclpattern):
+        list_files = []
+        for root, dirs, files in os.walk(basedir):
+            for f in files:
+                if re.search(filepattern, f):
+                    if not re.search(exclpattern, f):
+                        list_files.append(os.path.join(root, f))
+        return list_files
+
+    def _copy_files(self, list_files, container_dir):
+        for f in list_files:
+            Msg().out(f)
             if os.path.isfile(f):
                 target = container_dir + os.sep + 'ROOT' + f
                 try:
@@ -6416,19 +6457,6 @@ class Udocker(object):
                 except IOError as e:
                     print("Unable to copy file. %s" % e)
                 Msg().out(f)
-
-        Msg().out("Host libdir", lib_dir_host)
-        cont_env = container_json['config']['Env']
-        Msg().out("Image ENV", cont_env)
-        #####
-
-    def _list_nvidia_files(self, lib_dir_host):
-        list_bin = ["nvidia-bug-report.sh", "nvidia-cuda-mps-control", "nvidia-cuda-mps-server",
-                    "nvidia-debugdump", "nvidia-installer", "nvidia-modprobe", "nvidia-persistenced",
-                    "nvidia-settings", "nvidia-smi", "nvidia-uninstall", "nvidia-xconfig"]
-        list_lib = []
-
-        return list_bin, list_lib
 
     def do_install(self, cmdp):
         """
