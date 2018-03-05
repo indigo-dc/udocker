@@ -6464,7 +6464,11 @@ class Udocker(object):
             Msg().out('FILE to be copied: ', f)
             if os.path.isfile(f):
                 try:
-                    shutil.copy(f, targetdir)
+                    if os.path.islink(f):
+                        linkto = os.readlink(f)
+                        os.symlink(linkto, targetdir)
+                    else:
+                        shutil.copy(f, targetdir)
                 except IOError as e:
                     print("Unable to copy file. %s" % e)
                 Msg().out(f)
