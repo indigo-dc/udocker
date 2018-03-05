@@ -6449,7 +6449,7 @@ class Udocker(object):
 
     def _copy_files(self, list_files, container_dir):
         for f in list_files:
-            Msg().out(f)
+            Msg().out('FILE to be copied: ', f)
             if os.path.isfile(f):
                 target = container_dir + os.sep + 'ROOT' + f
                 try:
