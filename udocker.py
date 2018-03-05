@@ -6361,10 +6361,8 @@ class Udocker(object):
     def _set_nvidia(self, container_id):
         etc_dir = '/etc'
 
-        # TODO searh for these dirs instead of hardwired
-        bin_dir = '/usr/bin'
+        # TODO search for these dirs instead of hardwired
         lib_dir_host = '/usr/lib/x86_64-linux-gnu'  # libdir for debian/ubuntu host OS
-        lib_dir_image = '/usr/lib/x86_64-linux-gnu'  # libdir for debian/ubuntu docker OS
         os_type = 'debian'  # default OS type of host
         list_etc = ['vulkan/icd.d/nvidia_icd.json', 'OpenCL/vendors/nvidia.icd']
 
@@ -6407,11 +6405,24 @@ class Udocker(object):
         if re.search('rhel', os_type):
             lib_dir_host = '/usr/lib64'
 
-        basedir = '/usr/bin'
+        lib_dir_image = container_dir + '/ROOT' + '/usr/lib/x86_64-linux-gnu'
+        image_os = container_dir + '/ROOT' + '/etc/os-release'
+        os_file = open(image_os, 'r')
+        for line in os_file:
+            line = line.rstrip()
+            if re.search('^ID_LIKE=', line):
+                (dummy, os_type) = line.split('=')
+                Msg().out("Image OS type", os_type)
+
+        if re.search('rhel', os_type):
+            lib_dir_image = container_dir + '/ROOT' + '/usr/lib64'
+
+        basedir = '/usr/bin/'
+        targetdir = container_dir + '/ROOT' + basedir
         filepattern = '^nvidia'
         exclpattern = '(container|docker|modprobe|xconfig)'
         list_bin = self._get_file_list(basedir, filepattern, exclpattern)
-        self._copy_files(list_bin, container_dir)
+        self._copy_files(list_bin, targetdir)
         for f in list_bin:
             Msg().out(f)
 
@@ -6420,6 +6431,7 @@ class Udocker(object):
         filepattern = '(libnv|libOpenCL|libcuda|libvdpau)'
         exclpattern = '(xorg|container)'
         list_lib = self._get_file_list(basedir, filepattern, exclpattern)
+        self._copy_files(list_lib, lib_dir_image)
         for f in list_lib:
             Msg().out(f)
 
@@ -6428,11 +6440,11 @@ class Udocker(object):
         filepattern = 'lib[a-z,0-9]*GL'
         exclpattern = '(mesa|GLU)'
         list_lib = self._get_file_list(basedir, filepattern, exclpattern)
+        self._copy_files(list_lib, lib_dir_image)
         for f in list_lib:
             Msg().out(f)
 
         '''
-        Msg().out("Host libdir", lib_dir_host)
         cont_env = container_json['config']['Env']
         Msg().out("Image ENV", cont_env)
         '''
@@ -6447,13 +6459,12 @@ class Udocker(object):
                         list_files.append(os.path.join(root, f))
         return list_files
 
-    def _copy_files(self, list_files, container_dir):
+    def _copy_files(self, list_files, targetdir):
         for f in list_files:
             Msg().out('FILE to be copied: ', f)
             if os.path.isfile(f):
-                target = container_dir + os.sep + 'ROOT' + f
                 try:
-                    shutil.copy(f, target)
+                    shutil.copy(f, targetdir)
                 except IOError as e:
                     print("Unable to copy file. %s" % e)
                 Msg().out(f)
