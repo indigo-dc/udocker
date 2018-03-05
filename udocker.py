@@ -6440,7 +6440,7 @@ class Udocker(object):
         filepattern = 'lib[a-z,0-9]*GL'
         exclpattern = '(mesa|GLU)'
         list_lib = self._get_file_list(basedir, filepattern, exclpattern)
-        self._copy_files(list_lib, lib_dir_image)
+        # self._copy_files(list_lib, lib_dir_image)
         for f in list_lib:
             Msg().out(f)
 
@@ -6461,12 +6461,13 @@ class Udocker(object):
 
     def _copy_files(self, list_files, targetdir):
         for f in list_files:
-            Msg().out('FILE to be copied: ', f)
+            fname = os.path.basename(f)
+            Msg().out('FILE to be copied: ', fname, ' IN:', os.path.dirname(f))
             if os.path.isfile(f):
                 try:
                     if os.path.islink(f):
                         linkto = os.readlink(f)
-                        os.symlink(linkto, targetdir)
+                        os.symlink(linkto, targetdir + os.sep + fname)
                     else:
                         shutil.copy(f, targetdir)
                 except IOError as e:
