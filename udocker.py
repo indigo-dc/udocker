@@ -6348,7 +6348,6 @@ class Udocker(object):
         if nvidia:
             self._set_nvidia(container_id)
             Msg().out("NVIDIA Option set")
-
         #####
 
         exec_mode = ExecutionMode(self.localrepo, container_id)
@@ -6359,12 +6358,84 @@ class Udocker(object):
 
     # Implement here the NVIDIA lib copy: mariojmdavid@gmail.com
     def _set_nvidia(self, container_id):
+        container_dir = ''
+        container_json = {}
+        if container_id:
+            (container_dir, container_json) = ContainerStructure(
+                self.localrepo, container_id).get_container_attr()
+
+        cont_root = container_dir + os.sep + 'ROOT'
+        Msg().out("ROOT and JSON",  cont_root, container_json)
+        (list_etc, list_bin, list_lib) = self._get_nvidia_files()
+
+        # Copy files in /etc
+        host_dir = '/etc/'
+        cont_dir = host_dir
+        self._copy_files(host_dir, cont_dir, list_etc, cont_root)
+
+        # Copy files in /usr/bin
+        host_dir = '/usr/bin/'
+        cont_dir = host_dir
+        self._copy_files(host_dir, cont_dir, list_bin, cont_root)
+
+    def _get_nvidia_files(self):
+        list_etc = ['vulkan/icd.d/nvidia_icd.json',
+                    'OpenCL/vendors/nvidia.icd']
+        list_bin = ['nvidia-bug-report.sh', 'nvidia-cuda-mps-control',
+                    'nvidia-cuda-mps-server', 'nvidia-debugdump',
+                    'nvidia-installer', 'nvidia-modprobe',
+                    'nvidia-persistenced', 'nvidia-settings',
+                    'nvidia-smi', 'nvidia-uninstall', 'nvidia-xconfig']
+        list_lib = ['libEGL_nvidia', 'libEGL', 'libGLdispatch',
+                    'libGLESv1_CM_nvidia', 'libGLESv1_CM', 'libGLESv2_nvidia',
+                    'libGLESv2', 'libGL', 'libGLX_indirect', 'libGLX_nvidia',
+                    'libGLX', 'libOpenGL', 'libOpenCL', 'libcuda',
+                    'libvdpau_nvidia', 'vdpau/libvdpau_nvidia',
+                    'libnvcuvid', 'libnvidia-cfg', 'libnvidia-compiler',
+                    'libnvidia-eglcore', 'libnvidia-egl-wayland',
+                    'libnvidia-encode', 'libnvidia-fatbinaryloader',
+                    'libnvidia-fbc', 'libnvidia-glcore', 'libnvidia-glsi',
+                    'libnvidia-gtk2', 'libnvidia-gtk3', 'libnvidia-ifr',
+                    'libnvidia-ml', 'libnvidia-opencl',
+                    'libnvidia-ptxjitcompiler', 'libnvidia-tls',
+                    'tls/libnvidia-tls']
+        return list_etc, list_bin, list_lib
+
+    def _copy_files(self, host_dir, cont_dir, list_files, cont_root):
+        source_dir = host_dir
+        target_dir = cont_root + cont_dir
+        for fname in list_files:
+            full_srcname = source_dir + fname
+            full_dstname = target_dir + fname
+            if os.path.isfile(full_dstname):
+                try:
+                    os.remove(full_dstname)
+                except OSError:
+                    Msg().out("Unable to remove target file. %s"
+                              % full_dstname)
+            if os.path.isfile(full_srcname):
+                full_targetdir = os.path.dirname(full_dstname)
+                if not os.path.isdir(full_targetdir):
+                    try:
+                        os.makedirs(full_targetdir, 0755)
+                    except OSError:
+                        pass
+                try:
+                    if os.path.islink(full_srcname):
+                        linkto = os.readlink(full_srcname)
+                        os.symlink(linkto, full_dstname)
+                    else:
+                        shutil.copy(full_srcname, full_dstname)
+                except IOError as e:
+                    Msg().out("Unable to copy file. %s" % e)
+                Msg().out(full_srcname)
+
+    def _set_nvidia_OLD(self, container_id):
         etc_dir = '/etc'
 
         # TODO search for these dirs instead of hardwired
         lib_dir_host = '/usr/lib/x86_64-linux-gnu'  # libdir for debian/ubuntu host OS
         os_type = 'debian'  # default OS type of host
-        list_etc = ['vulkan/icd.d/nvidia_icd.json', 'OpenCL/vendors/nvidia.icd']
 
         container_dir = ''
         container_json = {}
@@ -6376,6 +6447,7 @@ class Udocker(object):
         Msg().out("container_json", container_json)
 
         # files from /etc
+        list_etc = []  # Dummy empty list
         for file_etc in list_etc:
             f = etc_dir + os.sep + file_etc
             if os.path.isfile(f):
@@ -6422,7 +6494,7 @@ class Udocker(object):
         filepattern = '^nvidia'
         exclpattern = '(container|docker|modprobe|xconfig)'
         list_bin = self._get_file_list(basedir, filepattern, exclpattern)
-        self._copy_files(list_bin, targetdir)
+        self._copy_files_OLD(list_bin, targetdir)
         for f in list_bin:
             Msg().out(f)
 
@@ -6431,16 +6503,7 @@ class Udocker(object):
         filepattern = '(libnv|libOpenCL|libcuda|libvdpau)'
         exclpattern = '(xorg|container)'
         list_lib = self._get_file_list(basedir, filepattern, exclpattern)
-        self._copy_files(list_lib, lib_dir_image)
-        for f in list_lib:
-            Msg().out(f)
-
-        Msg().out(40*'-')
-        basedir = lib_dir_host
-        filepattern = 'lib[a-z,0-9]*GL'
-        exclpattern = '(mesa|GLU)'
-        list_lib = self._get_file_list(basedir, filepattern, exclpattern)
-        # self._copy_files(list_lib, lib_dir_image)
+        self._copy_files_OLD(list_lib, lib_dir_image)
         for f in list_lib:
             Msg().out(f)
 
@@ -6459,7 +6522,7 @@ class Udocker(object):
                         list_files.append(os.path.join(root, f))
         return list_files
 
-    def _copy_files(self, list_files, targetdir):
+    def _copy_files_OLD(self, list_files, targetdir):
         for f in list_files:
             fname = os.path.basename(f)
             Msg().out('FILE to be copied: ', fname, ' IN:', os.path.dirname(f))
@@ -6473,6 +6536,9 @@ class Udocker(object):
                 except IOError as e:
                     print("Unable to copy file. %s" % e)
                 Msg().out(f)
+
+## End mdavid implementation
+##############################
 
     def do_install(self, cmdp):
         """
