@@ -6366,7 +6366,7 @@ class Udocker(object):
 
         cont_root = container_dir + os.sep + 'ROOT'
         Msg().out("ROOT and JSON", cont_root, container_json)
-        (list_etc, list_bin, list_lib) = self._get_nvidia_files()
+        (list_etc, list_bin) = self._get_nvidia_files()
 
         # get ostype and copy files in /etc
         host_dir = '/etc/'
@@ -6379,6 +6379,17 @@ class Udocker(object):
         host_dir = '/usr/bin/'
         cont_dir = host_dir
         self._copy_files(host_dir, cont_dir, list_bin, cont_root)
+
+        if os_type_host == 'debian':
+            host_dir = '/usr/lib/x86_64-linux-gnu/'
+        else:
+            host_dir = '/usr/lib64/'
+        if os_type_cont == 'debian':
+            cont_dir = '/usr/lib/x86_64-linux-gnu/'
+        else:
+            cont_dir = '/usr/lib64/'
+        list_libs = self._get_nvidia_libs(host_dir)
+        #self._copy_files(host_dir, cont_dir, list_libs, cont_root)
 
     def _get_os_type(self, basedir):
         os_type = 'debian'  # default os_type
@@ -6399,6 +6410,10 @@ class Udocker(object):
                     'nvidia-installer', 'nvidia-persistenced',
                     'nvidia-settings', 'nvidia-smi',
                     'nvidia-uninstall', 'nvidia-xconfig']
+        return list_etc, list_bin
+
+    def _get_nvidia_libs(self, host_dir):
+        list_nvidia_libs = []
         list_lib = ['libEGL_nvidia', 'libEGL', 'libGLdispatch',
                     'libGLESv1_CM_nvidia', 'libGLESv1_CM', 'libGLESv2_nvidia',
                     'libGLESv2', 'libGL', 'libGLX_indirect', 'libGLX_nvidia',
@@ -6412,7 +6427,9 @@ class Udocker(object):
                     'libnvidia-ml', 'libnvidia-opencl',
                     'libnvidia-ptxjitcompiler', 'libnvidia-tls',
                     'tls/libnvidia-tls']
-        return list_etc, list_bin, list_lib
+        for l in list_lib:
+            list_nvidia_libs.append(l)
+        return list_nvidia_libs
 
     def _copy_files(self, host_dir, cont_dir, list_files, cont_root):
         source_dir = host_dir
