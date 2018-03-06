@@ -6383,9 +6383,9 @@ class Udocker(object):
                     'OpenCL/vendors/nvidia.icd']
         list_bin = ['nvidia-bug-report.sh', 'nvidia-cuda-mps-control',
                     'nvidia-cuda-mps-server', 'nvidia-debugdump',
-                    'nvidia-installer', 'nvidia-modprobe',
-                    'nvidia-persistenced', 'nvidia-settings',
-                    'nvidia-smi', 'nvidia-uninstall', 'nvidia-xconfig']
+                    'nvidia-installer', 'nvidia-persistenced',
+                    'nvidia-settings', 'nvidia-smi',
+                    'nvidia-uninstall', 'nvidia-xconfig']
         list_lib = ['libEGL_nvidia', 'libEGL', 'libGLdispatch',
                     'libGLESv1_CM_nvidia', 'libGLESv1_CM', 'libGLESv2_nvidia',
                     'libGLESv2', 'libGL', 'libGLX_indirect', 'libGLX_nvidia',
