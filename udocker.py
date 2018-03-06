@@ -6365,18 +6365,31 @@ class Udocker(object):
                 self.localrepo, container_id).get_container_attr()
 
         cont_root = container_dir + os.sep + 'ROOT'
-        Msg().out("ROOT and JSON",  cont_root, container_json)
+        Msg().out("ROOT and JSON", cont_root, container_json)
         (list_etc, list_bin, list_lib) = self._get_nvidia_files()
 
-        # Copy files in /etc
+        # get ostype and copy files in /etc
         host_dir = '/etc/'
         cont_dir = host_dir
+        os_type_host = self._get_os_type(host_dir)
+        os_type_cont = self._get_os_type(cont_dir)
         self._copy_files(host_dir, cont_dir, list_etc, cont_root)
 
         # Copy files in /usr/bin
         host_dir = '/usr/bin/'
         cont_dir = host_dir
         self._copy_files(host_dir, cont_dir, list_bin, cont_root)
+
+    def _get_os_type(self, basedir):
+        os_type = 'debian'  # default os_type
+        os_file = open(basedir + 'os-release', 'r')
+        for line in os_file:
+            line = line.rstrip()
+            if re.search('^ID_LIKE=', line):
+                (dummy, os_type) = line.split('=')
+        if re.search('rhel', os_type):
+            os_type = 'rhel'
+        return os_type
 
     def _get_nvidia_files(self):
         list_etc = ['vulkan/icd.d/nvidia_icd.json',
