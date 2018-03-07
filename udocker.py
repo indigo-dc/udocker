@@ -6372,7 +6372,7 @@ class Udocker(object):
         host_dir = '/etc/'
         cont_dir = host_dir
         os_type_host = self._get_os_type(host_dir)
-        os_type_cont = self._get_os_type(cont_dir)
+        os_type_cont = self._get_os_type(cont_root + cont_dir)
         self._copy_files(host_dir, cont_dir, list_etc, cont_root)
 
         # Copy files in /usr/bin
@@ -6389,7 +6389,8 @@ class Udocker(object):
         else:
             cont_dir = '/usr/lib64/'
         list_libs = self._get_nvidia_libs(host_dir)
-        #self._copy_files(host_dir, cont_dir, list_libs, cont_root)
+        Msg().out(os_type_host, os_type_cont, host_dir, cont_dir)
+        self._copy_files(host_dir, cont_dir, list_libs, cont_root)
 
     def _get_os_type(self, basedir):
         os_type = 'debian'  # default os_type
@@ -6428,7 +6429,9 @@ class Udocker(object):
                     'libnvidia-ptxjitcompiler', 'libnvidia-tls',
                     'tls/libnvidia-tls']
         for l in list_lib:
-            list_nvidia_libs.append(l)
+            l2 = glob.glob(host_dir + l + '*')
+            for l3 in l2:
+                list_nvidia_libs.append(l3.replace(host_dir, ''))
         return list_nvidia_libs
 
     def _copy_files(self, host_dir, cont_dir, list_files, cont_root):
@@ -6458,7 +6461,7 @@ class Udocker(object):
                         shutil.copy(full_srcname, full_dstname)
                 except IOError as e:
                     Msg().out("Unable to copy file. %s" % e)
-                Msg().out(full_srcname)
+                Msg().out(full_srcname, full_dstname)
 
     def _set_nvidia_OLD(self, container_id):
         etc_dir = '/etc'
