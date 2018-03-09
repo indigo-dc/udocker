@@ -6380,6 +6380,8 @@ class Udocker(object):
         cont_dir = host_dir
         self._copy_files(host_dir, cont_dir, list_bin, cont_root)
 
+        rr = self._find_host_libs()
+
         if os_type_host == 'debian':
             host_dir = '/usr/lib/x86_64-linux-gnu/'
         else:
@@ -6391,6 +6393,18 @@ class Udocker(object):
         list_libs = self._get_nvidia_libs(host_dir)
         Msg().out(os_type_host, os_type_cont, host_dir, cont_dir)
         self._copy_files(host_dir, cont_dir, list_libs, cont_root)
+
+    def _find_host_libs(self):
+        host_dir = ''
+        cmd = "ldconfig -p"
+        ld_data = Uprocess().get_output(cmd)
+        if not ld_data:
+            return []
+        for line in ld_data.split("\n"):
+
+            Msg().out('>>>>>>> Libs in', line)
+        # return ld_dict.keys()
+        # return host_dir
 
     def _get_os_type(self, basedir):
         os_type = 'debian'  # default os_type
@@ -6415,19 +6429,19 @@ class Udocker(object):
 
     def _get_nvidia_libs(self, host_dir):
         list_nvidia_libs = []
-        list_lib = ['libEGL_nvidia', 'libEGL', 'libGLdispatch',
-                    'libGLESv1_CM_nvidia', 'libGLESv1_CM', 'libGLESv2_nvidia',
-                    'libGLESv2', 'libGL', 'libGLX_indirect', 'libGLX_nvidia',
-                    'libGLX', 'libOpenGL', 'libOpenCL', 'libcuda',
-                    'libvdpau_nvidia', 'vdpau/libvdpau_nvidia',
-                    'libnvcuvid', 'libnvidia-cfg', 'libnvidia-compiler',
-                    'libnvidia-eglcore', 'libnvidia-egl-wayland',
-                    'libnvidia-encode', 'libnvidia-fatbinaryloader',
-                    'libnvidia-fbc', 'libnvidia-glcore', 'libnvidia-glsi',
-                    'libnvidia-gtk2', 'libnvidia-gtk3', 'libnvidia-ifr',
-                    'libnvidia-ml', 'libnvidia-opencl',
-                    'libnvidia-ptxjitcompiler', 'libnvidia-tls',
-                    'tls/libnvidia-tls']
+        list_lib = ['libEGL_nvidia.', 'libEGL.', 'libGLdispatch.',
+                    'libGLESv1_CM_nvidia.', 'libGLESv1_CM.', 'libGLESv2_nvidia.',
+                    'libGLESv2.', 'libGL.', 'libGLX_indirect.', 'libGLX_nvidia.',
+                    'libGLX.', 'libOpenGL.', 'libOpenCL.', 'libcuda.',
+                    'libvdpau_nvidia.', 'vdpau/libvdpau_nvidia.',
+                    'libnvcuvid.', 'libnvidia-cfg.', 'libnvidia-compiler.',
+                    'libnvidia-eglcore.', 'libnvidia-egl-wayland.',
+                    'libnvidia-encode.', 'libnvidia-fatbinaryloader.',
+                    'libnvidia-fbc.', 'libnvidia-glcore.', 'libnvidia-glsi.',
+                    'libnvidia-gtk2.', 'libnvidia-gtk3.', 'libnvidia-ifr.',
+                    'libnvidia-ml.', 'libnvidia-opencl.',
+                    'libnvidia-ptxjitcompiler.', 'libnvidia-tls.',
+                    'tls/libnvidia-tls.']
         for l in list_lib:
             l2 = glob.glob(host_dir + l + '*')
             for l3 in l2:
