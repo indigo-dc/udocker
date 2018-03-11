@@ -6346,8 +6346,8 @@ class Udocker(object):
 
         # Implement here the NVIDIA lib copy: mariojmdavid@gmail.com
         if nvidia:
-            self._set_nvidia(container_id)
             Msg().out("NVIDIA Option set")
+            self._set_nvidia(container_id)
         #####
 
         exec_mode = ExecutionMode(self.localrepo, container_id)
@@ -6429,6 +6429,7 @@ class Udocker(object):
 
     def _get_nvidia_libs(self, host_dir):
         list_nvidia_libs = []
+        ''' try with less libs
         list_lib = ['libEGL_nvidia.', 'libEGL.', 'libGLdispatch.',
                     'libGLESv1_CM_nvidia.', 'libGLESv1_CM.', 'libGLESv2_nvidia.',
                     'libGLESv2.', 'libGL.', 'libGLX_indirect.', 'libGLX_nvidia.',
@@ -6442,6 +6443,13 @@ class Udocker(object):
                     'libnvidia-ml.', 'libnvidia-opencl.',
                     'libnvidia-ptxjitcompiler.', 'libnvidia-tls.',
                     'tls/libnvidia-tls.']
+        '''
+        list_lib = ['libOpenCL.', 'libcuda.', 'libnvcuvid.',
+                    'libnvidia-cfg.', 'libnvidia-compiler.',
+                    'libnvidia-encode.', 'libnvidia-fatbinaryloader.',
+                    'libnvidia-fbc.', 'libnvidia-ifr.', 'libnvidia-ml.',
+                    'libnvidia-opencl.', 'libnvidia-ptxjitcompiler.',
+                    'libnvidia-tls.', 'tls/libnvidia-tls.']
         for l in list_lib:
             l2 = glob.glob(host_dir + l + '*')
             for l3 in l2:
@@ -6477,6 +6485,8 @@ class Udocker(object):
                     Msg().out("Unable to copy file. %s" % e)
                 Msg().out(full_srcname, full_dstname)
 
+
+    ###############  OLD functions to be removed
     def _set_nvidia_OLD(self, container_id):
         etc_dir = '/etc'
 
@@ -6554,10 +6564,6 @@ class Udocker(object):
         for f in list_lib:
             Msg().out(f)
 
-        '''
-        cont_env = container_json['config']['Env']
-        Msg().out("Image ENV", cont_env)
-        '''
         #####
 
     def _get_file_list(self, basedir, filepattern, exclpattern):
