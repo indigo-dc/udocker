@@ -6380,12 +6380,14 @@ class Udocker(object):
         cont_dir = host_dir
         self._copy_files(host_dir, cont_dir, list_bin, cont_root)
 
-        rr = self._find_host_libs()
-
+        '''
         if os_type_host == 'debian':
             host_dir = '/usr/lib/x86_64-linux-gnu/'
         else:
             host_dir = '/usr/lib64/'
+        '''
+
+        host_dir = self._find_host_libs()
         if os_type_cont == 'debian':
             cont_dir = '/usr/lib/x86_64-linux-gnu/'
         else:
@@ -6401,10 +6403,12 @@ class Udocker(object):
         if not ld_data:
             return []
         for line in ld_data.split("\n"):
-
-            Msg().out('>>>>>>> Libs in', line)
-        # return ld_dict.keys()
-        # return host_dir
+            if re.search('libnvidia-cfg', line):
+                Msg().out('>>>>>>> Libs in', line)
+                splt = line.split('=> ')
+                host_dir = os.path.dirname(splt)
+        Msg().out('>>>>>>> Found NVIDIA libs in host dir', host_dir)
+        return host_dir
 
     def _get_os_type(self, basedir):
         os_type = 'debian'  # default os_type
