@@ -6406,8 +6406,7 @@ class Udocker(object):
             if re.search('libnvidia-cfg', line):
                 Msg().out('>>>>>>> Libs in', line)
                 splt = line.split('=> ')
-                host_dir = os.path.dirname(splt)
-        Msg().out('>>>>>>> Found NVIDIA libs in host dir', host_dir)
+                host_dir = os.path.dirname(splt[1]) + '/'
         return host_dir
 
     def _get_os_type(self, basedir):
