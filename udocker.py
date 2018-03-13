@@ -6380,13 +6380,7 @@ class Udocker(object):
         cont_dir = host_dir
         self._copy_files(host_dir, cont_dir, list_bin, cont_root)
 
-        '''
-        if os_type_host == 'debian':
-            host_dir = '/usr/lib/x86_64-linux-gnu/'
-        else:
-            host_dir = '/usr/lib64/'
-        '''
-
+        # Copy files nvidia libs
         host_dir = self._find_host_libs()
         if os_type_cont == 'debian':
             cont_dir = '/usr/lib/x86_64-linux-gnu/'
@@ -6404,7 +6398,6 @@ class Udocker(object):
             return []
         for line in ld_data.split("\n"):
             if re.search('libnvidia-cfg', line):
-                Msg().out('>>>>>>> Libs in', line)
                 splt = line.split('=> ')
                 host_dir = os.path.dirname(splt[1]) + '/'
         return host_dir
@@ -6488,113 +6481,7 @@ class Udocker(object):
                     Msg().out("Unable to copy file. %s" % e)
                 Msg().out(full_srcname, full_dstname)
 
-
-    ###############  OLD functions to be removed
-    def _set_nvidia_OLD(self, container_id):
-        etc_dir = '/etc'
-
-        # TODO search for these dirs instead of hardwired
-        lib_dir_host = '/usr/lib/x86_64-linux-gnu'  # libdir for debian/ubuntu host OS
-        os_type = 'debian'  # default OS type of host
-
-        container_dir = ''
-        container_json = {}
-        if container_id:
-            (container_dir, container_json) = ContainerStructure(
-                self.localrepo, container_id).get_container_attr()
-
-        Msg().out("container_dir",  container_dir)
-        Msg().out("container_json", container_json)
-
-        # files from /etc
-        list_etc = []  # Dummy empty list
-        for file_etc in list_etc:
-            f = etc_dir + os.sep + file_etc
-            if os.path.isfile(f):
-                dirname = os.path.dirname(f)
-                imgdir = container_dir + os.sep + 'ROOT' + dirname
-                if not os.path.isdir(imgdir):
-                    try:
-                        os.makedirs(imgdir, 0755)
-                    except OSError:
-                        pass
-
-                target = container_dir + os.sep + 'ROOT' + f
-                try:
-                    shutil.copy(f, target)
-                except IOError as e:
-                    print("Unable to copy file. %s" % e)
-                Msg().out(f)
-
-        # TODO: try except - implemented above with another class and method
-        os_file = open('/etc/os-release', 'r')
-        for line in os_file:
-            line = line.rstrip()
-            if re.search('^ID_LIKE=', line):
-                (dummy, os_type) = line.split('=')
-                Msg().out("Host OS type", os_type)
-
-        if re.search('rhel', os_type):
-            lib_dir_host = '/usr/lib64'
-
-        lib_dir_image = container_dir + '/ROOT' + '/usr/lib/x86_64-linux-gnu'
-        image_os = container_dir + '/ROOT' + '/etc/os-release'
-        os_file = open(image_os, 'r')
-        for line in os_file:
-            line = line.rstrip()
-            if re.search('^ID_LIKE=', line):
-                (dummy, os_type) = line.split('=')
-                Msg().out("Image OS type", os_type)
-
-        if re.search('rhel', os_type):
-            lib_dir_image = container_dir + '/ROOT' + '/usr/lib64'
-
-        basedir = '/usr/bin/'
-        targetdir = container_dir + '/ROOT' + basedir
-        filepattern = '^nvidia'
-        exclpattern = '(container|docker|modprobe|xconfig)'
-        list_bin = self._get_file_list(basedir, filepattern, exclpattern)
-        self._copy_files_OLD(list_bin, targetdir)
-        for f in list_bin:
-            Msg().out(f)
-
-        Msg().out(40*'-')
-        basedir = lib_dir_host
-        filepattern = '(libnv|libOpenCL|libcuda|libvdpau)'
-        exclpattern = '(xorg|container)'
-        list_lib = self._get_file_list(basedir, filepattern, exclpattern)
-        self._copy_files_OLD(list_lib, lib_dir_image)
-        for f in list_lib:
-            Msg().out(f)
-
-        #####
-
-    def _get_file_list(self, basedir, filepattern, exclpattern):
-        list_files = []
-        for root, dirs, files in os.walk(basedir):
-            for f in files:
-                if re.search(filepattern, f):
-                    if not re.search(exclpattern, f):
-                        list_files.append(os.path.join(root, f))
-        return list_files
-
-    def _copy_files_OLD(self, list_files, targetdir):
-        for f in list_files:
-            fname = os.path.basename(f)
-            Msg().out('FILE to be copied: ', fname, ' IN:', os.path.dirname(f))
-            if os.path.isfile(f):
-                try:
-                    if os.path.islink(f):
-                        linkto = os.readlink(f)
-                        os.symlink(linkto, targetdir + os.sep + fname)
-                    else:
-                        shutil.copy(f, targetdir)
-                except IOError as e:
-                    print("Unable to copy file. %s" % e)
-                Msg().out(f)
-
-## End mdavid implementation
-##############################
+    # End mdavid implementation
 
     def do_install(self, cmdp):
         """
