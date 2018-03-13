@@ -6458,7 +6458,7 @@ class Udocker(object):
         for fname in list_files:
             full_srcname = source_dir + fname
             full_dstname = target_dir + fname
-            if os.path.isfile(full_dstname):
+            if os.path.isfile(full_dstname) or os.path.islink(full_dstname):
                 try:
                     os.remove(full_dstname)
                 except OSError:
