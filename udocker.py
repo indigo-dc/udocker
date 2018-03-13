@@ -6371,7 +6371,6 @@ class Udocker(object):
         # get ostype and copy files in /etc
         host_dir = '/etc/'
         cont_dir = host_dir
-        os_type_host = self._get_os_type(host_dir)
         os_type_cont = self._get_os_type(cont_root + cont_dir)
         self._copy_files(host_dir, cont_dir, list_etc, cont_root)
 
@@ -6387,7 +6386,7 @@ class Udocker(object):
         else:
             cont_dir = '/usr/lib64/'
         list_libs = self._get_nvidia_libs(host_dir)
-        Msg().out(os_type_host, os_type_cont, host_dir, cont_dir)
+        Msg().out(os_type_cont, host_dir, cont_dir)
         self._copy_files(host_dir, cont_dir, list_libs, cont_root)
 
     def _find_host_libs(self):
