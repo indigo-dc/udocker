@@ -638,6 +638,7 @@ given container.
 Options:
 
 * `--execmode=XY` choose an execution mode
+* `--nvidia` set NVIDIA GPU mode
 * `--force` force the selection of the execution mode, can be used to
   force the change of an execution mode when it fails namely if it is
   transferred to a remote host while in one of the Fn modes.
@@ -723,6 +724,9 @@ Quick examples:
 
   udocker setup  --execmode=S1  mycontainer
   udocker run  mycontainer  /bin/ls
+
+  udocker setup  --execmode=F3 --nvidia  mycontainer
+  udocker run  mycontainer nvidia-smi
 ```
 
 ## 4. Running MPI Jobs
@@ -844,27 +848,29 @@ performance (see section 3.23).
 
 ## 5. Accessing GP/GPUs
 
-The host (either the physical machine or VM) where the container will run has to have
-the NVIDIA driver installed. Moreover, the NVIDIA driver version has to be known apriori,
-since the docker image has to have the exact same version as the host
+To run OpenCL or CUDA applications laveraging NVIDIA GPUs, the setup option
+`--nvidia` should be set. With this option there is no more the need to install
+the NVIDIA drivers and libraries in the image. With this mode, one can
+use base images from the official NVIDIA dockerhub repositories:
 
-Base docker images with several version of the NVIDIA driver can be found in dockerhub:
+* https://hub.docker.com/r/nvidia/cuda/
 
-* https://hub.docker.com/r/lipcomputing/nvidia-ubuntu16.04/
-* https://hub.docker.com/r/lipcomputing/nvidia-centos7/
+Images built with the the NVIDIA drivers and libraries will still work on
+this mode, this is the case of:
 
-In the tags tab one can check which versions are available. Dockerfiles and Ansible
-roles used to build these images are in the github repository: 
-https://github.com/LIP-Computing/ansible-role-nvidia 
+* https://hub.docker.com/r/indigodatacloudapps/disvis/
+* https://hub.docker.com/r/indigodatacloudapps/powerfit/
 
-Examples of using those NVIDIA base images with a given application are the "disvis" and 
-"powerfit" images whose Dockerfiles and Ansible roles can be found in:
+The following example uses the image tensorflow/tensorflow:latest-gpu-py3
+```bash
+udocker pull tensorflow/tensorflow:latest-gpu-py3
+udocker create --name=tf tensorflow/tensorflow:latest-gpu-py3
+udocker setup --execmode=F3 --nvidia tf
 
-* https://github.com/indigo-dc/ansible-role-disvis-powerfit
-
-In order to build your docker image with a given CUDA or OpenCL application, the 
-aforementioned images can be used. When the docker image with your application has 
-been built you can run the udocker with that image has described in the previous sections.
+git clone https://github.com/vykozlov/tf-benchmarks.git
+udocker run -v <SOMEDIR>/tf-benchmarks:/home/tf-benchmarks tf \
+ python /home/tf-benchmarksbenchmark_alexnet.py
+```
 
 ## 6. Accessing and transferring udocker containers
 
