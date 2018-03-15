@@ -101,9 +101,10 @@ Setup of authentication information for access to remote Docker registries. Enab
 .BR logout " " [ " " \-a " " ] " " | " " --registry=REGISTRY
 Remove authentication information created by "login". By default authentication is removed for the default REGISTRY. A specific REGISTRY can be specified with --registry. Alternatively ALL previously entered authentication information can be removed with the -a option.
 .TP
-.BR setup " "  --execmode=<Pn> " " | " " --execmode=<Fn> " " |  " " --execmode=<Rn> " " | " " --force " " | " " CONTAINER\-ID
+.BR setup " "  --execmode=<Pn> " " | " " --execmode=<Fn> " " |  " " --execmode=<Rn> " " | " " --nvidia " " | " " --force " " | " " CONTAINER\-ID
 Change container execution settings. The option --execmode enables selection of an alternative execution engine. (EXPERIMENTAL)
 In certain cases when experiencing execution errors changing the execution mode to mode P1 may solve the problem.
+The option --nvidia is EXPERIMENTAL, it activates the use of GPUs for the container.
 .TP
 .BR run " " [ " " RUNOPTIONS " " ] " " IMAGE " " | " " CONTAINER-ID " " | " " ALIAS " " [ " " COMMAND " " ARG1 " " ARG2 " " ... " " ]
 Execute a CONTAINER identified by CONTAINER-ID or ALIAS name. If an IMAGE name is provided instead of a CONTAINER-ID or ALIAS, then a CONTAINER will be automatically created from the specified IMAGE and executed. The "run" command will try to respect the execution information specified in the container or image metadata, if such information is not provided it will try to find a shell interpreter inside the container and execute it. Optionally a COMMAND to be executed inside the CONTAINER environment can be provided in the command line. The following RUNOPTIONS are available:
