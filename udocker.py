@@ -6344,11 +6344,10 @@ class Udocker(object):
             Msg().err("Error: container is protected")
             return False
 
-        # Implement here the NVIDIA lib copy: mariojmdavid@gmail.com
+        # Implement here the NVIDIA GPU support
         if nvidia:
             Msg().out("NVIDIA Option set")
             self._set_nvidia(container_id)
-        #####
 
         exec_mode = ExecutionMode(self.localrepo, container_id)
         if xmode:
@@ -6356,7 +6355,7 @@ class Udocker(object):
         Msg().out("execmode: %s" % (exec_mode.get_mode()))
         return True
 
-    # Implement here the NVIDIA lib copy: mariojmdavid@gmail.com
+    # Implement here the NVIDIA GPU support
     def _set_nvidia(self, container_id):
         container_dir = ''
         container_json = {}
@@ -6365,10 +6364,11 @@ class Udocker(object):
                 self.localrepo, container_id).get_container_attr()
 
         cont_root = container_dir + os.sep + 'ROOT'
-        Msg().out("ROOT and JSON", cont_root, container_json)
+        Msg().err("Info: Container ROOT dir:", cont_root)
+        Msg().err("Info: JSON:", container_json)
         (list_etc, list_bin) = self._get_nvidia_files()
 
-        # get ostype and copy files in /etc
+        # get container ostype and copy files in /etc
         host_dir = '/etc/'
         cont_dir = host_dir
         os_type_cont = self._get_os_type(cont_root + cont_dir)
@@ -6386,7 +6386,9 @@ class Udocker(object):
         else:
             cont_dir = '/usr/lib64/'
         list_libs = self._get_nvidia_libs(host_dir)
-        Msg().out(os_type_cont, host_dir, cont_dir)
+        Msg().err("Debug: Container OSType:", os_type_cont)
+        Msg().err("Debug: lib host dir:", host_dir)
+        Msg().err("Debug: lib container dir:", cont_dir)
         self._copy_files(host_dir, cont_dir, list_libs, cont_root)
 
     def _find_host_libs(self):
@@ -6424,7 +6426,7 @@ class Udocker(object):
 
     def _get_nvidia_libs(self, host_dir):
         list_nvidia_libs = []
-        ''' try with less libs
+        ''' Full list of nvidia libs
         list_lib = ['libEGL_nvidia.', 'libEGL.', 'libGLdispatch.',
                     'libGLESv1_CM_nvidia.', 'libGLESv1_CM.', 'libGLESv2_nvidia.',
                     'libGLESv2.', 'libGL.', 'libGLX_indirect.', 'libGLX_nvidia.',
@@ -6461,7 +6463,7 @@ class Udocker(object):
                 try:
                     os.remove(full_dstname)
                 except OSError:
-                    Msg().out("Unable to remove target file. %s"
+                    Msg().err("Error: Unable to remove target file. %s"
                               % full_dstname)
             if os.path.isfile(full_srcname):
                 full_targetdir = os.path.dirname(full_dstname)
@@ -6469,7 +6471,8 @@ class Udocker(object):
                     try:
                         os.makedirs(full_targetdir, 0755)
                     except OSError:
-                        pass
+                        Msg().err("Warning: problem creating dir. %s"
+                                  % full_targetdir)
                 try:
                     if os.path.islink(full_srcname):
                         linkto = os.readlink(full_srcname)
@@ -6477,10 +6480,9 @@ class Udocker(object):
                     else:
                         shutil.copy(full_srcname, full_dstname)
                 except IOError as e:
-                    Msg().out("Unable to copy file. %s" % e)
-                Msg().out(full_srcname, full_dstname)
-
-    # End mdavid implementation
+                    Msg().err("Error: Unable to copy file. %s" % e)
+                Msg().err("Debug: src filename: %s , dst filename: %s"
+                          % (full_srcname, full_dstname))
 
     def do_install(self, cmdp):
         """
