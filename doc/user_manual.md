@@ -846,7 +846,7 @@ this situation other execution modes (such as Fn) may provide significantly high
 performance (see section 3.23).
 
 
-## 5. Accessing GP/GPUs
+## 5. Accessing GPUs
 
 To run OpenCL or CUDA applications laveraging NVIDIA GPUs, the setup option
 `--nvidia` should be set. With this option there is no more the need to install
@@ -862,6 +862,7 @@ this mode, this is the case of:
 * https://hub.docker.com/r/indigodatacloudapps/powerfit/
 
 The following example uses the image tensorflow/tensorflow:latest-gpu-py3
+
 ```bash
 udocker pull tensorflow/tensorflow:latest-gpu-py3
 udocker create --name=tf tensorflow/tensorflow:latest-gpu-py3
