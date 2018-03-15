@@ -6541,6 +6541,9 @@ class Udocker(object):
           login                         :Login into docker repository
           logout                        :Logout from docker repository
 
+	  version			:Shows udocker version and exits
+	  --version			:Shows udocker version and exits
+
           help                          :This help
           run --help                    :Command specific help
 
@@ -6765,7 +6768,7 @@ class Main(object):
     def __init__(self):
         self.cmdp = CmdParser()
         parseok = self.cmdp.parse(sys.argv)
-        if self.cmdp.get("", "CMD") == "version":
+        if self.cmdp.get("", "CMD") == "version" or self.cmdp.get("--version", "GEN_OPT"):
             self._version()
             sys.exit(0)
         if not parseok:
