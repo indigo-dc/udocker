@@ -727,37 +727,22 @@ class FileUtilTestCase(unittest.TestCase):
         self.assertFalse(status)
 
     @mock.patch('udocker.Msg')
-    @mock.patch('udocker.subprocess.call')
-    @mock.patch('udocker.os.path.isfile')
-    def test_06_verify_tar01(self, mock_isfile, mock_call, mock_msg):
+    @mock.patch('udocker.tarfile.is_tarfile')
+    def test_06_verify_tar01(self, mock_istarfile, mock_msg):
         """Test FileUtil.verify_tar() check tar file."""
         mock_msg.level = 0
-        mock_isfile.return_value = False
-        mock_call.return_value = 0
+        mock_istarfile.return_value = False
         status = udocker.FileUtil("tarball.tar").verify_tar()
         self.assertFalse(status)
 
     @mock.patch('udocker.Msg')
-    @mock.patch('udocker.subprocess.call')
-    @mock.patch('udocker.os.path.isfile')
-    def test_07_verify_tar02(self, mock_isfile, mock_call, mock_msg):
+    @mock.patch('udocker.tarfile.is_tarfile')
+    def test_07_verify_tar02(self, mock_istarfile, mock_msg):
         """Test FileUtil.verify_tar() check tar file."""
         mock_msg.level = 0
-        mock_isfile.return_value = True
-        mock_call.return_value = 0
+        mock_istarfile.return_value = True
         status = udocker.FileUtil("tarball.tar").verify_tar()
         self.assertTrue(status)
-
-    @mock.patch('udocker.Msg')
-    @mock.patch('udocker.subprocess.call')
-    @mock.patch('udocker.os.path.isfile')
-    def test_08_verify_tar03(self, mock_isfile, mock_call, mock_msg):
-        """Test FileUtil.verify_tar() check tar file."""
-        mock_msg.level = 0
-        mock_isfile.return_value = True
-        mock_call.return_value = 1
-        status = udocker.FileUtil("tarball.tar").verify_tar()
-        self.assertFalse(status)
 
     @mock.patch('udocker.Config')
     @mock.patch('udocker.FileUtil.remove')

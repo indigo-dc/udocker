@@ -30,6 +30,7 @@ import time
 import pwd
 import grp
 import platform
+import tarfile
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me",
@@ -866,17 +867,14 @@ class FileUtil(object):
 
     def verify_tar(self):
         """Verify a tar file"""
-        if not os.path.isfile(self.filename):
-            return False
-        else:
-            cmd = "tar t"
+        try:
+            is_tar = tarfile.is_tarfile(self.filename)
             if Msg.level >= Msg.VER:
-                cmd += "v"
-            cmd += "f " + self.filename
-            if subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
-                               stdout=Msg.chldnul, close_fds=True):
-                return False
-            return True
+                t = tarfile.TarFile(self.filename)
+                Msg.out(t.list(verbose=False))
+        except:
+            return False
+        return is_tar
 
     def cleanup(self):
         """Delete all temporary files"""
