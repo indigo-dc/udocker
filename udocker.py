@@ -3604,14 +3604,20 @@ class ContainerStructure(object):
     def _dict_to_str(self, in_dict):
         """Convert dict to str"""
         out_str = ""
-        for (key, val) in in_dict.iteritems():
+        keys = in_dict.keys()
+        keys.sort()
+        for key in keys:
+            val = in_dict.get(key)
             out_str += "%s:%s " % (str(key), str(val))
         return out_str
 
     def _dict_to_list(self, in_dict):
         """Convert dict to list"""
         out_list = []
-        for (key, val) in in_dict.iteritems():
+        keys = in_dict.keys()
+        keys.sort()
+        for key in keys:
+            val = in_dict.get(key)
             out_list.append("%s:%s" % (str(key), str(val)))
         return out_list
 
