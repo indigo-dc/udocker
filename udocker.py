@@ -5619,14 +5619,15 @@ class Udocker(object):
     def _search_print_v1(self, repo_list):
         """Print search results from v1 API"""
         for repo in repo_list["results"]:
-            if repo["is_official"]:
+            if "is_official" in repo and repo["is_official"]:
                 is_official = "[OK]"
             else:
                 is_official = "----"
             description = ""
-            for char in repo["description"]:
-                if char in string.printable:
-                    description += char
+            if "description" in repo and repo["description"] is not None:
+                for char in repo["description"]:
+                    if char in string.printable:
+                        description += char
             Msg().out("%-40.40s %8.8s %s"
                       % (repo["name"], is_official, description))
 
