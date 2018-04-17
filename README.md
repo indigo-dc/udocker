@@ -1,12 +1,4 @@
-.. image:: doc/logo-small.png
-   :height: 50px
-   :width: 41 px
-   :scale: 100 %
-   :alt: alternate text
-   :align: right
-   
-.. User Space Containers
-=====================
+![logo](https://raw.githubusercontent.com/indigo-dc/udocker/master/doc/logo-small.png)
 
 udocker
 =======
