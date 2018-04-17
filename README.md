@@ -1,7 +1,5 @@
 ![logo](https://raw.githubusercontent.com/indigo-dc/udocker/master/doc/logo-small.png)
 
-udocker
-=======
 A basic user tool to execute simple docker containers in user space
 without requiring root privileges. Enables download and execution
 of docker containers by non-privileged users in Linux systems where 
