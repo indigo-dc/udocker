@@ -1,3 +1,13 @@
+.. image:: doc/logo-small.png
+   :height: 50px
+   :width: 41 px
+   :scale: 100 %
+   :alt: alternate text
+   :align: right
+   
+.. User Space Containers
+=====================
+
 udocker
 =======
 A basic user tool to execute simple docker containers in user space
