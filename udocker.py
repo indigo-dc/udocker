@@ -1504,9 +1504,13 @@ class ElfPatcher(object):
     def restore_ld(self):
         """Restore ld.so"""
         elf_loader = self.get_container_loader()
-        if FileUtil(self._container_ld_so_orig).size() == -1:
+        if FileUtil(self._container_ld_so_orig).size() <= 0:
+            Msg().err("Error: original loader not found or empty")
             return False
-        return FileUtil(self._container_ld_so_orig).copyto(elf_loader)
+        if not FileUtil(self._container_ld_so_orig).copyto(elf_loader):
+            Msg().err("Error: in loader copy or file locked by other process")
+            return False
+        return True
 
     def _get_ld_config(self):
         """Get get directories from container ld.so.cache"""
@@ -1761,7 +1765,11 @@ class FileBind(object):
         FileUtil(self.container_bind_dir).remove()
 
     def start(self, files_list):
-        """Prepare to run"""
+        """Prepare host files to be made available inside container
+        files_list: is the initial list of files to be made available
+        returns: the directory that holds the files and that must be
+                 binded inside the container
+        """
         self.host_bind_dir = FileUtil("BIND_FILES").mktmpdir()
         for f_name in files_list:
             if not os.path.isfile(f_name):
@@ -1878,7 +1886,7 @@ class ExecutionEngineCommon(object):
         return True
 
     def _set_cpu_affinity(self):
-        """set the cpu affinity string for container run command"""
+        """Set the cpu affinity string for container run command"""
         # find set affinity executable
         if not self.opt["cpuset"]:
             return []
@@ -1895,6 +1903,33 @@ class ExecutionEngineCommon(object):
         self.opt["cpuset"] = ""
         return []
 
+    def _cleanpath(self, pathname):
+        """Remove duplicate and trailing slashes"""
+        clean_path = ""
+        p_char = ''
+        for char in str(pathname):
+            if not clean_path:
+                clean_path = char
+            else:
+                if not (char == p_char and char == '/'):
+                    clean_path += char
+            p_char = char
+        if clean_path == "/":
+            return clean_path
+        else:
+            return clean_path.rstrip('/')
+
+    def _vol_split(self, vol):
+        """Split volume string host_path:container_path into list"""
+        try:
+            (host_dir, cont_dir) = vol.split(":", 1)
+            if not cont_dir:
+                cont_dir = host_dir
+        except ValueError:
+            host_dir = vol
+            cont_dir = vol
+        return (self._cleanpath(host_dir), self._cleanpath(cont_dir))
+
     def _cont2host(self, pathname):
         """Translate container path to host path"""
         if not (pathname and pathname.startswith("/")):
@@ -1903,12 +1938,12 @@ class ExecutionEngineCommon(object):
         real_container_root = os.path.realpath(self.container_root)
         pathname = re.sub("/+", "/", os.path.normpath(pathname))
         for vol in self.opt["vol"]:
-            if ":" in vol:
-                (host_path, cont_path) = vol.split(":", 1)
+            (host_path, cont_path) = self._vol_split(vol)
+            if cont_path != host_path:
                 if pathname.startswith(cont_path):
                     path = host_path + pathname[len(cont_path):]
                     break
-            elif pathname.startswith(vol):
+            elif pathname.startswith(host_path):
                 path = pathname
                 break
         if not path:
@@ -1946,22 +1981,17 @@ class ExecutionEngineCommon(object):
     def _check_volumes(self):
         """Check volume paths"""
         for vol in list(self.opt["vol"]):
-            if ":" in vol:
-                (host_path, cont_path) = vol.split(":", 1)
-                self._create_mountpoint(host_path, cont_path)
-            else:
-                host_path = vol
-                cont_path = ""
-                self._create_mountpoint(host_path, host_path)
-            if cont_path and (cont_path.endswith("/") or
-                              not cont_path.startswith("/")):
-                Msg().err("Error: invalid volume destination path:", cont_path)
+            (host_path, cont_path) = self._vol_split(vol)
+            if not host_path:
+                Msg().err("Error: invalid volume host directory:", host_path)
                 return False
-            elif not (host_path and host_path.startswith("/") and
-                      not host_path.endswith("/")):
-                Msg().err("Error: invalid volume spec:", vol)
+            if cont_path and not cont_path.startswith("/"):
+                Msg().err("Error: invalid volume container directory:", cont_path)
                 return False
-            elif not os.path.exists(host_path):
+            if host_path and not host_path.startswith("/"):
+                Msg().err("Error: invalid volume host directory:", host_path)
+                return False
+            if not os.path.exists(host_path):
                 if (host_path in Config.dri_list or
                         host_path in Config.sysdirs_list or
                         host_path in Config.hostauth_list):
@@ -1969,6 +1999,7 @@ class ExecutionEngineCommon(object):
                 else:
                     Msg().err("Error: invalid host volume path:", host_path)
                     return False
+            self._create_mountpoint(host_path, cont_path)
         return True
 
     def _get_bindhome(self):
@@ -1980,11 +2011,8 @@ class ExecutionEngineCommon(object):
     def _is_volume(self, path):
         """Is path a host_path in the volumes list"""
         for vol in list(self.opt["vol"]):
-            if ":" in vol:
-                (host_path, dummy) = vol.split(":", 1)
-            else:
-                host_path = vol
-            if host_path and host_path == path:
+            (host_path, dummy) = self._vol_split(vol)
+            if host_path and host_path == self._cleanpath(path):
                 return True
         return False
 
@@ -2528,7 +2556,7 @@ class PRootEngine(ExecutionEngineCommon):
         """Get the volume bindings string for container run command"""
         proot_vol_list = []
         for vol in self.opt["vol"]:
-            proot_vol_list.extend(["-b", vol])
+            proot_vol_list.extend(["-b", "%s:%s" % self._vol_split(vol)])
         return proot_vol_list
 
     def _get_network_map(self):
@@ -2742,12 +2770,8 @@ class RuncEngine(ExecutionEngineCommon):
         """Get the volume bindings string for runc"""
         (host_dir, cont_dir) = self._filebind.start(Config.sysdirs_list)
         self._add_mount_spec(host_dir, cont_dir, rwmode=True)
-        for volume in self.opt["vol"]:
-            try:
-                (host_dir, cont_dir) = volume.split(":", 1)
-            except ValueError:
-                host_dir = volume
-                cont_dir = volume
+        for vol in self.opt["vol"]:
+            (host_dir, cont_dir) = self._vol_split(vol)
             if os.path.isdir(host_dir):
                 if host_dir == "/dev":
                     Msg().err("Warning: this engine does not support -v",
@@ -2891,33 +2915,29 @@ class SingularityEngine(ExecutionEngineCommon):
     def _get_volume_bindings(self):
         """Get the volume bindings string for singularity exec"""
         vol_list = []
-        (host_dir, cont_dir) = self._filebind.start(Config.sysdirs_list)
-        vol_list.extend(["-B", "%s:%s" % (host_dir, cont_dir), ])
+        (tmphost_path, tmpcont_path) = self._filebind.start(Config.sysdirs_list)
+        vol_list.extend(["-B", "%s:%s" % (tmphost_path, tmpcont_path), ])
         home_dir = NixAuthentication().get_home()
         home_is_binded = False
         tmp_is_binded = False
         vartmp_is_binded = False
-        for volume in self.opt["vol"]:
-            try:
-                (host_dir, cont_dir) = volume.split(":", 1)
-            except ValueError:
-                host_dir = volume
-                cont_dir = volume
-            if os.path.isdir(host_dir):
-                if host_dir == home_dir and cont_dir in ("", host_dir):
+        for vol in self.opt["vol"]:
+            (host_path, cont_path) = self._vol_split(vol)
+            if os.path.isdir(host_path):
+                if host_path == home_dir and cont_path in ("", host_path):
                     home_is_binded = True
-                elif host_dir == "/tmp" and cont_dir in ("", "/tmp"):
+                elif host_path == "/tmp" and cont_path in ("", "/tmp"):
                     tmp_is_binded = True
-                elif host_dir == "/var/tmp" and cont_dir in ("", "/var/tmp"):
+                elif host_path == "/var/tmp" and cont_path in ("", "/var/tmp"):
                     vartmp_is_binded = True
                 else:
-                    vol_list.extend(["-B", volume, ])
-            elif os.path.isfile(host_dir):
-                if cont_dir not in Config.sysdirs_list:
+                    vol_list.extend(["-B", "%s:%s" % (host_path, cont_path), ])
+            elif os.path.isfile(host_path):
+                if cont_path not in Config.sysdirs_list:
                     Msg().err("Error: engine does not support file mounting:",
-                              host_dir)
+                              host_path)
                 else:
-                    self._filebind.add(host_dir, cont_dir)
+                    self._filebind.add(host_path, cont_path)
         if not home_is_binded:
             vol_list.extend(["--home", "%s/root:%s" % (self.container_root, "/root"), ])
         if not tmp_is_binded:
@@ -3105,18 +3125,14 @@ class FakechrootEngine(ExecutionEngineCommon):
         host_volumes_list = []
         map_volumes_list = []
         map_volumes_dict = dict()
-        for volume in self.opt["vol"]:
-            try:
-                (host_dir, cont_dir) = volume.split(":", 1)
-            except ValueError:
-                host_dir = volume
-                cont_dir = ""
-            if (not cont_dir) or host_dir == cont_dir:
-                host_volumes_list.append(host_dir)
+        for vol in self.opt["vol"]:
+            (host_path, cont_path) = self._vol_split(vol)
+            if host_path == cont_path:
+                host_volumes_list.append(host_path)
             else:
-                map_volumes_dict[cont_dir] = host_dir + "!" + cont_dir
-        for cont_dir in sorted(map_volumes_dict, reverse=True):
-            map_volumes_list.append(map_volumes_dict[cont_dir])
+                map_volumes_dict[cont_path] = host_path + "!" + cont_path
+        for cont_path in sorted(map_volumes_dict, reverse=True):
+            map_volumes_list.append(map_volumes_dict[cont_path])
         return (":".join(host_volumes_list), ":".join(map_volumes_list))
 
     def _get_access_filesok(self):
@@ -3329,7 +3345,7 @@ class ExecutionMode(object):
             if prev_xmode in ("P1", "P2", "F1", "R1", "S1"):
                 status = True
             elif force or prev_xmode in ("F2", "F3", "F4"):
-                status = (elfpatcher.restore_ld() and
+                status = ((elfpatcher.restore_ld() or force) and
                           elfpatcher.restore_binaries())
             if xmode in ("R1", "S1"):
                 filebind.setup()
@@ -3345,7 +3361,7 @@ class ExecutionMode(object):
             elif prev_xmode in ("F3", "F4"):
                 status = True
         if xmode[0] in ("P", "R", "S"):
-            if force or prev_xmode.startswith("F"):
+            if force or (status and prev_xmode.startswith("F")):
                 status = FileUtil(self.container_root).links_conv(force, False,
                                                                   orig_path)
         if status or force:
@@ -4453,16 +4469,20 @@ class GetURL(object):
     def set_insecure(self, bool_value=True):
         """Use insecure downloads no SSL verification"""
         self.insecure = bool_value
+        self._geturl.insecure = bool_value
 
     def set_proxy(self, http_proxy):
         """Specify a socks http proxy"""
         self.http_proxy = http_proxy
+        self._geturl.http_proxy = http_proxy
 
     def get(self, *args, **kwargs):
         """Get URL using selected implementation
         Example:
             get(url, ctimeout=5, timeout=5, header=[]):
         """
+        print "GetURL: " + str(self.http_proxy)
+
         if len(args) != 1:
             raise TypeError('wrong number of arguments')
         return self._geturl.get(*args, **kwargs)
@@ -4562,6 +4582,10 @@ class GetURLpyCurl(GetURL):
         url = str(args[0])
         pyc.setopt(pycurl.URL, url)
         self._set_defaults(pyc, hdr)
+
+        print "GetURLpyCurl: " + str(self.http_proxy)
+        print "GetURLpyCurl ctimeout: " + str(self.ctimeout)
+
         try:
             (output_file, filep) = self._mkpycurl(pyc, hdr, buf, **kwargs)
             Msg().err("curl url: ", url, l=Msg.DBG)
@@ -5133,8 +5157,10 @@ class DockerIoAPI(object):
             self.localrepo.setup_imagerepo(imagerepo)
             new_repo = True
         if self.is_v2():
+            print "V2"
             files = self.get_v2(remoterepo, tag)  # try v2
         else:
+            print "V1"
             files = self.get_v1(remoterepo, tag)  # try v1
         if new_repo and not files:
             self.localrepo.del_imagerepo(imagerepo, tag, False)
