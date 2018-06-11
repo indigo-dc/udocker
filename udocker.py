@@ -4481,8 +4481,6 @@ class GetURL(object):
         Example:
             get(url, ctimeout=5, timeout=5, header=[]):
         """
-        print "GetURL: " + str(self.http_proxy)
-
         if len(args) != 1:
             raise TypeError('wrong number of arguments')
         return self._geturl.get(*args, **kwargs)
@@ -4582,10 +4580,6 @@ class GetURLpyCurl(GetURL):
         url = str(args[0])
         pyc.setopt(pycurl.URL, url)
         self._set_defaults(pyc, hdr)
-
-        print "GetURLpyCurl: " + str(self.http_proxy)
-        print "GetURLpyCurl ctimeout: " + str(self.ctimeout)
-
         try:
             (output_file, filep) = self._mkpycurl(pyc, hdr, buf, **kwargs)
             Msg().err("curl url: ", url, l=Msg.DBG)
@@ -5157,10 +5151,8 @@ class DockerIoAPI(object):
             self.localrepo.setup_imagerepo(imagerepo)
             new_repo = True
         if self.is_v2():
-            print "V2"
             files = self.get_v2(remoterepo, tag)  # try v2
         else:
-            print "V1"
             files = self.get_v1(remoterepo, tag)  # try v1
         if new_repo and not files:
             self.localrepo.del_imagerepo(imagerepo, tag, False)
