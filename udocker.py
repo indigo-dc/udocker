@@ -4188,7 +4188,7 @@ class LocalRepository(object):
                     return(container_json, files)
         elif os.path.exists(directory + "/v2"):  # if dockerhub API v1
             manifest = self.load_json("manifest")
-            if manifest:
+            if manifest and manifest["fsLayers"]:
                 for layer in reversed(manifest["fsLayers"]):
                     layer_file = directory + "/" + layer["blobSum"]
                     if not os.path.exists(layer_file):
