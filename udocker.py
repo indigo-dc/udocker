@@ -4972,6 +4972,7 @@ class DockerIoAPI(object):
                     auth_header = "Authorization: Bearer " + \
                         auth_token["token"]
                     self.v2_auth_header = auth_header
+        # PR #126
         elif 'BASIC' in bearer:
             auth_header = "Authorization: Basic %s" %(self.v2_auth_token)
             self.v2_auth_header = auth_header
