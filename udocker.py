@@ -6119,6 +6119,8 @@ class Udocker(object):
         -l                         :long format
         """
         verbose = cmdp.get("-l")
+        dummy = cmdp.get("--no-trunc")
+        dummy = cmdp.get("--all")
         if cmdp.missing_options():               # syntax error
             return False
         images_list = self.localrepo.get_imagerepos()
