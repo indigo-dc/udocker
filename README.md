@@ -281,7 +281,7 @@ When citing udocker please use the following:
 ## Acknowledgements
 
 * Docker https://www.docker.com/
-* PRoot http://proot.me
+* PRoot https://proot-me.github.io/
 * Fakechroot https://github.com/dex4er/fakechroot/wiki
 * runC https://runc.io/
 * Singularity http://singularity.lbl.gov
