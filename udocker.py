@@ -171,7 +171,7 @@ class Config(object):
     # defaults for container execution
     cmd = ["/bin/bash", "-i"]  # Comand to execute
 
-    # dafault path for executables
+    # default path for executables
     root_path = "/usr/sbin:/sbin:/usr/bin:/bin"
     user_path = "/usr/local/bin:/usr/bin:/bin"
 
@@ -970,6 +970,18 @@ class FileUtil(object):
                     return directory + "/" + self.basename
             return ""
         return ""
+
+    def list_inpath(self, path, rootdir=""):
+        """List files with path PATH=/usr/bin:/bin prepended"""
+        full_path_list = []
+        if isinstance(path, str):
+            if "=" in path:
+                path = "".join(path.split("=", 1)[1:])
+            path = path.split(":")
+        if isinstance(path, (list, tuple)):
+            for directory in path:
+                full_path_list.append(rootdir + directory + "/" + self.basename)
+        return full_path_list
 
     def rename(self, dest_filename):
         """Rename/move file"""
@@ -2058,6 +2070,7 @@ class ExecutionEngineCommon(object):
 
     def _check_executable(self):
         """Check if executable exists and has execute permissions"""
+        exec_path_list = []
         path = self._getenv("PATH")
         if self.opt["entryp"] and isinstance(self.opt["entryp"], str):
             self.opt["cmd"] = self.opt["entryp"].strip().split(" ")
@@ -2074,16 +2087,17 @@ class ExecutionEngineCommon(object):
                       l=Msg.WAR)
         exec_name = self.opt["cmd"][0]            # exec pathname without args
         if exec_name.startswith("/"):
-            exec_path = exec_name
+            exec_path_list.append(exec_name)
         elif exec_name.startswith("./") or exec_name.startswith("../"):
-            exec_path = self.opt["cwd"] + "/" + exec_name
+            exec_path_list.append(self.opt["cwd"] + "/" + exec_name)
         else:
-            exec_path = \
-                FileUtil(exec_name).find_inpath(path, self.container_root + "/")
-        host_exec_path = self._cont2host(exec_path)
-        if (os.path.isfile(host_exec_path) and
-                os.access(host_exec_path, os.X_OK)):
-            return self.container_root + "/" + exec_path
+            exec_path_list = \
+                FileUtil(exec_name).list_inpath(path, "/")
+        for exec_path in exec_path_list:
+            host_exec_path = self._cont2host(exec_path)
+            if (os.path.isfile(host_exec_path) and
+                    os.access(host_exec_path, os.X_OK)):
+                return self.container_root + "/" + exec_path
         Msg().err("Error: command not found or has no execute bit set: ",
                   self.opt["cmd"])
         return ""
@@ -3600,7 +3614,7 @@ class ContainerStructure(object):
             confidx = "config"
         elif "container_config" in container_json:
             confidx = "container_config"
-        if param in container_json[confidx]:
+        if container_json[confidx]  and param in container_json[confidx]:
             if container_json[confidx][param] is None:
                 pass
             elif (isinstance(container_json[confidx][param], str) and (
