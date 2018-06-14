@@ -7103,7 +7103,7 @@ class UdockerTestCase(unittest.TestCase):
     @mock.patch('udocker.DockerIoAPI')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.LocalRepository')
-    def test_22_do_rmname(self, mock_local, mock_msg, mock_dioapi,
+    def test_23_do_rmname(self, mock_local, mock_msg, mock_dioapi,
                           mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
         """Test Udocker().do_rmname()."""
         self._init()
@@ -7141,7 +7141,7 @@ class UdockerTestCase(unittest.TestCase):
     @mock.patch('udocker.DockerIoAPI')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.LocalRepository')
-    def test_23_do_inspect(self, mock_local, mock_msg, mock_dioapi,
+    def test_24_do_inspect(self, mock_local, mock_msg, mock_dioapi,
                            mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg,
                            mock_cstruct, mock_json):
         """Test Udocker().do_inspect()."""
@@ -7190,7 +7190,7 @@ class UdockerTestCase(unittest.TestCase):
     @mock.patch('udocker.DockerIoAPI')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.LocalRepository')
-    def test_24_do_verify(self, mock_local, mock_msg, mock_dioapi,
+    def test_25_do_verify(self, mock_local, mock_msg, mock_dioapi,
                           mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
         """Test Udocker().do_verify()."""
         self._init()
@@ -7300,7 +7300,7 @@ class UdockerTestCase(unittest.TestCase):
     @mock.patch('udocker.DockerIoAPI')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.LocalRepository')
-    def test_16_do_setup(self, mock_local, mock_msg, mock_dioapi,
+    def test_28_do_setup(self, mock_local, mock_msg, mock_dioapi,
                          mock_dlocapi, mock_ks, mock_cmdp, mock_exec):
         """Test Udocker().do_setup()."""
         self._init()
@@ -7331,7 +7331,7 @@ class UdockerTestCase(unittest.TestCase):
         #
         udoc = udocker.Udocker(mock_local)
         mock_cmdp.missing_options.return_value = True
-        mock_cmdp.get.side_effect = ["", "P1", "" "", ]
+        mock_cmdp.get.side_effect = ["", "P1", "" "", "", ]
         mock_local.cd_container.return_value = True
         mock_local.isprotected_container.return_value = True
         mock_exec.set_mode.return_value = True
@@ -7340,7 +7340,7 @@ class UdockerTestCase(unittest.TestCase):
         #
         udoc = udocker.Udocker(mock_local)
         mock_cmdp.missing_options.return_value = True
-        mock_cmdp.get.side_effect = ["", "P1", "" "", ]
+        mock_cmdp.get.side_effect = ["", "P1", "" "", "", ]
         mock_local.cd_container.return_value = True
         mock_local.isprotected_container.return_value = False
         mock_exec.set_mode.return_value = True
