@@ -4435,14 +4435,14 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
     @mock.patch('udocker.Config')
     @mock.patch('udocker.os')
     @mock.patch('udocker.LocalRepository')
-    def test_14__env_cleanup(self, mock_local, mock_os, mock_config):
+    def test_14__env_cleanup_dict(self, mock_local, mock_os, mock_config):
         """Test ExecutionEngineCommon()._env_cleanup()."""
         # self._init()
         udocker.Config = mock_config
         udocker.Config.valid_host_env = ("HOME",)
         mock_os.environ = {'HOME': '/', 'USERNAME': 'user', }
         ex_eng = udocker.ExecutionEngineCommon(mock_local)
-        ex_eng._run_env_cleanup()
+        ex_eng._run_env_cleanup_dict()
         self.assertEqual(mock_os.environ, {'HOME': '/', })
 
     @mock.patch('udocker.Config')
@@ -4704,7 +4704,7 @@ class PRootEngineTestCase(unittest.TestCase):
 
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.PRootEngine._run_banner')
-    @mock.patch('udocker.PRootEngine._run_env_cleanup')
+    @mock.patch('udocker.PRootEngine._run_env_cleanup_dict')
     @mock.patch('udocker.PRootEngine._set_uid_map')
     @mock.patch('udocker.PRootEngine._get_volume_bindings')
     @mock.patch('udocker.PRootEngine._set_cpu_affinity')
@@ -4717,7 +4717,7 @@ class PRootEngineTestCase(unittest.TestCase):
     def test_07_run(self, mock_local, mock_run_init, mock_sel_proot,
                     mock_getenv, mock_run_env_set, mock_check_env,
                     mock_set_cpu_aff, mock_get_vol_bind, mock_set_uid_map,
-                    mock_env_cleanup, mock_run_banner, mock_call):
+                    mock_env_cleanup_dict, mock_run_banner, mock_call):
         """Test PRootEngine().run()."""
         mock_run_init.return_value = False
         self._init()
@@ -5192,41 +5192,6 @@ class RuncEngineTestCase(unittest.TestCase):
         status = rcex._check_env()
         self.assertFalse(status)
 
-    @mock.patch('udocker.LocalRepository')
-    def test_14__run_env_addhost(self, mock_local):
-        """Test RuncEngine()._run_env_addhost()."""
-        self._init()
-        #
-        rcex = udocker.RuncEngine(mock_local)
-        rcex.opt["env"] = ["AAAA=aaaa"]
-        status = rcex._run_env_addhost()
-        self.assertIn("AAAA=aaaa", rcex.opt["env"])
-        #
-        mock_osenv = mock.patch.dict(os.environ, {'BBBB': 'bbbb'})
-        rcex = udocker.RuncEngine(mock_local)
-        rcex.opt["env"] = ["AAAA=aaaa"]
-        mock_osenv.start()
-        status = rcex._run_env_addhost()
-        mock_osenv.stop()
-        self.assertIn("AAAA=aaaa", rcex.opt["env"])
-        self.assertIn("BBBB=bbbb", rcex.opt["env"])
-
-    @mock.patch('udocker.LocalRepository')
-    def test_15__run_env_cleanup(self, mock_local):
-        """Test RuncEngine()._run_env_cleanup()."""
-        self._init()
-        #
-        rcex = udocker.RuncEngine(mock_local)
-        rcex.opt["env"] = ["AAAA=aaaa"]
-        status = rcex._run_env_cleanup()
-        self.assertNotIn("AAAA=aaaa", rcex.opt["env"])
-        #
-        udocker.Config.valid_host_env = ("TERM", "PATH",)
-        rcex = udocker.RuncEngine(mock_local)
-        rcex.opt["env"] = ["PATH=/"]
-        status = rcex._run_env_cleanup()
-        self.assertIn("PATH=/", rcex.opt["env"])
-
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.FileBind')
@@ -5239,8 +5204,6 @@ class RuncEngineTestCase(unittest.TestCase):
     @mock.patch('udocker.RuncEngine._set_spec')
     @mock.patch('udocker.RuncEngine._check_env')
     @mock.patch('udocker.RuncEngine._run_env_set')
-    @mock.patch('udocker.RuncEngine._run_env_cleanup')
-    @mock.patch('udocker.RuncEngine._run_env_addhost')
     @mock.patch('udocker.RuncEngine._uid_check')
     @mock.patch('udocker.RuncEngine._load_spec')
     @mock.patch('udocker.RuncEngine._select_runc')
