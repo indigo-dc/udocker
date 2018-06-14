@@ -5376,7 +5376,7 @@ class DockerLocalFileAPI(object):
     def _untar_saved_container(self, tarfile, destdir):
         """Untar container created with docker save"""
         cmd = "umask 022 ; tar -C " + \
-            destdir + " -x --delay-directory-restore "
+            destdir + " -x "
         if Msg.level >= Msg.VER:
             cmd += " -v "
         cmd += " --one-file-system --no-same-owner "
