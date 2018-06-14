@@ -34,6 +34,11 @@ that offers several execution options. This version provides execution engines
 based on PRoot, Fakechroot, runC and Singularity as methods to execute Docker
 containers without privileges.
 
+The basic usage flow starts by downloading the image from an image repository in the usual way; create the container out of that image (flatenning the image on the filesystem), and finally run the container with the name we gave it in the creation process:
+
+  * `udocker pull` busybox
+  * `udocker create` --name=verybusy busybox
+  * `udocker run` verybusy
 
 ### 1.2. Limitations
 Since root privileges are not involved, any operation that really 

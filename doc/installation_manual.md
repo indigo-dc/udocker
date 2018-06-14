@@ -8,10 +8,12 @@ require any privileges.
 
 ## 1. DEPENDENCIES
 
-Python dependencies are described in the file requirements.txt
+Python dependencies are described in the file requirements.txt.
 
 udocker requires either pycurl or the curl executable command,
 to download both the binaries and/or pull containers from repositories.
+
+tar is needed when using `udocker install` to unpackage binaries and libraries.
 
 ## 2. USER INSTALLATION
 

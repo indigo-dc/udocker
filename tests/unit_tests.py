@@ -3558,6 +3558,10 @@ class DockerIoAPITestCase(unittest.TestCase):
         out = doia._get_v2_auth(www_authenticate, False)
         self.assertEqual(out, "Authorization: Bearer YYY")
 
+        www_authenticate = "BASIC realm=Sonatype Nexus Repository"
+        out = doia._get_v2_auth(www_authenticate, False)
+        self.assertEqual(out, "Authorization: Basic %s" %doia.v2_auth_token)
+
 class ChkSUMTestCase(unittest.TestCase):
     """Test ChkSUM() performs checksums portably."""
 
