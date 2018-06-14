@@ -5205,13 +5205,14 @@ class RuncEngineTestCase(unittest.TestCase):
     @mock.patch('udocker.RuncEngine._check_env')
     @mock.patch('udocker.RuncEngine._run_env_set')
     @mock.patch('udocker.RuncEngine._uid_check')
+    @mock.patch('udocker.RuncEngine._run_env_cleanup_list')
     @mock.patch('udocker.RuncEngine._load_spec')
     @mock.patch('udocker.RuncEngine._select_runc')
     @mock.patch('udocker.RuncEngine._run_init')
     @mock.patch('udocker.LocalRepository')
     def test_16_run(self, mock_local, mock_run_init, mock_sel_runc,
-                    mock_load_spec, mock_uid_check, mock_env_addhost,
-                    mock_env_cleanup, mock_env_set, mock_check_env,
+                    mock_load_spec, mock_uid_check,
+                    mock_run_env_cleanup_list, mock_env_set, mock_check_env,
                     mock_set_spec, mock_add_bindings, mock_save_spec,
                     mock_run_banner, mock_del_mount_spec, mock_inv_opt,
                     mock_unique, mock_fbind, mock_msg, mock_call):
@@ -5232,25 +5233,25 @@ class RuncEngineTestCase(unittest.TestCase):
         mock_run_init.return_value = True
         mock_load_spec.return_value = True
         mock_check_env.return_value = False
-        mock_env_cleanup.reset_mock()
+        mock_run_env_cleanup_list.reset_mock()
         rcex = udocker.RuncEngine(mock_local)
         rcex.opt["hostenv"] = []
         status = rcex.run("CONTAINERID")
-        self.assertTrue(mock_env_cleanup.called)
+        self.assertTrue(mock_run_env_cleanup_list.called)
         self.assertEqual(status, 5)
         #
         mock_run_init.return_value = True
         mock_load_spec.return_value = True
         mock_check_env.return_value = True
         mock_unique.return_value.uuid.return_value = "EXECUTION_ID"
-        mock_env_cleanup.reset_mock()
+        mock_run_env_cleanup_list.reset_mock()
         mock_call.reset_mock()
         rcex = udocker.RuncEngine(mock_local)
         rcex.runc_exec = "runc"
         rcex.container_dir = "/.udocker/containers/CONTAINER/ROOT"
         rcex.opt["hostenv"] = []
         status = rcex.run("CONTAINERID")
-        self.assertTrue(mock_env_cleanup.called)
+        self.assertTrue(mock_run_env_cleanup_list.called)
         self.assertTrue(mock_call.called)
 
 
