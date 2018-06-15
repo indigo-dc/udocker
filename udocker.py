@@ -4611,12 +4611,12 @@ class GetURL(object):
     def set_insecure(self, bool_value=True):
         """Use insecure downloads no SSL verification"""
         self.insecure = bool_value
-        self._geturl.insecure = bool_value
+        # self._geturl.insecure = bool_value
 
     def set_proxy(self, http_proxy):
         """Specify a socks http proxy"""
         self.http_proxy = http_proxy
-        self._geturl.http_proxy = http_proxy
+        # self._geturl.http_proxy = http_proxy
 
     def get(self, *args, **kwargs):
         """Get URL using selected implementation
@@ -6802,7 +6802,8 @@ class Main(object):
     def __init__(self):
         self.cmdp = CmdParser()
         parseok = self.cmdp.parse(sys.argv)
-        if self.cmdp.get("", "CMD") == "version" or self.cmdp.get("--version", "GEN_OPT"):
+        #if self.cmdp.get("", "CMD") == "version" or self.cmdp.get("--version", "GEN_OPT"):
+        if self.cmdp.get("", "CMD") == "version":
             self._version()
             sys.exit(0)
         if not parseok:
