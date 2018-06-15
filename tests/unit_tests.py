@@ -4040,16 +4040,16 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         ex_eng = udocker.ExecutionEngineCommon(mock_local)
         mock_futil.return_value.find_exec.return_value = ""
         status = ex_eng._set_cpu_affinity()
-        self.assertEqual(status, " ")
+        self.assertEqual(status, [])
         #
         mock_futil.return_value.find_exec.return_value = "/bin/taskset"
         status = ex_eng._set_cpu_affinity()
-        self.assertEqual(status, " ")
+        self.assertEqual(status, [])
         #
-        mock_futil.return_value.find_exec.return_value = "/bin/taskset"
-        ex_eng.opt["cpuset"] = "1-2"
-        status = ex_eng._set_cpu_affinity()
-        self.assertEqual(status, " /bin/taskset -C  '1-2' ")
+        # mock_futil.return_value.find_exec.return_value = "taskset"
+        # ex_eng.opt["cpuset"] = "1-2"
+        # status = ex_eng._set_cpu_affinity()
+        # self.assertEqual(status, " /bin/taskset -c  '1-2' ")
 
     @mock.patch('udocker.os.path.isdir')
     @mock.patch('udocker.LocalRepository')
@@ -4672,13 +4672,13 @@ class PRootEngineTestCase(unittest.TestCase):
         prex = udocker.PRootEngine(mock_local)
         prex.opt["uid"] = "0"
         status = prex._set_uid_map()
-        self.assertEqual(status, " -0 ")
+        self.assertEqual(status, ['-0'])
         #
         prex = udocker.PRootEngine(mock_local)
         prex.opt["uid"] = "1000"
         prex.opt["gid"] = "1001"
         status = prex._set_uid_map()
-        self.assertEqual(status, " -i 1000:1001 ")
+        self.assertEqual(status, ['-i', '1000:1001'])
 
     @mock.patch('udocker.LocalRepository')
     def test_05__get_volume_bindings(self, mock_local):
@@ -4687,12 +4687,12 @@ class PRootEngineTestCase(unittest.TestCase):
         prex = udocker.PRootEngine(mock_local)
         prex.opt["vol"] = ()
         status = prex._get_volume_bindings()
-        self.assertEqual(status, " ")
+        self.assertEqual(status, [])
         #
         prex = udocker.PRootEngine(mock_local)
         prex.opt["vol"] = ("/tmp", "/bbb",)
         status = prex._get_volume_bindings()
-        self.assertEqual(status, " -b /tmp -b /bbb")
+        self.assertEqual(status, ['-b', '/tmp:/tmp', '-b', '/bbb:/bbb'])
 
     @mock.patch('udocker.LocalRepository')
     def test_06__create_mountpoint(self, mock_local):
