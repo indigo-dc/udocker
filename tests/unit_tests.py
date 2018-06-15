@@ -4741,11 +4741,12 @@ class PRootEngineTestCase(unittest.TestCase):
         mock_run_init.return_value = True
         self._init()
         mock_check_env.return_value = True
-        mock_set_cpu_aff.return_value = ""
+        mock_set_cpu_aff.return_value = []
         mock_get_vol_bind.return_value = ""
         mock_set_uid_map.return_value = ""
         mock_call.return_value = 5
         prex = udocker.PRootEngine(mock_local)
+        prex.proot_exec = "/.udocker/bin/proot"
         prex.proot_noseccomp = False
         prex.opt = dict()
         prex.opt["env"] = []
@@ -4756,7 +4757,6 @@ class PRootEngineTestCase(unittest.TestCase):
         prex.opt["cwd"] = "/"
         prex.opt["cmd"] = "/bin/bash"
         prex._kernel = ""
-        prex.proot_exec = "/.udocker/bin/proot"
         prex.container_root = ""
         status = prex.run("CONTAINERID")
         self.assertEqual(status, 5)
