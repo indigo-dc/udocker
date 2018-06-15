@@ -6802,7 +6802,8 @@ class Main(object):
     def __init__(self):
         self.cmdp = CmdParser()
         parseok = self.cmdp.parse(sys.argv)
-        if self.cmdp.get("", "CMD") == "version" or self.cmdp.get("--version", "GEN_OPT"):
+        #if self.cmdp.get("", "CMD") == "version" or self.cmdp.get("--version", "GEN_OPT"):
+        if self.cmdp.get("", "CMD") == "version":
             self._version()
             sys.exit(0)
         if not parseok:

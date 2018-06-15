@@ -3976,7 +3976,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         udocker.Config = type('test', (object,), {})()
         udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
         udocker.Config.cmd = "/bin/bash"
-        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
+        udocker.Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
         udocker.Config.location = ""
         udocker.Config.uid = 1000
         udocker.Config.sysdirs_list = ["/", ]
@@ -4042,14 +4042,14 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         status = ex_eng._set_cpu_affinity()
         self.assertEqual(status, [])
         #
-        mock_futil.return_value.find_exec.return_value = "/bin/taskset"
+        mock_futil.return_value.find_exec.return_value = "taskset"
         status = ex_eng._set_cpu_affinity()
         self.assertEqual(status, [])
         #
-        # mock_futil.return_value.find_exec.return_value = "taskset"
-        # ex_eng.opt["cpuset"] = "1-2"
-        # status = ex_eng._set_cpu_affinity()
-        # self.assertEqual(status, " /bin/taskset -c  '1-2' ")
+        mock_futil.return_value.find_exec.return_value = "numactl"
+        ex_eng.opt["cpuset"] = "1-2"
+        status = ex_eng._set_cpu_affinity()
+        self.assertEqual(status, ["numactl", "-C", "1-2", "--"])
 
     @mock.patch('udocker.os.path.isdir')
     @mock.patch('udocker.LocalRepository')
@@ -4577,6 +4577,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         status = exc._is_volume("/tmp")
         self.assertFalse(status)
 
+
 class PRootEngineTestCase(unittest.TestCase):
     """Test PRootEngine() class for containers execution."""
 
@@ -4590,8 +4591,9 @@ class PRootEngineTestCase(unittest.TestCase):
         udocker.Config = mock.MagicMock()
         udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
         udocker.Config.cmd = "/bin/bash"
-        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
-        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
+                               ["taskset", "-c", "%s", ])
+        udocker.Config.valid_host_env = "HOME"
         udocker.Config.return_value.username.return_value = "user"
         udocker.Config.return_value.userhome.return_value = "/"
         udocker.Config.return_value.oskernel.return_value = "4.8.13"
@@ -4775,8 +4777,9 @@ class RuncEngineTestCase(unittest.TestCase):
         udocker.Config = mock.MagicMock()
         udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
         udocker.Config.cmd = "/bin/bash"
-        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
-        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
+                               ["taskset", "-c", "%s", ])
+        udocker.Config.valid_host_env = "HOME"
         udocker.Config.return_value.username.return_value = "user"
         udocker.Config.return_value.userhome.return_value = "/"
         udocker.Config.return_value.oskernel.return_value = "4.8.13"
@@ -5272,8 +5275,9 @@ class FakechrootEngineTestCase(unittest.TestCase):
         udocker.Config = mock.MagicMock()
         udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
         udocker.Config.cmd = "/bin/bash"
-        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
-        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
+                               ["taskset", "-c", "%s", ])
+        udocker.Config.valid_host_env = "HOME"
         udocker.Config.return_value.username.return_value = "user"
         udocker.Config.return_value.userhome.return_value = "/"
         udocker.Config.return_value.oskernel.return_value = "4.8.13"
@@ -5396,8 +5400,9 @@ class ExecutionModeTestCase(unittest.TestCase):
         udocker.Config = mock.MagicMock()
         udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
         udocker.Config.cmd = "/bin/bash"
-        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
-        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
+                               ["taskset", "-c", "%s", ])
+        udocker.Config.valid_host_env = "HOME"
         udocker.Config.return_value.username.return_value = "user"
         udocker.Config.return_value.userhome.return_value = "/"
         udocker.Config.return_value.oskernel.return_value = "4.8.13"
@@ -5534,8 +5539,9 @@ class ContainerStructureTestCase(unittest.TestCase):
         udocker.Config = mock.MagicMock()
         udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
         udocker.Config.cmd = "/bin/bash"
-        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
-        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
+                               ["taskset", "-c", "%s", ])
+        udocker.Config.valid_host_env = "HOME"
         udocker.Config.return_value.username.return_value = "user"
         udocker.Config.return_value.userhome.return_value = "/"
         udocker.Config.location = ""
@@ -5775,8 +5781,9 @@ class DockerLocalFileAPITestCase(unittest.TestCase):
         udocker.Config = mock.MagicMock()
         udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
         udocker.Config.cmd = "/bin/bash"
-        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
-        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
+                               ["taskset", "-c", "%s", ])
+        udocker.Config.valid_host_env = "HOME"
         udocker.Config.return_value.username.return_value = "user"
         udocker.Config.return_value.userhome.return_value = "/"
         udocker.Config.return_value.oskernel.return_value = "4.8.13"
@@ -6170,8 +6177,9 @@ class UdockerTestCase(unittest.TestCase):
         udocker.Config = mock.MagicMock()
         udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
         udocker.Config.cmd = "/bin/bash"
-        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
-        udocker.Config.valid_host_env = ("HOME")
+        udocker.Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
+                               ["taskset", "-c", "%s", ])
+        udocker.Config.valid_host_env = "HOME"
         udocker.Config.return_value.username.return_value = "user"
         udocker.Config.return_value.userhome.return_value = "/"
         udocker.Config.return_value.oskernel.return_value = "4.8.13"
@@ -7437,12 +7445,13 @@ class MainTestCase(unittest.TestCase):
         udocker.Config = mock.MagicMock()
         udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
         udocker.Config.cmd = "/bin/bash"
-        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
-        udocker.Config.valid_host_env = ("HOME")
-        udocker.Config.return_value.username.return_value = "user"
-        udocker.Config.return_value.userhome.return_value = "/"
+        udocker.Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
+                               ["taskset", "-c", "%s", ])
+        udocker.Config.valid_host_env = "HOME"
+        udocker.Config.username.return_value = "user"
+        # udocker.Config.userhome.return_value = "/"
         udocker.Config.location = ""
-        udocker.Config.return_value.oskernel.return_value = "4.8.13"
+        udocker.Config.oskernel.return_value = "4.8.13"
         udocker.Config.verbose_level = 3
         udocker.Config.http_insecure = False
         udocker.Config.topdir = "/.udocker"
