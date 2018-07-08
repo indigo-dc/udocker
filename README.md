@@ -284,6 +284,6 @@ When citing udocker please use the following:
 * PRoot https://proot-me.github.io/
 * Fakechroot https://github.com/dex4er/fakechroot/wiki
 * runC https://runc.io/
-* Singularity http://singularity.lbl.gov
+* Singularity https://www.sylabs.io/
 * INDIGO DataCloud https://www.indigo-datacloud.eu
 
