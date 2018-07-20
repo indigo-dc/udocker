@@ -341,7 +341,7 @@ class Config(object):
         try:
             self._read_config("/etc/" + Config.config)
             if self._read_config(config_file):
-                return True
+                return
             self._read_config(Config.topdir + "/" + Config.config)
             if self.topdir != self.homedir:
                 self._read_config(Config.homedir + "/" + Config.config)
@@ -1779,7 +1779,7 @@ class FileBind(object):
         """Restore container files after FileBind"""
         error = False
         if not os.path.isdir(self.container_orig_dir):
-            return True
+            return
         for f_name in os.listdir(self.container_orig_dir):
             orig_file = self.container_orig_dir + "/" + f_name
             if not os.path.isfile(orig_file):
@@ -4551,6 +4551,7 @@ class CurlHeader(object):
               pair[0].strip() == "" and
               "location" not in self.data):
             return -1
+        return None
 
     def setvalue_from_file(self, in_filename):
         """Load header content from file instead of from Curl()
@@ -6292,6 +6293,7 @@ class Udocker(object):
                 self.localrepo.iswriteable_container(container_id)]
             Msg().out("%-36.36s %c %c %-18s %-s" %
                       (container_id, prot, write, names, reponame))
+        return True
 
     def do_rm(self, cmdp):
         """
@@ -6882,6 +6884,7 @@ class Main(object):
             else:
                 Msg().err("Error: invalid command:", command, "\n")
                 self.udocker.do_help(self.cmdp)
+        return 1
 
     def start(self):
         """Program start and exception handling"""
