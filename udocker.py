@@ -5064,7 +5064,7 @@ class DockerIoAPI(object):
         files = []
         if layer_list:
             for layer_id in reversed(layer_list):
-                Msg().out("Downloading layer:", layer_id, l=Msg.INF)
+                Msg().err("Downloading layer:", layer_id, l=Msg.INF)
                 filesize = self.get_v1_image_json(endpoint, layer_id)
                 if not filesize:
                     return []
@@ -5169,7 +5169,7 @@ class DockerIoAPI(object):
         files = []
         if fslayers:
             for layer in reversed(fslayers):
-                Msg().out("Downloading layer:", layer["blobSum"],
+                Msg().err("Downloading layer:", layer["blobSum"],
                           l=Msg.INF)
                 if not self.get_v2_image_layer(imagerepo, layer["blobSum"]):
                     return []
