@@ -7445,11 +7445,12 @@ class MainTestCase(unittest.TestCase):
         udocker.Config = mock.MagicMock()
         udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
         udocker.Config.cmd = "/bin/bash"
-        udocker.Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
-                               ["taskset", "-c", "%s", ])
+        #udocker.Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
+        #                       ["taskset", "-c", "%s", ])
+        udocker.Config.cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
         udocker.Config.valid_host_env = "HOME"
         udocker.Config.username.return_value = "user"
-        # udocker.Config.userhome.return_value = "/"
+        udocker.Config.userhome.return_value = "/"
         udocker.Config.location = ""
         udocker.Config.oskernel.return_value = "4.8.13"
         udocker.Config.verbose_level = 3
