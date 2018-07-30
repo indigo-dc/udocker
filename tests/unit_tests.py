@@ -7477,42 +7477,42 @@ class MainTestCase(unittest.TestCase):
         """Test Main() constructor."""
         self._init()
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
+        mock_cmdp.return_value.get.side_effect = [False, False, False,
                                                   False, False, False, False,
                                                   False]
         udocker.Main()
         self.assertEqual(udocker.Config.verbose_level, 3)
         # --debug
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, True, False,
+        mock_cmdp.return_value.get.side_effect = [False, True, False,
                                                   False, False, False, False,
                                                   False]
         udocker.Main()
         self.assertNotEqual(udocker.Config.verbose_level, 3)
         # -D
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, False, True,
+        mock_cmdp.return_value.get.side_effect = [False, False, True,
                                                   False, False, False, False,
                                                   False]
         udocker.Main()
         self.assertNotEqual(udocker.Config.verbose_level, 3)
         # --quiet
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
+        mock_cmdp.return_value.get.side_effect = [False, False, False,
                                                   True, False, False, False,
                                                   False]
         udocker.Main()
         self.assertNotEqual(udocker.Config.verbose_level, 3)
         # -q
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
+        mock_cmdp.return_value.get.side_effect = [False, False, False,
                                                   False, True, False, False,
                                                   False]
         udocker.Main()
         self.assertNotEqual(udocker.Config.verbose_level, 3)
         # --insecure
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
+        mock_cmdp.return_value.get.side_effect = [False, False, False,
                                                   False, False, True, False,
                                                   False]
         udocker.Main()
@@ -7520,7 +7520,7 @@ class MainTestCase(unittest.TestCase):
         # --repo=
         mock_localrepo.return_value.is_repo.return_value = True
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
+        mock_cmdp.return_value.get.side_effect = [False, False, False,
                                                   False, False, False, True,
                                                   "/TOPDIR"]
         udocker.Main()
