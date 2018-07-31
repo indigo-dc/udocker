@@ -2806,10 +2806,11 @@ class GetURLTestCase(unittest.TestCase):
         hdr.data = {"content-length": dict(), }
         self.assertEqual(geturl.get_content_length(hdr), -1)
 
-    @mock.patch('udocker.GetURL._select_implementation')
-    def test_04_set_insecure(self, mock_sel):
+    @mock.patch('udocker.GetURLpyCurl')
+    def test_04_set_insecure(self, mock_gupycurl):
         """Test GetURL().set_insecure()."""
         self._init()
+        mock_gupycurl.return_value.is_available.return_value = True
         geturl = udocker.GetURL()
         geturl.set_insecure()
         self.assertEqual(geturl.insecure, True)
@@ -2817,10 +2818,11 @@ class GetURLTestCase(unittest.TestCase):
         geturl.set_insecure(False)
         self.assertEqual(geturl.insecure, False)
 
-    @mock.patch('udocker.GetURL._select_implementation')
-    def test_05_set_proxy(self, mock_sel):
+    @mock.patch('udocker.GetURLpyCurl')
+    def test_05_set_proxy(self, mock_gupycurl):
         """Test GetURL().set_proxy()."""
         self._init()
+        mock_gupycurl.return_value.is_available.return_value = True
         geturl = udocker.GetURL()
         geturl.set_proxy("http://host")
         self.assertEqual(geturl.http_proxy, "http://host")
