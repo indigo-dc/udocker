@@ -370,6 +370,24 @@ class ConfigTestCase(unittest.TestCase):
         self.assertEqual(status, "3.2.1")
 
 
+class GuestInfoTestCase(unittest.TestCase):
+    """Test GuestInfo() class."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test."""
+        set_env()
+
+    def test_01_init(self):
+        """Test GuestInfo() constructor."""
+        ginfo = udocker.GuestInfo("/ROOT")
+        self.assertEqual(ginfo._root_dir, "/ROOT")
+
+#    def test_02_get_filetype(self):
+#        """Test GuestInfo.get_filetype(filename) Get the file architecture"""
+#        getft = udocker.GuestInfo("/ROOT").get_filetype("filename.txt")
+
+
 class MsgTestCase(unittest.TestCase):
     """Test Msg() class screen error and info messages."""
 
