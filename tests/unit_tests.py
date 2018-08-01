@@ -378,14 +378,34 @@ class GuestInfoTestCase(unittest.TestCase):
         """Setup test."""
         set_env()
 
+    def _init(self):
+        """Common variables."""
+        self.rootdir = "~/.udocker/container/abcd0/ROOT"
+        self.file = "/bin/ls"
+        self.ftype = "/bin/ls: yyy, x86-64, xxx"
+        self.nofile = "ddd: cannot open"
+
     def test_01_init(self):
         """Test GuestInfo() constructor."""
-        ginfo = udocker.GuestInfo("/ROOT")
-        self.assertEqual(ginfo._root_dir, "/ROOT")
+        self._init()
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo._root_dir, self.rootdir)
 
-#    def test_02_get_filetype(self):
-#        """Test GuestInfo.get_filetype(filename) Get the file architecture"""
-#        getft = udocker.GuestInfo("/ROOT").get_filetype("filename.txt")
+    @mock.patch('udocker.Uprocess.get_output')
+    @mock.patch('udocker.os.path.isfile')
+    def test_02_get_filetype(self, mock_isfile, mock_getout):
+        """Test GuestInfo.get_filetype(filename) Get the file architecture"""
+        self._init()
+        # full filepath exists
+        mock_isfile.return_value = True
+        mock_getout.return_value = self.ftype
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo.get_filetype(self.file), self.ftype)
+        # file does not exist
+        mock_isfile.return_value = False
+        mock_getout.return_value = self.nofile
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo.get_filetype(self.nofile), "")
 
 
 class MsgTestCase(unittest.TestCase):
