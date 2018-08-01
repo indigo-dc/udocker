@@ -396,7 +396,7 @@ class GuestInfoTestCase(unittest.TestCase):
     @mock.patch('udocker.Uprocess.get_output')
     @mock.patch('udocker.os.path.isfile')
     def test_02_get_filetype(self, mock_isfile, mock_getout):
-        """Test GuestInfo.get_filetype(filename) Get the file architecture"""
+        """Test GuestInfo.get_filetype(filename)"""
         self._init()
         # full filepath exists
         mock_isfile.return_value = True
@@ -409,12 +409,23 @@ class GuestInfoTestCase(unittest.TestCase):
         ginfo = udocker.GuestInfo(self.rootdir)
         self.assertEqual(ginfo.get_filetype(self.nofile), "")
 
-#    def test_03_arch(self):
+#    @mock.patch('udocker.Uprocess.get_output')
+#    @mock.patch('udocker.GuestInfo')
+#    @mock.patch('udocker.GuestInfo._binarylist')
+#    def test_03_arch(self, mock_binlist, mock_gi, mock_getout):
+#        """Test GuestInfo.arch()"""
+#        self._init()
+#        # arch is x86_64
+#        mock_binlist.return_value = ["/bin/bash", "/bin/ls"]
+#        mock_getout.return_value.get_filetype.side_effect = [self.ftype, self.ftype]
+#        ginfo = udocker.GuestInfo(self.rootdir)
+#        self.assertEqual(ginfo.arch(), "amd64")
+
 #    def test_04_osdistribution(self):
 
     @mock.patch('udocker.GuestInfo.osdistribution')
     def test_05_osversion(self, mock_osdist):
-        """Test GuestInfo.osversion Get guest operating system"""
+        """Test GuestInfo.osversion()"""
         self._init()
         # has osdistro
         mock_osdist.return_value = self.osdist
