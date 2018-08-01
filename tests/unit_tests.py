@@ -384,6 +384,8 @@ class GuestInfoTestCase(unittest.TestCase):
         self.file = "/bin/ls"
         self.ftype = "/bin/ls: yyy, x86-64, xxx"
         self.nofile = "ddd: cannot open"
+        self.osdist = ("Ubuntu", "16.04")
+        self.noosdist = ("", "xx")
 
     def test_01_init(self):
         """Test GuestInfo() constructor."""
@@ -406,6 +408,22 @@ class GuestInfoTestCase(unittest.TestCase):
         mock_getout.return_value = self.nofile
         ginfo = udocker.GuestInfo(self.rootdir)
         self.assertEqual(ginfo.get_filetype(self.nofile), "")
+
+#    def test_03_arch(self):
+#    def test_04_osdistribution(self):
+
+    @mock.patch('udocker.GuestInfo.osdistribution')
+    def test_05_osversion(self, mock_osdist):
+        """Test GuestInfo.osversion Get guest operating system"""
+        self._init()
+        # has osdistro
+        mock_osdist.return_value = self.osdist
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo.osversion(), "linux")
+        # has no osdistro
+        mock_osdist.return_value = self.noosdist
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo.osversion(), "")
 
 
 class MsgTestCase(unittest.TestCase):
