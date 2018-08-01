@@ -421,7 +421,14 @@ class GuestInfoTestCase(unittest.TestCase):
 #        ginfo = udocker.GuestInfo(self.rootdir)
 #        self.assertEqual(ginfo.arch(), "amd64")
 
-#    def test_04_osdistribution(self):
+    @mock.patch('udocker.FileUtil')
+    def test_04_osdistribution(self, mock_futil):
+        """Test GuestInfo.osdistribution()"""
+        self._init()
+        # has osdistro
+        mock_futil.match().return_value = ["/etc/lsb-release"]
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo.osdistribution(), self.osdist)
 
     @mock.patch('udocker.GuestInfo.osdistribution')
     def test_05_osversion(self, mock_osdist):
