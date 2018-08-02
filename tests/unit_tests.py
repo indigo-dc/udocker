@@ -421,14 +421,22 @@ class GuestInfoTestCase(unittest.TestCase):
 #        ginfo = udocker.GuestInfo(self.rootdir)
 #        self.assertEqual(ginfo.arch(), "amd64")
 
-    @mock.patch('udocker.FileUtil')
-    def test_04_osdistribution(self, mock_futil):
-        """Test GuestInfo.osdistribution()"""
-        self._init()
-        # has osdistro
-        mock_futil.match().return_value = ["/etc/lsb-release"]
-        ginfo = udocker.GuestInfo(self.rootdir)
-        self.assertEqual(ginfo.osdistribution(), self.osdist)
+    # @mock.patch('udocker.os.path.exists')
+    # @mock.patch('udocker.FileUtil.match')
+    # @mock.patch('udocker.FileUtil.getdata')
+    # def test_04_osdistribution(self, mock_gdata, mock_match, mock_exists):
+    #     """Test GuestInfo.osdistribution()"""
+    #     self._init()
+    #     # has osdistro
+    #     self.lsbdata = "DISTRIB_ID=Ubuntu\n" \
+    #                    "DISTRIB_RELEASE=16.04\n" \
+    #                    "DISTRIB_CODENAME=xenial\n" \
+    #                    "DISTRIB_DESCRIPTION=Ubuntu 16.04.5 LTS\n"
+    #     mock_match.return_value = ["/etc/lsb-release"]
+    #     mock_exists.return_value = True
+    #     mock_gdata.return_value = self.lsbdata
+    #     ginfo = udocker.GuestInfo(self.rootdir)
+    #     self.assertEqual(ginfo.osdistribution(), self.osdist)
 
     @mock.patch('udocker.GuestInfo.osdistribution')
     def test_05_osversion(self, mock_osdist):
