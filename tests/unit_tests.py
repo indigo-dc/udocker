@@ -370,6 +370,88 @@ class ConfigTestCase(unittest.TestCase):
         self.assertEqual(status, "3.2.1")
 
 
+class GuestInfoTestCase(unittest.TestCase):
+    """Test GuestInfo() class."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test."""
+        set_env()
+
+    def _init(self):
+        """Common variables."""
+        self.rootdir = "~/.udocker/container/abcd0/ROOT"
+        self.file = "/bin/ls"
+        self.ftype = "/bin/ls: yyy, x86-64, xxx"
+        self.nofile = "ddd: cannot open"
+        self.osdist = ("Ubuntu", "16.04")
+        self.noosdist = ("", "xx")
+
+    def test_01_init(self):
+        """Test GuestInfo() constructor."""
+        self._init()
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo._root_dir, self.rootdir)
+
+    @mock.patch('udocker.Uprocess.get_output')
+    @mock.patch('udocker.os.path.isfile')
+    def test_02_get_filetype(self, mock_isfile, mock_getout):
+        """Test GuestInfo.get_filetype(filename)"""
+        self._init()
+        # full filepath exists
+        mock_isfile.return_value = True
+        mock_getout.return_value = self.ftype
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo.get_filetype(self.file), self.ftype)
+        # file does not exist
+        mock_isfile.return_value = False
+        mock_getout.return_value = self.nofile
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo.get_filetype(self.nofile), "")
+
+#    @mock.patch('udocker.Uprocess.get_output')
+#    @mock.patch('udocker.GuestInfo')
+#    @mock.patch('udocker.GuestInfo._binarylist')
+#    def test_03_arch(self, mock_binlist, mock_gi, mock_getout):
+#        """Test GuestInfo.arch()"""
+#        self._init()
+#        # arch is x86_64
+#        mock_binlist.return_value = ["/bin/bash", "/bin/ls"]
+#        mock_getout.return_value.get_filetype.side_effect = [self.ftype, self.ftype]
+#        ginfo = udocker.GuestInfo(self.rootdir)
+#        self.assertEqual(ginfo.arch(), "amd64")
+
+    # @mock.patch('udocker.os.path.exists')
+    # @mock.patch('udocker.FileUtil.match')
+    # @mock.patch('udocker.FileUtil.getdata')
+    # def test_04_osdistribution(self, mock_gdata, mock_match, mock_exists):
+    #     """Test GuestInfo.osdistribution()"""
+    #     self._init()
+    #     # has osdistro
+    #     self.lsbdata = "DISTRIB_ID=Ubuntu\n" \
+    #                    "DISTRIB_RELEASE=16.04\n" \
+    #                    "DISTRIB_CODENAME=xenial\n" \
+    #                    "DISTRIB_DESCRIPTION=Ubuntu 16.04.5 LTS\n"
+    #     mock_match.return_value = ["/etc/lsb-release"]
+    #     mock_exists.return_value = True
+    #     mock_gdata.return_value = self.lsbdata
+    #     ginfo = udocker.GuestInfo(self.rootdir)
+    #     self.assertEqual(ginfo.osdistribution(), self.osdist)
+
+    @mock.patch('udocker.GuestInfo.osdistribution')
+    def test_05_osversion(self, mock_osdist):
+        """Test GuestInfo.osversion()"""
+        self._init()
+        # has osdistro
+        mock_osdist.return_value = self.osdist
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo.osversion(), "linux")
+        # has no osdistro
+        mock_osdist.return_value = self.noosdist
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo.osversion(), "")
+
+
 class MsgTestCase(unittest.TestCase):
     """Test Msg() class screen error and info messages."""
 
