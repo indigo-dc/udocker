@@ -349,7 +349,7 @@ class Config(object):
             if os.getenv("UDOCKER_NOSYSCONF") is None:
                 self._read_config("/etc/" + Config.config)
             if self._read_config(config_file):
-                return True
+                return
             self._read_config(Config.topdir + "/" + Config.config)
             if self.topdir != self.homedir:
                 self._read_config(Config.homedir + "/" + Config.config)
@@ -1815,7 +1815,7 @@ class FileBind(object):
         """Restore container files after FileBind"""
         error = False
         if not os.path.isdir(self.container_orig_dir):
-            return True
+            return
         for f_name in os.listdir(self.container_orig_dir):
             orig_file = self.container_orig_dir + "/" + f_name
             if not os.path.isfile(orig_file):
@@ -4685,6 +4685,7 @@ class CurlHeader(object):
               pair[0].strip() == "" and
               "location" not in self.data):
             return -1
+        return None
 
     def setvalue_from_file(self, in_filename):
         """Load header content from file instead of from Curl()
@@ -5198,7 +5199,7 @@ class DockerIoAPI(object):
         files = []
         if layer_list:
             for layer_id in reversed(layer_list):
-                Msg().out("Downloading layer:", layer_id, l=Msg.INF)
+                Msg().err("Downloading layer:", layer_id, l=Msg.INF)
                 filesize = self.get_v1_image_json(endpoint, layer_id)
                 if not filesize:
                     return []
@@ -5303,7 +5304,7 @@ class DockerIoAPI(object):
         files = []
         if fslayers:
             for layer in reversed(fslayers):
-                Msg().out("Downloading layer:", layer["blobSum"],
+                Msg().err("Downloading layer:", layer["blobSum"],
                           l=Msg.INF)
                 if not self.get_v2_image_layer(imagerepo, layer["blobSum"]):
                     return []
@@ -6431,6 +6432,7 @@ class Udocker(object):
                 self.localrepo.iswriteable_container(container_id)]
             Msg().out("%-36.36s %c %c %-18s %-s" %
                       (container_id, prot, write, names, reponame))
+        return True
 
     def do_rm(self, cmdp):
         """
@@ -7028,6 +7030,7 @@ class Main(object):
             else:
                 Msg().err("Error: invalid command:", command, "\n")
                 self.udocker.do_help(self.cmdp)
+        return 1
 
     def start(self):
         """Program start and exception handling"""
