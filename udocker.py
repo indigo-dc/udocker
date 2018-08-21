@@ -31,6 +31,8 @@ import pwd
 import grp
 import platform
 import glob
+import select
+import ast
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me",
@@ -161,6 +163,8 @@ class Config(object):
         "/indigo/2/centos7/x86_64/tgz/udocker-1.1.1.tar.gz"
     )
 
+    installinfo = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
+
     autoinstall = True
 
     config = "udocker.conf"
@@ -284,6 +288,8 @@ class Config(object):
                     'libnvidia-tls.', 'tls/libnvidia-tls.'
                    ]
 
+    nvi_dev_list = ['/dev/nvidia', ]
+
     # -------------------------------------------------------------
 
     def _verify_config(self):
@@ -324,9 +330,10 @@ class Config(object):
             key = key.strip()
             Msg().err(config_file, ":", key, "=", val, l=Msg.DBG)
             try:
+                dummy = ast.literal_eval(val.strip())
                 exec('Config.%s=%s' % (key, val))
             except(NameError, AttributeError, TypeError, IndexError,
-                   SyntaxError):
+                   SyntaxError, ValueError):
                 raise ValueError("config file: %s at: %s" %
                                  (config_file, line.strip()))
             if key == "verbose_level":
@@ -339,7 +346,8 @@ class Config(object):
         Defaults should be in the form x = y
         """
         try:
-            self._read_config("/etc/" + Config.config)
+            if os.getenv("UDOCKER_NOSYSCONF") is None:
+                self._read_config("/etc/" + Config.config)
             if self._read_config(config_file):
                 return True
             self._read_config(Config.topdir + "/" + Config.config)
@@ -1193,6 +1201,8 @@ class UdockerTools(object):
         self.localrepo = localrepo        # LocalRepository object
         self._autoinstall = Config.autoinstall  # True / False
         self._tarball = Config.tarball  # URL or file
+        self._installinfo = Config.installinfo  # URL or file
+        self._install_json = dict()
         self.curl = GetURL()
 
     def _version_isequal(self, filename):
@@ -1204,17 +1214,34 @@ class UdockerTools(object):
         """Are the tools already installed"""
         return self._version_isequal(self.localrepo.libdir + "/VERSION")
 
-    def _download(self, tarball_url):
-        """Get the tools tarball containing the binaries"""
-        tarball_file = FileUtil("udockertools").mktmp()
+    def _download(self, url):
+        """Download a file """
+        download_file = FileUtil("udockertools").mktmp()
         if Msg.level <= Msg.DEF:
             Msg().setlevel(Msg.NIL)
-        (hdr, dummy) = self.curl.get(tarball_url, ofile=tarball_file)
+        (hdr, dummy) = self.curl.get(url, ofile=download_file)
         if Msg.level == Msg.NIL:
             Msg().setlevel()
-        if hdr.data["X-ND-CURLSTATUS"]:
-            return ""
-        return tarball_file
+        try:
+            if "200" in hdr.data["X-ND-HTTPSTATUS"]:
+                return download_file
+        except (KeyError, TypeError, AttributeError):
+            pass
+        FileUtil(download_file).remove()
+        return ""
+
+    def _get_file(self, locations):
+        """Get file from list of possible locations file or internet"""
+        for url in locations:
+            Msg().err("Info: getting file:", url, l=Msg.VER)
+            filename = ""
+            if "://" in url:
+                filename = self._download(url)
+            elif os.path.exists(url):
+                filename = os.path.realpath(url)
+            if filename and os.path.isfile(filename):
+                return (filename, url)
+        return ("", "")
 
     def _verify_version(self, tarball_file):
         """verify the tarball version"""
@@ -1296,14 +1323,29 @@ class UdockerTools(object):
         """
         Msg().out(self._instructions.__doc__, __version__, l=Msg.ERR)
 
-    def _get_mirrors(self):
+    def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
-        mirrors = self._tarball.split(" ")
+        if isinstance(mirrors, str):
+            mirrors = mirrors.split(" ")
         try:
             random.shuffle(mirrors)
         except NameError:
             pass
         return mirrors
+
+    def get_installinfo(self):
+        """Get json containing installation info"""
+        (infofile, url) = self._get_file(self._get_mirrors(self._installinfo))
+        try:
+            with open(infofile, "r") as filep:
+                self._install_json = json.load(filep)
+            for msg in self._install_json["messages"]:
+                Msg().err("Info:", msg)
+        except (KeyError, AttributeError, ValueError,
+                OSError, IOError) as error:
+            Msg().err("Warning: in install information:",
+                      error, url, l=Msg.VER)
+        return self._install_json
 
     def install(self, force=False):
         """Get the udocker tarball and install the binaries"""
@@ -1316,28 +1358,22 @@ class UdockerTools(object):
         elif not self._tarball:
             Msg().err("Error: UDOCKER_TARBALL not defined")
         else:
-            Msg().err("Info: installing", __version__,
-                      l=Msg.INF)
-            for tarball in self._get_mirrors():
-                Msg().err("Info: installing from:", tarball, l=Msg.VER)
-                tarball_file = ""
-                if "://" in tarball:
-                    tarball_file = self._download(tarball)
-                elif os.path.exists(tarball):
-                    tarball_file = os.path.realpath(tarball)
-                if tarball_file and os.path.isfile(tarball_file):
-                    status = False
-                    if not self._verify_version(tarball_file):
-                        Msg().err("Error: wrong tarball version:",
-                                  tarball)
-                    else:
-                        status = self._install(tarball_file)
-                    if "://" in tarball:
-                        FileUtil(tarball_file).remove()
+            Msg().err("Info: installing", __version__, l=Msg.INF)
+            (tarfile, url) = self._get_file(self._get_mirrors(self._tarball))
+            if tarfile:
+                Msg().err("Info: installing from:", url, l=Msg.VER)
+                status = False
+                if not self._verify_version(tarfile):
+                    Msg().err("Error: wrong tarball version:", url)
+                else:
+                    status = self._install(tarfile)
+                if "://" in url:
+                    FileUtil(tarfile).remove()
                     if status:
-                        return True
-            Msg().err("Error: installing tarball:",
-                      self._tarball)
+                        self.get_installinfo()
+                if status:
+                    return True
+            Msg().err("Error: installing tarball:", self._tarball)
         self._instructions()
         return False
 
@@ -1869,6 +1905,7 @@ class ExecutionEngineCommon(object):
         self.opt["volfrom"] = []                 # Mount vol from container TBD
         self.opt["portsmap"] = []                # Ports mapped in container
         self.opt["portsexp"] = []                # Ports exposed by container
+        self.opt["devices"] = []                 # Devices passed to container
 
     def _get_portsmap(self, by_container=True):
         """List of TCP/IP ports mapped indexed by container port"""
@@ -2754,6 +2791,7 @@ class RuncEngine(ExecutionEngineCommon):
             json_obj["hostname"] = platform.node()
         if self.opt["cwd"]:
             json_obj["process"]["cwd"] = self.opt["cwd"]
+        json_obj["process"]["terminal"] = sys.stdout.isatty()
         json_obj["process"]["env"] = []
         for env_str in self.opt["env"]:
             (env_var, value) = env_str.split("=", 1)
@@ -2775,6 +2813,54 @@ class RuncEngine(ExecutionEngineCommon):
                 self.opt["user"] != "root"):
             Msg().err("Warning: this engine only supports execution as root",
                       l=Msg.WAR)
+
+    def _add_device_spec(self, dev_path, mode="rwm"):
+        """Add device to the configuration"""
+        if not (os.path.exists(dev_path) and dev_path.startswith("/dev/")):
+            Msg().err("Error: device not found", dev_path)
+            return False
+        dev_stat = os.stat(dev_path)
+        if stat.S_ISBLK(dev_stat.st_mode):
+            dev_type = "b"
+        elif stat.S_ISCHR(dev_stat.st_mode):
+            dev_type = "c"
+        else:
+            Msg().err("Error: not a device", dev_path)
+            return False
+        filemode = 0
+        if "r" in mode.lower():
+            filemode += 0o444
+        if "w" in mode.lower():
+            filemode += 0o222
+        if not filemode:
+            filemode = 0o666
+        if "devices" not in self._container_specjson["linux"]:
+            self._container_specjson["linux"]["devices"] = []
+        device = {
+            "path": dev_path,
+            "type": dev_type,
+            "major": os.major(dev_stat.st_dev),
+            "minor": os.minor(dev_stat.st_dev),
+            "fileMode": filemode,
+            "uid": Config.uid,
+            "gid": Config.uid,
+        }
+        self._container_specjson["linux"]["devices"].append(device)
+        return True
+
+    def _add_devices(self):
+        """Add devices to container"""
+        added_devices = []
+        for dev in self.opt["devices"]:
+            dev_name = dev.split(':')[0]
+            if self._add_device_spec(dev_name):
+                added_devices.append(dev_name)
+        if "/dev/nvidiactl" not in added_devices:
+            nvidia_mode = NvidiaMode(self.localrepo, self.container_id)
+            if nvidia_mode.get_mode():
+                for dev_name in nvidia_mode.get_devices():
+                    if dev_name not in added_devices:
+                        self._add_device_spec(dev_name)
 
     def _create_mountpoint(self, host_path, cont_path):
         """Override create mountpoint"""
@@ -2892,6 +2978,7 @@ class RuncEngine(ExecutionEngineCommon):
                                      Config().oskernel_isgreater("4.8.0"))):
             self._del_mount_spec("mqueue", "/dev/mqueue")
         self._add_volume_bindings()
+        self._add_devices()
         self._save_spec()
 
         if Msg.level >= Msg.DBG:
@@ -2908,9 +2995,40 @@ class RuncEngine(ExecutionEngineCommon):
         cmd_l.extend(["--bundle", self.container_dir, self.execution_id])
         Msg().err("CMD =", cmd_l, l=Msg.VER)
 
-        # execute
         self._run_banner(self.opt["cmd"][0], '%')
+        if sys.stdout.isatty():
+            return self.run_pty(cmd_l)
+        return self.run_nopty(cmd_l)
+
+    def run_pty(self, cmd_l):
+        """runc from a terminal"""
         status = subprocess.call(cmd_l, shell=False, close_fds=True)
+        self._filebind.finish()
+        return status
+
+    def run_nopty(self, cmd_l):
+        """runc without a terminal"""
+        (pmaster, pslave) = os.openpty()
+        status = subprocess.Popen(cmd_l, shell=False, close_fds=True,
+                                  stdout=pslave, stderr=pslave)
+        os.close(pslave)
+        while True:
+            status.poll()
+            if status.returncode is not None:
+                break
+            readable, dummy, exception = \
+                select.select([pmaster, ], [], [pmaster, ], 5)
+            if exception:
+                break
+            if readable:
+                try:
+                    sys.stdout.write(os.read(pmaster, 1))
+                except OSError:
+                    break
+        try:
+            status.terminate()
+        except OSError:
+            pass
         self._filebind.finish()
         return status
 
@@ -3340,7 +3458,10 @@ class NvidiaMode(object):
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = container_id         # Container id
         self.container_dir = self.localrepo.cd_container(container_id)
+        if not self.container_dir:
+            raise ValueError("invalid container id")
         self.container_root = self.container_dir + "/ROOT"
+        self._container_nvidia_set = self.container_dir + "/nvidia"
 
     def _copy_files(self, host_src_dir, cont_dst_dir, files_list, force=False):
         """copy or link file to destination creating directories as needed"""
@@ -3428,6 +3549,19 @@ class NvidiaMode(object):
         self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
         self._copy_files('/etc', '/etc', Config.nvi_etc_list, force)
         self._copy_files('/usr/bin', '/usr/bin', Config.nvi_bin_list, force)
+        FileUtil(self._container_nvidia_set).putdata("")
+
+    def get_mode(self):
+        """Get nvidia mode"""
+        return os.path.exists(self._container_nvidia_set)
+
+    def get_devices(self):
+        """Get list of nvidia devices related to cuda"""
+        dev_list = []
+        for dev in Config.nvi_dev_list:
+            for expanded_devs in glob.glob(dev + '*'):
+                dev_list.append(expanded_devs)
+        return dev_list
 
 
 class ExecutionMode(object):
@@ -6155,6 +6289,10 @@ class Udocker(object):
             "kernel": {
                 "fl": ("--kernel=",), "act": "R",
                 "p2": "CMD_OPT", "p3": False
+            },
+            "devices": {
+                "fl": ("--device=",), "act": "E",
+                "p2": "CMD_OPT", "p3": True
             }
         }
         for option, cmdp_args in cmd_options.iteritems():
@@ -6193,6 +6331,7 @@ class Udocker(object):
         --bindhome                 :bind the home directory into the container
         --location=<path-to-dir>   :use root tree outside the repository
         --kernel=<kernel-id>       :use this Linux kernel identifier
+        --device=/dev/xxx          :pass device to container (R1 mode only)
 
         Only available in Pn execution modes:
         --publish=<hport:cport>    :map container TCP/IP <cport> into <hport>
@@ -6536,7 +6675,7 @@ class Udocker(object):
         if status is not None and not status:
             Msg().err("Error: install of udockertools failed")
 
-    def do_help(self, cmdp):
+    def do_help(self, cmdp, cmds=None):
         """
         Syntax:
           udocker  <command>  [command_options]  <command_args>
@@ -6618,13 +6757,15 @@ class Udocker(object):
 
         See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
         """
+        if cmds is None:
+            cmds = dict()
         cmd_help = cmdp.get("", "CMD")
         try:
-            text = eval("self.do_" + cmd_help + ".__doc__")
+            text = cmds[cmd_help].__doc__
             if text:
                 Msg().out(text)
                 return
-        except (AttributeError, SyntaxError):
+        except (AttributeError, SyntaxError, KeyError):
             pass
         Msg().out(self.do_help.__doc__)
 
@@ -6802,7 +6943,8 @@ class Main(object):
     def __init__(self):
         self.cmdp = CmdParser()
         parseok = self.cmdp.parse(sys.argv)
-        if self.cmdp.get("", "CMD") == "version" or self.cmdp.get("--version", "GEN_OPT"):
+        if (self.cmdp.get("", "CMD") == "version" or
+                self.cmdp.get("--version", "GEN_OPT")):
             self._version()
             sys.exit(0)
         if not parseok:
@@ -6811,7 +6953,7 @@ class Main(object):
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
             sys.exit(1)
-        Config().user_init(self.cmdp.get("--config=", "GEN_OPT"))
+        Config().user_init(self.cmdp.get("--config=", "GEN_OPT")) # read config
         if (self.cmdp.get("--debug", "GEN_OPT") or
                 self.cmdp.get("-D", "GEN_OPT")):
             Config.verbose_level = Msg.DBG
@@ -6868,7 +7010,7 @@ class Main(object):
                 if command != "install":
                     cmds["install"](None)
                 if self.cmdp.get("--help") or self.cmdp.get("-h"):
-                    self.udocker.do_help(self.cmdp)   # help on command
+                    self.udocker.do_help(self.cmdp, cmds)   # help on command
                     return 0
                 status = cmds[command](self.cmdp)     # executes the command
                 if self.cmdp.missing_options():
