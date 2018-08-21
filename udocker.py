@@ -6714,8 +6714,7 @@ class Udocker(object):
           login                         :Login into docker repository
           logout                        :Logout from docker repository
 
-	  version			:Shows udocker version and exits
-	  --version			:Shows udocker version and exits
+          version                       :Shows udocker version and exits
 
           help                          :This help
           run --help                    :Command specific help
@@ -6768,6 +6767,18 @@ class Udocker(object):
         except (AttributeError, SyntaxError, KeyError):
             pass
         Msg().out(self.do_help.__doc__)
+
+    def do_version(self, cmdp):
+        """
+        version: Print version information
+        """
+        if cmdp.missing_options():  # syntax error
+            return False
+        try:
+            Msg().out("%s %s" % ("version:", __version__))
+            Msg().out("%s %s" % ("tarball:", Config.tarball))
+        except NameError:
+            pass
 
 
 class CmdParser(object):
@@ -6943,10 +6954,13 @@ class Main(object):
     def __init__(self):
         self.cmdp = CmdParser()
         parseok = self.cmdp.parse(sys.argv)
+<<<<<<< HEAD
         if (self.cmdp.get("", "CMD") == "version" or
                 self.cmdp.get("--version", "GEN_OPT")):
             self._version()
             sys.exit(0)
+=======
+>>>>>>> 55d3b32b9920fe5d6ac1fd565f23b8b882f36745
         if not parseok:
             Msg().err("Error: parsing command line, use: udocker help")
             sys.exit(1)
@@ -6975,17 +6989,10 @@ class Main(object):
             self.localrepo.create_repo()
         self.udocker = Udocker(self.localrepo)
 
-    def _version(self):
-        """Print the version information"""
-        try:
-            Msg().out("%s %s" % ("version:", __version__))
-            Msg().out("%s %s" % ("tarball:", Config.tarball))
-        except NameError:
-            pass
-
     def execute(self):
         """Command parsing and selection"""
         cmds = {
+            "version": self.udocker.do_version,
             "help": self.udocker.do_help, "search": self.udocker.do_search,
             "images": self.udocker.do_images, "pull": self.udocker.do_pull,
             "create": self.udocker.do_create, "ps": self.udocker.do_ps,

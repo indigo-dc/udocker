@@ -218,6 +218,7 @@ The location of the udocker directories can be changed via environment variables
  * UDOCKER_KEYSTORE : location of keystore for repository login/logout
  * UDOCKER_TMP : location of temporary directory
  * UDOCKER_TARBALL : location of installation tarball (file of URL)
+ * UDOCKER_NOSYSCONF: do not read system wide config files in /etc
 
 The Docker index and registry and be overrided via environment variables.
 
