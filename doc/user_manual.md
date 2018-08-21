@@ -40,6 +40,12 @@ The basic usage flow starts by downloading the image from an image repository in
   * `udocker create` --name=verybusy busybox
   * `udocker run` verybusy
 
+This sequence allows the created container to be executed many time. If simultaneous executions are envisage just make sure that input/output files are not overwritten by giving them different names during execution.
+
+Containers can also be pulled, created and executed in a single step. However in this case a new container is created for every run invocation thus occupying more storage space. To pull, create and execute in a single step invoke run with an image name instead of container name:
+
+ * `udocker run` busybox
+
 ### 1.2. Limitations
 Since root privileges are not involved, any operation that really 
 requires privileges is not possible. The following are
