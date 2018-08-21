@@ -6954,13 +6954,10 @@ class Main(object):
     def __init__(self):
         self.cmdp = CmdParser()
         parseok = self.cmdp.parse(sys.argv)
-<<<<<<< HEAD
         if (self.cmdp.get("", "CMD") == "version" or
                 self.cmdp.get("--version", "GEN_OPT")):
             self._version()
             sys.exit(0)
-=======
->>>>>>> 55d3b32b9920fe5d6ac1fd565f23b8b882f36745
         if not parseok:
             Msg().err("Error: parsing command line, use: udocker help")
             sys.exit(1)
