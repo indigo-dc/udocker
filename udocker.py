@@ -7031,6 +7031,14 @@ class Main(object):
             self.localrepo.create_repo()
         self.udocker = Udocker(self.localrepo)
 
+    def _version(self):
+        """Print the version information"""
+        try:
+            Msg().out("%s %s" % ("version:", __version__))
+            Msg().out("%s %s" % ("tarball:", Config.tarball))
+        except NameError:
+            pass
+
     def execute(self):
         """Command parsing and selection"""
         cmds = {
