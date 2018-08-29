@@ -4769,9 +4769,24 @@ class GetURL(object):
         kwargs["post"] = args[1]
         return self._geturl.get(args[0], **kwargs)
 
+    def _get_status_code(self, status_line):
+        """
+        get http status code from http status line.
+        Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+        """
+        parts = status_line.split(" ")
+        try:
+            return int(parts[1])
+        except ValueError:
+            return 400
+
 
 class GetURLpyCurl(GetURL):
     """Downloader implementation using PyCurl"""
+
+    def __init__(self):
+        GetURL.__init__(self)
+        self._url = None
 
     def is_available(self):
         """Can we use this approach for download"""
@@ -4790,7 +4805,7 @@ class GetURLpyCurl(GetURL):
         if self.insecure:
             pyc.setopt(pyc.SSL_VERIFYPEER, 0)
             pyc.setopt(pyc.SSL_VERIFYHOST, 0)
-        pyc.setopt(pyc.FOLLOWLOCATION, True)
+        pyc.setopt(pyc.FOLLOWLOCATION, False)
         pyc.setopt(pyc.FAILONERROR, False)
         pyc.setopt(pyc.NOPROGRESS, True)
         pyc.setopt(pyc.HEADERFUNCTION, hdr.write)
@@ -4802,9 +4817,12 @@ class GetURLpyCurl(GetURL):
             pyc.setopt(pyc.VERBOSE, True)
         else:
             pyc.setopt(pyc.VERBOSE, False)
+        self._url = ""
 
-    def _mkpycurl(self, pyc, hdr, buf, **kwargs):
+    def _mkpycurl(self, pyc, hdr, buf, *args, **kwargs):
         """Prepare curl command line according to invocation options"""
+        self._url = str(args[0])
+        pyc.setopt(pycurl.URL, self._url)
         if "post" in kwargs:
             pyc.setopt(pyc.POST, 1)
             pyc.setopt(pyc.HTTPHEADER, ['Content-Type: application/json'])
@@ -4818,10 +4836,12 @@ class GetURLpyCurl(GetURL):
         if "header" in kwargs:  # avoid known pycurl bug
             clean_header_list = []
             for header_item in kwargs["header"]:
-                # in case of redirection do not add the Authorization header
-                if (not str(header_item).startswith("Authorization: Bearer")
-                        or "redirected" not in kwargs):
-                    clean_header_list.append(str(header_item))
+                if str(header_item).startswith("Authorization: Bearer"):
+                    if "Signature=" in self._url:
+                        continue
+                    if "redirect" in kwargs:
+                        continue
+                clean_header_list.append(str(header_item))
             pyc.setopt(pyc.HTTPHEADER, clean_header_list)
         if "v" in kwargs:
             pyc.setopt(pyc.VERBOSE, kwargs["v"])
@@ -4851,36 +4871,44 @@ class GetURLpyCurl(GetURL):
 
     def get(self, *args, **kwargs):
         """http get implementation using the PyCurl"""
-        buf = cStringIO.StringIO()
-        hdr = CurlHeader()
-        pyc = pycurl.Curl()
-        url = str(args[0])
-        pyc.setopt(pycurl.URL, url)
-        self._set_defaults(pyc, hdr)
-        try:
-            (output_file, filep) = self._mkpycurl(pyc, hdr, buf, **kwargs)
-            Msg().err("curl url: ", url, l=Msg.DBG)
-            Msg().err("curl arg: ", kwargs, l=Msg.DBG)
-            pyc.perform()     # call pyculr
-        except(IOError, OSError):
-            return(None, None)
-        except pycurl.error as error:
-            errno, errstr = error
-            hdr.data["X-ND-CURLSTATUS"] = errno
-            if not hdr.data["X-ND-HTTPSTATUS"]:
-                hdr.data["X-ND-HTTPSTATUS"] = errstr
+        cont_redirs = 0
+        max_redirs = 10
+        status_code = 302
+        while status_code >= 300 and status_code <= 308 and cont_redirs < max_redirs:
+            cont_redirs += 1
+            hdr = CurlHeader()
+            buf = cStringIO.StringIO()
+            pyc = pycurl.Curl()
+            self._set_defaults(pyc, hdr)
+            try:
+                (output_file, filep) = self._mkpycurl(pyc, hdr, buf, *args, **kwargs)
+                Msg().err("curl url: ", self._url, l=Msg.DBG)
+                Msg().err("curl arg: ", kwargs, l=Msg.DBG)
+                pyc.perform()     # call pyculr
+            except(IOError, OSError):
+                return(None, None)
+            except pycurl.error as error:
+                errno, errstr = error
+                hdr.data["X-ND-CURLSTATUS"] = errno
+                if not hdr.data["X-ND-HTTPSTATUS"]:
+                    hdr.data["X-ND-HTTPSTATUS"] = errstr
+            status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])
+            if status_code >= 300 and status_code <= 308:
+                args = (hdr.data['location'],)
+                kwargs["redirect"] = True
+
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
         if "ofile" in kwargs:
             filep.close()
-            if " 401" in hdr.data["X-ND-HTTPSTATUS"]:  # needs authentication
+            if status_code == 401:  # needs authentication
                 pass
-            elif " 206" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
+            elif status_code == 206 and "resume" in kwargs:
                 pass
-            elif " 416" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
+            elif status_code == 416 and "resume" in kwargs:
                 kwargs["resume"] = False
-                (hdr, buf) = self.get(url, **kwargs)
-            elif " 200" not in hdr.data["X-ND-HTTPSTATUS"]:
+                (hdr, buf) = self.get(self._url, **kwargs)
+            elif status_code != 200:
                 Msg().err("Error: in download: " + str(
                     hdr.data["X-ND-HTTPSTATUS"]))
                 FileUtil(output_file).remove()
@@ -4914,7 +4942,7 @@ class GetURLexeCurl(GetURL):
             "resume": "",
             "ctimeout": "--connect-timeout " + str(self.ctimeout),
             "timeout": "-m " + str(self.timeout),
-            "other": "--max-redirs 10 -s -q -S -L "
+            "other": "-s -q -S"
         }
         if self.insecure:
             self._opts["insecure"] = "-k"
@@ -4944,8 +4972,11 @@ class GetURLexeCurl(GetURL):
             self._opts["proxy"] = "--proxy '%s'" % (self.http_proxy)
         if "header" in kwargs:
             for header_item in kwargs["header"]:
-                if (not str(header_item).startswith("Authorization: Bearer") or
-                        "redirected" not in kwargs):
+                if str(header_item).startswith("Authorization: Bearer"):
+                    if "Signature=" in self._files["url"]:
+                        continue
+                    if "redirect" in kwargs:
+                        continue
                     self._opts["header"] += "-H '%s'" % (str(header_item))
         if "v" in kwargs and kwargs["v"]:
             self._opts["verbose"] = "-v"
@@ -4964,17 +4995,27 @@ class GetURLexeCurl(GetURL):
 
     def get(self, *args, **kwargs):
         """http get implementation using the curl cli executable"""
-        hdr = CurlHeader()
-        buf = cStringIO.StringIO()
-        self._set_defaults()
-        cmd = self._mkcurlcmd(*args, **kwargs)
-        status = subprocess.call(cmd, shell=True, close_fds=True) # call curl
-        hdr.setvalue_from_file(self._files["header_file"])
-        hdr.data["X-ND-CURLSTATUS"] = status
-        if status:
-            Msg().err("Error: in download: %s"
-                      % str(FileUtil(self._files["error_file"]).getdata()))
-            return(hdr, buf)
+        cont_redirs = 0
+        max_redirs = 10
+        status_code = 302
+        while status_code >= 300 and status_code <= 308 and cont_redirs < max_redirs:
+            cont_redirs += 1
+            hdr = CurlHeader()
+            buf = cStringIO.StringIO()
+            self._set_defaults()
+            cmd = self._mkcurlcmd(*args, **kwargs)
+            status = subprocess.call(cmd, shell=True, close_fds=True) # call curl
+            hdr.setvalue_from_file(self._files["header_file"])
+            hdr.data["X-ND-CURLSTATUS"] = status
+            if status:
+                Msg().err("Error: in download: %s"
+                          % str(FileUtil(self._files["error_file"]).getdata()))
+                return(hdr, buf)
+            status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])
+            if status_code >= 300 and status_code <= 308:
+                args = (hdr.data['location'],)
+                kwargs["redirect"] = True
+
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
         if "ofile" in kwargs:
@@ -5074,6 +5115,8 @@ class DockerIoAPI(object):
                             hdr.data["www-authenticate"])
                     auth_kwargs = kwargs.copy()
                     auth_kwargs.update({"header": [auth_header]})
+                    if "location" in hdr.data and hdr.data['location']:
+                        args = hdr.data['location']
                     (hdr, buf) = self._get_url(*args, **auth_kwargs)
                 else:
                     hdr.data["X-ND-CURLSTATUS"] = 13  # Permission denied
@@ -6956,11 +6999,7 @@ class Main(object):
     def __init__(self):
         self.cmdp = CmdParser()
         parseok = self.cmdp.parse(sys.argv)
-        if (self.cmdp.get("", "CMD") == "version" or
-                self.cmdp.get("--version", "GEN_OPT")):
-            self._version()
-            sys.exit(0)
-        if not parseok:
+        if not parseok and not self.cmdp.get("--version", "GEN_OPT"):
             Msg().err("Error: parsing command line, use: udocker help")
             sys.exit(1)
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
@@ -6983,6 +7022,10 @@ class Main(object):
                           Config.topdir)
                 sys.exit(1)
         self.localrepo = LocalRepository(Config.topdir)
+        if (self.cmdp.get("", "CMD") == "version" or
+                self.cmdp.get("--version", "GEN_OPT")):
+            Udocker(self.localrepo).do_version(self.cmdp)
+            sys.exit(0)
         if not self.localrepo.is_repo():
             Msg().out("Info: creating repo: " + Config.topdir, l=Msg.INF)
             self.localrepo.create_repo()

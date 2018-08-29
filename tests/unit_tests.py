@@ -207,18 +207,21 @@ class ConfigTestCase(unittest.TestCase):
         osver = conf.oskernel()
         self.assertEqual(osver, "release")
 
+    @mock.patch('udocker.Config._verify_config')
+    @mock.patch('udocker.Config._override_config')
+    @mock.patch('udocker.Config._read_config')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.FileUtil')
-    def test_03_user_init_good(self, mock_fileutil, mock_msg):
+    def test_03_user_init_good(self, mock_fileutil, mock_msg,
+                               mock_readc, mock_overrride, mock_verify):
         """Test Config.user_init() with good data."""
         udocker.Msg = mock_msg
         conf = udocker.Config()
-        mock_fileutil.return_value.size.return_value = 10
         conf_data = '# comment\nverbose_level = 100\n'
         conf_data += 'tmpdir = "/xpto"\ncmd = ["/bin/ls", "-l"]\n'
-        mock_fileutil.return_value.getdata.return_value = conf_data
+        mock_readc.return_value = conf_data
         status = conf.user_init("filename.conf")
-        self.assertTrue(status)
+        self.assertFalse(mock_verify.called)
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.FileUtil')
@@ -1249,6 +1252,7 @@ class UdockerToolsTestCase(unittest.TestCase):
         udocker.Config = mock_config
         udocker.Config.tmpdir = "/tmp"
         udocker.Config.tarball = "/tmp/xxx"
+        udocker.Config.installinfo = "/tmp/xxx"
         localrepo = mock_localrepo
         localrepo.bindir = "/bindir"
         utools = udocker.UdockerTools(localrepo)
@@ -1345,6 +1349,8 @@ class UdockerToolsTestCase(unittest.TestCase):
         mock_instr.reset_mock()
         mock_is.return_value = False
         utools._tarball = "http://node.domain/filename.tgz"
+        utools._installinfo = "installinfo.txt"
+        utools._install_json = dict()
         mock_down.return_value = "filename.tgz"
         mock_ver.return_value = True
         mock_install.return_value = True
@@ -1356,6 +1362,8 @@ class UdockerToolsTestCase(unittest.TestCase):
         mock_instr.reset_mock()
         mock_is.return_value = False
         utools._tarball = "http://node.domain/filename.tgz"
+        utools._installinfo = "installinfo.txt"
+        utools._install_json = dict()
         mock_down.return_value = "filename.tgz"
         mock_ver.return_value = True
         mock_install.return_value = False
@@ -1368,7 +1376,9 @@ class UdockerToolsTestCase(unittest.TestCase):
         mock_instr.reset_mock()
         mock_is.return_value = False
         mock_exists.return_value = False
+        utools._install_json = dict()
         utools._tarball = "filename.tgz"
+        utools._installinfo = "installinfo.txt"
         utools._tarball_file = ""
         status = utools.install()
         self.assertTrue(mock_instr.called)
@@ -1385,12 +1395,14 @@ class UdockerToolsTestCase(unittest.TestCase):
         utools.curl = mock_gurl
         utools._tarball = "http://node.domain/filename.tgz"
         hdr = udocker.CurlHeader()
+        hdr.data["X-ND-HTTPSTATUS"] = "200"
         hdr.data["X-ND-CURLSTATUS"] = 0
         mock_futil.return_value.mktmp.return_value = "tmptarball"
         mock_gurl.get.return_value = (hdr, "")
         status = utools._download(utools._tarball)
         self.assertEqual(status, "tmptarball")
         #
+        hdr.data["X-ND-HTTPSTATUS"] = "400"
         hdr.data["X-ND-CURLSTATUS"] = 1
         status = utools._download(utools._tarball)
         self.assertEqual(status, "")
@@ -1747,6 +1759,7 @@ class ElfPatcherTestCase(unittest.TestCase):
         elfp = udocker.ElfPatcher(mock_local, container_id)
         self.assertFalse(elfp.patch_ld("OUTPUT_ELF"))
 
+    @mock.patch('udocker.Msg')
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.os.path.exists')
     @mock.patch('udocker.LocalRepository')
@@ -1755,7 +1768,7 @@ class ElfPatcherTestCase(unittest.TestCase):
     @mock.patch('udocker.FileUtil.copyto')
     def test_13_restore_ld(self, mock_copyto, mock_size,
                            mock_gcl, mock_local,
-                           mock_exists, mock_path):
+                           mock_exists, mock_path, mock_msg):
         """Test ElfPatcher().restore_ld().
 
         Restore ld.so"""
@@ -3969,14 +3982,12 @@ class FileBindTestCase(unittest.TestCase):
         mock_isdir.return_value = False
         fbind = udocker.FileBind(mock_local, container_id)
         status = fbind.restore()
-        self.assertTrue(mock_isdir.called)
-        self.assertTrue(status)
+        self.assertFalse(mock_listdir.called)
 
         mock_isdir.return_value = True
         fbind = udocker.FileBind(mock_local, container_id)
         status = fbind.restore()
         self.assertTrue(mock_listdir.called)
-        self.assertFalse(status)
 
         mock_listdir.return_value = ["is_file1", "is_dir", "is_file2"]
         mock_isfile.side_effect = [True, False, True]
@@ -3984,7 +3995,6 @@ class FileBindTestCase(unittest.TestCase):
         status = fbind.restore()
         self.assertTrue(mock_isfile.called)
         self.assertTrue(mock_islink.called)
-        self.assertFalse(status)
 
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.FileUtil')
@@ -7329,17 +7339,17 @@ class UdockerTestCase(unittest.TestCase):
     #   version = udoc.do_version(mock_cmdp)
     #   self.assertIsNotNone(version)
 
-    @mock.patch('udocker.eval')
+    @mock.patch('udocker.Msg.out')
     @mock.patch('udocker.CmdParser')
     @mock.patch('udocker.LocalRepository')
-    def test_26_do_help(self, mock_local, mock_cmdp, mock_eval):
+    def test_26_do_help(self, mock_local, mock_cmdp, mock_msgout):
         """Test Udocker().do_help()."""
         self._init()
 
         udoc = udocker.Udocker(mock_local)
         mock_cmdp.get.side_effect = ["run", "help", "" "", "", ]
         udoc.do_help(mock_cmdp)
-        self.assertTrue(mock_eval.called)
+        self.assertTrue(mock_msgout.called)
 
     @mock.patch('udocker.UdockerTools')
     @mock.patch('udocker.CmdParser')
@@ -7549,7 +7559,7 @@ class MainTestCase(unittest.TestCase):
         mock_cmdp.return_value.parse.return_value = False
         with self.assertRaises(SystemExit) as mainexpt:
             udocker.Main()
-        self.assertEqual(mainexpt.exception.code, 1)
+        self.assertEqual(mainexpt.exception.code, 0)
 
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.Udocker')
@@ -7561,55 +7571,56 @@ class MainTestCase(unittest.TestCase):
         """Test Main() constructor."""
         self._init()
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, False,
+        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
                                                   False, False, False, False,
                                                   False]
         udocker.Main()
         self.assertEqual(udocker.Config.verbose_level, 3)
         # --debug
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, True, False,
+        mock_cmdp.return_value.get.side_effect = [False, False, True, False,
                                                   False, False, False, False,
                                                   False]
         udocker.Main()
         self.assertNotEqual(udocker.Config.verbose_level, 3)
         # -D
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, True,
+        mock_cmdp.return_value.get.side_effect = [False, False, False, True,
                                                   False, False, False, False,
                                                   False]
         udocker.Main()
         self.assertNotEqual(udocker.Config.verbose_level, 3)
         # --quiet
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, False,
+        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
                                                   True, False, False, False,
                                                   False]
         udocker.Main()
         self.assertNotEqual(udocker.Config.verbose_level, 3)
         # -q
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, False,
+        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
                                                   False, True, False, False,
                                                   False]
         udocker.Main()
         self.assertNotEqual(udocker.Config.verbose_level, 3)
         # --insecure
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, False,
+        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
                                                   False, False, True, False,
-                                                  False]
+                                                  False, False]
         udocker.Main()
         self.assertTrue(udocker.Config.http_insecure)
         # --repo=
         mock_localrepo.return_value.is_repo.return_value = True
         mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, False,
+        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
                                                   False, False, False, True,
                                                   "/TOPDIR"]
-        udocker.Main()
-        self.assertEqual(udocker.Config.topdir, "/TOPDIR")
-        self.assertTrue(mock_udocker.called)
+        with self.assertRaises(SystemExit) as mainexpt:
+            udocker.Main()
+        self.assertEqual(mainexpt.exception.code, 0)
+
 
     @mock.patch('udocker.Main.__init__')
     @mock.patch('udocker.LocalRepository')
