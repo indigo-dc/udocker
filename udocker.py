@@ -6201,7 +6201,7 @@ class Udocker(object):
         registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
         (imagerepo, tag) = self._check_imagespec(cmdp.get("P1"))
-        if self.keystore.get(imagerepo.split("/")[0]):
+        if not registry_url and self.keystore.get(imagerepo.split("/")[0]):
             registry_url = imagerepo.split("/")[0]
         if (not imagerepo) or cmdp.missing_options():    # syntax error
             return False
