@@ -2853,6 +2853,7 @@ class GetURLTestCase(unittest.TestCase):
         udocker.Config.http_agent = ""
         udocker.Config.http_proxy = ""
         udocker.Config.http_insecure = 0
+        udocker.Config.use_curl_executable = ""
 
     def _get(self, *args, **kwargs):
         """Mock for pycurl.get."""

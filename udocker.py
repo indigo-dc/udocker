@@ -255,6 +255,7 @@ class Config(object):
     ctimeout = 6       # default TCP connect timeout (secs)
     http_agent = ""
     http_insecure = False
+    use_curl_executable = "" # force use of executable
 
     # docker hub v1
     dockerio_index_url = "https://index.docker.io"
@@ -316,6 +317,8 @@ class Config(object):
                                          Config.fakechroot_so)
         Config.tmpdir = os.getenv("UDOCKER_TMP", Config.tmpdir)
         Config.keystore = os.getenv("UDOCKER_KEYSTORE", Config.keystore)
+        Config.use_curl_executable = os.getenv("UDOCKER_USE_CURL_EXECUTABLE",
+                                               Config.use_curl_executable)
 
     def _read_config(self, config_file):
         """Interpret config file content"""
@@ -4722,12 +4725,13 @@ class GetURL(object):
         self.http_proxy = Config.http_proxy
         self.cache_support = False
         self.insecure = Config.http_insecure
+        self._curl_executable = Config.use_curl_executable
         self._select_implementation()
 
     # pylint: disable=locally-disabled
     def _select_implementation(self):
         """Select which implementation to use"""
-        if GetURLpyCurl().is_available():
+        if GetURLpyCurl().is_available() and not self._curl_executable:
             self._geturl = GetURLpyCurl()
             self.cache_support = True
         elif GetURLexeCurl().is_available():
@@ -4988,7 +4992,10 @@ class GetURLexeCurl(GetURL):
             self._opts["timeout"] = "-m %s" % (str(self.download_timeout))
             if "resume" in kwargs and kwargs["resume"]:
                 self._opts["resume"] = "-C -"
-        return("curl " + " ".join(self._opts.values()) +
+        curl_executable = "curl"
+        if self._curl_executable and isinstance(self._curl_executable, str):
+            curl_executable = self._curl_executable
+        return(curl_executable + " " + " ".join(self._opts.values()) +
                " -D %s -o %s --stderr %s '%s'" %
                (self._files["header_file"], self._files["output_file"],
                 self._files["error_file"], self._files["url"]))
