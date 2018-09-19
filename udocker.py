@@ -5286,7 +5286,7 @@ class DockerIoAPI(object):
                         auth_token["token"]
                     self.v2_auth_header = auth_header
         # PR #126
-        elif 'BASIC' in bearer:
+        elif 'BASIC' in bearer or 'Basic' in bearer:
             auth_header = "Authorization: Basic %s" %(self.v2_auth_token)
             self.v2_auth_header = auth_header
         return auth_header
@@ -6208,6 +6208,8 @@ class Udocker(object):
         registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
         (imagerepo, tag) = self._check_imagespec(cmdp.get("P1"))
+        if not registry_url and self.keystore.get(imagerepo.split("/")[0]):
+            registry_url = imagerepo.split("/")[0]
         if (not imagerepo) or cmdp.missing_options():    # syntax error
             return False
         else:
