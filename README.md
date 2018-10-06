@@ -1,10 +1,12 @@
+[![Build Status](https://travis-ci.com/undu/udocker.svg?branch=master)](https://travis-ci.com/undu/udocker)
+
 udocker
 =======
 A basic user tool to execute simple docker containers in user space
 without requiring root privileges. Enables download and execution
-of docker containers by non-privileged users in Linux systems where 
+of docker containers by non-privileged users in Linux systems where
 docker is not available. It can be used to pull and execute docker
-containers in Linux batch systems and interactive clusters that are 
+containers in Linux batch systems and interactive clusters that are
 managed by other entities such as grid infrastructures or externally
 managed batch or interactive systems.
 
@@ -25,7 +27,7 @@ udocker does not make use of docker nor requires its presence.
 
 udocker "executes" the containers by simply providing a chroot like
 environment over the extracted container. The current implementation
-supports different methods to mimic chroot enabling execution of 
+supports different methods to mimic chroot enabling execution of
 containers without requiring privileges under a chroot like environment.
 udocker transparently supports several methods to execute the containers
 using tools and libraries such as:
@@ -128,8 +130,8 @@ udocker create --name=myfed  fedora:25
 udocker run  myfed  cat /etc/redhat-release
 ```
 
-Run mounting the host /home/u457 into the container directory /home/cuser. 
-Notice that you can "mount" any host directory inside the container, this 
+Run mounting the host /home/u457 into the container directory /home/cuser.
+Notice that you can "mount" any host directory inside the container, this
 is not a real mount but the directories will be visible inside the container.
 ```
 udocker run -v /home/u457:/home/cuser -w /home/user myfed  /bin/bash
@@ -212,7 +214,7 @@ and dockerfiles.
 udocker does not provide all the docker features, and is not intended
 as a docker replacement.
 
-Debugging inside of udocker with the PRoot engine will not work due to 
+Debugging inside of udocker with the PRoot engine will not work due to
 the way PRoot implements the chroot environment
 
 udocker is mainly oriented at providing a run-time environment for
@@ -236,25 +238,25 @@ adequately protected by the user.
 udocker does not require privileges and runs under the identity of the user
 invoking it.
 
-Users can downloaded udocker and execute it without requiring system 
+Users can downloaded udocker and execute it without requiring system
 administrators intervention.
 
 udocker via PRoot offers the emulation of the root user. This emulation
 mimics a real root user (e.g getuid will return 0). This is just an emulation
 no root privileges are involved. This feature makes possible the execution
 of some tools that do not require actual privileges but which refuse to
-work if the username or id are not root or 0. This enables for instance 
+work if the username or id are not root or 0. This enables for instance
 software installation using rpm, yum or dnf inside the container.
 
 Due to the lack of isolation udocker must not be run by privileged users.
 
 ## Other limitations
 Notice that when using execution engines other than PRoot (Pn modes) the
-created containers cannot be moved across hosts. In this case convert back 
+created containers cannot be moved across hosts. In this case convert back
 to a Pn mode before transfer.
 
 The accelerated mode of PRoot (mode P1) may exhibit failures in Linux kernels
-above 4.0 with some applications due to kernel changes and upstream issues in 
+above 4.0 with some applications due to kernel changes and upstream issues in
 this case use mode P2 or any of the other modes.
 
 The runC mode requires a recent kernel with user namespaces enabled.
@@ -276,7 +278,7 @@ See: [Contributing](CONTRIBUTING.md)
 ## Acknowledgements
 
 * Docker https://www.docker.com/
-* PRoot http://proot.me
+* PRoot https://proot-me.github.io/
 * Fakechroot https://github.com/dex4er/fakechroot/wiki
 * runC https://runc.io/
 * Singularity http://singularity.lbl.gov

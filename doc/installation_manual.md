@@ -8,10 +8,12 @@ require any privileges.
 
 ## 1. DEPENDENCIES
 
-Python dependencies are described in the file requirements.txt
+Python dependencies are described in the file requirements.txt.
 
 udocker requires either pycurl or the curl executable command,
 to download both the binaries and/or pull containers from repositories.
+
+tar is needed when using `udocker install` to unpackage binaries and libraries.
 
 ## 2. USER INSTALLATION
 
@@ -192,7 +194,7 @@ example builds the tarball from the master repository.
 ```
   git clone https://github.com/indigo-dc/udocker
   cd udocker/utils
-  bash build_tarball.sh
+  ./build_tarball.sh
 ```
  
 ## 7. DIRECTORIES
@@ -216,6 +218,7 @@ The location of the udocker directories can be changed via environment variables
  * UDOCKER_KEYSTORE : location of keystore for repository login/logout
  * UDOCKER_TMP : location of temporary directory
  * UDOCKER_TARBALL : location of installation tarball (file of URL)
+ * UDOCKER_NOSYSCONF: do not read system wide config files in /etc
 
 The Docker index and registry and be overrided via environment variables.
 

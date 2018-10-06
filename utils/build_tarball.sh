@@ -1115,7 +1115,7 @@ create_package_tarball()
 # MAIN
 # ##################################################################
 
-utils_dir="$(dirname $(realpath $0))"
+utils_dir="$(dirname $(readlink -e $0))"
 REPO_DIR="$(dirname $utils_dir)"
 
 sanity_check
