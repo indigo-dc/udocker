@@ -1,40 +1,56 @@
 #!/usr/bin/env python
-"""
-=============
-udocker setup
-=============
-Wrapper to execute basic docker containers without using docker.
-This tool is a last resort for the execution of docker containers
-where docker is unavailable. It only provides a limited set of
-functionalities.
+# -*- coding: utf-8 -*-
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+"""The setup script."""
 
-http://www.apache.org/licenses/LICENSE-2.0
+from setuptools import setup, find_packages
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+with open('README.md') as readme_file:
+    readme = readme_file.read()
 
-from distutils.core import setup
+with open('CHANGELOG.md') as history_file:
+    history = history_file.read()
 
-import os
-import sys
+requirements = ['Click>=6.0', ]
 
-sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])))
+setup_requirements = ['pytest-runner', ]
 
-import udocker
+test_requirements = ['pytest', ]
 
-setup(name="udocker",
-      version=udocker.__version__,
-      description="basic docker user space containers",
-      author="LIP",
-      author_email="udocker@lip.pt",
-      url="https://github.com/indigo-dc/udocker",
-      scripts=["udocker", ],
-      platforms=["linux2", ])
+setup(
+    author="Jorge Gomes",
+    author_email='udocker@lip.pt',
+    classifiers=[
+        'Development Status :: 2 - Pre-Alpha',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: Apache Software License',
+        'Natural Language :: English',
+        "Programming Language :: Python :: 2",
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+    ],
+    description="A basic user tool to execute simple docker containers in batch or interactive systems without root privileges",
+    entry_points={
+        'console_scripts': [
+            'udocker=udocker.cli:main',
+        ],
+    },
+    install_requires=requirements,
+    license="Apache Software License 2.0",
+    long_description=readme + '\n\n' + history,
+    include_package_data=True,
+    keywords='udocker',
+    name='udocker',
+    packages=find_packages(include=['udocker']),
+    setup_requires=setup_requirements,
+    test_suite='tests',
+    tests_require=test_requirements,
+    url='https://github.com/indigo-dc/udocker',
+    version='2.0.0-dev3',
+    zip_safe=False,
+)
+
