@@ -20,6 +20,7 @@ test_requirements = ['pytest', ]
 setup(
     author="Jorge Gomes",
     author_email='udocker@lip.pt',
+    version=udocker.__version__,
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
@@ -36,7 +37,7 @@ setup(
     description="A basic user tool to execute simple docker containers in batch or interactive systems without root privileges",
     entry_points={
         'console_scripts': [
-            'udocker=udocker.cli:main',
+            'udocker=udocker.udocker:main',
         ],
     },
     install_requires=requirements,
@@ -50,7 +51,7 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/indigo-dc/udocker',
-    version='2.0.0-dev3',
+    use_2to3=True,
     zip_safe=False,
 )
 
