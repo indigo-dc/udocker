@@ -22,15 +22,20 @@ limitations under the License.
 """
 import sys
 import click
+import udocker
 
 
-@click.command()
-def main(args=None):
+@click.group()
+@click.version_option()
+def main():
+    pass
 
-    click.echo("Replace this message by putting your code into "
-               "udocker.udocker.main")
-    click.echo("See click documentation at http://click.pocoo.org/")
-    return 0
+@main.command()
+@click.option('-V', '--version', 'version')
+def version(version):
+    '''Show udocker version number and exit.
+    '''
+    click.echo('udocker version: %s' % udocker.__version__)
 
 
 if __name__ == "__main__":
