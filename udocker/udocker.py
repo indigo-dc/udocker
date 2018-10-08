@@ -22,20 +22,32 @@ limitations under the License.
 """
 import sys
 import click
-import udocker
+__version__ = '2.0.0-dev1'
 
 
-@click.group()
-@click.version_option()
+@click.group(context_settings={
+    'help_option_names': ('-h', '--help')}
+)
+@click.version_option(__version__, '-v', '--version')
 def main():
     pass
 
+
+@click.option('--force', help='force reinstall')
+@click.option('--purge', help='remove files (be careful)')
 @main.command()
-@click.option('-V', '--version', 'version')
-def version(version):
-    '''Show udocker version number and exit.
-    '''
-    click.echo('udocker version: %s' % udocker.__version__)
+def install(force, purge):
+    """Install udocker and its tools
+    """
+    click.echo('Install files')
+
+
+@click.argument('directory', nargs=1, type=click.Path(writable=True))
+@main.command()
+def mkrepo(directory):
+    """Create a local repository in a specified directory
+    """
+    click.echo('Local repository: %s' % directory)
 
 
 if __name__ == "__main__":

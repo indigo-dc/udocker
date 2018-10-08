@@ -2,7 +2,6 @@ simplejson>=2.0.9
 pycurl>=7.15.5
 
 pip>=9.0.1
-bumpversion>=0.5.3
 wheel>=0.30.0
 watchdog>=0.8.3
 flake8>=3.5.0
