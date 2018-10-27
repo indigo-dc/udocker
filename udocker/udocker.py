@@ -32,7 +32,7 @@ logger = logging.getLogger('udocker')
 @click.group(context_settings={
     'help_option_names': ('-h', '--help')}
 )
-@click.version_option(__version__, '-v', '--version')
+@click.version_option(__version__, '-V', '--version')
 def main():
     pass
 
