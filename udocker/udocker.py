@@ -21,8 +21,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import sys
+import logging
 import click
-__version__ = '2.0.0-dev1'
+__version__ = '2.0.0-dev2'
+
+
+logger = logging.getLogger('udocker')
 
 
 @click.group(context_settings={
@@ -52,5 +56,5 @@ def mkrepo(directory):
 
 if __name__ == "__main__":
     sys.exit(main())
-  
+
 
