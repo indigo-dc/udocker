@@ -5345,7 +5345,7 @@ class RuncEngineTestCase(unittest.TestCase):
         mock_run_env_cleanup_list.reset_mock()
         mock_call.reset_mock()
         rcex = udocker.RuncEngine(mock_local)
-        rcex.runc_exec = "runc"
+        rcex.runc_exec = "true"
         rcex.container_dir = "/.udocker/containers/CONTAINER/ROOT"
         rcex.opt["hostenv"] = []
         status = rcex.run("CONTAINERID")
