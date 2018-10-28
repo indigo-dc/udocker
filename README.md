@@ -3,20 +3,17 @@
 
 [![logo](https://raw.githubusercontent.com/indigo-dc/udocker/master/doc/logo-small.png)]()
 
-udocker
-=======
-
-A basic user tool to execute simple docker containers in user space
-without requiring root privileges. Enables download and execution
+udocker is a basic user tool to execute simple docker containers in user
+space without requiring root privileges. Enables download and execution
 of docker containers by non-privileged users in Linux systems where
 docker is not available. It can be used to pull and execute docker
 containers in Linux batch systems and interactive clusters that are
 managed by other entities such as grid infrastructures or externally
 managed batch or interactive systems.
 
-The INDIGO udocker does not require any type of privileges nor the
-deployment of services by system administrators. It can be downloaded
-and executed entirely by the end user.
+udocker does not require any type of privileges nor the deployment of 
+services by system administrators. It can be downloaded and executed
+entirely by the end user.
 
 udocker is a wrapper around several tools to mimic a subset of the
 docker capabilities including pulling images and running containers
@@ -53,7 +50,8 @@ using tools and libraries such as:
 * Encapsulates several execution methods
 * Includes the required tools already compiled to work across systems
 * Tested with GPGPU and MPI applications
-* Runs both on new and older Linux distributions (including: CentOS 6, CentOS 7, Ubuntu 14, Ubuntu 16, Fedora, etc)
+* Runs both on new and older Linux distributions including: 
+  CentOS 6, CentOS 7, Ubuntu 14, Ubuntu 16, Ubunto 18, Fedora, etc
 
 ## Installation
 See the [Installation manual](doc/installation_manual.md)
