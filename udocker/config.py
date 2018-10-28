@@ -1,5 +1,18 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
+import pwd
+import platform
+import logging
+from udocker import PY_VER
+from msg import Msg
+if PY_VER >= '3':
+    from configparser import ConfigParser as confparser
+else:
+    from ConfigParser import SafeConfigParser as confparser
+
+
+logger = logging.getLogger('udocker')
 
 
 class Config(object):

@@ -27,6 +27,8 @@ __version__ = '2.0.0-dev2'
 
 
 logger = logging.getLogger('udocker')
+# Python version major.minor
+PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
 
 
 @click.group(context_settings={
