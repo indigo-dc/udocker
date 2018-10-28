@@ -45,21 +45,21 @@ From the development branch:
   ./udocker install
 ```
 
-### 2.2. INSTALL FROM INDIGO-DATACLOUD REPOSITORIES
+### 2.2. INSTALL FROM REPOSITORIES
 <!--
 -->
-The official release of udocker is available from the INDIGO-DataCloud
-repository at `http://repo.indigo-datacloud.eu/` where is made available
-as a tarball to be deployed by the end user.
+udocker is also available as a tarball in certain repositories such as:
+ * `https://download.ncg.ingrid.pt/webdav/udocker/`
+ * `http://repo.indigo-datacloud.eu/` 
 
 This installation method contains statically compiled binaries and is built
 to be used across different hosts and OS distributions. Please check the
 repositories for the latest release.
 
-Install or upgrade of udocker v1.1.0 or higher released by INDIGO-DataCloud:
+Install or upgrade of udocker v1.1.2:
 
 ```
-  curl http://repo.indigo-datacloud.eu/repository/indigo/2/centos7/x86_64/tgz/udocker-1.1.0.tar.gz > udocker-tarball.tgz
+  curl https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.2.tar.gz > udocker-tarball.tgz
   export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
   tar xzvf $UDOCKER_TARBALL udocker
   ./udocker install
@@ -124,7 +124,7 @@ DEBs are provided at http://repo.indigo-datacloud.eu
 ```
 Check the INDIGO-DataCloud repository for the latest versions and supported distributions.
 Replace `X` in the examples with the latest version.
-Notice that the rc engine (udocker-rceng) package is only available for Ubuntu 14 and 16.
+Notice that the rc engine (udocker-rceng) package is only available for Ubuntu 16 and 18.
 
 ## 4. SYSTEM INSTALLATION WITH ANSIBLE AND PYTHON
 
