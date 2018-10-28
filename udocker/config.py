@@ -6,6 +6,7 @@ import platform
 import logging
 from udocker import PY_VER
 from msg import Msg
+from utils.fileutils import FileUtil
 if PY_VER >= '3':
     from configparser import ConfigParser as confparser
 else:
@@ -208,6 +209,17 @@ class Config(object):
                                                Config.use_curl_executable)
 
     def _read_config(self, config_file):
+        """Interpret config file content"""
+        cfile = FileUtil(config_file)
+        if cfile.size() == -1:
+            return False
+        parser = confparser.ConfigParser()
+        parser.read(config_file)
+        ver_level = parser.get('DEFAULT', 'verbose_level')
+        Msg().setlevel(ver_level)
+        return True
+
+    def _read_configOLD(self, config_file):
         """Interpret config file content"""
         cfile = FileUtil(config_file)
         if cfile.size() == -1:
