@@ -52,7 +52,7 @@ patch_fakechroot_source()
         return
     fi
 
-    cp ${utils_dir}/fakechroot_source.patch Fakechroot.patch
+    cp ${utils_dir}/fakechroot_source_glibc.patch Fakechroot.patch
     patch -p1 < Fakechroot.patch
     popd
 }
@@ -148,6 +148,12 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker-freng (1.1.2-1) trusty; urgency=low
+
+  * Repackaging for udocker 1.1.2
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Fri, 26 Oct 2018 00:59:16 +0000
+
 udocker-freng (1.1.1-1) trusty; urgency=low
 
   * Repackaging for udocker 1.1.1
@@ -365,6 +371,9 @@ override_dh_auto_configure:
 #override_dh_auto_build:
 #	/bin/true
 
+override_dh_shlibdeps:
+	dpkg-shlibdeps -Tdebian/udocker-freng.substvars debian/udocker-freng/usr/lib/udocker/libfakechroot-Ubuntu-16-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-CentOS-7-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-Fedora-25-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-Ubuntu-14-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-Ubuntu-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-Debian-7-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-Fedora-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-CentOS-6-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-CentOS-x86_64.so debian/udocker-freng/usr/lib/udocker/patchelf-x86_64
+
 override_dh_auto_install:
 	install -g 0 -o 0 -m 755 -D patchelf/src/patchelf debian/udocker-freng/usr/lib/udocker/patchelf-x86_64
 	install -g 0 -o 0 -m 755 -D udocker_dir/lib/libfakechroot-CentOS-6-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-CentOS-6-x86_64.so
@@ -377,6 +386,7 @@ override_dh_auto_install:
 	install -g 0 -o 0 -m 755 -D udocker_dir/lib/libfakechroot-Ubuntu-14-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-CentOS-x86_64.so
 	install -g 0 -o 0 -m 755 -D udocker_dir/lib/libfakechroot-Ubuntu-14-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-x86_64.so
 	install -g 0 -o 0 -m 755 -D udocker_dir/lib/libfakechroot-Ubuntu-16-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-Ubuntu-16-x86_64.so
+	install -g 0 -o 0 -m 755 -D udocker_dir/lib/libfakechroot-Alpine-x86_64.so debian/udocker-freng/usr/lib/udocker/libfakechroot-Alpine-x86_64.so
 
 M_RULES
 }

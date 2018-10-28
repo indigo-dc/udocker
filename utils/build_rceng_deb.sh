@@ -46,7 +46,7 @@ create_source_tarball()
     if grep -q "14.04" /etc/lsb-release; then
         git checkout v1.0.0-rc3
     else
-        git checkout v1.0.0-rc4
+        git checkout v1.0.0-rc5
     fi
     popd
     /bin/mv runc ${BASE_DIR}-${VERSION}
@@ -83,6 +83,12 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker-rceng (1.1.2-1) trusty; urgency=low
+
+  * Repackaging for udocker 1.1.2
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Fri, 26 Oct 2018 01:42:37 +0000
+
 udocker-rceng (1.1.1-1) trusty; urgency=low
 
   * Repackaging for udocker 1.1.1
@@ -156,6 +162,9 @@ override_dh_auto_build:
 
 override_dh_auto_test:
 	echo overriding dh_auto_test
+
+override_dh_golang:
+	echo overriding dh_golang
 
 #.ONESHELL:
 override_dh_auto_install:

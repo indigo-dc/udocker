@@ -55,7 +55,7 @@ patch_fakechroot_source()
         return
     fi
 
-    cp ${utils_dir}/fakechroot_source.patch Fakechroot.patch
+    cp ${utils_dir}/fakechroot_source_glibc.patch Fakechroot.patch
     patch -p1 < Fakechroot.patch
     popd
 }
@@ -190,6 +190,8 @@ install -m 755 -D %{_builddir}/%{name}-%{version}/udocker_dir/lib/libfakechroot-
 echo "%{_datarootdir}/udocker/lib/libfakechroot-x86_64.so" >> %{_builddir}/%{name}-%{version}/files.lst
 install -m 755 -D %{_builddir}/%{name}-%{version}/udocker_dir/lib/libfakechroot-Ubuntu-16-x86_64.so %{buildroot}/%{_datarootdir}/udocker/lib/libfakechroot-Ubuntu-16-x86_64.so
 echo "%{_datarootdir}/udocker/lib/libfakechroot-Ubuntu-16-x86_64.so" >> %{_builddir}/%{name}-%{version}/files.lst
+install -m 755 -D %{_builddir}/%{name}-%{version}/udocker_dir/lib/libfakechroot-Alpine-x86_64.so %{buildroot}/%{_datarootdir}/udocker/lib/libfakechroot-Alpine-x86_64.so
+echo "%{_datarootdir}/udocker/lib/libfakechroot-Alpine-x86_64.so" >> %{_builddir}/%{name}-%{version}/files.lst
 
 %clean
 rm -rf %{buildroot}
@@ -200,6 +202,8 @@ rm -rf %{buildroot}
 %doc %{name}-%{version}/LICENSE-fakechroot %{name}-%{version}/COPYING-fakechroot %{name}-%{version}/THANKS-fakechroot %{name}-%{version}/COPYING-patchelf %{name}-%{version}/README-patchelf
 
 %changelog
+* Fri Nov 26 2018 udocker maintainer <udocker@lip.pt> 1.1.2-1
+- Repackaging for udocker 1.1.2
 * Wed Nov  8 2017 udocker maintainer <udocker@lip.pt> 1.1.1-1
 - Repackaging for udocker 1.1.1
 * Tue Sep 12 2017 udocker maintainer <udocker@lip.pt> 1.1.0-1 

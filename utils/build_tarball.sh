@@ -152,7 +152,7 @@ patch_fakechroot_source1()
         return
     fi
 
-    cp ${utils_dir}/fakechroot_source.patch Fakechroot.patch
+    cp ${utils_dir}/fakechroot_source_glibc.patch Fakechroot.patch
     patch -p1 < Fakechroot.patch
 }
 
@@ -162,12 +162,13 @@ prepare_runc_source()
     local RUNC_SOURCE_DIR="$1"
     cd "$BUILD_DIR"
 
+    #/bin/rm -Rf $RUNC_SOURCE_DIR
     if [ -d "$RUNC_SOURCE_DIR" ] ; then
         echo "runc source already exists: $RUNC_SOURCE_DIR"
         return
     fi
-
-    git clone --depth=1 https://github.com/opencontainers/runc
+     
+    git clone --depth=1 --branch v1.0.0-rc5 https://github.com/opencontainers/runc
     /bin/rm -Rf $BUILD_DIR/runc/.git
     /bin/mv runc "$RUNC_SOURCE_DIR"
 }
@@ -239,7 +240,7 @@ fedora25_create_dnf()
 gpgcheck=0
 installonly_limit=3
 clean_requirements_on_remove=True
-reposdir=
+reposdir=NONE
 
 [fedora]
 name=Fedora \$releasever - $ARCH
@@ -474,7 +475,7 @@ distroverpkg=centos-release
 
 # PUT YOUR REPOS HERE OR IN separate files named file.repo
 # in /etc/yum.repos.d
-reposdir=
+reposdir=NONE
 
 [base]
 name=CentOS-$releasever - Base
@@ -579,7 +580,7 @@ centos6_setup()
                 autoconf m4 gcc-c++ automake gawk libtool
     fi
 
-    $SUDO /usr/bin/ym -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
@@ -655,7 +656,7 @@ distroverpkg=centos-release
 
 # PUT YOUR REPOS HERE OR IN separate files named file.repo
 # in /etc/yum.repos.d
-reposdir=
+reposdir=NONE
 
 [base]
 name=CentOS-$releasever - Base
@@ -745,7 +746,7 @@ centos7_setup()
                 autoconf m4 gcc-c++ automake gawk libtool
     fi
 
-    $SUDO /usr/bin/ym -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
@@ -987,12 +988,91 @@ ubuntu16_build_runc()
         $PROOT -0 -r "$OS_ROOTDIR" -b "${RUNC_SOURCE_DIR}:/go/src/github.com/opencontainers/runc" -w / -b /dev \
             -b /etc/resolv.conf:/etc/resolv.conf /bin/bash <<'EOF_ubuntu16_runc'
 apt-get -y update
-apt-get -y install golang libseccomp-dev
+apt-get -y install golang libseccomp-dev git
 export GOPATH=/go
 cd /go/src/github.com/opencontainers/runc
 make static
 EOF_ubuntu16_runc
 
+    set +xv
+}
+
+# #############################################################################
+# Ubuntu 18.04
+# #############################################################################
+
+ubuntu18_setup()
+{
+    echo "ubuntu18_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="ubuntu"
+    local OS_RELVER="18"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/usr/lib/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    $SUDO debootstrap --arch=$OS_ARCH --variant=buildd xenial $OS_ROOTDIR http://archive.ubuntu.com/ubuntu/
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+ubuntu18_build_fakechroot()
+{
+    echo "ubuntu18_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="ubuntu"
+    local OS_RELVER="18"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+    elif [ "$OS_ARCH" = "amd64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-Ubuntu-18.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-Ubuntu-18.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -0 -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            -b /etc/resolv.conf:/etc/resolv.conf /bin/bash <<'EOF_ubuntu18_packages'
+apt-get -y update
+apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
+apt-get -y update
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash
+EOF_ubuntu18_packages
+
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_ubuntu18_fakechroot'
+# BUILD FAKECHROOT
+export SHELL=/bin/bash
+export CONFIG_SHELL=/bin/bash
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib
+cd /fakechroot
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-Ubuntu-18.so
+make clean
+EOF_ubuntu18_fakechroot
     set +xv
 }
 
@@ -1080,6 +1160,8 @@ create_package_tarball()
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-14-x86_64.so"
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Ubuntu-16.so" \
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-16-x86_64.so"
+    /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/libfakechroot-Ubuntu-18.so" \
+               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-18-x86_64.so"
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-x86_64/LICENSE" \
                "${PACKAGE_DIR}/udocker_dir/doc/LICENSE.fakechroot"
 
@@ -1166,12 +1248,16 @@ centos7_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-x86_64"
 ubuntu14_setup "amd64"
 ubuntu14_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-x86_64"
 #ostree_delete "amd64" "ubuntu" "14"
-
+#
 ubuntu16_setup "amd64"
 ubuntu16_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-x86_64"
 ubuntu16_build_runc "amd64" "${BUILD_DIR}/runc-source-x86_64"
 #ostree_delete "amd64" "ubuntu" "16"
-
+#
+ubuntu18_setup "amd64"
+ubuntu18_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-x86_64"
+#ostree_delete "amd64" "ubuntu" "18"
+#
 addto_package_simplejson
 addto_package_udocker
 addto_package_other

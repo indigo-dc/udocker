@@ -47,7 +47,7 @@ create_source_tarball()
     /bin/mkdir -p $BASE_DIR/go/src/github.com/opencontainers
     cd $TMP_DIR/$BASE_DIR/go/src/github.com/opencontainers
     git clone https://github.com/opencontainers/runc
-    git checkout v1.0.0-rc4
+    git checkout v1.0.0-rc5
     cd $TMP_DIR
     tar czvf $SOURCE_TARBALL $BASE_DIR
     /bin/rm -Rf $BASE_DIR
@@ -113,6 +113,8 @@ rm -rf %{buildroot}
 %doc go/src/github.com/opencontainers/runc/LICENSE go/src/github.com/opencontainers/runc/README.md go/src/github.com/opencontainers/runc/NOTICE
 
 %changelog
+* Fri Nov 26 2018 udocker maintainer <udocker@lip.pt> 1.1.2-1
+- Repackaging for udocker 1.1.2
 * Wed Nov  8 2017 udocker maintainer <udocker@lip.pt> 1.1.1-1
 - Repackaging for udocker 1.1.1
 * Thu Sep 12 2017 udocker maintainer <udocker@lip.pt> 1.1.0-1

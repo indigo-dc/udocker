@@ -41,8 +41,8 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.1"
-__date__ = "2017"
+__version__ = "1.1.2"
+__date__ = "2018"
 
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
@@ -77,12 +77,6 @@ try:
     from getpass import getpass
 except ImportError:
     getpass = raw_input
-
-if PY_VER < "2.6":
-    try:
-        import posixpath
-    except ImportError:
-        pass
 
 try:
     import json
@@ -154,13 +148,19 @@ class Config(object):
     # udocker installation tarball
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/AFImjw8ii0X72xf/download"
+        "/s/dPX6hxjHKm96bc2/download"
         " "
         "https://cernbox.cern.ch/index.php"
-        "/s/VC7GuVWA7mYRAiy/download"
+        "/s/Djc4eKJ73uQRZ72/download?x-access-token=eyJhbGciOiJIUzI1Ni"
+        "IsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDE4LTEwLTI1VDE2OjQ4OjM5LjkxND"
+        "UxNTM2NCswMjowMCIsImV4cGlyZXMiOjAsImlkIjoiMTQ0NzQ3IiwiaXRlbV9"
+        "0eXBlIjowLCJtdGltZSI6MTU0MDQ3NTE2Miwib3duZXIiOiJqb3JnZSIsInBh"
+        "dGgiOiJlb3Nob21lLWo6MjY3OTE1MTAxOTIxNjA3NjgiLCJwcm90ZWN0ZWQiO"
+        "mZhbHNlLCJyZWFkX29ubHkiOnRydWUsInNoYXJlX25hbWUiOiJ1ZG9ja2VyLT"
+        "EuMS4yLnRhci5neiIsInRva2VuIjoiRGpjNGVLSjczdVFSWjcyIn0.YCpo-ho"
+        "LPqg6J1PgutWRblgu2kj58IVvw10kkvNI6Nc"
         " "
-        "http://repo.indigo-datacloud.eu/repository"
-        "/indigo/2/centos7/x86_64/tgz/udocker-1.1.1.tar.gz"
+        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.2.tar.gz"
     )
 
     installinfo = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
@@ -4147,29 +4147,12 @@ class LocalRepository(object):
                 return container_dir
         return ""
 
-    def _relpath(self, path, start):
-        """An alternative to os.path.relpath()"""
-        if not path:
-            raise ValueError("no path specified")
-        start_list = posixpath.abspath(start).split(posixpath.sep)
-        path_list = posixpath.abspath(path).split(posixpath.sep)
-        # Work out how much of the filepath is shared by start and path.
-        i = len(posixpath.commonprefix([start_list, path_list]))
-        rel_list = [posixpath.pardir] * (len(start_list) - i) + path_list[i:]
-        if not rel_list:
-            return posixpath.curdir
-        return posixpath.join(*rel_list)
-
     def _symlink(self, existing_file, link_file):
         """Create relative symbolic links"""
         if os.path.exists(link_file):
             return False
-        try:
-            rel_path_to_existing = os.path.relpath(
-                existing_file, os.path.dirname(link_file))
-        except (AttributeError, NameError):
-            rel_path_to_existing = self._relpath(
-                existing_file, os.path.dirname(link_file))
+        rel_path_to_existing = os.path.relpath(
+            existing_file, os.path.dirname(link_file))
         try:
             os.symlink(rel_path_to_existing, link_file)
         except (IOError, OSError):

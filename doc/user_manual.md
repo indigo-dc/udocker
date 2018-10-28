@@ -634,7 +634,7 @@ Examples:
 
 ### 3.25. Setup
 ```
-  udocker setup [--execmode=XY] [--force] CONTAINER-ID|CONTAINER-NAME
+  udocker setup [--execmode=XY] [--force] [--nvidia] CONTAINER-ID|CONTAINER-NAME
 ```
 Choose an execution mode to define how a given container will be executed.
 Enables selection of an execution engine and related execution modes.
@@ -707,6 +707,9 @@ host, and then convert again from Pn to the intended Fn mode.
 
 Mode Rn requires kernels with support for rootless containers, thus
 it will not work on some distributions (e.g. CentOS 6 and CentOS 7).
+
+The option --nvidia enables access to GPGPUs by adding the necessary 
+host libraries to the container.
  
 Quick examples:
 
