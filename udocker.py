@@ -3514,19 +3514,27 @@ class NvidiaMode(object):
 
     def _find_host_dir(self):
         """Find the location of the host nvidia libraries"""
+        dir_list = []
         ld_library_path = os.getenv("LD_LIBRARY_PATH")
         if ld_library_path:
             for libdir in ld_library_path.split(':'):
                 if glob.glob(libdir + '/libnvidia-cfg.so*'):
-                    return libdir + '/'
+                    dir_list.append(libdir + '/')
+                if glob.glob(libdir + '/libcuda.so*'):
+                    dir_list.append(libdir + '/')
+            if dir_list:
+                return dir_list
         ld_data = Uprocess().get_output("ldconfig -p")
         if not ld_data:
             return ""
         for line in ld_data.split("\n"):
             match = re.search("[ |\t]libnvidia-cfg.so[^ ]* .*=> (/.*)", line)
             if match:
-                return os.path.dirname(match.group(1)) + '/'
-        return ""
+                dir_list.append(os.path.dirname(match.group(1)) + '/')
+            match = re.search("[ |\t]libcuda.so[^ ]* .*=> (/.*)", line)
+            if match:
+                dir_list.append(os.path.dirname(match.group(1)) + '/')
+        return dir_list
 
     def _find_cont_dir(self):
         """Find the location of the host target directory for libraries"""
@@ -3540,16 +3548,17 @@ class NvidiaMode(object):
         if not self.container_dir:
             Msg().err("Error: nvidia set mode container dir not found")
             return
-        nvi_host_dir = self._find_host_dir()
+        nvi_host_dir_list = self._find_host_dir()
         nvi_cont_dir = self._find_cont_dir()
-        if not nvi_host_dir:
+        if not nvi_host_dir_list:
             Msg().err("Error: host nvidia libraries not found")
             return
         if not nvi_cont_dir:
             Msg().err("Error: destination directory for nvidia libs not found")
             return
-        lib_list = self._get_nvidia_libs(nvi_host_dir)
-        self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
+        for nvi_host_dir in nvi_host_dir_list:
+            lib_list = self._get_nvidia_libs(nvi_host_dir)
+            self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
         self._copy_files('/etc', '/etc', Config.nvi_etc_list, force)
         self._copy_files('/usr/bin', '/usr/bin', Config.nvi_bin_list, force)
         FileUtil(self._container_nvidia_set).putdata("")
