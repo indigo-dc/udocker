@@ -75,6 +75,35 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker (1.1.2-1) trusty; urgency=low
+
+  * Repackaging for udocker 1.1.2
+  * Improve parsing of quotes in the command line
+  * Fix version command to exit with 0
+  * Add kill-on-exit to proot on P modes
+  * Improve download of udocker utils
+  * Handle authentication headers when pulling
+  * Handle of redirects when pulling
+  * Fix registries table
+  * Support search quay.io
+  * Fix auth header when no standard Docker registry is used
+  * Add registry detection on image name
+  * Add --version option
+  * Force python2 as interpreter
+  * Fix handling of volumes in metadata
+  * Handle empty metadata
+  * Fix http proxy functionality
+  * Ignore --no-trunc and --all in the images command
+  * Implement verification of layers in manifest
+  * Add --nvidia to support GPUs and related drivers
+  * Send download messages to stderr
+  * Enable override of curl executable
+  * Fix building on CentOS 6.1
+  * Mitigation for upstream limitation in runC without tty
+  * Fix detection of executable with symlinks in container
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Fri, 26 Oct 2018 00:59:16 +0000
+
 udocker (1.1.1-1) trusty; urgency=low
 
   * New execution engine using singularity

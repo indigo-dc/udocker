@@ -34,6 +34,17 @@ that offers several execution options. This version provides execution engines
 based on PRoot, Fakechroot, runC and Singularity as methods to execute Docker
 containers without privileges.
 
+The basic usage flow starts by downloading the image from an image repository in the usual way; create the container out of that image (flatenning the image on the filesystem), and finally run the container with the name we gave it in the creation process:
+
+  * `udocker pull` busybox
+  * `udocker create` --name=verybusy busybox
+  * `udocker run` verybusy
+
+This sequence allows the created container to be executed many times. If simultaneous executions are envisage just make sure that input/output files are not overwritten by giving them different names during execution as the container will be shared among executions.
+
+Containers can also be pulled, created and executed in a single step. However in this case a new container is created for every run invocation thus occupying more storage space. To pull, create and execute in a single step invoke run with an image name instead of container name:
+
+ * `udocker run` busybox
 
 ### 1.2. Limitations
 Since root privileges are not involved, any operation that really 
@@ -623,12 +634,13 @@ Examples:
 
 ### 3.25. Setup
 ```
-  udocker setup [--execmode=XY] [--force] CONTAINER-ID|CONTAINER-NAME
+  udocker setup [--execmode=XY] [--force] [--nvidia] CONTAINER-ID|CONTAINER-NAME
 ```
 Choose an execution mode to define how a given container will be executed.
 Enables selection of an execution engine and related execution modes.
 Without --execmode=XY, setup will print the current execution mode for the
-given container.
+given container. The option --nvidia enables access to GPGPUs by adding the
+necessary host libraries to the container.
 
 Options:
 
@@ -696,6 +708,9 @@ host, and then convert again from Pn to the intended Fn mode.
 
 Mode Rn requires kernels with support for rootless containers, thus
 it will not work on some distributions (e.g. CentOS 6 and CentOS 7).
+
+The option --nvidia enables access to GPGPUs by adding the necessary 
+host libraries to the container.
  
 Quick examples:
 

@@ -1,7 +1,7 @@
 .\" Manpage for udocker
 .\" Contact udocker@lip.pt to correct errors or typos.
 .\" To read this man page use:   man -l udocker.1
-.TH udocker 1 "3 Nov 2017" "version 1.1.1" "udocker man page"
+.TH udocker 1 "25 Oct 2018" "version 1.1.2" "udocker man page"
 .SH NAME
 udocker \- execute Docker containers in user space without privileges
 .SH SYNOPSIS
@@ -101,9 +101,10 @@ Setup of authentication information for access to remote Docker registries. Enab
 .BR logout " " [ " " \-a " " ] " " | " " --registry=REGISTRY
 Remove authentication information created by "login". By default authentication is removed for the default REGISTRY. A specific REGISTRY can be specified with --registry. Alternatively ALL previously entered authentication information can be removed with the -a option.
 .TP
-.BR setup " "  --execmode=<Pn> " " | " " --execmode=<Fn> " " |  " " --execmode=<Rn> " " | " " --force " " | " " CONTAINER\-ID
+.BR setup " "  --execmode=<Pn> " " | " " --execmode=<Fn> " " |  " " --execmode=<Rn> " " | " " --force " " | " "  --nvidia " " | " " CONTAINER\-ID
 Change container execution settings. The option --execmode enables selection of an alternative execution engine. (EXPERIMENTAL)
 In certain cases when experiencing execution errors changing the execution mode to mode P1 may solve the problem.
+The option --nvidia enables access to GPGPUs by adding the necessary host libraries to the container.
 .TP
 .BR run " " [ " " RUNOPTIONS " " ] " " IMAGE " " | " " CONTAINER-ID " " | " " ALIAS " " [ " " COMMAND " " ARG1 " " ARG2 " " ... " " ]
 Execute a CONTAINER identified by CONTAINER-ID or ALIAS name. If an IMAGE name is provided instead of a CONTAINER-ID or ALIAS, then a CONTAINER will be automatically created from the specified IMAGE and executed. The "run" command will try to respect the execution information specified in the container or image metadata, if such information is not provided it will try to find a shell interpreter inside the container and execute it. Optionally a COMMAND to be executed inside the CONTAINER environment can be provided in the command line. The following RUNOPTIONS are available:
@@ -199,7 +200,9 @@ Override the default udocker registry pointing to Docker Hub.
 .TP
 .BR UDOCKER_INDEX
 Override the default udocker index pointing to Docker Hub.
-
+.TP
+.BR UDOCKER_USE_CURL_EXECUTABLE
+Forces the use of a curl executable instead of pycurl and enables selection of a given curl executable pathname.
 
 .SH FILES
 .TP

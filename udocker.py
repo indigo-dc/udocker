@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """
 ========
 udocker
@@ -30,6 +30,9 @@ import time
 import pwd
 import grp
 import platform
+import glob
+import select
+import ast
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me",
@@ -38,8 +41,8 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.1"
-__date__ = "2017"
+__version__ = "1.1.2"
+__date__ = "2018"
 
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
@@ -74,12 +77,6 @@ try:
     from getpass import getpass
 except ImportError:
     getpass = raw_input
-
-if PY_VER < "2.6":
-    try:
-        import posixpath
-    except ImportError:
-        pass
 
 try:
     import json
@@ -151,14 +148,22 @@ class Config(object):
     # udocker installation tarball
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/AFImjw8ii0X72xf/download"
+        "/s/dPX6hxjHKm96bc2/download"
         " "
         "https://cernbox.cern.ch/index.php"
-        "/s/VC7GuVWA7mYRAiy/download"
+        "/s/Djc4eKJ73uQRZ72/download?x-access-token=eyJhbGciOiJIUzI1Ni"
+        "IsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDE4LTEwLTI1VDE2OjQ4OjM5LjkxND"
+        "UxNTM2NCswMjowMCIsImV4cGlyZXMiOjAsImlkIjoiMTQ0NzQ3IiwiaXRlbV9"
+        "0eXBlIjowLCJtdGltZSI6MTU0MDQ3NTE2Miwib3duZXIiOiJqb3JnZSIsInBh"
+        "dGgiOiJlb3Nob21lLWo6MjY3OTE1MTAxOTIxNjA3NjgiLCJwcm90ZWN0ZWQiO"
+        "mZhbHNlLCJyZWFkX29ubHkiOnRydWUsInNoYXJlX25hbWUiOiJ1ZG9ja2VyLT"
+        "EuMS4yLnRhci5neiIsInRva2VuIjoiRGpjNGVLSjczdVFSWjcyIn0.YCpo-ho"
+        "LPqg6J1PgutWRblgu2kj58IVvw10kkvNI6Nc"
         " "
-        "http://repo.indigo-datacloud.eu/repository"
-        "/indigo/2/centos7/x86_64/tgz/udocker-1.1.1.tar.gz"
+        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.2.tar.gz"
     )
+
+    installinfo = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
 
     autoinstall = True
 
@@ -171,14 +176,13 @@ class Config(object):
     # defaults for container execution
     cmd = ["/bin/bash", "-i"]  # Comand to execute
 
-    # dafault path for executables
+    # default path for executables
     root_path = "/usr/sbin:/sbin:/usr/bin:/bin"
     user_path = "/usr/local/bin:/usr/bin:/bin"
 
     # directories to be mapped in contaners with: run --sysdirs
     sysdirs_list = (
-        "/dev", "/proc", "/sys",
-        "/etc/resolv.conf", "/etc/host.conf",
+        "/dev", "/proc", "/sys", "/etc/resolv.conf", "/etc/host.conf",
         "/lib/modules",
     )
 
@@ -201,6 +205,9 @@ class Config(object):
     # PRoot override seccomp
     # proot_noseccomp = True
     proot_noseccomp = None
+
+    # PRoot kill-on-exit
+    proot_killonexit = True
 
     # fakechroot engine get ld_library_paths from ld.so.cache
     ld_so_cache = "/etc/ld.so.cache"
@@ -228,13 +235,15 @@ class Config(object):
     runc_nomqueue = None
 
     # singularity options -u --nv -w
-    singularity_options = " -w "
+    singularity_options = ["-w", ]
 
     # Pass host env variables
     valid_host_env = ("TERM", "PATH", )
+    invalid_host_env = ("VTE_VERSION", )
 
     # CPU affinity executables to use with: run --cpuset-cpus="1,2,3-4"
-    cpu_affinity_exec_tools = ("taskset -c ", "numactl -C ")
+    cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
+                               ["taskset", "-c", "%s", ])
 
     # Containers execution defaults
     location = ""         # run container in this location
@@ -246,6 +255,7 @@ class Config(object):
     ctimeout = 6       # default TCP connect timeout (secs)
     http_agent = ""
     http_insecure = False
+    use_curl_executable = "" # force use of executable
 
     # docker hub v1
     dockerio_index_url = "https://index.docker.io"
@@ -255,9 +265,32 @@ class Config(object):
     # dockerio_registry_url = "http://localhost:5000"
 
     # registries table
-    docker_registries = {"docker.io": ["https://registry-1.docker.io"
+    docker_registries = {"docker.io": ["https://registry-1.docker.io",
                                        "https://index.docker.io"],
                         }
+
+    # nvidia files
+    nvi_etc_list = ['vulkan/icd.d/nvidia_icd.json',
+                    'OpenCL/vendors/nvidia.icd'
+                   ]
+
+    nvi_bin_list = ['nvidia-bug-report.sh', 'nvidia-cuda-mps-control',
+                    'nvidia-cuda-mps-server', 'nvidia-debugdump',
+                    'nvidia-installer', 'nvidia-persistenced',
+                    'nvidia-settings', 'nvidia-smi',
+                    'nvidia-uninstall', 'nvidia-xconfig'
+                   ]
+
+    nvi_lib_list = ['libOpenCL.', 'libcuda.', 'libnvcuvid.',
+                    'libnvidia-cfg.', 'libnvidia-compiler.',
+                    'libnvidia-encode.', 'libnvidia-fatbinaryloader.',
+                    'libnvidia-fbc.', 'libnvidia-ifr.', 'libnvidia-ml.',
+                    'libnvidia-opencl.', 'libnvidia-ptxjitcompiler.',
+                    'libnvidia-tls.', 'tls/libnvidia-tls.'
+                   ]
+
+    nvi_dev_list = ['/dev/nvidia', ]
+
     # -------------------------------------------------------------
 
     def _verify_config(self):
@@ -284,6 +317,8 @@ class Config(object):
                                          Config.fakechroot_so)
         Config.tmpdir = os.getenv("UDOCKER_TMP", Config.tmpdir)
         Config.keystore = os.getenv("UDOCKER_KEYSTORE", Config.keystore)
+        Config.use_curl_executable = os.getenv("UDOCKER_USE_CURL_EXECUTABLE",
+                                               Config.use_curl_executable)
 
     def _read_config(self, config_file):
         """Interpret config file content"""
@@ -298,9 +333,10 @@ class Config(object):
             key = key.strip()
             Msg().err(config_file, ":", key, "=", val, l=Msg.DBG)
             try:
+                dummy = ast.literal_eval(val.strip())
                 exec('Config.%s=%s' % (key, val))
             except(NameError, AttributeError, TypeError, IndexError,
-                   SyntaxError):
+                   SyntaxError, ValueError):
                 raise ValueError("config file: %s at: %s" %
                                  (config_file, line.strip()))
             if key == "verbose_level":
@@ -313,9 +349,10 @@ class Config(object):
         Defaults should be in the form x = y
         """
         try:
-            self._read_config("/etc/" + Config.config)
+            if os.getenv("UDOCKER_NOSYSCONF") is None:
+                self._read_config("/etc/" + Config.config)
             if self._read_config(config_file):
-                return True
+                return
             self._read_config(Config.topdir + "/" + Config.config)
             if self.topdir != self.homedir:
                 self._read_config(Config.homedir + "/" + Config.config)
@@ -394,18 +431,22 @@ class GuestInfo(object):
                    "/lib/ld-linux.so.2",
                    "/lib/ld-linux.so",
                    "/bin/sh", "/bin/bash", "/bin/zsh", "/bin/csh", "/bin/tcsh",
-                   "/bin/ls", "/sbin/ldconfig",
+                   "/bin/ls", "/bin/busybox",
                    "/system/bin/sh", "/system/bin/ls",
                   ]
 
     def __init__(self, root_dir):
         self._root_dir = root_dir
 
-    def _get_arch(self, filename):
+    def get_filetype(self, filename):
         """Get the file architecture"""
+        if not filename.startswith(self._root_dir):
+            filename = self._root_dir + "/" + filename
         if os.path.islink(filename):
-            fpath = self._root_dir + os.readlink(filename)
-            return self._get_arch(fpath)
+            f_path = os.readlink(filename)
+            if not f_path.startswith("/"):
+                f_path = os.path.dirname(filename) + "/" + f_path
+            return self.get_filetype(f_path)
         if os.path.isfile(filename):
             cmd = "file %s" % (filename)
             return Uprocess().get_output(cmd)
@@ -414,16 +455,16 @@ class GuestInfo(object):
     def arch(self):
         """Get guest system architecture"""
         for filename in GuestInfo._binarylist:
-            fpath = self._root_dir + filename
-            data = self._get_arch(fpath)
-            if not data:
+            f_path = self._root_dir + filename
+            filetype = self.get_filetype(f_path)
+            if not filetype:
                 continue
-            if "x86-64," in data:
+            if "x86-64," in filetype:
                 return "amd64"
-            if "80386," in data:
+            if "80386," in filetype:
                 return "i386"
-            if "ARM," in data:
-                if "64-bit" in data:
+            if "ARM," in filetype:
+                if "64-bit" in filetype:
                     return "arm64"
                 else:
                     return "arm"
@@ -431,11 +472,18 @@ class GuestInfo(object):
 
     def osdistribution(self):
         """Get guest operating system distribution"""
-        fpath = self._root_dir + "/etc/lsb-release"
-        if os.path.exists(fpath):
+        for f_path in FileUtil(self._root_dir + "/etc/.+-release").match():
+            if os.path.exists(f_path):
+                osinfo = FileUtil(f_path).getdata()
+                match = re.match(r"([^=]+) release (\d+)", osinfo)
+                if match and match.group(1):
+                    return (match.group(1).split(" ")[0],
+                            match.group(2).split(".")[0])
+        f_path = self._root_dir + "/etc/lsb-release"
+        if os.path.exists(f_path):
             distribution = ""
             version = ""
-            osinfo = FileUtil(fpath).getdata()
+            osinfo = FileUtil(f_path).getdata()
             match = re.search(r"DISTRIB_ID=(.+)(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
@@ -446,28 +494,21 @@ class GuestInfo(object):
                 version = match.group(1).split(".")[0]
             if distribution and version:
                 return (distribution, version)
-        fpath = self._root_dir + "/etc/os-release"
-        if os.path.exists(fpath):
+        f_path = self._root_dir + "/etc/os-release"
+        if os.path.exists(f_path):
             distribution = ""
             version = ""
-            osinfo = FileUtil(fpath).getdata()
+            osinfo = FileUtil(f_path).getdata()
             match = re.search(r"NAME=\"?(.+)\"?(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
                 distribution = match.group(1).split(" ")[0]
-            match = re.search(r"VERSION_ID=\"?(\d+)\"?(\n|$)",
+            match = re.search(r"VERSION_ID=\"?(.+)\"?(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
                 version = match.group(1).split(".")[0]
             if distribution and version:
                 return (distribution, version)
-        for fpath in FileUtil(self._root_dir + "/etc/.+-release").match():
-            if os.path.exists(fpath):
-                osinfo = FileUtil(fpath).getdata()
-                match = re.match(r"([^=]+) release (\d+)", osinfo)
-                if match and match.group(1):
-                    return (match.group(1).split(" ")[0],
-                            match.group(2).split(".")[0])
         return ("", "")
 
     def osversion(self):
@@ -584,6 +625,7 @@ class Msg(object):
     file descriptor should be redirected to /dev/null
     """
 
+    NIL = -1
     ERR = 0
     MSG = 1
     WAR = 2
@@ -592,6 +634,7 @@ class Msg(object):
     DBG = 5
     DEF = INF
     level = DEF
+    previous = DEF
     nullfp = None
     chlderr = sys.stderr
     chldout = sys.stdout
@@ -616,8 +659,12 @@ class Msg(object):
             Msg.chldout = Msg.nullfp
             Msg.chldnul = Msg.nullfp
 
-    def setlevel(self, new_level):
+    def setlevel(self, new_level=None):
         """Define debug level"""
+        if new_level is None:
+            new_level = Msg.previous
+        else:
+            Msg.previous = Msg.level
         Msg.level = new_level
         if Msg.level >= Msg.DBG:
             Msg.chlderr = sys.stderr
@@ -625,6 +672,7 @@ class Msg(object):
         else:
             Msg.chlderr = Msg.nullfp
             Msg.chldout = Msg.nullfp
+        return Msg.previous
 
     def out(self, *args, **kwargs):
         """Write text to stdout respecting verbose level"""
@@ -887,8 +935,6 @@ class FileUtil(object):
 
     def getdata(self, mode="rb"):
         """Read file content to a buffer"""
-        if not self.filename:
-            return ""
         try:
             filep = open(self.filename, mode)
         except (IOError, OSError, TypeError):
@@ -898,10 +944,19 @@ class FileUtil(object):
             filep.close()
             return buf
 
+    def get1stline(self, mode="rb"):
+        """Read file 1st line to a buffer"""
+        try:
+            filep = open(self.filename, mode)
+        except (IOError, OSError, TypeError):
+            return ""
+        else:
+            buf = filep.readline().strip()
+            filep.close()
+            return buf
+
     def putdata(self, buf, mode="wb"):
         """Write buffer to file"""
-        if not self.filename:
-            return ""
         try:
             filep = open(self.filename, mode)
         except (IOError, OSError, TypeError):
@@ -947,6 +1002,18 @@ class FileUtil(object):
                     return directory + "/" + self.basename
             return ""
         return ""
+
+    def list_inpath(self, path, rootdir=""):
+        """List files with path PATH=/usr/bin:/bin prepended"""
+        full_path_list = []
+        if isinstance(path, str):
+            if "=" in path:
+                path = "".join(path.split("=", 1)[1:])
+            path = path.split(":")
+        if isinstance(path, (list, tuple)):
+            for directory in path:
+                full_path_list.append(rootdir + directory + "/" + self.basename)
+        return full_path_list
 
     def rename(self, dest_filename):
         """Rename/move file"""
@@ -1137,6 +1204,8 @@ class UdockerTools(object):
         self.localrepo = localrepo        # LocalRepository object
         self._autoinstall = Config.autoinstall  # True / False
         self._tarball = Config.tarball  # URL or file
+        self._installinfo = Config.installinfo  # URL or file
+        self._install_json = dict()
         self.curl = GetURL()
 
     def _version_isequal(self, filename):
@@ -1148,13 +1217,34 @@ class UdockerTools(object):
         """Are the tools already installed"""
         return self._version_isequal(self.localrepo.libdir + "/VERSION")
 
-    def _download(self, tarball_url):
-        """Get the tools tarball containing the binaries"""
-        tarball_file = FileUtil("udockertools").mktmp()
-        (hdr, dummy) = self.curl.get(tarball_url, ofile=tarball_file)
-        if hdr.data["X-ND-CURLSTATUS"]:
-            return ""
-        return tarball_file
+    def _download(self, url):
+        """Download a file """
+        download_file = FileUtil("udockertools").mktmp()
+        if Msg.level <= Msg.DEF:
+            Msg().setlevel(Msg.NIL)
+        (hdr, dummy) = self.curl.get(url, ofile=download_file)
+        if Msg.level == Msg.NIL:
+            Msg().setlevel()
+        try:
+            if "200" in hdr.data["X-ND-HTTPSTATUS"]:
+                return download_file
+        except (KeyError, TypeError, AttributeError):
+            pass
+        FileUtil(download_file).remove()
+        return ""
+
+    def _get_file(self, locations):
+        """Get file from list of possible locations file or internet"""
+        for url in locations:
+            Msg().err("Info: getting file:", url, l=Msg.VER)
+            filename = ""
+            if "://" in url:
+                filename = self._download(url)
+            elif os.path.exists(url):
+                filename = os.path.realpath(url)
+            if filename and os.path.isfile(filename):
+                return (filename, url)
+        return ("", "")
 
     def _verify_version(self, tarball_file):
         """verify the tarball version"""
@@ -1236,14 +1326,29 @@ class UdockerTools(object):
         """
         Msg().out(self._instructions.__doc__, __version__, l=Msg.ERR)
 
-    def _get_mirrors(self):
+    def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
-        mirrors = self._tarball.split(" ")
+        if isinstance(mirrors, str):
+            mirrors = mirrors.split(" ")
         try:
             random.shuffle(mirrors)
         except NameError:
             pass
         return mirrors
+
+    def get_installinfo(self):
+        """Get json containing installation info"""
+        (infofile, url) = self._get_file(self._get_mirrors(self._installinfo))
+        try:
+            with open(infofile, "r") as filep:
+                self._install_json = json.load(filep)
+            for msg in self._install_json["messages"]:
+                Msg().err("Info:", msg)
+        except (KeyError, AttributeError, ValueError,
+                OSError, IOError) as error:
+            Msg().err("Warning: in install information:",
+                      error, url, l=Msg.VER)
+        return self._install_json
 
     def install(self, force=False):
         """Get the udocker tarball and install the binaries"""
@@ -1256,28 +1361,22 @@ class UdockerTools(object):
         elif not self._tarball:
             Msg().err("Error: UDOCKER_TARBALL not defined")
         else:
-            Msg().err("Info: installing", __version__,
-                      l=Msg.INF)
-            for tarball in self._get_mirrors():
-                Msg().err("Info: installing from:", tarball)
-                tarball_file = ""
-                if "://" in tarball:
-                    tarball_file = self._download(tarball)
-                elif os.path.exists(tarball):
-                    tarball_file = tarball
-                if tarball_file and os.path.isfile(tarball_file):
-                    status = False
-                    if not self._verify_version(tarball_file):
-                        Msg().err("Error: wrong tarball version:",
-                                  tarball)
-                    else:
-                        status = self._install(tarball_file)
-                    if "://" in tarball:
-                        FileUtil(tarball_file).remove()
+            Msg().err("Info: installing", __version__, l=Msg.INF)
+            (tarfile, url) = self._get_file(self._get_mirrors(self._tarball))
+            if tarfile:
+                Msg().err("Info: installing from:", url, l=Msg.VER)
+                status = False
+                if not self._verify_version(tarfile):
+                    Msg().err("Error: wrong tarball version:", url)
+                else:
+                    status = self._install(tarfile)
+                if "://" in url:
+                    FileUtil(tarfile).remove()
                     if status:
-                        return True
-            Msg().err("Error: installing tarball:",
-                      self._tarball)
+                        self.get_installinfo()
+                if status:
+                    return True
+            Msg().err("Error: installing tarball:", self._tarball)
         self._instructions()
         return False
 
@@ -1459,11 +1558,14 @@ class ElfPatcher(object):
             ld_data = FileUtil(elf_loader).getdata()
             if not ld_data:
                 return False
-        nul = "\x00/\x00\x00\x00"
-        etc = "\x00/etc"
+        nul_etc = "\x00/\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        nul_lib = "\x00/\x00\x00\x00"
+        nul_usr = "\x00/\x00\x00\x00"
+        etc = "\x00/etc/ld.so"
         lib = "\x00/lib"
         usr = "\x00/usr"
-        ld_data = ld_data.replace(etc, nul).replace(lib, nul).replace(usr, nul)
+        ld_data = ld_data.replace(etc, nul_etc).\
+            replace(lib, nul_lib).replace(usr, nul_usr)
         ld_library_path_orig = "\x00LD_LIBRARY_PATH\x00"
         ld_library_path_new = "\x00LD_LIBRARY_REAL\x00"
         ld_data = ld_data.replace(ld_library_path_orig, ld_library_path_new)
@@ -1474,9 +1576,13 @@ class ElfPatcher(object):
     def restore_ld(self):
         """Restore ld.so"""
         elf_loader = self.get_container_loader()
-        if FileUtil(self._container_ld_so_orig).size() == -1:
+        if FileUtil(self._container_ld_so_orig).size() <= 0:
+            Msg().err("Error: original loader not found or empty")
             return False
-        return FileUtil(self._container_ld_so_orig).copyto(elf_loader)
+        if not FileUtil(self._container_ld_so_orig).copyto(elf_loader):
+            Msg().err("Error: in loader copy or file locked by other process")
+            return False
+        return True
 
     def _get_ld_config(self):
         """Get get directories from container ld.so.cache"""
@@ -1712,7 +1818,7 @@ class FileBind(object):
         """Restore container files after FileBind"""
         error = False
         if not os.path.isdir(self.container_orig_dir):
-            return True
+            return
         for f_name in os.listdir(self.container_orig_dir):
             orig_file = self.container_orig_dir + "/" + f_name
             if not os.path.isfile(orig_file):
@@ -1731,7 +1837,11 @@ class FileBind(object):
         FileUtil(self.container_bind_dir).remove()
 
     def start(self, files_list):
-        """Prepare to run"""
+        """Prepare host files to be made available inside container
+        files_list: is the initial list of files to be made available
+        returns: the directory that holds the files and that must be
+                 binded inside the container
+        """
         self.host_bind_dir = FileUtil("BIND_FILES").mktmpdir()
         for f_name in files_list:
             if not os.path.isfile(f_name):
@@ -1741,7 +1851,10 @@ class FileBind(object):
             cont_file = self.container_root + "/" + f_name
             link_path = self.bind_dir + "/" + orig_file
             if not os.path.exists(orig_file_path):
-                os.rename(cont_file, orig_file_path)
+                if os.path.exists(cont_file):
+                    os.rename(cont_file, orig_file_path)
+                else:
+                    FileUtil(orig_file_path).putdata("")
                 os.symlink(link_path, cont_file)
             FileUtil(orig_file_path).copyto(self.host_bind_dir)
         return (self.host_bind_dir, self.bind_dir)
@@ -1795,6 +1908,7 @@ class ExecutionEngineCommon(object):
         self.opt["volfrom"] = []                 # Mount vol from container TBD
         self.opt["portsmap"] = []                # Ports mapped in container
         self.opt["portsexp"] = []                # Ports exposed by container
+        self.opt["devices"] = []                 # Devices passed to container
 
     def _get_portsmap(self, by_container=True):
         """List of TCP/IP ports mapped indexed by container port"""
@@ -1845,24 +1959,49 @@ class ExecutionEngineCommon(object):
         return True
 
     def _set_cpu_affinity(self):
-        """set the cpu affinity string for container run command"""
+        """Set the cpu affinity string for container run command"""
         # find set affinity executable
-        cpu_affinity_exec = ""
+        if not self.opt["cpuset"]:
+            return []
+        exec_cmd = []
         for exec_cmd in Config.cpu_affinity_exec_tools:
             exec_name = \
-                FileUtil(exec_cmd.split(" ", 1)[0]).find_exec()
+                FileUtil(exec_cmd[0]).find_exec()
             if exec_name:
-                cpu_affinity_exec = exec_name + \
-                    " " + exec_cmd.split(" ", 1)[1]
-        # if no cpu affinity executable available ignore affinity set
-        if not cpu_affinity_exec:
-            self.opt["cpuset"] = ""
-            return " "
-        elif self.opt["cpuset"]:
-            self.opt["cpuset"] = "'" + self.opt["cpuset"] + "'"
-            return " %s %s " % (cpu_affinity_exec, self.opt["cpuset"])
+                exec_cmd[0] = exec_name
+                for (index, arg) in enumerate(exec_cmd):
+                    if arg == "%s":
+                        exec_cmd[index] = self.opt["cpuset"]
+                return exec_cmd
         self.opt["cpuset"] = ""
-        return " "
+        return []
+
+    def _cleanpath(self, pathname):
+        """Remove duplicate and trailing slashes"""
+        clean_path = ""
+        p_char = ''
+        for char in str(pathname):
+            if not clean_path:
+                clean_path = char
+            else:
+                if not (char == p_char and char == '/'):
+                    clean_path += char
+            p_char = char
+        if clean_path == "/":
+            return clean_path
+        else:
+            return clean_path.rstrip('/')
+
+    def _vol_split(self, vol):
+        """Split volume string host_path:container_path into list"""
+        try:
+            (host_dir, cont_dir) = vol.split(":", 1)
+            if not cont_dir:
+                cont_dir = host_dir
+        except ValueError:
+            host_dir = vol
+            cont_dir = vol
+        return (self._cleanpath(host_dir), self._cleanpath(cont_dir))
 
     def _cont2host(self, pathname):
         """Translate container path to host path"""
@@ -1870,13 +2009,14 @@ class ExecutionEngineCommon(object):
             return ""
         path = ""
         real_container_root = os.path.realpath(self.container_root)
+        pathname = re.sub("/+", "/", os.path.normpath(pathname))
         for vol in self.opt["vol"]:
-            if ":" in vol:
-                (host_path, cont_path) = vol.split(":")
+            (host_path, cont_path) = self._vol_split(vol)
+            if cont_path != host_path:
                 if pathname.startswith(cont_path):
                     path = host_path + pathname[len(cont_path):]
                     break
-            elif pathname.startswith(vol):
+            elif pathname.startswith(host_path):
                 path = pathname
                 break
         if not path:
@@ -1887,8 +2027,11 @@ class ExecutionEngineCommon(object):
             while os.path.islink(f_path):
                 real_path = os.readlink(f_path)
                 if real_path.startswith("/"):
-                    if f_path.startswith(real_container_root):
-                        f_path = real_container_root + real_path
+                    if f_path.startswith(real_container_root): # in container
+                        if real_path.startswith(real_container_root):
+                            f_path = real_path
+                        else:
+                            f_path = real_container_root + real_path
                     else:
                         f_path = real_path
                 else:
@@ -1903,33 +2046,33 @@ class ExecutionEngineCommon(object):
         if os.path.exists(mountpoint):
             return True
         if os.path.isfile(host_path):
-            status = FileUtil(mountpoint).putdata("")
+            return FileUtil(mountpoint).putdata("")
         elif os.path.isdir(host_path):
-            status = FileUtil(mountpoint).mkdir()
-        return status
+            return FileUtil(mountpoint).mkdir()
+        return False
 
     def _check_volumes(self):
         """Check volume paths"""
         for vol in list(self.opt["vol"]):
-            if ":" in vol:
-                (host_path, cont_path) = vol.split(":")
-                self._create_mountpoint(host_path, cont_path)
-            else:
-                host_path = vol
-                cont_path = ""
-                self._create_mountpoint(host_path, host_path)
+            (host_path, cont_path) = self._vol_split(vol)
+            if not host_path:
+                Msg().err("Error: invalid volume host directory:", host_path)
+                return False
             if cont_path and not cont_path.startswith("/"):
-                Msg().err("Error: invalid volume destination path:", cont_path)
+                Msg().err("Error: invalid volume container directory:", cont_path)
                 return False
-            elif not (host_path and host_path.startswith("/")):
-                Msg().err("Error: invalid volume spec:", vol)
+            if host_path and not host_path.startswith("/"):
+                Msg().err("Error: invalid volume host directory:", host_path)
                 return False
-            elif not os.path.exists(host_path):
-                if host_path in Config.dri_list:
+            if not os.path.exists(host_path):
+                if (host_path in Config.dri_list or
+                        host_path in Config.sysdirs_list or
+                        host_path in Config.hostauth_list):
                     self.opt["vol"].remove(vol)
                 else:
                     Msg().err("Error: invalid host volume path:", host_path)
                     return False
+            self._create_mountpoint(host_path, cont_path)
         return True
 
     def _get_bindhome(self):
@@ -1941,11 +2084,8 @@ class ExecutionEngineCommon(object):
     def _is_volume(self, path):
         """Is path a host_path in the volumes list"""
         for vol in list(self.opt["vol"]):
-            if ":" in vol:
-                (host_path, dummy) = vol.split(":")
-            else:
-                host_path = vol
-            if host_path and host_path == path:
+            (host_path, dummy) = self._vol_split(vol)
+            if host_path and host_path == self._cleanpath(path):
                 return True
         return False
 
@@ -1989,32 +2129,9 @@ class ExecutionEngineCommon(object):
         Msg().err("Error: invalid working directory: ", self.opt["cwd"])
         return False
 
-    def _getquote(self, arg):
-        """Obtain the quote character from string"""
-        double_p = arg.find('"')
-        single_p = arg.find("'")
-        if double_p != -1 and (double_p < single_p or single_p == -1):
-            return "'"
-        if single_p != -1 and (single_p < double_p or double_p == -1):
-            return '"'
-        return "'"
-
-    def _quote(self, argv):
-        """Iterate over argv and quote items containing spaces. This is
-        useful in case an interpreter is used in the command e.g.:
-        $ udocker.py run container bash -c 'echo hello'
-        """
-        _argv = []
-        for arg in argv:
-            quote_ch = self._getquote(arg)
-            if ' ' in arg:
-                #arg = "'%s'" % (arg)
-                arg = '%s%s%s' % (quote_ch, arg, quote_ch)
-            _argv.append(arg)
-        return _argv
-
     def _check_executable(self):
         """Check if executable exists and has execute permissions"""
+        exec_path_list = []
         path = self._getenv("PATH")
         if self.opt["entryp"] and isinstance(self.opt["entryp"], str):
             self.opt["cmd"] = self.opt["entryp"].strip().split(" ")
@@ -2030,18 +2147,18 @@ class ExecutionEngineCommon(object):
             Msg().err("Warning: no command assuming:", self.opt["cmd"],
                       l=Msg.WAR)
         exec_name = self.opt["cmd"][0]            # exec pathname without args
-        self.opt["cmd"] = self._quote(self.opt["cmd"])
         if exec_name.startswith("/"):
-            exec_path = exec_name
+            exec_path_list.append(exec_name)
         elif exec_name.startswith("./") or exec_name.startswith("../"):
-            exec_path = self.opt["cwd"] + "/" + exec_name
+            exec_path_list.append(self.opt["cwd"] + "/" + exec_name)
         else:
-            exec_path = \
-                FileUtil(exec_name).find_inpath(path, self.container_root + "/")
-        host_exec_path = self._cont2host(exec_path)
-        if (os.path.isfile(host_exec_path) and
-                os.access(host_exec_path, os.X_OK)):
-            return host_exec_path
+            exec_path_list = \
+                FileUtil(exec_name).list_inpath(path, "/")
+        for exec_path in exec_path_list:
+            host_exec_path = self._cont2host(exec_path)
+            if (os.path.isfile(host_exec_path) and
+                    os.access(host_exec_path, os.X_OK)):
+                return self.container_root + "/" + exec_path
         Msg().err("Error: command not found or has no execute bit set: ",
                   self.opt["cmd"])
         return ""
@@ -2086,9 +2203,9 @@ class ExecutionEngineCommon(object):
                     self.opt["entryp"] = \
                         container_structure.get_container_meta(
                             "Entrypoint", [], container_json)
-                self.opt["vol"].extend(
+                self.opt["Volumes"] = \
                     container_structure.get_container_meta(
-                        "Volumes", [], container_json))
+                        "Volumes", [], container_json)
                 self.opt["portsexp"].extend(
                     container_structure.get_container_meta(
                         "ExposedPorts", [], container_json))
@@ -2110,7 +2227,7 @@ class ExecutionEngineCommon(object):
                 self.opt["env"].remove(pair)
                 val = os.getenv(pair, "")
                 if val:
-                    self.opt["env"].append('%s="%s"' % (pair, val))
+                    self.opt["env"].append('%s=%s' % (pair, val))
                 continue
             (key, val) = pair.split("=", 1)
             if " " in key or key[0] in string.digits:
@@ -2118,7 +2235,7 @@ class ExecutionEngineCommon(object):
                 return False
             if " " in pair and "'" not in pair and '"' not in pair:
                 self.opt["env"].remove(pair)
-                self.opt["env"].append('%s="%s"' % (key, val))
+                self.opt["env"].append('%s=%s' % (key, val))
         return True
 
     def _getenv(self, search_key):
@@ -2347,12 +2464,43 @@ class ExecutionEngineCommon(object):
                   "\n", char * 78, "\n",
                   "executing:", os.path.basename(cmd), l=Msg.INF)
 
-    def _run_env_cleanup(self):
+    def _run_env_cleanup_dict(self):
         """Allow only to pass essential environment variables."""
         environ_copy = os.environ.copy()
         for env_var in environ_copy:
-            if env_var not in Config.valid_host_env:
+            if env_var in Config.invalid_host_env:
                 del os.environ[env_var]
+                continue
+            if not self.opt["hostenv"]:
+                if env_var not in Config.valid_host_env:
+                    del os.environ[env_var]
+
+    def _run_env_cleanup_list(self):
+        """ Allow only to pass essential environment variables.
+            Overriding parent ExecutionEngineCommon() class.
+        """
+        container_env = []
+        for env_str in self.opt["env"]:
+            (env_var, dummy) = env_str.split("=", 1)
+            if env_var:
+                container_env.append(env_var)
+        for (env_var, value) in os.environ.iteritems():
+            if not env_var:
+                continue
+            if env_var in Config.invalid_host_env or env_var in container_env:
+                continue
+            if ((not self.opt["hostenv"]) and
+                    env_var not in Config.valid_host_env):
+                continue
+            self.opt["env"].append("%s=%s" % (env_var, value))
+
+    def _run_env_get(self):
+        """Get environment list"""
+        env_dict = dict()
+        for env_pair in self.opt["env"]:
+            (key, val) = env_pair.split("=", 1)
+            env_dict[key] = val
+        return env_dict
 
     def _run_env_set(self):
         """Environment variables to set"""
@@ -2469,11 +2617,11 @@ class PRootEngine(ExecutionEngineCommon):
     def _set_uid_map(self):
         """Set the uid_map string for container run command"""
         if self.opt["uid"] == "0":
-            uid_map = " -0 "
+            uid_map_list = ["-0", ]
         else:
-            uid_map = \
-                " -i " + self.opt["uid"] + ":" + self.opt["gid"] + " "
-        return uid_map
+            uid_map_list = \
+                ["-i", self.opt["uid"] + ":" + self.opt["gid"], ]
+        return uid_map_list
 
     def _create_mountpoint(self, host_path, cont_path):
         """Override create mountpoint"""
@@ -2481,20 +2629,19 @@ class PRootEngine(ExecutionEngineCommon):
 
     def _get_volume_bindings(self):
         """Get the volume bindings string for container run command"""
-        if self.opt["vol"]:
-            vol_str = " -b " + " -b ".join(self.opt["vol"])
-        else:
-            vol_str = " "
-        return vol_str
+        proot_vol_list = []
+        for vol in self.opt["vol"]:
+            proot_vol_list.extend(["-b", "%s:%s" % self._vol_split(vol)])
+        return proot_vol_list
 
     def _get_network_map(self):
         """Get mapping of TCP/IP ports"""
-        proot_options = ""
+        proot_netmap_list = []
         for (cont_port, host_port) in self._get_portsmap().iteritems():
-            proot_options += " -p %d:%d " % (cont_port, host_port)
+            proot_netmap_list.extend(["-p", "%d:%d " % (cont_port, host_port)])
         if self.opt["netcoop"]:
-            proot_options += " -n "
-        return proot_options
+            proot_netmap_list.extend(["-n", ])
+        return proot_netmap_list
 
     def run(self, container_id):
         """Execute a Docker container using PRoot. This is the main method
@@ -2523,35 +2670,38 @@ class PRootEngine(ExecutionEngineCommon):
             return 4
 
         if Msg.level >= Msg.DBG:
-            proot_verbose = " -v 9 "
+            proot_verbose = ["-v", "9", ]
         else:
-            proot_verbose = ""
+            proot_verbose = []
+
+        if Config.proot_killonexit:
+            proot_kill_on_exit = ["--kill-on-exit", ]
+        else:
+            proot_kill_on_exit = []
 
         # build the actual command
-        cmd_t = (r"unset VTE_VERSION;",
-                 " ".join(self.opt["env"]),
-                 self._set_cpu_affinity(),
-                 self.proot_exec,
-                 proot_verbose,
-                 self._get_volume_bindings(),
-                 self._set_uid_map(),
-                 "-k", self._kernel,
-                 self._get_network_map(),
-                 "-r", self.container_root,
-                 " ",)
-        cmd = " ".join(cmd_t)
-        if self.opt["cwd"]:  # set current working directory
-            cmd += " -w " + self.opt["cwd"] + " "
-        cmd += " ".join(self.opt["cmd"])
-        Msg().err("CMD = " + cmd, l=Msg.VER)
+        cmd_l = self._set_cpu_affinity()
+        cmd_l.append(self.proot_exec)
+        cmd_l.extend(proot_verbose)
+        cmd_l.extend(proot_kill_on_exit)
+        cmd_l.extend(self._get_volume_bindings())
+        cmd_l.extend(self._set_uid_map())
+        cmd_l.extend(["-k", self._kernel, ])
+        cmd_l.extend(self._get_network_map())
+        cmd_l.extend(["-r", self.container_root, ])
 
-        # if not --hostenv clean the environment
-        if not self.opt["hostenv"]:
-            self._run_env_cleanup()
+        if self.opt["cwd"]:  # set current working directory
+            cmd_l.extend(["-w", self.opt["cwd"], ])
+        cmd_l.extend(self.opt["cmd"])
+        Msg().err("CMD =", cmd_l, l=Msg.VER)
+
+        # cleanup the environment
+        self._run_env_cleanup_dict()
 
         # execute
         self._run_banner(self.opt["cmd"][0])
-        status = subprocess.call(cmd, shell=True, close_fds=True)
+        status = subprocess.call(cmd_l, shell=False, close_fds=True,
+                                 env=os.environ.update(self._run_env_get()))
         return status
 
 
@@ -2592,9 +2742,9 @@ class RuncEngine(ExecutionEngineCommon):
         if FileUtil(self._container_specfile).size() != -1 and new:
             FileUtil(self._container_specfile).remove()
         if FileUtil(self._container_specfile).size() == -1:
-            cmd = self.runc_exec + " spec --rootless --bundle " \
-                 + os.path.realpath(self.container_dir)
-            status = subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
+            cmd_l = [self.runc_exec, "spec", "--rootless", "--bundle",
+                     os.path.realpath(self.container_dir)]
+            status = subprocess.call(cmd_l, shell=False, stderr=Msg.chlderr,
                                      close_fds=True)
             if status:
                 return False
@@ -2644,6 +2794,7 @@ class RuncEngine(ExecutionEngineCommon):
             json_obj["hostname"] = platform.node()
         if self.opt["cwd"]:
             json_obj["process"]["cwd"] = self.opt["cwd"]
+        json_obj["process"]["terminal"] = sys.stdout.isatty()
         json_obj["process"]["env"] = []
         for env_str in self.opt["env"]:
             (env_var, value) = env_str.split("=", 1)
@@ -2655,7 +2806,8 @@ class RuncEngine(ExecutionEngineCommon):
         for idmap in json_obj["linux"]["gidMappings"]:
             if "hostID" in idmap:
                 idmap["hostID"] = Config.gid
-        json_obj["process"]["args"] = self._remove_quotes(self.opt["cmd"])
+        #json_obj["process"]["args"] = self._remove_quotes(self.opt["cmd"])
+        json_obj["process"]["args"] = self.opt["cmd"]
         return json_obj
 
     def _uid_check(self):
@@ -2664,6 +2816,54 @@ class RuncEngine(ExecutionEngineCommon):
                 self.opt["user"] != "root"):
             Msg().err("Warning: this engine only supports execution as root",
                       l=Msg.WAR)
+
+    def _add_device_spec(self, dev_path, mode="rwm"):
+        """Add device to the configuration"""
+        if not (os.path.exists(dev_path) and dev_path.startswith("/dev/")):
+            Msg().err("Error: device not found", dev_path)
+            return False
+        dev_stat = os.stat(dev_path)
+        if stat.S_ISBLK(dev_stat.st_mode):
+            dev_type = "b"
+        elif stat.S_ISCHR(dev_stat.st_mode):
+            dev_type = "c"
+        else:
+            Msg().err("Error: not a device", dev_path)
+            return False
+        filemode = 0
+        if "r" in mode.lower():
+            filemode += 0o444
+        if "w" in mode.lower():
+            filemode += 0o222
+        if not filemode:
+            filemode = 0o666
+        if "devices" not in self._container_specjson["linux"]:
+            self._container_specjson["linux"]["devices"] = []
+        device = {
+            "path": dev_path,
+            "type": dev_type,
+            "major": os.major(dev_stat.st_dev),
+            "minor": os.minor(dev_stat.st_dev),
+            "fileMode": filemode,
+            "uid": Config.uid,
+            "gid": Config.uid,
+        }
+        self._container_specjson["linux"]["devices"].append(device)
+        return True
+
+    def _add_devices(self):
+        """Add devices to container"""
+        added_devices = []
+        for dev in self.opt["devices"]:
+            dev_name = dev.split(':')[0]
+            if self._add_device_spec(dev_name):
+                added_devices.append(dev_name)
+        if "/dev/nvidiactl" not in added_devices:
+            nvidia_mode = NvidiaMode(self.localrepo, self.container_id)
+            if nvidia_mode.get_mode():
+                for dev_name in nvidia_mode.get_devices():
+                    if dev_name not in added_devices:
+                        self._add_device_spec(dev_name)
 
     def _create_mountpoint(self, host_path, cont_path):
         """Override create mountpoint"""
@@ -2694,12 +2894,8 @@ class RuncEngine(ExecutionEngineCommon):
         """Get the volume bindings string for runc"""
         (host_dir, cont_dir) = self._filebind.start(Config.sysdirs_list)
         self._add_mount_spec(host_dir, cont_dir, rwmode=True)
-        for volume in self.opt["vol"]:
-            try:
-                (host_dir, cont_dir) = volume.split(":")
-            except ValueError:
-                host_dir = volume
-                cont_dir = volume
+        for vol in self.opt["vol"]:
+            (host_dir, cont_dir) = self._vol_split(vol)
             if os.path.isdir(host_dir):
                 if host_dir == "/dev":
                     Msg().err("Warning: this engine does not support -v",
@@ -2732,29 +2928,6 @@ class RuncEngine(ExecutionEngineCommon):
                 Msg().err("Error: in environment:", pair)
                 return False
         return True
-
-    def _run_env_addhost(self):
-        """Add host env to spec"""
-        container_env = []
-        for env_str in self.opt["env"]:
-            (env_var, dummy) = env_str.split("=", 1)
-            if env_var:
-                container_env.append(env_var)
-        for (env_var, value) in os.environ.iteritems():
-            if not env_var:
-                continue
-            if env_var in ("VTE_VERSION") or env_var in container_env:
-                continue
-            self.opt["env"].append("%s=%s" % (env_var, value))
-
-    def _run_env_cleanup(self):
-        """ Allow only to pass essential environment variables.
-            Overriding parent ExecutionEngineCommon() class.
-        """
-        for (index, env_str) in enumerate(self.opt["env"]):
-            (env_var, dummy) = env_str.split("=", 1)
-            if env_var not in Config.valid_host_env:
-                del self.opt["env"][index]
 
     def _run_invalid_options(self):
         """check -p --publish -P --publish-all --net-coop"""
@@ -2796,10 +2969,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._uid_check()
 
         # if not --hostenv clean the environment
-        if self.opt["hostenv"]:
-            self._run_env_addhost()
-        else:
-            self._run_env_cleanup()
+        self._run_env_cleanup_list()
 
         # set environment variables
         self._run_env_set()
@@ -2811,23 +2981,57 @@ class RuncEngine(ExecutionEngineCommon):
                                      Config().oskernel_isgreater("4.8.0"))):
             self._del_mount_spec("mqueue", "/dev/mqueue")
         self._add_volume_bindings()
+        self._add_devices()
         self._save_spec()
 
         if Msg.level >= Msg.DBG:
-            runc_debug = " --debug "
+            runc_debug = ["--debug", ]
         else:
-            runc_debug = ""
+            runc_debug = []
 
         # build the actual command
         self.execution_id = Unique().uuid(self.container_id)
-        cmd = self._set_cpu_affinity() + self.runc_exec + runc_debug + \
-              " --root " + self.container_dir + \
-              " run --bundle " + self.container_dir + " " + self.execution_id
-        Msg().err("CMD = " + cmd, l=Msg.VER)
+        cmd_l = self._set_cpu_affinity()
+        cmd_l.append(self.runc_exec)
+        cmd_l.extend(runc_debug)
+        cmd_l.extend(["--root", self.container_dir, "run"])
+        cmd_l.extend(["--bundle", self.container_dir, self.execution_id])
+        Msg().err("CMD =", cmd_l, l=Msg.VER)
 
-        # execute
         self._run_banner(self.opt["cmd"][0], '%')
-        status = subprocess.call(cmd, shell=True, close_fds=True)
+        if sys.stdout.isatty():
+            return self.run_pty(cmd_l)
+        return self.run_nopty(cmd_l)
+
+    def run_pty(self, cmd_l):
+        """runc from a terminal"""
+        status = subprocess.call(cmd_l, shell=False, close_fds=True)
+        self._filebind.finish()
+        return status
+
+    def run_nopty(self, cmd_l):
+        """runc without a terminal"""
+        (pmaster, pslave) = os.openpty()
+        status = subprocess.Popen(cmd_l, shell=False, close_fds=True,
+                                  stdout=pslave, stderr=pslave)
+        os.close(pslave)
+        while True:
+            status.poll()
+            if status.returncode is not None:
+                break
+            readable, dummy, exception = \
+                select.select([pmaster, ], [], [pmaster, ], 5)
+            if exception:
+                break
+            if readable:
+                try:
+                    sys.stdout.write(os.read(pmaster, 1))
+                except OSError:
+                    break
+        try:
+            status.terminate()
+        except OSError:
+            pass
         self._filebind.finish()
         return status
 
@@ -2866,50 +3070,46 @@ class SingularityEngine(ExecutionEngineCommon):
 
     def _get_volume_bindings(self):
         """Get the volume bindings string for singularity exec"""
-        vol_str = ""
-        (host_dir, cont_dir) = self._filebind.start(Config.sysdirs_list)
-        vol_str = " -B %s:%s " % (host_dir, cont_dir)
+        vol_list = []
+        (tmphost_path, tmpcont_path) = self._filebind.start(Config.sysdirs_list)
+        vol_list.extend(["-B", "%s:%s" % (tmphost_path, tmpcont_path), ])
         home_dir = NixAuthentication().get_home()
         home_is_binded = False
         tmp_is_binded = False
         vartmp_is_binded = False
-        for volume in self.opt["vol"]:
-            try:
-                (host_dir, cont_dir) = volume.split(":")
-            except ValueError:
-                host_dir = volume
-                cont_dir = volume
-            if os.path.isdir(host_dir):
-                if host_dir == home_dir and cont_dir in ("", host_dir):
+        for vol in self.opt["vol"]:
+            (host_path, cont_path) = self._vol_split(vol)
+            if os.path.isdir(host_path):
+                if host_path == home_dir and cont_path in ("", host_path):
                     home_is_binded = True
-                elif host_dir == "/tmp" and cont_dir in ("", "/tmp"):
+                elif host_path == "/tmp" and cont_path in ("", "/tmp"):
                     tmp_is_binded = True
-                elif host_dir == "/var/tmp" and cont_dir in ("", "/var/tmp"):
+                elif host_path == "/var/tmp" and cont_path in ("", "/var/tmp"):
                     vartmp_is_binded = True
                 else:
-                    vol_str += " -B %s " % volume
-            elif os.path.isfile(host_dir):
-                if cont_dir not in Config.sysdirs_list:
+                    vol_list.extend(["-B", "%s:%s" % (host_path, cont_path), ])
+            elif os.path.isfile(host_path):
+                if cont_path not in Config.sysdirs_list:
                     Msg().err("Error: engine does not support file mounting:",
-                              host_dir)
+                              host_path)
                 else:
-                    self._filebind.add(host_dir, cont_dir)
+                    self._filebind.add(host_path, cont_path)
         if not home_is_binded:
-            vol_str += " --home %s/root:%s " % (self.container_root, "/root")
+            vol_list.extend(["--home", "%s/root:%s" % (self.container_root, "/root"), ])
         if not tmp_is_binded:
-            vol_str += " -B %s/tmp:/tmp " % (self.container_root)
+            vol_list.extend(["-B", "%s/tmp:/tmp" % (self.container_root), ])
         if not vartmp_is_binded:
-            vol_str += " -B %s/var/tmp:/var/tmp " % (self.container_root)
-        return vol_str
+            vol_list.extend(["-B", "%s/var/tmp:/var/tmp" % (self.container_root), ])
+        return vol_list
 
-    def _singularityenv_get(self):
+    def _singularity_env_get(self):
         """Build environment string with user specified environment in
         the form SINGULARITYENV_var=value
         """
-        singularityenv = ""
+        singularityenv = dict()
         for pair in list(self.opt["env"]):
             (key, val) = pair.split("=", 1)
-            singularityenv += 'SINGULARITYENV_%s=%s ' % (key, val)
+            singularityenv['SINGULARITYENV_%s' % key] = val
         return singularityenv
 
     def _setup_container_user(self, user):
@@ -2933,6 +3133,12 @@ class SingularityEngine(ExecutionEngineCommon):
         if self.opt["netcoop"]:
             Msg().err("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
+
+    def _has_option(self, option):
+        """Check if singularity has a given cli option"""
+        if option in Uprocess().get_output("singularity --help"):
+            return True
+        return False
 
     def run(self, container_id):
         """Execute a Docker container using singularity.
@@ -2968,42 +3174,43 @@ class SingularityEngine(ExecutionEngineCommon):
             return 5
 
         if Msg.level >= Msg.DBG:
-            singularity_debug = " --debug -x -v "
+            singularity_debug = ["--debug", "-x", "-v", ]
+        elif self._has_option("--silent"):
+            singularity_debug = ["--silent", ]
+        elif self._has_option("--quiet"):
+            singularity_debug = ["--quiet", ]
         else:
-            singularity_debug = " -s "
+            singularity_debug = []
 
         if self.singularity_exec.startswith(self.localrepo.bindir):
-            Config.singularity_options += " -u "
+            Config.singularity_options.extend(["-u", ])
 
-        if FileUtil("nvidia-smi").find_exec():
-            Config.singularity_options += " --nv "
+        #if FileUtil("nvidia-smi").find_exec():
+        #    Config.singularity_options.extend(["--nv", ])
 
-        vol_str = self._get_volume_bindings()
+        singularity_vol_list = self._get_volume_bindings()
 
         # build the actual command
         self.execution_id = Unique().uuid(self.container_id)
-        cmd = self._set_cpu_affinity()
-        cmd += self.singularity_exec + singularity_debug + " exec "
-        if Config.singularity_options:
-            cmd += Config.singularity_options
+        cmd_l = self._set_cpu_affinity()
+        cmd_l.append(self.singularity_exec)
+        cmd_l.extend(singularity_debug)
+        cmd_l.append("exec")
+        cmd_l.extend(Config.singularity_options)
         if self.opt["cwd"]:
-            cmd += " --pwd " + self.opt["cwd"]
-        #if not self.opt["hostenv"]:
-        #    cmd += " -e "
-        cmd += vol_str
-        cmd += self.container_root + " "
-        cmd += " ".join(self.opt["cmd"])
-        Msg().err("CMD = " + cmd, l=Msg.VER)
+            cmd_l.extend(["--pwd", self.opt["cwd"], ])
+        cmd_l.extend(singularity_vol_list)
+        cmd_l.append(self.container_root)
+        cmd_l.extend(self.opt["cmd"])
+        Msg().err("CMD =", cmd_l, l=Msg.VER)
 
         # if not --hostenv clean the environment
-        if not self.opt["hostenv"]:
-            self._run_env_cleanup()
-
-        cmd = "%s %s" % (self._singularityenv_get(), cmd)
+        self._run_env_cleanup_dict()
 
         # execute
         self._run_banner(self.opt["cmd"][0], '/')
-        status = subprocess.call(cmd, shell=True, close_fds=True)
+        status = subprocess.call(cmd_l, shell=False, close_fds=True, \
+            env=os.environ.update(self._singularity_env_get()))
         self._filebind.finish()
         return status
 
@@ -3036,6 +3243,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         else:
             lib = "libfakechroot"
             deflib = "libfakechroot.so"
+            image_list = [deflib, ]
             guest = GuestInfo(self.container_root)
             arch = guest.arch()
             (distro, version) = guest.osdistribution()
@@ -3073,18 +3281,14 @@ class FakechrootEngine(ExecutionEngineCommon):
         host_volumes_list = []
         map_volumes_list = []
         map_volumes_dict = dict()
-        for volume in self.opt["vol"]:
-            try:
-                (host_dir, cont_dir) = volume.split(":")
-            except ValueError:
-                host_dir = volume
-                cont_dir = ""
-            if (not cont_dir) or host_dir == cont_dir:
-                host_volumes_list.append(host_dir)
+        for vol in self.opt["vol"]:
+            (host_path, cont_path) = self._vol_split(vol)
+            if host_path == cont_path:
+                host_volumes_list.append(host_path)
             else:
-                map_volumes_dict[cont_dir] = host_dir + "!" + cont_dir
-        for cont_dir in sorted(map_volumes_dict, reverse=True):
-            map_volumes_list.append(map_volumes_dict[cont_dir])
+                map_volumes_dict[cont_path] = host_path + "!" + cont_path
+        for cont_path in sorted(map_volumes_dict, reverse=True):
+            map_volumes_list.append(map_volumes_dict[cont_path])
         return (":".join(host_volumes_list), ":".join(map_volumes_list))
 
     def _get_access_filesok(self):
@@ -3105,6 +3309,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         self._fakechroot_so = self._select_fakechroot_so()
         access_filesok = self._get_access_filesok()
         #
+        self.opt["env"].append("PWD=" + self.opt["cwd"])
         self.opt["env"].append("FAKECHROOT_BASE=" +
                                os.path.realpath(self.container_root))
         self.opt["env"].append("LD_PRELOAD=" + self._fakechroot_so)
@@ -3160,6 +3365,36 @@ class FakechrootEngine(ExecutionEngineCommon):
             Msg().err("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
 
+    def _run_add_script_support(self, exec_path):
+        """Add an interpreter for non binary executables (scripts)"""
+        filetype = GuestInfo(self.container_root).get_filetype(exec_path)
+        if "ELF" in filetype and ("static" in filetype or
+                                  "dynamic" in filetype):
+            self.opt["cmd"][0] = exec_path
+            return []
+        env_exec = FileUtil("env").find_inpath("/bin:/usr/bin",
+                                               self.container_root)
+        if  env_exec:
+            return [self.container_root + "/" + env_exec, ]
+        real_path = self._cont2host(exec_path.split(self.container_root, 1)[-1])
+        hashbang = FileUtil(real_path).get1stline()
+        match = re.match("#! *([^ ]+)(.*)", hashbang)
+        if match and not match.group(1).startswith("/"):
+            Msg().err("Error: no such file", match.group(1), "in", exec_path)
+            sys.exit(1)
+        elif match:
+            interpreter = [self.container_root + "/" + match.group(1), ]
+            if match.group(2):
+                interpreter.extend(match.group(2).strip().split(" "))
+            self.opt["cmd"][0] = exec_path.split(self.container_root, 1)[-1]
+            return interpreter
+        sh_exec = FileUtil("sh").find_inpath(self._getenv("PATH"),
+                                             self.container_root)
+        if sh_exec:
+            return [self.container_root + "/" + sh_exec, ]
+        Msg().err("Error: sh not found")
+        sys.exit(1)
+
     def run(self, container_id):
         """Execute a Docker container using Fakechroot. This is the main
         method invoked to run the a container with Fakechroot.
@@ -3193,32 +3428,143 @@ class FakechrootEngine(ExecutionEngineCommon):
         if not self._check_env():
             return 4
 
-        # build the actual command
-        self.opt["cmd"][0] = exec_path
-        cmd_t = (r"unset VTE_VERSION;",
-                 " export ",
-                 "; export ".join(self.opt["env"]),
-                 " ; export PWD=" + self.opt["cwd"] + " ;", )
-        cmd = " ".join(cmd_t)
-        if xmode in ("F1", "F2"):
-            cmd += " " + self._elfpatcher.get_container_loader() + " "
-        cmd += " ".join(self.opt["cmd"])
-        Msg().err("CMD = " + cmd, l=Msg.VER)
-
-        # set affinity
-        affinity = self._set_cpu_affinity()
-        if self.opt["cpuset"]:
-            cmd = "%s /bin/sh -c '%s'" % (affinity, cmd)
-
         # if not --hostenv clean the environment
-        if not self.opt["hostenv"]:
-            self._run_env_cleanup()
+        self._run_env_cleanup_list()
+
+        # build the actual command
+        cmd_l = self._set_cpu_affinity()
+        cmd_l.extend(["env", "-i", ])
+        cmd_l.extend(self.opt["env"])
+        if xmode in ("F1", "F2"):
+            container_loader = self._elfpatcher.get_container_loader()
+            if container_loader:
+                cmd_l.append(container_loader)
+        cmd_l.extend(self._run_add_script_support(exec_path))
+        cmd_l.extend(self.opt["cmd"])
+        Msg().err("CMD =", cmd_l, l=Msg.VER)
 
         # execute
         self._run_banner(self.opt["cmd"][0], "#")
         cwd = self._cont2host(self.opt["cwd"])
-        status = subprocess.call(cmd, shell=True, close_fds=True, cwd=cwd)
+        status = subprocess.call(cmd_l, shell=False, close_fds=True, cwd=cwd)
         return status
+
+
+class NvidiaMode(object):
+    """nvidia-docker like functionality for udocker.
+    Make nvidia host libraries available within udocker, this is achieved
+    by copy them into the container so that the execution modes that need
+    to change libraries may work properly.
+    """
+
+    def __init__(self, localrepo, container_id):
+        self.localrepo = localrepo               # LocalRepository object
+        self.container_id = container_id         # Container id
+        self.container_dir = self.localrepo.cd_container(container_id)
+        if not self.container_dir:
+            raise ValueError("invalid container id")
+        self.container_root = self.container_dir + "/ROOT"
+        self._container_nvidia_set = self.container_dir + "/nvidia"
+
+    def _copy_files(self, host_src_dir, cont_dst_dir, files_list, force=False):
+        """copy or link file to destination creating directories as needed"""
+        for fname in files_list:
+            srcname = host_src_dir + '/' + fname
+            dstname = self.container_root + '/' + cont_dst_dir + '/' + fname
+            if os.path.isfile(dstname) or os.path.islink(dstname):
+                if force:
+                    try:
+                        os.remove(dstname)
+                    except OSError:
+                        Msg().err("Error: deleting nvidia file", dstname)
+                else:
+                    Msg().err("Error: nvidia file already exists", dstname,
+                              ", use --force to overwrite")
+                    return
+            if os.path.isfile(srcname):
+                srcdir = os.path.dirname(srcname)
+                dstdir = os.path.dirname(dstname)
+                if not os.path.isdir(dstdir):
+                    try:
+                        os.makedirs(dstdir)
+                        os.chmod(dstdir, stat.S_IMODE(os.stat(srcdir).st_mode) |
+                                 stat.S_IRWXU)
+                    except OSError:
+                        Msg().err("Error: creating nvidia dir", dstdir)
+                if not FileUtil(srcname).copyto(dstname):
+                    Msg().err("Error: copying file", srcname, "to", dstname)
+                    return
+                try:
+                    mask = stat.S_IMODE(os.stat(srcname).st_mode) | \
+                                        stat.S_IWUSR | stat.S_IRUSR
+                    if os.access(srcname, os.X_OK):
+                        mask = mask | stat.S_IXUSR
+                    os.chmod(dstname, mask)
+                except (IOError, OSError) as error:
+                    Msg().err("Error: change mask of nvidia file", error)
+                Msg().err("nvidia copied", srcname, "to", dstname, l=Msg.DBG)
+
+    def _get_nvidia_libs(self, host_dir):
+        """Expand the library files to include the versions"""
+        lib_list = []
+        for lib in Config.nvi_lib_list:
+            for expanded_libs in glob.glob(host_dir + '/' + lib + '*'):
+                lib_list.append(expanded_libs.replace(host_dir, ''))
+        return lib_list
+
+    def _find_host_dir(self):
+        """Find the location of the host nvidia libraries"""
+        ld_library_path = os.getenv("LD_LIBRARY_PATH")
+        if ld_library_path:
+            for libdir in ld_library_path.split(':'):
+                if glob.glob(libdir + '/libnvidia-cfg.so*'):
+                    return libdir + '/'
+        ld_data = Uprocess().get_output("ldconfig -p")
+        if not ld_data:
+            return ""
+        for line in ld_data.split("\n"):
+            match = re.search("[ |\t]libnvidia-cfg.so[^ ]* .*=> (/.*)", line)
+            if match:
+                return os.path.dirname(match.group(1)) + '/'
+        return ""
+
+    def _find_cont_dir(self):
+        """Find the location of the host target directory for libraries"""
+        for dst_dir in ('/usr/lib/x86_64-linux-gnu', '/usr/lib64'):
+            if os.path.isdir(self.container_root + "/" + dst_dir):
+                return dst_dir
+        return ""
+
+    def set_mode(self, force=False):
+        """Set nvidia mode"""
+        if not self.container_dir:
+            Msg().err("Error: nvidia set mode container dir not found")
+            return
+        nvi_host_dir = self._find_host_dir()
+        nvi_cont_dir = self._find_cont_dir()
+        if not nvi_host_dir:
+            Msg().err("Error: host nvidia libraries not found")
+            return
+        if not nvi_cont_dir:
+            Msg().err("Error: destination directory for nvidia libs not found")
+            return
+        lib_list = self._get_nvidia_libs(nvi_host_dir)
+        self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
+        self._copy_files('/etc', '/etc', Config.nvi_etc_list, force)
+        self._copy_files('/usr/bin', '/usr/bin', Config.nvi_bin_list, force)
+        FileUtil(self._container_nvidia_set).putdata("")
+
+    def get_mode(self):
+        """Get nvidia mode"""
+        return os.path.exists(self._container_nvidia_set)
+
+    def get_devices(self):
+        """Get list of nvidia devices related to cuda"""
+        dev_list = []
+        for dev in Config.nvi_dev_list:
+            for expanded_devs in glob.glob(dev + '*'):
+                dev_list.append(expanded_devs)
+        return dev_list
 
 
 class ExecutionMode(object):
@@ -3274,7 +3620,7 @@ class ExecutionMode(object):
             if prev_xmode in ("P1", "P2", "F1", "R1", "S1"):
                 status = True
             elif force or prev_xmode in ("F2", "F3", "F4"):
-                status = (elfpatcher.restore_ld() and
+                status = ((elfpatcher.restore_ld() or force) and
                           elfpatcher.restore_binaries())
             if xmode in ("R1", "S1"):
                 filebind.setup()
@@ -3290,7 +3636,7 @@ class ExecutionMode(object):
             elif prev_xmode in ("F3", "F4"):
                 status = True
         if xmode[0] in ("P", "R", "S"):
-            if force or prev_xmode.startswith("F"):
+            if force or (status and prev_xmode.startswith("F")):
                 status = FileUtil(self.container_root).links_conv(force, False,
                                                                   orig_path)
         if status or force:
@@ -3394,7 +3740,8 @@ class ContainerStructure(object):
         if not status:
             Msg().err("Error: creating container:", self.container_id)
         elif not self._chk_container_root():
-            Msg().err("Warning: check container content:", self.container_id)
+            Msg().err("Warning: check container content:", self.container_id,
+                      l=Msg.WAR)
         return self.container_id
 
     def create_fromlayer(self, imagerepo, tag, layer_file, container_json):
@@ -3418,7 +3765,8 @@ class ContainerStructure(object):
         if not status:
             Msg().err("Error: creating container:", self.container_id)
         elif not self._chk_container_root():
-            Msg().err("Warning: check container content:", self.container_id)
+            Msg().err("Warning: check container content:", self.container_id,
+                      l=Msg.WAR)
         return self.container_id
 
     def clone_fromfile(self, clone_file):
@@ -3436,7 +3784,8 @@ class ContainerStructure(object):
         if not status:
             Msg().err("Error: creating container clone:", self.container_id)
         elif not self._chk_container_root():
-            Msg().err("Warning: check container content:", self.container_id)
+            Msg().err("Warning: check container content:", self.container_id,
+                      l=Msg.WAR)
         return self.container_id
 
     def _apply_whiteouts(self, tarf, destdir):
@@ -3529,7 +3878,7 @@ class ContainerStructure(object):
             confidx = "config"
         elif "container_config" in container_json:
             confidx = "container_config"
-        if param in container_json[confidx]:
+        if container_json[confidx]  and param in container_json[confidx]:
             if container_json[confidx][param] is None:
                 pass
             elif (isinstance(container_json[confidx][param], str) and (
@@ -3604,7 +3953,8 @@ class ContainerStructure(object):
         if not status:
             Msg().err("Error: creating container:", dest_container_id)
         elif not self._chk_container_root(dest_container_id):
-            Msg().err("Warning: check container content:", dest_container_id)
+            Msg().err("Warning: check container content:", dest_container_id,
+                      l=Msg.WAR)
         return dest_container_id
 
 
@@ -3797,29 +4147,12 @@ class LocalRepository(object):
                 return container_dir
         return ""
 
-    def _relpath(self, path, start):
-        """An alternative to os.path.relpath()"""
-        if not path:
-            raise ValueError("no path specified")
-        start_list = posixpath.abspath(start).split(posixpath.sep)
-        path_list = posixpath.abspath(path).split(posixpath.sep)
-        # Work out how much of the filepath is shared by start and path.
-        i = len(posixpath.commonprefix([start_list, path_list]))
-        rel_list = [posixpath.pardir] * (len(start_list) - i) + path_list[i:]
-        if not rel_list:
-            return posixpath.curdir
-        return posixpath.join(*rel_list)
-
     def _symlink(self, existing_file, link_file):
         """Create relative symbolic links"""
         if os.path.exists(link_file):
             return False
-        try:
-            rel_path_to_existing = os.path.relpath(
-                existing_file, os.path.dirname(link_file))
-        except (AttributeError, NameError):
-            rel_path_to_existing = self._relpath(
-                existing_file, os.path.dirname(link_file))
+        rel_path_to_existing = os.path.relpath(
+            existing_file, os.path.dirname(link_file))
         try:
             os.symlink(rel_path_to_existing, link_file)
         except (IOError, OSError):
@@ -4103,7 +4436,7 @@ class LocalRepository(object):
                     return(container_json, files)
         elif os.path.exists(directory + "/v2"):  # if dockerhub API v1
             manifest = self.load_json("manifest")
-            if manifest:
+            if manifest and manifest["fsLayers"]:
                 for layer in reversed(manifest["fsLayers"]):
                     layer_file = directory + "/" + layer["blobSum"]
                     if not os.path.exists(layer_file):
@@ -4338,6 +4671,7 @@ class CurlHeader(object):
               pair[0].strip() == "" and
               "location" not in self.data):
             return -1
+        return None
 
     def setvalue_from_file(self, in_filename):
         """Load header content from file instead of from Curl()
@@ -4374,12 +4708,13 @@ class GetURL(object):
         self.http_proxy = Config.http_proxy
         self.cache_support = False
         self.insecure = Config.http_insecure
+        self._curl_executable = Config.use_curl_executable
         self._select_implementation()
 
     # pylint: disable=locally-disabled
     def _select_implementation(self):
         """Select which implementation to use"""
-        if GetURLpyCurl().is_available():
+        if GetURLpyCurl().is_available() and not self._curl_executable:
             self._geturl = GetURLpyCurl()
             self.cache_support = True
         elif GetURLexeCurl().is_available():
@@ -4398,10 +4733,12 @@ class GetURL(object):
     def set_insecure(self, bool_value=True):
         """Use insecure downloads no SSL verification"""
         self.insecure = bool_value
+        self._geturl.insecure = bool_value
 
     def set_proxy(self, http_proxy):
         """Specify a socks http proxy"""
         self.http_proxy = http_proxy
+        self._geturl.http_proxy = http_proxy
 
     def get(self, *args, **kwargs):
         """Get URL using selected implementation
@@ -4419,9 +4756,24 @@ class GetURL(object):
         kwargs["post"] = args[1]
         return self._geturl.get(args[0], **kwargs)
 
+    def _get_status_code(self, status_line):
+        """
+        get http status code from http status line.
+        Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+        """
+        parts = status_line.split(" ")
+        try:
+            return int(parts[1])
+        except ValueError:
+            return 400
+
 
 class GetURLpyCurl(GetURL):
     """Downloader implementation using PyCurl"""
+
+    def __init__(self):
+        GetURL.__init__(self)
+        self._url = None
 
     def is_available(self):
         """Can we use this approach for download"""
@@ -4440,7 +4792,7 @@ class GetURLpyCurl(GetURL):
         if self.insecure:
             pyc.setopt(pyc.SSL_VERIFYPEER, 0)
             pyc.setopt(pyc.SSL_VERIFYHOST, 0)
-        pyc.setopt(pyc.FOLLOWLOCATION, True)
+        pyc.setopt(pyc.FOLLOWLOCATION, False)
         pyc.setopt(pyc.FAILONERROR, False)
         pyc.setopt(pyc.NOPROGRESS, True)
         pyc.setopt(pyc.HEADERFUNCTION, hdr.write)
@@ -4452,9 +4804,12 @@ class GetURLpyCurl(GetURL):
             pyc.setopt(pyc.VERBOSE, True)
         else:
             pyc.setopt(pyc.VERBOSE, False)
+        self._url = ""
 
-    def _mkpycurl(self, pyc, hdr, buf, **kwargs):
+    def _mkpycurl(self, pyc, hdr, buf, *args, **kwargs):
         """Prepare curl command line according to invocation options"""
+        self._url = str(args[0])
+        pyc.setopt(pycurl.URL, self._url)
         if "post" in kwargs:
             pyc.setopt(pyc.POST, 1)
             pyc.setopt(pyc.HTTPHEADER, ['Content-Type: application/json'])
@@ -4468,6 +4823,11 @@ class GetURLpyCurl(GetURL):
         if "header" in kwargs:  # avoid known pycurl bug
             clean_header_list = []
             for header_item in kwargs["header"]:
+                if str(header_item).startswith("Authorization: Bearer"):
+                    if "Signature=" in self._url:
+                        continue
+                    if "redirect" in kwargs:
+                        continue
                 clean_header_list.append(str(header_item))
             pyc.setopt(pyc.HTTPHEADER, clean_header_list)
         if "v" in kwargs:
@@ -4498,34 +4858,44 @@ class GetURLpyCurl(GetURL):
 
     def get(self, *args, **kwargs):
         """http get implementation using the PyCurl"""
-        buf = cStringIO.StringIO()
-        hdr = CurlHeader()
-        pyc = pycurl.Curl()
-        url = str(args[0])
-        pyc.setopt(pycurl.URL, url)
-        self._set_defaults(pyc, hdr)
-        try:
-            (output_file, filep) = self._mkpycurl(pyc, hdr, buf, **kwargs)
-            pyc.perform()
-        except(IOError, OSError):
-            return(None, None)
-        except pycurl.error as error:
-            errno, errstr = error
-            hdr.data["X-ND-CURLSTATUS"] = errno
-            if not hdr.data["X-ND-HTTPSTATUS"]:
-                hdr.data["X-ND-HTTPSTATUS"] = errstr
+        cont_redirs = 0
+        max_redirs = 10
+        status_code = 302
+        while status_code >= 300 and status_code <= 308 and cont_redirs < max_redirs:
+            cont_redirs += 1
+            hdr = CurlHeader()
+            buf = cStringIO.StringIO()
+            pyc = pycurl.Curl()
+            self._set_defaults(pyc, hdr)
+            try:
+                (output_file, filep) = self._mkpycurl(pyc, hdr, buf, *args, **kwargs)
+                Msg().err("curl url: ", self._url, l=Msg.DBG)
+                Msg().err("curl arg: ", kwargs, l=Msg.DBG)
+                pyc.perform()     # call pyculr
+            except(IOError, OSError):
+                return(None, None)
+            except pycurl.error as error:
+                errno, errstr = error
+                hdr.data["X-ND-CURLSTATUS"] = errno
+                if not hdr.data["X-ND-HTTPSTATUS"]:
+                    hdr.data["X-ND-HTTPSTATUS"] = errstr
+            status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])
+            if status_code >= 300 and status_code <= 308:
+                args = (hdr.data['location'],)
+                kwargs["redirect"] = True
+
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
         if "ofile" in kwargs:
             filep.close()
-            if " 401" in hdr.data["X-ND-HTTPSTATUS"]:  # needs authentication
+            if status_code == 401:  # needs authentication
                 pass
-            elif " 206" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
+            elif status_code == 206 and "resume" in kwargs:
                 pass
-            elif " 416" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
+            elif status_code == 416 and "resume" in kwargs:
                 kwargs["resume"] = False
-                (hdr, buf) = self.get(url, **kwargs)
-            elif " 200" not in hdr.data["X-ND-HTTPSTATUS"]:
+                (hdr, buf) = self.get(self._url, **kwargs)
+            elif status_code != 200:
                 Msg().err("Error: in download: " + str(
                     hdr.data["X-ND-HTTPSTATUS"]))
                 FileUtil(output_file).remove()
@@ -4559,7 +4929,7 @@ class GetURLexeCurl(GetURL):
             "resume": "",
             "ctimeout": "--connect-timeout " + str(self.ctimeout),
             "timeout": "-m " + str(self.timeout),
-            "other": "--max-redirs 10 -s -q -S -L "
+            "other": "-s -q -S"
         }
         if self.insecure:
             self._opts["insecure"] = "-k"
@@ -4589,7 +4959,12 @@ class GetURLexeCurl(GetURL):
             self._opts["proxy"] = "--proxy '%s'" % (self.http_proxy)
         if "header" in kwargs:
             for header_item in kwargs["header"]:
-                self._opts["header"] += "-H '%s'" % (str(header_item))
+                if str(header_item).startswith("Authorization: Bearer"):
+                    if "Signature=" in self._files["url"]:
+                        continue
+                    if "redirect" in kwargs:
+                        continue
+                    self._opts["header"] += "-H '%s'" % (str(header_item))
         if "v" in kwargs and kwargs["v"]:
             self._opts["verbose"] = "-v"
         if "nobody" in kwargs and kwargs["nobody"]:
@@ -4600,24 +4975,37 @@ class GetURLexeCurl(GetURL):
             self._opts["timeout"] = "-m %s" % (str(self.download_timeout))
             if "resume" in kwargs and kwargs["resume"]:
                 self._opts["resume"] = "-C -"
-        return("curl " + " ".join(self._opts.values()) +
+        curl_executable = "curl"
+        if self._curl_executable and isinstance(self._curl_executable, str):
+            curl_executable = self._curl_executable
+        return(curl_executable + " " + " ".join(self._opts.values()) +
                " -D %s -o %s --stderr %s '%s'" %
                (self._files["header_file"], self._files["output_file"],
                 self._files["error_file"], self._files["url"]))
 
     def get(self, *args, **kwargs):
         """http get implementation using the curl cli executable"""
-        hdr = CurlHeader()
-        buf = cStringIO.StringIO()
-        self._set_defaults()
-        cmd = self._mkcurlcmd(*args, **kwargs)
-        status = subprocess.call(cmd, shell=True, close_fds=True)
-        hdr.setvalue_from_file(self._files["header_file"])
-        hdr.data["X-ND-CURLSTATUS"] = status
-        if status:
-            Msg().err("Error: in download: %s"
-                      % str(FileUtil(self._files["error_file"]).getdata()))
-            return(hdr, buf)
+        cont_redirs = 0
+        max_redirs = 10
+        status_code = 302
+        while status_code >= 300 and status_code <= 308 and cont_redirs < max_redirs:
+            cont_redirs += 1
+            hdr = CurlHeader()
+            buf = cStringIO.StringIO()
+            self._set_defaults()
+            cmd = self._mkcurlcmd(*args, **kwargs)
+            status = subprocess.call(cmd, shell=True, close_fds=True) # call curl
+            hdr.setvalue_from_file(self._files["header_file"])
+            hdr.data["X-ND-CURLSTATUS"] = status
+            if status:
+                Msg().err("Error: in download: %s"
+                          % str(FileUtil(self._files["error_file"]).getdata()))
+                return(hdr, buf)
+            status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])
+            if status_code >= 300 and status_code <= 308:
+                args = (hdr.data['location'],)
+                kwargs["redirect"] = True
+
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
         if "ofile" in kwargs:
@@ -4717,6 +5105,8 @@ class DockerIoAPI(object):
                             hdr.data["www-authenticate"])
                     auth_kwargs = kwargs.copy()
                     auth_kwargs.update({"header": [auth_header]})
+                    if "location" in hdr.data and hdr.data['location']:
+                        args = hdr.data['location']
                     (hdr, buf) = self._get_url(*args, **auth_kwargs)
                 else:
                     hdr.data["X-ND-CURLSTATUS"] = 13  # Permission denied
@@ -4842,7 +5232,7 @@ class DockerIoAPI(object):
         files = []
         if layer_list:
             for layer_id in reversed(layer_list):
-                Msg().out("Downloading layer:", layer_id, l=Msg.INF)
+                Msg().err("Downloading layer:", layer_id, l=Msg.INF)
                 filesize = self.get_v1_image_json(endpoint, layer_id)
                 if not filesize:
                     return []
@@ -4878,6 +5268,10 @@ class DockerIoAPI(object):
                     auth_header = "Authorization: Bearer " + \
                         auth_token["token"]
                     self.v2_auth_header = auth_header
+        # PR #126
+        elif 'BASIC' in bearer or 'Basic' in bearer:
+            auth_header = "Authorization: Basic %s" %(self.v2_auth_token)
+            self.v2_auth_header = auth_header
         return auth_header
 
     def get_v2_login_token(self, username, password):
@@ -4943,7 +5337,7 @@ class DockerIoAPI(object):
         files = []
         if fslayers:
             for layer in reversed(fslayers):
-                Msg().out("Downloading layer:", layer["blobSum"],
+                Msg().err("Downloading layer:", layer["blobSum"],
                           l=Msg.INF)
                 if not self.get_v2_image_layer(imagerepo, layer["blobSum"]):
                     return []
@@ -5557,14 +5951,15 @@ class Udocker(object):
     def _search_print_v1(self, repo_list):
         """Print search results from v1 API"""
         for repo in repo_list["results"]:
-            if repo["is_official"]:
+            if "is_official" in repo and repo["is_official"]:
                 is_official = "[OK]"
             else:
                 is_official = "----"
             description = ""
-            for char in repo["description"]:
-                if char in string.printable:
-                    description += char
+            if "description" in repo and repo["description"] is not None:
+                for char in repo["description"]:
+                    if char in string.printable:
+                        description += char
             Msg().out("%-40.40s %8.8s %s"
                       % (repo["name"], is_official, description))
 
@@ -5796,6 +6191,8 @@ class Udocker(object):
         registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
         (imagerepo, tag) = self._check_imagespec(cmdp.get("P1"))
+        if not registry_url and self.keystore.get(imagerepo.split("/")[0]):
+            registry_url = imagerepo.split("/")[0]
         if (not imagerepo) or cmdp.missing_options():    # syntax error
             return False
         else:
@@ -5928,6 +6325,10 @@ class Udocker(object):
             "kernel": {
                 "fl": ("--kernel=",), "act": "R",
                 "p2": "CMD_OPT", "p3": False
+            },
+            "devices": {
+                "fl": ("--device=",), "act": "E",
+                "p2": "CMD_OPT", "p3": True
             }
         }
         for option, cmdp_args in cmd_options.iteritems():
@@ -5966,6 +6367,7 @@ class Udocker(object):
         --bindhome                 :bind the home directory into the container
         --location=<path-to-dir>   :use root tree outside the repository
         --kernel=<kernel-id>       :use this Linux kernel identifier
+        --device=/dev/xxx          :pass device to container (R1 mode only)
 
         Only available in Pn execution modes:
         --publish=<hport:cport>    :map container TCP/IP <cport> into <hport>
@@ -6025,6 +6427,8 @@ class Udocker(object):
         -l                         :long format
         """
         verbose = cmdp.get("-l")
+        dummy = cmdp.get("--no-trunc")
+        dummy = cmdp.get("--all")
         if cmdp.missing_options():               # syntax error
             return False
         images_list = self.localrepo.get_imagerepos()
@@ -6063,6 +6467,7 @@ class Udocker(object):
                 self.localrepo.iswriteable_container(container_id)]
             Msg().out("%-36.36s %c %c %-18s %-s" %
                       (container_id, prot, write, names, reponame))
+        return True
 
     def do_rm(self, cmdp):
         """
@@ -6241,8 +6646,8 @@ class Udocker(object):
             elif self.localrepo.verify_image():
                 Msg().out("Info: image Ok", l=Msg.INF)
                 return True
-            Msg().err("Error: image verification failure")
-            return False
+        Msg().err("Error: image verification failure")
+        return False
 
     def do_setup(self, cmdp):
         """
@@ -6250,6 +6655,8 @@ class Udocker(object):
         setup [options] <container-id>
         --execmode=<mode>          :select execution mode from below
         --force                    :force setup change
+        --nvidia                   :add NVIDIA libraries and binaries
+                                    (nvidia support is EXPERIMENTAL)
 
         <mode> is one of the following execution modes:
         P1: proot accelerated mode using seccomp filtering (default)
@@ -6267,6 +6674,7 @@ class Udocker(object):
         container_id = cmdp.get("P1")
         xmode = cmdp.get("--execmode=")
         force = cmdp.get("--force")
+        nvidia = cmdp.get("--nvidia")
         if cmdp.missing_options():               # syntax error
             return False
         if not self.localrepo.cd_container(container_id):
@@ -6275,6 +6683,9 @@ class Udocker(object):
         elif xmode and self.localrepo.isprotected_container(container_id):
             Msg().err("Error: container is protected")
             return False
+        if nvidia:
+            nvidia_mode = NvidiaMode(self.localrepo, container_id)
+            nvidia_mode.set_mode(force)
         exec_mode = ExecutionMode(self.localrepo, container_id)
         if xmode:
             return exec_mode.set_mode(xmode.upper(), force)
@@ -6301,7 +6712,7 @@ class Udocker(object):
         if status is not None and not status:
             Msg().err("Error: install of udockertools failed")
 
-    def do_help(self, cmdp):
+    def do_help(self, cmdp, cmds=None):
         """
         Syntax:
           udocker  <command>  [command_options]  <command_args>
@@ -6339,6 +6750,8 @@ class Udocker(object):
           setup                         :Change container execution settings
           login                         :Login into docker repository
           logout                        :Logout from docker repository
+
+          version                       :Shows udocker version and exits
 
           help                          :This help
           run --help                    :Command specific help
@@ -6380,15 +6793,29 @@ class Udocker(object):
 
         See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
         """
+        if cmds is None:
+            cmds = dict()
         cmd_help = cmdp.get("", "CMD")
         try:
-            text = eval("self.do_" + cmd_help + ".__doc__")
+            text = cmds[cmd_help].__doc__
             if text:
                 Msg().out(text)
                 return
-        except AttributeError:
+        except (AttributeError, SyntaxError, KeyError):
             pass
         Msg().out(self.do_help.__doc__)
+
+    def do_version(self, cmdp):
+        """
+        version: Print version information
+        """
+        if cmdp.missing_options():  # syntax error
+            return False
+        try:
+            Msg().out("%s %s" % ("version:", __version__))
+            Msg().out("%s %s" % ("tarball:", Config.tarball))
+        except NameError:
+            pass
 
 
 class CmdParser(object):
@@ -6564,16 +6991,13 @@ class Main(object):
     def __init__(self):
         self.cmdp = CmdParser()
         parseok = self.cmdp.parse(sys.argv)
-        if self.cmdp.get("", "CMD") == "version":
-            self._version()
-            sys.exit(1)
-        if not parseok:
+        if not parseok and not self.cmdp.get("--version", "GEN_OPT"):
             Msg().err("Error: parsing command line, use: udocker help")
             sys.exit(1)
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
             sys.exit(1)
-        Config().user_init(self.cmdp.get("--config=", "GEN_OPT"))
+        Config().user_init(self.cmdp.get("--config=", "GEN_OPT")) # read config
         if (self.cmdp.get("--debug", "GEN_OPT") or
                 self.cmdp.get("-D", "GEN_OPT")):
             Config.verbose_level = Msg.DBG
@@ -6590,22 +7014,19 @@ class Main(object):
                           Config.topdir)
                 sys.exit(1)
         self.localrepo = LocalRepository(Config.topdir)
+        if (self.cmdp.get("", "CMD") == "version" or
+                self.cmdp.get("--version", "GEN_OPT")):
+            Udocker(self.localrepo).do_version(self.cmdp)
+            sys.exit(0)
         if not self.localrepo.is_repo():
             Msg().out("Info: creating repo: " + Config.topdir, l=Msg.INF)
             self.localrepo.create_repo()
         self.udocker = Udocker(self.localrepo)
 
-    def _version(self):
-        """Print the version information"""
-        try:
-            Msg().out("%s %s" % ("version:", __version__))
-            Msg().out("%s %s" % ("tarball:", Config.tarball))
-        except NameError:
-            pass
-
     def execute(self):
         """Command parsing and selection"""
         cmds = {
+            "version": self.udocker.do_version,
             "help": self.udocker.do_help, "search": self.udocker.do_search,
             "images": self.udocker.do_images, "pull": self.udocker.do_pull,
             "create": self.udocker.do_create, "ps": self.udocker.do_ps,
@@ -6630,7 +7051,7 @@ class Main(object):
                 if command != "install":
                     cmds["install"](None)
                 if self.cmdp.get("--help") or self.cmdp.get("-h"):
-                    self.udocker.do_help(self.cmdp)   # help on command
+                    self.udocker.do_help(self.cmdp, cmds)   # help on command
                     return 0
                 status = cmds[command](self.cmdp)     # executes the command
                 if self.cmdp.missing_options():
@@ -6644,6 +7065,7 @@ class Main(object):
             else:
                 Msg().err("Error: invalid command:", command, "\n")
                 self.udocker.do_help(self.cmdp)
+        return 1
 
     def start(self):
         """Program start and exception handling"""

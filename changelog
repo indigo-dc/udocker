@@ -1,3 +1,39 @@
+udocker (1.1.2)
+  * Improve parsing of quotes in the command line
+    - closes: #98
+  * Fix version command to exit with 0
+    - closes: #107
+  * Add kill-on-exit to proot on Pn modes
+  * Improve download of udocker utils
+  * Handle authentication headers when pulling 
+    - closes: #110
+  * Handle of redirects when pulling
+  * Fix registries table
+  * Support search quay.io
+  * Fix auth header when no standard Docker registry is used
+  * Add registry detection on image name
+  * Add --version option
+  * Force python2 as interpreter
+    - closes: #131
+  * Fix handling of volumes in metadata
+  * Handle empty metadata
+  * Fix http proxy functionality
+    - closes: #115
+  * Ignore --no-trunc and --all in the images command
+    - closes: #108
+  * Implement verification of layers in manifest
+  * Add --nvidia to support GPUs and related drivers
+  * Send download messages to stderr
+  * Enable override of curl executable
+  * Fix building on CentOS 6
+    - closes: #157
+  * Mitigation for upstream limitation in runC without tty
+    - closes: #132
+  * Fix detection of executable with symlinks in container
+    - closes: #118
+  * Updated runC to v1.0.0-rc5
+  * Experimental support for Alpine in Fn modes
+
 udocker (1.1.1)
   * New execution engine using singularity
   * Updated documentation with OpenMPI information and examples

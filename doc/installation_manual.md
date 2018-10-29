@@ -8,10 +8,12 @@ require any privileges.
 
 ## 1. DEPENDENCIES
 
-Python dependencies are described in the file requirements.txt
+Python dependencies are described in the file requirements.txt.
 
 udocker requires either pycurl or the curl executable command,
 to download both the binaries and/or pull containers from repositories.
+
+tar is needed when using `udocker install` to unpackage binaries and libraries.
 
 ## 2. USER INSTALLATION
 
@@ -43,21 +45,21 @@ From the development branch:
   ./udocker install
 ```
 
-### 2.2. INSTALL FROM INDIGO-DATACLOUD REPOSITORIES
+### 2.2. INSTALL FROM REPOSITORIES
 <!--
 -->
-The official release of udocker is available from the INDIGO-DataCloud
-repository at `http://repo.indigo-datacloud.eu/` where is made available
-as a tarball to be deployed by the end user.
+udocker is also available as a tarball in certain repositories such as:
+ * `https://download.ncg.ingrid.pt/webdav/udocker/`
+ * `http://repo.indigo-datacloud.eu/` 
 
 This installation method contains statically compiled binaries and is built
 to be used across different hosts and OS distributions. Please check the
 repositories for the latest release.
 
-Install or upgrade of udocker v1.1.0 or higher released by INDIGO-DataCloud:
+Install or upgrade of udocker v1.1.2:
 
 ```
-  curl http://repo.indigo-datacloud.eu/repository/indigo/2/centos7/x86_64/tgz/udocker-1.1.0.tar.gz > udocker-tarball.tgz
+  curl https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.2.tar.gz > udocker-tarball.tgz
   export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
   tar xzvf $UDOCKER_TARBALL udocker
   ./udocker install
@@ -122,7 +124,7 @@ DEBs are provided at http://repo.indigo-datacloud.eu
 ```
 Check the INDIGO-DataCloud repository for the latest versions and supported distributions.
 Replace `X` in the examples with the latest version.
-Notice that the rc engine (udocker-rceng) package is only available for Ubuntu 14 and 16.
+Notice that the rc engine (udocker-rceng) package is only available for Ubuntu 16 and 18.
 
 ## 4. SYSTEM INSTALLATION WITH ANSIBLE AND PYTHON
 
@@ -192,7 +194,7 @@ example builds the tarball from the master repository.
 ```
   git clone https://github.com/indigo-dc/udocker
   cd udocker/utils
-  bash build_tarball.sh
+  ./build_tarball.sh
 ```
  
 ## 7. DIRECTORIES
@@ -216,6 +218,7 @@ The location of the udocker directories can be changed via environment variables
  * UDOCKER_KEYSTORE : location of keystore for repository login/logout
  * UDOCKER_TMP : location of temporary directory
  * UDOCKER_TARBALL : location of installation tarball (file of URL)
+ * UDOCKER_NOSYSCONF: do not read system wide config files in /etc
 
 The Docker index and registry and be overrided via environment variables.
 
@@ -226,6 +229,11 @@ The verbosity level of udocker can be enforced. Removing banners and most messag
 can be achieved by executing with UDOCKER_LOGLEVEL=2
 
  * UDOCKER_LOGLEVEL : set verbosity level from 0 to 5 (MIN to MAX verbosity)
+
+Forces the use of a curl executable instead of pycurl and enables selection of a given 
+curl executable pathname:
+
+ * UDOCKER_USE_CURL_EXECUTABLE : pathname to the location of curl executable
 
 ## 9. CONFIGURATION
 
