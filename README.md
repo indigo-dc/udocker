@@ -1,5 +1,5 @@
 
-[![Build Status](https://travis-ci.com/undu/udocker.svg?branch=master)](https://travis-ci.com/undu/udocker)
+[//]: #[![Build Status](https://travis-ci.com/undu/udocker.svg?branch=master)](https://travis-ci.com/undu/udocker)
 
 [![logo](https://raw.githubusercontent.com/indigo-dc/udocker/master/doc/logo-small.png)]()
 
