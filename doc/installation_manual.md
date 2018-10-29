@@ -230,6 +230,11 @@ can be achieved by executing with UDOCKER_LOGLEVEL=2
 
  * UDOCKER_LOGLEVEL : set verbosity level from 0 to 5 (MIN to MAX verbosity)
 
+Forces the use of a curl executable instead of pycurl and enables selection of a given 
+curl executable pathname:
+
+ * UDOCKER_USE_CURL_EXECUTABLE : pathname to the location of curl executable
+
 ## 9. CONFIGURATION
 
 udocker loads the following configuration files:

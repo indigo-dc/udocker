@@ -639,7 +639,8 @@ Examples:
 Choose an execution mode to define how a given container will be executed.
 Enables selection of an execution engine and related execution modes.
 Without --execmode=XY, setup will print the current execution mode for the
-given container.
+given container. The option --nvidia enables access to GPGPUs by adding the
+necessary host libraries to the container.
 
 Options:
 
