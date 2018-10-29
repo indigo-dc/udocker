@@ -5849,7 +5849,7 @@ class ContainerStructureTestCase(unittest.TestCase):
         #
         prex = udocker.ContainerStructure(mock_local)
         status = prex._dict_to_str({'A': 1, 'B': 2})
-        self.assertTrue(status in ("A:1 B:2 ", "B:1 A:2 "))
+        self.assertTrue(status in ("A:1 B:2 ", "B:2 A:1 ", ))
         #self.assertEqual(status, "A:1 B:2 ")
 
     @mock.patch('udocker.Msg')
