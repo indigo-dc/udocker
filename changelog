@@ -33,6 +33,8 @@ udocker (1.1.2)
     - closes: #118
   * Updated runC to v1.0.0-rc5
   * Experimental support for Alpine in Fn modes
+  * Improve pathname translation in Fn modes for mounted dirs
+    - partially addresses: #160
 
 udocker (1.1.1)
   * New execution engine using singularity
