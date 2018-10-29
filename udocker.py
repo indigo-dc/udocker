@@ -3528,10 +3528,10 @@ class NvidiaMode(object):
         if not ld_data:
             return ""
         for line in ld_data.split("\n"):
-            match = re.search("[ |\t]libnvidia-cfg.so[^ ]* .*=> (/.*)", line)
+            match = re.search("[ |\t]libnvidia-cfg.so[^ ]* .*x86-64.*=> (/.*)", line)
             if match:
                 dir_list.append(os.path.dirname(match.group(1)) + '/')
-            match = re.search("[ |\t]libcuda.so[^ ]* .*=> (/.*)", line)
+            match = re.search("[ |\t]libcuda.so[^ ]* .*x86-64.*=> (/.*)", line)
             if match:
                 dir_list.append(os.path.dirname(match.group(1)) + '/')
         return dir_list
