@@ -95,6 +95,7 @@ create_source_tarball()
     pushd $TMP_DIR
     /bin/rm -Rf ${BASE_DIR}-${VERSION}
     /bin/rm -Rf udocker_tarball.tgz
+    print $UDOCKER_TARBALL_URL
     curl $UDOCKER_TARBALL_URL > udocker_tarball.tgz
     /bin/mkdir ${BASE_DIR}-${VERSION}
     pushd ${BASE_DIR}-${VERSION}
@@ -148,6 +149,12 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker-freng (1.1.3-1) trusty; urgency=low
+
+  * Repackaging for udocker 1.1.3
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Tue, 30 Oct 2018 17:30:00 +0000
+
 udocker-freng (1.1.2-1) trusty; urgency=low
 
   * Repackaging for udocker 1.1.2

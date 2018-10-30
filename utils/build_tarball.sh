@@ -36,6 +36,11 @@ udocker_version()
     $REPO_DIR/udocker.py version | grep "version:" | cut -f2- '-d ' | cut -f1 '-d-'
 }
 
+tarball_version()
+{
+    $REPO_DIR/udocker.py version | grep "tarball_release:" | cut -f2- '-d ' | cut -f1 '-d-'
+}
+
 get_proot_static() 
 {
     echo "get_proot_static"
@@ -1135,8 +1140,8 @@ create_package_tarball()
         return
     fi
 
-    echo $(udocker_version)
-    echo $(udocker_version) > "${PACKAGE_DIR}/udocker_dir/lib/VERSION"
+    echo $(tarball_version)
+    echo $(tarball_version) > "${PACKAGE_DIR}/udocker_dir/lib/VERSION"
 
     /bin/cp -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-25.bin" \
                "${PACKAGE_DIR}/udocker_dir/bin/proot-x86"
@@ -1202,11 +1207,11 @@ REPO_DIR="$(dirname $utils_dir)"
 
 sanity_check
 
-BUILD_DIR=${HOME}/udocker-build-$(udocker_version)
+BUILD_DIR=${HOME}/udocker-build-$(tarball_version)
 S_PROOT_DIR="${BUILD_DIR}/proot-static-build/static"
 S_PROOT_PACKAGES_DIR="${BUILD_DIR}/proot-static-build/packages"
 PACKAGE_DIR="${BUILD_DIR}/package"
-TARBALL_FILE="${BUILD_DIR}/udocker-$(udocker_version).tar.gz"
+TARBALL_FILE="${BUILD_DIR}/udocker-$(tarball_version).tar.gz"
 
 
 [ ! -e "$BUILD_DIR" ] && /bin/mkdir -p "$BUILD_DIR"

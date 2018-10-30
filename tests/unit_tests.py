@@ -1253,6 +1253,7 @@ class UdockerToolsTestCase(unittest.TestCase):
         udocker.Config.tmpdir = "/tmp"
         udocker.Config.tarball = "/tmp/xxx"
         udocker.Config.installinfo = "/tmp/xxx"
+        udocker.Config._tarball_release = "0.0.0"
         localrepo = mock_localrepo
         localrepo.bindir = "/bindir"
         utools = udocker.UdockerTools(localrepo)
@@ -1262,13 +1263,15 @@ class UdockerToolsTestCase(unittest.TestCase):
     @mock.patch('udocker.FileUtil')
     def test_02__version_isequal(self, futil, mock_localrepo):
         """Test UdockerTools._version_isequal()."""
-        futil.return_value.getdata.return_value = udocker.__version__
+        futil.return_value.getdata.return_value = "0.0.0"
         utools = udocker.UdockerTools(mock_localrepo)
+        utools._tarball_release = "0.0.0"
         status = utools._version_isequal("versionfile")
         self.assertTrue(status)
         #
         futil.return_value.getdata.return_value = "0.0.0"
         utools = udocker.UdockerTools(mock_localrepo)
+        utools._tarball_release = "1.1.1"
         status = utools._version_isequal("versionfile")
         self.assertFalse(status)
 
@@ -1317,6 +1320,7 @@ class UdockerToolsTestCase(unittest.TestCase):
         # NO AUTOINSTALL
         mock_is.return_value = False
         utools._tarball = "http://node.domain/filename.tgz"
+        utools._tarball_release = udocker.Config.tarball_version
         utools._autoinstall = False
         status = utools.install()
         self.assertEqual(status, None)
@@ -1330,6 +1334,7 @@ class UdockerToolsTestCase(unittest.TestCase):
         mock_instr.reset_mock()
         mock_is.return_value = False
         utools._tarball = "http://node.domain/filename.tgz"
+        utools._tarball_release = udocker.Config.tarball_version
         mock_down.return_value = ""
         status = utools.install()
         self.assertTrue(mock_instr.called)
@@ -1338,6 +1343,7 @@ class UdockerToolsTestCase(unittest.TestCase):
         mock_instr.reset_mock()
         mock_is.return_value = False
         utools._tarball = "http://node.domain/filename.tgz"
+        utools._tarball_release = udocker.Config.tarball_version
         mock_down.return_value = "filename.tgz"
         mock_ver.return_value = False
         mock_isfile.return_value = False
@@ -1349,6 +1355,7 @@ class UdockerToolsTestCase(unittest.TestCase):
         mock_instr.reset_mock()
         mock_is.return_value = False
         utools._tarball = "http://node.domain/filename.tgz"
+        utools._tarball_release = udocker.Config.tarball_version
         utools._installinfo = "installinfo.txt"
         utools._install_json = dict()
         mock_down.return_value = "filename.tgz"
@@ -1362,6 +1369,7 @@ class UdockerToolsTestCase(unittest.TestCase):
         mock_instr.reset_mock()
         mock_is.return_value = False
         utools._tarball = "http://node.domain/filename.tgz"
+        utools._tarball_release = udocker.Config.tarball_version
         utools._installinfo = "installinfo.txt"
         utools._install_json = dict()
         mock_down.return_value = "filename.tgz"
@@ -1378,6 +1386,7 @@ class UdockerToolsTestCase(unittest.TestCase):
         mock_exists.return_value = False
         utools._install_json = dict()
         utools._tarball = "filename.tgz"
+        utools._tarball_release = udocker.Config.tarball_version
         utools._installinfo = "installinfo.txt"
         utools._tarball_file = ""
         status = utools.install()

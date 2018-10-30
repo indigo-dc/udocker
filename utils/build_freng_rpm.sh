@@ -202,7 +202,9 @@ rm -rf %{buildroot}
 %doc %{name}-%{version}/LICENSE-fakechroot %{name}-%{version}/COPYING-fakechroot %{name}-%{version}/THANKS-fakechroot %{name}-%{version}/COPYING-patchelf %{name}-%{version}/README-patchelf
 
 %changelog
-* Fri Nov 26 2018 udocker maintainer <udocker@lip.pt> 1.1.2-1
+* Tue Oct 30 2018 udocker maintainer <udocker@lip.pt> 1.1.3-1
+- Repackaging for udocker 1.1.3
+* Fri Oct 26 2018 udocker maintainer <udocker@lip.pt> 1.1.2-1
 - Repackaging for udocker 1.1.2
 * Wed Nov  8 2017 udocker maintainer <udocker@lip.pt> 1.1.1-1
 - Repackaging for udocker 1.1.1
