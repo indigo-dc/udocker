@@ -3521,26 +3521,24 @@ class NvidiaMode(object):
 
     def _find_host_dir(self):
         """Find the location of the host nvidia libraries"""
-        dir_list = []
+        dir_list = set()
         ld_library_path = os.getenv("LD_LIBRARY_PATH")
         if ld_library_path:
             for libdir in ld_library_path.split(':'):
                 if glob.glob(libdir + '/libnvidia-cfg.so*'):
-                    dir_list.append(libdir + '/')
+                    dir_list.add(libdir + '/')
                 if glob.glob(libdir + '/libcuda.so*'):
-                    dir_list.append(libdir + '/')
-            if dir_list:
-                return dir_list
+                    dir_list.add(libdir + '/')
         ld_data = Uprocess().get_output("ldconfig -p")
         if not ld_data:
             return ""
         for line in ld_data.split("\n"):
             match = re.search("[ |\t]libnvidia-cfg.so[^ ]* .*x86-64.*=> (/.*)", line)
             if match:
-                dir_list.append(os.path.dirname(match.group(1)) + '/')
+                dir_list.add(os.path.dirname(match.group(1)) + '/')
             match = re.search("[ |\t]libcuda.so[^ ]* .*x86-64.*=> (/.*)", line)
             if match:
-                dir_list.append(os.path.dirname(match.group(1)) + '/')
+                dir_list.add(os.path.dirname(match.group(1)) + '/')
         return dir_list
 
     def _find_cont_dir(self):
@@ -5032,6 +5030,7 @@ class GetURLexeCurl(GetURL):
             if status:
                 Msg().err("Error: in download: %s"
                           % str(FileUtil(self._files["error_file"]).getdata()))
+                FileUtil(self._files["output_file"]).remove()
                 return(hdr, buf)
             status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])
             if status_code >= 300 and status_code <= 308:
