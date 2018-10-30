@@ -1384,7 +1384,6 @@ class UdockerTools(object):
                     if status:
                         self.get_installinfo()
                 if status:
-                    Msg().err("Info: installed ok", self._tarball_release, l=Msg.VER)
                     return True
             Msg().err("Error: installing tarball:", self._tarball)
         self._instructions()
@@ -6751,7 +6750,10 @@ class Udocker(object):
             utools.purge()
         status = utools.install(force)
         if status is not None and not status:
-            Msg().err("Error: install of udockertools failed")
+            Msg().err("Error: installation of udockertools failed")
+            return True
+        Msg().err("Info: installation of udockertools successful", l=Msg.VER)
+        return False
 
     def do_help(self, cmdp, cmds=None):
         """
@@ -6847,6 +6849,7 @@ class Udocker(object):
         except (AttributeError, SyntaxError, KeyError):
             pass
         Msg().out(self.do_help.__doc__)
+        return True
 
     def do_version(self, cmdp):
         """
@@ -6860,6 +6863,7 @@ class Udocker(object):
             Msg().out("%s %s" % ("tarball_release:", Config.tarball_release))
         except NameError:
             pass
+        return True
 
 
 class CmdParser(object):
