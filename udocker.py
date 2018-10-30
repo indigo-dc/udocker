@@ -3466,6 +3466,13 @@ class NvidiaMode(object):
         self.container_root = self.container_dir + "/ROOT"
         self._container_nvidia_set = self.container_dir + "/nvidia"
 
+    def _files_exist(self, cont_dst_dir, files_list):
+        """Verify if files already exists"""
+        for fname in files_list:
+            dstname = self.container_root + '/' + cont_dst_dir + '/' + fname
+            if os.path.exists(dstname):
+                raise OSError("file already exists", dstname)
+
     def _copy_files(self, host_src_dir, cont_dst_dir, files_list, force=False):
         """copy or link file to destination creating directories as needed"""
         for fname in files_list:
@@ -3543,6 +3550,18 @@ class NvidiaMode(object):
                 return dst_dir
         return ""
 
+    def _installation_exists(self, nvi_host_dir_list, nvi_cont_dir):
+        """Container has files from previous nvidia installation"""
+        try:
+            for nvi_host_dir in nvi_host_dir_list:
+                lib_list = self._get_nvidia_libs(nvi_host_dir)
+                self._files_exist(nvi_cont_dir, lib_list)
+            self._files_exist('/etc', Config.nvi_etc_list)
+            self._files_exist('/usr/bin', Config.nvi_bin_list)
+        except OSError:
+            return True
+        return False
+
     def set_mode(self, force=False):
         """Set nvidia mode"""
         if not self.container_dir:
@@ -3555,6 +3574,10 @@ class NvidiaMode(object):
             return
         if not nvi_cont_dir:
             Msg().err("Error: destination directory for nvidia libs not found")
+            return
+        if (not force) and self._installation_exists(nvi_host_dir_list, nvi_cont_dir):
+            Msg().err("Error: nvidia installation already exists"
+                      ", use --force to overwrite")
             return
         for nvi_host_dir in nvi_host_dir_list:
             lib_list = self._get_nvidia_libs(nvi_host_dir)
