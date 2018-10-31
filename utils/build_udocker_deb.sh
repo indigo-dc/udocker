@@ -75,9 +75,15 @@ M_DOCS
 create_changelog()
 {
     cat - > $DEB_CHANGELOG_FILE <<M_CHANGELOG
+udocker (1.1.3-1) trusty; urgency=low
+
+  * Support for nvidia drivers on ubuntu
+  * Installation improvements
+
+ -- $DEBFULLNAME <$DEBEMAIL>  Tue, 30 Oct 2018 17:30:00 +0000
+
 udocker (1.1.2-1) trusty; urgency=low
 
-  * Repackaging for udocker 1.1.2
   * Improve parsing of quotes in the command line
   * Fix version command to exit with 0
   * Add kill-on-exit to proot on P modes

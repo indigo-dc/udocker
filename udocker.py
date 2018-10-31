@@ -35,13 +35,14 @@ import select
 import ast
 
 __author__ = "udocker@lip.pt"
+__copyright__ = "Copyright 2017, LIP"
 __credits__ = ["PRoot http://proot.me",
                "runC https://runc.io",
                "Fakechroot https://github.com/dex4er/fakechroot",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 __date__ = "2018"
 
 # Python version major.minor
@@ -146,21 +147,22 @@ class Config(object):
     gid = os.getgid()
 
     # udocker installation tarball
+    tarball_release = "1.1.3"
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/dPX6hxjHKm96bc2/download"
+        "/s/iv4FOV1jZcfnGFH/download"
         " "
         "https://cernbox.cern.ch/index.php"
-        "/s/Djc4eKJ73uQRZ72/download?x-access-token=eyJhbGciOiJIUzI1Ni"
-        "IsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDE4LTEwLTI1VDE2OjQ4OjM5LjkxND"
-        "UxNTM2NCswMjowMCIsImV4cGlyZXMiOjAsImlkIjoiMTQ0NzQ3IiwiaXRlbV9"
-        "0eXBlIjowLCJtdGltZSI6MTU0MDQ3NTE2Miwib3duZXIiOiJqb3JnZSIsInBh"
-        "dGgiOiJlb3Nob21lLWo6MjY3OTE1MTAxOTIxNjA3NjgiLCJwcm90ZWN0ZWQiO"
+        "/s/CS31ycKOpj2KzxO/download?x-access-token=eyJhbGciOiJIUzI1Ni"
+        "IsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDE4LTEwLTMwVDE4OjM1OjMyLjI2MD"
+        "AxMDA3OCswMTowMCIsImV4cGlyZXMiOjAsImlkIjoiMTQ1NjgwIiwiaXRlbV9"
+        "0eXBlIjowLCJtdGltZSI6MTU0MDkxNzA3Miwib3duZXIiOiJqb3JnZSIsInBh"
+        "dGgiOiJlb3Nob21lLWo6MjcyNTgzNjk2NDc1NzUwNDAiLCJwcm90ZWN0ZWQiO"
         "mZhbHNlLCJyZWFkX29ubHkiOnRydWUsInNoYXJlX25hbWUiOiJ1ZG9ja2VyLT"
-        "EuMS4yLnRhci5neiIsInRva2VuIjoiRGpjNGVLSjczdVFSWjcyIn0.YCpo-ho"
-        "LPqg6J1PgutWRblgu2kj58IVvw10kkvNI6Nc"
+        "EuMS4zLnRhci5neiIsInRva2VuIjoiQ1MzMXljS09wajJLenhPIn0._9LTvxM"
+        "V12NpxcZXaCg3PJeQfz94qYui4ccscrrvgVA"
         " "
-        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.2.tar.gz"
+        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.3.tar.gz"
     )
 
     installinfo = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
@@ -1205,13 +1207,14 @@ class UdockerTools(object):
         self._autoinstall = Config.autoinstall  # True / False
         self._tarball = Config.tarball  # URL or file
         self._installinfo = Config.installinfo  # URL or file
+        self._tarball_release = Config.tarball_release
         self._install_json = dict()
         self.curl = GetURL()
 
     def _version_isequal(self, filename):
-        """Is version inside file equal to this udocker version"""
+        """Is version inside file equal to the taball release requirement"""
         version = FileUtil(filename).getdata().strip()
-        return version and version == __version__
+        return version and version == self._tarball_release
 
     def is_available(self):
         """Are the tools already installed"""
@@ -1302,29 +1305,36 @@ class UdockerTools(object):
         """
         Udocker installation instructions are available at:
 
-          https://indigo-dc.gitbooks.io/udocker/content/
+          https://github.com/indigo-dc/udocker/tree/master/doc
+          https://github.com/indigo-dc/udocker/tree/devel/doc
 
         Udocker requires additional tools to run. These are available
-        in the tarball that comprises udocker. The tarballs are available
-        at the INDIGO-DataCloud repository under tarballs at:
+        in the udocker tarball. The tarballs are available at several
+        locations. By default udocker will install from the locations
+        defined in Config.tarball.
 
-          http://repo.indigo-datacloud.eu/
+        To install from files or other URLs use these instructions:
 
-        Udocker can be installed with these instructions:
-
-        1) set UDOCKER_TARBALL to a remote URL or local filename e.g.
+        1) set UDOCKER_TARBALL to a remote URL or local filename:
 
           $ export UDOCKER_TARBALL=http://host/path
           or
           $ export UDOCKER_TARBALL=/tmp/filename
 
-        2) run udocker and installation will proceed
+        2) run udocker with the install command or optionally using
+           the option --force to overwrite the local installation:
 
-          ./udocker version
+          ./udocker install
+          or
+          ./udocker install --force
 
-        The correct tarball version for this udocker executable is:
+        3) once installed the binaries and containers will be placed
+           by default under $HOME/.udocker
+
         """
-        Msg().out(self._instructions.__doc__, __version__, l=Msg.ERR)
+        Msg().out(self._instructions.__doc__, l=Msg.ERR)
+        Msg().out("        udocker version:", __version__,
+                  "requires tarball release:", self._tarball_release, l=Msg.ERR)
 
     def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
@@ -1338,16 +1348,15 @@ class UdockerTools(object):
 
     def get_installinfo(self):
         """Get json containing installation info"""
-        (infofile, url) = self._get_file(self._get_mirrors(self._installinfo))
+        (infofile, dummy) = self._get_file(self._get_mirrors(self._installinfo))
         try:
             with open(infofile, "r") as filep:
                 self._install_json = json.load(filep)
             for msg in self._install_json["messages"]:
                 Msg().err("Info:", msg)
         except (KeyError, AttributeError, ValueError,
-                OSError, IOError) as error:
-            Msg().err("Warning: in install information:",
-                      error, url, l=Msg.VER)
+                OSError, IOError):
+            Msg().err("Info: no messages available", l=Msg.VER)
         return self._install_json
 
     def install(self, force=False):
@@ -1361,7 +1370,7 @@ class UdockerTools(object):
         elif not self._tarball:
             Msg().err("Error: UDOCKER_TARBALL not defined")
         else:
-            Msg().err("Info: installing", __version__, l=Msg.INF)
+            Msg().err("Info: installing", self._tarball_release, l=Msg.INF)
             (tarfile, url) = self._get_file(self._get_mirrors(self._tarball))
             if tarfile:
                 Msg().err("Info: installing from:", url, l=Msg.VER)
@@ -3466,6 +3475,13 @@ class NvidiaMode(object):
         self.container_root = self.container_dir + "/ROOT"
         self._container_nvidia_set = self.container_dir + "/nvidia"
 
+    def _files_exist(self, cont_dst_dir, files_list):
+        """Verify if files already exists"""
+        for fname in files_list:
+            dstname = self.container_root + '/' + cont_dst_dir + '/' + fname
+            if os.path.exists(dstname):
+                raise OSError("file already exists", dstname)
+
     def _copy_files(self, host_src_dir, cont_dst_dir, files_list, force=False):
         """copy or link file to destination creating directories as needed"""
         for fname in files_list:
@@ -3514,19 +3530,25 @@ class NvidiaMode(object):
 
     def _find_host_dir(self):
         """Find the location of the host nvidia libraries"""
+        dir_list = set()
         ld_library_path = os.getenv("LD_LIBRARY_PATH")
         if ld_library_path:
             for libdir in ld_library_path.split(':'):
                 if glob.glob(libdir + '/libnvidia-cfg.so*'):
-                    return libdir + '/'
+                    dir_list.add(libdir + '/')
+                if glob.glob(libdir + '/libcuda.so*'):
+                    dir_list.add(libdir + '/')
         ld_data = Uprocess().get_output("ldconfig -p")
         if not ld_data:
             return ""
         for line in ld_data.split("\n"):
-            match = re.search("[ |\t]libnvidia-cfg.so[^ ]* .*=> (/.*)", line)
+            match = re.search("[ |\t]libnvidia-cfg.so[^ ]* .*x86-64.*=> (/.*)", line)
             if match:
-                return os.path.dirname(match.group(1)) + '/'
-        return ""
+                dir_list.add(os.path.dirname(match.group(1)) + '/')
+            match = re.search("[ |\t]libcuda.so[^ ]* .*x86-64.*=> (/.*)", line)
+            if match:
+                dir_list.add(os.path.dirname(match.group(1)) + '/')
+        return dir_list
 
     def _find_cont_dir(self):
         """Find the location of the host target directory for libraries"""
@@ -3535,21 +3557,38 @@ class NvidiaMode(object):
                 return dst_dir
         return ""
 
+    def _installation_exists(self, nvi_host_dir_list, nvi_cont_dir):
+        """Container has files from previous nvidia installation"""
+        try:
+            for nvi_host_dir in nvi_host_dir_list:
+                lib_list = self._get_nvidia_libs(nvi_host_dir)
+                self._files_exist(nvi_cont_dir, lib_list)
+            self._files_exist('/etc', Config.nvi_etc_list)
+            self._files_exist('/usr/bin', Config.nvi_bin_list)
+        except OSError:
+            return True
+        return False
+
     def set_mode(self, force=False):
         """Set nvidia mode"""
         if not self.container_dir:
             Msg().err("Error: nvidia set mode container dir not found")
             return
-        nvi_host_dir = self._find_host_dir()
+        nvi_host_dir_list = self._find_host_dir()
         nvi_cont_dir = self._find_cont_dir()
-        if not nvi_host_dir:
+        if not nvi_host_dir_list:
             Msg().err("Error: host nvidia libraries not found")
             return
         if not nvi_cont_dir:
             Msg().err("Error: destination directory for nvidia libs not found")
             return
-        lib_list = self._get_nvidia_libs(nvi_host_dir)
-        self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
+        if (not force) and self._installation_exists(nvi_host_dir_list, nvi_cont_dir):
+            Msg().err("Error: nvidia installation already exists"
+                      ", use --force to overwrite")
+            return
+        for nvi_host_dir in nvi_host_dir_list:
+            lib_list = self._get_nvidia_libs(nvi_host_dir)
+            self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
         self._copy_files('/etc', '/etc', Config.nvi_etc_list, force)
         self._copy_files('/usr/bin', '/usr/bin', Config.nvi_bin_list, force)
         FileUtil(self._container_nvidia_set).putdata("")
@@ -5000,6 +5039,7 @@ class GetURLexeCurl(GetURL):
             if status:
                 Msg().err("Error: in download: %s"
                           % str(FileUtil(self._files["error_file"]).getdata()))
+                FileUtil(self._files["output_file"]).remove()
                 return(hdr, buf)
             status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])
             if status_code >= 300 and status_code <= 308:
@@ -6710,7 +6750,10 @@ class Udocker(object):
             utools.purge()
         status = utools.install(force)
         if status is not None and not status:
-            Msg().err("Error: install of udockertools failed")
+            Msg().err("Error: installation of udockertools failed")
+            return True
+        Msg().err("Info: installation of udockertools successful", l=Msg.VER)
+        return False
 
     def do_help(self, cmdp, cmds=None):
         """
@@ -6781,6 +6824,8 @@ class Udocker(object):
           udocker import --clone fedora_all.tar
 
         Notes:
+          * by default the binaries, images and containers are placed in
+               $HOME/.udocker
           * by default the following host directories are mounted in the
             container:
                /dev /proc /sys
@@ -6804,6 +6849,7 @@ class Udocker(object):
         except (AttributeError, SyntaxError, KeyError):
             pass
         Msg().out(self.do_help.__doc__)
+        return True
 
     def do_version(self, cmdp):
         """
@@ -6814,8 +6860,10 @@ class Udocker(object):
         try:
             Msg().out("%s %s" % ("version:", __version__))
             Msg().out("%s %s" % ("tarball:", Config.tarball))
+            Msg().out("%s %s" % ("tarball_release:", Config.tarball_release))
         except NameError:
             pass
+        return True
 
 
 class CmdParser(object):

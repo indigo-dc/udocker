@@ -113,7 +113,9 @@ rm -rf %{buildroot}
 %doc go/src/github.com/opencontainers/runc/LICENSE go/src/github.com/opencontainers/runc/README.md go/src/github.com/opencontainers/runc/NOTICE
 
 %changelog
-* Fri Nov 26 2018 udocker maintainer <udocker@lip.pt> 1.1.2-1
+* Fri Oct 30 2018 udocker maintainer <udocker@lip.pt> 1.1.3-1
+- Repackaging for udocker 1.1.3
+* Fri Oct 26 2018 udocker maintainer <udocker@lip.pt> 1.1.2-1
 - Repackaging for udocker 1.1.2
 * Wed Nov  8 2017 udocker maintainer <udocker@lip.pt> 1.1.1-1
 - Repackaging for udocker 1.1.1

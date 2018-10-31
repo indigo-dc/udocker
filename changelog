@@ -1,3 +1,9 @@
+udocker (1.1.3)
+  * Support for nvidia drivers on ubuntu
+    - closes: #162
+  * Installation improvements
+    - closes: #166
+
 udocker (1.1.2)
   * Improve parsing of quotes in the command line
     - closes: #98
