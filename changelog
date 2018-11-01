@@ -3,6 +3,8 @@ udocker (1.1.3)
     - closes: #162
   * Installation improvements
     - closes: #166
+  * Fix issue on Fn mode symlink convertion
+    - partially addresses: #160
 
 udocker (1.1.2)
   * Improve parsing of quotes in the command line

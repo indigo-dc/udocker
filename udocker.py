@@ -1164,8 +1164,8 @@ class FileUtil(object):
             Msg().err("Error: links convertion outside of directory tree: ",
                       root_path)
             return None
-        for dir_path, dummy, files in os.walk(root_path):
-            for f_name in files:
+        for dir_path, dirs, files in os.walk(root_path):
+            for f_name in files + dirs:
                 try:
                     f_path = dir_path + "/" + f_name
                     if not os.path.islink(f_path):
@@ -6751,9 +6751,9 @@ class Udocker(object):
         status = utools.install(force)
         if status is not None and not status:
             Msg().err("Error: installation of udockertools failed")
-            return True
+            return False
         Msg().err("Info: installation of udockertools successful", l=Msg.VER)
-        return False
+        return True
 
     def do_help(self, cmdp, cmds=None):
         """
