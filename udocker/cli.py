@@ -2,8 +2,8 @@
 
 import os
 from docker import *
-from helper.keystore import KeyStore
-from config import Config
+from udocker.helper.keystore import KeyStore
+from udocker.config import Config
 
 
 class Udocker(object):

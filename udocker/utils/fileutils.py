@@ -12,26 +12,17 @@ class ChkSUM(object):
     """Checksumming for files"""
 
     def __init__(self):
-        dummy = hashlib.sha256()
-        self._sha256_call = self._hashlib_sha256
+        self.hash_sha256 = hashlib.sha256()
 
-    def _hashlib_sha256(self, filename):
+    def sha256(self, filename):
         """sha256 calculation using hashlib"""
-        hash_sha256 = hashlib.sha256()
         try:
             with open(filename, "rb") as filep:
                 for chunk in iter(lambda: filep.read(4096), b""):
-                    hash_sha256.update(chunk)
-            return hash_sha256.hexdigest()
+                    self.hash_sha256.update(chunk)
+            return self.hash_sha256.hexdigest()
         except (IOError, OSError):
             return ""
-
-
-    def sha256(self, filename):
-        """
-        Call the actual sha256 implementation selected in __init__
-        """
-        return self._sha256_call(filename)
 
 
 class FileUtil(object):

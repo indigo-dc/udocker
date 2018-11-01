@@ -5,8 +5,8 @@ import pwd
 import platform
 import logging
 from udocker import PY_VER
-from msg import Msg
-from utils.fileutils import FileUtil
+from udocker.msg import Msg
+from udocker.utils.fileutils import FileUtil
 if PY_VER >= '3':
     from configparser import ConfigParser as confparser
 else:
