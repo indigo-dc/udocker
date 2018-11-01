@@ -1191,14 +1191,14 @@ class FileUtilTestCase(unittest.TestCase):
         #
         mock_realpath.return_value = "/ROOT"
         mock_is_safe_prefix.return_value = True
-        mock_walk.return_value = [("/", "", []), ]
+        mock_walk.return_value = [("/", [], []), ]
         status = udocker.FileUtil("/ROOT").links_conv(False, True, "")
         self.assertEqual(status, [])
         #
         mock_realpath.return_value = "/ROOT"
         mock_is_safe_prefix.return_value = True
         mock_islink = False
-        mock_walk.return_value = [("/", "", ["F1", "F2"]), ]
+        mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
         status = udocker.FileUtil("/ROOT").links_conv(False, True, "")
         self.assertEqual(status, [])
         #
@@ -1207,7 +1207,7 @@ class FileUtilTestCase(unittest.TestCase):
         mock_islink = True
         mock_lstat.return_value.st_uid = 1
         udocker.Config.uid = 0
-        mock_walk.return_value = [("/", "", ["F1", "F2"]), ]
+        mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
         status = udocker.FileUtil("/ROOT").links_conv(False, True, "")
         self.assertEqual(status, [])
         #
@@ -1218,7 +1218,7 @@ class FileUtilTestCase(unittest.TestCase):
         mock_link_set.reset_mock()
         mock_link_restore.reset_mock()
         udocker.Config.uid = 1
-        mock_walk.return_value = [("/", "", ["F1", "F2"]), ]
+        mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
         status = udocker.FileUtil("/ROOT").links_conv(False, True, "")
         self.assertTrue(mock_link_set.called)
         self.assertFalse(mock_link_restore.called)
@@ -1230,7 +1230,7 @@ class FileUtilTestCase(unittest.TestCase):
         mock_link_set.reset_mock()
         mock_link_restore.reset_mock()
         udocker.Config.uid = 1
-        mock_walk.return_value = [("/", "", ["F1", "F2"]), ]
+        mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
         status = udocker.FileUtil("/ROOT").links_conv(False, False, "")
         self.assertFalse(mock_link_set.called)
         self.assertTrue(mock_link_restore.called)

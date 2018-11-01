@@ -292,4 +292,6 @@ When citing udocker please use the following:
 * runC https://runc.io/
 * Singularity https://www.sylabs.io/
 * INDIGO DataCloud https://www.indigo-datacloud.eu
+* EOSC-hub https://eosc-hub.eu
+* DEEP-Hybrid-DataCloud https://deep-hybrid-datacloud.eu
 

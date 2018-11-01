@@ -980,6 +980,8 @@ Rn modes. See section 3.23 for information on changing execution modes.
 * runC https://runc.io/
 * Singularity http://singularity.lbl.gov
 * INDIGO DataCloud https://www.indigo-datacloud.eu
+* EOSC-hub https://eosc-hub.eu
+* DEEP-Hybrid-DataCloud https://deep-hybrid-datacloud.eu
 * Open MPI https://www.open-mpi.org
 * openQCD http://luscher.web.cern.ch/luscher/openQCD
 
