@@ -4,10 +4,10 @@ import sys
 import pwd
 import platform
 import logging
-from udocker import PY_VER
-from udocker.msg import Msg
-from udocker.utils.fileutils import FileUtil
-if PY_VER >= '3':
+import udocker
+from msg import Msg
+from utils.fileutils import FileUtil
+if udocker.PY_VER >= '3':
     from configparser import ConfigParser as confparser
 else:
     from ConfigParser import SafeConfigParser as confparser

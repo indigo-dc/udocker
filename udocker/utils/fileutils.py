@@ -2,7 +2,7 @@
 import hashlib
 import os
 import re
-from udocker.config import Config
+import udocker.config
 from udocker.helper.unique import Unique
 from udocker.msg import Msg
 from udocker.utils.uprocess import Uprocess
@@ -33,7 +33,7 @@ class FileUtil(object):
     orig_umask = None
 
     def __init__(self, filename=None):
-        self._tmpdir = Config.tmpdir
+        self._tmpdir = udocker.config.Config.tmpdir
         if filename == "-":
             self.filename = "-"
             self.basename = "-"
@@ -123,7 +123,7 @@ class FileUtil(object):
         elif self.filename.count("/") < 2:
             Msg().err("Error: delete pathname too short: ", self.filename)
             return False
-        elif self.uid() != Config.uid:
+        elif self.uid() != udocker.config.Config.uid:
             Msg().err("Error: delete not owner: ", self.filename)
             return False
         elif (not force) and (not self._is_safe_prefix(self.filename)):
@@ -419,7 +419,7 @@ class FileUtil(object):
                     f_path = dir_path + "/" + f_name
                     if not os.path.islink(f_path):
                         continue
-                    if os.lstat(f_path).st_uid != Config.uid:
+                    if os.lstat(f_path).st_uid != udocker.config.Config.uid:
                         continue
                     if to_container:
                         if self._link_set(f_path, orig_path, root_path, force):

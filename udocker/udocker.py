@@ -23,6 +23,9 @@ limitations under the License.
 import sys
 import logging
 import click
+import cli
+import config
+import container.localrepo
 __version__ = '2.0.0-dev2'
 
 
@@ -46,6 +49,10 @@ def install(force, purge):
     """Install udocker and its tools
     """
     click.echo('Install files')
+    localrepo = container.localrepo.LocalRepository(config.Config.topdir)
+    click.echo(localrepo)
+    ud = cli.Udocker(localrepo)
+    click.echo(ud)
 
 
 @click.argument('directory', nargs=1, type=click.Path(writable=True))
