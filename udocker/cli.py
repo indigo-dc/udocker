@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 from docker import *
 from helper.keystore import KeyStore
 from config import Config
