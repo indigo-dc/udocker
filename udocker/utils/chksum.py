@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import hashlib
 import re
+from udocker.utils.uprocess import Uprocess
 
 
 class ChkSUM(object):

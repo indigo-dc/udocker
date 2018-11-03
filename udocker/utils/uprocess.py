@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import subprocess
+from udocker.msg import Msg
 
 
 class Uprocess(object):
@@ -19,9 +20,7 @@ class Uprocess(object):
 
     def check_output(self, *popenargs, **kwargs):
         """Select check_output implementation"""
-        if PY_VER >= "2.7":
-            return subprocess.check_output(*popenargs, **kwargs)
-        return self._check_output(*popenargs, **kwargs)
+        return subprocess.check_output(*popenargs, **kwargs)
 
     def get_output(self, cmd):
         """Execute a shell command and get its output"""
@@ -32,3 +31,10 @@ class Uprocess(object):
         except subprocess.CalledProcessError:
             return None
         return content.strip()
+
+# TODO: this was here for the support of py2.6
+#    def check_output(self, *popenargs, **kwargs):
+#        """Select check_output implementation"""
+#        if PY_VER >= "2.7":
+#            return subprocess.check_output(*popenargs, **kwargs)
+#        return self._check_output(*popenargs, **kwargs)
