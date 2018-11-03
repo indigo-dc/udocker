@@ -3,6 +3,9 @@ import os
 import sys
 import platform
 import ast
+import pwd
+from udocker.msg import Msg
+from udocker.utils.fileutil import FileUtil
 
 
 class Config(object):

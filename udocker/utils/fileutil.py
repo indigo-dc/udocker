@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+import os
+
+# TODO: remove circular dependency on Config
+from udocker.config import Config
+
 
 class FileUtil(object):
     """Some utilities to manipulate files"""
@@ -8,6 +13,7 @@ class FileUtil(object):
     orig_umask = None
 
     def __init__(self, filename=None):
+        # TODO: remove circular dependency on Config
         self._tmpdir = Config.tmpdir
         if filename == "-":
             self.filename = "-"
