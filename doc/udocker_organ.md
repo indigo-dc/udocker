@@ -64,10 +64,3 @@ dir = container
 
 * structure.py - class ContainerStructure(object):
 * localrepo.py - class LocalRepository(object):
-
-## To be reviewed
-
-Main and CmdParser classes are removed will be using "click"
-functions for each command and option
- 
-* class CmdParser(object):
