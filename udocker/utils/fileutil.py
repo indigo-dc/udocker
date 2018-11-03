@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
+import stat
+import re
+import subprocess
+
+from udocker.msg import Msg
+from udocker.helper.unique import Unique
+from udocker.utils.uprocess import Uprocess
 
 # TODO: remove circular dependency on Config
 from udocker.config import Config
@@ -128,6 +136,7 @@ class FileUtil(object):
             del FileUtil.tmptrash[self.filename]
         return True
 
+    # TODO: tarfile is part of the standard lib
     def verify_tar(self):
         """Verify a tar file"""
         if not os.path.isfile(self.filename):
