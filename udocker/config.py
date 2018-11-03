@@ -1,19 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
-import sys
-import pwd
-import platform
-import logging
-import udocker
-from msg import Msg
-from utils.fileutils import FileUtil
-if udocker.PY_VER >= '3':
-    from configparser import ConfigParser as confparser
-else:
-    from ConfigParser import SafeConfigParser as confparser
-
-
-logger = logging.getLogger('udocker')
 
 
 class Config(object):
@@ -40,15 +25,22 @@ class Config(object):
     gid = os.getgid()
 
     # udocker installation tarball
+    tarball_release = "1.1.3"
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/AFImjw8ii0X72xf/download"
+        "/s/iv4FOV1jZcfnGFH/download"
         " "
         "https://cernbox.cern.ch/index.php"
-        "/s/VC7GuVWA7mYRAiy/download"
+        "/s/CS31ycKOpj2KzxO/download?x-access-token=eyJhbGciOiJIUzI1Ni"
+        "IsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDE4LTEwLTMwVDE4OjM1OjMyLjI2MD"
+        "AxMDA3OCswMTowMCIsImV4cGlyZXMiOjAsImlkIjoiMTQ1NjgwIiwiaXRlbV9"
+        "0eXBlIjowLCJtdGltZSI6MTU0MDkxNzA3Miwib3duZXIiOiJqb3JnZSIsInBh"
+        "dGgiOiJlb3Nob21lLWo6MjcyNTgzNjk2NDc1NzUwNDAiLCJwcm90ZWN0ZWQiO"
+        "mZhbHNlLCJyZWFkX29ubHkiOnRydWUsInNoYXJlX25hbWUiOiJ1ZG9ja2VyLT"
+        "EuMS4zLnRhci5neiIsInRva2VuIjoiQ1MzMXljS09wajJLenhPIn0._9LTvxM"
+        "V12NpxcZXaCg3PJeQfz94qYui4ccscrrvgVA"
         " "
-        "http://repo.indigo-datacloud.eu/repository"
-        "/indigo/2/centos7/x86_64/tgz/udocker-1.1.1.tar.gz"
+        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.3.tar.gz"
     )
 
     installinfo = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
@@ -213,17 +205,6 @@ class Config(object):
         cfile = FileUtil(config_file)
         if cfile.size() == -1:
             return False
-        parser = confparser.ConfigParser()
-        parser.read(config_file)
-        ver_level = parser.get('DEFAULT', 'verbose_level')
-        Msg().setlevel(ver_level)
-        return True
-
-    def _read_configOLD(self, config_file):
-        """Interpret config file content"""
-        cfile = FileUtil(config_file)
-        if cfile.size() == -1:
-            return False
         data = cfile.getdata()
         for line in data.split("\n"):
             if not line.strip() or "=" not in line or line.startswith("#"):
@@ -319,4 +300,3 @@ class Config(object):
             elif os_version[idx] < ref_version[idx]:
                 return False
         return True
-

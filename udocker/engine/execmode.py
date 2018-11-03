@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class ExecutionMode(object):
     """Generic execution engine class to encapsulate the specific
     execution engines and their execution modes.
@@ -91,4 +93,3 @@ class ExecutionMode(object):
         elif xmode.startswith("S"):
             self.exec_engine = SingularityEngine(self.localrepo)
         return self.exec_engine
-

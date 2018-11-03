@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class FileBind(object):
     """Alternative method to allow host files to be visible inside
     a container when binding of files is not possible such as when

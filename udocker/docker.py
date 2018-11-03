@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class DockerIoAPI(object):
     """Class to encapsulate the access to the Docker Hub service
     Allows to search and download images from Docker Hub

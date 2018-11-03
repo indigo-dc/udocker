@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 class CurlHeader(object):
     """An http header parser to be used with PyCurl
     Allows to retrieve the header fields and the status.
@@ -358,6 +357,7 @@ class GetURLexeCurl(GetURL):
             if status:
                 Msg().err("Error: in download: %s"
                           % str(FileUtil(self._files["error_file"]).getdata()))
+                FileUtil(self._files["output_file"]).remove()
                 return(hdr, buf)
             status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])
             if status_code >= 300 and status_code <= 308:

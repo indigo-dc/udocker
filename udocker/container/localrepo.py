@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class LocalRepository(object):
     """Implements a basic repository for images and containers.
     The repository will be usually in the user home directory.
@@ -187,29 +189,12 @@ class LocalRepository(object):
                 return container_dir
         return ""
 
-    def _relpath(self, path, start):
-        """An alternative to os.path.relpath()"""
-        if not path:
-            raise ValueError("no path specified")
-        start_list = posixpath.abspath(start).split(posixpath.sep)
-        path_list = posixpath.abspath(path).split(posixpath.sep)
-        # Work out how much of the filepath is shared by start and path.
-        i = len(posixpath.commonprefix([start_list, path_list]))
-        rel_list = [posixpath.pardir] * (len(start_list) - i) + path_list[i:]
-        if not rel_list:
-            return posixpath.curdir
-        return posixpath.join(*rel_list)
-
     def _symlink(self, existing_file, link_file):
         """Create relative symbolic links"""
         if os.path.exists(link_file):
             return False
-        try:
-            rel_path_to_existing = os.path.relpath(
-                existing_file, os.path.dirname(link_file))
-        except (AttributeError, NameError):
-            rel_path_to_existing = self._relpath(
-                existing_file, os.path.dirname(link_file))
+        rel_path_to_existing = os.path.relpath(
+            existing_file, os.path.dirname(link_file))
         try:
             os.symlink(rel_path_to_existing, link_file)
         except (IOError, OSError):

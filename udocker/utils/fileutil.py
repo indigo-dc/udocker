@@ -1,29 +1,4 @@
 # -*- coding: utf-8 -*-
-import hashlib
-import os
-import re
-import udocker.config
-from udocker.helper.unique import Unique
-from udocker.msg import Msg
-from udocker.utils.uprocess import Uprocess
-
-
-class ChkSUM(object):
-    """Checksumming for files"""
-
-    def __init__(self):
-        self.hash_sha256 = hashlib.sha256()
-
-    def sha256(self, filename):
-        """sha256 calculation using hashlib"""
-        try:
-            with open(filename, "rb") as filep:
-                for chunk in iter(lambda: filep.read(4096), b""):
-                    self.hash_sha256.update(chunk)
-            return self.hash_sha256.hexdigest()
-        except (IOError, OSError):
-            return ""
-
 
 class FileUtil(object):
     """Some utilities to manipulate files"""
@@ -33,7 +8,7 @@ class FileUtil(object):
     orig_umask = None
 
     def __init__(self, filename=None):
-        self._tmpdir = udocker.config.Config.tmpdir
+        self._tmpdir = Config.tmpdir
         if filename == "-":
             self.filename = "-"
             self.basename = "-"
@@ -123,7 +98,7 @@ class FileUtil(object):
         elif self.filename.count("/") < 2:
             Msg().err("Error: delete pathname too short: ", self.filename)
             return False
-        elif self.uid() != udocker.config.Config.uid:
+        elif self.uid() != Config.uid:
             Msg().err("Error: delete not owner: ", self.filename)
             return False
         elif (not force) and (not self._is_safe_prefix(self.filename)):
@@ -413,13 +388,13 @@ class FileUtil(object):
             Msg().err("Error: links convertion outside of directory tree: ",
                       root_path)
             return None
-        for dir_path, dummy, files in os.walk(root_path):
-            for f_name in files:
+        for dir_path, dirs, files in os.walk(root_path):
+            for f_name in files + dirs:
                 try:
                     f_path = dir_path + "/" + f_name
                     if not os.path.islink(f_path):
                         continue
-                    if os.lstat(f_path).st_uid != udocker.config.Config.uid:
+                    if os.lstat(f_path).st_uid != Config.uid:
                         continue
                     if to_container:
                         if self._link_set(f_path, orig_path, root_path, force):

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class PRootEngine(ExecutionEngineCommon):
     """Docker container execution engine using PRoot
     Provides a chroot like environment to run containers.
@@ -137,4 +139,3 @@ class PRootEngine(ExecutionEngineCommon):
         status = subprocess.call(cmd_l, shell=False, close_fds=True,
                                  env=os.environ.update(self._run_env_get()))
         return status
-

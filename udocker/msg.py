@@ -9,6 +9,7 @@ class Msg(object):
     file descriptor should be redirected to /dev/null
     """
 
+    NIL = -1
     ERR = 0
     MSG = 1
     WAR = 2
@@ -17,6 +18,7 @@ class Msg(object):
     DBG = 5
     DEF = INF
     level = DEF
+    previous = DEF
     nullfp = None
     chlderr = sys.stderr
     chldout = sys.stdout
@@ -41,8 +43,12 @@ class Msg(object):
             Msg.chldout = Msg.nullfp
             Msg.chldnul = Msg.nullfp
 
-    def setlevel(self, new_level):
+    def setlevel(self, new_level=None):
         """Define debug level"""
+        if new_level is None:
+            new_level = Msg.previous
+        else:
+            Msg.previous = Msg.level
         Msg.level = new_level
         if Msg.level >= Msg.DBG:
             Msg.chlderr = sys.stderr
@@ -50,6 +56,7 @@ class Msg(object):
         else:
             Msg.chlderr = Msg.nullfp
             Msg.chldout = Msg.nullfp
+        return Msg.previous
 
     def out(self, *args, **kwargs):
         """Write text to stdout respecting verbose level"""

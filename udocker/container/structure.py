@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class ContainerStructure(object):
     """Docker container structure.
     Creation of a container filesystem from a repository image.

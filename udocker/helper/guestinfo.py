@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class GuestInfo(object):
     """Get os information from a directory tree"""
 

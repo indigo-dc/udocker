@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class KeyStore(object):
     """Basic storage for authentication tokens to be used
     with dockerhub and private repositories

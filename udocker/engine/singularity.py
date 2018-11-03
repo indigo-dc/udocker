@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class SingularityEngine(ExecutionEngineCommon):
     """Docker container execution engine using singularity
     Provides a namespaces based user space container.
@@ -175,4 +177,3 @@ class SingularityEngine(ExecutionEngineCommon):
             env=os.environ.update(self._singularity_env_get()))
         self._filebind.finish()
         return status
-

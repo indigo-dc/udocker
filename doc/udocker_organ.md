@@ -2,11 +2,16 @@
 
 Repository path udocker/udocker
 
+It is based in version 1.1.3 release in DEEP
+
 ## Base directory
 
 dir = .
 
-* udocker.py - Main program
+* udocker.py - class Main(object):
+* cmdparser.py - class CmdParser(object):
+* cli.py -     class Udocker(object):
+  * This is the command line implementation
 * config.py -  class Config(object):
 * tools.py -   class UdockerTools(object):
 * msg.py - class Msg(object):
@@ -14,9 +19,7 @@ dir = .
   * class DockerIoAPI(object):
   * class DockerLocalFileAPI(object):
 
-This is the command line implementation
 
-* cli.py -     class Udocker(object):
 
 ## Directory utils
 
@@ -24,16 +27,14 @@ dir = utils/
 
 * uprocess.py - class Uprocess(object):
 * filebind.py - class FileBind(object):
+* fileutil.py - class FileUtil(object):
+* chkcsum.py -  class ChkSUM(object):
 
 * curl.py:
   * class CurlHeader(object):
   * class GetURL(object):
   * class GetURLpyCurl(GetURL):
   * class GetURLexeCurl(GetURL):
-
-* fileutils.py:
-  * class ChkSUM(object):
-  * class FileUtil(object):
 
 ## Directory helper
 
@@ -69,5 +70,4 @@ dir = container
 Main and CmdParser classes are removed will be using "click"
 functions for each command and option
  
-* class Main(object):
 * class CmdParser(object):

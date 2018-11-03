@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class NixAuthentication(object):
     """Provides abstraction and useful methods to manage
     passwd and group based authentication, both for the

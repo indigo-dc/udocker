@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class FakechrootEngine(ExecutionEngineCommon):
     """Docker container execution engine using Fakechroot
     Provides a chroot like environment to run containers.
@@ -231,4 +233,3 @@ class FakechrootEngine(ExecutionEngineCommon):
         cwd = self._cont2host(self.opt["cwd"])
         status = subprocess.call(cmd_l, shell=False, close_fds=True, cwd=cwd)
         return status
-

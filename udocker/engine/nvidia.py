@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class NvidiaMode(object):
     """nvidia-docker like functionality for udocker.
     Make nvidia host libraries available within udocker, this is achieved
@@ -13,6 +15,13 @@ class NvidiaMode(object):
             raise ValueError("invalid container id")
         self.container_root = self.container_dir + "/ROOT"
         self._container_nvidia_set = self.container_dir + "/nvidia"
+
+    def _files_exist(self, cont_dst_dir, files_list):
+        """Verify if files already exists"""
+        for fname in files_list:
+            dstname = self.container_root + '/' + cont_dst_dir + '/' + fname
+            if os.path.exists(dstname):
+                raise OSError("file already exists", dstname)
 
     def _copy_files(self, host_src_dir, cont_dst_dir, files_list, force=False):
         """copy or link file to destination creating directories as needed"""
@@ -62,19 +71,25 @@ class NvidiaMode(object):
 
     def _find_host_dir(self):
         """Find the location of the host nvidia libraries"""
+        dir_list = set()
         ld_library_path = os.getenv("LD_LIBRARY_PATH")
         if ld_library_path:
             for libdir in ld_library_path.split(':'):
                 if glob.glob(libdir + '/libnvidia-cfg.so*'):
-                    return libdir + '/'
+                    dir_list.add(libdir + '/')
+                if glob.glob(libdir + '/libcuda.so*'):
+                    dir_list.add(libdir + '/')
         ld_data = Uprocess().get_output("ldconfig -p")
         if not ld_data:
             return ""
         for line in ld_data.split("\n"):
-            match = re.search("[ |\t]libnvidia-cfg.so[^ ]* .*=> (/.*)", line)
+            match = re.search("[ |\t]libnvidia-cfg.so[^ ]* .*x86-64.*=> (/.*)", line)
             if match:
-                return os.path.dirname(match.group(1)) + '/'
-        return ""
+                dir_list.add(os.path.dirname(match.group(1)) + '/')
+            match = re.search("[ |\t]libcuda.so[^ ]* .*x86-64.*=> (/.*)", line)
+            if match:
+                dir_list.add(os.path.dirname(match.group(1)) + '/')
+        return dir_list
 
     def _find_cont_dir(self):
         """Find the location of the host target directory for libraries"""
@@ -83,21 +98,38 @@ class NvidiaMode(object):
                 return dst_dir
         return ""
 
+    def _installation_exists(self, nvi_host_dir_list, nvi_cont_dir):
+        """Container has files from previous nvidia installation"""
+        try:
+            for nvi_host_dir in nvi_host_dir_list:
+                lib_list = self._get_nvidia_libs(nvi_host_dir)
+                self._files_exist(nvi_cont_dir, lib_list)
+            self._files_exist('/etc', Config.nvi_etc_list)
+            self._files_exist('/usr/bin', Config.nvi_bin_list)
+        except OSError:
+            return True
+        return False
+
     def set_mode(self, force=False):
         """Set nvidia mode"""
         if not self.container_dir:
             Msg().err("Error: nvidia set mode container dir not found")
             return
-        nvi_host_dir = self._find_host_dir()
+        nvi_host_dir_list = self._find_host_dir()
         nvi_cont_dir = self._find_cont_dir()
-        if not nvi_host_dir:
+        if not nvi_host_dir_list:
             Msg().err("Error: host nvidia libraries not found")
             return
         if not nvi_cont_dir:
             Msg().err("Error: destination directory for nvidia libs not found")
             return
-        lib_list = self._get_nvidia_libs(nvi_host_dir)
-        self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
+        if (not force) and self._installation_exists(nvi_host_dir_list, nvi_cont_dir):
+            Msg().err("Error: nvidia installation already exists"
+                      ", use --force to overwrite")
+            return
+        for nvi_host_dir in nvi_host_dir_list:
+            lib_list = self._get_nvidia_libs(nvi_host_dir)
+            self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
         self._copy_files('/etc', '/etc', Config.nvi_etc_list, force)
         self._copy_files('/usr/bin', '/usr/bin', Config.nvi_bin_list, force)
         FileUtil(self._container_nvidia_set).putdata("")
@@ -113,4 +145,3 @@ class NvidiaMode(object):
             for expanded_devs in glob.glob(dev + '*'):
                 dev_list.append(expanded_devs)
         return dev_list
-

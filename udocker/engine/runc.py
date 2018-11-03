@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class RuncEngine(ExecutionEngineCommon):
     """Docker container execution engine using runc
     Provides a namespaces based user space container.
@@ -327,4 +329,3 @@ class RuncEngine(ExecutionEngineCommon):
             pass
         self._filebind.finish()
         return status
-

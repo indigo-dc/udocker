@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class ExecutionEngineCommon(object):
     """Docker container execution engine parent class
     Provides the container execution methods that are common to
@@ -688,4 +690,3 @@ class ExecutionEngineCommon(object):
         exec_path = self._check_executable()
 
         return exec_path
-

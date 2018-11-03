@@ -4,7 +4,7 @@
 """Tests for `udocker` package."""
 
 import pytest
-from udocker.utils.fileutils import ChkSUM
+from udocker.utils.fileutil import ChkSUM
 
 
 ###############################

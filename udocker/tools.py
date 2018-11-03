@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class UdockerTools(object):
     """Download and setup of the udocker supporting tools
     Includes: proot and alternative python modules, these
@@ -10,13 +12,14 @@ class UdockerTools(object):
         self._autoinstall = Config.autoinstall  # True / False
         self._tarball = Config.tarball  # URL or file
         self._installinfo = Config.installinfo  # URL or file
+        self._tarball_release = Config.tarball_release
         self._install_json = dict()
         self.curl = GetURL()
 
     def _version_isequal(self, filename):
-        """Is version inside file equal to this udocker version"""
+        """Is version inside file equal to the taball release requirement"""
         version = FileUtil(filename).getdata().strip()
-        return version and version == __version__
+        return version and version == self._tarball_release
 
     def is_available(self):
         """Are the tools already installed"""
@@ -107,29 +110,36 @@ class UdockerTools(object):
         """
         Udocker installation instructions are available at:
 
-          https://indigo-dc.gitbooks.io/udocker/content/
+          https://github.com/indigo-dc/udocker/tree/master/doc
+          https://github.com/indigo-dc/udocker/tree/devel/doc
 
         Udocker requires additional tools to run. These are available
-        in the tarball that comprises udocker. The tarballs are available
-        at the INDIGO-DataCloud repository under tarballs at:
+        in the udocker tarball. The tarballs are available at several
+        locations. By default udocker will install from the locations
+        defined in Config.tarball.
 
-          http://repo.indigo-datacloud.eu/
+        To install from files or other URLs use these instructions:
 
-        Udocker can be installed with these instructions:
-
-        1) set UDOCKER_TARBALL to a remote URL or local filename e.g.
+        1) set UDOCKER_TARBALL to a remote URL or local filename:
 
           $ export UDOCKER_TARBALL=http://host/path
           or
           $ export UDOCKER_TARBALL=/tmp/filename
 
-        2) run udocker and installation will proceed
+        2) run udocker with the install command or optionally using
+           the option --force to overwrite the local installation:
 
-          ./udocker version
+          ./udocker install
+          or
+          ./udocker install --force
 
-        The correct tarball version for this udocker executable is:
+        3) once installed the binaries and containers will be placed
+           by default under $HOME/.udocker
+
         """
-        Msg().out(self._instructions.__doc__, __version__, l=Msg.ERR)
+        Msg().out(self._instructions.__doc__, l=Msg.ERR)
+        Msg().out("        udocker version:", __version__,
+                  "requires tarball release:", self._tarball_release, l=Msg.ERR)
 
     def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
@@ -143,16 +153,15 @@ class UdockerTools(object):
 
     def get_installinfo(self):
         """Get json containing installation info"""
-        (infofile, url) = self._get_file(self._get_mirrors(self._installinfo))
+        (infofile, dummy) = self._get_file(self._get_mirrors(self._installinfo))
         try:
             with open(infofile, "r") as filep:
                 self._install_json = json.load(filep)
             for msg in self._install_json["messages"]:
                 Msg().err("Info:", msg)
         except (KeyError, AttributeError, ValueError,
-                OSError, IOError) as error:
-            Msg().err("Warning: in install information:",
-                      error, url, l=Msg.VER)
+                OSError, IOError):
+            Msg().err("Info: no messages available", l=Msg.VER)
         return self._install_json
 
     def install(self, force=False):
@@ -166,7 +175,7 @@ class UdockerTools(object):
         elif not self._tarball:
             Msg().err("Error: UDOCKER_TARBALL not defined")
         else:
-            Msg().err("Info: installing", __version__, l=Msg.INF)
+            Msg().err("Info: installing", self._tarball_release, l=Msg.INF)
             (tarfile, url) = self._get_file(self._get_mirrors(self._tarball))
             if tarfile:
                 Msg().err("Info: installing from:", url, l=Msg.VER)

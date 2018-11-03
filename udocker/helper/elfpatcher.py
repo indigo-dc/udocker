@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class ElfPatcher(object):
     """Patch container executables"""
 

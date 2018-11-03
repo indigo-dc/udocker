@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class Unique(object):
     """Produce unique identifiers for container names, temporary
     file names and other purposes. If module uuid does not exist

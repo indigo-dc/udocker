@@ -1,22 +1,34 @@
 # -*- coding: utf-8 -*-
 import subprocess
-import sys
 
 
 class Uprocess(object):
     """Provide alternative implementations for subprocess"""
 
-    @staticmethod
-    def _check_output(*popenargs, **kwargs):
+    def _check_output(self, *popenargs, **kwargs):
+        """Alternative to subprocess.check_output"""
+        process = subprocess.Popen(*popenargs, stdout=subprocess.PIPE, **kwargs)
+        output, dummy = process.communicate()
+        retcode = process.poll()
+        if retcode:
+            cmd = kwargs.get("args")
+            if cmd is None:
+                cmd = popenargs[0]
+            raise subprocess.CalledProcessError(retcode, cmd)
+        return output
+
+    def check_output(self, *popenargs, **kwargs):
         """Select check_output implementation"""
-        return subprocess.check_output(*popenargs, **kwargs)
+        if PY_VER >= "2.7":
+            return subprocess.check_output(*popenargs, **kwargs)
+        return self._check_output(*popenargs, **kwargs)
 
     def get_output(self, cmd):
         """Execute a shell command and get its output"""
         try:
-            content = self._check_output(cmd, shell=True,
-                                         stderr=sys.stderr,
-                                         close_fds=True)
+            content = self.check_output(cmd, shell=True,
+                                        stderr=Msg.chlderr,
+                                        close_fds=True)
         except subprocess.CalledProcessError:
             return None
         return content.strip()
