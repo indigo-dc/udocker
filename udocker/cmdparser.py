@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import string
+
 
 class CmdParser(object):
     """Implements a simple command line parser.
