@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+import re
+import os
+import sys
+
+from udocker.config import Config
+from udocker.utils.uprocess import Uprocess
+from udocker.msg import Msg
+from udocker.utils.fileutil import FileUtil
+
 
 class ElfPatcher(object):
     """Patch container executables"""
