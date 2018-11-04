@@ -1,4 +1,27 @@
 # -*- coding: utf-8 -*-
+import os
+import subprocess
+import random
+import sys
+
+from udocker.config import Config
+from udocker.utils.curl import GetURL
+from udocker.utils.fileutil import FileUtil
+from udocker.msg import Msg
+from udocker import __version__
+
+START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
+try:
+    import json
+except ImportError:
+    sys.path.append(START_PATH + "/../lib/simplejson")
+    sys.path.append(os.path.expanduser('~') + "/.udocker/lib/simplejson")
+    sys.path.append(str(os.getenv("UDOCKER_DIR")) + "/lib/simplejson")
+    try:
+        import simplejson as json
+    except ImportError:
+        pass
+
 
 class UdockerTools(object):
     """Download and setup of the udocker supporting tools
