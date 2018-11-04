@@ -1,4 +1,33 @@
 # -*- coding: utf-8 -*-
+import sys
+import os
+import subprocess
+
+from udocker.config import Config
+from udocker.msg import Msg
+from udocker.utils.fileutil import FileUtil
+
+try:
+    import cStringIO
+except ImportError:
+    from io import BytesIO as cStringIO
+try:
+    import pycurl
+except ImportError:
+    pass
+
+START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
+try:
+    import json
+except ImportError:
+    sys.path.append(START_PATH + "/../lib/simplejson")
+    sys.path.append(os.path.expanduser('~') + "/.udocker/lib/simplejson")
+    sys.path.append(str(os.getenv("UDOCKER_DIR")) + "/lib/simplejson")
+    try:
+        import simplejson as json
+    except ImportError:
+        pass
+
 
 class CurlHeader(object):
     """An http header parser to be used with PyCurl
