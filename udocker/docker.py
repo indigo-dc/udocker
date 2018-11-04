@@ -1,4 +1,31 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
+import re
+import base64
+import subprocess
+
+from udocker.config import Config
+from udocker.msg import Msg
+from udocker.utils.fileutil import FileUtil
+from udocker.utils.curl import GetURL
+from udocker.utils.chksum import ChkSUM
+from udocker.helper.unique import Unique
+from udocker.container.structure import ContainerStructure
+from udocker.engine.execmode import ExecutionMode
+
+START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
+try:
+    import json
+except ImportError:
+    sys.path.append(START_PATH + "/../lib/simplejson")
+    sys.path.append(os.path.expanduser('~') + "/.udocker/lib/simplejson")
+    sys.path.append(str(os.getenv("UDOCKER_DIR")) + "/lib/simplejson")
+    try:
+        import simplejson as json
+    except ImportError:
+        pass
+
 
 class DockerIoAPI(object):
     """Class to encapsulate the access to the Docker Hub service
