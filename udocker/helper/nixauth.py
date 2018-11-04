@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+import re
+import pwd
+import grp
+from udocker.config import Config
+
 
 class NixAuthentication(object):
     """Provides abstraction and useful methods to manage
