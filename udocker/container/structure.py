@@ -1,4 +1,12 @@
 # -*- coding: utf-8 -*-
+import os
+import subprocess
+
+from udocker.msg import Msg
+from udocker.utils.fileutil import FileUtil
+from udocker.helper.unique import Unique
+from udocker.config import Config
+
 
 class ContainerStructure(object):
     """Docker container structure.
