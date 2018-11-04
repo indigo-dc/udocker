@@ -1,4 +1,21 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
+from udocker.config import Config
+from udocker.utils.fileutil import FileUtil
+
+START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
+try:
+    import json
+except ImportError:
+    sys.path.append(START_PATH + "/../lib/simplejson")
+    sys.path.append(os.path.expanduser('~') + "/.udocker/lib/simplejson")
+    sys.path.append(str(os.getenv("UDOCKER_DIR")) + "/lib/simplejson")
+    try:
+        import simplejson as json
+    except ImportError:
+        pass
+
 
 class KeyStore(object):
     """Basic storage for authentication tokens to be used
