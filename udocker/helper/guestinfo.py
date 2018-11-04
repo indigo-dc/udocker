@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+import os
+import re
+from udocker.utils.uprocess import Uprocess
+from udocker.utils.fileutil import FileUtil
+
 
 class GuestInfo(object):
     """Get os information from a directory tree"""
