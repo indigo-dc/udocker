@@ -1,4 +1,32 @@
 # -*- coding: utf-8 -*-
+import sys
+import os
+import subprocess
+import platform
+import stat
+import string
+import select
+
+from udocker.engine.base import ExecutionEngineCommon
+from udocker.config import Config
+from udocker.msg import Msg
+from udocker.utils.fileutil import FileUtil
+from udocker.engine.nvidia import NvidiaMode
+from udocker.utils.filebind import FileBind
+from udocker.helper.unique import Unique
+
+START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
+try:
+    import json
+except ImportError:
+    sys.path.append(START_PATH + "/../lib/simplejson")
+    sys.path.append(os.path.expanduser('~') + "/.udocker/lib/simplejson")
+    sys.path.append(str(os.getenv("UDOCKER_DIR")) + "/lib/simplejson")
+    try:
+        import simplejson as json
+    except ImportError:
+        pass
+
 
 class RuncEngine(ExecutionEngineCommon):
     """Docker container execution engine using runc
