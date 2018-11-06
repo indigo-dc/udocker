@@ -1,4 +1,16 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
+import re
+import subprocess
+
+from udocker.engine.base import ExecutionEngineCommon
+from udocker.config import Config
+from udocker.helper.guestinfo import GuestInfo
+from udocker.msg import Msg
+from udocker.utils.fileutil import FileUtil
+from udocker.helper.elfpatcher import ElfPatcher
+
 
 class FakechrootEngine(ExecutionEngineCommon):
     """Docker container execution engine using Fakechroot
