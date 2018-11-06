@@ -1,4 +1,16 @@
 # -*- coding: utf-8 -*-
+import sys
+import os
+import subprocess
+
+from udocker.engine.base import ExecutionEngineCommon
+from udocker.config import Config
+from udocker.msg import Msg
+from udocker.utils.fileutil import FileUtil
+from udocker.helper.nixauth import NixAuthentication
+from udocker.utils.filebind import FileBind
+from udocker.utils.uprocess import Uprocess
+from udocker.helper.unique import Unique
 
 class SingularityEngine(ExecutionEngineCommon):
     """Docker container execution engine using singularity
