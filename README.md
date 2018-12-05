@@ -2,6 +2,7 @@
 <!---
 [![Build Status](https://travis-ci.com/undu/udocker.svg?branch=master)](https://travis-ci.com/undu/udocker)
 -->
+[![Build Status](https://jenkins.indigo-datacloud.eu:8080/buildStatus/icon?job=Pipeline-as-code/udocker/master)](https://jenkins.indigo-datacloud.eu:8080/job/Pipeline-as-code/udocker/master)
 
 [![logo](https://raw.githubusercontent.com/indigo-dc/udocker/master/doc/logo-small.png)]()
 
@@ -13,7 +14,7 @@ containers in Linux batch systems and interactive clusters that are
 managed by other entities such as grid infrastructures or externally
 managed batch or interactive systems.
 
-udocker does not require any type of privileges nor the deployment of 
+udocker does not require any type of privileges nor the deployment of
 services by system administrators. It can be downloaded and executed
 entirely by the end user.
 
@@ -52,7 +53,7 @@ using tools and libraries such as:
 * Encapsulates several execution methods
 * Includes the required tools already compiled to work across systems
 * Tested with GPGPU and MPI applications
-* Runs both on new and older Linux distributions including: 
+* Runs both on new and older Linux distributions including:
   CentOS 6, CentOS 7, Ubuntu 14, Ubuntu 16, Ubunto 18, Fedora, etc
 
 ## Installation
