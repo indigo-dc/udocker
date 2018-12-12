@@ -141,7 +141,13 @@ commands = bandit udocker -f html -o bandit.html"""
                     '',
                     ['wp3', 'preview-testbed', "udocker-${env.BRANCH_NAME}"],
                     'Task',
-                    'mariojmdavid'
+                    'mariojmdavid',
+                    ['wgcastell',
+                     'vkozlov',
+                     'dlugo',
+                     'keiichiito',
+                     'laralloret',
+                     'ignacioheredia']
                 )
             }
         }
