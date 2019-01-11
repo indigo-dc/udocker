@@ -3,8 +3,8 @@
 
 """The setup script."""
 
+from udocker import __version__
 from setuptools import setup, find_packages
-import udocker
 
 with open('README.md') as readme_file:
     readme = readme_file.read()
@@ -12,7 +12,7 @@ with open('README.md') as readme_file:
 with open('CHANGELOG.md') as history_file:
     history = history_file.read()
 
-#requirements = ['Click>=6.0', ]
+requirements = []
 
 setup_requirements = ['pytest-runner', ]
 
@@ -21,7 +21,7 @@ test_requirements = ['pytest', ]
 setup(
     author="Jorge Gomes",
     author_email='udocker@lip.pt',
-    version=udocker.__version__,
+    version=__version__,
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
