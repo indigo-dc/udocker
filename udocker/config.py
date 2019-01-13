@@ -4,8 +4,8 @@ import sys
 import platform
 import ast
 import pwd
+
 from udocker.msg import Msg
-from udocker.utils.fileutil import FileUtil
 
 
 class Config(object):
@@ -209,26 +209,26 @@ class Config(object):
 
     def _read_config(self, config_file):
         """Interpret config file content"""
-        cfile = FileUtil(config_file)
-        if cfile.size() == -1:
+        if os.access(config_file, os.R_OK) and os.path.getsize(config_file) !=0:
+            with open(config_file) as fp:
+                for line in fp:
+                    if not line.strip() or "=" not in line or line.startswith("#"):
+                        continue
+                    (key, val) = line.strip().split("=", 1)
+                    key = key.strip()
+                    Msg().err(config_file, ":", key, "=", val, l=Msg.DBG)
+                    try:
+                        dummy = ast.literal_eval(val.strip())
+                        exec('Config.%s=%s' % (key, val))
+                    except(NameError, AttributeError, TypeError, IndexError,
+                           SyntaxError, ValueError):
+                        raise ValueError("config file: %s at: %s" %
+                                         (config_file, line.strip()))
+                    if key == "verbose_level":
+                        Msg().setlevel(Config.verbose_level)
+            return True
+        else:
             return False
-        data = cfile.getdata()
-        for line in data.split("\n"):
-            if not line.strip() or "=" not in line or line.startswith("#"):
-                continue
-            (key, val) = line.strip().split("=", 1)
-            key = key.strip()
-            Msg().err(config_file, ":", key, "=", val, l=Msg.DBG)
-            try:
-                dummy = ast.literal_eval(val.strip())
-                exec('Config.%s=%s' % (key, val))
-            except(NameError, AttributeError, TypeError, IndexError,
-                   SyntaxError, ValueError):
-                raise ValueError("config file: %s at: %s" %
-                                 (config_file, line.strip()))
-            if key == "verbose_level":
-                Msg().setlevel(Config.verbose_level)
-        return True
 
     def user_init(self, config_file):
         """
