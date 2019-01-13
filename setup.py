@@ -36,11 +36,12 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     description="A basic user tool to execute simple docker containers in batch or interactive systems without root privileges",
-    entry_points={
-        'console_scripts': [
-            'udocker=udocker.udocker:main',
-        ],
-    },
+    scripts=['udocker/udocker'],
+#    entry_points={
+#        'console_scripts': [
+#            'udocker=udocker.udocker:main',
+#        ],
+#    },
     install_requires=requirements,
     license="Apache Software License 2.0",
     long_description=readme + '\n\n' + history,
