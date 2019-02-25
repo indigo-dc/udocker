@@ -1,6 +1,6 @@
 #!/usr/bin/groovy
 
-@Library(['github.com/indigo-dc/jenkins-pipeline-library']) _
+@Library(['github.com/indigo-dc/jenkins-pipeline-library@1.0.0']) _
 
 pipeline {
     agent {
