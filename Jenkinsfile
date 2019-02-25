@@ -105,7 +105,7 @@ commands = bandit udocker -f html -o bandit.html"""
                 always {
                     OWASPDependencyCheckPublish()
                     HTMLReport(
-                        '',
+                        "${WORKSPACE}",
                         'dependency-check-report.html',
                         'OWASP Dependency Report')
                     deleteDir()
