@@ -96,11 +96,11 @@ class ExecutionMode(object):
         """get execution engine instance"""
         xmode = self.get_mode()
         if xmode.startswith("P"):
-            self.exec_engine = PRootEngine(self.localrepo)
+            self.exec_engine = PRootEngine(self.localrepo, xmode)
         elif xmode.startswith("F"):
-            self.exec_engine = FakechrootEngine(self.localrepo)
+            self.exec_engine = FakechrootEngine(self.localrepo, xmode)
         elif xmode.startswith("R"):
-            self.exec_engine = RuncEngine(self.localrepo)
+            self.exec_engine = RuncEngine(self.localrepo, xmode)
         elif xmode.startswith("S"):
-            self.exec_engine = SingularityEngine(self.localrepo)
+            self.exec_engine = SingularityEngine(self.localrepo, xmode)
         return self.exec_engine

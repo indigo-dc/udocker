@@ -17,12 +17,13 @@ class PRootEngine(ExecutionEngineCommon):
     Inherits from ContainerEngine class
     """
 
-    def __init__(self, localrepo):
+    def __init__(self, localrepo, xmode):
         super(PRootEngine, self).__init__(localrepo)
         conf = Config()
         self.proot_exec = None                   # PRoot
         self.proot_noseccomp = False             # Noseccomp mode
         self._kernel = conf.oskernel()           # Emulate kernel
+        self.exec_mode = xmode
 
     def _select_proot(self):
         """Set proot executable and related variables"""
@@ -110,7 +111,7 @@ class PRootEngine(ExecutionEngineCommon):
             self._kernel = self.opt["kernel"]
 
         # set environment variables
-        self._run_env_set()
+        self._run_env_set(self.exec_mode)
         if not self._check_env():
             return 4
 

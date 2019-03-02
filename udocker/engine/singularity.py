@@ -18,11 +18,12 @@ class SingularityEngine(ExecutionEngineCommon):
     Inherits from ContainerEngine class
     """
 
-    def __init__(self, localrepo):
+    def __init__(self, localrepo, xmode):
         super(SingularityEngine, self).__init__(localrepo)
         self.singularity_exec = None                   # singularity
         self._filebind = None
         self.execution_id = None
+        self.exec_mode = xmode
 
     def _select_singularity(self):
         """Set singularity executable and related variables"""
@@ -145,7 +146,7 @@ class SingularityEngine(ExecutionEngineCommon):
         self._uid_check_noroot()
 
         # set environment variables
-        self._run_env_set()
+        self._run_env_set(self.exec_mode)
         if not self._check_env():
             return 5
 

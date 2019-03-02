@@ -9,7 +9,6 @@ from udocker.utils.fileutil import FileUtil
 from udocker.helper.nixauth import NixAuthentication
 from udocker.container.structure import ContainerStructure
 from udocker.utils.filebind import FileBind
-from udocker.engine.execmode import ExecutionMode
 
 
 class ExecutionEngineCommon(object):
@@ -642,7 +641,7 @@ class ExecutionEngineCommon(object):
             env_dict[key] = val
         return env_dict
 
-    def _run_env_set(self):
+    def _run_env_set(self, exec_mode):
         """Environment variables to set"""
         if not any(entry.startswith("HOME=") for entry in self.opt["env"]):
             self.opt["env"].append("HOME=" + self.opt["home"])
@@ -659,7 +658,7 @@ class ExecutionEngineCommon(object):
         self.opt["env"].append("container_ruser=" + Config().username())
         self.opt["env"].append("container_root=" + self.container_root)
         self.opt["env"].append("container_uuid=" + self.container_id)
-        self.opt["env"].append("container_execmode=" + self.exec_mode.get_mode())
+        self.opt["env"].append("container_execmode=" + exec_mode)
         names = str(self.container_names).translate(None, " '\"[]")
         self.opt["env"].append("container_names=" + names)
 
@@ -682,9 +681,6 @@ class ExecutionEngineCommon(object):
         self.container_names = self.localrepo.get_container_name(container_id)
         self.container_id = container_id
         self.container_dir = container_dir
-
-        # execution mode
-        self.exec_mode = ExecutionMode(self.localrepo, self.container_id)
 
         # check if exposing privileged ports
         self._check_exposed_ports()

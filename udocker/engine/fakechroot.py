@@ -19,10 +19,11 @@ class FakechrootEngine(ExecutionEngineCommon):
     Inherits from ContainerEngine class
     """
 
-    def __init__(self, localrepo):
+    def __init__(self, localrepo, xmode):
         super(FakechrootEngine, self).__init__(localrepo)
         self._fakechroot_so = ""
         self._elfpatcher = None
+        self.exec_mode = xmode
 
     def _select_fakechroot_so(self):
         """Select fakechroot sharable object library"""
@@ -192,7 +193,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         Msg().err("Error: sh not found")
         sys.exit(1)
 
-    def run(self, container_id):
+    def run(self, exec_mode, container_id):
         """Execute a Docker container using Fakechroot. This is the main
         method invoked to run the a container with Fakechroot.
 
@@ -220,7 +221,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                       l=Msg.WAR)
 
         # set basic environment variables
-        self._run_env_set()
+        self._run_env_set(self.exec_mode)
         self._fakechroot_env_set()
         if not self._check_env():
             return 4

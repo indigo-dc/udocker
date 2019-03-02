@@ -34,13 +34,14 @@ class RuncEngine(ExecutionEngineCommon):
     Inherits from ContainerEngine class
     """
 
-    def __init__(self, localrepo):
+    def __init__(self, localrepo, xmode):
         super(RuncEngine, self).__init__(localrepo)
         self.runc_exec = None                   # runc
         self._container_specjson = None
         self._container_specfile = None
         self._filebind = None
         self.execution_id = None
+        self.exec_mode = xmode
 
     def _select_runc(self):
         """Set runc executable and related variables"""
@@ -295,7 +296,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._run_env_cleanup_list()
 
         # set environment variables
-        self._run_env_set()
+        self._run_env_set(self.exec_mode)
         if not self._check_env():
             return 5
 
