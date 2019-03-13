@@ -56,29 +56,30 @@ class Main(object):
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
             sys.exit(1)
-        Config().user_init(self.cmdp.get("--config=", "GEN_OPT")) # read config
+        self.cfg = Config()
+        self.cfg.user_init(self.cmdp.get("--config=", "GEN_OPT")) # read config
         if (self.cmdp.get("--debug", "GEN_OPT") or
                 self.cmdp.get("-D", "GEN_OPT")):
-            Config.verbose_level = Msg.DBG
+            self.cfg.verbose_level = Msg.DBG
         elif (self.cmdp.get("--quiet", "GEN_OPT") or
               self.cmdp.get("-q", "GEN_OPT")):
-            Config.verbose_level = Msg.MSG
-        Msg().setlevel(Config.verbose_level)
+            self.cfg.verbose_level = Msg.MSG
+        Msg().setlevel(self.cfg.verbose_level)
         if self.cmdp.get("--insecure", "GEN_OPT"):
-            Config.http_insecure = True
+            self.cfg.http_insecure = True
         if self.cmdp.get("--repo=", "GEN_OPT"):  # override repo root tree
-            Config.topdir = self.cmdp.get("--repo=", "GEN_OPT")
-            if not LocalRepository(Config.topdir).is_repo():
+            self.cfg.topdir = self.cmdp.get("--repo=", "GEN_OPT")
+            if not LocalRepository(self.cfg.topdir).is_repo():
                 Msg().err("Error: invalid udocker repository:",
-                          Config.topdir)
+                          self.cfg.topdir)
                 sys.exit(1)
-        self.localrepo = LocalRepository(Config.topdir)
+        self.localrepo = LocalRepository(self.cfg.topdir)
         if (self.cmdp.get("", "CMD") == "version" or
                 self.cmdp.get("--version", "GEN_OPT")):
             Udocker(self.localrepo).do_version(self.cmdp)
             sys.exit(0)
         if not self.localrepo.is_repo():
-            Msg().out("Info: creating repo: " + Config.topdir, l=Msg.INF)
+            Msg().out("Info: creating repo: " + self.cfg.topdir, l=Msg.INF)
             self.localrepo.create_repo()
         self.udocker = Udocker(self.localrepo)
 
