@@ -110,17 +110,17 @@ class Main(object):
                 if command != "install":
                     cmds["install"](None)
                 if self.cmdp.get("--help") or self.cmdp.get("-h"):
-                    self.udocker.do_help(self.cmdp, cmds)   # help on command
+                    self.udocker.do_help(self.cmdp, cmds)  # help on command
                     return 0
-                status = cmds[command](self.cmdp)     # executes the command
+                status = cmds[command](self.cmdp)   # executes the command
                 if self.cmdp.missing_options():
                     Msg().err("Error: syntax error at: %s" %
                               " ".join(self.cmdp.missing_options()))
                     return 1
                 if isinstance(status, bool):
                     return not status
-                elif isinstance(status, (int, long)):
-                    return status                     # return command status
+                elif isinstance(status, int):
+                    return status                   # return command status
             else:
                 Msg().err("Error: invalid command:", command, "\n")
                 self.udocker.do_help(self.cmdp)
@@ -139,6 +139,7 @@ class Main(object):
         else:
             FileUtil().cleanup()
             return exit_status
+
 
 if __name__ == "__main__":
     sys.exit(Main().start())
