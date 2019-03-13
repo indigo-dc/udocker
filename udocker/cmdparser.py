@@ -42,7 +42,7 @@ class CmdParser(object):
         return step == 2
 
     def missing_options(self):
-        """Get comamnd line options not used/fetched by Cmdp.get()
+        """Get command line options not used/fetched by Cmdp.get()
         """
         all_opt = []
         for pos in range(len(self._argv_split['GEN_OPT'])):
@@ -57,7 +57,7 @@ class CmdParser(object):
 
     def get(self, opt_name, opt_where="CMD_OPT", opt_multiple=False):
         """Get the value of a command line option --xyz=
-        multiple=true  multiple occurences of option can be present
+        multiple=true  multiple occurrences of option can be present
         """
         if opt_where == "CMD":
             return self._argv_split["CMD"]
