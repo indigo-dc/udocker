@@ -56,7 +56,7 @@ class Main(object):
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
             sys.exit(1)
-        Config().user_init(self.cmdp.get("--config=", "GEN_OPT")) # read config
+        Config().user_init(self.cmdp.get("--config=", "GEN_OPT"))  # read config
         if (self.cmdp.get("--debug", "GEN_OPT") or
                 self.cmdp.get("-D", "GEN_OPT")):
             Config.verbose_level = Msg.DBG
