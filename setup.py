@@ -3,6 +3,7 @@
 
 """The setup script."""
 
+import os
 from udocker import __version__
 from setuptools import setup, find_packages
 
@@ -11,6 +12,11 @@ with open('README.md') as readme_file:
 
 with open('CHANGELOG.md') as history_file:
     history = history_file.read()
+
+CONF_DIR = '/etc'
+
+if os.getenv('VIRTUAL_ENV'):
+    CONF_DIR = os.getenv('VIRTUAL_ENV') + '/etc'
 
 requirements = []
 
@@ -45,6 +51,7 @@ setup(
     keywords='udocker',
     name='udocker',
     packages=find_packages(),
+    data_files=[(CONF_DIR, ['etc/udocker.conf'])],
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
