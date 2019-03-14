@@ -235,6 +235,30 @@ class Config(object):
         Try to load default values from config file
         Defaults should be in the form x = y
         """
+        if config_file is None:
+            self._override_config()
+            self._verify_config()
+            return
+
+        try:
+            if os.getenv("UDOCKER_NOSYSCONF") is None:
+                self._read_config("/etc/" + Config.config)
+            if self._read_config(config_file):
+                return
+            self._read_config(Config.topdir + "/" + Config.config)
+            if self.topdir != self.homedir:
+                self._read_config(Config.homedir + "/" + Config.config)
+        except ValueError as error:
+            Msg().err("Error:", error)
+            sys.exit(1)
+        self._override_config()
+        self._verify_config()
+
+    def user_init_old(self, config_file):
+        """
+        Try to load default values from config file
+        Defaults should be in the form x = y
+        """
         try:
             if os.getenv("UDOCKER_NOSYSCONF") is None:
                 self._read_config("/etc/" + Config.config)

@@ -135,7 +135,7 @@ class CmdParser(object):
                     return opt_arg
         if opt_multiple:
             return all_args
-        return False
+        return None
 
     def _get_param(self, opt_name, opt_list, consumed, consumed_params):
         """Get command line parameters
