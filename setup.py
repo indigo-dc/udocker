@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 =============
 udocker setup
@@ -21,20 +22,49 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from distutils.core import setup
-
 import os
 import sys
+from udocker import __version__
+from setuptools import setup, find_packages
 
 sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])))
 
-import udocker
+with open('README.md') as readme_file:
+    readme = readme_file.read()
 
-setup(name="udocker",
-      version=udocker.__version__,
-      description="basic docker user space containers",
-      author="LIP",
-      author_email="udocker@lip.pt",
-      url="https://github.com/indigo-dc/udocker",
-      scripts=["udocker", ],
-      platforms=["linux2", ])
+with open('changelog') as history_file:
+    history = history_file.read()
+
+requirements = []
+
+setup(
+    author="Jorge Gomes",
+    author_email='udocker@lip.pt',
+    version=__version__,
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'Intended Audience :: End Users/Desktop',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: Apache Software License',
+        'Natural Language :: English',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+    ],
+    description="A basic user tool to execute simple docker \
+        containers in batch or interactive systems without root privileges",
+    scripts=['udocker'],
+    install_requires=requirements,
+    license="Apache Software License 2.0",
+    long_description=readme + '\n\n' + history,
+    include_package_data=True,
+    keywords='udocker',
+    name='udocker',
+    packages=find_packages(),
+    test_suite='tests',
+    url='https://github.com/indigo-dc/udocker',
+    use_2to3=True,
+    zip_safe=False,
+)
