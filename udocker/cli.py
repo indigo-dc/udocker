@@ -3,6 +3,7 @@ import os
 import string
 import getpass
 
+from udocker import __version__
 from udocker.msg import Msg
 from udocker.config import Config
 from udocker.docker import DockerIoAPI
