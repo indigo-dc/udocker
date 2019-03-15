@@ -25,6 +25,8 @@ limitations under the License.
 import sys
 import os
 
+sys.path.append('../')
+
 from udocker.cmdparser import CmdParser
 from udocker.msg import Msg
 from udocker.config import Config
