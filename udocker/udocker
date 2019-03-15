@@ -41,7 +41,7 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = '2.0.0-dev3'
+__version__ = '2.0.1'
 
 
 class Main(object):

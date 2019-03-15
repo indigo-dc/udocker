@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """Top-level package for udocker."""
-__version__ = '2.0.0-dev3'
+__version__ = '2.0.1'
 __date__ = '2017'
 __credits__ = ['PRoot http://proot.me',
                'runC https://runc.io',
