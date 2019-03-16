@@ -1,0 +1,2 @@
+simplejson>=2.0.9
+pycurl>=7.15.5
