@@ -22,7 +22,6 @@ import os
 import sys
 import unittest
 import mock
-import platform
 import pwd
 
 sys.path.append('../../')
@@ -33,12 +32,6 @@ except ImportError:
     from io import StringIO
 
 from udocker.config import Config
-
-__author__ = "udocker@lip.pt"
-__credits__ = ["PRoot http://proot.me"]
-__license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "0.0.3"
-__date__ = "2016"
 
 if sys.version_info[0] >= 3:
     BUILTINS = "builtins"

@@ -33,12 +33,6 @@ except ImportError:
 
 from udocker.utils.uprocess import Uprocess
 
-__author__ = "udocker@lip.pt"
-__credits__ = ["PRoot http://proot.me"]
-__license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "0.0.3"
-__date__ = "2016"
-
 if sys.version_info[0] >= 3:
     BUILTINS = "builtins"
 else:
