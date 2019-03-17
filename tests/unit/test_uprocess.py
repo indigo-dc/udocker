@@ -58,7 +58,7 @@ class UprocessTestCase(unittest.TestCase):
         """Setup test."""
         set_env()
 
-    @mock.patch('udocker.subprocess.Popen')
+    @mock.patch('subprocess.Popen')
     def test_01__check_output(self, mock_popen):
         """Test _check_output()."""
         mock_popen.return_value.communicate.return_value = ("OUTPUT", None)
@@ -73,7 +73,7 @@ class UprocessTestCase(unittest.TestCase):
         self.assertRaises(subprocess.CalledProcessError,
                           uproc._check_output, "CMD")
 
-    @mock.patch('udocker.subprocess.check_output')
+    @mock.patch('subprocess.check_output')
     def test_02_check_output(self, mock_subp_chkout):
         """Test check_output()."""
         uproc = Uprocess()
