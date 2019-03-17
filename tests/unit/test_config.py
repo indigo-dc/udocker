@@ -126,7 +126,7 @@ class ConfigTestCase(unittest.TestCase):
     @mock.patch('udocker.config.Config._override_config')
     @mock.patch('udocker.config.Config._read_config')
     @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.utils.fileutils.FileUtil')
+    @mock.patch('udocker.utils.fileutil.FileUtil')
     def test_03_user_init_good(self, mock_fileutil, mock_msg,
                                mock_readc, mock_overrride, mock_verify):
         """Test Config.user_init() with good data."""
@@ -139,7 +139,7 @@ class ConfigTestCase(unittest.TestCase):
         self.assertFalse(mock_verify.called)
 
     @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.utils.fileutils.FileUtil')
+    @mock.patch('udocker.utils.fileutil.FileUtil')
     @mock.patch('sys.exit')
     def test_04_user_init_bad(self, mock_exit, mock_fileutil, mock_msg):
         """Test Config.user_init() with bad config data."""
@@ -178,7 +178,7 @@ class ConfigTestCase(unittest.TestCase):
         status = conf.oskernel_isgreater([1, 1, 1])
         self.assertFalse(status)
 
-    @mock.patch('udocker.utils.fileutils.FileUtil')
+    @mock.patch('udocker.utils.fileutil.FileUtil')
     def test_07__read_config(self, mock_futil):
         """Test Config._read_config()."""
         conf = Config()
