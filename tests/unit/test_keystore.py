@@ -145,10 +145,10 @@ class KeyStoreTestCase(unittest.TestCase):
         mock_verks.side_effect = KeyError
         self.assertFalse(kstore.delete(self.url))
 
-    @mock.patch('udocker.KeyStore._verify_keystore')
+    @mock.patch('udocker.helper.keystore.KeyStore._verify_keystore')
     @mock.patch('udocker.config.Config')
     @mock.patch('os.unlink')
-    @mock.patch('udocker.KeyStore._shred')
+    @mock.patch('udocker.helper.keystore.KeyStore._shred')
     def test_09_erase(self, mock_shred, mock_unlink,
                       mock_config, mock_verks):
         """Test KeyStore().erase() erase credentials file."""
