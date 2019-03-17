@@ -80,14 +80,14 @@ class UprocessTestCase(unittest.TestCase):
         uproc.check_output("CMD")
         self.assertTrue(mock_subp_chkout.called)
 
-    @mock.patch('udocker.Uprocess.check_output')
-    def test_03_get_output(self, mock_uproc_chkout):
+    @mock.patch('Uprocess.check_output')
+    def test_03_get_output_true(self, mock_uproc_chkout):
         """Test get_output()."""
         mock_uproc_chkout.return_value = "OUTPUT"
         uproc = Uprocess()
         self.assertEqual("OUTPUT", uproc.get_output("CMD"))
 
-    def test_04_get_output(self):
+    def test_04_get_output_false(self):
         """Test get_output()."""
         uproc = Uprocess()
         self.assertRaises(subprocess.CalledProcessError,
