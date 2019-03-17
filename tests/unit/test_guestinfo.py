@@ -25,11 +25,6 @@ import mock
 
 sys.path.append('../../')
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
 from udocker.helper.guestinfo import GuestInfo
 
 if sys.version_info[0] >= 3:
