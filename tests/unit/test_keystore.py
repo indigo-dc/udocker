@@ -68,8 +68,9 @@ class KeyStoreTestCase(unittest.TestCase):
             kstore = KeyStore("filename")
             self.assertEqual(self.credentials, kstore._read_all())
 
+    @mock.patch('udocker.helper.keystore.KeyStore._verify_keystore')
     @mock.patch('udocker.config.Config')
-    def test_03__shred(self, mock_config):
+    def test_03__shred(self, mock_config, mock_verks):
         """Test KeyStore()._shred() erase file content."""
         Config = mock_config
         Config.tmpdir = "/tmp"
@@ -77,9 +78,10 @@ class KeyStoreTestCase(unittest.TestCase):
             kstore = KeyStore("filename")
             self.assertFalse(kstore._shred())
 
+    @mock.patch('udocker.helper.keystore.KeyStore._verify_keystore')
     @mock.patch('udocker.config.Config')
     @mock.patch('os.stat')
-    def test_04__shred(self, mock_stat, mock_config):
+    def test_04__shred(self, mock_stat, mock_config, mock_verks):
         """Test KeyStore()._shred() erase file content."""
         Config = mock_config
         Config.tmpdir = "/tmp"
@@ -130,9 +132,10 @@ class KeyStoreTestCase(unittest.TestCase):
 
     @mock.patch('udocker.config.Config')
     @mock.patch('udocker.helper.keystore.KeyStore._verify_keystore')
+    @mock.patch('udocker.helper.keystore.KeyStore._shred')
     @mock.patch('udocker.helper.keystore.KeyStore._write_all')
     @mock.patch('udocker.helper.keystore.KeyStore._read_all')
-    def test_08_delete(self, mock_readall, mock_writeall,
+    def test_08_delete(self, mock_readall, mock_writeall, mock_shred,
                        mock_verks, mock_config):
         """Test KeyStore().delete() delete credential for url from file."""
         self._init()
