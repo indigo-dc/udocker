@@ -24,6 +24,8 @@ import sys
 import unittest
 import mock
 
+sys.path.append('../../')
+
 try:
     from StringIO import StringIO
 except ImportError:
