@@ -13,3 +13,9 @@ pytest>=3.4.2
 pytest-runner>=2.11.1
 pylint
 
+pydocstyle
+nose
+nosexcover
+mock
+pep8
+bandit
