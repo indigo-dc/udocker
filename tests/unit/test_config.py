@@ -33,8 +33,6 @@ except ImportError:
     from io import StringIO
 
 from udocker.config import Config
-from udocker.msg import Msg
-from udocker.utils.fileutil import FileUtil
 
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
@@ -99,25 +97,28 @@ class ConfigTestCase(unittest.TestCase):
         conf = Config()
         self._verify_config(conf)
 
-    @mock.patch('platform')
-    def test_02_platform(self, mock_platform):
+
+    @mock.patch('platform.release')
+    @mock.patch('platform.system')
+    @mock.patch('platform.machine')
+    def test_02_platform(self, mock_machine, mock_system, mock_release):
         """Test Config.platform()."""
         conf = Config()
-        mock_platform.machine.return_value = "x86_64"
+        mock_machine.return_value = "x86_64"
         arch = conf.arch()
         self.assertEqual("amd64", arch, "Config._sysarch x86_64")
-        mock_platform.machine.return_value = "i586"
+        mock_machine.return_value = "i586"
         arch = conf.arch()
         self.assertEqual("i386", arch, "Config._sysarchi i586")
-        mock_platform.machine.return_value = "xpto"
+        mock_machine.return_value = "xpto"
         arch = conf.arch()
         self.assertEqual("", arch, "Config._sysarchi i586")
         #
-        mock_platform.system.return_value = "linux"
+        mock_system.return_value = "linux"
         osver = conf.osversion()
         self.assertEqual(osver, "linux")
         #
-        mock_platform.release.return_value = "release"
+        mock_release.return_value = "release"
         osver = conf.oskernel()
         self.assertEqual(osver, "release")
 
