@@ -50,7 +50,6 @@ def set_env():
     if not os.getenv("HOME"):
         os.environ["HOME"] = os.getcwd()
 
-
 class UprocessTestCase(unittest.TestCase):
     """Test case for the Uprocess class."""
 
@@ -59,7 +58,7 @@ class UprocessTestCase(unittest.TestCase):
         """Setup test."""
         set_env()
 
-    @mock.patch('subprocess.Popen')
+    @mock.patch('udocker.subprocess.Popen')
     def test_01__check_output(self, mock_popen):
         """Test _check_output()."""
         mock_popen.return_value.communicate.return_value = ("OUTPUT", None)
@@ -74,27 +73,12 @@ class UprocessTestCase(unittest.TestCase):
         self.assertRaises(subprocess.CalledProcessError,
                           uproc._check_output, "CMD")
 
-    @mock.patch('Uprocess._check_output')
-    @mock.patch('subprocess.check_output')
-    def test_02_check_output(self, mock_subp_chkout, mock_uproc_chkout):
+    @mock.patch('udocker.subprocess.check_output')
+    def test_02_check_output(self, mock_subp_chkout):
         """Test check_output()."""
         uproc = Uprocess()
         uproc.check_output("CMD")
-        self.assertTrue(mock_uproc_chkout.called)
-
-        # udocker.PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
-        # if udocker.PY_VER >= "2.7":
-        #     self.assertTrue(mock_subp_chkout.called)
-        # else:
-        #     self.assertTrue(mock_uproc_chkout.called)
-
-        # Making sure we cover both cases
-        #PY_VER = "3.5"
-        #uproc.check_output("CMD")
-        #self.assertTrue(mock_subp_chkout.called)
-        #PY_VER = "2.6"
-        #uproc.check_output("CMD")
-        #self.assertTrue(mock_uproc_chkout.called)
+        self.assertTrue(mock_subp_chkout.called)
 
     @mock.patch('udocker.Uprocess.check_output')
     def test_03_get_output(self, mock_uproc_chkout):
@@ -108,3 +92,4 @@ class UprocessTestCase(unittest.TestCase):
         uproc = Uprocess()
         self.assertRaises(subprocess.CalledProcessError,
                           uproc.get_output("/bin/false"))
+
