@@ -82,7 +82,7 @@ class MsgTestCase(unittest.TestCase):
         self._verify_descriptors(msg)
         self.assertEqual(msg.level, 7)
 
-    @mock.patch('udocker.sys.stdout', new_callable=StringIO)
+    @mock.patch('sys.stdout', new_callable=StringIO)
     def test_03_out(self, mock_stdout):
         """Test Msg.out() screen messages."""
         msg = Msg(Msg.MSG)
