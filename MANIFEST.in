@@ -1,0 +1,13 @@
+include AUTHORS.md
+include changelog
+include CITING.md
+include CONTRIBUTING.md
+include LICENSE
+include README.md
+include SUMMARY.md
+
+recursive-include tests *
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+
+recursive-include doc *.md udocker.1 *.jpg *.png *.gif
