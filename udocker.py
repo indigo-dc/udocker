@@ -42,7 +42,7 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.2.0"
+__version__ = "1.1.3"
 __date__ = "2018"
 
 # Python version major.minor
@@ -147,7 +147,7 @@ class Config(object):
     gid = os.getgid()
 
     # udocker installation tarball
-    tarball_release = __version__
+    tarball_release = "1.1.3"
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
         "/s/iv4FOV1jZcfnGFH/download"
