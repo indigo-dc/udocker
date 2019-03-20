@@ -128,6 +128,18 @@ commands = bandit udocker -f html -o bandit.html"""
             }
         }
 
+        stage('PyPI delivery') {
+            when {
+                anyOf {
+                    branch 'master'
+                    buildingTag()
+                }
+            }
+            steps {
+                PyPIDeploy('udocker', 'indigobot')
+            }
+        }
+
         stage('Notifications') {
             when {
                 buildingTag()
