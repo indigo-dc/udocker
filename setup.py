@@ -24,10 +24,10 @@ limitations under the License.
 
 import os
 import sys
+sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])))
+
 from udocker import __version__
 from setuptools import setup, find_packages
-
-sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])))
 
 with open('README.md') as readme_file:
     readme = readme_file.read()
