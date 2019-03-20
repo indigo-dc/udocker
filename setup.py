@@ -24,10 +24,10 @@ limitations under the License.
 
 import os
 import sys
-from udocker import __version__
-from setuptools import setup, find_packages
-
 sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])))
+
+#from udocker import __version__
+from setuptools import setup, find_packages
 
 with open('README.md') as readme_file:
     readme = readme_file.read()
@@ -40,7 +40,7 @@ requirements = []
 setup(
     author="Jorge Gomes",
     author_email='udocker@lip.pt',
-    version=__version__,
+    version="1.1.3",
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
