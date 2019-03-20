@@ -147,7 +147,7 @@ class Config(object):
     gid = os.getgid()
 
     # udocker installation tarball
-    tarball_release = "1.1.3"
+    tarball_release = __version__
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
         "/s/iv4FOV1jZcfnGFH/download"
