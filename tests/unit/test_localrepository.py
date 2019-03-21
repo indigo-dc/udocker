@@ -29,10 +29,12 @@ if sys.version_info[0] >= 3:
 else:
     BUILTINS = "__builtin__"
 
+
 def set_env():
     """Set environment variables."""
     if not os.getenv("HOME"):
         os.environ["HOME"] = os.getcwd()
+
 
 class LocalRepositoryTestCase(unittest.TestCase):
     """Test LocalRepositoryTestCase().
