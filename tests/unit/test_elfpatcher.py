@@ -15,11 +15,11 @@ limitations under the License.
 """
 
 import os
-import sys
 import unittest
 import mock
 
 from udocker.helper.elfpatcher import ElfPatcher
+
 
 def set_env():
     """Set environment variables."""
