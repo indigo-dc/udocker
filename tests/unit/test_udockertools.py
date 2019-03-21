@@ -19,7 +19,7 @@ import sys
 import unittest
 import mock
 
-sys.path.append('../../')
+#sys.path.append('../../')
 
 from udocker.tools import UdockerTools
 from udocker.utils.curl import CurlHeader
