@@ -20,8 +20,6 @@ import subprocess
 import unittest
 import mock
 
-from udocker.container.localrepo import LocalRepository
-from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 from udocker.container.localrepo import LocalRepository
 
