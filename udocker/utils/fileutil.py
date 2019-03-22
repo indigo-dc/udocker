@@ -9,7 +9,6 @@ from udocker.msg import Msg
 from udocker.helper.unique import Unique
 from udocker.utils.uprocess import Uprocess
 
-# TODO: remove circular dependency on Config
 from udocker.config import Config
 
 
@@ -21,7 +20,6 @@ class FileUtil(object):
     orig_umask = None
 
     def __init__(self, filename=None):
-        # TODO: remove circular dependency on Config
         self._tmpdir = Config.tmpdir
         if filename == "-":
             self.filename = "-"
