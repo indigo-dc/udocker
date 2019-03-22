@@ -24,7 +24,7 @@ import unittest
 import mock
 import pwd
 
-sys.path.append('../../')
+sys.path.append('.')
 
 from udocker.config import Config
 
@@ -111,29 +111,28 @@ class ConfigTestCase(unittest.TestCase):
         self.assertEqual(osver, "release")
 
     @mock.patch('udocker.config.Config._verify_config')
-    @mock.patch('udocker.config.Config._override_config')
     @mock.patch('udocker.config.Config._read_config')
-    @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.utils.fileutil.FileUtil')
-    def test_03_user_init_good(self, mock_fileutil, mock_msg,
-                               mock_readc, mock_overrride, mock_verify):
+    def test_03_user_init_good(self, mock_readc, mock_verify):
         """Test Config.user_init() with good data."""
-        Msg = mock_msg
         conf = Config()
-        conf_data = '# comment\nverbose_level = 100\n'
-        conf_data += 'tmpdir = "/xpto"\ncmd = ["/bin/ls", "-l"]\n'
+        conf_data = '''\
+# comment
+verbose_level = 100
+tmpdir = "/xpto"
+cmd = ["/bin/ls", "-l"]
+'''
         mock_readc.return_value = conf_data
         status = conf.user_init("filename.conf")
         self.assertFalse(mock_verify.called)
 
-    @mock.patch('udocker.msg.Msg')
     @mock.patch('udocker.utils.fileutil.FileUtil')
     @mock.patch('sys.exit')
-    def test_04_user_init_bad(self, mock_exit, mock_fileutil, mock_msg):
+    def test_04_user_init_bad(self, mock_exit, mock_fileutil):
         """Test Config.user_init() with bad config data."""
-        Msg = mock_msg
         conf = Config()
-        conf_data = 'hh +=* ffhdklfh\n'
+        conf_data = '''\
+hh +=* ffhdklfh
+'''
         mock_fileutil.return_value.size.return_value = 10
         mock_fileutil.return_value.getdata.return_value = conf_data
         conf.user_init("filename.conf")
@@ -274,3 +273,7 @@ class ConfigTestCase(unittest.TestCase):
         conf = Config()
         status = conf.oskernel()
         self.assertEqual(status, "3.2.1")
+
+
+if __name__ == '__main__':
+    unittest.main()

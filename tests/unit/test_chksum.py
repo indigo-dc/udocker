@@ -19,6 +19,7 @@ import sys
 import unittest
 import mock
 from StringIO import StringIO
+
 sys.path.append('.')
 
 from udocker.utils.chksum import ChkSUM

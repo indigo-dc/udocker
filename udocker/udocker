@@ -64,10 +64,6 @@ class Main(object):
                           Config.topdir)
                 sys.exit(1)
         self.localrepo = LocalRepository(Config.topdir)
-        if (self.cmdp.get("", "CMD") == "version" or
-                self.cmdp.get("--version", "GEN_OPT")):
-            UdockerCLI(self.localrepo).do_version(self.cmdp)
-            sys.exit(0)
         if not self.localrepo.is_repo():
             Msg().out("Info: creating repo: " + Config.topdir, l=Msg.INF)
             self.localrepo.create_repo()
@@ -94,6 +90,10 @@ class Main(object):
         if (self.cmdp.get("--help", "GEN_OPT") or
                 self.cmdp.get("-h", "GEN_OPT")):
             self.udocker.do_help(self.cmdp)
+            return 0
+        elif (self.cmdp.get("", "CMD") == "version" or
+                self.cmdp.get("--version", "GEN_OPT")):
+            self.udocker.do_version(self.cmdp)
             return 0
         else:
             command = self.cmdp.get("", "CMD")

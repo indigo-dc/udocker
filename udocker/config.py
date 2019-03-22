@@ -209,7 +209,8 @@ class Config(object):
 
     def _read_config(self, config_file):
         """Interpret config file content"""
-        if os.access(config_file, os.R_OK) and os.path.getsize(config_file) !=0:
+        if os.access(config_file, os.R_OK) and \
+           os.path.getsize(config_file) != 0:
             with open(config_file) as fp:
                 for line in fp:
                     if not line.strip() or "=" not in line or line.startswith("#"):
