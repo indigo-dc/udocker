@@ -92,8 +92,7 @@ class Main(object):
             "setup":self.udocker.do_setup, "install":self.udocker.do_install,
         }
         if (self.cmdp.get("--help", "GEN_OPT") or
-                self.cmdp.get("-h", "GEN_OPT") or
-                self.cmdp.get("help", "CMD")):
+                self.cmdp.get("-h", "GEN_OPT")):
             self.udocker.do_help(self.cmdp)
             return 0
         else:
