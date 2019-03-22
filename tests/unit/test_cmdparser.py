@@ -15,8 +15,10 @@ limitations under the License.
 """
 
 import os
+import sys
 import unittest
-import mock
+
+sys.path.append('.')
 
 from udocker.cmdparser import CmdParser
 
@@ -101,3 +103,7 @@ class CmdParserTestCase(unittest.TestCase):
     def test_07__get_params(self):
         """Test CmdParser()._get_params()."""
         pass
+
+
+if __name__ == '__main__':
+    unittest.main()
