@@ -13,5 +13,5 @@ __credits__ = ['PRoot http://proot.me',
                'Fakechroot https://github.com/dex4er/fakechroot',
                'Singularity http://singularity.lbl.gov'
               ]
-__version__ = '2.0.3'
+__version__ = '2.0.4'
 __date__ = '2017'
