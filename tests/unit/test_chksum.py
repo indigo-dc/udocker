@@ -19,6 +19,7 @@ import sys
 import unittest
 import mock
 from StringIO import StringIO
+sys.path.append('.')
 
 from udocker.utils.chksum import ChkSUM
 
@@ -95,3 +96,7 @@ class ChkSUMTestCase(unittest.TestCase):
         cksum = ChkSUM()
         status = cksum._openssl_sha256("filename")
         self.assertEqual(status, "123456")
+
+
+if __name__ == '__main__':
+    unittest.main()
