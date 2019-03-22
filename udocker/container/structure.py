@@ -135,7 +135,7 @@ class ContainerStructure(object):
         return self.container_id
 
     def _apply_whiteouts(self, tarf, destdir):
-        """The layered filesystem od docker uses whiteout files
+        """The layered filesystem of docker uses whiteout files
         to identify files or directories to be removed.
         The format is .wh.<filename>
         """

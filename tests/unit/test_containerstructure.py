@@ -15,9 +15,12 @@ limitations under the License.
 """
 
 import os
+import sys
 import subprocess
 import unittest
 import mock
+
+sys.path.append('.')
 
 from udocker.container.structure import ContainerStructure
 from udocker.config import Config
@@ -101,10 +104,10 @@ class ContainerStructureTestCase(unittest.TestCase):
         self.assertEqual(container_json, ["value", ])
 
     @mock.patch('udocker.container.structure.ContainerStructure._untar_layers')
-    @mock.patch('udocker.helper.unique.Unique')
+    @mock.patch('udocker.helper.unique.Unique.uuid')
     @mock.patch('udocker.msg.Msg')
     @mock.patch('udocker.container.localrepo.LocalRepository')
-    def test_03_create(self, mock_local, mock_msg, mock_unique,
+    def test_03_create(self, mock_local, mock_msg, mock_uuid,
                        mock_untar):
         """Test ContainerStructure().create()."""
         self._init()
@@ -133,7 +136,7 @@ class ContainerStructureTestCase(unittest.TestCase):
         mock_local.get_image_attributes.return_value = (["value", ], [])
         mock_local.setup_container.return_value = "/"
         mock_untar.return_value = False
-        mock_unique.return_value.uuid.return_value = "123456"
+        mock_uuid.return_value = "123456"
         status = prex.create_fromimage("imagerepo", "tag")
         self.assertEqual(status, "123456")
 
@@ -270,3 +273,7 @@ class ContainerStructureTestCase(unittest.TestCase):
         prex = ContainerStructure(mock_local)
         status = prex._dict_to_list({'A': 1, 'B': 2})
         self.assertEqual(sorted(status), sorted(["A:1", "B:2"]))
+
+
+if __name__ == '__main__':
+    unittest.main()
