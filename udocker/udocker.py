@@ -22,19 +22,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
-
-from udocker.cmdparser import CmdParser
-from udocker.msg import Msg
-from udocker.config import Config
-from udocker.container.localrepo import LocalRepository
-from udocker.cli import Udocker
-from udocker.utils.fileutil import FileUtil
-
-
 __author__ = "udocker@lip.pt"
 __copyright__ = "Copyright 2017, LIP"
 __credits__ = ["PRoot http://proot.me",
@@ -43,6 +30,24 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
+__credits__ = ['PRoot http://proot.me',
+               'runC https://runc.io',
+               'Fakechroot https://github.com/dex4er/fakechroot',
+               'Singularity http://singularity.lbl.gov'
+              ]
+__version__ = '2.0.2'
+__date__ = '2017'
+
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
+
+from udocker.cmdparser import CmdParser
+from udocker.msg import Msg
+from udocker.config import Config
+from udocker.container.localrepo import LocalRepository
+from udocker.cli import UdockerCLI
+from udocker.utils.fileutil import FileUtil
 
 
 class Main(object):
@@ -76,12 +81,12 @@ class Main(object):
         self.localrepo = LocalRepository(Config.topdir)
         if (self.cmdp.get("", "CMD") == "version" or
                 self.cmdp.get("--version", "GEN_OPT")):
-            Udocker(self.localrepo).do_version(self.cmdp)
+            UdockerCLI(self.localrepo).do_version(self.cmdp)
             sys.exit(0)
         if not self.localrepo.is_repo():
             Msg().out("Info: creating repo: " + Config.topdir, l=Msg.INF)
             self.localrepo.create_repo()
-        self.udocker = Udocker(self.localrepo)
+        self.udocker = UdockerCLI(self.localrepo)
 
     def execute(self):
         """Command parsing and selection"""

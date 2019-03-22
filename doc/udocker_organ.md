@@ -10,7 +10,7 @@ dir = .
 
 * udocker.py - class Main(object):
 * cmdparser.py - class CmdParser(object):
-* cli.py -     class Udocker(object):
+* cli.py -     class UdockerCLI(object):
   * This is the command line implementation
 * config.py -  class Config(object):
 * tools.py -   class UdockerTools(object):

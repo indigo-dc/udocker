@@ -16,7 +16,7 @@ from udocker.engine.nvidia import NvidiaMode
 from udocker.tools import UdockerTools
 
 
-class Udocker(object):
+class UdockerCLI(object):
     """Implements most of the command line interface.
     These methods correspond directly to the commands that can
     be invoked via the command line interface.
