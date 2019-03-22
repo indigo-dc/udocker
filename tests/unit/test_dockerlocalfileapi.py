@@ -15,8 +15,11 @@ limitations under the License.
 """
 
 import os
+import sys
 import unittest
 import mock
+
+sys.path.append('.')
 
 from udocker.docker import DockerLocalFileAPI
 
@@ -426,3 +429,7 @@ class DockerLocalFileAPITestCase(unittest.TestCase):
         status = dlocapi.import_toimage("TARFILE", "IMAGE", "TAG", False)
         self.assertEqual(status, "LAYERID")
         self.assertFalse(mock_rename.called)
+
+
+if __name__ == '__main__':
+    unittest.main()
