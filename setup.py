@@ -61,7 +61,7 @@ setup(
     ],
     description="A basic user tool to execute simple docker \
         containers in batch or interactive systems without root privileges",
-    scripts=['udocker/udocker'],
+    scripts=['udocker/udocker.py'],
     install_requires=requirements,
     license="Apache Software License 2.0",
     long_description=readme + '\n\n' + history,
