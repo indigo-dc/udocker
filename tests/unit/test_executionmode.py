@@ -95,7 +95,7 @@ class ExecutionModeTestCase(unittest.TestCase):
 
     @mock.patch('udocker.msg.Msg')
     @mock.patch('udocker.engine.execmode.ExecutionMode.get_mode')
-    @mock.patch('udocker.os.path')
+    @mock.patch('os.path')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     @mock.patch('udocker.utils.filebind.FileBind')
     @mock.patch('udocker.helper.elfpatcher.ElfPatcher')
