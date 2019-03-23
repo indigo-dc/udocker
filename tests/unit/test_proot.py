@@ -15,8 +15,11 @@ limitations under the License.
 """
 
 import os
+import sys
 import unittest
 import mock
+
+sys.path.append('.')
 
 from udocker.engine.proot import PRootEngine
 from udocker.config import Config
@@ -212,3 +215,7 @@ class PRootEngineTestCase(unittest.TestCase):
         prex.container_root = ""
         status = prex.run("CONTAINERID")
         self.assertEqual(status, 5)
+
+
+if __name__ == '__main__':
+    unittest.main()

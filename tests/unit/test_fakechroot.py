@@ -15,8 +15,11 @@ limitations under the License.
 """
 
 import os
+import sys
 import unittest
 import mock
+
+sys.path.append('.')
 
 from udocker.engine.fakechroot import FakechrootEngine
 
@@ -154,3 +157,7 @@ class FakechrootEngineTestCase(unittest.TestCase):
         ufake = FakechrootEngine(mock_local)
         status = ufake.run("container_id")
         self.assertEqual(status, 2)
+
+
+if __name__ == '__main__':
+    unittest.main()

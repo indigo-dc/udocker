@@ -19,6 +19,8 @@ import sys
 import unittest
 import mock
 
+sys.path.append('.')
+
 from udocker.engine.runc import RuncEngine
 from udocker.config import Config
 
@@ -526,3 +528,7 @@ class RuncEngineTestCase(unittest.TestCase):
         status = rcex.run("CONTAINERID")
         self.assertTrue(mock_run_env_cleanup_list.called)
         #self.assertTrue(mock_call.called)
+
+
+if __name__ == '__main__':
+    unittest.main()
