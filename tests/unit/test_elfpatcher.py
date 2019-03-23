@@ -15,8 +15,11 @@ limitations under the License.
 """
 
 import os
+import sys
 import unittest
 import mock
+
+sys.path.append('.')
 
 from udocker.helper.elfpatcher import ElfPatcher
 
@@ -111,7 +114,7 @@ class ElfPatcherTestCase(unittest.TestCase):
         self.assertEqual(elfp.guess_elf_loader(), "ld.so")
 
     @mock.patch('os.path')
-    @mock.patch('udocker.os.path.exists')
+    @mock.patch('os.path.exists')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     @mock.patch('udocker.utils.fileutil.FileUtil.getdata')
     @mock.patch('udocker.helper.elfpatcher.ElfPatcher.guess_elf_loader')
@@ -385,3 +388,7 @@ class ElfPatcherTestCase(unittest.TestCase):
         elfp = ElfPatcher(mock_local, container_id)
         # status = elfp.get_ld_library_path()
         # self.assertEqual(status, [''])
+
+
+if __name__ == '__main__':
+    unittest.main()
