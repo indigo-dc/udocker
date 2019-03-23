@@ -15,8 +15,11 @@ limitations under the License.
 """
 
 import os
+import sys
 import unittest
 import mock
+
+sys.path.append('.')
 
 from udocker.utils.filebind import FileBind
 
@@ -43,7 +46,7 @@ class FileBindTestCase(unittest.TestCase):
     @mock.patch('udocker.container.localrepo.LocalRepository')
     @mock.patch('os.path.realpath')
     def test_01_init(self, mock_realpath, mock_local):
-        """Test FileBind()."""
+        """Test FileBind() constructor"""
         self._init()
 
         container_id = "CONTAINERID"
@@ -127,12 +130,13 @@ class FileBindTestCase(unittest.TestCase):
         self.assertTrue(mock_islink.called)
 
     @mock.patch('udocker.container.localrepo.LocalRepository')
+    @mock.patch('udocker.container.localrepo.LocalRepository.mktmp')
     @mock.patch('udocker.utils.fileutil.FileUtil')
     @mock.patch('os.path.realpath')
     @mock.patch('os.path.isfile')
     @mock.patch('os.path.exists')
     def test_04_start(self, mock_exists, mock_isfile,
-                      mock_realpath, mock_futil, mock_local):
+                      mock_realpath, mock_futil, mock_mktmp, mock_local):
         """Test FileBind().start().
 
         Prepare to run.
@@ -143,7 +147,7 @@ class FileBindTestCase(unittest.TestCase):
         mock_realpath.return_value = "/tmp"
         files_list = ["file1", "dir1", "file2"]
 
-        mock_futil.return_value.mktmp.return_value = "tmpDir"
+        mock_mktmp.return_value = "tmpDir"
         fbind = FileBind(mock_local, container_id)
         fbind.start(files_list)
         self.assertTrue(mock_futil.called)
@@ -182,3 +186,7 @@ class FileBindTestCase(unittest.TestCase):
         fbind.add(host_file, container_file)
         self.assertTrue(mock_futil.return_value.remove.called)
         self.assertTrue(mock_futil.return_value.copyto.called)
+
+
+if __name__ == '__main__':
+    unittest.main()
