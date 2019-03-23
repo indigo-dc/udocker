@@ -19,7 +19,7 @@ import sys
 import unittest
 import mock
 
-sys.path.append('../../')
+sys.path.append('.')
 
 from udocker.utils.fileutil import FileUtil
 
@@ -249,18 +249,18 @@ class FileUtilTestCase(unittest.TestCase):
             data = FileUtil("somefile").getdata()
             self.assertEqual(data, 'qwerty')
 
-    @mock.patch('udocker.utils.uprocess.Uprocess')
-    def test_13_find_exec(self, mock_call):
+    @mock.patch('udocker.utils.uprocess.Uprocess.get_output')
+    def test_13_find_exec(self, mock_gout):
         """Test FileUtil.find_exec() find executable."""
-        mock_call.return_value.get_output.return_value = None
+        mock_gout.return_value = None
         filename = FileUtil("executable").find_exec()
         self.assertEqual(filename, "")
         #
-        mock_call.return_value.get_output.return_value = "/bin/ls"
+        mock_gout.return_value = "/bin/ls"
         filename = FileUtil("executable").find_exec()
         self.assertEqual(filename, "/bin/ls")
         #
-        mock_call.return_value.get_output.return_value = "not found"
+        mock_gout.return_value = "not found"
         filename = FileUtil("executable").find_exec()
         self.assertEqual(filename, "")
 
@@ -609,3 +609,7 @@ class FileUtilTestCase(unittest.TestCase):
         status = FileUtil("/ROOT").links_conv(False, False, "")
         self.assertFalse(mock_link_set.called)
         self.assertTrue(mock_link_restore.called)
+
+
+if __name__ == '__main__':
+    unittest.main()
