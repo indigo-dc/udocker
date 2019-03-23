@@ -15,8 +15,11 @@ limitations under the License.
 """
 
 import os
+import sys
 import unittest
 import mock
+
+sys.path.append('.')
 
 from udocker.engine.execmode import ExecutionMode
 from udocker.engine.runc import RuncEngine
@@ -76,19 +79,19 @@ class ExecutionModeTestCase(unittest.TestCase):
                          ("P1", "P2", "F1", "F2", "F3", "F4", "R1", "S1"))
 
     @mock.patch('os.path')
-    @mock.patch('udocker.utils.fileutil.FileUtil')
+    @mock.patch('udocker.utils.fileutil.FileUtil.getdata')
     @mock.patch('udocker.container.localrepo.LocalRepository')
-    def test_02_get_mode(self, mock_local, mock_futil, mock_path):
+    def test_02_get_mode(self, mock_local, mock_getdata, mock_path):
         """Get execution mode"""
 
         self._init()
         container_id = "CONTAINER_ID"
-        mock_futil.return_value.getdata.return_value.strip.return_value = None
+        mock_getdata.return_value.strip.return_value = None
         uexm = ExecutionMode(mock_local, container_id)
         status = uexm.get_mode()
         self.assertEqual(status, "P1")
 
-        mock_futil.return_value.getdata.return_value = "F3"
+        mock_getdata.return_value = "F3"
         uexm = ExecutionMode(mock_local, container_id)
         status = uexm.get_mode()
         self.assertEqual(status, "F3")
@@ -167,3 +170,7 @@ class ExecutionModeTestCase(unittest.TestCase):
 
         exec_engine = uexm.get_engine()
         self.assertIsInstance(exec_engine, PRootEngine)
+
+
+if __name__ == '__main__':
+    unittest.main()
