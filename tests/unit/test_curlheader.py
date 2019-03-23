@@ -20,8 +20,9 @@ import unittest
 import mock
 from StringIO import StringIO
 
-from udocker.utils.curl import CurlHeader
+sys.path.append('.')
 
+from udocker.utils.curl import CurlHeader
 
 if sys.version_info[0] >= 3:
     BUILTINS = "builtins"
@@ -90,3 +91,7 @@ class CurlHeaderTestCase(unittest.TestCase):
         curl_header = CurlHeader()
         curl_header.data = "XXXX"
         self.assertEqual(curl_header.getvalue(), curl_header.data)
+
+
+if __name__ == '__main__':
+    unittest.main()
