@@ -15,8 +15,11 @@ limitations under the License.
 """
 
 import os
+import sys
 import unittest
 import mock
+
+sys.path.append('.')
 
 from udocker.engine.base import ExecutionEngineCommon
 from udocker.config import Config
@@ -55,7 +58,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
 
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_01_init(self, mock_local):
-        """Test ExecutionEngineCommon()."""
+        """Test ExecutionEngineCommon() constructor"""
         self._init()
         ex_eng = ExecutionEngineCommon(mock_local)
         self.assertEqual(ex_eng.container_id, "")
@@ -646,3 +649,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         exc.opt["vol"] = [""]
         status = exc._is_volume("/tmp")
         self.assertFalse(status)
+
+
+if __name__ == '__main__':
+    unittest.main()
