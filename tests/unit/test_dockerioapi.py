@@ -52,7 +52,7 @@ class DockerIoAPITestCase(unittest.TestCase):
     @mock.patch('udocker.utils.curl.GetURL')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_01_init(self, mock_local, mock_geturl):
-        """Test DockerIoAPI()."""
+        """Test DockerIoAPI() constructor"""
         self._init()
         #
         uia = DockerIoAPI(mock_local)
