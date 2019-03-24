@@ -15,8 +15,11 @@ limitations under the License.
 """
 
 import os
+import sys
 import unittest
 import mock
+
+sys.path.append('.')
 
 from udocker.utils.curl import GetURL
 from udocker.config import Config
@@ -140,3 +143,7 @@ class GetURLTestCase(unittest.TestCase):
         geturl._geturl.get = self._get
         self.assertEqual(geturl.post("http://host",
                                      {"DATA": 1, }), "http://host")
+
+
+if __name__ == '__main__':
+    unittest.main()
