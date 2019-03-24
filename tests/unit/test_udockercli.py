@@ -15,8 +15,12 @@ limitations under the License.
 """
 
 import os
+import sys
 import unittest
 import mock
+import __builtin__
+
+sys.path.append('.')
 
 from udocker.cli import UdockerCLI
 
@@ -162,7 +166,7 @@ class UdockerCLITestCase(unittest.TestCase):
         status = udoc.do_mkrepo(mock_cmdp)
         self.assertFalse(status)
 
-    @mock.patch('raw_input')
+    @mock.patch.object(__builtin__, 'raw_input')
     @mock.patch('udocker.cli.UdockerCLI._search_print_v2')
     @mock.patch('udocker.cli.UdockerCLI._search_print_v1')
     @mock.patch('udocker.cmdparser.CmdParser')
@@ -319,8 +323,8 @@ class UdockerCLITestCase(unittest.TestCase):
         status = udoc.do_import(mock_cmdp)
         self.assertTrue(status)
 
-    @mock.patch('getpass')
-    @mock.patch('raw_input')
+    @mock.patch('getpass.getpass')
+    @mock.patch.object(__builtin__, 'raw_input')
     @mock.patch('udocker.cmdparser.CmdParser')
     @mock.patch('udocker.helper.keystore.KeyStore')
     @mock.patch('udocker.docker.DockerLocalFileAPI')
@@ -998,54 +1002,54 @@ class UdockerCLITestCase(unittest.TestCase):
         status = udoc.do_rmname(mock_cmdp)
         self.assertTrue(status)
 
-    @mock.patch('json')
+    @mock.patch('udocker.container.localrepo.LocalRepository.get_container_id')
+    @mock.patch('udocker.cmdparser.CmdParser.missing_options')
     @mock.patch('udocker.container.structure.ContainerStructure')
     @mock.patch('udocker.cli.UdockerCLI._check_imagespec')
     @mock.patch('udocker.cmdparser.CmdParser')
     @mock.patch('udocker.helper.keystore.KeyStore')
     @mock.patch('udocker.docker.DockerLocalFileAPI')
-    @mock.patch('udocker.docker.DockerIoAPI')
+    @mock.patch('udocker.container.structure.ContainerStructure.get_container_attr')
     @mock.patch('udocker.msg.Msg')
     @mock.patch('udocker.container.localrepo.LocalRepository')
-    def test_24_do_inspect(self, mock_local, mock_msg, mock_dioapi,
+    def test_24_do_inspect(self, mock_local, mock_msg, mock_contattr,
                            mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg,
-                           mock_cstruct, mock_json):
+                           mock_cstruct, mock_missopt, mock_contid):
         """Test Udocker().do_inspect()."""
         self._init()
         mock_msg.level = 0
         #
         udoc = UdockerCLI(mock_local)
-        mock_cmdp.missing_options.return_value = True
+        mock_missopt.return_value = True
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
         status = udoc.do_inspect(mock_cmdp)
         self.assertFalse(status)
         #
         udoc = UdockerCLI(mock_local)
-        mock_cmdp.missing_options.return_value = False
+        mock_missopt.return_value = False
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
-        mock_local.get_container_id.return_value = "123"
-        mock_cstruct.return_value.get_container_attr.return_value = ("", "")
+        mock_contid.return_value = "123"
+        mock_contattr.return_value = ("", "")
         status = udoc.do_inspect(mock_cmdp)
         self.assertFalse(status)
         #
         udoc = UdockerCLI(mock_local)
-        mock_cmdp.missing_options.return_value = False
+        mock_missopt.return_value = False
         mock_cmdp.get.side_effect = ["", "PRINT", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
-        mock_local.get_container_id.return_value = "123"
-        mock_cstruct.return_value.get_container_attr.return_value = ("DIR", "")
+        mock_contid.return_value = "123"
+        mock_contattr.return_value = ("DIR", "")
         status = udoc.do_inspect(mock_cmdp)
         self.assertTrue(status)
         #
         udoc = UdockerCLI(mock_local)
-        mock_cmdp.missing_options.return_value = False
+        mock_missopt.return_value = False
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
-        mock_local.get_container_id.return_value = "123"
-        mock_cstruct.return_value.get_container_attr.return_value = (
-            "", "JSON")
+        mock_contid.return_value = "123"
+        mock_contattr.return_value = ("", "JSON")
         status = udoc.do_inspect(mock_cmdp)
         self.assertTrue(status)
 
@@ -1212,3 +1216,7 @@ class UdockerCLITestCase(unittest.TestCase):
         mock_exec.set_mode.return_value = True
         status = udoc.do_setup(mock_cmdp)
         self.assertFalse(status)
+
+
+if __name__ == '__main__':
+    unittest.main()
