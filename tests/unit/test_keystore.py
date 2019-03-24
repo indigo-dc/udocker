@@ -23,7 +23,7 @@ import sys
 import unittest
 import mock
 
-sys.path.append('../../')
+sys.path.append('.')
 
 from udocker.helper.keystore import KeyStore
 
@@ -165,3 +165,6 @@ class KeyStoreTestCase(unittest.TestCase):
         mock_unlink.side_effect = IOError
         self.assertFalse(kstore.erase())
 
+
+if __name__ == '__main__':
+    unittest.main()
