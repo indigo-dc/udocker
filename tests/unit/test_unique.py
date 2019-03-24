@@ -22,7 +22,7 @@ import os
 import sys
 import unittest
 
-sys.path.append('../../')
+sys.path.append('.')
 
 from udocker.helper.unique import Unique
 
@@ -89,3 +89,7 @@ class UniqueTestCase(unittest.TestCase):
         self.assertTrue(rand.endswith("12345"))
         self.assertTrue(rand.startswith("udocker"))
         self.assertGreater(len(rand.strip()), 50)
+
+
+if __name__ == '__main__':
+    unittest.main()
