@@ -22,6 +22,8 @@ import unittest
 import mock
 from StringIO import StringIO
 
+sys.path.append('.')
+
 from udocker.helper.nixauth import NixAuthentication
 
 if sys.version_info[0] >= 3:
@@ -59,13 +61,14 @@ class NixAuthenticationTestCase(unittest.TestCase):
         self.assertEqual(auth.passwd_file, "passwd")
         self.assertEqual(auth.group_file, "group")
 
-    @mock.patch('pwd')
-    def test_01__get_user_from_host(self, mock_pwd):
+    @mock.patch('pwd.getpwnam')
+    @mock.patch('pwd.getpwuid')
+    def test_01__get_user_from_host(self, mock_getpwuid, mock_getpwnam):
         """Test NixAuthentication()._get_user_from_host()."""
         self._init()
         usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr",
                                  "/root", "/bin/bash"])
-        mock_pwd.getpwuid.return_value = usr
+        mock_getpwuid.return_value = usr
         auth = NixAuthentication()
         (name, uid, gid, gecos, _dir, shell) = auth._get_user_from_host(0)
         self.assertEqual(name, usr.pw_name)
@@ -75,7 +78,7 @@ class NixAuthenticationTestCase(unittest.TestCase):
         self.assertEqual(_dir, usr.pw_dir)
         self.assertEqual(shell, usr.pw_shell)
         #
-        mock_pwd.getpwnam.return_value = usr
+        mock_getpwnam.return_value = usr
         auth = NixAuthentication()
         (name, uid, gid, gecos, _dir, shell) = auth._get_user_from_host("root")
         self.assertEqual(name, usr.pw_name)
@@ -84,19 +87,21 @@ class NixAuthenticationTestCase(unittest.TestCase):
         self.assertEqual(gecos, usr.pw_gecos)
         self.assertEqual(_dir, usr.pw_dir)
 
-    @mock.patch('pwd')
-    def test_02__get_group_from_host(self, mock_pwd):
+    # TODO: (mdavid) review test
+    @mock.patch('grp.getgrnam')
+    @mock.patch('grp.getgrgid')
+    def test_02__get_group_from_host(self, mock_grgid, mock_grname):
         """Test NixAuthentication()._get_group_from_host()."""
         self._init()
         hgr = grp.struct_group(["root", "*", "0", str([])])
-        mock_pwd.getgrgid.return_value = hgr
+        mock_grgid.return_value = hgr
         auth = NixAuthentication()
         (name, gid, mem) = auth._get_group_from_host(0)
         self.assertEqual(name, hgr.gr_name)
         self.assertEqual(gid, str(hgr.gr_gid))
         self.assertEqual(mem, hgr.gr_mem)
         #
-        mock_pwd.getgrnam.return_value = hgr
+        mock_grname.return_value = hgr
         auth = NixAuthentication()
         (name, gid, mem) = auth._get_group_from_host("root")
         self.assertEqual(name, hgr.gr_name)
@@ -209,3 +214,7 @@ class NixAuthenticationTestCase(unittest.TestCase):
         auth.get_group("group")
         self.assertFalse(mock_host.called)
         self.assertTrue(mock_file.called)
+
+
+if __name__ == '__main__':
+    unittest.main()
