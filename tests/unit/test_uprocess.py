@@ -24,7 +24,7 @@ import sys
 import unittest
 import mock
 
-sys.path.append('../../')
+sys.path.append('.')
 
 from udocker.utils.uprocess import Uprocess
 
@@ -82,3 +82,6 @@ class UprocessTestCase(unittest.TestCase):
         self.assertRaises(subprocess.CalledProcessError,
                           uproc.get_output("/bin/false"))
 
+
+if __name__ == '__main__':
+    unittest.main()
