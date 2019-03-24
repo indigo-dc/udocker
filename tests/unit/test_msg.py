@@ -24,7 +24,7 @@ import unittest
 import mock
 from StringIO import StringIO
 
-sys.path.append('../../')
+sys.path.append('.')
 
 from udocker.msg import Msg
 
@@ -99,3 +99,7 @@ class MsgTestCase(unittest.TestCase):
         self.assertEqual("111 222 333 444 555\n", mock_stderr.getvalue())
         sys.stdout = STDOUT
         sys.stderr = STDERR
+
+
+if __name__ == '__main__':
+    unittest.main()
