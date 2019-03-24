@@ -15,11 +15,15 @@ limitations under the License.
 """
 
 import os
+import sys
 import unittest
 import mock
 
-#from udocker import Main
-import udocker
+sys.path.append('.')
+sys.path.append('/../../')
+
+from udocker import Main
+#import udocker
 
 
 def set_env():
@@ -192,3 +196,7 @@ class MainTestCase(unittest.TestCase):
         umain = udocker.Main()
         status = umain.start()
         self.assertEqual(status, 1)
+
+
+if __name__ == '__main__':
+    unittest.main()
