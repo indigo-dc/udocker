@@ -15,11 +15,13 @@ limitations under the License.
 """
 
 import os
+import sys
 import unittest
 import mock
 
+sys.path.append('.')
+
 from udocker.utils.curl import GetURLexeCurl
-from udocker.config import Config
 
 
 def set_env():
@@ -53,23 +55,23 @@ class GetURLexeCurlTestCase(unittest.TestCase):
     @mock.patch('udocker.msg.Msg')
     @mock.patch('udocker.utils.curl.GetURL')
     def test_01_init(self, mock_gcurl, mock_msg):
-        """Test GetURLexeCurl().__init__()."""
+        """Test GetURLexeCurl() constructor."""
         self._init()
         self.assertIsNone(GetURLexeCurl()._opts)
         self.assertIsNone(GetURLexeCurl()._files)
 
     @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.utils.fileutil.FileUtil')
+    @mock.patch('udocker.utils.fileutil.FileUtil.find_exec')
     @mock.patch('udocker.utils.curl.GetURLexeCurl._select_implementation')
-    def test_02_is_available(self, mock_sel, mock_futil, mock_msg):
+    def test_02_is_available(self, mock_sel, mock_findexec, mock_msg):
         """Test GetURLexeCurl()._is_available()."""
         self._init()
         mock_msg.level = 0
         geturl = GetURLexeCurl()
-        mock_futil.return_value.find_exec.return_value = "/tmp"
+        mock_findexec.return_value = "/tmp"
         self.assertTrue(geturl.is_available())
 
-        mock_futil.return_value.find_exec.return_value = ""
+        mock_findexec.return_value = ""
         self.assertFalse(geturl.is_available())
 
     def test_03__select_implementation(self):
@@ -110,3 +112,7 @@ class GetURLexeCurlTestCase(unittest.TestCase):
         geturl._geturl = type('test', (object,), {})()
         geturl.get = self._get
         self.assertEqual(geturl.get("http://host"), "http://host")
+
+
+if __name__ == '__main__':
+    unittest.main()
