@@ -15,8 +15,11 @@ limitations under the License.
 """
 
 import os
+import sys
 import unittest
 import mock
+
+sys.path.append('.')
 
 from udocker.utils.curl import GetURLpyCurl
 
@@ -50,48 +53,48 @@ class GetURLpyCurlTestCase(unittest.TestCase):
         return args[0]
 
     @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.utils.curl.GetURLpyCurl')
+    @mock.patch('udocker.utils.curl.GetURLpyCurl.is_available')
     def test_01_is_available(self, mock_gupycurl, mock_msg):
         """Test GetURLpyCurl()._is_available()."""
         self._init()
         mock_msg.level = 0
         geturl = GetURLpyCurl()
         geturl.is_available()
-        mock_gupycurl.return_value.is_available.return_value = True
+        mock_gupycurl.return_value = True
         self.assertTrue(geturl.is_available())
 
-        mock_gupycurl.return_value.is_available.return_value = False
+        mock_gupycurl.return_value = False
         self.assertFalse(geturl.is_available())
 
     def test_02__select_implementation(self):
         """Test GetURLpyCurl()._select_implementation()."""
         pass
 
-    #    @mock.patch('udocker.GetURLpyCurl._select_implementation')
-    #    @mock.patch('udocker.Msg')
-    #    @mock.patch('udocker.pycurl')
-    #    @mock.patch('udocker.CurlHeader')
-    #    def test_03__set_defaults(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
-    #        """Test GetURLpyCurl()._set_defaults()."""
-    #        self._init()
-    #        mock_sel.return_value.insecure.return_value = True
-    #        geturl = udocker.GetURLpyCurl()
-    #        geturl._set_defaults(mock_pyc, mock_hdr)
-    #        self.assertTrue(mock_pyc.setopt.called)
-    #
-    #        # when Msg.level >= Msg.DBG: AND insecure
-    #        mock_msg.DBG.return_value = 3
-    #        mock_msg.level.return_value = 3
-    #        geturl._set_defaults(mock_pyc, mock_hdr)
-    #        self.assertEqual(mock_pyc.setopt.call_count, 18)
-    #
-    #        mock_sel.return_value.insecure.return_value = True
-    #
-    #        # when Msg.level < Msg.DBG: AND secure
-    #        mock_msg.DBG.return_value = 3
-    #        mock_msg.level.return_value = 2
-    #        geturl._set_defaults(mock_pyc, mock_hdr)
-    #        self.assertEqual(mock_pyc.setopt.call_count, 27)
+    @mock.patch('udocker.GetURLpyCurl._select_implementation')
+    @mock.patch('udocker.msg.Msg')
+    @mock.patch('pycurl')
+    @mock.patch('udocker.utils.curl.CurlHeader.insecure')
+    def test_03__set_defaults(self, mock_hdr, mock_pyc, mock_msg, mock_selinsec):
+        """Test GetURLpyCurl()._set_defaults()."""
+        self._init()
+        mock_selinsec.return_value = True
+        geturl = GetURLpyCurl()
+        geturl._set_defaults(mock_pyc, mock_hdr)
+        self.assertTrue(mock_pyc.setopt.called)
+
+        # when Msg.level >= Msg.DBG: AND insecure
+        mock_msg.DBG.return_value = 3
+        mock_msg.level.return_value = 3
+        geturl._set_defaults(mock_pyc, mock_hdr)
+        self.assertEqual(mock_pyc.setopt.call_count, 18)
+
+        mock_selinsec.return_value = True
+
+        # when Msg.level < Msg.DBG: AND secure
+        mock_msg.DBG.return_value = 3
+        mock_msg.level.return_value = 2
+        geturl._set_defaults(mock_pyc, mock_hdr)
+        self.assertEqual(mock_pyc.setopt.call_count, 27)
     #
     #    @mock.patch('udocker.GetURLpyCurl._select_implementation')
     #    @mock.patch('udocker.Msg')
@@ -116,3 +119,7 @@ class GetURLpyCurlTestCase(unittest.TestCase):
         geturl._geturl = type('test', (object,), {})()
         geturl.get = self._get
         self.assertEqual(geturl.get("http://host"), "http://host")
+
+
+if __name__ == '__main__':
+    unittest.main()
