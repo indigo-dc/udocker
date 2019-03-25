@@ -35,7 +35,7 @@ class RuncEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, localrepo, xmode):
-        super(RuncEngine, self).__init__(localrepo)
+        super(RuncEngine, self).__init__(localrepo, xmode)
         self.runc_exec = None                   # runc
         self._container_specjson = None
         self._container_specfile = None
@@ -47,6 +47,7 @@ class RuncEngine(ExecutionEngineCommon):
         """Set runc executable and related variables"""
         conf = Config()
         arch = conf.arch()
+        image_list = []
         if arch == "amd64":
             image_list = ["runc-x86_64", "runc"]
         elif arch == "i386":
@@ -130,7 +131,7 @@ class RuncEngine(ExecutionEngineCommon):
         for idmap in json_obj["linux"]["gidMappings"]:
             if "hostID" in idmap:
                 idmap["hostID"] = Config.gid
-        #json_obj["process"]["args"] = self._remove_quotes(self.opt["cmd"])
+        # json_obj["process"]["args"] = self._remove_quotes(self.opt["cmd"])
         json_obj["process"]["args"] = self.opt["cmd"]
         return json_obj
 
@@ -296,7 +297,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._run_env_cleanup_list()
 
         # set environment variables
-        self._run_env_set(self.exec_mode)
+        self._run_env_set()
         if not self._check_env():
             return 5
 
