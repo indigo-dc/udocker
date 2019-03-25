@@ -20,7 +20,7 @@ class FakechrootEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, localrepo, xmode):
-        super(FakechrootEngine, self).__init__(localrepo)
+        super(FakechrootEngine, self).__init__(localrepo, xmode)
         self._fakechroot_so = ""
         self._elfpatcher = None
         self.exec_mode = xmode
@@ -28,6 +28,7 @@ class FakechrootEngine(ExecutionEngineCommon):
     def _select_fakechroot_so(self):
         """Select fakechroot sharable object library"""
         conf = Config()
+        image_list = []
         if conf.fakechroot_so:
             if isinstance(conf.fakechroot_so, list):
                 image_list = conf.fakechroot_so
@@ -126,22 +127,21 @@ class FakechrootEngine(ExecutionEngineCommon):
                                    access_filesok)
         # execution mode
         ld_library_real = self._elfpatcher.get_ld_library_path()
-        xmode = self.exec_mode.get_mode()
-        if xmode == "F1":
+        if self.exec_mode == "F1":
             self.opt["env"].append("FAKECHROOT_ELFLOADER=" +
                                    self._elfpatcher.get_container_loader())
             self.opt["env"].append("LD_LIBRARY_PATH=" + ld_library_real)
-        elif xmode == "F2":
+        elif self.exec_mode == "F2":
             self.opt["env"].append("FAKECHROOT_ELFLOADER=" +
                                    self._elfpatcher.get_container_loader())
             self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
             self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
-        elif xmode == "F3":
+        elif self.exec_mode == "F3":
             self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
             self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
-        elif xmode == "F4":
+        elif self.exec_mode == "F4":
             self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
             self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
@@ -212,7 +212,6 @@ class FakechrootEngine(ExecutionEngineCommon):
         self._run_invalid_options()
 
         # execution mode and get patcher
-        xmode = self.exec_mode.get_mode()
         self._elfpatcher = ElfPatcher(self.localrepo, self.container_id)
 
         # verify if container pathnames are correct for this mode
@@ -221,7 +220,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                       l=Msg.WAR)
 
         # set basic environment variables
-        self._run_env_set(self.exec_mode)
+        self._run_env_set()
         self._fakechroot_env_set()
         if not self._check_env():
             return 4
@@ -233,7 +232,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         cmd_l = self._set_cpu_affinity()
         cmd_l.extend(["env", "-i", ])
         cmd_l.extend(self.opt["env"])
-        if xmode in ("F1", "F2"):
+        if self.exec_mode in ("F1", "F2"):
             container_loader = self._elfpatcher.get_container_loader()
             if container_loader:
                 cmd_l.append(container_loader)
