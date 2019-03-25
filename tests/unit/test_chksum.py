@@ -19,9 +19,6 @@ import sys
 import unittest
 import mock
 from StringIO import StringIO
-
-sys.path.append('.')
-
 from udocker.utils.chksum import ChkSUM
 
 if sys.version_info[0] >= 3:
@@ -48,7 +45,7 @@ class ChkSUMTestCase(unittest.TestCase):
         """Configure variables."""
         pass
 
-    @mock.patch('hashlib.sha256')
+    @mock.patch('udocker.utils.chksum.hashlib.sha256')
     def test_01_init(self, mock_hashlib_sha):
         """Test ChkSUM() constructor."""
         self._init()
