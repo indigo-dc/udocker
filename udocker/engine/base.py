@@ -17,7 +17,7 @@ class ExecutionEngineCommon(object):
     the execution drivers.
     """
 
-    def __init__(self, localrepo):
+    def __init__(self, localrepo, xmode):
         self.localrepo = localrepo               # LocalRepository instance
         self.container_id = ""                   # Container id
         self.container_dir = ""                  # Container directory
@@ -25,7 +25,7 @@ class ExecutionEngineCommon(object):
         self.container_names = []                # Container names
         self.imagerepo = None                    # Imagerepo of container image
         self.hostauth_list = Config.hostauth_list  # passwd and group
-        self.exec_mode = None                    # ExecutionMode instance
+        self.exec_mode = xmode                   # ExecutionMode instance
         # Metadata defaults
         self.opt = dict()                        # Run options
         self.opt["nometa"] = False               # Don't load metadata
@@ -641,7 +641,7 @@ class ExecutionEngineCommon(object):
             env_dict[key] = val
         return env_dict
 
-    def _run_env_set(self, exec_mode):
+    def _run_env_set(self):
         """Environment variables to set"""
         if not any(entry.startswith("HOME=") for entry in self.opt["env"]):
             self.opt["env"].append("HOME=" + self.opt["home"])
@@ -658,7 +658,7 @@ class ExecutionEngineCommon(object):
         self.opt["env"].append("container_ruser=" + Config().username())
         self.opt["env"].append("container_root=" + self.container_root)
         self.opt["env"].append("container_uuid=" + self.container_id)
-        self.opt["env"].append("container_execmode=" + exec_mode)
+        self.opt["env"].append("container_execmode=" + self.exec_mode)
         names = str(self.container_names).translate(None, " '\"[]")
         self.opt["env"].append("container_names=" + names)
 

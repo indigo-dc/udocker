@@ -172,7 +172,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             return []
         env_exec = FileUtil("env").find_inpath("/bin:/usr/bin",
                                                self.container_root)
-        if  env_exec:
+        if env_exec:
             return [self.container_root + "/" + env_exec, ]
         real_path = self._cont2host(exec_path.split(self.container_root, 1)[-1])
         hashbang = FileUtil(real_path).get1stline()

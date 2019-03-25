@@ -11,6 +11,7 @@ from udocker.engine.proot import PRootEngine
 from udocker.engine.runc import RuncEngine
 from udocker.engine.singularity import SingularityEngine
 
+
 class ExecutionMode(object):
     """Generic execution engine class to encapsulate the specific
     execution engines and their execution modes.
