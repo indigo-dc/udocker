@@ -18,7 +18,7 @@ class PRootEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, localrepo, xmode):
-        super(PRootEngine, self).__init__(localrepo)
+        super(PRootEngine, self).__init__(localrepo, xmode)
         conf = Config()
         self.proot_exec = None                   # PRoot
         self.proot_noseccomp = False             # Noseccomp mode
@@ -29,6 +29,7 @@ class PRootEngine(ExecutionEngineCommon):
         """Set proot executable and related variables"""
         conf = Config()
         arch = conf.arch()
+        image_list = []
         if arch == "amd64":
             if conf.oskernel_isgreater((4, 8, 0)):
                 image_list = ["proot-x86_64-4_8_0", "proot-x86_64", "proot"]
@@ -57,7 +58,7 @@ class PRootEngine(ExecutionEngineCommon):
         if conf.oskernel_isgreater((4, 8, 0)):
             if conf.proot_noseccomp is not None:
                 self.proot_noseccomp = conf.proot_noseccomp
-            if self.exec_mode.get_mode() == "P2":
+            if self.exec_mode == "P2":
                 self.proot_noseccomp = True
 
     def _set_uid_map(self):
@@ -111,7 +112,7 @@ class PRootEngine(ExecutionEngineCommon):
             self._kernel = self.opt["kernel"]
 
         # set environment variables
-        self._run_env_set(self.exec_mode)
+        self._run_env_set()
         if not self._check_env():
             return 4
 
