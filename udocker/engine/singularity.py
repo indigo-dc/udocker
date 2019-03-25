@@ -19,7 +19,7 @@ class SingularityEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, localrepo, xmode):
-        super(SingularityEngine, self).__init__(localrepo)
+        super(SingularityEngine, self).__init__(localrepo, xmode)
         self.singularity_exec = None                   # singularity
         self._filebind = None
         self.execution_id = None
@@ -29,6 +29,7 @@ class SingularityEngine(ExecutionEngineCommon):
         """Set singularity executable and related variables"""
         conf = Config()
         arch = conf.arch()
+        image_list = []
         if arch == "amd64":
             image_list = ["singularity-x86_64", "singularity"]
         elif arch == "i386":
@@ -146,7 +147,7 @@ class SingularityEngine(ExecutionEngineCommon):
         self._uid_check_noroot()
 
         # set environment variables
-        self._run_env_set(self.exec_mode)
+        self._run_env_set()
         if not self._check_env():
             return 5
 
@@ -162,8 +163,8 @@ class SingularityEngine(ExecutionEngineCommon):
         if self.singularity_exec.startswith(self.localrepo.bindir):
             Config.singularity_options.extend(["-u", ])
 
-        #if FileUtil("nvidia-smi").find_exec():
-        #    Config.singularity_options.extend(["--nv", ])
+        # if FileUtil("nvidia-smi").find_exec():
+        #     Config.singularity_options.extend(["--nv", ])
 
         singularity_vol_list = self._get_volume_bindings()
 
@@ -186,7 +187,7 @@ class SingularityEngine(ExecutionEngineCommon):
 
         # execute
         self._run_banner(self.opt["cmd"][0], '/')
-        status = subprocess.call(cmd_l, shell=False, close_fds=True, \
-            env=os.environ.update(self._singularity_env_get()))
+        status = subprocess.call(cmd_l, shell=False, close_fds=True,
+                    env=os.environ.update(self._singularity_env_get()))
         self._filebind.finish()
         return status
