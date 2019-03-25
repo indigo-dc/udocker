@@ -15,11 +15,7 @@ limitations under the License.
 """
 
 import os
-import sys
 import unittest
-
-sys.path.append('.')
-
 from udocker.cmdparser import CmdParser
 
 
@@ -39,7 +35,6 @@ class CmdParserTestCase(unittest.TestCase):
 
     def test_01__init(self):
         """Test CmdParser() Constructor."""
-
         cmdp = CmdParser()
         self.assertEqual(cmdp._argv, "")
         self.assertIsInstance(cmdp._argv_split, dict)
@@ -55,42 +50,40 @@ class CmdParserTestCase(unittest.TestCase):
 
     def test_02_parse(self):
         """Test CmdParser().parse()."""
-
         cmdp = CmdParser()
         status = cmdp.parse("udocker run --bindhome "
                             "--hostauth --hostenv -v /sys"
                             " -v /proc -v /var/run -v /dev"
-                            " --user=jorge --dri myfed  firefox")
+                            " --user=jorge --dri myfed firefox")
         self.assertTrue(status)
 
     def test_03_missing_options(self):
         """Test CmdParser().missing_options()."""
-
         cmdp = CmdParser()
         cmdp.parse("udocker run --bindhome "
                    "--hostauth --hostenv -v /sys"
                    " -v /proc -v /var/run -v /dev"
-                   " --user=jorge --dri myfed  firefox")
+                   " --user=jorge --dri myfed firefox")
         out = cmdp.missing_options()
         self.assertIsInstance(out, list)
 
     def test_04_get(self):
         """Test CmdParser().get()."""
-
         cmdp = CmdParser()
         cmdp.declare_options("-v= -e= -w= -u= -i -t -a")
-        cmdp.parse("udocker run --bindhome "
+        cmdp.parse("udocker --debug run --bindhome "
                    "--hostauth --hostenv -v /sys"
-                   " -v /proc -v /var/run -v /dev --debug"
-                   " -u=jorge --dri myfed  firefox")
+                   " -v /proc -v /var/run -v /dev"
+                   " --user=jorge --dri myfed firefox")
+
         out = cmdp.get("xyz")
         self.assertIsNone(out)
 
-        # out = cmdp.get("--user=")
+        # out = cmdp.get("--user=", "CMD_OPT")
         # self.assertEqual(out, "jorge")
 
-        # out = cmdp.get("--debug", "GEN_OPT")
-        # self.assertTrue(out)
+        out = cmdp.get("run", "CMD")
+        self.assertTrue(out)
 
     def test_05_declare_options(self):
         """Test CmdParser().declare_options()."""
