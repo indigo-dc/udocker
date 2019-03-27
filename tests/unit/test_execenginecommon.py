@@ -124,7 +124,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         status = ex_eng._set_cpu_affinity()
         self.assertEqual(status, ["numactl", "-C", "1-2", "--"])
 
-    @mock.patch('os.path.isdir')
+    @mock.patch('udocker.engine.base.os.path.isdir')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_04__cont2host(self, mock_local, mock_isdir):
         """Test ExecutionEngine()._cont2host()."""
@@ -149,8 +149,8 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self.assertEqual(status, "/var/xxx/tt")
 
     @mock.patch('udocker.msg.Msg')
-    @mock.patch('os.path.isdir')
-    @mock.patch('os.path.exists')
+    @mock.patch('udocker.engine.base.os.path.isdir')
+    @mock.patch('udocker.engine.base.os.path.exists')
     @mock.patch('udocker.engine.base.ExecutionEngineCommon._cont2host')
     @mock.patch('udocker.engine.base.ExecutionEngineCommon._getenv')
     @mock.patch('udocker.container.localrepo.LocalRepository')
@@ -187,9 +187,9 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self.assertTrue(status)
 
     @mock.patch('udocker.msg.Msg')
-    @mock.patch('os.access')
-    @mock.patch('os.readlink')
-    @mock.patch('os.path.isfile')
+    @mock.patch('udocker.engine.base.os.access')
+    @mock.patch('udocker.engine.base.os.readlink')
+    @mock.patch('udocker.engine.base.os.path.isfile')
     @mock.patch('udocker.engine.base.ExecutionEngineCommon._getenv')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_06__check_executable(self, mock_local, mock_getenv, mock_isfile,
@@ -377,7 +377,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self.assertTrue(mock_cruser.called)
         self.assertEqual(ex_eng.opt["user"], "")
 
-    @mock.patch('os.getgroups')
+    @mock.patch('udocker.engine.base.os.getgroups')
     @mock.patch('udocker.utils.fileutil.FileUtil')
     @mock.patch('udocker.msg.Msg')
     @mock.patch('udocker.helper.nixauth.NixAuthentication')
@@ -494,7 +494,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self.assertTrue(agroup.called_once_with("G80000", "80000"))
 
     @mock.patch('udocker.msg.Msg')
-    @mock.patch('os.path.basename')
+    @mock.patch('udocker.engine.base.os.path.basename')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_12__run_banner(self, mock_local, mock_base, mock_msg):
         """Test ExecutionEngineCommon()._run_banner()."""
@@ -506,7 +506,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self.assertTrue(mock_base.called_once_with("/bin/bash"))
 
     @mock.patch('udocker.config.Config')
-    @mock.patch('os.environ')
+    @mock.patch('udocker.engine.base.os.environ')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_14__env_cleanup_dict(self, mock_local, mock_osenv, mock_config):
         """Test ExecutionEngineCommon()._env_cleanup()."""
@@ -604,7 +604,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         status = prex._get_bindhome()
         self.assertEqual(status, "")
 
-    @mock.patch('os.path.exists')
+    @mock.patch('udocker.engine.base.os.path.exists')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_18__create_mountpoint(self, mock_local, mock_exists):
         """Test ExecutionEngine()._create_mountpoint()."""
@@ -619,7 +619,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         status = exc._create_mountpoint("", "")
         self.assertTrue(status)
 
-    @mock.patch('os.path.exists')
+    @mock.patch('udocker.engine.base.os.path.exists')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_19__check_volumes(self, mock_local, mock_exists):
         """."""
