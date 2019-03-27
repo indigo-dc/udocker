@@ -96,6 +96,8 @@ class ExecutionModeTestCase(unittest.TestCase):
         status = uexm.get_mode()
         self.assertEqual(status, "F3")
 
+    @mock.patch('udocker.utils.filebind.FileBind.setup')
+    @mock.patch('udocker.utils.filebind.FileBind.restore')
     @mock.patch('udocker.msg.Msg')
     @mock.patch('udocker.engine.execmode.ExecutionMode.get_mode')
     @mock.patch('udocker.engine.execmode.os.path')
@@ -106,7 +108,8 @@ class ExecutionModeTestCase(unittest.TestCase):
     @mock.patch('udocker.utils.fileutil.FileUtil.putdata')
     def test_03_set_mode(self, mock_putdata, mock_futil,
                          mock_elfp, mock_fbind, mock_local,
-                         mock_path, mock_getmode, mock_msg):
+                         mock_path, mock_getmode, mock_msg,
+                         mock_restore, mock_setup):
         """Set execution mode."""
 
         self._init()
@@ -123,7 +126,7 @@ class ExecutionModeTestCase(unittest.TestCase):
         self.assertTrue(status)
 
         uexm.set_mode("P1")
-        self.assertTrue(mock_fbind.return_value.restore.called)
+        self.assertTrue(mock_restore.called)
 
         uexm.set_mode("F1")
         self.assertTrue(mock_futil.return_value.links_conv.called)
@@ -132,7 +135,7 @@ class ExecutionModeTestCase(unittest.TestCase):
         self.assertTrue(mock_elfp.return_value.restore_ld.called)
 
         uexm.set_mode("R1")
-        self.assertTrue(mock_fbind.return_value.setup.called)
+        self.assertTrue(mock_setup.called)
 
         uexm.set_mode("F2")
         self.assertTrue(mock_elfp.return_value.restore_binaries.called)
