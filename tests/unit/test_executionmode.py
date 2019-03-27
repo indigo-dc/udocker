@@ -58,7 +58,7 @@ class ExecutionModeTestCase(unittest.TestCase):
         Config.return_value.arch.return_value = "ARCH"
         Config.default_execution_mode = "P1"
 
-    @mock.patch('os.path.realpath')
+    @mock.patch('udocker.engine.execmode.os.path.realpath')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_01_init(self, mock_local, mock_realpath):
         """Test __init__()."""
@@ -78,7 +78,7 @@ class ExecutionModeTestCase(unittest.TestCase):
         self.assertEqual(uexm.valid_modes,
                          ("P1", "P2", "F1", "F2", "F3", "F4", "R1", "S1"))
 
-    @mock.patch('os.path')
+    @mock.patch('udocker.engine.execmode.os.path')
     @mock.patch('udocker.utils.fileutil.FileUtil.getdata')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_02_get_mode(self, mock_local, mock_getdata, mock_path):
@@ -98,7 +98,7 @@ class ExecutionModeTestCase(unittest.TestCase):
 
     @mock.patch('udocker.msg.Msg')
     @mock.patch('udocker.engine.execmode.ExecutionMode.get_mode')
-    @mock.patch('os.path')
+    @mock.patch('udocker.engine.execmode.os.path')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     @mock.patch('udocker.utils.filebind.FileBind')
     @mock.patch('udocker.helper.elfpatcher.ElfPatcher')
@@ -152,7 +152,7 @@ class ExecutionModeTestCase(unittest.TestCase):
         self.assertTrue(mock_msg.return_value.err.called)
 
     @mock.patch('udocker.engine.execmode.ExecutionMode.get_mode')
-    @mock.patch('os.path')
+    @mock.patch('udocker.engine.execmode.os.path')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_04_get_engine(self, mock_local, mock_path, mock_getmode):
         """get execution engine instance"""
