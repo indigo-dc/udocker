@@ -55,12 +55,13 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         Config.sysdirs_list = ["/", ]
         Config.root_path = "/usr/sbin:/sbin:/usr/bin:/bin"
         Config.user_path = "/usr/bin:/bin:/usr/local/bin"
+        self.xmode = "P1"
 
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_01_init(self, mock_local):
         """Test ExecutionEngineCommon() constructor"""
         self._init()
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         self.assertEqual(ex_eng.container_id, "")
         self.assertEqual(ex_eng.container_root, "")
         self.assertEqual(ex_eng.container_names, [])
@@ -88,7 +89,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         """Test ExecutionEngineCommon()._check_exposed_ports()."""
         self._init()
         mock_msg.level = 0
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["portsexp"] = ("1024", "2048/tcp", "23000/udp")
         status = ex_eng._check_exposed_ports()
         self.assertTrue(status)
@@ -105,21 +106,21 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         status = ex_eng._check_exposed_ports()
         self.assertFalse(status)
 
-    @mock.patch('udocker.utils.fileutil.FileUtil')
+    @mock.patch('udocker.utils.fileutil.FileUtil.find_exec')
     @mock.patch('udocker.container.localrepo.LocalRepository')
-    def test_03__set_cpu_affinity(self, mock_local, mock_futil):
+    def test_03__set_cpu_affinity(self, mock_local, mock_findexec):
         """Test ExecutionEngineCommon()._set_cpu_affinity()."""
         self._init()
-        ex_eng = ExecutionEngineCommon(mock_local)
-        mock_futil.return_value.find_exec.return_value = ""
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
+        mock_findexec.return_value = ""
         status = ex_eng._set_cpu_affinity()
         self.assertEqual(status, [])
         #
-        mock_futil.return_value.find_exec.return_value = "taskset"
+        mock_findexec.return_value = "taskset"
         status = ex_eng._set_cpu_affinity()
         self.assertEqual(status, [])
         #
-        mock_futil.return_value.find_exec.return_value = "numactl"
+        mock_findexec.return_value = "numactl"
         ex_eng.opt["cpuset"] = "1-2"
         status = ex_eng._set_cpu_affinity()
         self.assertEqual(status, ["numactl", "-C", "1-2", "--"])
@@ -131,7 +132,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self._init()
         mock_isdir.return_value = True
         #
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["vol"] = ("/opt/xxx:/mnt",)
         status = ex_eng._cont2host("/mnt")
         self.assertEqual(status, "/opt/xxx")
@@ -159,7 +160,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         """Test ExecutionEngineCommon()._check_paths()."""
         self._init()
         mock_msg.level = 0
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         mock_getenv.return_value = ""
         mock_isinvol.return_value = False
         mock_exists.return_value = False
@@ -197,7 +198,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         """Test ExecutionEngineCommon()._check_executable()."""
         self._init()
         mock_msg.level = 0
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         mock_getenv.return_value = ""
         ex_eng.opt["entryp"] = "/bin/shell -x -v"
         mock_isfile.return_value = False
@@ -228,7 +229,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
                                    mock_chkports, mock_cstruct):
         """Test ExecutionEngineCommon()._run_load_metadata()."""
         self._init()
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         mock_getenv.return_value = ""
         Config.location = "/tmp/container"
         status = ex_eng._run_load_metadata("123")
@@ -255,7 +256,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
     def test_08__getenv(self, mock_local):
         """Test ExecutionEngineCommon()._getenv()."""
         self._init()
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["env"] = ["HOME=/home/user", "PATH=/bin:/usr/bin"]
         status = ex_eng._getenv("")
         self.assertEqual(status, None)
@@ -275,7 +276,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         """Test ExecutionEngineCommon()._uid_gid_from_str()."""
         self._init()
         mock_msg.level = 0
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         status = ex_eng._uid_gid_from_str("")
         self.assertEqual(status, (None, None))
         #
@@ -295,13 +296,13 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         """Test ExecutionEngineCommon()._setup_container_user()."""
         self._init()
         mock_msg.level = 0
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         mock_ugfs.return_value = (None, None)
         status = ex_eng._setup_container_user("0:0")
         self.assertFalse(status)
         self.assertTrue(mock_ugfs.called_once_with("root"))
         #
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["vol"] = ""
         ex_eng.opt["hostauth"] = False
         mock_nix.return_value.get_user.return_value = ("", "", "",
@@ -311,7 +312,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self.assertTrue(status)
         self.assertTrue(mock_cruser.called)
         #
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["vol"] = ""
         ex_eng.opt["hostauth"] = False
         mock_nix.return_value.get_user.return_value = ("root", 0, 0,
@@ -321,7 +322,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self.assertTrue(status)
         self.assertTrue(mock_cruser.called)
         #
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["vol"] = ""
         ex_eng.opt["hostauth"] = True
         mock_nix.return_value.get_user.return_value = ("", "", "",
@@ -330,7 +331,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         status = ex_eng._setup_container_user("0:0")
         self.assertFalse(status)
         #
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["vol"] = ""
         ex_eng.opt["hostauth"] = True
         mock_nix.return_value.get_user.return_value = ("root", 0, 0,
@@ -340,7 +341,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self.assertTrue(status)
         self.assertTrue(mock_cruser.called)
         #
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["vol"] = ""
         ex_eng.opt["hostauth"] = False
         mock_nix.return_value.get_user.return_value = ("", "", "",
@@ -349,7 +350,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self.assertTrue(status)
         self.assertTrue(mock_cruser.called)
         #
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["vol"] = ""
         ex_eng.opt["hostauth"] = False
         mock_nix.return_value.get_user.return_value = ("root", 0, 0,
@@ -358,7 +359,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self.assertTrue(status)
         self.assertTrue(mock_cruser.called)
         #
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["vol"] = ""
         ex_eng.opt["hostauth"] = True
         mock_nix.return_value.get_user.return_value = ("", "", "",
@@ -366,7 +367,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         status = ex_eng._setup_container_user("")
         self.assertFalse(status)
         #
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["vol"] = ""
         ex_eng.opt["hostauth"] = False
         mock_nix.return_value.get_user.return_value = ("", 100, 0,
@@ -395,7 +396,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         Config.uid = 1000
         Config.gid = 1000
         mock_nix.return_value.add_user.return_value = False
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["uid"] = ""
         ex_eng.opt["gid"] = ""
         ex_eng.opt["user"] = ""
@@ -412,7 +413,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self.assertEqual(ex_eng.opt["gecos"], "*UDOCKER*")
         #
         mock_nix.return_value.add_user.return_value = False
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["uid"] = "60000"
         ex_eng.opt["gid"] = "60000"
         ex_eng.opt["user"] = "someuser"
@@ -429,7 +430,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self.assertEqual(ex_eng.opt["gecos"], "*XXX*")
         #
         mock_nix.return_value.add_user.return_value = False
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["uid"] = "60000"
         ex_eng.opt["gid"] = "60000"
         ex_eng.opt["user"] = "someuser"
@@ -449,7 +450,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         mock_nix.return_value.get_group.return_value = ("", "", "")
         mock_nix.return_value.add_group.return_value = True
         mock_groups.return_value = ()
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["uid"] = "60000"
         ex_eng.opt["gid"] = "60000"
         ex_eng.opt["user"] = "someuser"
@@ -472,7 +473,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         mock_nix.return_value.get_group.return_value = ("", "", "")
         mock_nix.return_value.add_group.return_value = True
         mock_groups.return_value = (80000,)
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["uid"] = "60000"
         ex_eng.opt["gid"] = "60000"
         ex_eng.opt["user"] = "someuser"
@@ -500,7 +501,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         """Test ExecutionEngineCommon()._run_banner()."""
         self._init()
         mock_msg.level = 0
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng._run_banner("/bin/bash")
         ex_eng.container_id = "CONTAINERID"
         self.assertTrue(mock_base.called_once_with("/bin/bash"))
@@ -514,7 +515,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         Config = mock_config
         Config.valid_host_env = ("HOME",)
         mock_osenv.return_value = {'HOME': '/', 'USERNAME': 'user', }
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng._run_env_cleanup_dict()
         self.assertEqual(mock_osenv, {'HOME': '/', })
 
@@ -523,7 +524,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
     def test_15__run_env_set(self, mock_local, mock_config):
         """Test ExecutionEngineCommon()._run_env_set()."""
         # self._init()
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         ex_eng.opt["home"] = "/"
         ex_eng.opt["user"] = "user"
         ex_eng.opt["uid"] = "1000"
@@ -557,7 +558,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         mock_setupuser.return_value = True
         mock_chkpaths.return_value = True
         mock_chkexec.return_value = True
-        ex_eng = ExecutionEngineCommon(mock_local)
+        ex_eng = ExecutionEngineCommon(mock_local, self.xmode)
         status = ex_eng._run_init("2717add4-e6f6-397c-9019-74fa67be439f")
         self.assertTrue(status)
         self.assertEqual(ex_eng.container_root, "/container_dir/ROOT")
@@ -587,19 +588,19 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self._init()
         #
         mock_nixauth.return_value.get_home.return_value = ""
-        prex = ExecutionEngineCommon(mock_local)
+        prex = ExecutionEngineCommon(mock_local, self.xmode)
         prex.opt["bindhome"] = False
         status = prex._get_bindhome()
         self.assertEqual(status, "")
         #
         mock_nixauth.return_value.get_home.return_value = "/home/user"
-        prex = ExecutionEngineCommon(mock_local)
+        prex = ExecutionEngineCommon(mock_local, self.xmode)
         prex.opt["bindhome"] = True
         status = prex._get_bindhome()
         self.assertEqual(status, "/home/user")
         #
         mock_nixauth.return_value.get_home.return_value = ""
-        prex = ExecutionEngineCommon(mock_local)
+        prex = ExecutionEngineCommon(mock_local, self.xmode)
         prex.opt["bindhome"] = True
         status = prex._get_bindhome()
         self.assertEqual(status, "")
@@ -610,12 +611,12 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         """Test ExecutionEngine()._create_mountpoint()."""
         self._init()
         mock_exists.return_value = False
-        exc = ExecutionEngineCommon(mock_local)
+        exc = ExecutionEngineCommon(mock_local, self.xmode)
         status = exc._create_mountpoint("", "")
         self.assertFalse(status)
 
         mock_exists.return_value = True
-        exc = ExecutionEngineCommon(mock_local)
+        exc = ExecutionEngineCommon(mock_local, self.xmode)
         status = exc._create_mountpoint("", "")
         self.assertTrue(status)
 
@@ -625,13 +626,13 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         """."""
         self._init()
 
-        exc = ExecutionEngineCommon(mock_local)
+        exc = ExecutionEngineCommon(mock_local, self.xmode)
         exc.opt["vol"] = ()
         status = exc._check_volumes()
         self.assertTrue(status)
 
         mock_exists.return_value = False
-        exc = ExecutionEngineCommon(mock_local)
+        exc = ExecutionEngineCommon(mock_local, self.xmode)
         status = exc._check_volumes()
         self.assertTrue(status)
 
@@ -640,12 +641,12 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         """."""
         self._init()
 
-        exc = ExecutionEngineCommon(mock_local)
+        exc = ExecutionEngineCommon(mock_local, self.xmode)
         exc.opt["vol"] = ["/tmp"]
         status = exc._is_volume("/tmp")
         self.assertTrue(status)
 
-        exc = ExecutionEngineCommon(mock_local)
+        exc = ExecutionEngineCommon(mock_local, self.xmode)
         exc.opt["vol"] = [""]
         status = exc._is_volume("/tmp")
         self.assertFalse(status)
