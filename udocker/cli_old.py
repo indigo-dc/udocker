@@ -941,10 +941,12 @@ class UdockerCLI(Cmd):
         Msg().out(self.do_help.__doc__)
         return True
 
-    def do_version(self, arg):
+    def do_version(self, cmdp):
         """
         version: Print version information
         """
+        if cmdp.missing_options():  # syntax error
+            return False
         try:
             Msg().out("%s %s" % ("version:", __version__))
             Msg().out("%s %s" % ("tarball:", Config.tarball))
