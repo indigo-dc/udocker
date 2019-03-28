@@ -941,7 +941,7 @@ class UdockerCLI(Cmd):
         Msg().out(self.do_help.__doc__)
         return True
 
-    def do_version(self, arg):
+    def do_version(self):
         """
         version: Print version information
         """

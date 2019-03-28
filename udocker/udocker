@@ -49,6 +49,9 @@ class Main(object):
 Syntax:
   udocker  [general_options] <command>  [command_options]  <command_args>
 
+  udocker [-h|--help|help]        :Display this help and exits
+  udocker [-V|--version|version]  :Display udocker version and tarball version and exits
+
 Commands:
   search <repo/image:tag>       :Search dockerhub for container images
   pull <repo/image:tag>         :Pull container image from dockerhub
@@ -83,10 +86,7 @@ Commands:
   login                         :Login into docker repository
   logout                        :Logout from docker repository
 
-  version                       :Shows udocker version and exits
-
-  help                          :This help
-  run --help                    :Command specific help
+  help [command]                :Command specific help
 
 Options common to all commands must appear before the command:
   -D                            :Debug
@@ -129,13 +129,18 @@ See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
             """)
         return True
 
-    def do_EOF(self, line):
-        return True
-
 
 if __name__ == "__main__":
     localrepo = LocalRepository(Config.topdir)
+    lhelp = ['-h', '--help', 'help']
+    lversion = ['-V', '--version', 'version']
     if len(sys.argv) > 1:
-        UdockerCLI(localrepo).onecmd(' '.join(sys.argv[1:]))
+        if sys.argv[1] in lhelp:
+            Main().do_help()
+            UdockerCLI(localrepo).onecmd(' '.join(sys.argv[1:]))
+        if sys.argv[1] in lversion:
+            UdockerCLI(localrepo).do_version()
+        else:
+            UdockerCLI(localrepo).onecmd(' '.join(sys.argv[1:]))
     else:
         Main().do_help()
