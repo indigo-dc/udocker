@@ -952,3 +952,6 @@ class UdockerCLI(Cmd):
         except NameError:
             pass
         return True
+
+    def default(self, arg):
+        print('Command "%s" not found' % arg)
