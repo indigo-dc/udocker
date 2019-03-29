@@ -4,6 +4,7 @@ import sys
 import re
 import base64
 import subprocess
+import json
 
 from udocker.config import Config
 from udocker.msg import Msg
@@ -15,16 +16,6 @@ from udocker.container.structure import ContainerStructure
 from udocker.engine.execmode import ExecutionMode
 
 START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
-try:
-    import json
-except ImportError:
-    sys.path.append(START_PATH + "/../lib/simplejson")
-    sys.path.append(os.path.expanduser('~') + "/.udocker/lib/simplejson")
-    sys.path.append(str(os.getenv("UDOCKER_DIR")) + "/lib/simplejson")
-    try:
-        import simplejson as json
-    except ImportError:
-        pass
 
 
 class DockerIoAPI(object):
@@ -33,8 +24,9 @@ class DockerIoAPI(object):
     """
 
     def __init__(self, localrepo):
-        self.index_url = Config.dockerio_index_url
-        self.registry_url = Config.dockerio_registry_url
+        self.conf = Config().getconf()
+        self.index_url = self.conf['dockerio_index_url']
+        self.registry_url = self.conf['dockerio_registry_url']
         self.v1_auth_header = ""
         self.v2_auth_header = ""
         self.v2_auth_token = ""
@@ -436,8 +428,8 @@ class DockerIoAPI(object):
                 imagerepo = "/".join(components)
         if registry:
             try:
-                registry_url = Config.docker_registries[registry][0]
-                index_url = Config.docker_registries[registry][1]
+                registry_url = self.conf['docker_registries'][registry][0]
+                index_url = self.conf['docker_registries'][registry][1]
             except (KeyError, NameError, TypeError):
                 registry_url = "https://%s" % registry
                 index_url = registry_url
@@ -717,8 +709,8 @@ class DockerLocalFileAPI(object):
         container_json["comment"] = comment
         container_json["created"] = \
             time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z")
-        container_json["architecture"] = Config().arch()
-        container_json["os"] = Config().osversion()
+        container_json["architecture"] = self.conf['arch']
+        container_json["os"] = self.conf['osversion']
         layer_file = self.localrepo.layersdir + "/" + layer_id + ".layer"
         container_json["size"] = FileUtil(layer_file).size()
         if container_json["size"] == -1:
