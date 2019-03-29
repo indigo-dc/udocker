@@ -2,6 +2,7 @@
 import sys
 import os
 import subprocess
+import json
 
 from udocker.config import Config
 from udocker.msg import Msg
@@ -17,16 +18,6 @@ except ImportError:
     pass
 
 START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
-try:
-    import json
-except ImportError:
-    sys.path.append(START_PATH + "/../lib/simplejson")
-    sys.path.append(os.path.expanduser('~') + "/.udocker/lib/simplejson")
-    sys.path.append(str(os.getenv("UDOCKER_DIR")) + "/lib/simplejson")
-    try:
-        import simplejson as json
-    except ImportError:
-        pass
 
 
 class CurlHeader(object):
@@ -87,14 +78,15 @@ class GetURL(object):
 
     def __init__(self):
         """Load configuration common to the implementations"""
-        self.timeout = Config.timeout
-        self.ctimeout = Config.ctimeout
-        self.download_timeout = Config.download_timeout
-        self.agent = Config.http_agent
-        self.http_proxy = Config.http_proxy
+        self.conf = Config().getconf()
+        self.timeout = self.conf['timeout']
+        self.ctimeout = self.conf['ctimeout']
+        self.download_timeout = self.conf['download_timeout']
+        self.agent = self.conf['http_agent']
+        self.http_proxy = self.conf['http_proxy']
         self.cache_support = False
-        self.insecure = Config.http_insecure
-        self._curl_executable = Config.use_curl_executable
+        self.insecure = self.conf['http_insecure']
+        self._curl_executable = self.conf['use_curl_executable']
         self._select_implementation()
 
     # pylint: disable=locally-disabled
