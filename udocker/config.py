@@ -291,6 +291,6 @@ class Config(object):
                 return False
         return True
 
-    def get(self):
+    def getconf(self):
         """Return all configuration variables"""
         return self.conf
