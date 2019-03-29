@@ -25,14 +25,15 @@ class UdockerCLI(Cmd):
 
     def __init__(self, localrepo):
         Cmd.__init__(self)
+        self.conf = Config().getconf()
         self.localrepo = localrepo
         self.dockerioapi = DockerIoAPI(localrepo)
         self.dockerlocalfileapi = DockerLocalFileAPI(localrepo)
-        if Config.keystore.startswith("/"):
-            self.keystore = KeyStore(Config.keystore)
+        if self.conf['keystore'].startswith("/"):
+            self.keystore = KeyStore(self.conf['keystore'])
         else:
             self.keystore = \
-                KeyStore(self.localrepo.homedir + "/" + Config.keystore)
+                KeyStore(self.localrepo.homedir + "/" + self.conf['keystore'])
 
     def _cdrepo(self, cmdp):
         """Select the top directory of a local repository"""
@@ -511,13 +512,13 @@ class UdockerCLI(Cmd):
         """
         self._get_run_options(cmdp)
         container_or_image = cmdp.get("P1")
-        Config.location = cmdp.get("--location=")
+        self.conf['location'] = cmdp.get("--location=")
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
         #
         if cmdp.missing_options(): # syntax error
             return False
-        if Config.location:
+        if self.conf['location']:
             container_id = ""
         elif not container_or_image:
             Msg().err("Error: must specify container_id or image:tag")
@@ -851,8 +852,8 @@ class UdockerCLI(Cmd):
         """
         try:
             Msg().out("%s %s" % ("version:", __version__))
-            Msg().out("%s %s" % ("tarball:", Config.tarball))
-            Msg().out("%s %s" % ("tarball_release:", Config.tarball_release))
+            Msg().out("%s %s" % ("tarball:", self.conf['tarball']))
+            Msg().out("%s %s" % ("tarball_release:", self.conf['tarball_release']))
         except NameError:
             pass
         return True
