@@ -2,6 +2,7 @@
 import os
 import sys
 import re
+import json
 
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
@@ -9,16 +10,6 @@ from udocker.utils.chksum import ChkSUM
 from udocker.msg import Msg
 
 START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
-try:
-    import json
-except ImportError:
-    sys.path.append(START_PATH + "/../lib/simplejson")
-    sys.path.append(os.path.expanduser('~') + "/.udocker/lib/simplejson")
-    sys.path.append(str(os.getenv("UDOCKER_DIR")) + "/lib/simplejson")
-    try:
-        import simplejson as json
-    except ImportError:
-        pass
 
 
 class LocalRepository(object):
@@ -38,17 +29,18 @@ class LocalRepository(object):
     """
 
     def __init__(self, topdir=None):
+        self.conf = Config().getconf()
         if topdir:
             self.topdir = topdir
         else:
-            self.topdir = Config.topdir
+            self.topdir = self.conf['topdir']
 
-        self.bindir = Config.bindir
-        self.libdir = Config.libdir
-        self.reposdir = Config.reposdir
-        self.layersdir = Config.layersdir
-        self.containersdir = Config.containersdir
-        self.homedir = Config.homedir
+        self.bindir = self.conf['bindir']
+        self.libdir = self.conf['libdir']
+        self.reposdir = self.conf['reposdir']
+        self.layersdir = self.conf['layersdir']
+        self.containersdir = self.conf['containersdir']
+        self.homedir = self.conf['homedir']
 
         if not self.bindir:
             self.bindir = self.topdir + "/bin"
@@ -90,7 +82,7 @@ class LocalRepository(object):
                 os.makedirs(self.bindir)
             if not os.path.exists(self.libdir):
                 os.makedirs(self.libdir)
-            if not (Config.keystore.startswith("/") or os.path.exists(self.homedir)):
+            if not (self.conf['keystore'].startswith("/") or os.path.exists(self.homedir)):
                 os.makedirs(self.homedir)
         except(IOError, OSError):
             return False
