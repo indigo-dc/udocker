@@ -131,7 +131,8 @@ See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
 
 
 if __name__ == "__main__":
-    localrepo = LocalRepository(Config.topdir)
+    conf = Config().get()
+    localrepo = LocalRepository(conf['topdir'])
     lhelp = ['-h', '--help', 'help']
     lversion = ['-V', '--version', 'version']
     if len(sys.argv) > 1:

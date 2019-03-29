@@ -21,8 +21,8 @@ class Config(object):
         """Initialize configuration variables with default values"""
         self.conf = dict()
         self.conf['verbose_level'] = 3
-        self.conf['homedir'] = os.path.expanduser("~") + "/.udocker"
-        self.conf['topdir'] = self.conf['homedir']
+        self.conf['homedir'] = os.path.expanduser("~")
+        self.conf['topdir'] = self.conf['homedir'] + "/.udocker"
         self.conf['bindir'] = None
         self.conf['libdir'] = None
         self.conf['reposdir'] = None
@@ -182,7 +182,24 @@ class Config(object):
             sys.exit(1)
 
     def _file_override(self):
-        pass
+        """
+        Override values from config file
+        """
+        cfpath = '/etc/' + self.conf['config']
+        if os.path.exists(cfpath):
+            config = ConfigParser()
+            config.read(cfpath)
+            for (key, val) in config.items(['DEFAULT']):
+                if val is not None:
+                    self.conf[key] = val
+
+        cfpath = self.conf['homedir'] + self.conf['config']
+        if os.path.exists(cfpath):
+            config = ConfigParser()
+            config.read(cfpath)
+            for (key, val) in config.items(['DEFAULT']):
+                if val is not None:
+                    self.conf[key] = val
 
     def _env_override(self):
         """Override config with environment"""
@@ -210,36 +227,6 @@ class Config(object):
                                           self.conf['keystore'])
         self.conf['use_curl_executable'] = os.getenv("UDOCKER_USE_CURL_EXECUTABLE",
                                                      self.conf['use_curl_executable'])
-
-    def user_init(self, config_file):
-        """
-        Try to load default values from config file
-        Defaults should be in the form x = y
-        """
-        if config_file is None:
-            try:
-                cfile = "/etc/" + Config.config
-                if os.getenv("UDOCKER_NOSYSCONF") is None:
-                    self._read_config(cfile)
-                cfile = Config.topdir + "/" + Config.config
-                self._read_config(cfile)
-                if self.topdir != self.homedir:
-                    cfile = Config.homedir + "/" + Config.config
-                    self._read_config(cfile)
-            except ValueError as error:
-                Msg().err("Error:", error)
-                sys.exit(1)
-
-            self._override_config()
-            self._verify_config()
-            return
-
-        try:
-            if self._read_config(config_file):
-                return
-        except ValueError as error:
-            Msg().err("Error:", error)
-            sys.exit(1)
 
     def _username(self):
         """Get username"""
