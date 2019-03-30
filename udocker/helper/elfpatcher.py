@@ -20,6 +20,7 @@ class ElfPatcher(object):
     ONE_OUTPUT = 32
 
     def __init__(self, localrepo, container_id):
+        self.conf = Config().getconf()
         self._localrepo = localrepo
         self._container_dir = \
             os.path.realpath(self._localrepo.cd_container(container_id))
@@ -32,12 +33,12 @@ class ElfPatcher(object):
         self._container_patch_time = self._container_dir + "/patch.time"
         self._container_patch_path = self._container_dir + "/patch.path"
         self._shlib = re.compile(r"^lib\S+\.so(\.\d+)*$")
-        self._uid = Config.uid
+        self._uid = self.conf['uid']
 
     def select_patchelf(self):
         """Set patchelf executable"""
-        conf = Config()
-        arch = conf.arch()
+        arch = self.conf['arch']
+        image_list = list()
         if arch == "amd64":
             image_list = ["patchelf-x86_64", "patchelf"]
         elif arch == "i386":
@@ -215,7 +216,7 @@ class ElfPatcher(object):
     def _get_ld_config(self):
         """Get get directories from container ld.so.cache"""
         cmd = "ldconfig -p -C %s/%s" % (self._container_root,
-                                        Config.ld_so_cache)
+                                        self.conf['ld_so_cache'])
         ld_dict = dict()
         ld_data = Uprocess().get_output(cmd)
         if not ld_data:
@@ -261,9 +262,9 @@ class ElfPatcher(object):
         """Get ld library paths"""
         ld_list = self._get_ld_config()
         ld_list.extend(self.get_ld_libdirs())
-        for ld_dir in Config.lib_dirs_list_essential:
+        for ld_dir in self.conf['lib_dirs_list_essential']:
             ld_dir = self._container_root + "/" + ld_dir
             if ld_dir not in ld_list:
                 ld_list.insert(0, ld_dir)
-        ld_list.extend(Config.lib_dirs_list_append)
+        ld_list.extend(self.conf['lib_dirs_list_append'])
         return ":".join(ld_list)
