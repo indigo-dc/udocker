@@ -2,6 +2,7 @@
 import re
 import pwd
 import grp
+
 from udocker.config import Config
 
 
@@ -14,6 +15,7 @@ class NixAuthentication(object):
     """
 
     def __init__(self, passwd_file=None, group_file=None):
+        self.conf = Config().getconf()
         self.passwd_file = passwd_file
         self.group_file = group_file
 
@@ -140,8 +142,7 @@ class NixAuthentication(object):
 
     def get_home(self):
         """Get host or container home directory"""
-        (r_user, dummy, dummy, dummy, r_home,
-         dummy) = self.get_user(Config.uid)
+        (r_user, d, d, d, r_home, d) = self.get_user(self.conf['uid'])
         if r_user:
             return r_home
         return ""
