@@ -26,6 +26,7 @@ class ExecutionMode(object):
     """
 
     def __init__(self, localrepo, container_id):
+        self.conf = Config().getconf()
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = container_id         # Container id
         self.container_dir = self.localrepo.cd_container(container_id)
@@ -39,7 +40,7 @@ class ExecutionMode(object):
         """Get execution mode"""
         xmode = FileUtil(self.container_execmode).getdata().strip()
         if not xmode:
-            xmode = Config.default_execution_mode
+            xmode = self.conf['default_execution_mode']
         return xmode
 
     def set_mode(self, xmode, force=False):
