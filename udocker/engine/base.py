@@ -18,13 +18,14 @@ class ExecutionEngineCommon(object):
     """
 
     def __init__(self, localrepo, xmode):
+        self.conf = Config().getconf()
         self.localrepo = localrepo               # LocalRepository instance
         self.container_id = ""                   # Container id
         self.container_dir = ""                  # Container directory
         self.container_root = ""                 # ROOT of container filesystem
         self.container_names = []                # Container names
         self.imagerepo = None                    # Imagerepo of container image
-        self.hostauth_list = Config.hostauth_list  # passwd and group
+        self.hostauth_list = self.conf['hostauth_list']  # passwd and group
         self.exec_mode = xmode                   # ExecutionMode instance
         # Metadata defaults
         self.opt = dict()                        # Run options
@@ -41,7 +42,7 @@ class ExecutionEngineCommon(object):
         self.opt["user"] = ""                    # User to run in the container
         self.opt["cwd"] = ""                     # Default dir in the container
         self.opt["entryp"] = ""                  # Container entrypoint
-        self.opt["cmd"] = Config.cmd             # Comand to execute
+        self.opt["cmd"] = self.conf['cmd']       # Comand to execute
         self.opt["hostname"] = ""                # Hostname TBD
         self.opt["domain"] = ""                  # Host domainname TBD
         self.opt["volfrom"] = []                 # Mount vol from container TBD
@@ -90,7 +91,7 @@ class ExecutionEngineCommon(object):
                         if mapped_ports[port_number] >= 1024:
                             continue
                     exposes_priv = True
-        if exposes_priv and Config.uid != 0:
+        if exposes_priv and self.conf['uid'] != 0:
             Msg().err("Error: this container exposes privileged TCP/IP ports")
             return False
         if exposes_port:
@@ -103,7 +104,7 @@ class ExecutionEngineCommon(object):
         if not self.opt["cpuset"]:
             return []
         exec_cmd = []
-        for exec_cmd in Config.cpu_affinity_exec_tools:
+        for exec_cmd in self.conf['cpu_affinity_exec_tools']:
             exec_name = \
                 FileUtil(exec_cmd[0]).find_exec()
             if exec_name:
@@ -204,9 +205,9 @@ class ExecutionEngineCommon(object):
                 Msg().err("Error: invalid volume host directory:", host_path)
                 return False
             if not os.path.exists(host_path):
-                if (host_path in Config.dri_list or
-                        host_path in Config.sysdirs_list or
-                        host_path in Config.hostauth_list):
+                if (host_path in self.conf['dri_list'] or
+                        host_path in self.conf['sysdirs_list'] or
+                        host_path in self.conf['hostauth_list']):
                     self.opt["vol"].remove(vol)
                 else:
                     Msg().err("Error: invalid host volume path:", host_path)
@@ -232,11 +233,11 @@ class ExecutionEngineCommon(object):
         """Set the volume bindings string for container run command"""
         # predefined volume bindings --sysdirs --hostauth --dri
         if not self.opt["nosysdirs"]:
-            self.opt["vol"].extend(Config.sysdirs_list)
+            self.opt["vol"].extend(self.conf['sysdirs_list'])
         if self.opt["hostauth"]:
             self.opt["vol"].extend(self.hostauth_list)
         if self.opt["dri"]:
-            self.opt["vol"].extend(Config.dri_list)
+            self.opt["vol"].extend(self.conf['dri_list'])
         home = self._get_bindhome()
         if home:
             self.opt["vol"].append(home)
@@ -256,9 +257,9 @@ class ExecutionEngineCommon(object):
         """Make sure we have a reasonable default PATH and CWD"""
         if not self._getenv("PATH"):
             if self.opt["uid"] == "0":
-                path = Config.root_path
+                path = self.conf['root_path']
             else:
-                path = Config.user_path
+                path = self.conf['user_path']
             self.opt["env"].append("PATH=%s" % path)
         # verify if the working directory is valid and fix it
         if not self.opt["cwd"]:
@@ -282,7 +283,7 @@ class ExecutionEngineCommon(object):
             else:
                 self.opt["cmd"] = self.opt["entryp"]
         if not self.opt["cmd"]:
-            self.opt["cmd"] = Config.cmd
+            self.opt["cmd"] = self.conf['cmd']
             Msg().err("Warning: no command assuming:", self.opt["cmd"],
                       l=Msg.WAR)
         exec_name = self.opt["cmd"][0]            # exec pathname without args
@@ -306,7 +307,7 @@ class ExecutionEngineCommon(object):
         """Load container metadata from container JSON payload"""
         # get container metadata unless we are dealing with a simple directory
         # tree in which case we don't have metadata
-        if Config.location:
+        if self.conf['location']:
             container_dir = ""
             container_json = []
         else:
@@ -502,9 +503,9 @@ class ExecutionEngineCommon(object):
         FileUtil(container_auth.group_file).copyto(tmp_group)
         FileUtil().umask()
         if not self.opt["uid"]:
-            self.opt["uid"] = str(Config.uid)
+            self.opt["uid"] = str(self.conf['uid'])
         if not self.opt["gid"]:
-            self.opt["gid"] = str(Config.gid)
+            self.opt["gid"] = str(self.conf['gid'])
         if not self.opt["user"]:
             self.opt["user"] = "udoc" + self.opt["uid"][0:4]
         if self.opt["user"] == "root":
@@ -539,15 +540,15 @@ class ExecutionEngineCommon(object):
                 self.opt["user"] == "root" or self.opt["user"] == "0"):
             Msg().err("Warning: running as uid 0 is not supported by this engine",
                       l=Msg.WAR)
-            self.opt["user"] = Config().username()
+            self.opt["user"] = self.conf['username']
 
     def _setup_container_user_noroot(self, user):
         """ Setup user for engines without root support.
         Equivalent to _setup_container_user() for engines without root support.
         """
-        self.opt["user"] = Config().username()
-        self.opt["uid"] = str(Config.uid)
-        self.opt["gid"] = str(Config.gid)
+        self.opt["user"] = self.conf['username']
+        self.opt["uid"] = str(self.conf['uid'])
+        self.opt["gid"] = str(self.conf['gid'])
         self.opt["home"] = "/"
         self.opt["gecos"] = ""
         self.opt["shell"] = ""
@@ -607,11 +608,11 @@ class ExecutionEngineCommon(object):
         """Allow only to pass essential environment variables."""
         environ_copy = os.environ.copy()
         for env_var in environ_copy:
-            if env_var in Config.invalid_host_env:
+            if env_var in self.conf['invalid_host_env']:
                 del os.environ[env_var]
                 continue
             if not self.opt["hostenv"]:
-                if env_var not in Config.valid_host_env:
+                if env_var not in self.conf['valid_host_env']:
                     del os.environ[env_var]
 
     def _run_env_cleanup_list(self):
@@ -626,10 +627,10 @@ class ExecutionEngineCommon(object):
         for (env_var, value) in os.environ.iteritems():
             if not env_var:
                 continue
-            if env_var in Config.invalid_host_env or env_var in container_env:
+            if env_var in self.conf['invalid_host_env'] or env_var in container_env:
                 continue
             if ((not self.opt["hostenv"]) and
-                    env_var not in Config.valid_host_env):
+                    env_var not in self.conf['valid_host_env']):
                 continue
             self.opt["env"].append("%s=%s" % (env_var, value))
 
@@ -655,7 +656,7 @@ class ExecutionEngineCommon(object):
             self.opt["env"].append(r"PS1=%s\$ " % self.container_id[:8])
 
         self.opt["env"].append("SHLVL=0")
-        self.opt["env"].append("container_ruser=" + Config().username())
+        self.opt["env"].append("container_ruser=" + self.conf['username'])
         self.opt["env"].append("container_root=" + self.container_root)
         self.opt["env"].append("container_uuid=" + self.container_id)
         self.opt["env"].append("container_execmode=" + self.exec_mode)
@@ -672,8 +673,8 @@ class ExecutionEngineCommon(object):
         except (ValueError, TypeError):
             return ""
 
-        if Config.location:                   # using specific root tree
-            self.container_root = Config.location
+        if self.conf['location']:               # using specific root tree
+            self.container_root = self.conf['location']
         else:
             self.container_root = container_dir + "/ROOT"
 
