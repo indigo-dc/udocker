@@ -859,4 +859,4 @@ class UdockerCLI(Cmd):
         return True
 
     def default(self, arg):
-        print('Command "%s" not found' % arg)
+        Msg().out('Command "%s" not found' % arg)
