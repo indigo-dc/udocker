@@ -16,6 +16,7 @@ class ContainerStructure(object):
     """
 
     def __init__(self, localrepo, container_id=None):
+        self.conf = Config().getconf()
         self.localrepo = localrepo
         self.container_id = container_id
         self.tag = ""
@@ -23,7 +24,7 @@ class ContainerStructure(object):
 
     def get_container_attr(self):
         """Get container directory and JSON metadata by id or name"""
-        if Config.location:
+        if self.conf['location']:
             container_dir = ""
             container_json = []
         else:
@@ -220,6 +221,7 @@ class ContainerStructure(object):
 
     def get_container_meta(self, param, default, container_json):
         """Get the container metadata from the container"""
+        confidx = ""
         if "config" in container_json:
             confidx = "config"
         elif "container_config" in container_json:
