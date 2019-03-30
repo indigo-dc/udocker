@@ -20,15 +20,15 @@ class SingularityEngine(ExecutionEngineCommon):
 
     def __init__(self, localrepo, xmode):
         super(SingularityEngine, self).__init__(localrepo, xmode)
-        self.singularity_exec = None                   # singularity
+        self.conf = Config().getconf()
+        self.singularity_exec = None
         self._filebind = None
         self.execution_id = None
         self.exec_mode = xmode
 
     def _select_singularity(self):
         """Set singularity executable and related variables"""
-        conf = Config()
-        arch = conf.arch()
+        arch = self.conf['arch']
         image_list = []
         if arch == "amd64":
             image_list = ["singularity-x86_64", "singularity"]
@@ -49,7 +49,7 @@ class SingularityEngine(ExecutionEngineCommon):
     def _get_volume_bindings(self):
         """Get the volume bindings string for singularity exec"""
         vol_list = []
-        (tmphost_path, tmpcont_path) = self._filebind.start(Config.sysdirs_list)
+        (tmphost_path, tmpcont_path) = self._filebind.start(self.conf['sysdirs_list'])
         vol_list.extend(["-B", "%s:%s" % (tmphost_path, tmpcont_path), ])
         home_dir = NixAuthentication().get_home()
         home_is_binded = False
@@ -67,7 +67,7 @@ class SingularityEngine(ExecutionEngineCommon):
                 else:
                     vol_list.extend(["-B", "%s:%s" % (host_path, cont_path), ])
             elif os.path.isfile(host_path):
-                if cont_path not in Config.sysdirs_list:
+                if cont_path not in self.conf['sysdirs_list']:
                     Msg().err("Error: engine does not support file mounting:",
                               host_path)
                 else:
@@ -126,7 +126,7 @@ class SingularityEngine(ExecutionEngineCommon):
           * options:  many via self.opt see the help
         """
 
-        Config.sysdirs_list = (
+        self.conf['sysdirs_list'] = (
             # "/dev", "/proc", "/sys",
             "/etc/passwd", "/etc/group",
             "/lib/modules",
@@ -161,10 +161,10 @@ class SingularityEngine(ExecutionEngineCommon):
             singularity_debug = []
 
         if self.singularity_exec.startswith(self.localrepo.bindir):
-            Config.singularity_options.extend(["-u", ])
+            self.conf['singularity_options'].extend(["-u", ])
 
         # if FileUtil("nvidia-smi").find_exec():
-        #     Config.singularity_options.extend(["--nv", ])
+        #     self.conf['singularity_options'].extend(["--nv", ])
 
         singularity_vol_list = self._get_volume_bindings()
 
@@ -174,7 +174,7 @@ class SingularityEngine(ExecutionEngineCommon):
         cmd_l.append(self.singularity_exec)
         cmd_l.extend(singularity_debug)
         cmd_l.append("exec")
-        cmd_l.extend(Config.singularity_options)
+        cmd_l.extend(self.conf['singularity_options'])
         if self.opt["cwd"]:
             cmd_l.extend(["--pwd", self.opt["cwd"], ])
         cmd_l.extend(singularity_vol_list)
