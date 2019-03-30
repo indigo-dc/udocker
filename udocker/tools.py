@@ -3,6 +3,7 @@ import os
 import subprocess
 import random
 import sys
+import json
 
 from udocker.config import Config
 from udocker.utils.curl import GetURL
@@ -11,16 +12,6 @@ from udocker.msg import Msg
 from udocker import __version__
 
 START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
-try:
-    import json
-except ImportError:
-    sys.path.append(START_PATH + "/../lib/simplejson")
-    sys.path.append(os.path.expanduser('~') + "/.udocker/lib/simplejson")
-    sys.path.append(str(os.getenv("UDOCKER_DIR")) + "/lib/simplejson")
-    try:
-        import simplejson as json
-    except ImportError:
-        pass
 
 
 class UdockerTools(object):
@@ -31,11 +22,12 @@ class UdockerTools(object):
     """
 
     def __init__(self, localrepo):
+        self.conf = Config().getconf()
         self.localrepo = localrepo        # LocalRepository object
-        self._autoinstall = Config.autoinstall  # True / False
-        self._tarball = Config.tarball  # URL or file
-        self._installinfo = Config.installinfo  # URL or file
-        self._tarball_release = Config.tarball_release
+        self._autoinstall = self.conf['autoinstall']  # True / False
+        self._tarball = self.conf['tarball']  # URL or file
+        self._installinfo = self.conf['installinfo']  # URL or file
+        self._tarball_release = self.conf['tarball_release']
         self._install_json = dict()
         self.curl = GetURL()
 
@@ -139,7 +131,7 @@ class UdockerTools(object):
         Udocker requires additional tools to run. These are available
         in the udocker tarball. The tarballs are available at several
         locations. By default udocker will install from the locations
-        defined in Config.tarball.
+        defined in self.conf['tarball'].
 
         To install from files or other URLs use these instructions:
 
