@@ -6,6 +6,7 @@ import platform
 import stat
 import string
 import select
+import json
 
 from udocker.engine.base import ExecutionEngineCommon
 from udocker.config import Config
@@ -16,16 +17,6 @@ from udocker.utils.filebind import FileBind
 from udocker.helper.unique import Unique
 
 START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
-try:
-    import json
-except ImportError:
-    sys.path.append(START_PATH + "/../lib/simplejson")
-    sys.path.append(os.path.expanduser('~') + "/.udocker/lib/simplejson")
-    sys.path.append(str(os.getenv("UDOCKER_DIR")) + "/lib/simplejson")
-    try:
-        import simplejson as json
-    except ImportError:
-        pass
 
 
 class RuncEngine(ExecutionEngineCommon):
@@ -36,7 +27,8 @@ class RuncEngine(ExecutionEngineCommon):
 
     def __init__(self, localrepo, xmode):
         super(RuncEngine, self).__init__(localrepo, xmode)
-        self.runc_exec = None                   # runc
+        self.conf = Config().getconf()
+        self.runc_exec = None
         self._container_specjson = None
         self._container_specfile = None
         self._filebind = None
@@ -45,8 +37,7 @@ class RuncEngine(ExecutionEngineCommon):
 
     def _select_runc(self):
         """Set runc executable and related variables"""
-        conf = Config()
-        arch = conf.arch()
+        arch = self.conf['arch']
         image_list = []
         if arch == "amd64":
             image_list = ["runc-x86_64", "runc"]
@@ -127,10 +118,10 @@ class RuncEngine(ExecutionEngineCommon):
                 json_obj["process"]["env"].append("%s=%s" % (env_var, value))
         for idmap in json_obj["linux"]["uidMappings"]:
             if "hostID" in idmap:
-                idmap["hostID"] = Config.uid
+                idmap["hostID"] = self.conf['uid']
         for idmap in json_obj["linux"]["gidMappings"]:
             if "hostID" in idmap:
-                idmap["hostID"] = Config.gid
+                idmap["hostID"] = self.conf['gid']
         # json_obj["process"]["args"] = self._remove_quotes(self.opt["cmd"])
         json_obj["process"]["args"] = self.opt["cmd"]
         return json_obj
@@ -170,8 +161,8 @@ class RuncEngine(ExecutionEngineCommon):
             "major": os.major(dev_stat.st_dev),
             "minor": os.minor(dev_stat.st_dev),
             "fileMode": filemode,
-            "uid": Config.uid,
-            "gid": Config.uid,
+            "uid": self.conf['uid'],
+            "gid": self.conf['gid'],
         }
         self._container_specjson["linux"]["devices"].append(device)
         return True
@@ -217,7 +208,7 @@ class RuncEngine(ExecutionEngineCommon):
 
     def _add_volume_bindings(self):
         """Get the volume bindings string for runc"""
-        (host_dir, cont_dir) = self._filebind.start(Config.sysdirs_list)
+        (host_dir, cont_dir) = self._filebind.start(self.conf['sysdirs_list'])
         self._add_mount_spec(host_dir, cont_dir, rwmode=True)
         for vol in self.opt["vol"]:
             (host_dir, cont_dir) = self._vol_split(vol)
@@ -228,7 +219,7 @@ class RuncEngine(ExecutionEngineCommon):
                     continue
                 self._add_mount_spec(host_dir, cont_dir, rwmode=True)
             elif os.path.isfile(host_dir):
-                if cont_dir not in Config.sysdirs_list:
+                if cont_dir not in self.conf['sysdirs_list']:
                     Msg().err("Error: engine does not support file mounting:",
                               host_dir)
                 else:
@@ -271,7 +262,7 @@ class RuncEngine(ExecutionEngineCommon):
           * options:  many via self.opt see the help
         """
 
-        Config.sysdirs_list = (
+        self.conf['sysdirs_list'] = (
             "/etc/resolv.conf", "/etc/host.conf",
             "/etc/passwd", "/etc/group",
         )
@@ -302,8 +293,9 @@ class RuncEngine(ExecutionEngineCommon):
             return 5
 
         self._set_spec()
-        if (Config.runc_nomqueue or (Config.runc_nomqueue is None and not
-                                     Config().oskernel_isgreater("4.8.0"))):
+        if (self.conf['runc_nomqueue'] or
+                (self.conf['runc_nomqueue'] is None and not
+                 self.conf.oskernel_isgreater("4.8.0"))):
             self._del_mount_spec("mqueue", "/dev/mqueue")
         self._add_volume_bindings()
         self._add_devices()
