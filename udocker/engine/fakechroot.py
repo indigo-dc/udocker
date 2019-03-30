@@ -21,22 +21,22 @@ class FakechrootEngine(ExecutionEngineCommon):
 
     def __init__(self, localrepo, xmode):
         super(FakechrootEngine, self).__init__(localrepo, xmode)
+        self.conf = Config().getconf()
         self._fakechroot_so = ""
         self._elfpatcher = None
         self.exec_mode = xmode
 
     def _select_fakechroot_so(self):
         """Select fakechroot sharable object library"""
-        conf = Config()
         image_list = []
-        if conf.fakechroot_so:
-            if isinstance(conf.fakechroot_so, list):
-                image_list = conf.fakechroot_so
-            elif isinstance(conf.fakechroot_so, str):
-                image_list = [conf.fakechroot_so, ]
-            if "/" in conf.fakechroot_so:
-                if os.path.exists(conf.fakechroot_so):
-                    return os.path.realpath(conf.fakechroot_so)
+        if self.conf['fakechroot_so']:
+            if isinstance(self.conf['fakechroot_so'], list):
+                image_list = self.conf['fakechroot_so']
+            elif isinstance(self.conf['fakechroot_so'], str):
+                image_list = [self.conf['fakechroot_so'], ]
+            if "/" in self.conf['fakechroot_so']:
+                if os.path.exists(self.conf['fakechroot_so']):
+                    return os.path.realpath(self.conf['fakechroot_so'])
         elif os.path.exists(self.container_dir + "/libfakechroot.so"):
             return self.container_dir + "/libfakechroot.so"
         else:
@@ -96,7 +96,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         A list of certain existing files is provided
         """
         file_list = []
-        for c_path in Config.access_files:
+        for c_path in self.conf['access_files']:
             h_file = self._cont2host(c_path)
             if h_file and os.path.exists(h_file):
                 file_list.append(c_path)
@@ -113,7 +113,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                                os.path.realpath(self.container_root))
         self.opt["env"].append("LD_PRELOAD=" + self._fakechroot_so)
         if not self._is_volume("/tmp"):
-            self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" + Config.tmpdir)
+            self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" + self.conf['tmpdir'])
         #
         if host_volumes:
             self.opt["env"].append("FAKECHROOT_EXCLUDE_PATH=" + host_volumes)
