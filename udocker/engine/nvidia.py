@@ -18,6 +18,7 @@ class NvidiaMode(object):
     """
 
     def __init__(self, localrepo, container_id):
+        self.conf = Config().getconf()
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = container_id         # Container id
         self.container_dir = self.localrepo.cd_container(container_id)
@@ -74,7 +75,7 @@ class NvidiaMode(object):
     def _get_nvidia_libs(self, host_dir):
         """Expand the library files to include the versions"""
         lib_list = []
-        for lib in Config.nvi_lib_list:
+        for lib in self.conf['nvi_lib_list']:
             for expanded_libs in glob.glob(host_dir + '/' + lib + '*'):
                 lib_list.append(expanded_libs.replace(host_dir, ''))
         return lib_list
@@ -114,8 +115,8 @@ class NvidiaMode(object):
             for nvi_host_dir in nvi_host_dir_list:
                 lib_list = self._get_nvidia_libs(nvi_host_dir)
                 self._files_exist(nvi_cont_dir, lib_list)
-            self._files_exist('/etc', Config.nvi_etc_list)
-            self._files_exist('/usr/bin', Config.nvi_bin_list)
+            self._files_exist('/etc', self.conf['nvi_etc_list'])
+            self._files_exist('/usr/bin', self.conf['nvi_bin_list'])
         except OSError:
             return True
         return False
@@ -140,8 +141,8 @@ class NvidiaMode(object):
         for nvi_host_dir in nvi_host_dir_list:
             lib_list = self._get_nvidia_libs(nvi_host_dir)
             self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
-        self._copy_files('/etc', '/etc', Config.nvi_etc_list, force)
-        self._copy_files('/usr/bin', '/usr/bin', Config.nvi_bin_list, force)
+        self._copy_files('/etc', '/etc', self.conf['nvi_etc_list'], force)
+        self._copy_files('/usr/bin', '/usr/bin', self.conf['nvi_bin_list'], force)
         FileUtil(self._container_nvidia_set).putdata("")
 
     def get_mode(self):
@@ -151,7 +152,7 @@ class NvidiaMode(object):
     def get_devices(self):
         """Get list of nvidia devices related to cuda"""
         dev_list = []
-        for dev in Config.nvi_dev_list:
+        for dev in self.conf['nvi_dev_list']:
             for expanded_devs in glob.glob(dev + '*'):
                 dev_list.append(expanded_devs)
         return dev_list
