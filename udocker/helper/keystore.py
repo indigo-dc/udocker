@@ -1,20 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
+import json
+
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 
 START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
-try:
-    import json
-except ImportError:
-    sys.path.append(START_PATH + "/../lib/simplejson")
-    sys.path.append(os.path.expanduser('~') + "/.udocker/lib/simplejson")
-    sys.path.append(str(os.getenv("UDOCKER_DIR")) + "/lib/simplejson")
-    try:
-        import simplejson as json
-    except ImportError:
-        pass
 
 
 class KeyStore(object):
@@ -24,17 +16,18 @@ class KeyStore(object):
 
     def __init__(self, keystore_file):
         """Initialize keystone"""
+        self.conf = Config().getconf()
         self.keystore_file = keystore_file
         self.credential = dict()
 
     def _verify_keystore(self):
         """Verify the keystore file and directory"""
         keystore_uid = FileUtil(self.keystore_file).uid()
-        if keystore_uid != -1 and keystore_uid != Config.uid:
+        if keystore_uid != -1 and keystore_uid != self.conf['uid']:
             raise IOError("not owner of keystore: %s" %
                           (self.keystore_file))
         keystore_dir = os.path.dirname(self.keystore_file)
-        if FileUtil(keystore_dir).uid() != Config.uid:
+        if FileUtil(keystore_dir).uid() != self.conf['uid']:
             raise IOError("keystore dir not found or not owner: %s" %
                           (keystore_dir))
         if (keystore_uid != -1 and
