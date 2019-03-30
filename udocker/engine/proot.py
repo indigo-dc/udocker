@@ -19,34 +19,33 @@ class PRootEngine(ExecutionEngineCommon):
 
     def __init__(self, localrepo, xmode):
         super(PRootEngine, self).__init__(localrepo, xmode)
-        conf = Config()
+        self.conf = Config().getconf()
         self.proot_exec = None                   # PRoot
         self.proot_noseccomp = False             # Noseccomp mode
-        self._kernel = conf.oskernel()           # Emulate kernel
+        self._kernel = self.conf['oskernel()']   # Emulate kernel
         self.exec_mode = xmode
 
     def _select_proot(self):
         """Set proot executable and related variables"""
-        conf = Config()
-        arch = conf.arch()
+        arch = self.conf['arch']
         image_list = []
         if arch == "amd64":
-            if conf.oskernel_isgreater((4, 8, 0)):
+            if self.conf.oskernel_isgreater((4, 8, 0)):
                 image_list = ["proot-x86_64-4_8_0", "proot-x86_64", "proot"]
             else:
                 image_list = ["proot-x86_64", "proot"]
         elif arch == "i386":
-            if conf.oskernel_isgreater((4, 8, 0)):
+            if self.conf.oskernel_isgreater((4, 8, 0)):
                 image_list = ["proot-x86-4_8_0", "proot-x86", "proot"]
             else:
                 image_list = ["proot-x86", "proot"]
         elif arch == "arm64":
-            if conf.oskernel_isgreater((4, 8, 0)):
+            if self.conf.oskernel_isgreater((4, 8, 0)):
                 image_list = ["proot-arm64-4_8_0", "proot-arm64", "proot"]
             else:
                 image_list = ["proot-arm64", "proot"]
         elif arch == "arm":
-            if conf.oskernel_isgreater((4, 8, 0)):
+            if self.conf.oskernel_isgreater((4, 8, 0)):
                 image_list = ["proot-arm-4_8_0", "proot-arm", "proot"]
             else:
                 image_list = ["proot-arm", "proot"]
@@ -55,9 +54,9 @@ class PRootEngine(ExecutionEngineCommon):
         if not self.proot_exec:
             Msg().err("Error: proot executable not found")
             sys.exit(1)
-        if conf.oskernel_isgreater((4, 8, 0)):
-            if conf.proot_noseccomp is not None:
-                self.proot_noseccomp = conf.proot_noseccomp
+        if self.conf.oskernel_isgreater((4, 8, 0)):
+            if self.conf['proot_noseccomp'] is not None:
+                self.proot_noseccomp = self.conf['proot_noseccomp']
             if self.exec_mode == "P2":
                 self.proot_noseccomp = True
 
@@ -121,7 +120,7 @@ class PRootEngine(ExecutionEngineCommon):
         else:
             proot_verbose = []
 
-        if Config.proot_killonexit:
+        if self.conf['proot_killonexit']:
             proot_kill_on_exit = ["--kill-on-exit", ]
         else:
             proot_kill_on_exit = []
