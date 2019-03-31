@@ -23,9 +23,9 @@ class UdockerCLI(Cmd):
     be invoked via the command line interface.
     """
 
-    def __init__(self, localrepo):
+    def __init__(self, localrepo, conf):
         Cmd.__init__(self)
-        self.conf = Config().getconf()
+        self.conf = conf
         self.localrepo = localrepo
         self.dockerioapi = DockerIoAPI(localrepo)
         self.dockerlocalfileapi = DockerLocalFileAPI(localrepo)

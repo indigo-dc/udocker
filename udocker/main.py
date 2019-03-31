@@ -44,7 +44,7 @@ class Main(object):
         self.conf = Config().getconf()
         self.parser = ArgumentParser()
         self.localrepo = LocalRepository(self.conf['topdir'])
-        self.cli = UdockerCLI(self.localrepo)
+        self.cli = UdockerCLI(self.localrepo, self.conf)
 
         '''
         self.cmdp = CmdParser()
