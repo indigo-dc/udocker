@@ -41,9 +41,12 @@ class Main(object):
     """Get options, parse and execute the command line"""
 
     def __init__(self):
-        self.conf = Config().getconf()
         self.parser = ArgumentParser()
+
+        self.conf = Config().getconf()
         self.localrepo = LocalRepository(self.conf['topdir'])
+
+
         self.cli = UdockerCLI(self.localrepo, self.conf)
 
         '''
@@ -96,7 +99,18 @@ Syntax:
   udocker [-h|--help|help]        :Display this help and exits
   udocker [-V|--version|version]  :Display udocker version and tarball version and exits
 
+General options common to all commands must appear before the command:
+  -D, --debug                   :Debug
+  -q, --quiet                   :Less verbosity
+  --allow-root                  :Allow udocker to run as root
+  --repo=<directory>            :Use repository at directory
+
+  -c <conf_file>
+  --config=<conf_file>          :Use configuration <conf_file>
+
 Commands:
+  help [command]                :Command specific help
+
   search <repo/image:tag>       :Search dockerhub for container images
   pull <repo/image:tag>         :Pull container image from dockerhub
   images                        :List container images
@@ -129,13 +143,6 @@ Commands:
   setup                         :Change container execution settings
   login                         :Login into docker repository
   logout                        :Logout from docker repository
-
-  help [command]                :Command specific help
-
-Options common to all commands must appear before the command:
-  -D                            :Debug
-  --quiet                       :Less verbosity
-  --repo=<directory>            :Use repository at directory
 
 Examples:
   udocker search fedora
