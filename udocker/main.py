@@ -24,6 +24,7 @@ limitations under the License.
 """
 import sys
 import os
+from argparse import ArgumentParser
 
 sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 from udocker.cli import UdockerCLI
@@ -41,11 +42,11 @@ class Main(object):
 
     def __init__(self):
         self.conf = Config().getconf()
+        self.parser = ArgumentParser()
         self.localrepo = LocalRepository(self.conf['topdir'])
-        cli = UdockerCLI(self.localrepo)
-        lhelp = ['-h', '--help', 'help']
-        lversion = ['-V', '--version', 'version']
+        self.cli = UdockerCLI(self.localrepo)
 
+        '''
         self.cmdp = CmdParser()
         parseok = self.cmdp.parse(sys.argv)
         if not parseok and not self.cmdp.get("--version", "GEN_OPT"):
@@ -79,6 +80,7 @@ class Main(object):
             Msg().out("Info: creating repo: " + Config.topdir, l=Msg.INF)
             self.localrepo.create_repo()
         self.udocker = Udocker(self.localrepo)
+        '''
 
     @staticmethod
     def do_help():
@@ -173,22 +175,18 @@ See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
 
     def execute(self):
         """Command parsing and selection"""
-        cmds = {
-            "version": self.udocker.do_version,
-            "help": self.udocker.do_help, "search": self.udocker.do_search,
-            "images": self.udocker.do_images, "pull": self.udocker.do_pull,
-            "create": self.udocker.do_create, "ps": self.udocker.do_ps,
-            "run": self.udocker.do_run,
-            "rmi": self.udocker.do_rmi, "mkrepo": self.udocker.do_mkrepo,
-            "import": self.udocker.do_import, "load": self.udocker.do_load,
-            "export": self.udocker.do_export, "clone": self.udocker.do_clone,
-            "protect": self.udocker.do_protect, "rm": self.udocker.do_rm,
-            "name": self.udocker.do_name, "rmname": self.udocker.do_rmname,
-            "verify": self.udocker.do_verify, "logout": self.udocker.do_logout,
-            "unprotect": self.udocker.do_unprotect,
-            "inspect": self.udocker.do_inspect, "login": self.udocker.do_login,
-            "setup":self.udocker.do_setup, "install":self.udocker.do_install,
-        }
+        lhelp = ['-h', '--help', 'help']
+        lversion = ['-V', '--version', 'version']
+        if (len(sys.argv) == 0) or (sys.argv[1] in lhelp):
+            self.do_help()
+            return 0
+        else:
+            if sys.argv[1] in lversion:
+                self.cli.do_version()
+            else:
+                self.cli.onecmd(' '.join(sys.argv[1:]))
+
+        '''
         if (self.cmdp.get("--help", "GEN_OPT") or
                 self.cmdp.get("-h", "GEN_OPT")):
             self.udocker.do_help(self.cmdp)
@@ -214,7 +212,7 @@ See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
                 Msg().err("Error: invalid command:", command, "\n")
                 self.udocker.do_help(self.cmdp)
         return 1
-
+        '''
 
     def start(self):
         """Program start and exception handling"""

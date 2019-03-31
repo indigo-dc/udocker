@@ -31,20 +31,3 @@ from udocker.main import Main
 
 if __name__ == "__main__":
     sys.exit(Main().start())
-
-'''
-    conf = Config().getconf()
-    localrepo = LocalRepository(conf['topdir'])
-    cli = UdockerCLI(localrepo)
-    lhelp = ['-h', '--help', 'help']
-    lversion = ['-V', '--version', 'version']
-    if len(sys.argv) > 1:
-        if sys.argv[1] in lhelp:
-            Main().do_help()
-        if sys.argv[1] in lversion:
-            cli.do_version()
-        else:
-            cli.onecmd(' '.join(sys.argv[1:]))
-    else:
-        Main().do_help()
-'''
