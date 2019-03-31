@@ -17,8 +17,9 @@ class Config(object):
     self.user_init() and that can reside in ~/.udocker/udocker.conf
     """
 
-    def __init__(self):
+    def __init__(self, user_cfile="u.conf"):
         """Initialize configuration variables with default values"""
+        self.user_cfile = user_cfile
         self.conf = dict()
         self.conf['verbose_level'] = 3
         self.conf['homedir'] = os.path.expanduser("~")
@@ -194,6 +195,14 @@ class Config(object):
                     self.conf[key] = val
 
         cfpath = self.conf['homedir'] + self.conf['config']
+        if os.path.exists(cfpath):
+            config = ConfigParser()
+            config.read(cfpath)
+            for (key, val) in config.items(['DEFAULT']):
+                if val is not None:
+                    self.conf[key] = val
+
+        cfpath = self.user_cfile
         if os.path.exists(cfpath):
             config = ConfigParser()
             config.read(cfpath)

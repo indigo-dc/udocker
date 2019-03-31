@@ -24,13 +24,15 @@ limitations under the License.
 """
 import sys
 import os
-from argparse import ArgumentParser
+#from argparse import ArgumentParser
 
 sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 from udocker.cli import UdockerCLI
 from udocker.container.localrepo import LocalRepository
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
+from udocker.cmdparser import CmdParser
+from udocker.msg import Msg
 
 
 class Main(object):
@@ -41,12 +43,21 @@ class Main(object):
     """Get options, parse and execute the command line"""
 
     def __init__(self):
-        self.parser = ArgumentParser()
+        self.cmdp = CmdParser()
+        parseok = self.cmdp.parse(sys.argv)
+        if not parseok and not self.cmdp.get("--version", "GEN_OPT"):
+            Msg().err("Error: parsing command line, use: udocker help")
+            sys.exit(1)
+        if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
+            Msg().err("Error: do not run as root !")
+            sys.exit(1)
 
         self.conf = Config().getconf()
+        if self.cmdp.get("--config=", "GEN_OPT"):
+            conf_file = self.cmdp.get("--config=", "GEN_OPT")
+            self.conf = Config(conf_file).getconf()
+
         self.localrepo = LocalRepository(self.conf['topdir'])
-
-
         self.cli = UdockerCLI(self.localrepo, self.conf)
 
         '''
