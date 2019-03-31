@@ -4124,6 +4124,13 @@ class LocalRepository(object):
         """See if container or image tag are protected"""
         return os.path.exists(directory + "/PROTECT")
 
+    def _get_hash(self, directory):
+        """See if container or image tag are protected"""
+        tag_hash=""
+        if os.path.exists(directory + "/hash"):
+                tag_hash=self.load_json(directory + "/hash")
+        return tag_hash
+
     def iswriteable_container(self, container_id):
         """See if a container root dir is writable by this user"""
         container_root = self.cd_container(container_id) + "/ROOT"
@@ -4289,6 +4296,10 @@ class LocalRepository(object):
     def isprotected_imagerepo(self, imagerepo, tag):
         """See if this image TAG is protected against deletion"""
         return self._isprotected(self.reposdir + "/" + imagerepo + "/" + tag)
+
+    def get_hash_imagerepo(self, imagerepo, tag):
+        """Get this image TAG hash"""
+        return self._get_hash(self.reposdir + "/" + imagerepo + "/" + tag)
 
     def cd_imagerepo(self, imagerepo, tag):
         """Select an image TAG for further operations"""
@@ -5003,7 +5014,9 @@ class GetURLexeCurl(GetURL):
                         continue
                     if "redirect" in kwargs:
                         continue
-                    self._opts["header"] += "-H '%s'" % (str(header_item))
+                    self._opts["header"] += "-H '%s' " % (str(header_item))
+                else:
+                    self._opts["header"] += "-H '%s' " % (str(header_item))
         if "v" in kwargs and kwargs["v"]:
             self._opts["verbose"] = "-v"
         if "nobody" in kwargs and kwargs["nobody"]:
@@ -5129,6 +5142,12 @@ class DockerIoAPI(object):
         url = str(args[0])
         if "RETRY" not in kwargs:
             kwargs["RETRY"] = 3
+        if "scope" not in kwargs:
+            kwargs["scope"] = ""
+        if "header" not in kwargs:
+            if 'accept' in kwargs:
+                headers=[kwargs['accept']]
+                kwargs.update({"header": headers})
         kwargs["RETRY"] -= 1
         (hdr, buf) = self.curl.get(*args, **kwargs)
         Msg().err("header: %s" % (hdr.data), l=Msg.DBG)
@@ -5139,12 +5158,15 @@ class DockerIoAPI(object):
                     auth_header = ""
                     if "/v2/" in url:
                         auth_header = self._get_v2_auth(
-                            hdr.data["www-authenticate"], kwargs["RETRY"])
+                            hdr.data["www-authenticate"], kwargs["RETRY"], kwargs["scope"])
                     elif "/v1/" in url:
                         auth_header = self._get_v1_auth(
                             hdr.data["www-authenticate"])
                     auth_kwargs = kwargs.copy()
-                    auth_kwargs.update({"header": [auth_header]})
+                    headers=[auth_header]
+                    if 'accept' in kwargs:
+                       headers=[auth_header,kwargs['accept']]
+                    auth_kwargs.update({"header": headers})
                     if "location" in hdr.data and hdr.data['location']:
                         args = hdr.data['location']
                     (hdr, buf) = self._get_url(*args, **auth_kwargs)
@@ -5283,7 +5305,7 @@ class DockerIoAPI(object):
                 files.append(layer_id + ".layer")
         return files
 
-    def _get_v2_auth(self, www_authenticate, retry):
+    def _get_v2_auth(self, www_authenticate, retry, scope):
         """Authentication for v2 API"""
         auth_header = ""
         (bearer, auth_data) = www_authenticate.rsplit(" ", 1)
@@ -5294,6 +5316,8 @@ class DockerIoAPI(object):
                 for field in auth_fields:
                     if field != "realm":
                         auth_url += field + "=" + auth_fields[field] + "&"
+                if scope != '':
+                    auth_url += "scope="+scope
                 header = []
                 if self.v2_auth_token:
                     header = ["Authorization: Basic %s" % (self.v2_auth_token)]
@@ -5340,7 +5364,7 @@ class DockerIoAPI(object):
             pass
         return False
 
-    def get_v2_image_manifest(self, imagerepo, tag):
+    def get_v2_image_manifest(self, imagerepo, tag, manifestver=1):
         """Get the image manifest which contains JSON metadata
         that is common to all layers in this image tag
         """
@@ -5351,7 +5375,12 @@ class DockerIoAPI(object):
             url = self.registry_url + "/v2/" + imagerepo + \
                 "/manifests/" + tag
         Msg().err("manifest url:", url, l=Msg.DBG)
-        (hdr, buf) = self._get_url(url)
+        scope=u'repository:'+imagerepo+u':'+tag+u':pull'
+        if manifestver==1:
+            accept = u'Accept: application/vnd.docker.distribution.manifest.v1+prettyjws'
+        else:
+            accept = u'Accept: application/vnd.docker.distribution.manifest.v2+json'
+        (hdr, buf) = self._get_url(url, scope=scope, accept=accept)
         try:
             return(hdr.data, json.loads(buf.getvalue()))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
@@ -5388,12 +5417,17 @@ class DockerIoAPI(object):
         """Pull container with v2 API"""
         files = []
         (dummy, manifest) = self.get_v2_image_manifest(imagerepo, tag)
+        (hdr2, manifest2) = self.get_v2_image_manifest(imagerepo, tag, 2)
         try:
             if not (self.localrepo.setup_tag(tag) and
                     self.localrepo.set_version("v2")):
                 Msg().err("Error: setting localrepo v2 tag and version")
                 return []
             self.localrepo.save_json("manifest", manifest)
+            self.localrepo.save_json("manifest2", manifest2)
+            if 'docker-content-digest' not in hdr2:
+                hdr2['docker-content-digest']=""
+            self.localrepo.save_json("hash", hdr2['docker-content-digest'])
             Msg().err("v2 layers: %s" % (imagerepo), l=Msg.DBG)
             files = self.get_v2_layers_all(imagerepo,
                                            manifest["fsLayers"])
@@ -6476,7 +6510,10 @@ class Udocker(object):
         for (imagerepo, tag) in images_list:
             prot = (".", "P")[
                 self.localrepo.isprotected_imagerepo(imagerepo, tag)]
-            Msg().out("%-60.60s %c" % (imagerepo + ":" + tag, prot))
+            tag_hash = self.localrepo.get_hash_imagerepo(imagerepo, tag)
+            if tag_hash == None or tag_hash == "":
+                tag_hash = u'<none>'
+            Msg().out("%-60s %c %s" % (imagerepo + ":" + tag, prot, tag_hash))
             if verbose:
                 imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
                 Msg().out("  %s" % (imagerepo_dir))
