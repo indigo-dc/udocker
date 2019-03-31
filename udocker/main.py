@@ -177,14 +177,15 @@ See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
         """Command parsing and selection"""
         lhelp = ['-h', '--help', 'help']
         lversion = ['-V', '--version', 'version']
-        if (len(sys.argv) == 0) or (sys.argv[1] in lhelp):
+        if (len(sys.argv) == 1) or \
+                (len(sys.argv) == 2 and sys.argv[1] in lhelp):
             self.do_help()
             return 0
+        if sys.argv[1] in lversion:
+            self.cli.do_version()
+            return 0
         else:
-            if sys.argv[1] in lversion:
-                self.cli.do_version()
-            else:
-                self.cli.onecmd(' '.join(sys.argv[1:]))
+            self.cli.onecmd(' '.join(sys.argv[1:]))
 
         '''
         if (self.cmdp.get("--help", "GEN_OPT") or
