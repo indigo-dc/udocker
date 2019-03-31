@@ -40,6 +40,12 @@ class Main(object):
     """Get options, parse and execute the command line"""
 
     def __init__(self):
+        self.conf = Config().getconf()
+        self.localrepo = LocalRepository(self.conf['topdir'])
+        cli = UdockerCLI(self.localrepo)
+        lhelp = ['-h', '--help', 'help']
+        lversion = ['-V', '--version', 'version']
+
         self.cmdp = CmdParser()
         parseok = self.cmdp.parse(sys.argv)
         if not parseok and not self.cmdp.get("--version", "GEN_OPT"):
