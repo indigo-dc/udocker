@@ -22,15 +22,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from __future__ import print_function
 import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 from udocker.main import Main
-#from udocker.cli import UdockerCLI
-#from udocker.container.localrepo import LocalRepository
-#from udocker.config import Config
 
 
 if __name__ == "__main__":
