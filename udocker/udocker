@@ -28,12 +28,15 @@ import os
 
 sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 from udocker.main import Main
-from udocker.cli import UdockerCLI
-from udocker.container.localrepo import LocalRepository
-from udocker.config import Config
+#from udocker.cli import UdockerCLI
+#from udocker.container.localrepo import LocalRepository
+#from udocker.config import Config
 
 
 if __name__ == "__main__":
+    sys.exit(Main().start())
+
+'''
     conf = Config().getconf()
     localrepo = LocalRepository(conf['topdir'])
     cli = UdockerCLI(localrepo)
@@ -48,3 +51,4 @@ if __name__ == "__main__":
             cli.onecmd(' '.join(sys.argv[1:]))
     else:
         Main().do_help()
+'''
