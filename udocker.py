@@ -4128,7 +4128,7 @@ class LocalRepository(object):
         """See if container or image tag are protected"""
         tag_hash=""
         if os.path.exists(directory + "/hash"):
-                tag_hash=self.load_json(directory + "/hash")
+            tag_hash=self.load_json(directory + "/hash")
         return tag_hash
 
     def iswriteable_container(self, container_id):
@@ -5165,7 +5165,7 @@ class DockerIoAPI(object):
                     auth_kwargs = kwargs.copy()
                     headers=[auth_header]
                     if 'accept' in kwargs:
-                       headers=[auth_header,kwargs['accept']]
+                        headers=[auth_header,kwargs['accept']]
                     auth_kwargs.update({"header": headers})
                     if "location" in hdr.data and hdr.data['location']:
                         args = hdr.data['location']
