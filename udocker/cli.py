@@ -30,10 +30,10 @@ class UdockerCLI(Cmd):
         self.dockerioapi = DockerIoAPI(localrepo, conf)
         self.dockerlocalfileapi = DockerLocalFileAPI(localrepo, self.conf)
         if self.conf['keystore'].startswith("/"):
-            self.keystore = KeyStore(self.conf['keystore'])
+            self.keystore = KeyStore(self.conf, self.conf['keystore'])
         else:
             self.keystore = \
-                KeyStore(self.localrepo.homedir + "/" + self.conf['keystore'])
+                KeyStore(self.conf, self.localrepo.homedir + "/" + self.conf['keystore'])
 
     def _cdrepo(self, cmdp):
         """Select the top directory of a local repository"""

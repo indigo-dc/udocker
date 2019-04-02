@@ -14,9 +14,9 @@ class KeyStore(object):
     with dockerhub and private repositories
     """
 
-    def __init__(self, keystore_file):
+    def __init__(self, conf, keystore_file):
         """Initialize keystone"""
-        self.conf = Config().getconf()
+        self.conf = conf
         self.keystore_file = keystore_file
         self.credential = dict()
 
