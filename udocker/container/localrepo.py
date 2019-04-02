@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
 import re
 import json
 
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.chksum import ChkSUM
 from udocker.msg import Msg
-
-START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 
 class LocalRepository(object):

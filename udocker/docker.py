@@ -15,8 +15,6 @@ from udocker.helper.unique import Unique
 from udocker.container.structure import ContainerStructure
 from udocker.engine.execmode import ExecutionMode
 
-START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
-
 
 class DockerIoAPI(object):
     """Class to encapsulate the access to the Docker Hub service

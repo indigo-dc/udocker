@@ -3,7 +3,6 @@ import os
 import sys
 import json
 
-START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
 from udocker.utils.fileutil import FileUtil
 
 

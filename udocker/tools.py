@@ -2,15 +2,12 @@
 import os
 import subprocess
 import random
-import sys
 import json
 
 from udocker.utils.curl import GetURL
 from udocker.utils.fileutil import FileUtil
 from udocker.msg import Msg
 from udocker import __version__
-
-START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 
 class UdockerTools(object):

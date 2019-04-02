@@ -15,8 +15,6 @@ from udocker.engine.nvidia import NvidiaMode
 from udocker.utils.filebind import FileBind
 from udocker.helper.unique import Unique
 
-START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
-
 
 class RuncEngine(ExecutionEngineCommon):
     """Docker container execution engine using runc

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import sys
 import os
 import subprocess
 import json
@@ -15,8 +14,6 @@ try:
     import pycurl
 except ImportError:
     pass
-
-START_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 
 class CurlHeader(object):
