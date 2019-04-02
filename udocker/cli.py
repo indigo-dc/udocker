@@ -835,7 +835,7 @@ class UdockerCLI(Cmd):
         else:
             force = False
             purge = False
-        utools = UdockerTools(self.localrepo)
+        utools = UdockerTools(self.localrepo, self.conf)
         if purge:
             utools.purge()
         status = utools.install(force)

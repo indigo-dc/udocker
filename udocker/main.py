@@ -24,7 +24,6 @@ limitations under the License.
 """
 import sys
 import os
-#from argparse import ArgumentParser
 
 sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 from udocker.cli import UdockerCLI

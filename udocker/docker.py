@@ -521,7 +521,7 @@ class DockerLocalFileAPI(object):
 
     def _load_structure(self, tmp_imagedir):
         """Load the structure of a Docker pulled image"""
-        structure = {}
+        structure = dict()
         structure["layers"] = dict()
         if FileUtil(tmp_imagedir).isdir():
             for fname in os.listdir(tmp_imagedir):

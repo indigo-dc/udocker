@@ -21,8 +21,8 @@ class UdockerTools(object):
     end-user.
     """
 
-    def __init__(self, localrepo):
-        self.conf = Config().getconf()
+    def __init__(self, localrepo, conf):
+        self.conf = conf
         self.localrepo = localrepo        # LocalRepository object
         self._autoinstall = self.conf['autoinstall']  # True / False
         self._tarball = self.conf['tarball']  # URL or file
