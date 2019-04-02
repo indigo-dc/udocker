@@ -56,7 +56,14 @@ class Main(object):
             conf_file = self.cmdp.get("--config=", "GEN_OPT")
             self.conf = Config(conf_file).getconf()
 
-        self.localrepo = LocalRepository(self.conf['topdir'])
+        if self.cmdp.get("--repo=", "GEN_OPT"):  # override repo root tree
+            self.conf['topdir'] = self.cmdp.get("--repo=", "GEN_OPT")
+            if not LocalRepository(self.conf).is_repo():
+                Msg().err("Error: invalid udocker repository:",
+                          self.conf['topdir'])
+                sys.exit(1)
+
+        self.localrepo = LocalRepository(self.conf)
         self.cli = UdockerCLI(self.localrepo, self.conf)
 
         '''

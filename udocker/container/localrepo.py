@@ -28,13 +28,9 @@ class LocalRepository(object):
     5. lib:        contains python libraries
     """
 
-    def __init__(self, topdir=None):
-        self.conf = Config().getconf()
-        if topdir:
-            self.topdir = topdir
-        else:
-            self.topdir = self.conf['topdir']
-
+    def __init__(self, conf):
+        self.conf = conf
+        self.topdir = self.conf['topdir']
         self.bindir = self.conf['bindir']
         self.libdir = self.conf['libdir']
         self.reposdir = self.conf['reposdir']
@@ -63,7 +59,8 @@ class LocalRepository(object):
 
     def setup(self, topdir=None):
         """change to a different localrepo"""
-        self.__init__(topdir)
+        self.conf['topdir'] = topdir
+        self.__init__(self.conf)
 
     def create_repo(self):
         """creates properties with pathnames for easy
