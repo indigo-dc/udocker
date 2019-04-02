@@ -19,7 +19,7 @@ class FakechrootEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, conf, localrepo, xmode):
-        super(FakechrootEngine, self).__init__(localrepo, xmode)
+        super(FakechrootEngine, self).__init__(conf, localrepo, xmode)
         self.conf = conf
         self._fakechroot_so = ""
         self._elfpatcher = None

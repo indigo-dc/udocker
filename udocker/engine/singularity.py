@@ -18,7 +18,7 @@ class SingularityEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, conf, localrepo, xmode):
-        super(SingularityEngine, self).__init__(localrepo, xmode)
+        super(SingularityEngine, self).__init__(conf, localrepo, xmode)
         self.conf = conf
         self.singularity_exec = None
         self._filebind = None

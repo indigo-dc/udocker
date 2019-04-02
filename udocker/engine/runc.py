@@ -25,7 +25,7 @@ class RuncEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, conf, localrepo, xmode):
-        super(RuncEngine, self).__init__(localrepo, xmode)
+        super(RuncEngine, self).__init__(conf, localrepo, xmode)
         self.conf = conf
         self.runc_exec = None
         self._container_specjson = None
@@ -174,7 +174,8 @@ class RuncEngine(ExecutionEngineCommon):
             if self._add_device_spec(dev_name):
                 added_devices.append(dev_name)
         if "/dev/nvidiactl" not in added_devices:
-            nvidia_mode = NvidiaMode(self.localrepo, self.container_id)
+            nvidia_mode = NvidiaMode(self.conf, self.localrepo,
+                                     self.container_id)
             if nvidia_mode.get_mode():
                 for dev_name in nvidia_mode.get_devices():
                     if dev_name not in added_devices:

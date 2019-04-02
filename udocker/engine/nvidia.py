@@ -6,7 +6,6 @@ import re
 
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
-from udocker.config import Config
 from udocker.utils.uprocess import Uprocess
 
 
@@ -17,8 +16,8 @@ class NvidiaMode(object):
     to change libraries may work properly.
     """
 
-    def __init__(self, localrepo, container_id):
-        self.conf = Config().getconf()
+    def __init__(self, conf, localrepo, container_id):
+        self.conf = conf
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = container_id         # Container id
         self.container_dir = self.localrepo.cd_container(container_id)
