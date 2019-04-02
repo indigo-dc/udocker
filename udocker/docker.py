@@ -23,8 +23,8 @@ class DockerIoAPI(object):
     Allows to search and download images from Docker Hub
     """
 
-    def __init__(self, localrepo):
-        self.conf = Config().getconf()
+    def __init__(self, localrepo, conf):
+        self.conf = conf
         self.index_url = self.conf['dockerio_index_url']
         self.registry_url = self.conf['dockerio_registry_url']
         self.v1_auth_header = ""
