@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 
-from udocker.config import Config
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.filebind import FileBind
@@ -25,8 +24,8 @@ class ExecutionMode(object):
     S1: singularity
     """
 
-    def __init__(self, localrepo, container_id):
-        self.conf = Config().getconf()
+    def __init__(self, conf, localrepo, container_id):
+        self.conf = conf
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = container_id         # Container id
         self.container_dir = self.localrepo.cd_container(container_id)
@@ -47,7 +46,7 @@ class ExecutionMode(object):
         """Set execution mode"""
         status = False
         prev_xmode = self.get_mode()
-        elfpatcher = ElfPatcher(self.localrepo, self.container_id)
+        elfpatcher = ElfPatcher(self.conf, self.localrepo, self.container_id)
         filebind = FileBind(self.localrepo, self.container_id)
         orig_path = FileUtil(self.container_orig_root).getdata().strip()
         if xmode not in self.valid_modes:

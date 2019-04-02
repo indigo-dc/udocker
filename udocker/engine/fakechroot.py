@@ -5,7 +5,6 @@ import re
 import subprocess
 
 from udocker.engine.base import ExecutionEngineCommon
-from udocker.config import Config
 from udocker.helper.guestinfo import GuestInfo
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
@@ -19,9 +18,9 @@ class FakechrootEngine(ExecutionEngineCommon):
     Inherits from ContainerEngine class
     """
 
-    def __init__(self, localrepo, xmode):
+    def __init__(self, conf, localrepo, xmode):
         super(FakechrootEngine, self).__init__(localrepo, xmode)
-        self.conf = Config().getconf()
+        self.conf = conf
         self._fakechroot_so = ""
         self._elfpatcher = None
         self.exec_mode = xmode
@@ -212,7 +211,8 @@ class FakechrootEngine(ExecutionEngineCommon):
         self._run_invalid_options()
 
         # execution mode and get patcher
-        self._elfpatcher = ElfPatcher(self.localrepo, self.container_id)
+        self._elfpatcher = ElfPatcher(self.conf, self.localrepo,
+                                      self.container_id)
 
         # verify if container pathnames are correct for this mode
         if not self._elfpatcher.check_container_path():

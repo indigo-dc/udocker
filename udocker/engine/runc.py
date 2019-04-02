@@ -9,7 +9,6 @@ import select
 import json
 
 from udocker.engine.base import ExecutionEngineCommon
-from udocker.config import Config
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.engine.nvidia import NvidiaMode
@@ -25,9 +24,9 @@ class RuncEngine(ExecutionEngineCommon):
     Inherits from ContainerEngine class
     """
 
-    def __init__(self, localrepo, xmode):
+    def __init__(self, conf, localrepo, xmode):
         super(RuncEngine, self).__init__(localrepo, xmode)
-        self.conf = Config().getconf()
+        self.conf = conf
         self.runc_exec = None
         self._container_specjson = None
         self._container_specfile = None

@@ -3,8 +3,6 @@ import re
 import pwd
 import grp
 
-from udocker.config import Config
-
 
 class NixAuthentication(object):
     """Provides abstraction and useful methods to manage
@@ -14,8 +12,8 @@ class NixAuthentication(object):
     system authentication databases are used.
     """
 
-    def __init__(self, passwd_file=None, group_file=None):
-        self.conf = Config().getconf()
+    def __init__(self, conf, passwd_file=None, group_file=None):
+        self.conf = conf
         self.passwd_file = passwd_file
         self.group_file = group_file
 

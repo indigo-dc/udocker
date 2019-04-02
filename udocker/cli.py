@@ -542,7 +542,8 @@ class UdockerCLI(Cmd):
                 if not self.localrepo.set_container_name(container_id, name):
                     Msg().err("Error: invalid container name format")
                     return False
-        exec_engine = ExecutionMode(self.localrepo, container_id).get_engine()
+        exec_engine = ExecutionMode(self.conf, self.localrepo,
+                                    container_id).get_engine()
         if not exec_engine:
             Msg().err("Error: no execution engine for this execmode")
             return False
@@ -819,7 +820,7 @@ class UdockerCLI(Cmd):
         if nvidia:
             nvidia_mode = NvidiaMode(self.localrepo, container_id)
             nvidia_mode.set_mode(force)
-        exec_mode = ExecutionMode(self.localrepo, container_id)
+        exec_mode = ExecutionMode(self.conf, self.localrepo, container_id)
         if xmode:
             return exec_mode.set_mode(xmode.upper(), force)
         Msg().out("execmode: %s" % (exec_mode.get_mode()))

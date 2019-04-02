@@ -4,7 +4,6 @@ import os
 import subprocess
 
 from udocker.engine.base import ExecutionEngineCommon
-from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 from udocker.msg import Msg
 
@@ -17,9 +16,9 @@ class PRootEngine(ExecutionEngineCommon):
     Inherits from ContainerEngine class
     """
 
-    def __init__(self, localrepo, xmode):
+    def __init__(self, conf, localrepo, xmode):
         super(PRootEngine, self).__init__(localrepo, xmode)
-        self.conf = Config().getconf()
+        self.conf = conf
         self.proot_exec = None                   # PRoot
         self.proot_noseccomp = False             # Noseccomp mode
         self._kernel = self.conf['oskernel()']   # Emulate kernel

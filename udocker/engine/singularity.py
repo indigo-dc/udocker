@@ -4,7 +4,6 @@ import os
 import subprocess
 
 from udocker.engine.base import ExecutionEngineCommon
-from udocker.config import Config
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.nixauth import NixAuthentication
@@ -18,9 +17,9 @@ class SingularityEngine(ExecutionEngineCommon):
     Inherits from ContainerEngine class
     """
 
-    def __init__(self, localrepo, xmode):
+    def __init__(self, conf, localrepo, xmode):
         super(SingularityEngine, self).__init__(localrepo, xmode)
-        self.conf = Config().getconf()
+        self.conf = conf
         self.singularity_exec = None
         self._filebind = None
         self.execution_id = None
@@ -51,7 +50,7 @@ class SingularityEngine(ExecutionEngineCommon):
         vol_list = []
         (tmphost_path, tmpcont_path) = self._filebind.start(self.conf['sysdirs_list'])
         vol_list.extend(["-B", "%s:%s" % (tmphost_path, tmpcont_path), ])
-        home_dir = NixAuthentication().get_home()
+        home_dir = NixAuthentication(self.conf).get_home()
         home_is_binded = False
         tmp_is_binded = False
         vartmp_is_binded = False

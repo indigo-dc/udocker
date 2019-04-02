@@ -3,7 +3,6 @@ import re
 import os
 import sys
 
-from udocker.config import Config
 from udocker.utils.uprocess import Uprocess
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
@@ -19,8 +18,8 @@ class ElfPatcher(object):
     ONE_SUCCESS = 16
     ONE_OUTPUT = 32
 
-    def __init__(self, localrepo, container_id):
-        self.conf = Config().getconf()
+    def __init__(self, conf, localrepo, container_id):
+        self.conf = conf
         self._localrepo = localrepo
         self._container_dir = \
             os.path.realpath(self._localrepo.cd_container(container_id))

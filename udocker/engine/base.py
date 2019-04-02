@@ -3,7 +3,6 @@ import os
 import string
 import re
 
-from udocker.config import Config
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.nixauth import NixAuthentication
@@ -17,8 +16,8 @@ class ExecutionEngineCommon(object):
     the execution drivers.
     """
 
-    def __init__(self, localrepo, xmode):
-        self.conf = Config().getconf()
+    def __init__(self, conf, localrepo, xmode):
+        self.conf = conf
         self.localrepo = localrepo               # LocalRepository instance
         self.container_id = ""                   # Container id
         self.container_dir = ""                  # Container directory
@@ -218,7 +217,7 @@ class ExecutionEngineCommon(object):
     def _get_bindhome(self):
         """Binding of the host $HOME in to the container $HOME"""
         if self.opt["bindhome"]:
-            return NixAuthentication().get_home()
+            return NixAuthentication(self.conf).get_home()
         return ""
 
     def _is_volume(self, path):
@@ -442,9 +441,9 @@ class ExecutionEngineCommon(object):
         self.opt["home"] = "/"
         self.opt["gecos"] = ""
         self.opt["shell"] = ""
-        host_auth = NixAuthentication()
+        host_auth = NixAuthentication(self.conf)
         (passwd, group) = self._select_auth_files()
-        container_auth = NixAuthentication(passwd, group)
+        container_auth = NixAuthentication(self.conf, passwd, group)
         if not user:
             user = self.opt["user"]
         if ":" in user:
@@ -516,7 +515,7 @@ class ExecutionEngineCommon(object):
             self.opt["shell"] = "/bin/sh"
         if not self.opt["gecos"]:
             self.opt["gecos"] = "*UDOCKER*"
-        new_auth = NixAuthentication(tmp_passwd, tmp_group)
+        new_auth = NixAuthentication(self.conf, tmp_passwd, tmp_group)
         if (not new_auth.add_user(self.opt["user"], "x",
                                   self.opt["uid"], self.opt["gid"],
                                   self.opt["gecos"], self.opt["home"],
@@ -552,8 +551,9 @@ class ExecutionEngineCommon(object):
         self.opt["home"] = "/"
         self.opt["gecos"] = ""
         self.opt["shell"] = ""
-        host_auth = NixAuthentication()
-        container_auth = NixAuthentication(self.container_root + "/etc/passwd",
+        host_auth = NixAuthentication(self.conf)
+        container_auth = NixAuthentication(self.conf,
+                                           self.container_root + "/etc/passwd",
                                            self.container_root + "/etc/group")
         if not user:
             user = self.opt["user"]
