@@ -25,7 +25,6 @@ limitations under the License.
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 from udocker.cli import UdockerCLI
 from udocker.container.localrepo import LocalRepository
 from udocker.config import Config
@@ -44,17 +43,29 @@ class Main(object):
     def __init__(self):
         self.cmdp = CmdParser()
         parseok = self.cmdp.parse(sys.argv)
-        if not parseok and not self.cmdp.get("--version", "GEN_OPT"):
-            Msg().err("Error: parsing command line, use: udocker help")
+        if not parseok:
+            Msg().err("Error: parsing command line, use: udocker [help]")
             sys.exit(1)
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
             sys.exit(1)
 
-        self.conf = Config().getconf()
         if self.cmdp.get("--config=", "GEN_OPT"):
             conf_file = self.cmdp.get("--config=", "GEN_OPT")
             self.conf = Config(conf_file).getconf()
+        else:
+            self.conf = Config().getconf()
+
+        if (self.cmdp.get("--debug", "GEN_OPT") or
+                self.cmdp.get("-D", "GEN_OPT")):
+            self.conf['verbose_level'] = Msg.DBG
+        elif (self.cmdp.get("--quiet", "GEN_OPT") or
+              self.cmdp.get("-q", "GEN_OPT")):
+            self.conf['verbose_level'] = Msg.MSG
+        Msg().setlevel(self.conf['verbose_level'])
+
+        if self.cmdp.get("--insecure", "GEN_OPT"):
+            self.conf['http_insecure'] = True
 
         if self.cmdp.get("--repo=", "GEN_OPT"):  # override repo root tree
             self.conf['topdir'] = self.cmdp.get("--repo=", "GEN_OPT")
@@ -64,43 +75,10 @@ class Main(object):
                 sys.exit(1)
 
         self.localrepo = LocalRepository(self.conf)
-        self.cli = UdockerCLI(self.localrepo, self.conf)
-
-        '''
-        self.cmdp = CmdParser()
-        parseok = self.cmdp.parse(sys.argv)
-        if not parseok and not self.cmdp.get("--version", "GEN_OPT"):
-            Msg().err("Error: parsing command line, use: udocker help")
-            sys.exit(1)
-        if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
-            Msg().err("Error: do not run as root !")
-            sys.exit(1)
-        Config().user_init(self.cmdp.get("--config=", "GEN_OPT")) # read config
-        if (self.cmdp.get("--debug", "GEN_OPT") or
-                self.cmdp.get("-D", "GEN_OPT")):
-            Config.verbose_level = Msg.DBG
-        elif (self.cmdp.get("--quiet", "GEN_OPT") or
-              self.cmdp.get("-q", "GEN_OPT")):
-            Config.verbose_level = Msg.MSG
-        Msg().setlevel(Config.verbose_level)
-        if self.cmdp.get("--insecure", "GEN_OPT"):
-            Config.http_insecure = True
-        if self.cmdp.get("--repo=", "GEN_OPT"):  # override repo root tree
-            Config.topdir = self.cmdp.get("--repo=", "GEN_OPT")
-            if not LocalRepository(Config.topdir).is_repo():
-                Msg().err("Error: invalid udocker repository:",
-                          Config.topdir)
-                sys.exit(1)
-        self.localrepo = LocalRepository(Config.topdir)
-        if (self.cmdp.get("", "CMD") == "version" or
-                self.cmdp.get("--version", "GEN_OPT")):
-            Udocker(self.localrepo).do_version(self.cmdp)
-            sys.exit(0)
         if not self.localrepo.is_repo():
-            Msg().out("Info: creating repo: " + Config.topdir, l=Msg.INF)
+            Msg().out("Info: creating repo: " + self.conf['topdir'], l=Msg.INF)
             self.localrepo.create_repo()
-        self.udocker = Udocker(self.localrepo)
-        '''
+        self.cli = UdockerCLI(self.localrepo, self.conf)
 
     @staticmethod
     def do_help():
