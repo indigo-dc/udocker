@@ -42,10 +42,6 @@ class Main(object):
 
     def __init__(self):
         self.cmdp = CmdParser()
-        parseok = self.cmdp.parse(sys.argv)
-        if not parseok:
-            Msg().err("Error: parsing command line, use: udocker [help]")
-            sys.exit(1)
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
             sys.exit(1)

@@ -849,7 +849,7 @@ class UdockerCLI(Cmd):
         Msg().err("Info: installation of udockertools successful", l=Msg.VER)
         return True
 
-    def do_listconf(self):
+    def do_listconf(self, cmdp):
         """
         listconf: Print all configuration options
         """

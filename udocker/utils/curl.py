@@ -88,8 +88,8 @@ class GetURL(object):
     # pylint: disable=locally-disabled
     def _select_implementation(self):
         """Select which implementation to use"""
-        if GetURLpyCurl().is_available() and not self._curl_executable:
-            self._geturl = GetURLpyCurl()
+        if GetURLpyCurl(self.conf).is_available() and not self._curl_executable:
+            self._geturl = GetURLpyCurl(self.conf)
             self.cache_support = True
         elif GetURLexeCurl().is_available():
             self._geturl = GetURLexeCurl()
