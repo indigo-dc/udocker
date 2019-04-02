@@ -8,10 +8,5 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__credits__ = ['PRoot http://proot.me',
-               'runC https://runc.io',
-               'Fakechroot https://github.com/dex4er/fakechroot',
-               'Singularity http://singularity.lbl.gov'
-              ]
-__version__ = '2.0.4'
+__version__ = '2.0.5'
 __date__ = '2017'
