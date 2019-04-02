@@ -4,7 +4,6 @@ import sys
 import re
 import json
 
-from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.chksum import ChkSUM
 from udocker.msg import Msg
