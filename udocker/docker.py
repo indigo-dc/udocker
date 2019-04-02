@@ -31,7 +31,7 @@ class DockerIoAPI(object):
         self.v2_auth_header = ""
         self.v2_auth_token = ""
         self.localrepo = localrepo
-        self.curl = GetURL()
+        self.curl = GetURL(self.conf)
         self.docker_registry_domain = "docker.io"
         self.search_link = ""
         self.search_pause = True

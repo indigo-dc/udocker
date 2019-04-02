@@ -28,7 +28,7 @@ class UdockerTools(object):
         self._installinfo = self.conf['installinfo']  # URL or file
         self._tarball_release = self.conf['tarball_release']
         self._install_json = dict()
-        self.curl = GetURL()
+        self.curl = GetURL(self.conf)
 
     def _version_isequal(self, filename):
         """Is version inside file equal to the taball release requirement"""

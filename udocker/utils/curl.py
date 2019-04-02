@@ -4,7 +4,6 @@ import os
 import subprocess
 import json
 
-from udocker.config import Config
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 
@@ -76,9 +75,9 @@ class CurlHeader(object):
 class GetURL(object):
     """File downloader using PyCurl or a curl cli executable"""
 
-    def __init__(self):
+    def __init__(self, conf):
         """Load configuration common to the implementations"""
-        self.conf = Config().getconf()
+        self.conf = conf
         self.timeout = self.conf['timeout']
         self.ctimeout = self.conf['ctimeout']
         self.download_timeout = self.conf['download_timeout']
@@ -149,8 +148,9 @@ class GetURL(object):
 class GetURLpyCurl(GetURL):
     """Downloader implementation using PyCurl"""
 
-    def __init__(self):
-        GetURL.__init__(self)
+    def __init__(self, conf):
+        self.conf = conf
+        GetURL.__init__(self, self.conf)
         self._url = None
 
     def is_available(self):
@@ -239,6 +239,7 @@ class GetURLpyCurl(GetURL):
         cont_redirs = 0
         max_redirs = 10
         status_code = 302
+        hdr = ""
         while status_code >= 300 and status_code <= 308 and cont_redirs < max_redirs:
             cont_redirs += 1
             hdr = CurlHeader()
