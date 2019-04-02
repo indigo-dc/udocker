@@ -6,7 +6,6 @@ from cmd import Cmd
 
 from udocker import __version__
 from udocker.msg import Msg
-from udocker.config import Config
 from udocker.docker import DockerIoAPI
 from udocker.docker import DockerLocalFileAPI
 from udocker.helper.keystore import KeyStore
