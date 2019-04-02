@@ -6,7 +6,6 @@ import base64
 import subprocess
 import json
 
-from udocker.config import Config
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.curl import GetURL
