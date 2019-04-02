@@ -105,6 +105,7 @@ General options common to all commands must appear before the command:
 
 Commands:
   help [command]                :Command specific help
+  listconf                      :Print all configuration options
 
   search <repo/image:tag>       :Search dockerhub for container images
   pull <repo/image:tag>         :Pull container image from dockerhub
