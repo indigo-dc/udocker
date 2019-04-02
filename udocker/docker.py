@@ -2,6 +2,7 @@
 import os
 import sys
 import re
+import time
 import base64
 import subprocess
 import json
@@ -101,6 +102,7 @@ class DockerIoAPI(object):
         file already exists locally and whether its size is the
         same to avoid downloaded it again.
         """
+        hdr = ""
         match = re.search("/sha256:(\\S+)$", filename)
         if match:
             layer_f_chksum = ChkSUM().sha256(filename)
@@ -516,7 +518,8 @@ class DockerIoAPI(object):
 class DockerLocalFileAPI(object):
     """Manipulate container and/or image files produced by Docker"""
 
-    def __init__(self, localrepo):
+    def __init__(self, localrepo, conf):
+        self.conf = conf
         self.localrepo = localrepo
 
     def _load_structure(self, tmp_imagedir):
@@ -824,8 +827,11 @@ class DockerLocalFileAPI(object):
                 return False
         layer_id = Unique().layer_v1()
         container_json = self.create_container_meta(layer_id)
-        container_id = ContainerStructure(self.localrepo).create_fromlayer(
-            imagerepo, tag, tarfile, container_json)
+        container_id = ContainerStructure(self.localrepo,
+                                          self.conf).create_fromlayer(imagerepo,
+                                                                      tag,
+                                                                      tarfile,
+                                                                      container_json)
         if container_name:
             self.localrepo.set_container_name(container_id, container_name)
         return container_id

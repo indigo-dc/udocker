@@ -2,6 +2,7 @@
 import os
 import string
 import getpass
+import json
 from cmd import Cmd
 
 from udocker import __version__
@@ -27,7 +28,7 @@ class UdockerCLI(Cmd):
         self.conf = conf
         self.localrepo = localrepo
         self.dockerioapi = DockerIoAPI(localrepo, conf)
-        self.dockerlocalfileapi = DockerLocalFileAPI(localrepo)
+        self.dockerlocalfileapi = DockerLocalFileAPI(localrepo, self.conf)
         if self.conf['keystore'].startswith("/"):
             self.keystore = KeyStore(self.conf['keystore'])
         else:
@@ -234,11 +235,11 @@ class UdockerCLI(Cmd):
             Msg().err("Error: invalid output file name", tarfile)
             return False
         if clone:
-            if ContainerStructure(self.localrepo,
+            if ContainerStructure(self.localrepo, self.conf,
                                   container_id).clone_tofile(tarfile):
                 return True
         else:
-            if ContainerStructure(self.localrepo,
+            if ContainerStructure(self.localrepo, self.conf,
                                   container_id).export_tofile(tarfile):
                 return True
         Msg().err("Error: exporting")
@@ -368,8 +369,9 @@ class UdockerCLI(Cmd):
             return False
         (imagerepo, tag) = self._check_imagespec(imagespec)
         if imagerepo:
-            return ContainerStructure(self.localrepo).create_fromimage(
-                imagerepo, tag)
+            return ContainerStructure(self.localrepo,
+                                      self.conf).create_fromimage(imagerepo,
+                                                                  tag)
         return False
 
     def _get_run_options(self, cmdp, exec_engine=None):
@@ -733,6 +735,7 @@ class UdockerCLI(Cmd):
         inspect <container-id or repo/image:tag>
         -p                         :print container directory path on host
         """
+        container_dir = ""
         container_or_image = cmdp.get("P1")
         container_id = self.localrepo.get_container_id(container_or_image)
         print_dir = cmdp.get("-p")
@@ -740,7 +743,7 @@ class UdockerCLI(Cmd):
             return False
         if container_id:
             (container_dir, container_json) = ContainerStructure(
-                self.localrepo, container_id).get_container_attr()
+                self.localrepo, self.conf, container_id).get_container_attr()
         else:
             (imagerepo, tag) = self._check_imagespec(container_or_image)
             if self.localrepo.cd_imagerepo(imagerepo, tag):

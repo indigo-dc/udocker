@@ -5,7 +5,6 @@ import subprocess
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.unique import Unique
-from udocker.config import Config
 
 
 class ContainerStructure(object):
@@ -15,8 +14,8 @@ class ContainerStructure(object):
     Access to container metadata.
     """
 
-    def __init__(self, localrepo, container_id=None):
-        self.conf = Config().getconf()
+    def __init__(self, localrepo, conf, container_id=None):
+        self.conf = conf
         self.localrepo = localrepo
         self.container_id = container_id
         self.tag = ""

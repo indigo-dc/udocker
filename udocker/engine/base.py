@@ -312,7 +312,7 @@ class ExecutionEngineCommon(object):
             container_json = []
         else:
             container_structure = \
-                ContainerStructure(self.localrepo, container_id)
+                ContainerStructure(self.localrepo, self.conf, container_id)
             (container_dir, container_json) = \
                 container_structure.get_container_attr()
             if not container_dir:

@@ -5,7 +5,6 @@ import random
 import sys
 import json
 
-from udocker.config import Config
 from udocker.utils.curl import GetURL
 from udocker.utils.fileutil import FileUtil
 from udocker.msg import Msg
