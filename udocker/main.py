@@ -194,33 +194,11 @@ See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
             if self.cmdp.missing_options():
                 Msg().err("Error: syntax error at: %s" %
                           " ".join(self.cmdp.missing_options()))
-                sys.exit(0)
+                sys.exit(1)
             if isinstance(status, bool):
                 return not status
             elif isinstance(status, int):
                 return sys.exit(status)  # return command status
-
-        '''
-        command = self.cmdp.get("", "CMD")
-        if command in cmds:
-            if command != "install":
-                cmds["install"](None)
-            if self.cmdp.get("--help") or self.cmdp.get("-h"):
-                self.udocker.do_help(self.cmdp, cmds)   # help on command
-                return 0
-            status = cmds[command](self.cmdp)     # executes the command
-            if self.cmdp.missing_options():
-                Msg().err("Error: syntax error at: %s" %
-                          " ".join(self.cmdp.missing_options()))
-                return 1
-            if isinstance(status, bool):
-                return not status
-            elif isinstance(status, (int, long)):
-                return status                     # return command status
-        else:
-            Msg().err("Error: invalid command:", command, "\n")
-            self.udocker.do_help(self.cmdp)
-        '''
 
     def start(self):
         """Program start and exception handling"""
@@ -228,7 +206,7 @@ See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
             exit_status = self._execute()
         except (KeyboardInterrupt, SystemExit):
             FileUtil().cleanup()
-            return 1
+            return sys.exit(1)
         except:
             FileUtil().cleanup()
             raise
