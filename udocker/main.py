@@ -40,9 +40,8 @@ class Main(object):
     """
     """Get options, parse and execute the command line"""
 
-    def __init__(self, argv):
-        self.argv = argv
-        self.cmdp = CmdParser(self.argv)
+    def __init__(self):
+        self.cmdp = CmdParser()
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
             sys.exit(1)
@@ -77,112 +76,32 @@ class Main(object):
             self.localrepo.create_repo()
         self.cli = UdockerCLI(self.localrepo, self.conf)
 
-    @staticmethod
-    def do_help():
-        """
-        Print help information
-        """
-
-        print(
-            """
-Syntax:
-  udocker  [general_options] <command>  [command_options]  <command_args>
-
-  udocker [-h|--help|help]        :Display this help and exits
-  udocker [-V|--version|version]  :Display udocker version and tarball version and exits
-
-General options common to all commands must appear before the command:
-  -D, --debug                   :Debug
-  -q, --quiet                   :Less verbosity
-  --allow-root                  :Allow udocker to run as root
-  --repo=<directory>            :Use repository at directory
-
-  -c <conf_file>
-  --config=<conf_file>          :Use configuration <conf_file>
-
-Commands:
-  help [command]                :Command specific help
-  listconf                      :Print all configuration options
-
-  search <repo/image:tag>       :Search dockerhub for container images
-  pull <repo/image:tag>         :Pull container image from dockerhub
-  images                        :List container images
-  create <repo/image:tag>       :Create container from a pulled image
-  ps                            :List created containers
-  rm  <container>               :Delete container
-  run <container>               :Execute container
-  inspect <container>           :Low level information on container
-  name <container_id> <name>    :Give name to container
-  rmname <name>                 :Delete name from container
-
-  rmi <repo/image:tag>          :Delete image
-  rm <container-id>             :Delete container
-  import <tar> <repo/image:tag> :Import tar file (exported by docker)
-  import - <repo/image:tag>     :Import from stdin (exported by docker)
-  load -i <exported-image>      :Load image from file (saved by docker)
-  load                          :Load image from stdin (saved by docker)
-  export -o <tar> <container>   :Export container rootfs to file
-  export - <container>          :Export container rootfs to stdin
-  inspect <repo/image:tag>      :Return low level information on image
-  verify <repo/image:tag>       :Verify a pulled image
-  clone <container>             :duplicate container
-
-  protect <repo/image:tag>      :Protect repository
-  unprotect <repo/image:tag>    :Unprotect repository
-  protect <container>           :Protect container
-  unprotect <container>         :Unprotect container
-
-  mkrepo <topdir>               :Create repository in another location
-  setup                         :Change container execution settings
-  login                         :Login into docker repository
-  logout                        :Logout from docker repository
-
-Examples:
-  udocker search fedora
-  udocker pull fedora
-  udocker create --name=fed  fedora
-  udocker run  fed  cat /etc/redhat-release
-  udocker run --hostauth --hostenv --bindhome  fed
-  udocker run --user=root  fed  yum install firefox
-  udocker run --hostauth --hostenv --bindhome fed   firefox
-  udocker run --hostauth --hostenv --bindhome fed   /bin/bash -i
-  udocker run --user=root  fed  yum install cheese
-  udocker run --hostauth --hostenv --bindhome --dri fed  cheese
-  udocker --repo=/home/x/.udocker  images
-  udocker -D run --user=1001:5001  fedora
-  udocker export -o fedora.tar fedora
-  udocker import fedora.tar myfedoraimage
-  udocker create --name=myfedoracontainer myfedoraimage
-  udocker export -o fedora_all.tar --clone fedora
-  udocker import --clone fedora_all.tar
-
-Notes:
-  * by default the binaries, images and containers are placed in
-       $HOME/.udocker
-  * by default the following host directories are mounted in the
-    container:
-       /dev /proc /sys
-       /etc/resolv.conf /etc/host.conf /etc/hostname
-  * to prevent the mount of the above directories use:
-       run  --nosysdirs  <container>
-  * additional host directories to be mounted are specified with:
-       run --volume=/data:/mnt --volume=/etc/hosts  <container>
-       run --nosysdirs --volume=/dev --volume=/proc  <container>
-
-See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
-            """)
-        return True
-
     def _execute(self):
         """Command parsing and selection"""
         lhelp = ['-h', '--help', 'help']
         lversion = ['-V', '--version', 'version']
+        cmds = {
+            "search": self.cli.do_search, "listconf": self.cli.do_listconf,
+            "images": self.cli.do_images, "pull": self.cli.do_pull,
+            "create": self.cli.do_create, "ps": self.cli.do_ps,
+            "run": self.cli.do_run,
+            "rmi": self.cli.do_rmi, "mkrepo": self.cli.do_mkrepo,
+            "import": self.cli.do_import, "load": self.cli.do_load,
+            "export": self.cli.do_export, "clone": self.cli.do_clone,
+            "protect": self.cli.do_protect, "rm": self.cli.do_rm,
+            "name": self.cli.do_name, "rmname": self.cli.do_rmname,
+            "verify": self.cli.do_verify, "logout": self.cli.do_logout,
+            "unprotect": self.cli.do_unprotect,
+            "inspect": self.cli.do_inspect, "login": self.cli.do_login,
+            "setup": self.cli.do_setup, "install": self.cli.do_install,
+        }
+
         if (len(self.argv) == 1) or \
                 (len(self.argv) == 2 and self.argv[1] in lhelp):
-            self.do_help()
+            self.cli.do_help(None)
             sys.exit(0)
         if self.argv[1] in lversion:
-            self.cli.do_version()
+            self.cli.do_version(None)
             sys.exit(0)
         else:
             print(' '.join(self.argv[1:]))
@@ -190,7 +109,7 @@ See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
             command = self.cmdp.get("", "CMD")
             if command != "install":
                 self.cli.do_install(None)
-            status = self.cli.onecmd(' '.join(self.argv[1:]))  # executes command
+            status = cmds[command](self.cmdp)  # executes command
             if self.cmdp.missing_options():
                 Msg().err("Error: syntax error at: %s" %
                           " ".join(self.cmdp.missing_options()))

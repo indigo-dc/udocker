@@ -30,5 +30,5 @@ from udocker.main import Main
 
 
 if __name__ == "__main__":
-    run_main = Main(sys.argv)
+    run_main = Main()
     sys.exit(run_main.start())

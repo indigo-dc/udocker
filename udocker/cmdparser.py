@@ -10,9 +10,9 @@ class CmdParser(object):
       $ udocker command arg1 arg2 --opta --optb=zzz
     """
 
-    def __init__(self, argv):
+    def __init__(self):
         """constructor parses the user command line"""
-        self._argv = argv
+        self._argv = ""
         self._argv_split = dict()
         self._argv_consumed_options = dict()
         self._argv_consumed_params = dict()
