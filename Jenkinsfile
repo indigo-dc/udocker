@@ -91,6 +91,7 @@ commands = bandit udocker -f html -o bandit.html"""
             }
         }
 
+        /*
         stage('Dependency check') {
             agent {
                 label 'docker-build'
@@ -112,6 +113,7 @@ commands = bandit udocker -f html -o bandit.html"""
                 }
             }
         }
+        */
 
         stage('Metrics gathering') {
             agent {
