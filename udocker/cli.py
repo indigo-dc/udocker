@@ -35,18 +35,6 @@ class UdockerCLI(Cmd):
             self.keystore = \
                 KeyStore(self.conf, self.localrepo.homedir + "/" + self.conf['keystore'])
 
-    def _cdrepo(self, cmdp):
-        """Select the top directory of a local repository"""
-        topdir = cmdp.get("P1")
-        if cmdp.missing_options():               # syntax error
-            return False
-        if not FileUtil(topdir).isdir():
-            Msg().err("Warning: localrepo directory is invalid: ", topdir,
-                      l=Msg.WAR)
-            return False
-        self.localrepo.setup(topdir)
-        return True
-
     def _check_imagespec(self, imagespec, def_imagespec=None):
         """Perform the image verification"""
         if (not imagespec) and def_imagespec:
