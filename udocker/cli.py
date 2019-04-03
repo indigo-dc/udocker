@@ -854,7 +854,8 @@ class UdockerCLI(Cmd):
         listconf: Print all configuration options
         """
         Msg().out(80*"-")
-        Msg().out(self.conf)
+        for varopt in self.conf:
+            Msg().out(varopt + ' = ', self.conf[varopt])
         Msg().out(80*"-")
 
     def do_version(self):

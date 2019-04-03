@@ -40,8 +40,9 @@ class Main(object):
     """
     """Get options, parse and execute the command line"""
 
-    def __init__(self):
-        self.cmdp = CmdParser()
+    def __init__(self, argv):
+        self.argv = argv
+        self.cmdp = CmdParser(self.argv)
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
             sys.exit(1)
@@ -172,7 +173,7 @@ See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
             """)
         return True
 
-    def execute(self):
+    def _execute(self):
         """Command parsing and selection"""
         lhelp = ['-h', '--help', 'help']
         lversion = ['-V', '--version', 'version']
@@ -187,37 +188,31 @@ See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
             self.cli.onecmd(' '.join(sys.argv[1:]))
 
         '''
-        if (self.cmdp.get("--help", "GEN_OPT") or
-                self.cmdp.get("-h", "GEN_OPT")):
-            self.udocker.do_help(self.cmdp)
-            return 0
+        command = self.cmdp.get("", "CMD")
+        if command in cmds:
+            if command != "install":
+                cmds["install"](None)
+            if self.cmdp.get("--help") or self.cmdp.get("-h"):
+                self.udocker.do_help(self.cmdp, cmds)   # help on command
+                return 0
+            status = cmds[command](self.cmdp)     # executes the command
+            if self.cmdp.missing_options():
+                Msg().err("Error: syntax error at: %s" %
+                          " ".join(self.cmdp.missing_options()))
+                return 1
+            if isinstance(status, bool):
+                return not status
+            elif isinstance(status, (int, long)):
+                return status                     # return command status
         else:
-            command = self.cmdp.get("", "CMD")
-            if command in cmds:
-                if command != "install":
-                    cmds["install"](None)
-                if self.cmdp.get("--help") or self.cmdp.get("-h"):
-                    self.udocker.do_help(self.cmdp, cmds)   # help on command
-                    return 0
-                status = cmds[command](self.cmdp)     # executes the command
-                if self.cmdp.missing_options():
-                    Msg().err("Error: syntax error at: %s" %
-                              " ".join(self.cmdp.missing_options()))
-                    return 1
-                if isinstance(status, bool):
-                    return not status
-                elif isinstance(status, (int, long)):
-                    return status                     # return command status
-            else:
-                Msg().err("Error: invalid command:", command, "\n")
-                self.udocker.do_help(self.cmdp)
-        return 1
+            Msg().err("Error: invalid command:", command, "\n")
+            self.udocker.do_help(self.cmdp)
         '''
 
     def start(self):
         """Program start and exception handling"""
         try:
-            exit_status = self.execute()
+            exit_status = self._execute()
         except (KeyboardInterrupt, SystemExit):
             FileUtil().cleanup()
             return 1

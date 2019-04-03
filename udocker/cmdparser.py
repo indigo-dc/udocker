@@ -10,9 +10,9 @@ class CmdParser(object):
       $ udocker command arg1 arg2 --opta --optb=zzz
     """
 
-    def __init__(self):
+    def __init__(self, argv):
         """constructor parses the user command line"""
-        self._argv = ""
+        self._argv = argv
         self._argv_split = dict()
         self._argv_consumed_options = dict()
         self._argv_consumed_params = dict()
@@ -24,13 +24,13 @@ class CmdParser(object):
         self._argv_consumed_params['GEN_OPT'] = []
         self._argv_consumed_params['CMD_OPT'] = []
 
-    def parse(self, argv):
+    def _parse(self):
         """Parse a command line string.
         Divides the string in three blocks: general_options,
         command name, and command options+arguments
         """
         step = 1
-        for arg in argv[1:]:
+        for arg in self._argv[1:]:
             if step == 1:
                 if arg[0] in string.ascii_letters:
                     self._argv_split['CMD'] = arg
@@ -59,6 +59,7 @@ class CmdParser(object):
         """Get the value of a command line option --xyz=
         multiple=true  multiple occurrences of option can be present
         """
+        self._parse()
         if opt_where == "CMD":
             return self._argv_split["CMD"]
         elif opt_where in ("CMD_OPT", "GEN_OPT"):
