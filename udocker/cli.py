@@ -826,7 +826,7 @@ class UdockerCLI(Cmd):
         Msg().out("execmode: %s" % (exec_mode.get_mode()))
         return True
 
-    def do_install(self, cmdp):
+    def do_install(self, cmdp=None):
         """
         install: install udocker and its tools
         install [options]

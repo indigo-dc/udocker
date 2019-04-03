@@ -177,15 +177,28 @@ See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
         """Command parsing and selection"""
         lhelp = ['-h', '--help', 'help']
         lversion = ['-V', '--version', 'version']
-        if (len(sys.argv) == 1) or \
-                (len(sys.argv) == 2 and sys.argv[1] in lhelp):
+        if (len(self.argv) == 1) or \
+                (len(self.argv) == 2 and self.argv[1] in lhelp):
             self.do_help()
-            return 0
-        if sys.argv[1] in lversion:
+            sys.exit(0)
+        if self.argv[1] in lversion:
             self.cli.do_version()
-            return 0
+            sys.exit(0)
         else:
-            self.cli.onecmd(' '.join(sys.argv[1:]))
+            print(' '.join(self.argv[1:]))
+            print(80*'-')
+            command = self.cmdp.get("", "CMD")
+            if command != "install":
+                self.cli.do_install()
+            status = self.cli.onecmd(' '.join(self.argv[1:]))  # executes command
+            if self.cmdp.missing_options():
+                Msg().err("Error: syntax error at: %s" %
+                          " ".join(self.cmdp.missing_options()))
+                sys.exit(0)
+            if isinstance(status, bool):
+                return not status
+            elif isinstance(status, int):
+                return sys.exit(status)  # return command status
 
         '''
         command = self.cmdp.get("", "CMD")
