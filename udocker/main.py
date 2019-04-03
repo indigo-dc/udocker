@@ -189,7 +189,7 @@ See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
             print(80*'-')
             command = self.cmdp.get("", "CMD")
             if command != "install":
-                self.cli.do_install()
+                self.cli.do_install(None)
             status = self.cli.onecmd(' '.join(self.argv[1:]))  # executes command
             if self.cmdp.missing_options():
                 Msg().err("Error: syntax error at: %s" %
