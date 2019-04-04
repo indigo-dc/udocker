@@ -335,6 +335,7 @@ class UdockerCLI(object):
         --index=https://index.docker.io/v1              :docker index
         --registry=https://registry-1.docker.io         :docker registry
         """
+        exit_status = 0
         index_url = cmdp.get("--index=")
         registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
@@ -342,7 +343,8 @@ class UdockerCLI(object):
         if not registry_url and self.keystore.get(imagerepo.split("/")[0]):
             registry_url = imagerepo.split("/")[0]
         if (not imagerepo) or cmdp.missing_options():    # syntax error
-            return False
+            exit_status = 1
+            return exit_status
         else:
             if http_proxy:
                 self.dockerioapi.set_proxy(http_proxy)
@@ -353,10 +355,11 @@ class UdockerCLI(object):
             v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
             self.dockerioapi.set_v2_login_token(v2_auth_token)
             if self.dockerioapi.get(imagerepo, tag):
-                return True
+                return exit_status
             else:
                 Msg().err("Error: no files downloaded")
-        return False
+        exit_status = 1
+        return exit_status
 
     def do_create(self, cmdp):
         """
@@ -364,10 +367,12 @@ class UdockerCLI(object):
         create [options]  <repo/image:tag>
         --name=xxxx                :set or change the name of the container
         """
+        exit_status = 0
         imagespec = cmdp.get("P1")
         name = cmdp.get("--name=")
         if cmdp.missing_options():               # syntax error
-            return False
+            exit_status = 1
+            return exit_status
         container_id = self._create(imagespec)
         if container_id:
             Msg().out(container_id)
@@ -375,9 +380,12 @@ class UdockerCLI(object):
                                                               name):
                 Msg().err("Error: invalid container name may already exist "
                           "or wrong format")
-                return False
-            return True
-        return False
+                exit_status = 1
+                return exit_status
+            exit_status = 0
+            return exit_status
+        exit_status = 1
+        return exit_status
 
     def _create(self, imagespec):
         """Auxiliary to create(), performs the creation"""
@@ -386,9 +394,8 @@ class UdockerCLI(object):
             return False
         (imagerepo, tag) = self._check_imagespec(imagespec)
         if imagerepo:
-            return ContainerStructure(self.localrepo,
-                                      self.conf).create_fromimage(imagerepo,
-                                                                  tag)
+            cont_struct = ContainerStructure(self.localrepo, self.conf)
+            return cont_struct.create_fromimage(imagerepo, tag)
         return False
 
     def _get_run_options(self, cmdp, exec_engine=None):
@@ -528,6 +535,7 @@ class UdockerCLI(object):
         run <repo/image:tag> always creates a new container from the image
         if needed the image is pulled. This is slow and may waste storage.
         """
+        exit_status = 0
         self._get_run_options(cmdp)
         container_or_image = cmdp.get("P1")
         self.conf['location'] = cmdp.get("--location=")
@@ -535,12 +543,14 @@ class UdockerCLI(object):
         name = cmdp.get("--name=")
         #
         if cmdp.missing_options(): # syntax error
-            return False
+            exit_status = 1
+            return exit_status
         if self.conf['location']:
             container_id = ""
         elif not container_or_image:
             Msg().err("Error: must specify container_id or image:tag")
-            return False
+            exit_status = 1
+            return exit_status
         else:
             container_id = self.localrepo.get_container_id(container_or_image)
             if not container_id:
@@ -554,21 +564,25 @@ class UdockerCLI(object):
                         container_id = self._create(imagerepo+":"+tag)
                     if not container_id:
                         Msg().err("Error: image or container not available")
-                        return False
+                        exit_status = 1
+                        return exit_status
             if name and container_id:
                 if not self.localrepo.set_container_name(container_id, name):
                     Msg().err("Error: invalid container name format")
-                    return False
+                    exit_status = 1
+                    return exit_status
         exec_engine = ExecutionMode(self.conf, self.localrepo,
                                     container_id).get_engine()
         if not exec_engine:
             Msg().err("Error: no execution engine for this execmode")
-            return False
+            exit_status = 1
+            return exit_status
         self._get_run_options(cmdp, exec_engine)
-        status = exec_engine.run(container_id)
+        exit_status = exec_engine.run(container_id)
         if delete and not self.localrepo.isprotected_container(container_id):
             self.localrepo.del_container(container_id)
-        return status
+
+        return exit_status
 
     def do_images(self, cmdp):
         """
@@ -576,11 +590,13 @@ class UdockerCLI(object):
         images [options]
         -l                         :long format
         """
+        exit_status = 0
         verbose = cmdp.get("-l")
         dummy = cmdp.get("--no-trunc")
         dummy = cmdp.get("--all")
         if cmdp.missing_options():               # syntax error
-            return False
+            exit_status = 1
+            return exit_status
         images_list = self.localrepo.get_imagerepos()
         Msg().out("REPOSITORY", l=Msg.INF)
         for (imagerepo, tag) in images_list:
@@ -599,14 +615,16 @@ class UdockerCLI(object):
                         Msg().out("    %s (%d MB)" %
                                   (layer_name.replace(imagerepo_dir, ""),
                                    file_size))
-        return True
+        return exit_status
 
     def do_ps(self, cmdp):
         """
         ps: list containers
         """
+        exit_status = 0
         if cmdp.missing_options():               # syntax error
-            return False
+            exit_status = 1
+            return exit_status
         containers_list = self.localrepo.get_containers_list(False)
         Msg().out("%-36.36s %c %c %-18s %-s" %
                   ("CONTAINER ID", "P", "M", "NAMES", "IMAGE"), l=Msg.INF)
@@ -617,37 +635,42 @@ class UdockerCLI(object):
                 self.localrepo.iswriteable_container(container_id)]
             Msg().out("%-36.36s %c %c %-18s %-s" %
                       (container_id, prot, write, names, reponame))
-        return True
+
+        return exit_status
 
     def do_rm(self, cmdp):
         """
         rm: delete a container
         rm <container_id>
         """
+        exit_status = 0
         container_id_list = cmdp.get("P*")
         if cmdp.missing_options():               # syntax error
-            return False
+            exit_status = 1
+            return exit_status
         if not container_id_list:
             Msg().err("Error: must specify image:tag or repository/image:tag")
-            return False
-        status = True
+            exit_status = 1
+            return exit_status
+
         for container_id in cmdp.get("P*"):
             container_id = self.localrepo.get_container_id(container_id)
             if not container_id:
                 Msg().err("Error: invalid container id", container_id)
-                status = False
+                exit_status = 1
                 continue
             else:
                 if self.localrepo.isprotected_container(container_id):
                     Msg().err("Error: container is protected")
-                    status = False
+                    exit_status = 1
                     continue
                 Msg().out("Info: deleting container:",
                           str(container_id), l=Msg.INF)
                 if not self.localrepo.del_container(container_id):
                     Msg().err("Error: deleting container")
-                    status = False
-        return status
+                    exit_status = 1
+
+        return exit_status
 
     def do_rmi(self, cmdp):
         """
@@ -655,97 +678,127 @@ class UdockerCLI(object):
         rmi [options] <repo/image:tag>
         -f                          :force removal
         """
+        exit_status = 0
         force = cmdp.get("-f")
         imagespec = str(cmdp.get("P1"))
         (imagerepo, tag) = self._check_imagespec(imagespec)
         if cmdp.missing_options():               # syntax error
-            return False
+            exit_status = 1
+            return exit_status
         if not imagerepo:
-            return False
+            exit_status = 1
+            return exit_status
         else:
             if self.localrepo.isprotected_imagerepo(imagerepo, tag):
                 Msg().err("Error: image repository is protected")
-                return False
+                exit_status = 1
+                return exit_status
             Msg().out("Info: deleting image:", imagespec, l=Msg.INF)
             if not self.localrepo.del_imagerepo(imagerepo, tag, force):
                 Msg().err("Error: deleting image")
-                return False
-            return True
+                exit_status = 1
+                return exit_status
+
+        return exit_status
 
     def do_protect(self, cmdp):
         """
         protect: protect a container or image against deletion
         protect <container-id or repo/image:tag>
         """
+        exit_status = 0
         arg = cmdp.get("P1")
         if cmdp.missing_options():               # syntax error
-            return False
+            exit_status = 1
+            return exit_status
+
         if self.localrepo.get_container_id(arg):
             if not self.localrepo.protect_container(arg):
                 Msg().err("Error: protect container failed")
-                return False
-            return True
+                exit_status = 1
+                return exit_status
+            exit_status = 0
         else:
             (imagerepo, tag) = self._check_imagespec(arg)
             if imagerepo:
                 if self.localrepo.protect_imagerepo(imagerepo, tag):
-                    return True
+                    exit_status = 0
+                    return exit_status
             Msg().err("Error: protect image failed")
-            return False
+            exit_status = 1
+
+        return exit_status
 
     def do_unprotect(self, cmdp):
         """
         unprotect: remove delete protection
         unprotect <container-id or repo/image:tag>
         """
+        exit_status = 0
         arg = cmdp.get("P1")
         if cmdp.missing_options():               # syntax error
-            return False
+            exit_status = 1
+            return exit_status
+
         if self.localrepo.get_container_id(arg):
             if not self.localrepo.unprotect_container(arg):
                 Msg().err("Error: unprotect container failed")
-                return False
-            return True
+                exit_status = 1
+                return exit_status
+            exit_status = 0
         else:
             (imagerepo, tag) = self._check_imagespec(arg)
             if imagerepo:
                 if self.localrepo.unprotect_imagerepo(imagerepo, tag):
-                    return True
+                    exit_status = 0
+                    return exit_status
             Msg().err("Error: unprotect image failed")
-            return False
+            exit_status = 1
+
+        return exit_status
 
     def do_name(self, cmdp):
         """
         name: give a name alias to a container
         name <container-id> <container-name>
         """
+        exit_status = 0
         container_id = cmdp.get("P1")
         name = cmdp.get("P2")
         if cmdp.missing_options():               # syntax error
-            return False
+            exit_status = 1
+            return exit_status
         if not (self.localrepo.get_container_id(container_id) and name):
             Msg().err("Error: invalid container id or name")
-            return False
+            exit_status = 1
+            return exit_status
         if not self.localrepo.set_container_name(container_id, name):
             Msg().err("Error: invalid container name")
-            return False
-        return True
+            exit_status = 1
+            return exit_status
+
+        return exit_status
 
     def do_rmname(self, cmdp):
         """
         rmname: remove name from container
         rmname <container-name>
         """
+        exit_status = 0
         name = cmdp.get("P1")
         if cmdp.missing_options():               # syntax error
-            return False
+            exit_status = 1
+            return exit_status
         if not name:
             Msg().err("Error: invalid container id or name")
-            return False
+            exit_status = 1
+            return exit_status
         if not self.localrepo.del_container_name(name):
             Msg().err("Error: removing container name")
-            return False
-        return True
+            exit_status = 1
+            return exit_status
+
+        return exit_status
 
     def do_inspect(self, cmdp):
         """
@@ -753,12 +806,15 @@ class UdockerCLI(object):
         inspect <container-id or repo/image:tag>
         -p                         :print container directory path on host
         """
+        exit_status = 0
         container_dir = ""
         container_or_image = cmdp.get("P1")
         container_id = self.localrepo.get_container_id(container_or_image)
         print_dir = cmdp.get("-p")
         if cmdp.missing_options():               # syntax error
-            return False
+            exit_status = 1
+            return exit_status
+
         if container_id:
             (container_dir, container_json) = ContainerStructure(
                 self.localrepo, self.conf, container_id).get_container_attr()
@@ -767,38 +823,49 @@ class UdockerCLI(object):
             if self.localrepo.cd_imagerepo(imagerepo, tag):
                 (container_json, dummy) = self.localrepo.get_image_attributes()
             else:
-                return False
+                exit_status = 1
+                return exit_status
+
         if print_dir:
             if container_id and container_dir:
                 Msg().out(str(container_dir) + "/ROOT")
-                return True
+                exit_status = 0
+                return exit_status
         elif container_json:
             try:
                 Msg().out(json.dumps(container_json, sort_keys=True,
                                      indent=4, separators=(',', ': ')))
             except (IOError, OSError, AttributeError, ValueError, TypeError):
                 Msg().out(container_json)
-            return True
-        return False
+            exit_status = 0
+            return exit_status
+
+        exit_status = 1
+        return exit_status
 
     def do_verify(self, cmdp):
         """
         verify: verify an image
         verify <repo/image:tag>
         """
+        exit_status = 0
         (imagerepo, tag) = self._check_imagespec(cmdp.get("P1"))
         if (not imagerepo) or cmdp.missing_options():  # syntax error
-            return False
+            exit_status = 1
+            return exit_status
         else:
             Msg().out("Info: verifying: %s:%s" % (imagerepo, tag), l=Msg.INF)
             if not self.localrepo.cd_imagerepo(imagerepo, tag):
                 Msg().err("Error: selecting image and tag")
-                return False
+                exit_status = 1
+                return exit_status
             elif self.localrepo.verify_image():
                 Msg().out("Info: image Ok", l=Msg.INF)
-                return True
+                exit_status = 0
+                return exit_status
         Msg().err("Error: image verification failure")
-        return False
+        exit_status = 1
+        return exit_status
 
     def do_setup(self, cmdp):
         """
@@ -822,26 +889,34 @@ class UdockerCLI(object):
             if singularity is available in the PATH udocker will use
             it to execute the container
         """
+        exit_status = 0
         container_id = cmdp.get("P1")
         xmode = cmdp.get("--execmode=")
         force = cmdp.get("--force")
         nvidia = cmdp.get("--nvidia")
         if cmdp.missing_options():               # syntax error
-            return False
+            exit_status = 1
+            return exit_status
+
         if not self.localrepo.cd_container(container_id):
             Msg().err("Error: invalid container id")
-            return False
+            exit_status = 1
+            return exit_status
         elif xmode and self.localrepo.isprotected_container(container_id):
             Msg().err("Error: container is protected")
-            return False
+            exit_status = 1
+            return exit_status
+
         if nvidia:
             nvidia_mode = NvidiaMode(self.conf, self.localrepo, container_id)
             nvidia_mode.set_mode(force)
         exec_mode = ExecutionMode(self.conf, self.localrepo, container_id)
+
         if xmode:
             return exec_mode.set_mode(xmode.upper(), force)
+
         Msg().out("execmode: %s" % (exec_mode.get_mode()))
-        return True
+        return exit_status
 
     def do_install(self, cmdp):
         """
@@ -850,49 +925,58 @@ class UdockerCLI(object):
         --force                    :force reinstall
         --purge                    :remove files (be careful)
         """
+        exit_status = 0
         if cmdp is not None:
             force = cmdp.get("--force")
             purge = cmdp.get("--purge")
         else:
             force = False
             purge = False
+
         utools = UdockerTools(self.localrepo, self.conf)
         if purge:
             utools.purge()
+
         status = utools.install(force)
         if status is not None and not status:
             Msg().err("Error: installation of udockertools failed")
-            return False
+            exit_status = 1
+            return exit_status
+
         Msg().err("Info: installation of udockertools successful", l=Msg.VER)
-        return True
+        return exit_status
 
     def do_listconf(self, cmdp):
         """
         listconf: Print all configuration options
         """
+        exit_status = 0
         Msg().out(80*"-")
         for varopt in self.conf:
             Msg().out(varopt + ' = ', self.conf[varopt])
         Msg().out(80*"-")
-        return True
+        return exit_status
 
     def do_version(self, cmdp):
         """
         version: Print version information
         """
+        exit_status = 0
         try:
             Msg().out("%s %s" % ("version:", __version__))
             Msg().out("%s %s" % ("tarball:", self.conf['tarball']))
             Msg().out("%s %s" % ("tarball_release:", self.conf['tarball_release']))
         except NameError:
-            pass
-        return True
+            exit_status = 1
+            return exit_status
+
+        return exit_status
 
     def do_help(self, cmdp):
         """
         Print help information
         """
-
+        exit_status = 0
         Msg().out(
             """
 Syntax:
@@ -981,8 +1065,4 @@ Notes:
 
 See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
             """)
-        return True
-
-    def default(self, cmd):
-        Msg().out('Command "%s" not found' % cmd)
-        return False
+        return exit_status
