@@ -52,17 +52,20 @@ class UdockerCLI(object):
         mkrepo: create a local repository in a specified directory
         mkrepo <directory>
         """
+        exit_status = 0
         topdir = cmdp.get("P1")
         if not topdir or not os.path.exists(topdir):
             self.localrepo.setup(topdir)
             if self.localrepo.create_repo():
-                return True
+                exit_status = 0
             else:
                 Msg().err("Error: localrepo creation failure: ", topdir)
-                return False
+                exit_status = 1
         else:
             Msg().err("Error: localrepo directory already exists: ", topdir)
-            return False
+            exit_status = 1
+
+        return exit_status
 
     def _search_print_v1(self, repo_list):
         """Print search results from v1 API"""
@@ -93,6 +96,7 @@ class UdockerCLI(object):
         --index=https://index.docker.io/v1              :docker index
         --registry=https://registry-1.docker.io         :docker registry
         """
+        exit_status = 0
         pause = not cmdp.get("-a")
         index_url = cmdp.get("--index=")
         registry_url = cmdp.get("--registry=")
@@ -101,8 +105,9 @@ class UdockerCLI(object):
             self.dockerioapi.set_index(index_url)
         if registry_url:
             self.dockerioapi.set_registry(registry_url)
-        if cmdp.missing_options():               # syntax error
-            return False
+        if cmdp.missing_options():         # syntax error
+            exit_status = 1
+            return exit_status
         Msg().out("%-40.40s %8.8s %s" %
                   ("NAME", "OFFICIAL", "DESCRIPTION"), l=Msg.INF)
         self.dockerioapi.search_init(pause)
@@ -111,7 +116,8 @@ class UdockerCLI(object):
         while True:
             repo_list = self.dockerioapi.search_get_page(expression)
             if not repo_list:
-                return True
+                exit_status = 0
+                return exit_status
             elif "results" in repo_list:
                 self._search_print_v1(repo_list)
             elif "repositories" in repo_list:
@@ -119,7 +125,8 @@ class UdockerCLI(object):
             if pause and not self.dockerioapi.search_ended:
                 key_press = raw_input("[press return or q to quit]")
                 if key_press in ("q", "Q", "e", "E"):
-                    return True
+                    exit_status = 0
+                    return exit_status
 
     def do_load(self, cmdp):
         """
@@ -128,24 +135,28 @@ class UdockerCLI(object):
         load -i <docker-saved-container-file>
         load < <docker-saved-container-file>
         """
+        exit_status = 0
         imagefile = cmdp.get("--input=")
         if not imagefile:
             imagefile = cmdp.get("-i=")
             if imagefile is False:
                 imagefile = "-"
         if cmdp.missing_options():  # syntax error
-            return False
+            exit_status = 1
+            return exit_status
         if not imagefile:
             Msg().err("Error: must specify filename of docker exported image")
-            return False
+            exit_status = 1
+            return exit_status
         repos = self.dockerlocalfileapi.load(imagefile)
         if not repos:
             Msg().err("Error: loading failed")
-            return False
-        else:
-            for repo_item in repos:
-                Msg().out(repo_item)
-            return True
+            exit_status = 1
+            return exit_status
+
+        for repo_item in repos:
+            Msg().out(repo_item)
+        return exit_status
 
     def do_import(self, cmdp):
         """
@@ -157,6 +168,7 @@ class UdockerCLI(object):
         --clone                    :import udocker container format with metadata
         --name=<container-name>    :with --tocontainer or --clone to add an alias
         """
+        exit_status = 0
         move_tarball = cmdp.get("--mv")
         to_container = cmdp.get("--tocontainer")
         name = cmdp.get("--name=")
@@ -171,9 +183,11 @@ class UdockerCLI(object):
             imagespec = cmdp.get("P2")
         if not tarfile:
             Msg().err("Error: must specify tar filename")
-            return False
+            exit_status = 1
+            return exit_status
         if cmdp.missing_options():  # syntax error
-            return False
+            exit_status = 1
+            return exit_status
         if to_container or clone:
             if clone:
                 container_id = self.dockerlocalfileapi.import_clone(
@@ -185,16 +199,20 @@ class UdockerCLI(object):
                     tarfile, imagerepo, tag, name)
             if container_id:
                 Msg().out(container_id)
-                return True
+                exit_status = 0
+                return exit_status
         else:
             (imagerepo, tag) = self._check_imagespec(imagespec)
             if not imagerepo:
-                return False
+                exit_status = 1
+                return exit_status
             if self.dockerlocalfileapi.import_toimage(tarfile, imagerepo, tag,
                                                       move_tarball):
-                return True
+                exit_status = 0
+                return exit_status
         Msg().err("Error: importing")
-        return False
+        exit_status = 1
+        return exit_status
 
     def do_export(self, cmdp):
         """
@@ -204,6 +222,7 @@ class UdockerCLI(object):
         -o                         :export to file, instead of stdout
         --clone                    :export in clone (udocker) format
         """
+        exit_status = 0
         to_file = cmdp.get("-o")
         clone = cmdp.get("--clone")
         if to_file:
@@ -212,23 +231,29 @@ class UdockerCLI(object):
         else:
             tarfile = "-"
             container_id = cmdp.get("P1")
+
         container_id = self.localrepo.get_container_id(container_id)
         if not container_id:
             Msg().err("Error: invalid container id", container_id)
-            return False
+            exit_status = 1
+            return exit_status
         if not tarfile:
             Msg().err("Error: invalid output file name", tarfile)
-            return False
+            exit_status = 1
+            return exit_status
         if clone:
             if ContainerStructure(self.localrepo, self.conf,
                                   container_id).clone_tofile(tarfile):
-                return True
+                exit_status = 0
+                return exit_status
         else:
             if ContainerStructure(self.localrepo, self.conf,
                                   container_id).export_tofile(tarfile):
-                return True
+                exit_status = 0
+                return exit_status
         Msg().err("Error: exporting")
-        return False
+        exit_status = 1
+        return exit_status
 
     def do_clone(self, cmdp):
         """
@@ -236,17 +261,21 @@ class UdockerCLI(object):
         clone <source-container-id>
         --name=<container-name>    :add an alias to the cloned container
         """
+        exit_status = 0
         name = cmdp.get("--name=")
         container_id = cmdp.get("P1")
         container_id = self.localrepo.get_container_id(container_id)
         if not container_id:
             Msg().err("Error: invalid container id", container_id)
-            return False
+            exit_status = 1
+            return exit_status
         if self.dockerlocalfileapi.clone_container(container_id, name):
             Msg().out(container_id)
-            return True
+            exit_status = 0
+            return exit_status
         Msg().err("Error: cloning")
-        return False
+        exit_status = 1
+        return exit_status
 
     def do_login(self, cmdp):
         """
@@ -255,6 +284,7 @@ class UdockerCLI(object):
         --password=password
         --registry=https://registry-1.docker.io
         """
+        exit_status = 0
         username = cmdp.get("--username=")
         password = cmdp.get("--password=")
         registry_url = cmdp.get("--registry=")
@@ -270,9 +300,10 @@ class UdockerCLI(object):
         v2_auth_token = \
             self.dockerioapi.get_v2_login_token(username, password)
         if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, ""):
-            return True
+            return exit_status
         Msg().err("Error: invalid credentials")
-        return False
+        exit_status = 1
+        return exit_status
 
     def do_logout(self, cmdp):
         """
@@ -280,17 +311,18 @@ class UdockerCLI(object):
         -a remove all authentication credentials
         --registry=https://registry-1.docker.io
         """
+        exit_status = 0
         all_credentials = cmdp.get("-a")
         registry_url = cmdp.get("--registry=")
         if registry_url:
             self.dockerioapi.set_registry(registry_url)
         if all_credentials:
-            status = self.keystore.erase()
+            exit_status = self.keystore.erase()
         else:
-            status = self.keystore.delete(self.dockerioapi.registry_url)
-        if not status:
+            exit_status = self.keystore.delete(self.dockerioapi.registry_url)
+        if exit_status == 1:
             Msg().err("Error: deleting credentials")
-        return status
+        return exit_status
 
     def do_pull(self, cmdp):
         """

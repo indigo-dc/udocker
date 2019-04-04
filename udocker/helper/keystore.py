@@ -20,16 +20,15 @@ class KeyStore(object):
         """Verify the keystore file and directory"""
         keystore_uid = FileUtil(self.keystore_file).uid()
         if keystore_uid != -1 and keystore_uid != self.conf['uid']:
-            raise IOError("not owner of keystore: %s" %
-                          (self.keystore_file))
+            raise IOError("not owner of keystore: %s" % self.keystore_file)
         keystore_dir = os.path.dirname(self.keystore_file)
         if FileUtil(keystore_dir).uid() != self.conf['uid']:
             raise IOError("keystore dir not found or not owner: %s" %
-                          (keystore_dir))
+                          keystore_dir)
         if (keystore_uid != -1 and
                 (os.stat(self.keystore_file).st_mode & 0o077)):
             raise IOError("keystore is accessible to group or others: %s" %
-                          (self.keystore_file))
+                          self.keystore_file)
 
     def _read_all(self):
         """Read all credentials from file"""
@@ -41,17 +40,20 @@ class KeyStore(object):
 
     def _shred(self):
         """Shred file content"""
+        exit_status = 0
         self._verify_keystore()
         try:
             size = os.stat(self.keystore_file).st_size
             with open(self.keystore_file, "rb+") as filep:
                 filep.write(" " * size)
         except (IOError, OSError):
-            return False
-        return True
+            exit_status = 1
+            return exit_status
+        return exit_status
 
     def _write_all(self, auths):
         """Write all credentials to file"""
+        exit_status = 0
         self._verify_keystore()
         oldmask = None
         try:
@@ -62,8 +64,9 @@ class KeyStore(object):
         except (IOError, OSError):
             if oldmask is not None:
                 os.umask(oldmask)
-            return False
-        return True
+            exit_status = 1
+            return exit_status
+        return exit_status
 
     def get(self, url):
         """Get credential from keystore for given url"""
@@ -86,21 +89,25 @@ class KeyStore(object):
 
     def delete(self, url):
         """Delete credential from keystore for given url"""
+        exit_status = 0
         self._verify_keystore()
         auths = self._read_all()
         try:
             del auths[url]
         except KeyError:
-            return False
+            exit_status = 1
+            return exit_status
         self._shred()
         return self._write_all(auths)
 
     def erase(self):
         """Delete all credentials from keystore"""
+        exit_status = 0
         self._verify_keystore()
         try:
             self._shred()
             os.unlink(self.keystore_file)
         except (IOError, OSError):
-            return False
-        return True
+            exit_status = 1
+            return exit_status
+        return exit_status
