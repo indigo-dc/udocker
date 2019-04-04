@@ -80,6 +80,7 @@ class Main(object):
 
     def _execute(self):
         """Command parsing and selection"""
+        exit_status = 0
         lhelp = ['-h', '--help', 'help']
         lversion = ['-V', '--version', 'version']
         cmds = {
@@ -100,24 +101,22 @@ class Main(object):
 
         if (len(self.argv) == 1) or \
                 (len(self.argv) == 2 and self.argv[1] in lhelp):
-            self.cli.do_help(None)
-            sys.exit(0)
+            exit_status = self.cli.do_help(None)
+            return exit_status
+
         if self.argv[1] in lversion:
-            self.cli.do_version(None)
-            sys.exit(0)
+            exit_status = self.cli.do_version(None)
         else:
             command = self.cmdp.get("", "CMD")
             if command != "install":
                 self.cli.do_install(None)
-            status = cmds[command](self.cmdp)  # executes command
+            exit_status = cmds[command](self.cmdp)  # executes command
             if self.cmdp.missing_options():
                 Msg().err("Error: syntax error at: %s" %
                           " ".join(self.cmdp.missing_options()))
-                sys.exit(1)
-            if isinstance(status, bool):
-                return not status
-            elif isinstance(status, int):
-                return sys.exit(status)  # return command status
+                exit_status = 1
+
+        return exit_status
 
     def start(self):
         """Program start and exception handling"""
@@ -126,9 +125,6 @@ class Main(object):
         except (KeyboardInterrupt, SystemExit):
             FileUtil().cleanup()
             return sys.exit(1)
-        except:
-            FileUtil().cleanup()
-            raise
         else:
             FileUtil().cleanup()
             return exit_status
