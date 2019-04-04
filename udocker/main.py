@@ -106,8 +106,6 @@ class Main(object):
             self.cli.do_version(None)
             sys.exit(0)
         else:
-            print(' '.join(self.argv[1:]))
-            print(80*'-')
             command = self.cmdp.get("", "CMD")
             if command != "install":
                 self.cli.do_install(None)
