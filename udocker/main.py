@@ -40,8 +40,10 @@ class Main(object):
     """
     """Get options, parse and execute the command line"""
 
-    def __init__(self):
+    def __init__(self, argv):
+        self.argv = argv
         self.cmdp = CmdParser()
+        parseok = self.cmdp.parse(argv)
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
             sys.exit(1)
