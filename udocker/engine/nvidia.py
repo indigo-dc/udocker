@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Manage setting nvidia"""
+
 import os
 import stat
 import glob
