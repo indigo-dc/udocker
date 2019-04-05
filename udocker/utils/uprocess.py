@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Alternative implementations for subprocess"""
+
 import subprocess
 from udocker.msg import Msg
 
