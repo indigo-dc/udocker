@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Configurations options and treatment/overrinding"""
 import os
 import sys
 import platform
