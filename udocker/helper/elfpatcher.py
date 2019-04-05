@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+"""ElfPatcher management and tools"""
+
 import re
 import os
 import sys
+import time
 
 from udocker.utils.uprocess import Uprocess
 from udocker.msg import Msg
