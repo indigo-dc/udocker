@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""File bind inside containers"""
+
 import os
 
 from udocker.msg import Msg
