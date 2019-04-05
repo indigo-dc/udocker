@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Classes for cURL management and tools"""
+
 import os
 import subprocess
 import json
