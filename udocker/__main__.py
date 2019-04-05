@@ -29,6 +29,7 @@ from udocker.umain import UMain
 
 
 def main():
+    """main execution function"""
     run_main = UMain(sys.argv)
     sys.exit(run_main.start())
 
