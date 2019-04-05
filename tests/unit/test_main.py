@@ -20,10 +20,7 @@ import unittest
 import mock
 
 sys.path.append('.')
-sys.path.append('/../../')
-
-from udocker import Main
-#import udocker
+from udocker.umain import UMain
 
 
 def set_env():
@@ -32,8 +29,8 @@ def set_env():
         os.environ["HOME"] = os.getcwd()
 
 
-class MainTestCase(unittest.TestCase):
-    """Test Main() class main udocker program."""
+class UMainTestCase(unittest.TestCase):
+    """Test UMain() class main udocker program."""
 
     @classmethod
     def setUpClass(cls):
@@ -60,11 +57,11 @@ class MainTestCase(unittest.TestCase):
     @mock.patch('udocker.msg.Msg')
     @mock.patch('udocker.cmdparser.CmdParser')
     def test_01_init(self, mock_cmdp, mock_msg):
-        """Test Main() constructor."""
+        """Test UMain() constructor."""
         self._init()
         mock_cmdp.return_value.parse.return_value = False
         with self.assertRaises(SystemExit) as mainexpt:
-            udocker.Main()
+            UMain()
         self.assertEqual(mainexpt.exception.code, 0)
 
     @mock.patch('udocker.container.localrepo.LocalRepository')
@@ -74,48 +71,48 @@ class MainTestCase(unittest.TestCase):
     @mock.patch('udocker.cmdparser.CmdParser')
     def test_02_init(self, mock_cmdp, mock_msg, mock_conf_init, mock_udocker,
                      mock_localrepo):
-        """Test Main() constructor."""
+        """Test UMain() constructor."""
         self._init()
         mock_cmdp.return_value.parse.return_value = True
         mock_cmdp.return_value.get.side_effect = [False, False, False, False,
                                                   False, False, False, False,
                                                   False]
-        udocker.Main()
+        UMain()
         self.assertEqual(udocker.Config.verbose_level, 3)
         # --debug
         mock_cmdp.return_value.parse.return_value = True
         mock_cmdp.return_value.get.side_effect = [False, False, True, False,
                                                   False, False, False, False,
                                                   False]
-        udocker.Main()
+        UMain()
         self.assertNotEqual(udocker.Config.verbose_level, 3)
         # -D
         mock_cmdp.return_value.parse.return_value = True
         mock_cmdp.return_value.get.side_effect = [False, False, False, True,
                                                   False, False, False, False,
                                                   False]
-        udocker.Main()
+        UMain()
         self.assertNotEqual(udocker.Config.verbose_level, 3)
         # --quiet
         mock_cmdp.return_value.parse.return_value = True
         mock_cmdp.return_value.get.side_effect = [False, False, False, False,
                                                   True, False, False, False,
                                                   False]
-        udocker.Main()
+        UMain()
         self.assertNotEqual(udocker.Config.verbose_level, 3)
         # -q
         mock_cmdp.return_value.parse.return_value = True
         mock_cmdp.return_value.get.side_effect = [False, False, False, False,
                                                   False, True, False, False,
                                                   False]
-        udocker.Main()
+        UMain()
         self.assertNotEqual(udocker.Config.verbose_level, 3)
         # --insecure
         mock_cmdp.return_value.parse.return_value = True
         mock_cmdp.return_value.get.side_effect = [False, False, False, False,
                                                   False, False, True, False,
                                                   False, False]
-        udocker.Main()
+        UMain()
         self.assertTrue(udocker.Config.http_insecure)
         # --repo=
         mock_localrepo.return_value.is_repo.return_value = True
@@ -124,68 +121,68 @@ class MainTestCase(unittest.TestCase):
                                                   False, False, False, True,
                                                   "/TOPDIR"]
         with self.assertRaises(SystemExit) as mainexpt:
-            udocker.Main()
+            UMain()
         self.assertEqual(mainexpt.exception.code, 0)
 
 
-    @mock.patch('udocker.Main.__init__')
+    @mock.patch('udocker.UMain.__init__')
     @mock.patch('udocker.container.localrepo.LocalRepository')
     @mock.patch('udocker.cli.UdockerCLI')
     @mock.patch('udocker.msg.Msg')
     @mock.patch('udocker.cmdparser.CmdParser')
     def test_03_execute(self, mock_cmdp, mock_msg, mock_udocker,
                         mock_localrepo, mock_main_init):
-        """Test Main().execute()."""
+        """Test UMain().execute()."""
         self._init()
         mock_main_init.return_value = None
         mock_cmdp.return_value.get.side_effect = [True, False, False, False,
                                                   False, False, False, False]
-        umain = udocker.Main()
+        umain = UMain()
         umain.udocker = mock_udocker
         umain.cmdp = mock_cmdp
-        status = umain.execute()
+        status = umain._execute()
         self.assertEqual(status, 0)
         #
         mock_main_init.return_value = None
         mock_cmdp.return_value.get.side_effect = [False, True, False, False,
                                                   False, False, False, False]
-        umain = udocker.Main()
+        umain = UMain()
         umain.udocker = mock_udocker
         umain.cmdp = mock_cmdp
-        status = umain.execute()
+        status = umain._execute()
         self.assertEqual(status, 0)
         #
         mock_main_init.return_value = None
         mock_cmdp.return_value.get.side_effect = [False, False, "ERR", False,
                                                   False, False, False, False]
-        umain = udocker.Main()
+        umain = UMain()
         umain.udocker = mock_udocker
         umain.cmdp = mock_cmdp
         umain.cmdp.reset_mock()
-        status = umain.execute()
+        status = umain._execute()
         self.assertTrue(umain.udocker.do_help.called)
         #
         mock_main_init.return_value = None
         mock_cmdp.return_value.get.side_effect = [False, False, "run", True,
                                                   False, False, False, False]
-        umain = udocker.Main()
+        umain = UMain()
         umain.udocker = mock_udocker
         umain.cmdp = mock_cmdp
         umain.cmdp.reset_mock()
         status = umain.execute()
         self.assertTrue(umain.udocker.do_help.called)
 
-    @mock.patch('udocker.Main.__init__')
-    @mock.patch('udocker.Main.execute')
+    @mock.patch('udocker.UMain.__init__')
+    @mock.patch('udocker.UMain._execute')
     @mock.patch('udocker.utils.fileutil.FileUtil')
     @mock.patch('udocker.msg.Msg')
     def test_04_start(self, mock_msg, mock_futil, mock_main_execute,
                       mock_main_init):
-        """Test Main().start()."""
+        """Test UMain().start()."""
         self._init()
         mock_main_init.return_value = None
         mock_main_execute.return_value = 2
-        umain = udocker.Main()
+        umain = UMain()
         status = umain.start()
         self.assertEqual(status, 2)
         #
@@ -193,7 +190,7 @@ class MainTestCase(unittest.TestCase):
         mock_main_init.return_value = None
         mock_main_execute.return_value = 2
         mock_main_execute.side_effect = KeyboardInterrupt("CTRLC")
-        umain = udocker.Main()
+        umain = UMain()
         status = umain.start()
         self.assertEqual(status, 1)
 
