@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Tools to manage the container structure"""
+
 import os
 import subprocess
 
