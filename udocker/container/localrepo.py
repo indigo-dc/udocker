@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Local repository management for images, containers"""
+
 import os
 import re
 import json
