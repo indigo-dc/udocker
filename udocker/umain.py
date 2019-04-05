@@ -33,7 +33,7 @@ from udocker.cmdparser import CmdParser
 from udocker.msg import Msg
 
 
-class Main(object):
+class UMain(object):
     """Implements most of the command line interface.
     These methods correspond directly to the commands that can
     be invoked via the command line interface.

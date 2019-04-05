@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # -*- coding: utf-8 -*-
 """
 ========
@@ -20,14 +22,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
+from udocker.umain import UMain
 
-__author__ = "udocker@lip.pt"
-__copyright__ = "Copyright 2017, LIP"
-__credits__ = ["PRoot http://proot.me",
-               "runC https://runc.io",
-               "Fakechroot https://github.com/dex4er/fakechroot",
-               "Singularity http://singularity.lbl.gov"
-              ]
-__license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = '1.0.11'
-__date__ = '2017'
+
+def main():
+    run_main = UMain(sys.argv)
+    sys.exit(run_main.start())
+
+
+if __name__ == "__main__":
+    main()
