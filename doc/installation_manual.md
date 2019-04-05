@@ -78,9 +78,9 @@ After download of tarball from PYPI, you can uncompress, and set the
 udocker executable in your PATH:
 
 ```
-  ls udocker-2.0.5.tar.gz
-  tar zxvf udocker-2.0.5.tar.gz
-  export PATH=`pwd`/udocker-2.0.5/udocker:$PATH
+  ls udocker-1.0.11.tgz
+  tar zxvf udocker-1.0.11.tgz
+  export PATH=`pwd`/udocker:$PATH
 ```
 
 ### 2.4. OBTAINING THE URL OF THE TARBALL
