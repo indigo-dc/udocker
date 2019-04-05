@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Superclass for the execution engines"""
+
 import os
 import string
 import re
