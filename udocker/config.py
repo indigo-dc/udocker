@@ -142,8 +142,7 @@ class Config(object):
         # registries table
         self.conf['docker_registries'] = {"docker.io":
                                               ["https://registry-1.docker.io",
-                                               "https://index.docker.io"],
-                                          }
+                                               "https://index.docker.io"]}
 
         # nvidia files
         self.conf['nvi_etc_list'] = ['vulkan/icd.d/nvidia_icd.json',
