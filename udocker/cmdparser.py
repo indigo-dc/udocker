@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Parser for udocker commands and options"""
+
 import string
 
 
