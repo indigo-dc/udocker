@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+""""Checksumming for files"""
+
 import hashlib
 import re
 from udocker.utils.uprocess import Uprocess
