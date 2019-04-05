@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""File utilities"""
+
 import os
 import sys
 import stat
