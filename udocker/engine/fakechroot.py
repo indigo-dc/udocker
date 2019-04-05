@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""fakechroot execution engine"""
+
 import os
 import sys
 import re
