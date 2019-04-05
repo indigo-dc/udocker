@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Messages, output, errors, MSG levels"""
 import sys
 
 
