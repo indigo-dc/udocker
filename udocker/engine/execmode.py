@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Management of execution mode"""
+
 import os
 
 from udocker.msg import Msg
