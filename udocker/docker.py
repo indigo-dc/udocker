@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
+"""Docker API integration"""
+
 import os
-import sys
 import re
 import time
 import base64
@@ -847,10 +848,12 @@ class DockerLocalFileAPI(object):
                 Msg().err("Error: container name already exists:",
                           container_name)
                 return False
-        container_id = ContainerStructure(self.localrepo).clone_fromfile(
-            tarfile)
+
+        cstruct = ContainerStructure(self.localrepo, self.conf)
+        container_id = cstruct.clone_fromfile(tarfile)
         if container_name:
             self.localrepo.set_container_name(container_id, container_name)
+
         return container_id
 
     def clone_container(self, container_id, container_name):
@@ -863,13 +866,17 @@ class DockerLocalFileAPI(object):
                 Msg().err("Error: container name already exists:",
                           container_name)
                 return False
-        dest_container_id = ContainerStructure(self.localrepo,
-                                               container_id).clone()
+
+        cstruct = ContainerStructure(self.localrepo, self.conf)
+        dest_container_id = cstruct.clone()
         if container_name:
             self.localrepo.set_container_name(dest_container_id,
                                               container_name)
-        exec_mode = ExecutionMode(self.localrepo, dest_container_id)
+
+        exec_mode = ExecutionMode(self.conf, self.localrepo,
+                                  dest_container_id)
         xmode = exec_mode.get_mode()
         if xmode.startswith("F"):
             exec_mode.set_mode(xmode, True)
+
         return dest_container_id
