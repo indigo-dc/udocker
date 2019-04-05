@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Linux utilities, authentication"""
+
 import re
 import pwd
 import grp
@@ -140,7 +142,7 @@ class NixAuthentication(object):
 
     def get_home(self):
         """Get host or container home directory"""
-        (r_user, d, d, d, r_home, d) = self.get_user(self.conf['uid'])
+        (r_user, dum, dum, dum, r_home, dum) = self.get_user(self.conf['uid'])
         if r_user:
             return r_home
         return ""
