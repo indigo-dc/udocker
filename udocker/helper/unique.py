@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Unique IDentifiers"""
+
 import string
 import uuid
 import random
