@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Singularity execution engine"""
+
 import sys
 import os
 import subprocess
@@ -186,7 +188,8 @@ class SingularityEngine(ExecutionEngineCommon):
 
         # execute
         self._run_banner(self.opt["cmd"][0], '/')
-        status = subprocess.call(cmd_l, shell=False, close_fds=True,
-                    env=os.environ.update(self._singularity_env_get()))
+        sing_env = os.environ.update(self._singularity_env_get())
+        status = subprocess.call(cmd_l, shell=False,
+                                 close_fds=True, env=sing_env)
         self._filebind.finish()
         return status

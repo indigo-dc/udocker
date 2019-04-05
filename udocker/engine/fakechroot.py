@@ -194,7 +194,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         Msg().err("Error: sh not found")
         sys.exit(1)
 
-    def run(self, exec_mode, container_id):
+    def run(self, container_id):
         """Execute a Docker container using Fakechroot. This is the main
         method invoked to run the a container with Fakechroot.
 

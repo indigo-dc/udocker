@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""PRoot execution engine"""
+
 import sys
 import os
 import subprocess
