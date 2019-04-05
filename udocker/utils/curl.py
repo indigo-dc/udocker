@@ -91,8 +91,8 @@ class GetURL(object):
         if GetURLpyCurl(self.conf).is_available() and not self._curl_executable:
             self._geturl = GetURLpyCurl(self.conf)
             self.cache_support = True
-        elif GetURLexeCurl().is_available():
-            self._geturl = GetURLexeCurl()
+        elif GetURLexeCurl(self.conf).is_available():
+            self._geturl = GetURLexeCurl(self.conf)
         else:
             Msg().err("Error: need curl or pycurl to perform downloads")
             raise NameError('need curl or pycurl')
@@ -281,8 +281,8 @@ class GetURLpyCurl(GetURL):
 class GetURLexeCurl(GetURL):
     """Downloader implementation using curl cli executable"""
 
-    def __init__(self):
-        GetURL.__init__(self)
+    def __init__(self, conf):
+        GetURL.__init__(self, conf)
         self._opts = None
         self._files = None
 
