@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Management and tools for the keystore"""
+
 import os
 import json
 
