@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Implements most of the command line interface."""
 
 import sys
 import os
@@ -12,16 +13,15 @@ from udocker.msg import Msg
 
 
 class UMain(object):
-    """Implements most of the command line interface.
-    These methods correspond directly to the commands that can
+    """These methods correspond directly to the commands that can
     be invoked via the command line interface.
     """
-    """Get options, parse and execute the command line"""
 
     def __init__(self, argv):
+        """Get options, parse and execute the command line"""
         self.argv = argv
         self.cmdp = CmdParser()
-        parseok = self.cmdp.parse(argv)
+        self.cmdp.parse(argv)
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
             sys.exit(1)
