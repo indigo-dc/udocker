@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Information about the guest/container"""
+
 import os
 import re
 from udocker.utils.uprocess import Uprocess
