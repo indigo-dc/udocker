@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""udocker Command Line Interface implementation"""
+
 import os
 import string
 import getpass
@@ -737,7 +739,7 @@ class UdockerCLI(object):
         else:
             (imagerepo, tag) = self._check_imagespec(arg)
             if imagerepo and self.localrepo.protect_imagerepo(imagerepo, tag):
-                    return exit_status
+                return exit_status
             Msg().err("Error: protect image failed")
             exit_status = 1
 
@@ -762,7 +764,7 @@ class UdockerCLI(object):
         else:
             (imagerepo, tag) = self._check_imagespec(arg)
             if imagerepo and self.localrepo.unprotect_imagerepo(imagerepo, tag):
-                    return exit_status
+                return exit_status
             Msg().err("Error: unprotect image failed")
             exit_status = 1
 
@@ -956,7 +958,7 @@ class UdockerCLI(object):
         Msg().err("Info: installation of udockertools successful", l=Msg.VER)
         return exit_status
 
-    def do_listconf(self, cmdp):
+    def do_listconf(self):
         """
         listconf: Print all configuration options
         """
@@ -968,7 +970,7 @@ class UdockerCLI(object):
         Msg().out(80*"-")
         return exit_status
 
-    def do_version(self, cmdp):
+    def do_version(self):
         """
         version: Print version information
         """
@@ -983,7 +985,7 @@ class UdockerCLI(object):
 
         return exit_status
 
-    def do_help(self, cmdp):
+    def do_help(self):
         """
         Print help information
         """

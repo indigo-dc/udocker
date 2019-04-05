@@ -62,7 +62,7 @@ class UMain(object):
         lhelp = ['-h', '--help', 'help']
         lversion = ['-V', '--version', 'version']
         cmds = {
-            "search": self.cli.do_search, "listconf": self.cli.do_listconf,
+            "search": self.cli.do_search,
             "images": self.cli.do_images, "pull": self.cli.do_pull,
             "create": self.cli.do_create, "ps": self.cli.do_ps,
             "run": self.cli.do_run,
@@ -79,11 +79,14 @@ class UMain(object):
 
         if (len(self.argv) == 1) or \
                 (len(self.argv) == 2 and self.argv[1] in lhelp):
-            exit_status = self.cli.do_help(None)
+            exit_status = self.cli.do_help()
             return exit_status
 
+        if "listconf" in self.argv:
+            exit_status = self.cli.do_listconf()
+
         if self.argv[1] in lversion:
-            exit_status = self.cli.do_version(None)
+            exit_status = self.cli.do_version()
         else:
             command = self.cmdp.get("", "CMD")
             if command != "install":
