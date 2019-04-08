@@ -18,7 +18,11 @@ import os
 import sys
 import unittest
 import mock
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 from udocker.utils.chksum import ChkSUM
 
 if sys.version_info[0] >= 3:
