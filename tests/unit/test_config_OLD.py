@@ -104,6 +104,34 @@ class ConfigTestCase(unittest.TestCase):
         osver = conf['oskernel']
         self.assertEqual(osver, "release")
 
+    @mock.patch('udocker.config.Config._verify_config')
+    @mock.patch('udocker.config.Config._read_config')
+    def test_03_user_init_good(self, mock_readc, mock_verify):
+        """Test Config.user_init() with good data."""
+        conf = Config().getconf()
+        conf_data = '''\
+# comment
+verbose_level = 100
+tmpdir = "/xpto"
+cmd = ["/bin/ls", "-l"]
+'''
+        mock_readc.return_value = conf_data
+        status = conf.user_init("filename.conf")
+        self.assertFalse(mock_verify.called)
+
+    @mock.patch('udocker.utils.fileutil.FileUtil')
+    @mock.patch('sys.exit')
+    def test_04_user_init_bad(self, mock_exit, mock_fileutil):
+        """Test Config.user_init() with bad config data."""
+        conf = Config().getconf()
+        conf_data = '''\
+hh +=* ffhdklfh
+'''
+        mock_fileutil.return_value.size.return_value = 10
+        mock_fileutil.return_value.getdata.return_value = conf_data
+        conf.user_init("filename.conf")
+        self.assertTrue(mock_exit.called)
+
     @mock.patch('udocker.msg.Msg')
     def test_05_username(self, mock_msg):
         """Test Config._username()."""
@@ -129,6 +157,14 @@ class ConfigTestCase(unittest.TestCase):
         #
         mock_oskern.return_value = "1.0.1-"
         status = conf.oskernel_isgreater([1, 1, 1])
+        self.assertFalse(status)
+
+    @mock.patch('udocker.utils.fileutil.FileUtil')
+    def test_07__read_config(self, mock_futil):
+        """Test Config._read_config()."""
+        conf = Config().getconf()
+        mock_futil.return_value.size.return_value = -1
+        status = conf._read_config(conf)
         self.assertFalse(status)
 
     @mock.patch('udocker.config.Config.__init__')
