@@ -43,6 +43,7 @@ class ChkSUMTestCase(unittest.TestCase):
         """Configure variables."""
         pass
 
+    # TODO: review tests
     def test_01_sha256(self):
         """Test ChkSUM().sha256()."""
         self._init()
