@@ -112,22 +112,21 @@ class ConfigTestCase(unittest.TestCase):
         user = conf['username']
         self.assertEqual(user, pwd.getpwuid(os.getuid()).pw_name)
 
-    @mock.patch('udocker.config.Config.oskernel')
     @mock.patch('udocker.msg.Msg')
-    def test_06_oskernel_isgreater(self, mock_msg, mock_oskern):
+    def test_06_oskernel_isgreater(self, mock_msg):
         """Test Config.oskernel_isgreater()."""
         Msg = mock_msg
         conf = Config().getconf()
         #
-        mock_oskern.return_value = "1.1.2-"
+        conf['oskernel'] = "1.1.2-"
         status = conf.oskernel_isgreater([1, 1, 1])
         self.assertTrue(status)
         #
-        mock_oskern.return_value = "1.2.1-"
+        conf['oskernel'] = "1.2.1-"
         status = conf.oskernel_isgreater([1, 1, 1])
         self.assertTrue(status)
         #
-        mock_oskern.return_value = "1.0.1-"
+        conf['oskernel'] = "1.0.1-"
         status = conf.oskernel_isgreater([1, 1, 1])
         self.assertFalse(status)
 
