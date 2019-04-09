@@ -43,22 +43,23 @@ class ContainerStructureTestCase(unittest.TestCase):
     def _init(self):
         """Configure variables."""
         Config = mock.MagicMock()
-        Config.hostauth_list = ("/etc/passwd", "/etc/group")
-        Config.cmd = "/bin/bash"
-        Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
-                                          ["taskset", "-c", "%s", ])
-        Config.valid_host_env = "HOME"
-        Config.return_value.username.return_value = "user"
-        Config.return_value.userhome.return_value = "/"
-        Config.location = ""
-        Config.return_value.oskernel.return_value = "4.8.13"
+        self.conf = Config().getconf()
+        self.conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
+        self.conf['cmd'] = "/bin/bash"
+        self.conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
+                                                ["taskset", "-c", "%s", ])
+        self.conf['valid_host_env'] = "HOME"
+        self.conf['username'] = "user"
+        self.conf['userhome'] = "/"
+        self.conf['location'] = ""
+        self.conf['oskernel'] = "4.8.13"
 
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_01_init(self, mock_local):
         """Test ContainerStructure()."""
         self._init()
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         self.assertEqual(prex.tag, "")
         self.assertEqual(prex.imagerepo, "")
         #
@@ -74,20 +75,20 @@ class ContainerStructureTestCase(unittest.TestCase):
         self._init()
         mock_msg.level = 0
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         Config.location = "/"
         (container_dir, container_json) = prex.get_container_attr()
         self.assertEqual(container_dir, "")
         self.assertEqual(container_json, [])
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         Config.location = ""
         mock_local.cd_container.return_value = ""
         (container_dir, container_json) = prex.get_container_attr()
         self.assertEqual(container_dir, False)
         self.assertEqual(container_json, False)
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         Config.location = ""
         mock_local.cd_container.return_value = "/"
         mock_local.load_json.return_value = []
@@ -95,7 +96,7 @@ class ContainerStructureTestCase(unittest.TestCase):
         self.assertEqual(container_dir, False)
         self.assertEqual(container_json, False)
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         Config.location = ""
         mock_local.cd_container.return_value = "/"
         mock_local.load_json.return_value = ["value", ]
@@ -113,25 +114,25 @@ class ContainerStructureTestCase(unittest.TestCase):
         self._init()
         mock_msg.level = 0
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         mock_local.cd_imagerepo.return_value = ""
         status = prex.create_fromimage("imagerepo", "tag")
         self.assertFalse(status)
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         mock_local.cd_imagerepo.return_value = "/"
         mock_local.get_image_attributes.return_value = ([], [])
         status = prex.create_fromimage("imagerepo", "tag")
         self.assertFalse(status)
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         mock_local.cd_imagerepo.return_value = "/"
         mock_local.get_image_attributes.return_value = (["value", ], [])
         mock_local.setup_container.return_value = ""
         status = prex.create_fromimage("imagerepo", "tag")
         self.assertFalse(status)
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         mock_local.cd_imagerepo.return_value = "/"
         mock_local.get_image_attributes.return_value = (["value", ], [])
         mock_local.setup_container.return_value = "/"
@@ -148,7 +149,7 @@ class ContainerStructureTestCase(unittest.TestCase):
         self._init()
         mock_msg.level = 0
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         with mock.patch.object(subprocess, 'Popen') as mock_popen:
             mock_popen.return_value.stdout.readline.side_effect = [
                 "/aaa", "", ]
@@ -156,7 +157,7 @@ class ContainerStructureTestCase(unittest.TestCase):
         self.assertTrue(status)
         self.assertFalse(mock_futil.called)
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         with mock.patch.object(subprocess, 'Popen') as mock_popen:
             mock_popen.return_value.stdout.readline.side_effect = [
                 "/a/.wh.x", "", ]
@@ -177,21 +178,21 @@ class ContainerStructureTestCase(unittest.TestCase):
         tarfiles = ["a.tar", "b.tar", ]
         #
         mock_call.return_value = False
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         status = prex._untar_layers(tarfiles, "/tmp")
         self.assertTrue(status)
         self.assertTrue(mock_call.called)
         #
         mock_call.reset_mock()
         mock_call.return_value = True
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         status = prex._untar_layers(tarfiles, "/tmp")
         self.assertFalse(status)
         self.assertTrue(mock_call.called)
         #
         mock_call.reset_mock()
         mock_call.return_value = True
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         status = prex._untar_layers([], "/tmp")
         self.assertFalse(status)
         self.assertFalse(mock_call.called)
@@ -240,7 +241,7 @@ class ContainerStructureTestCase(unittest.TestCase):
             },
         }
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         status = prex.get_container_meta("Cmd", "", container_json)
         self.assertEqual(status, "/bin/bash")
         #
@@ -258,7 +259,7 @@ class ContainerStructureTestCase(unittest.TestCase):
         self._init()
         mock_msg.level = 0
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         status = prex._dict_to_str({'A': 1, 'B': 2})
         self.assertTrue(status in ("A:1 B:2 ", "B:2 A:1 ", ))
         #self.assertEqual(status, "A:1 B:2 ")
@@ -270,7 +271,7 @@ class ContainerStructureTestCase(unittest.TestCase):
         self._init()
         mock_msg.level = 0
         #
-        prex = ContainerStructure(mock_local)
+        prex = ContainerStructure(mock_local, self.conf)
         status = prex._dict_to_list({'A': 1, 'B': 2})
         self.assertEqual(sorted(status), sorted(["A:1", "B:2"]))
 
