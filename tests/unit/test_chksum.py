@@ -15,7 +15,6 @@ limitations under the License.
 """
 
 import os
-import sys
 import unittest
 import mock
 try:
@@ -24,11 +23,6 @@ except ImportError:
     from io import StringIO
 
 from udocker.utils.chksum import ChkSUM
-
-if sys.version_info[0] >= 3:
-    BUILTINS = "builtins"
-else:
-    BUILTINS = "__builtin__"
 
 
 def set_env():
@@ -49,15 +43,7 @@ class ChkSUMTestCase(unittest.TestCase):
         """Configure variables."""
         pass
 
-    @mock.patch('udocker.utils.chksum.hashlib.sha256')
-    def test_01_init(self, mock_hashlib_sha):
-        """Test ChkSUM() constructor."""
-        self._init()
-        mock_hashlib_sha.return_value = True
-        cksum = ChkSUM()
-        self.assertEqual(cksum._sha256_call, cksum._hashlib_sha256)
-
-    def test_02_sha256(self):
+    def test_01_sha256(self):
         """Test ChkSUM().sha256()."""
         self._init()
         mock_call = mock.MagicMock()
@@ -72,32 +58,6 @@ class ChkSUMTestCase(unittest.TestCase):
         cksum._sha256_call = mock_call
         status = cksum.sha256("filename")
         self.assertFalse(status)
-
-    def test_03__hashlib_sha256(self):
-        """Test ChkSUM()._hashlib_sha256()."""
-        sha256sum = (
-            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-        self._init()
-        cksum = ChkSUM()
-        file_data = StringIO("qwerty")
-        with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
-            mopen.return_value.__iter__ = (
-                lambda self: iter(file_data.readline, ''))
-            status = cksum._hashlib_sha256("filename")
-            self.assertEqual(status, sha256sum)
-
-    @mock.patch('udocker.utils.uprocess.Uprocess.get_output')
-    @mock.patch('udocker.msg.Msg')
-    def test_04__openssl_sha256(self, mock_msg, mock_subproc):
-        """Test ChkSUM()._openssl_sha256()."""
-        self._init()
-        Msg = mock_msg
-        Msg.return_value.chlderr = open("/dev/null", "w")
-        Msg.chlderr = open("/dev/null", "w")
-        mock_subproc.return_value = "123456 "
-        cksum = ChkSUM()
-        status = cksum._openssl_sha256("filename")
-        self.assertEqual(status, "123456")
 
 
 if __name__ == '__main__':
