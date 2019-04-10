@@ -4,11 +4,12 @@ udocker unit tests: ChkSUM
 """
 
 import os
+import sys
 from unittest import TestCase, main
 try:
-    from unittest.mock import Mock, MagicMock, patch
+    from unittest.mock import Mock, MagicMock, patch, mock_open
 except ImportError:
-    from mock import Mock, MagicMock, patch
+    from mock import Mock, MagicMock, patch, mock_open
 
 try:
     from StringIO import StringIO
@@ -17,32 +18,26 @@ except ImportError:
 
 from udocker.utils.chksum import ChkSUM
 
+if sys.version_info[0] >= 3:
+    BUILTINS = "builtins"
+else:
+    BUILTINS = "__builtin__"
+
 
 class ChkSUMTestCase(TestCase):
     """Test ChkSUM() performs checksums portably."""
-
-    # TODO: review tests
-    @patch('udocker.utils.chksum.hashlib')
-    def test_01_sha256(self, mock_hashlib):
+    def test_01_sha256(self):
         """Test ChkSUM().sha256()."""
         sha256sum = (
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
         cksum = ChkSUM()
         #
         file_data = StringIO("qwerty")
-        with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
+        with patch(BUILTINS + '.open', mock_open()) as mopen:
             mopen.return_value.__iter__ = (
                 lambda self: iter(file_data.readline, ''))
-            status = cksum._hashlib_sha256("filename")
+            status = cksum.sha256("filename")
             self.assertEqual(status, sha256sum)
-
-        status = cksum.sha256("filename")
-        self.assertTrue(status)
-        #
-        mock_call.return_value = False
-        cksum._sha256_call = mock_call
-        status = cksum.sha256("filename")
-        self.assertFalse(status)
 
 
 if __name__ == '__main__':
