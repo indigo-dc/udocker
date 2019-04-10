@@ -37,8 +37,8 @@ class ChkSUMTestCase(TestCase):
         pass
 
     # TODO: review tests
-    @patch('udocker.utils.chksum.ChkSUM')
-    def test_01_sha256(self, mock_chksum):
+    @patch('udocker.utils.chksum.hashlib')
+    def test_01_sha256(self, mock_hashlib):
         """Test ChkSUM().sha256()."""
         self._init()
         mock_call = MagicMock()
