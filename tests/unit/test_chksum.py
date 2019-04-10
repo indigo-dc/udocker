@@ -18,34 +18,24 @@ except ImportError:
 from udocker.utils.chksum import ChkSUM
 
 
-def set_env():
-    """Set environment variables."""
-    if not os.getenv("HOME"):
-        os.environ["HOME"] = os.getcwd()
-
-
 class ChkSUMTestCase(TestCase):
     """Test ChkSUM() performs checksums portably."""
-
-    @classmethod
-    def setUpClass(cls):
-        """Setup test."""
-        set_env()
-
-    def _init(self):
-        """Configure variables."""
-        pass
 
     # TODO: review tests
     @patch('udocker.utils.chksum.hashlib')
     def test_01_sha256(self, mock_hashlib):
         """Test ChkSUM().sha256()."""
-        self._init()
-        mock_call = MagicMock()
+        sha256sum = (
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
         cksum = ChkSUM()
         #
-        mock_call.return_value = True
-        cksum._sha256_call = mock_call
+        file_data = StringIO("qwerty")
+        with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
+            mopen.return_value.__iter__ = (
+                lambda self: iter(file_data.readline, ''))
+            status = cksum._hashlib_sha256("filename")
+            self.assertEqual(status, sha256sum)
+
         status = cksum.sha256("filename")
         self.assertTrue(status)
         #
