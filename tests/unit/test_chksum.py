@@ -4,7 +4,7 @@ udocker unit tests: ChkSUM
 """
 
 import os
-from unittest import TestCase
+from unittest import TestCase, main
 try:
     from unittest.mock import Mock, MagicMock, patch
 except ImportError:
@@ -56,4 +56,4 @@ class ChkSUMTestCase(TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()
