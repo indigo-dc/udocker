@@ -10,18 +10,15 @@ from udocker.utils.fileutil import FileUtil
 class GuestInfo(object):
     """Get os information from a directory tree"""
 
-    _binarylist = ["/lib64/ld-linux-x86-64.so",
-                   "/lib64/ld-linux-x86-64.so.2",
-                   "/lib64/ld-linux-x86-64.so.3",
-                   "/lib/ld-linux.so.2",
-                   "/lib/ld-linux.so",
-                   "/bin/sh", "/bin/bash", "/bin/zsh", "/bin/csh", "/bin/tcsh",
-                   "/bin/ls", "/bin/busybox",
-                   "/system/bin/sh", "/system/bin/ls",
-                  ]
-
     def __init__(self, root_dir):
         self._root_dir = root_dir
+        self.binarylist = ["/lib64/ld-linux-x86-64.so",
+                           "/lib64/ld-linux-x86-64.so.2",
+                           "/lib64/ld-linux-x86-64.so.3",
+                           "/lib/ld-linux.so.2", "/lib/ld-linux.so",
+                           "/bin/sh", "/bin/bash", "/bin/zsh", "/bin/csh",
+                           "/bin/tcsh", "/bin/ls", "/bin/busybox",
+                           "/system/bin/sh", "/system/bin/ls"]
 
     def get_filetype(self, filename):
         """Get the file architecture"""
@@ -39,7 +36,7 @@ class GuestInfo(object):
 
     def arch(self):
         """Get guest system architecture"""
-        for filename in GuestInfo._binarylist:
+        for filename in self.binarylist:
             f_path = self._root_dir + filename
             filetype = self.get_filetype(f_path)
             if not filetype:
