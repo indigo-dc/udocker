@@ -2,8 +2,6 @@
 """
 udocker unit tests: ChkSUM
 """
-
-import os
 import sys
 from unittest import TestCase, main
 try:
