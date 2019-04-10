@@ -1,30 +1,18 @@
 #!/usr/bin/env python2
 """
-udocker unit tests.
-
-Unit tests for udocker, a wrapper to execute basic docker containers
-without using docker.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+udocker unit tests: Msg
 """
-
-import os
 import sys
-import unittest
-import mock
-from StringIO import StringIO
+from unittest import TestCase, main
+try:
+    from unittest.mock import Mock, patch
+except ImportError:
+    from mock import Mock, patch
 
-sys.path.append('.')
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from udocker.msg import Msg
 
@@ -37,11 +25,6 @@ if sys.version_info[0] >= 3:
 else:
     BUILTINS = "__builtin__"
 
-def set_env():
-    """Set environment variables."""
-    if not os.getenv("HOME"):
-        os.environ["HOME"] = os.getcwd()
-
 def is_writable_file(obj):
     """Check if obj is a file."""
     try:
@@ -52,13 +35,8 @@ def is_writable_file(obj):
         return True
 
 
-class MsgTestCase(unittest.TestCase):
+class MsgTestCase(TestCase):
     """Test Msg() class screen error and info messages."""
-
-    @classmethod
-    def setUpClass(cls):
-        """Setup test."""
-        set_env()
 
     def _verify_descriptors(self, msg):
         """Verify Msg() file descriptors."""
@@ -82,7 +60,7 @@ class MsgTestCase(unittest.TestCase):
         self._verify_descriptors(msg)
         self.assertEqual(msg.level, 7)
 
-    @mock.patch('sys.stdout', new_callable=StringIO)
+    @patch('sys.stdout', new_callable=StringIO)
     def test_03_out(self, mock_stdout):
         """Test Msg.out() screen messages."""
         msg = Msg(Msg.MSG)
@@ -91,7 +69,7 @@ class MsgTestCase(unittest.TestCase):
         sys.stdout = STDOUT
         sys.stderr = STDERR
 
-    @mock.patch('sys.stderr', new_callable=StringIO)
+    @patch('sys.stderr', new_callable=StringIO)
     def test_04_err(self, mock_stderr):
         """Test Msg.err() screen messages."""
         msg = Msg(Msg.ERR)
@@ -102,4 +80,4 @@ class MsgTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()
