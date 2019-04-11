@@ -22,7 +22,7 @@ class NixAuthentication(object):
     def _get_user_from_host(self, wanted_user):
         """get user information from the host /etc/passwd"""
         wanted_uid = ""
-        if (isinstance(wanted_user, (int, long)) or
+        if (isinstance(wanted_user, int) or
                 re.match("^\\d+$", wanted_user)):
             wanted_uid = str(wanted_user)
             wanted_user = ""
@@ -44,7 +44,7 @@ class NixAuthentication(object):
     def _get_group_from_host(self, wanted_group):
         """get group information from the host /etc/group"""
         wanted_gid = ""
-        if (isinstance(wanted_group, (int, long)) or
+        if (isinstance(wanted_group, int) or
                 re.match("^\\d+$", wanted_group)):
             wanted_gid = str(wanted_group)
             wanted_group = ""
@@ -64,7 +64,7 @@ class NixAuthentication(object):
     def _get_user_from_file(self, wanted_user):
         """Get user from a passwd file"""
         wanted_uid = ""
-        if (isinstance(wanted_user, (int, long)) or
+        if (isinstance(wanted_user, int) or
                 re.match("^\\d+$", wanted_user)):
             wanted_uid = str(wanted_user)
             wanted_user = ""
@@ -86,7 +86,7 @@ class NixAuthentication(object):
     def _get_group_from_file(self, wanted_group):
         """Get group from a group file"""
         wanted_gid = ""
-        if (isinstance(wanted_group, (int, long)) or
+        if (isinstance(wanted_group, int) or
                 re.match("^\\d+$", wanted_group)):
             wanted_gid = str(wanted_group)
             wanted_group = ""
