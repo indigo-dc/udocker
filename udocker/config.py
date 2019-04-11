@@ -176,12 +176,6 @@ class Config(object):
         self._file_override()   # Override with variables in conf file
         self._env_override()    # Override with variables in environment
 
-    def _verify_config(self):
-        """Config verification"""
-        if not self.conf['topdir']:
-            Msg().err("Error: UDOCKER directory not found")
-            sys.exit(1)
-
     def _file_override(self):
         """
         Override values from config file
@@ -302,4 +296,8 @@ class Config(object):
 
     def getconf(self):
         """Return all configuration variables"""
+        if not self.conf['topdir']:
+            Msg().err("Error: UDOCKER directory not found")
+            sys.exit(1)
+
         return self.conf
