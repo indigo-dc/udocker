@@ -100,7 +100,8 @@ class KeyStore(object):
             exit_status = 1
             return exit_status
         self._shred()
-        return self._write_all(auths)
+        exit_status = self._write_all(auths)
+        return exit_status
 
     def erase(self):
         """Delete all credentials from keystore"""
