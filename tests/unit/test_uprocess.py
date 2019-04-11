@@ -6,9 +6,9 @@ import subprocess
 import sys
 from unittest import TestCase, main
 try:
-    from unittest.mock import Mock, MagicMock, patch, mock_open
+    from unittest.mock import Mock, patch
 except ImportError:
-    from mock import Mock, MagicMock, patch, mock_open
+    from mock import Mock, patch
 
 sys.path.append('.')
 
