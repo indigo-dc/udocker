@@ -50,7 +50,7 @@ class PRootEngine(ExecutionEngineCommon):
                 image_list = ["proot-arm-4_8_0", "proot-arm", "proot"]
             else:
                 image_list = ["proot-arm", "proot"]
-        f_util = FileUtil(self.localrepo.bindir)
+        f_util = FileUtil(self.conf, self.localrepo.bindir)
         self.proot_exec = f_util.find_file_in_dir(image_list)
         if not self.proot_exec:
             Msg().err("Error: proot executable not found")
