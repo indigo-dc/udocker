@@ -107,7 +107,7 @@ class ExecutionEngineCommon(object):
         exec_cmd = []
         for exec_cmd in self.conf['cpu_affinity_exec_tools']:
             exec_name = \
-                FileUtil(exec_cmd[0]).find_exec()
+                FileUtil(self.conf, exec_cmd[0]).find_exec()
             if exec_name:
                 exec_cmd[0] = exec_name
                 for (index, arg) in enumerate(exec_cmd):
@@ -187,9 +187,9 @@ class ExecutionEngineCommon(object):
         if os.path.exists(mountpoint):
             return True
         if os.path.isfile(host_path):
-            return FileUtil(mountpoint).putdata("")
+            return FileUtil(self.conf, mountpoint).putdata("")
         elif os.path.isdir(host_path):
-            return FileUtil(mountpoint).mkdir()
+            return FileUtil(self.conf, mountpoint).mkdir()
         return False
 
     def _check_volumes(self):
@@ -294,7 +294,7 @@ class ExecutionEngineCommon(object):
             exec_path_list.append(self.opt["cwd"] + "/" + exec_name)
         else:
             exec_path_list = \
-                FileUtil(exec_name).list_inpath(path, "/")
+                FileUtil(self.conf, exec_name).list_inpath(path, "/")
         for exec_path in exec_path_list:
             host_exec_path = self._cont2host(exec_path)
             if (os.path.isfile(host_exec_path) and
@@ -498,11 +498,11 @@ class ExecutionEngineCommon(object):
         setup this binding as well via hostauth.
         """
         FileUtil().umask(0o077)
-        tmp_passwd = FileUtil("passwd").mktmp()
-        tmp_group = FileUtil("group").mktmp()
-        FileUtil(container_auth.passwd_file).copyto(tmp_passwd)
-        FileUtil(container_auth.group_file).copyto(tmp_group)
-        FileUtil().umask()
+        tmp_passwd = FileUtil(self.conf, "passwd").mktmp()
+        tmp_group = FileUtil(self.conf, "group").mktmp()
+        FileUtil(self.conf, container_auth.passwd_file).copyto(tmp_passwd)
+        FileUtil(self.conf, container_auth.group_file).copyto(tmp_group)
+        FileUtil(self.conf).umask()
         if not self.opt["uid"]:
             self.opt["uid"] = str(self.conf['uid'])
         if not self.opt["gid"]:
