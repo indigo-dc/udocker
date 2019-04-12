@@ -274,7 +274,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._run_invalid_options()
 
         self._container_specfile = self.container_dir + "/config.json"
-        self._filebind = FileBind(self.localrepo, self.container_id)
+        self._filebind = FileBind(self.conf, self.localrepo, self.container_id)
 
         self._select_runc()
 
