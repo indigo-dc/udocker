@@ -10,7 +10,8 @@ from udocker.utils.fileutil import FileUtil
 class GuestInfo(object):
     """Get os information from a directory tree"""
 
-    def __init__(self, root_dir):
+    def __init__(self, conf, root_dir):
+        self.conf = conf
         self._root_dir = root_dir
         self.binarylist = ["/lib64/ld-linux-x86-64.so",
                            "/lib64/ld-linux-x86-64.so.2",
@@ -54,9 +55,9 @@ class GuestInfo(object):
 
     def osdistribution(self):
         """Get guest operating system distribution"""
-        for f_path in FileUtil(self._root_dir + "/etc/.+-release").match():
+        for f_path in FileUtil(self.conf, self._root_dir + "/etc/.+-release").match():
             if os.path.exists(f_path):
-                osinfo = FileUtil(f_path).getdata()
+                osinfo = FileUtil(self.conf, f_path).getdata()
                 match = re.match(r"([^=]+) release (\d+)", osinfo)
                 if match and match.group(1):
                     return (match.group(1).split(" ")[0],
@@ -65,7 +66,7 @@ class GuestInfo(object):
         if os.path.exists(f_path):
             distribution = ""
             version = ""
-            osinfo = FileUtil(f_path).getdata()
+            osinfo = FileUtil(self.conf, f_path).getdata()
             match = re.search(r"DISTRIB_ID=(.+)(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
@@ -80,7 +81,7 @@ class GuestInfo(object):
         if os.path.exists(f_path):
             distribution = ""
             version = ""
-            osinfo = FileUtil(f_path).getdata()
+            osinfo = FileUtil(self.conf, f_path).getdata()
             match = re.search(r"NAME=\"?(.+)\"?(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
