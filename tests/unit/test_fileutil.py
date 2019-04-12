@@ -6,9 +6,9 @@ import sys
 import os
 from unittest import TestCase, main
 try:
-    from unittest.mock import Mock, patch, mock_open
+    from unittest.mock import Mock, patch, MagicMock, mock_open
 except ImportError:
-    from mock import Mock, patch, mock_open
+    from mock import Mock, patch, MagicMock, mock_open
 
 sys.path.append('.')
 
@@ -52,7 +52,8 @@ class FileUtilTestCase(TestCase):
 
     def _init(self):
         """Configure variables."""
-        self.conf = Config().getconf()
+        cnf = Config()
+        self.conf = cnf.getconf()
 
     def test_01_init(self):
         """Test FileUtil(self.conf) constructor."""
@@ -75,8 +76,17 @@ class FileUtilTestCase(TestCase):
         self.assertTrue(tmp_file.startswith("/somewhere/udocker-"))
         self.assertGreater(len(tmp_file.strip()), 68)
 
+    @patch('udocker.config.Config._oskernel')
+    @patch('udocker.config.Config._osdistribution')
+    @patch('udocker.config.Config._osversion')
+    @patch('udocker.config.Config._arch')
+    @patch('udocker.config.Config._username')
+    @patch('udocker.config.Config.os.getgid')
+    @patch('udocker.config.Config.os.getuid')
+    @patch('udocker.config.Config.os.path.expanduser')
     @patch('udocker.utils.fileutil.os.stat')
-    def test_03_uid(self, mock_stat):
+    def test_03_uid(self, mock_stat, mock_expand, mock_uid, mock_gid, mock_user,
+                    mock_arch, mock_osver, mock_osdist, mock_oskern):
         """Test FileUtil.uid()."""
         self._init()
         mock_stat.return_value.st_uid = 1234
