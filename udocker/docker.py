@@ -115,7 +115,7 @@ class DockerIoAPI(object):
             elif cache_mode == 3:
                 (hdr, dummy) = self._get_url(url, sizeonly=True)
             remote_size = self.curl.get_content_length(hdr)
-            if remote_size == FileUtil(filename).size():
+            if remote_size == FileUtil(self.conf, filename).size():
                 return True             # is cached skip download
         else:
             remote_size = -1
@@ -125,10 +125,10 @@ class DockerIoAPI(object):
         (hdr, dummy) = self._get_url(url, ofile=filename, resume=resume)
         if remote_size == -1:
             remote_size = self.curl.get_content_length(hdr)
-        if (remote_size != FileUtil(filename).size() and
+        if (remote_size != FileUtil(self.conf, filename).size() and
                 hdr.data["X-ND-CURLSTATUS"]):
             Msg().err("Error: file size mismatch:", filename,
-                      remote_size, FileUtil(filename).size())
+                      remote_size, FileUtil(self.conf, filename).size())
             return False
         return True
 
@@ -525,7 +525,7 @@ class DockerLocalFileAPI(object):
         """Load the structure of a Docker pulled image"""
         structure = dict()
         structure["layers"] = dict()
-        if FileUtil(tmp_imagedir).isdir():
+        if FileUtil(self.conf, tmp_imagedir).isdir():
             for fname in os.listdir(tmp_imagedir):
                 f_path = tmp_imagedir + "/" + fname
                 if fname == "repositories":
@@ -535,7 +535,7 @@ class DockerLocalFileAPI(object):
                     pass
                 elif len(fname) == 69 and fname.endswith(".json"):
                     pass
-                elif len(fname) == 64 and FileUtil(f_path).isdir():
+                elif len(fname) == 64 and FileUtil(self.conf, f_path).isdir():
                     layer_id = fname
                     structure["layers"][layer_id] = dict()
                     for layer_f in os.listdir(f_path):
@@ -603,7 +603,7 @@ class DockerLocalFileAPI(object):
         try:
             os.rename(filepath, target_file)
         except(IOError, OSError):
-            if not FileUtil(filepath).copyto(target_file):
+            if not FileUtil(self.conf, filepath).copyto(target_file):
                 return False
         self.localrepo.add_image_layer(target_file)
         return True
@@ -676,19 +676,19 @@ class DockerLocalFileAPI(object):
         if not os.path.exists(imagefile) and imagefile != "-":
             Msg().err("Error: image file does not exist:", imagefile)
             return False
-        tmp_imagedir = FileUtil("import").mktmp()
+        tmp_imagedir = FileUtil(self.conf, "import").mktmp()
         try:
             os.makedirs(tmp_imagedir)
         except (IOError, OSError):
             return False
         if not self._untar_saved_container(imagefile, tmp_imagedir):
             Msg().err("Error: failed to extract container:", imagefile)
-            FileUtil(tmp_imagedir).remove()
+            FileUtil(self.conf, tmp_imagedir).remove()
             return False
         structure = self._load_structure(tmp_imagedir)
         if not structure:
             Msg().err("Error: failed to load image structure", imagefile)
-            FileUtil(tmp_imagedir).remove()
+            FileUtil(self.conf, tmp_imagedir).remove()
             return False
         else:
             if "repositories" in structure and structure["repositories"]:
@@ -697,7 +697,7 @@ class DockerLocalFileAPI(object):
                 imagerepo = Unique().imagename()
                 tag = "latest"
                 repositories = self._load_image(structure, imagerepo, tag)
-            FileUtil(tmp_imagedir).remove()
+            FileUtil(self.conf, tmp_imagedir).remove()
             return repositories
 
     def create_container_meta(self, layer_id, comment="created by udocker"):
@@ -713,7 +713,7 @@ class DockerLocalFileAPI(object):
         container_json["architecture"] = self.conf['arch']
         container_json["os"] = self.conf['osversion']
         layer_file = self.localrepo.layersdir + "/" + layer_id + ".layer"
-        container_json["size"] = FileUtil(layer_file).size()
+        container_json["size"] = FileUtil(self.conf, layer_file).size()
         if container_json["size"] == -1:
             container_json["size"] = 0
         container_json["container_config"] = {
@@ -799,7 +799,7 @@ class DockerLocalFileAPI(object):
             except(IOError, OSError):
                 pass
         if not os.path.exists(layer_file):
-            if not FileUtil(tarfile).copyto(layer_file):
+            if not FileUtil(self.conf, tarfile).copyto(layer_file):
                 Msg().err("Error: in move/copy file", tarfile)
                 return False
         self.localrepo.add_image_layer(layer_file)
