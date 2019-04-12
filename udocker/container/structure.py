@@ -152,7 +152,7 @@ class ContainerStructure(object):
                     rm_filename = destdir + "/" \
                         + os.path.dirname(wh_filename) + "/" \
                         + wh_basename.replace(".wh.", "", 1)
-                    FileUtil(rm_filename).remove()
+                    FileUtil(self.conf, rm_filename).remove()
             else:
                 try:
                     proc.stdout.close()
