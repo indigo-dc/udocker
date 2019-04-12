@@ -39,10 +39,10 @@ class SingularityEngine(ExecutionEngineCommon):
             image_list = ["singularity-arm64", "singularity"]
         elif arch == "arm":
             image_list = ["singularity-arm", "singularity"]
-        f_util = FileUtil(self.localrepo.bindir)
+        f_util = FileUtil(self.conf, self.localrepo.bindir)
         self.singularity_exec = f_util.find_file_in_dir(image_list)
         if not self.singularity_exec:
-            self.singularity_exec = FileUtil("singularity").find_exec()
+            self.singularity_exec = FileUtil(self.conf, "singularity").find_exec()
         if not self.singularity_exec:
             Msg().err("Error: singularity executable not found")
             sys.exit(1)
@@ -97,12 +97,12 @@ class SingularityEngine(ExecutionEngineCommon):
 
     def _make_container_directories(self):
         """Create directories expected by Singularity"""
-        FileUtil(self.container_root + "/var/tmp").mkdir()
-        FileUtil(self.container_root + "/tmp").mkdir()
-        FileUtil(self.container_root + "/proc").mkdir()
-        FileUtil(self.container_root + "/dev").mkdir()
-        FileUtil(self.container_root + "/sys").mkdir()
-        FileUtil(self.container_root + "/root").mkdir()
+        FileUtil(self.conf, self.container_root + "/var/tmp").mkdir()
+        FileUtil(self.conf, self.container_root + "/tmp").mkdir()
+        FileUtil(self.conf, self.container_root + "/proc").mkdir()
+        FileUtil(self.conf, self.container_root + "/dev").mkdir()
+        FileUtil(self.conf, self.container_root + "/sys").mkdir()
+        FileUtil(self.conf, self.container_root + "/root").mkdir()
 
     def _run_invalid_options(self):
         """check -p --publish -P --publish-all --net-coop"""
@@ -164,7 +164,7 @@ class SingularityEngine(ExecutionEngineCommon):
         if self.singularity_exec.startswith(self.localrepo.bindir):
             self.conf['singularity_options'].extend(["-u", ])
 
-        # if FileUtil("nvidia-smi").find_exec():
+        # if FileUtil(self.conf, "nvidia-smi").find_exec():
         #     self.conf['singularity_options'].extend(["--nv", ])
 
         singularity_vol_list = self._get_volume_bindings()
