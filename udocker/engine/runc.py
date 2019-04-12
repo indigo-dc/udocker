@@ -46,7 +46,7 @@ class RuncEngine(ExecutionEngineCommon):
             image_list = ["runc-arm64", "runc"]
         elif arch == "arm":
             image_list = ["runc-arm", "runc"]
-        f_util = FileUtil(self.localrepo.bindir)
+        f_util = FileUtil(self.conf, self.localrepo.bindir)
         self.runc_exec = f_util.find_file_in_dir(image_list)
         if not self.runc_exec:
             Msg().err("Error: runc executable not found")
@@ -54,9 +54,9 @@ class RuncEngine(ExecutionEngineCommon):
 
     def _load_spec(self, new=False):
         """Generate runc spec file"""
-        if FileUtil(self._container_specfile).size() != -1 and new:
-            FileUtil(self._container_specfile).remove()
-        if FileUtil(self._container_specfile).size() == -1:
+        if FileUtil(self.conf, self._container_specfile).size() != -1 and new:
+            FileUtil(self.conf, self._container_specfile).remove()
+        if FileUtil(self.conf, self._container_specfile).size() == -1:
             cmd_l = [self.runc_exec, "spec", "--rootless", "--bundle",
                      os.path.realpath(self.container_dir)]
             status = subprocess.call(cmd_l, shell=False, stderr=Msg.chlderr,
