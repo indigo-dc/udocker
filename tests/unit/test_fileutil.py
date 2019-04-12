@@ -97,13 +97,13 @@ class FileUtilTestCase(TestCase):
                             mock_exists, mock_realpath):
         """Test FileUtil.remove() with plain files."""
         self._init()
-        mock_uid.return_value = os.getuid()
+        mock_uid.return_value = 1000
         # file does not exist (regression of #50)
         mock_isdir.return_value = True
         mock_isfile.return_value = True
         mock_exists.return_value = True
         mock_safe.return_value = True
-        self.conf['uid'] = os.getuid()
+        self.conf['uid'] = 1000
         self.conf['tmpdir'] = "/tmp"
         mock_realpath.return_value = "/tmp"
         # under /
@@ -111,12 +111,12 @@ class FileUtilTestCase(TestCase):
         status = futil.remove()
         self.assertFalse(status)
         # wrong uid
-        mock_uid.return_value = os.getuid() + 1
+        mock_uid.return_value = 1001
         futil = FileUtil(self.conf, "/tmp/filename4.txt")
         status = futil.remove()
         self.assertFalse(status)
         # under /tmp
-        mock_uid.return_value = os.getuid()
+        mock_uid.return_value = 1000
         futil = FileUtil(self.conf, "/tmp/filename4.txt")
         status = futil.remove()
         self.assertTrue(status)
@@ -145,14 +145,14 @@ class FileUtilTestCase(TestCase):
                            mock_msg, mock_exists):
         """Test FileUtil.remove() with directories."""
         self._init()
-        mock_uid.return_value = os.getuid()
+        mock_uid.return_value = 1000
         mock_isfile.return_value = False
         mock_islink.return_value = False
         mock_isdir.return_value = True
         mock_exists.return_value = True
         mock_safe.return_value = True
         mock_call.return_value = 0
-        self.conf['uid'] = os.getuid()
+        self.conf['uid'] = 1000
         self.conf['tmpdir'] = "/tmp"
         # remove directory under /tmp OK
         futil = FileUtil(self.conf, "/tmp/directory")
@@ -220,11 +220,11 @@ class FileUtilTestCase(TestCase):
         status = FileUtil(self.conf, "somedir").isdir()
         self.assertFalse(status)
 
-    @patch('udocker.utils.fileutil.os.stat')
+    @patch('udocker.utils.fileutil.os.stat.st_size')
     def test_11_size(self, mock_stat):
         """Test FileUtil.size() get file size."""
         self._init()
-        mock_stat.return_value.st_size = 4321
+        mock_stat.return_value = 4321
         size = FileUtil(self.conf, "somefile").size()
         self.assertEqual(size, 4321)
 
@@ -536,7 +536,7 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.FileUtil._link_set')
     @patch('udocker.msg.Msg')
     @patch('udocker.utils.fileutil.FileUtil._is_safe_prefix')
-    @patch('udocker.utils.fileutil.os.lstat')
+    @patch('udocker.utils.fileutil.os.lstat.st_uid')
     @patch('udocker.utils.fileutil.os.path.islink')
     @patch('udocker.utils.fileutil.os.walk')
     @patch('udocker.utils.fileutil.os.path.realpath')
@@ -572,7 +572,7 @@ class FileUtilTestCase(TestCase):
         mock_realpath.return_value = "/ROOT"
         mock_is_safe_prefix.return_value = True
         mock_islink = True
-        mock_lstat.return_value.st_uid = 1
+        mock_lstat.return_value = 1
         self._init()
         self.conf['uid'] = 0
         mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
@@ -582,7 +582,7 @@ class FileUtilTestCase(TestCase):
         mock_realpath.return_value = "/ROOT"
         mock_is_safe_prefix.return_value = True
         mock_islink = True
-        mock_lstat.return_value.st_uid = 1
+        mock_lstat.return_value = 1
         mock_link_set.reset_mock()
         mock_link_restore.reset_mock()
         self._init()
@@ -595,7 +595,7 @@ class FileUtilTestCase(TestCase):
         mock_realpath.return_value = "/ROOT"
         mock_is_safe_prefix.return_value = True
         mock_islink = True
-        mock_lstat.return_value.st_uid = 1
+        mock_lstat.return_value = 1
         mock_link_set.reset_mock()
         mock_link_restore.reset_mock()
         self._init()

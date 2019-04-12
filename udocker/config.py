@@ -182,6 +182,7 @@ class Config(object):
         """
         cfpath = '/etc/' + self.conf['config']
         if os.path.exists(cfpath):
+            Msg().out('Using config file: %s', cfpath)
             config = ConfigParser()
             config.read(cfpath)
             for (key, val) in config.items(['DEFAULT']):
@@ -190,6 +191,7 @@ class Config(object):
 
         cfpath = self.conf['homedir'] + self.conf['config']
         if os.path.exists(cfpath):
+            Msg().out('Using config file: %s', cfpath)
             config = ConfigParser()
             config.read(cfpath)
             for (key, val) in config.items(['DEFAULT']):
@@ -198,6 +200,7 @@ class Config(object):
 
         cfpath = self.user_cfile
         if os.path.exists(cfpath):
+            Msg().out('Using config file: %s', cfpath)
             config = ConfigParser()
             config.read(cfpath)
             for (key, val) in config.items(['DEFAULT']):
