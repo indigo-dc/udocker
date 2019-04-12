@@ -224,8 +224,7 @@ class FileUtilTestCase(TestCase):
 
     def test_12_getdata(self):
         """Test FileUtil.size() get file content."""
-        with mock.patch(BUILTINS + '.open',
-                        mock.mock_open(read_data='qwerty')):
+        with patch(BUILTINS + '.open', mock_open(read_data='qwerty')):
             data = FileUtil("somefile").getdata()
             self.assertEqual(data, 'qwerty')
 
@@ -266,7 +265,7 @@ class FileUtilTestCase(TestCase):
 
     def test_15_copyto(self):
         """Test FileUtil.copyto() file copy."""
-        with mock.patch(BUILTINS + '.open', mock.mock_open()):
+        with patch(BUILTINS + '.open', mock_open()):
             status = FileUtil("source").copyto("dest")
             self.assertTrue(status)
             status = FileUtil("source").copyto("dest", "w")
@@ -345,8 +344,7 @@ class FileUtilTestCase(TestCase):
         data = futil.putdata("qwerty")
         self.assertFalse(data)
         #
-        with mock.patch(BUILTINS + '.open',
-                        mock.mock_open()):
+        with patch(BUILTINS + '.open', mock_open()):
             data = FileUtil("somefile").putdata("qwerty")
             self.assertEqual(data, 'qwerty')
 
@@ -389,16 +387,14 @@ class FileUtilTestCase(TestCase):
         mock_readlink.return_value = "/HOST/DIR"
         mock_realpath.return_value = "/HOST/DIR"
         mock_access.return_value = True
-        FileUtil("/con").\
-            _link_change_apply("/con/lnk_new", "/con/lnk", False)
+        FileUtil("/con")._link_change_apply("/con/lnk_new", "/con/lnk", False)
         self.assertTrue(mock_remove.called)
         self.assertTrue(mock_symlink.called)
 
         mock_access.return_value = False
         mock_remove.reset_mock()
         mock_symlink.reset_mock()
-        FileUtil("/con").\
-            _link_change_apply("/con/lnk_new", "/con/lnk", True)
+        FileUtil("/con")._link_change_apply("/con/lnk_new", "/con/lnk", True)
         self.assertTrue(mock_chmod.called)
         self.assertTrue(mock_remove.called)
         self.assertTrue(mock_symlink.called)
@@ -472,7 +468,7 @@ class FileUtilTestCase(TestCase):
         """Test FileUtil._link_restore()."""
         mock_readlink.return_value = "/con/AAA"
         status = FileUtil("/con")._link_restore("/con/lnk", "/con",
-                                                        "/root", False)
+                                                "/root", False)
         self.assertTrue(status)
         #
         mock_readlink.return_value = "/con/AAA"
@@ -557,8 +553,8 @@ class FileUtilTestCase(TestCase):
         mock_is_safe_prefix.return_value = True
         mock_islink = True
         mock_lstat.return_value.st_uid = 1
-        Config = mock_config
-        Config.uid = 0
+        self._init()
+        self.conf['uid'] = 0
         mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
         status = FileUtil("/ROOT").links_conv(False, True, "")
         self.assertEqual(status, [])
@@ -569,8 +565,8 @@ class FileUtilTestCase(TestCase):
         mock_lstat.return_value.st_uid = 1
         mock_link_set.reset_mock()
         mock_link_restore.reset_mock()
-        Config = mock_config
-        Config.uid = 1
+        self._init()
+        self.conf['uid'] = 1
         mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
         status = FileUtil("/ROOT").links_conv(False, True, "")
         self.assertTrue(mock_link_set.called)
@@ -582,8 +578,8 @@ class FileUtilTestCase(TestCase):
         mock_lstat.return_value.st_uid = 1
         mock_link_set.reset_mock()
         mock_link_restore.reset_mock()
-        Config = mock_config
-        Config.uid = 1
+        self._init()
+        self.conf['uid'] = 1
         mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
         status = FileUtil("/ROOT").links_conv(False, False, "")
         self.assertFalse(mock_link_set.called)
