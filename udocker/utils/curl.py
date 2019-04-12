@@ -18,6 +18,7 @@ except ImportError:
     pass
 
 
+# TODO: some variables may be called before assignment
 class CurlHeader(object):
     """An http header parser to be used with PyCurl
     Allows to retrieve the header fields and the status.
@@ -218,7 +219,7 @@ class GetURLpyCurl(GetURL):
             pyc.setopt(pyc.TIMEOUT, self.download_timeout)
             openflags = "wb"
             if "resume" in kwargs and kwargs["resume"]:
-                pyc.setopt(pyc.RESUME_FROM, FileUtil(output_file).size())
+                pyc.setopt(pyc.RESUME_FROM, FileUtil(self.conf, output_file).size())
                 openflags = "ab"
             try:
                 filep = open(output_file, openflags)
@@ -276,7 +277,7 @@ class GetURLpyCurl(GetURL):
             elif status_code != 200:
                 Msg().err("Error: in download: " + str(
                     hdr.data["X-ND-HTTPSTATUS"]))
-                FileUtil(output_file).remove()
+                FileUtil(self.conf, output_file).remove()
         return(hdr, buf)
 
 
@@ -290,7 +291,7 @@ class GetURLexeCurl(GetURL):
 
     def is_available(self):
         """Can we use this approach for download"""
-        return bool(FileUtil("curl").find_exec())
+        return bool(FileUtil(self.conf, "curl").find_exec())
 
     def _select_implementation(self):
         """Override the parent class method"""
@@ -315,9 +316,9 @@ class GetURLexeCurl(GetURL):
             self._opts["verbose"] = "-v"
         self._files = {
             "url":  "",
-            "error_file": FileUtil("execurl_err").mktmp(),
-            "output_file": FileUtil("execurl_out").mktmp(),
-            "header_file": FileUtil("execurl_hdr").mktmp()
+            "error_file": FileUtil(self.conf, "execurl_err").mktmp(),
+            "output_file": FileUtil(self.conf, "execurl_out").mktmp(),
+            "header_file": FileUtil(self.conf, "execurl_hdr").mktmp()
         }
 
     def _mkcurlcmd(self, *args, **kwargs):
@@ -348,7 +349,7 @@ class GetURLexeCurl(GetURL):
         if "nobody" in kwargs and kwargs["nobody"]:
             self._opts["nobody"] = "--head"
         if "ofile" in kwargs:
-            FileUtil(self._files["output_file"]).remove()
+            FileUtil(self.conf, self._files["output_file"]).remove()
             self._files["output_file"] = kwargs["ofile"] + ".tmp"
             self._opts["timeout"] = "-m %s" % (str(self.download_timeout))
             if "resume" in kwargs and kwargs["resume"]:
@@ -377,8 +378,8 @@ class GetURLexeCurl(GetURL):
             hdr.data["X-ND-CURLSTATUS"] = status
             if status:
                 Msg().err("Error: in download: %s"
-                          % str(FileUtil(self._files["error_file"]).getdata()))
-                FileUtil(self._files["output_file"]).remove()
+                          % str(FileUtil(self.conf, self._files["error_file"]).getdata()))
+                FileUtil(self.conf, self._files["output_file"]).remove()
                 return(hdr, buf)
             status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])
             if status_code >= 300 and status_code <= 308:
@@ -399,7 +400,7 @@ class GetURLexeCurl(GetURL):
             elif " 200" not in hdr.data["X-ND-HTTPSTATUS"]:
                 Msg().err("Error: in download: ", str(
                     hdr.data["X-ND-HTTPSTATUS"]), ": ", str(status))
-                FileUtil(self._files["output_file"]).remove()
+                FileUtil(self.conf, self._files["output_file"]).remove()
             else:  # OK downloaded
                 os.rename(self._files["output_file"], kwargs["ofile"])
         else:
@@ -408,7 +409,7 @@ class GetURLexeCurl(GetURL):
                                               "r").read())
             except(IOError, OSError):
                 Msg().err("Error: reading curl output file to buffer")
-            FileUtil(self._files["output_file"]).remove()
-        FileUtil(self._files["error_file"]).remove()
-        FileUtil(self._files["header_file"]).remove()
+            FileUtil(self.conf, self._files["output_file"]).remove()
+        FileUtil(self.conf, self._files["error_file"]).remove()
+        FileUtil(self.conf, self._files["header_file"]).remove()
         return(hdr, buf)
