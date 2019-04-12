@@ -20,11 +20,11 @@ class KeyStore(object):
 
     def _verify_keystore(self):
         """Verify the keystore file and directory"""
-        keystore_uid = FileUtil(self.keystore_file).uid()
+        keystore_uid = FileUtil(self.conf, self.keystore_file).uid()
         if keystore_uid != -1 and keystore_uid != self.conf['uid']:
             raise IOError("not owner of keystore: %s" % self.keystore_file)
         keystore_dir = os.path.dirname(self.keystore_file)
-        if FileUtil(keystore_dir).uid() != self.conf['uid']:
+        if FileUtil(self.conf, keystore_dir).uid() != self.conf['uid']:
             raise IOError("keystore dir not found or not owner: %s" %
                           keystore_dir)
         if (keystore_uid != -1 and
