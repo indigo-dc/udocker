@@ -31,7 +31,7 @@ class UdockerTools(object):
 
     def _version_isequal(self, filename):
         """Is version inside file equal to the taball release requirement"""
-        version = FileUtil(filename).getdata().strip()
+        version = FileUtil(self.conf, filename).getdata().strip()
         return version and version == self._tarball_release
 
     def is_available(self):
@@ -40,7 +40,7 @@ class UdockerTools(object):
 
     def _download(self, url):
         """Download a file """
-        download_file = FileUtil("udockertools").mktmp()
+        download_file = FileUtil(self.conf, "udockertools").mktmp()
         if Msg.level <= Msg.DEF:
             Msg().setlevel(Msg.NIL)
         (hdr, dummy) = self.curl.get(url, ofile=download_file)
@@ -51,7 +51,7 @@ class UdockerTools(object):
                 return download_file
         except (KeyError, TypeError, AttributeError):
             pass
-        FileUtil(download_file).remove()
+        FileUtil(self.conf, download_file).remove()
         return ""
 
     def _get_file(self, locations):
@@ -71,7 +71,7 @@ class UdockerTools(object):
         """verify the tarball version"""
         if not (tarball_file and os.path.isfile(tarball_file)):
             return False
-        tmpdir = FileUtil("VERSION").mktmpdir()
+        tmpdir = FileUtil(self.conf, "VERSION").mktmpdir()
         if not tmpdir:
             return False
         cmd = "cd " + tmpdir + " ; "
@@ -83,17 +83,17 @@ class UdockerTools(object):
         if status:
             return False
         status = self._version_isequal(tmpdir + "/VERSION")
-        FileUtil(tmpdir).remove()
+        FileUtil(self.conf, tmpdir).remove()
         return status
 
     def purge(self):
         """Remove existing files in bin and lib"""
         for f_name in os.listdir(self.localrepo.bindir):
-            FileUtil(self.localrepo.bindir + "/" + f_name).register_prefix()
-            FileUtil(self.localrepo.bindir + "/" + f_name).remove()
+            FileUtil(self.conf, self.localrepo.bindir + "/" + f_name).register_prefix()
+            FileUtil(self.conf, self.localrepo.bindir + "/" + f_name).remove()
         for f_name in os.listdir(self.localrepo.libdir):
-            FileUtil(self.localrepo.libdir + "/" + f_name).register_prefix()
-            FileUtil(self.localrepo.libdir + "/" + f_name).remove()
+            FileUtil(self.conf, self.localrepo.libdir + "/" + f_name).register_prefix()
+            FileUtil(self.conf, self.localrepo.libdir + "/" + f_name).remove()
 
     def _install(self, tarball_file):
         """Install the tarball"""
@@ -198,7 +198,7 @@ class UdockerTools(object):
                 else:
                     status = self._install(tarfile)
                 if "://" in url:
-                    FileUtil(tarfile).remove()
+                    FileUtil(self.conf, tarfile).remove()
                     if status:
                         self.get_installinfo()
                 if status:
