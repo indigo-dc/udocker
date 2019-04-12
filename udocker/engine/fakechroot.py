@@ -44,7 +44,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             lib = "libfakechroot"
             deflib = "libfakechroot.so"
             image_list = [deflib, ]
-            guest = GuestInfo(self.container_root)
+            guest = GuestInfo(self.conf, self.container_root)
             arch = guest.arch()
             (distro, version) = guest.osdistribution()
             version = version.split(".")[0]
@@ -166,7 +166,7 @@ class FakechrootEngine(ExecutionEngineCommon):
 
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non binary executables (scripts)"""
-        filetype = GuestInfo(self.container_root).get_filetype(exec_path)
+        filetype = GuestInfo(self.conf, self.container_root).get_filetype(exec_path)
         if "ELF" in filetype and ("static" in filetype or
                                   "dynamic" in filetype):
             self.opt["cmd"][0] = exec_path
