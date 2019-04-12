@@ -6,9 +6,9 @@ import sys
 import os
 from unittest import TestCase, main
 try:
-    from unittest.mock import Mock, MagicMock, patch, mock_open
+    from unittest.mock import Mock, patch, mock_open
 except ImportError:
-    from mock import Mock, MagicMock, patch, mock_open
+    from mock import Mock, patch, mock_open
 
 sys.path.append('.')
 
@@ -167,7 +167,7 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.subprocess.call')
     @patch('udocker.utils.fileutil.os.path.isfile')
     def test_06_verify_tar01(self, mock_isfile, mock_call, mock_msg):
-        """Test FileUtil.verify_tar() check tar file."""
+        """Test FileUtil.verify_tar() check tar file - 01."""
         mock_msg.level = 0
         mock_isfile.return_value = False
         mock_call.return_value = 0
@@ -178,7 +178,7 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.subprocess.call')
     @patch('udocker.utils.fileutil.os.path.isfile')
     def test_07_verify_tar02(self, mock_isfile, mock_call, mock_msg):
-        """Test FileUtil.verify_tar() check tar file."""
+        """Test FileUtil.verify_tar() check tar file. - 02"""
         mock_msg.level = 0
         mock_isfile.return_value = True
         mock_call.return_value = 0
@@ -189,24 +189,23 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.subprocess.call')
     @patch('udocker.utils.fileutil.os.path.isfile')
     def test_08_verify_tar03(self, mock_isfile, mock_call, mock_msg):
-        """Test FileUtil.verify_tar() check tar file."""
+        """Test FileUtil.verify_tar() check tar file. - 03"""
         mock_msg.level = 0
         mock_isfile.return_value = True
         mock_call.return_value = 1
         status = FileUtil("tarball.tar").verify_tar()
         self.assertFalse(status)
 
-    @patch('udocker.config.Config')
     @patch('udocker.utils.fileutil.FileUtil.remove')
-    def test_09_cleanup(self, mock_remove, mock_config):
+    def test_09_cleanup(self, mock_remove):
         """Test FileUtil.cleanup() delete tmp files."""
-        Config = mock_config
-        Config.tmpdir = "/tmp"
+        self._init()
+        self.conf['tmpdir'] = "/tmp"
         FileUtil.tmptrash = {'file1.txt': None, 'file2.txt': None}
         FileUtil("").cleanup()
         self.assertEqual(mock_remove.call_count, 2)
 
-    @patch('os.path.isdir')
+    @patch('udocker.utils.fileutil.os.path.isdir')
     def test_10_isdir(self, mock_isdir):
         """Test FileUtil.isdir()."""
         mock_isdir.return_value = True
@@ -216,7 +215,7 @@ class FileUtilTestCase(TestCase):
         status = FileUtil("somedir").isdir()
         self.assertFalse(status)
 
-    @patch('os.stat')
+    @patch('udocker.utils.fileutil.os.stat')
     def test_11_size(self, mock_stat):
         """Test FileUtil.size() get file size."""
         mock_stat.return_value.st_size = 4321
@@ -245,7 +244,7 @@ class FileUtilTestCase(TestCase):
         filename = FileUtil("executable").find_exec()
         self.assertEqual(filename, "")
 
-    @patch('os.path.lexists')
+    @patch('udocker.utils.fileutil.os.path.lexists')
     def test_14_find_inpath(self, mock_exists):
         """Test FileUtil.find_inpath() file is in a path."""
         # exist
@@ -275,7 +274,7 @@ class FileUtilTestCase(TestCase):
             status = FileUtil("source").copyto("dest", "a")
             self.assertTrue(status)
 
-    @patch('os.makedirs')
+    @patch('udocker.utils.fileutil.os.makedirs')
     @patch('udocker.utils.fileutil.FileUtil')
     def test_16_mkdir(self, mock_mkdirs, mock_futil):
         """Create directory"""
@@ -287,7 +286,7 @@ class FileUtilTestCase(TestCase):
         status = mock_futil.mkdir()
         self.assertTrue(status)
 
-    @patch('os.umask')
+    @patch('udocker.utils.fileutil.os.umask')
     def test_17_umask(self, mock_umask):
         """Test FileUtil.umask()."""
         mock_umask.return_value = 0
@@ -351,13 +350,13 @@ class FileUtilTestCase(TestCase):
             data = FileUtil("somefile").putdata("qwerty")
             self.assertEqual(data, 'qwerty')
 
-    @patch('os.rename')
+    @patch('udocker.utils.fileutil.os.rename')
     def test_21_rename(self, mock_rename):
         """Test FileUtil.rename()."""
         status = FileUtil("somefile").rename("otherfile")
         self.assertTrue(status)
 
-    @patch('os.path.exists')
+    @patch('udocker.utils.fileutil.os.path.exists')
     def test_22_find_file_in_dir(self, mock_exists):
         """Test FileUtil.find_file_in_dir()."""
         file_list = []
@@ -374,14 +373,14 @@ class FileUtilTestCase(TestCase):
         status = FileUtil("/dir").find_file_in_dir(file_list)
         self.assertEqual(status, "/dir/F2")
 
-    @patch('os.symlink')
-    @patch('os.remove')
-    @patch('os.stat')
-    @patch('os.chmod')
-    @patch('os.access')
-    @patch('os.path.dirname')
-    @patch('os.path.realpath')
-    @patch('os.readlink')
+    @patch('udocker.utils.fileutil.os.symlink')
+    @patch('udocker.utils.fileutil.os.remove')
+    @patch('udocker.utils.fileutil.os.stat')
+    @patch('udocker.utils.fileutil.os.chmod')
+    @patch('udocker.utils.fileutil.os.access')
+    @patch('udocker.utils.fileutil.os.path.dirname')
+    @patch('udocker.utils.fileutil.os.path.realpath')
+    @patch('udocker.utils.fileutil.os.readlink')
     def test_23__link_change_apply(self, mock_readlink,
                                    mock_realpath, mock_dirname,
                                    mock_access, mock_chmod, mock_stat,
@@ -404,14 +403,14 @@ class FileUtilTestCase(TestCase):
         self.assertTrue(mock_remove.called)
         self.assertTrue(mock_symlink.called)
 
-    @patch('os.symlink')
-    @patch('os.remove')
-    @patch('os.stat')
-    @patch('os.chmod')
-    @patch('os.access')
-    @patch('os.path.dirname')
-    @patch('os.path.realpath')
-    @patch('os.readlink')
+    @patch('udocker.utils.fileutil.os.symlink')
+    @patch('udocker.utils.fileutil.os.remove')
+    @patch('udocker.utils.fileutil.os.stat')
+    @patch('udocker.utils.fileutil.os.chmod')
+    @patch('udocker.utils.fileutil.os.access')
+    @patch('udocker.utils.fileutil.os.path.dirname')
+    @patch('udocker.utils.fileutil.os.path.realpath')
+    @patch('udocker.utils.fileutil.os.readlink')
     def test_24__link_set(self, mock_readlink, mock_realpath, mock_dirname,
                           mock_access, mock_chmod, mock_stat, mock_remove,
                           mock_symlink):
@@ -459,14 +458,14 @@ class FileUtilTestCase(TestCase):
         self.assertTrue(mock_chmod.called)
         self.assertTrue(status)
 
-    @patch('os.symlink')
-    @patch('os.remove')
-    @patch('os.stat')
-    @patch('os.chmod')
-    @patch('os.access')
-    @patch('os.path.dirname')
-    @patch('os.path.realpath')
-    @patch('os.readlink')
+    @patch('udocker.utils.fileutil.os.symlink')
+    @patch('udocker.utils.fileutil.os.remove')
+    @patch('udocker.utils.fileutil.os.stat')
+    @patch('udocker.utils.fileutil.os.chmod')
+    @patch('udocker.utils.fileutil.os.access')
+    @patch('udocker.utils.fileutil.os.path.dirname')
+    @patch('udocker.utils.fileutil.os.path.realpath')
+    @patch('udocker.utils.fileutil.os.readlink')
     def test_25__link_restore(self, mock_readlink, mock_realpath, mock_dirname,
                               mock_access, mock_chmod, mock_stat, mock_remove,
                               mock_symlink):
@@ -518,18 +517,17 @@ class FileUtilTestCase(TestCase):
         self.assertTrue(mock_remove.called)
         self.assertTrue(mock_symlink.called)
 
-    @patch('udocker.config.Config')
     @patch('udocker.utils.fileutil.FileUtil._link_restore')
     @patch('udocker.utils.fileutil.FileUtil._link_set')
     @patch('udocker.msg.Msg')
     @patch('udocker.utils.fileutil.FileUtil._is_safe_prefix')
-    @patch('os.lstat')
-    @patch('os.path.islink')
-    @patch('os.walk')
-    @patch('os.path.realpath')
+    @patch('udocker.utils.fileutil.os.lstat')
+    @patch('udocker.utils.fileutil.os.path.islink')
+    @patch('udocker.utils.fileutil.os.walk')
+    @patch('udocker.utils.fileutil.os.path.realpath')
     def test_26_links_conv(self, mock_realpath, mock_walk, mock_islink,
                            mock_lstat, mock_is_safe_prefix, mock_msg,
-                           mock_link_set, mock_link_restore, mock_config):
+                           mock_link_set, mock_link_restore):
         """Test FileUtil.links_conv()."""
         mock_realpath.return_value = "/ROOT"
         mock_is_safe_prefix.return_value = False
