@@ -104,8 +104,8 @@ class UMain(object):
         try:
             exit_status = self._execute()
         except (KeyboardInterrupt, SystemExit):
-            FileUtil().cleanup()
+            FileUtil(self.conf).cleanup()
             return sys.exit(1)
         else:
-            FileUtil().cleanup()
+            FileUtil(self.conf).cleanup()
             return exit_status
