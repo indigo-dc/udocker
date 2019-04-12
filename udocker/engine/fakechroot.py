@@ -64,7 +64,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                 image_list = ["%s-%s-%s-arm.so" % (lib, distro, version),
                               "%s-%s-arm.so" % (lib, distro),
                               "%s-arm.so" % (lib), deflib]
-        f_util = FileUtil(self.localrepo.libdir)
+        f_util = FileUtil(self.conf, self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
         if not fakechroot_so:
             Msg().err("Error: no libfakechroot found", image_list)
@@ -171,12 +171,12 @@ class FakechrootEngine(ExecutionEngineCommon):
                                   "dynamic" in filetype):
             self.opt["cmd"][0] = exec_path
             return []
-        env_exec = FileUtil("env").find_inpath("/bin:/usr/bin",
+        env_exec = FileUtil(self.conf, "env").find_inpath("/bin:/usr/bin",
                                                self.container_root)
         if env_exec:
             return [self.container_root + "/" + env_exec, ]
         real_path = self._cont2host(exec_path.split(self.container_root, 1)[-1])
-        hashbang = FileUtil(real_path).get1stline()
+        hashbang = FileUtil(self.conf, real_path).get1stline()
         match = re.match("#! *([^ ]+)(.*)", hashbang)
         if match and not match.group(1).startswith("/"):
             Msg().err("Error: no such file", match.group(1), "in", exec_path)
@@ -187,7 +187,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                 interpreter.extend(match.group(2).strip().split(" "))
             self.opt["cmd"][0] = exec_path.split(self.container_root, 1)[-1]
             return interpreter
-        sh_exec = FileUtil("sh").find_inpath(self._getenv("PATH"),
+        sh_exec = FileUtil(self.conf, "sh").find_inpath(self._getenv("PATH"),
                                              self.container_root)
         if sh_exec:
             return [self.container_root + "/" + sh_exec, ]
