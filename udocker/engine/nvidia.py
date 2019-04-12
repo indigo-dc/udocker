@@ -60,7 +60,7 @@ class NvidiaMode(object):
                                  stat.S_IRWXU)
                     except OSError:
                         Msg().err("Error: creating nvidia dir", dstdir)
-                if not FileUtil(srcname).copyto(dstname):
+                if not FileUtil(self.conf, srcname).copyto(dstname):
                     Msg().err("Error: copying file", srcname, "to", dstname)
                     return
                 try:
@@ -144,7 +144,7 @@ class NvidiaMode(object):
             self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
         self._copy_files('/etc', '/etc', self.conf['nvi_etc_list'], force)
         self._copy_files('/usr/bin', '/usr/bin', self.conf['nvi_bin_list'], force)
-        FileUtil(self._container_nvidia_set).putdata("")
+        FileUtil(self.conf, self._container_nvidia_set).putdata("")
 
     def get_mode(self):
         """Get nvidia mode"""
