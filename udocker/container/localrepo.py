@@ -51,9 +51,9 @@ class LocalRepository(object):
         self.cur_tagdir = ""
         self.cur_containerdir = ""
 
-        FileUtil(self.reposdir).register_prefix()
-        FileUtil(self.layersdir).register_prefix()
-        FileUtil(self.containersdir).register_prefix()
+        FileUtil(self.conf, self.reposdir).register_prefix()
+        FileUtil(self.conf, self.layersdir).register_prefix()
+        FileUtil(self.conf, self.containersdir).register_prefix()
 
     def setup(self, topdir=None):
         """change to a different localrepo"""
@@ -129,7 +129,7 @@ class LocalRepository(object):
 
     def _unprotect(self, directory):
         """Remove protection mark from container or image tag"""
-        return FileUtil(directory + "/PROTECT").remove()
+        return FileUtil(self.conf, directory + "/PROTECT").remove()
 
     def _isprotected(self, directory):
         """See if container or image tag are protected"""
@@ -184,7 +184,7 @@ class LocalRepository(object):
             if container_dir in self.get_containers_list(True):
                 for name in self.get_container_name(container_id):
                     self.del_container_name(name)  # delete aliases links
-                if FileUtil(container_dir).remove():
+                if FileUtil(self.conf, container_dir).remove():
                     self.cur_containerdir = ""
                     return True
         return False
@@ -234,7 +234,7 @@ class LocalRepository(object):
         if self._name_is_valid(name):
             linkname = self.containersdir + "/" + name
             if os.path.exists(linkname):
-                return FileUtil(linkname).remove()
+                return FileUtil(self.conf, linkname).remove()
         return False
 
     def get_container_id(self, container_name):
@@ -315,7 +315,7 @@ class LocalRepository(object):
     def _find(self, filename, in_dir):
         """is a specific layer filename referenced by another image TAG"""
         found_list = []
-        if FileUtil(in_dir).isdir():
+        if FileUtil(self.conf, in_dir).isdir():
             for fullname in os.listdir(in_dir):
                 f_path = in_dir + "/" + fullname
                 if os.path.islink(f_path):
@@ -337,11 +337,11 @@ class LocalRepository(object):
             f_path = tag_dir + "/" + fname  # link to layer
             if os.path.islink(f_path):
                 layer_file = tag_dir + "/" + os.readlink(f_path)
-                if not FileUtil(f_path).remove() and not force:
+                if not FileUtil(self.conf, f_path).remove() and not force:
                     return False
                 if not self._inrepository(fname):
                     # removing actual layers not reference by other repos
-                    if not FileUtil(layer_file).remove() and not force:
+                    if not FileUtil(self.conf, layer_file).remove() and not force:
                         return False
         return True
 
@@ -350,7 +350,7 @@ class LocalRepository(object):
         tag_dir = self.cd_imagerepo(imagerepo, tag)
         if (tag_dir and
                 self._remove_layers(tag_dir, force) and
-                FileUtil(tag_dir).remove()):
+                FileUtil(self.conf, tag_dir).remove()):
             self.cur_repodir = ""
             self.cur_tagdir = ""
             return True
@@ -361,7 +361,7 @@ class LocalRepository(object):
         The tags identify actual usable containers
         """
         tag_list = []
-        if FileUtil(tag_dir).isdir():
+        if FileUtil(self.conf, tag_dir).isdir():
             for fname in os.listdir(tag_dir):
                 f_path = tag_dir + "/" + fname
                 if self._is_tag(f_path):
@@ -383,7 +383,7 @@ class LocalRepository(object):
             for fname in os.listdir(tag_dir):
                 filename = tag_dir + "/" + fname
                 if os.path.islink(filename):
-                    size = FileUtil(filename).size()
+                    size = FileUtil(self.conf, filename).size()
                     layers_list.append((filename, size))
         return layers_list
 
@@ -399,7 +399,7 @@ class LocalRepository(object):
             return False
         linkname = self.cur_tagdir + "/" + os.path.basename(filename)
         if os.path.islink(linkname):
-            FileUtil(linkname).remove()
+            FileUtil(self.conf, linkname).remove()
         self._symlink(filename, linkname)
         return True
 
@@ -452,8 +452,8 @@ class LocalRepository(object):
                 os.path.exists(directory + "/v2") and version != "v2"):
             if len(os.listdir(directory)) == 1:
                 try:
-                    FileUtil(directory + "/v1").remove()
-                    FileUtil(directory + "/v2").remove()
+                    FileUtil(self.conf, directory + "/v1").remove()
+                    FileUtil(self.conf, directory + "/v2").remove()
                 except (IOError, OSError):
                     pass
                 if os.listdir(directory):
@@ -557,7 +557,7 @@ class LocalRepository(object):
         """Scan the repository structure of a given image tag"""
         structure = {}
         structure["layers"] = dict()
-        if FileUtil(imagetagdir).isdir():
+        if FileUtil(self.conf, imagetagdir).isdir():
             for fname in os.listdir(imagetagdir):
                 f_path = imagetagdir + "/" + fname
                 if fname == "ancestry":
@@ -637,7 +637,7 @@ class LocalRepository(object):
                               os.readlink(layer_f)):
             Msg().err("Error: layer data file not found")
             return False
-        if not FileUtil(layer_f).verify_tar():
+        if not FileUtil(self.conf, layer_f).verify_tar():
             Msg().err("Error: layer file not ok:", layer_f)
             return False
         match = re.search("/sha256:(\\S+)$", layer_f)
