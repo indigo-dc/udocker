@@ -39,7 +39,7 @@ class ExecutionMode(object):
 
     def get_mode(self):
         """Get execution mode"""
-        xmode = FileUtil(self.container_execmode).getdata().strip()
+        xmode = FileUtil(self.conf, self.container_execmode).getdata().strip()
         if not xmode:
             xmode = self.conf['default_execution_mode']
         return xmode
@@ -50,7 +50,7 @@ class ExecutionMode(object):
         prev_xmode = self.get_mode()
         elfpatcher = ElfPatcher(self.conf, self.localrepo, self.container_id)
         filebind = FileBind(self.localrepo, self.container_id)
-        orig_path = FileUtil(self.container_orig_root).getdata().strip()
+        orig_path = FileUtil(self.conf, self.container_orig_root).getdata().strip()
         if xmode not in self.valid_modes:
             Msg().err("Error: invalid execmode:", xmode)
             return status
@@ -60,7 +60,7 @@ class ExecutionMode(object):
             filebind.restore()
         if xmode.startswith("F"):
             if force or prev_xmode[0] in ("P", "R", "S"):
-                status = (FileUtil(self.container_root).links_conv(force, True,
+                status = (FileUtil(self.conf, self.container_root).links_conv(force, True,
                                                                    orig_path)
                           and elfpatcher.get_ld_libdirs(force))
         if xmode in ("P1", "P2", "F1", "R1", "S1"):
@@ -84,12 +84,12 @@ class ExecutionMode(object):
                 status = True
         if xmode[0] in ("P", "R", "S"):
             if force or (status and prev_xmode.startswith("F")):
-                status = FileUtil(self.container_root).links_conv(force, False,
+                status = FileUtil(self.conf, self.container_root).links_conv(force, False,
                                                                   orig_path)
         if status or force:
-            status = FileUtil(self.container_execmode).putdata(xmode)
+            status = FileUtil(self.conf, self.container_execmode).putdata(xmode)
         if status or force:
-            status = FileUtil(self.container_orig_root).putdata(
+            status = FileUtil(self.conf, self.container_orig_root).putdata(
                 os.path.realpath(self.container_root))
         if (not status) and (not force):
             Msg().err("Error: container setup failed")
