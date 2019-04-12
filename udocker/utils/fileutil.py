@@ -10,7 +10,6 @@ import subprocess
 from udocker.msg import Msg
 from udocker.helper.unique import Unique
 from udocker.utils.uprocess import Uprocess
-from udocker.config import Config
 
 
 class FileUtil(object):
@@ -20,8 +19,8 @@ class FileUtil(object):
     safe_prefixes = []
     orig_umask = None
 
-    def __init__(self, filename=None):
-        self.conf = Config().getconf()
+    def __init__(self, conf, filename=None):
+        self.conf = conf
         self._tmpdir = self.conf['tmpdir']
         if filename == "-":
             self.filename = "-"
