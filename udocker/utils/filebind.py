@@ -16,7 +16,8 @@ class FileBind(object):
     bind_dir = "/.bind_host_files"
     orig_dir = "/.bind_orig_files"
 
-    def __init__(self, localrepo, container_id):
+    def __init__(self, conf, localrepo, container_id):
+        self.conf = conf
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = container_id         # Container id
         self.container_dir = \
@@ -29,11 +30,11 @@ class FileBind(object):
     def setup(self):
         """Prepare container for FileBind"""
         if not os.path.isdir(self.container_orig_dir):
-            if not FileUtil(self.container_orig_dir).mkdir():
+            if not FileUtil(self.conf, self.container_orig_dir).mkdir():
                 Msg().err("Error: creating dir:", self.container_orig_dir)
                 return False
         if not os.path.isdir(self.container_bind_dir):
-            if not FileUtil(self.container_bind_dir).mkdir():
+            if not FileUtil(self.conf, self.container_bind_dir).mkdir():
                 Msg().err("Error: creating dir:", self.container_bind_dir)
                 return False
         return True
@@ -50,15 +51,15 @@ class FileBind(object):
             cont_file = os.path.basename(f_name).replace('#', '/')
             cont_file = self.container_root + "/" + cont_file
             if os.path.islink(cont_file):
-                FileUtil(cont_file).remove()
+                FileUtil(self.conf, cont_file).remove()
             elif os.path.exists(cont_file):
                 continue
-            if not FileUtil(orig_file).rename(cont_file):
+            if not FileUtil(self.conf, orig_file).rename(cont_file):
                 Msg().err("Error: restoring binded file:", cont_file)
                 error = True
         if not error:
-            FileUtil(self.container_orig_dir).remove()
-        FileUtil(self.container_bind_dir).remove()
+            FileUtil(self.conf, self.container_orig_dir).remove()
+        FileUtil(self.conf, self.container_bind_dir).remove()
 
     def start(self, files_list):
         """Prepare host files to be made available inside container
@@ -66,7 +67,7 @@ class FileBind(object):
         returns: the directory that holds the files and that must be
                  binded inside the container
         """
-        self.host_bind_dir = FileUtil("BIND_FILES").mktmpdir()
+        self.host_bind_dir = FileUtil(self.conf, "BIND_FILES").mktmpdir()
         for f_name in files_list:
             if not os.path.isfile(f_name):
                 continue
@@ -78,19 +79,19 @@ class FileBind(object):
                 if os.path.exists(cont_file):
                     os.rename(cont_file, orig_file_path)
                 else:
-                    FileUtil(orig_file_path).putdata("")
+                    FileUtil(self.conf, orig_file_path).putdata("")
                 os.symlink(link_path, cont_file)
-            FileUtil(orig_file_path).copyto(self.host_bind_dir)
+            FileUtil(self.conf, orig_file_path).copyto(self.host_bind_dir)
         return (self.host_bind_dir, self.bind_dir)
 
     def finish(self):
         """Cleanup after run"""
         pass
-        #return FileUtil(self.host_bind_dir).remove()
+        #return FileUtil(self.conf, self.host_bind_dir).remove()
 
     def add(self, host_file, cont_file):
         """Add file to be made available inside container"""
         replace_file = cont_file.replace('/', '#')
         replace_file = self.host_bind_dir + "/" + replace_file
-        FileUtil(replace_file).remove()
-        FileUtil(host_file).copyto(replace_file)
+        FileUtil(self.conf, replace_file).remove()
+        FileUtil(self.conf, host_file).copyto(replace_file)

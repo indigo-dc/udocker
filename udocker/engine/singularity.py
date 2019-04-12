@@ -141,7 +141,7 @@ class SingularityEngine(ExecutionEngineCommon):
 
         self._make_container_directories()
 
-        self._filebind = FileBind(self.localrepo, self.container_id)
+        self._filebind = FileBind(self.conf, self.localrepo, self.container_id)
 
         self._select_singularity()
 
