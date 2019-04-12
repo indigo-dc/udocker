@@ -49,7 +49,7 @@ class ExecutionMode(object):
         status = False
         prev_xmode = self.get_mode()
         elfpatcher = ElfPatcher(self.conf, self.localrepo, self.container_id)
-        filebind = FileBind(self.localrepo, self.container_id)
+        filebind = FileBind(self.conf, self.localrepo, self.container_id)
         orig_path = FileUtil(self.conf, self.container_orig_root).getdata().strip()
         if xmode not in self.valid_modes:
             Msg().err("Error: invalid execmode:", xmode)
