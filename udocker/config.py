@@ -31,9 +31,6 @@ class Config(object):
         self.conf['layersdir'] = None
         self.conf['containersdir'] = None
 
-        self.conf['uid'] = os.getuid()
-        self.conf['gid'] = os.getgid()
-
         # udocker installation tarball
         self.conf['tarball_release'] = "1.1.3"
         self.conf['tarball'] = (
@@ -167,15 +164,6 @@ class Config(object):
 
         self.conf['nvi_dev_list'] = ['/dev/nvidia', ]
 
-        self.conf['username'] = self._username()
-        self.conf['arch'] = self._arch()
-        self.conf['osversion'] = self._osversion()
-        self.conf['osdistribution'] = self._osdistribution()
-        self.conf['oskernel'] = self._oskernel()
-
-        self._file_override()   # Override with variables in conf file
-        self._env_override()    # Override with variables in environment
-
     def _file_override(self):
         """
         Override values from config file
@@ -302,5 +290,16 @@ class Config(object):
         if not self.conf['topdir']:
             Msg().err("Error: UDOCKER directory not found")
             sys.exit(1)
+
+        self.conf['uid'] = os.getuid()
+        self.conf['gid'] = os.getgid()
+        self.conf['username'] = self._username()
+        self.conf['arch'] = self._arch()
+        self.conf['osversion'] = self._osversion()
+        self.conf['osdistribution'] = self._osdistribution()
+        self.conf['oskernel'] = self._oskernel()
+
+        self._file_override()   # Override with variables in conf file
+        self._env_override()    # Override with variables in environment
 
         return self.conf
