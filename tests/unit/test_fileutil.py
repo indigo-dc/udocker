@@ -50,18 +50,18 @@ def is_writable_file(obj):
 class FileUtilTestCase(TestCase):
     """Test FileUtil(self.conf) file manipulation methods."""
 
-    def _init(self):
-        """Configure variables."""
-        cnf = Config()
-        self.conf = cnf.getconf()
+
+    def setUp(self):
+        self.conf = Config().getconf()
+
+    def tearDown(self):
+        pass
 
     def test_01_init(self):
         """Test FileUtil(self.conf) constructor."""
-        self._init()
         self.conf['tmpdir'] = "/tmp"
         futil = FileUtil(self.conf, "filename.txt")
         self.assertEqual(futil.filename, os.path.abspath("filename.txt"))
-        self.assertTrue(self.conf['tmpdir'])
 
         #mock_config.side_effect = AttributeError("abc")
         #futil = FileUtil(self.conf)
@@ -69,28 +69,19 @@ class FileUtilTestCase(TestCase):
 
     def test_02_mktmp(self):
         """Test FileUtil.mktmp()."""
-        self._init()
         self.conf['tmpdir'] = "/somewhere"
         tmp_file = FileUtil(self.conf, "filename2.txt").mktmp()
         self.assertTrue(tmp_file.endswith("-filename2.txt"))
         self.assertTrue(tmp_file.startswith("/somewhere/udocker-"))
         self.assertGreater(len(tmp_file.strip()), 68)
 
-    @patch('udocker.config.Config._oskernel')
-    @patch('udocker.config.Config._osdistribution')
-    @patch('udocker.config.Config._osversion')
-    @patch('udocker.config.Config._arch')
-    @patch('udocker.config.Config._username')
-    @patch('udocker.config.Config.os.getgid')
-    @patch('udocker.config.Config.os.getuid')
-    @patch('udocker.config.Config.os.path.expanduser')
     @patch('udocker.utils.fileutil.os.stat')
-    def test_03_uid(self, mock_stat, mock_expand, mock_uid, mock_gid, mock_user,
-                    mock_arch, mock_osver, mock_osdist, mock_oskern):
+    def test_03_uid(self, mock_stat):
         """Test FileUtil.uid()."""
-        self._init()
         mock_stat.return_value.st_uid = 1234
-        uid = FileUtil(self.conf, "filename3.txt").uid()
+        self.conf['tmpdir'] = "/tmp"
+        futil = FileUtil(self.conf, "filename.txt")
+        uid = futil.uid()
         self.assertEqual(uid, 1234)
 
     @patch('udocker.utils.fileutil.os.path.realpath')
@@ -106,7 +97,6 @@ class FileUtilTestCase(TestCase):
                             mock_isfile, mock_islink, mock_remove, mock_msg,
                             mock_exists, mock_realpath):
         """Test FileUtil.remove() with plain files."""
-        self._init()
         mock_uid.return_value = 1000
         # file does not exist (regression of #50)
         mock_isdir.return_value = True
@@ -154,7 +144,6 @@ class FileUtilTestCase(TestCase):
                            mock_islink, mock_isdir, mock_call,
                            mock_msg, mock_exists):
         """Test FileUtil.remove() with directories."""
-        self._init()
         mock_uid.return_value = 1000
         mock_isfile.return_value = False
         mock_islink.return_value = False
@@ -179,7 +168,6 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.path.isfile')
     def test_06_verify_tar01(self, mock_isfile, mock_call, mock_msg):
         """Test FileUtil.verify_tar() check tar file - 01."""
-        self._init()
         mock_msg.level = 0
         mock_isfile.return_value = False
         mock_call.return_value = 0
@@ -191,7 +179,6 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.path.isfile')
     def test_07_verify_tar02(self, mock_isfile, mock_call, mock_msg):
         """Test FileUtil.verify_tar() check tar file. - 02"""
-        self._init()
         mock_msg.level = 0
         mock_isfile.return_value = True
         mock_call.return_value = 0
@@ -203,7 +190,6 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.path.isfile')
     def test_08_verify_tar03(self, mock_isfile, mock_call, mock_msg):
         """Test FileUtil.verify_tar() check tar file. - 03"""
-        self._init()
         mock_msg.level = 0
         mock_isfile.return_value = True
         mock_call.return_value = 1
@@ -213,7 +199,6 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.FileUtil.remove')
     def test_09_cleanup(self, mock_remove):
         """Test FileUtil.cleanup() delete tmp files."""
-        self._init()
         self.conf['tmpdir'] = "/tmp"
         FileUtil.tmptrash = {'file1.txt': None, 'file2.txt': None}
         FileUtil(self.conf, "").cleanup()
@@ -222,7 +207,6 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.path.isdir')
     def test_10_isdir(self, mock_isdir):
         """Test FileUtil.isdir()."""
-        self._init()
         mock_isdir.return_value = True
         status = FileUtil(self.conf, "somedir").isdir()
         self.assertTrue(status)
@@ -233,14 +217,12 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.stat.st_size')
     def test_11_size(self, mock_stat):
         """Test FileUtil.size() get file size."""
-        self._init()
         mock_stat.return_value = 4321
         size = FileUtil(self.conf, "somefile").size()
         self.assertEqual(size, 4321)
 
     def test_12_getdata(self):
         """Test FileUtil.size() get file content."""
-        self._init()
         with patch(BUILTINS + '.open', mock_open(read_data='qwerty')):
             data = FileUtil(self.conf, "somefile").getdata()
             self.assertEqual(data, 'qwerty')
@@ -248,7 +230,6 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.uprocess.Uprocess.get_output')
     def test_13_find_exec(self, mock_gout):
         """Test FileUtil.find_exec() find executable."""
-        self._init()
         mock_gout.return_value = None
         filename = FileUtil(self.conf, "executable").find_exec()
         self.assertEqual(filename, "")
@@ -265,7 +246,6 @@ class FileUtilTestCase(TestCase):
     def test_14_find_inpath(self, mock_exists):
         """Test FileUtil.find_inpath() file is in a path."""
         # exist
-        self._init()
         mock_exists.return_value = True
         filename = FileUtil(self.conf, "exec").find_inpath("/bin:/usr/bin")
         self.assertEqual(filename, "/bin/exec")
@@ -284,7 +264,6 @@ class FileUtilTestCase(TestCase):
 
     def test_15_copyto(self):
         """Test FileUtil.copyto() file copy."""
-        self._init()
         with patch(BUILTINS + '.open', mock_open()):
             status = FileUtil(self.conf, "source").copyto("dest")
             self.assertTrue(status)
@@ -308,7 +287,6 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.umask')
     def test_17_umask(self, mock_umask):
         """Test FileUtil.umask()."""
-        self._init()
         mock_umask.return_value = 0
         futil = FileUtil(self.conf, "somedir")
         status = futil.umask()
@@ -332,7 +310,6 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.FileUtil.mkdir')
     def test_18_mktmpdir(self, mock_umkdir, mock_umktmp):
         """Test FileUtil.mktmpdir()."""
-        self._init()
         mock_umktmp.return_value = "/dir"
         mock_umkdir.return_value = True
         futil = FileUtil(self.conf, "somedir")
@@ -349,7 +326,6 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.FileUtil.mkdir')
     def test_19__is_safe_prefix(self, mock_umkdir, mock_umktmp):
         """Test FileUtil._is_safe_prefix()."""
-        self._init()
         futil = FileUtil(self.conf, "somedir")
         FileUtil.safe_prefixes = []
         status = futil._is_safe_prefix("/AAA")
@@ -362,7 +338,6 @@ class FileUtilTestCase(TestCase):
 
     def test_20_putdata(self):
         """Test FileUtil.putdata()"""
-        self._init()
         futil = FileUtil(self.conf, "somefile")
         futil.filename = ""
         data = futil.putdata("qwerty")
@@ -375,14 +350,12 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.rename')
     def test_21_rename(self, mock_rename):
         """Test FileUtil.rename()."""
-        self._init()
         status = FileUtil(self.conf, "somefile").rename("otherfile")
         self.assertTrue(status)
 
     @patch('udocker.utils.fileutil.os.path.exists')
     def test_22_find_file_in_dir(self, mock_exists):
         """Test FileUtil.find_file_in_dir()."""
-        self._init()
         file_list = []
         status = FileUtil(self.conf, "/dir").find_file_in_dir(file_list)
         self.assertEqual(status, "")
@@ -410,7 +383,6 @@ class FileUtilTestCase(TestCase):
                                    mock_access, mock_chmod, mock_stat,
                                    mock_remove, mock_symlink):
         """Actually apply the link convertion."""
-        self._init()
         mock_readlink.return_value = "/HOST/DIR"
         mock_realpath.return_value = "/HOST/DIR"
         mock_access.return_value = True
@@ -438,7 +410,6 @@ class FileUtilTestCase(TestCase):
                           mock_access, mock_chmod, mock_stat, mock_remove,
                           mock_symlink):
         """Test FileUtil._link_set()."""
-        self._init()
         mock_readlink.return_value = "X"
         status = FileUtil(self.conf, "/con")._link_set("/con/lnk", "", "/con", False)
         self.assertFalse(status)
@@ -494,7 +465,6 @@ class FileUtilTestCase(TestCase):
                               mock_access, mock_chmod, mock_stat, mock_remove,
                               mock_symlink):
         """Test FileUtil._link_restore()."""
-        self._init()
         mock_readlink.return_value = "/con/AAA"
         status = FileUtil(self.conf, "/con")._link_restore("/con/lnk", "/con",
                                                            "/root", False)
@@ -554,7 +524,6 @@ class FileUtilTestCase(TestCase):
                            mock_lstat, mock_is_safe_prefix, mock_msg,
                            mock_link_set, mock_link_restore):
         """Test FileUtil.links_conv()."""
-        self._init()
         mock_realpath.return_value = "/ROOT"
         mock_is_safe_prefix.return_value = False
         status = FileUtil(self.conf, "/ROOT").links_conv(False, True, "")
@@ -583,7 +552,6 @@ class FileUtilTestCase(TestCase):
         mock_is_safe_prefix.return_value = True
         mock_islink = True
         mock_lstat.return_value = 1
-        self._init()
         self.conf['uid'] = 0
         mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
         status = FileUtil(self.conf, "/ROOT").links_conv(False, True, "")
@@ -595,7 +563,6 @@ class FileUtilTestCase(TestCase):
         mock_lstat.return_value = 1
         mock_link_set.reset_mock()
         mock_link_restore.reset_mock()
-        self._init()
         self.conf['uid'] = 1
         mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
         status = FileUtil(self.conf, "/ROOT").links_conv(False, True, "")
@@ -608,7 +575,6 @@ class FileUtilTestCase(TestCase):
         mock_lstat.return_value = 1
         mock_link_set.reset_mock()
         mock_link_restore.reset_mock()
-        self._init()
         self.conf['uid'] = 1
         mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
         status = FileUtil(self.conf, "/ROOT").links_conv(False, False, "")
