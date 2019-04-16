@@ -59,9 +59,14 @@ class ConfigTestCase(TestCase):
         """Test Config()._file_override"""
         pass
 
-    def test_03_env_override(self):
+    # TODO: this test needs further work
+    @patch('udocker.config.os.getenv')
+    def test_03_env_override(self, mock_getenv):
         """Test Config()._env_override"""
-        pass
+        mock_getenv.return_value = "5"
+        self.Config._env_override()
+        self.assertEqual(self.Config.conf['verbose_level'], 5)
+
 
     def test_04_username(self):
         """Test Config._username()."""
