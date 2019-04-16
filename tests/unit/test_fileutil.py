@@ -200,9 +200,8 @@ class FileUtilTestCase(TestCase):
     def test_09_cleanup(self, mock_remove):
         """Test FileUtil.cleanup() delete tmp files."""
         self.conf['tmpdir'] = "/tmp"
-        futil = FileUtil(self.conf, "")
-        futil.tmptrash = {'file1.txt': None, 'file2.txt': None}
-        futil.cleanup()
+        FileUtil.tmptrash = {'file1.txt': None, 'file2.txt': None}
+        FileUtil(self.conf, "").cleanup()
         self.assertEqual(mock_remove.call_count, 2)
 
     @patch('udocker.utils.fileutil.os.path.isdir')
@@ -313,14 +312,12 @@ class FileUtilTestCase(TestCase):
         """Test FileUtil.mktmpdir()."""
         mock_umktmp.return_value = "/dir"
         mock_umkdir.return_value = True
-        futil = FileUtil(self.conf, "somedir")
-        status = futil.mktmpdir()
+        status = FileUtil(self.conf, "somedir").mktmpdir()
         self.assertEqual(status, "/dir")
         #
         mock_umktmp.return_value = "/dir"
         mock_umkdir.return_value = False
-        futil = FileUtil(self.conf, "somedir")
-        status = futil.mktmpdir()
+        status = FileUtil(self.conf, "somedir").mktmpdir()
         self.assertEqual(status, None)
 
     @patch('udocker.utils.fileutil.FileUtil.mktmp')

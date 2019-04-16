@@ -86,7 +86,7 @@ class FileUtil(object):
     def mktmpdir(self):
         """Create temporary directory"""
         dirname = self.mktmp()
-        if FileUtil(dirname).mkdir():
+        if FileUtil(self.conf, dirname).mkdir():
             return dirname
         return None
 
@@ -154,7 +154,7 @@ class FileUtil(object):
         """Delete all temporary files"""
         tmptrash_copy = dict(FileUtil.tmptrash)
         for filename in tmptrash_copy:
-            FileUtil(filename).remove()
+            FileUtil(self.conf, filename).remove()
 
     def isdir(self):
         """Is filename a directory"""
