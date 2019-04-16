@@ -2,63 +2,76 @@
 """
 udocker unit tests: CmdParser
 """
+import sys
 from unittest import TestCase, main
+
+sys.path.append('.')
 from udocker.cmdparser import CmdParser
 
 
 class CmdParserTestCase(TestCase):
     """Test CmdParserTestCase() command line interface."""
 
+    def setUp(self):
+        self.cmdp = CmdParser()
+
+    def tearDown(self):
+        pass
+
     def test_01__init(self):
         """Test CmdParser() Constructor."""
-        cmdp = CmdParser()
-        self.assertEqual(cmdp._argv, "")
-        self.assertIsInstance(cmdp._argv_split, dict)
-        self.assertIsInstance(cmdp._argv_consumed_options, dict)
-        self.assertIsInstance(cmdp._argv_consumed_params, dict)
-        self.assertEqual(cmdp._argv_split['CMD'], "")
-        self.assertEqual(cmdp._argv_split['GEN_OPT'], [])
-        self.assertEqual(cmdp._argv_split['CMD_OPT'], [])
-        self.assertEqual(cmdp._argv_consumed_options['GEN_OPT'], [])
-        self.assertEqual(cmdp._argv_consumed_options['CMD_OPT'], [])
-        self.assertEqual(cmdp._argv_consumed_params['GEN_OPT'], [])
-        self.assertEqual(cmdp._argv_consumed_params['CMD_OPT'], [])
+        self.assertEqual(self.cmdp._argv, "")
+        self.assertIsInstance(self.cmdp._argv_split, dict)
+        self.assertIsInstance(self.cmdp._argv_consumed_options, dict)
+        self.assertIsInstance(self.cmdp._argv_consumed_params, dict)
+        self.assertEqual(self.cmdp._argv_split['CMD'], "")
+        self.assertEqual(self.cmdp._argv_split['GEN_OPT'], [])
+        self.assertEqual(self.cmdp._argv_split['CMD_OPT'], [])
+        self.assertEqual(self.cmdp._argv_consumed_options['GEN_OPT'], [])
+        self.assertEqual(self.cmdp._argv_consumed_options['CMD_OPT'], [])
+        self.assertEqual(self.cmdp._argv_consumed_params['GEN_OPT'], [])
+        self.assertEqual(self.cmdp._argv_consumed_params['CMD_OPT'], [])
 
     def test_02_parse(self):
         """Test CmdParser().parse()."""
-        cmdp = CmdParser()
-        status = cmdp.parse("udocker run --bindhome "
-                            "--hostauth --hostenv -v /sys"
-                            " -v /proc -v /var/run -v /dev"
-                            " --user=jorge --dri myfed firefox")
+        argv = ("udocker run --bindhome --hostauth --hostenv -v /sys "
+                "-v /proc -v /var/run -v /dev --user=jorge "
+                "--dri myfed firefox")
+        status = self.cmdp.parse(argv)
         self.assertTrue(status)
+
+        argv = ""
+        status = self.cmdp.parse(argv)
+        self.assertFalse(status)
 
     def test_03_missing_options(self):
         """Test CmdParser().missing_options()."""
-        cmdp = CmdParser()
-        cmdp.parse("udocker run --bindhome "
-                   "--hostauth --hostenv -v /sys"
-                   " -v /proc -v /var/run -v /dev"
-                   " --user=jorge --dri myfed firefox")
-        out = cmdp.missing_options()
+        argv = ("udocker run --bindhome --hostauth --hostenv -v /sys"
+                " -v /proc -v /var/run -v /dev --user=jorge "
+                "--dri myfed firefox")
+        self.cmdp.parse(argv)
+        out = self.cmdp.missing_options()
         self.assertIsInstance(out, list)
 
     def test_04_get(self):
         """Test CmdParser().get()."""
-        cmdp = CmdParser()
-        cmdp.declare_options("-v= -e= -w= -u= -i -t -a")
-        cmdp.parse("udocker --debug run --bindhome "
-                   "--hostauth --hostenv -v /sys"
-                   " -v /proc -v /var/run -v /dev"
-                   " --user=jorge --dri myfed firefox")
+        self.cmdp.declare_options("-v= -e= -w= -u= -i -t -a")
+        argv = ("udocker --debug run --bindhome --hostauth --hostenv -v /sys"
+                " -v /proc -v /var/run -v /dev --user=jorge "
+                "--dri myfed firefox")
+        self.cmdp.parse(argv)
 
-        out = cmdp.get("xyz")
+        out = self.cmdp.get("xyz")
         self.assertIsNone(out)
 
-        # out = cmdp.get("--user=", "CMD_OPT")
-        # self.assertEqual(out, "jorge")
+        #argv = ("udocker --debug run --bindhome --hostauth --hostenv -v /sys"
+        #        " -v /proc -v /var/run -v /dev --user=jorge "
+        #        "--dri myfed firefox")
+        #self.cmdp.parse(argv)
+        #out = self.cmdp.get("--user=", "CMD_OPT")
+        #self.assertEqual(out, "jorge")
 
-        out = cmdp.get("run", "CMD")
+        out = self.cmdp.get("run", "CMD")
         self.assertTrue(out)
 
     def test_05_declare_options(self):
