@@ -200,8 +200,9 @@ class FileUtilTestCase(TestCase):
     def test_09_cleanup(self, mock_remove):
         """Test FileUtil.cleanup() delete tmp files."""
         self.conf['tmpdir'] = "/tmp"
-        FileUtil.tmptrash = {'file1.txt': None, 'file2.txt': None}
-        FileUtil(self.conf, "").cleanup()
+        futil = FileUtil(self.conf, "")
+        futil.tmptrash = {'file1.txt': None, 'file2.txt': None}
+        futil.cleanup()
         self.assertEqual(mock_remove.call_count, 2)
 
     @patch('udocker.utils.fileutil.os.path.isdir')
@@ -214,10 +215,10 @@ class FileUtilTestCase(TestCase):
         status = FileUtil(self.conf, "somedir").isdir()
         self.assertFalse(status)
 
-    @patch('udocker.utils.fileutil.os.stat.st_size')
+    @patch('udocker.utils.fileutil.os.stat')
     def test_11_size(self, mock_stat):
         """Test FileUtil.size() get file size."""
-        mock_stat.return_value = 4321
+        mock_stat.return_value.st_size = 4321
         size = FileUtil(self.conf, "somefile").size()
         self.assertEqual(size, 4321)
 
@@ -516,7 +517,7 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.FileUtil._link_set')
     @patch('udocker.msg.Msg')
     @patch('udocker.utils.fileutil.FileUtil._is_safe_prefix')
-    @patch('udocker.utils.fileutil.os.lstat.st_uid')
+    @patch('udocker.utils.fileutil.os.lstat')
     @patch('udocker.utils.fileutil.os.path.islink')
     @patch('udocker.utils.fileutil.os.walk')
     @patch('udocker.utils.fileutil.os.path.realpath')
@@ -551,7 +552,7 @@ class FileUtilTestCase(TestCase):
         mock_realpath.return_value = "/ROOT"
         mock_is_safe_prefix.return_value = True
         mock_islink = True
-        mock_lstat.return_value = 1
+        mock_lstat.return_value.st_uid = 1
         self.conf['uid'] = 0
         mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
         status = FileUtil(self.conf, "/ROOT").links_conv(False, True, "")
@@ -560,7 +561,7 @@ class FileUtilTestCase(TestCase):
         mock_realpath.return_value = "/ROOT"
         mock_is_safe_prefix.return_value = True
         mock_islink = True
-        mock_lstat.return_value = 1
+        mock_lstat.return_value.st_uid = 1
         mock_link_set.reset_mock()
         mock_link_restore.reset_mock()
         self.conf['uid'] = 1
@@ -572,7 +573,7 @@ class FileUtilTestCase(TestCase):
         mock_realpath.return_value = "/ROOT"
         mock_is_safe_prefix.return_value = True
         mock_islink = True
-        mock_lstat.return_value = 1
+        mock_lstat.return_value.st_uid = 1
         mock_link_set.reset_mock()
         mock_link_restore.reset_mock()
         self.conf['uid'] = 1

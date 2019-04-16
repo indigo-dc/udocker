@@ -21,6 +21,7 @@ class FileUtil(object):
 
     def __init__(self, conf, filename=None):
         self.conf = conf
+        self._tmpdir = self.conf['tmpdir']
         if filename == "-":
             self.filename = "-"
             self.basename = "-"
@@ -31,7 +32,7 @@ class FileUtil(object):
         except (AttributeError, TypeError):
             self.filename = filename
             self.basename = filename
-        self._register_prefix(self.conf['tmpdir'])
+        self._register_prefix(self._tmpdir)
 
     def _register_prefix(self, prefix):
         """Register directory prefixes where remove() is allowed"""
@@ -67,7 +68,7 @@ class FileUtil(object):
     def mktmp(self):
         """Generate a temporary filename"""
         while True:
-            tmp_file = self.conf['tmpdir'] + "/" + \
+            tmp_file = self._tmpdir + "/" + \
                 Unique().filename(self.basename)
             if not os.path.exists(tmp_file):
                 FileUtil.tmptrash[tmp_file] = True
