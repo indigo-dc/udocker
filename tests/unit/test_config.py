@@ -20,35 +20,40 @@ from udocker.config import Config
 class ConfigTestCase(TestCase):
     """Test case for the udocker configuration."""
 
+    def setUp(self):
+        self.Config = Config()
+
+    def tearDown(self):
+        pass
+
     def test_01_init(self):
         """Test Config() constructor."""
-        conf = Config().getconf()
-        self.assertIsInstance(conf['verbose_level'], int)
-        self.assertIsInstance(conf['topdir'], str)
-        self.assertIs(conf['bindir'], None)
-        self.assertIs(conf['libdir'], None)
-        self.assertIs(conf['reposdir'], None)
-        self.assertIs(conf['layersdir'], None)
-        self.assertIs(conf['containersdir'], None)
-        self.assertIsInstance(conf['homedir'], str)
-        self.assertIsInstance(conf['config'], str)
-        self.assertIsInstance(conf['keystore'], str)
-        self.assertIsInstance(conf['tmpdir'], str)
-        self.assertIsInstance(conf['tarball'], str)
-        self.assertIsInstance(conf['cmd'], list)
-        self.assertIsInstance(conf['sysdirs_list'], tuple)
-        self.assertIsInstance(conf['hostauth_list'], tuple)
-        self.assertIsInstance(conf['dri_list'], tuple)
-        self.assertIsInstance(conf['cpu_affinity_exec_tools'], tuple)
-        self.assertIsInstance(conf['location'], str)
-        self.assertIsInstance(conf['http_proxy'], str)
-        self.assertIsInstance(conf['timeout'], int)
-        self.assertIsInstance(conf['download_timeout'], int)
-        self.assertIsInstance(conf['ctimeout'], int)
-        self.assertIsInstance(conf['http_agent'], str)
-        self.assertIsInstance(conf['http_insecure'], bool)
-        self.assertIsInstance(conf['dockerio_index_url'], str)
-        self.assertIsInstance(conf['dockerio_registry_url'], str)
+        self.assertIsInstance(self.Config.conf['verbose_level'], int)
+        self.assertIsInstance(self.Config.conf['topdir'], str)
+        self.assertIs(self.Config.conf['bindir'], None)
+        self.assertIs(self.Config.conf['libdir'], None)
+        self.assertIs(self.Config.conf['reposdir'], None)
+        self.assertIs(self.Config.conf['layersdir'], None)
+        self.assertIs(self.Config.conf['containersdir'], None)
+        self.assertIsInstance(self.Config.conf['homedir'], str)
+        self.assertIsInstance(self.Config.conf['config'], str)
+        self.assertIsInstance(self.Config.conf['keystore'], str)
+        self.assertIsInstance(self.Config.conf['tmpdir'], str)
+        self.assertIsInstance(self.Config.conf['tarball'], str)
+        self.assertIsInstance(self.Config.conf['cmd'], list)
+        self.assertIsInstance(self.Config.conf['sysdirs_list'], tuple)
+        self.assertIsInstance(self.Config.conf['hostauth_list'], tuple)
+        self.assertIsInstance(self.Config.conf['dri_list'], tuple)
+        self.assertIsInstance(self.Config.conf['cpu_affinity_exec_tools'], tuple)
+        self.assertIsInstance(self.Config.conf['location'], str)
+        self.assertIsInstance(self.Config.conf['http_proxy'], str)
+        self.assertIsInstance(self.Config.conf['timeout'], int)
+        self.assertIsInstance(self.Config.conf['download_timeout'], int)
+        self.assertIsInstance(self.Config.conf['ctimeout'], int)
+        self.assertIsInstance(self.Config.conf['http_agent'], str)
+        self.assertIsInstance(self.Config.conf['http_insecure'], bool)
+        self.assertIsInstance(self.Config.conf['dockerio_index_url'], str)
+        self.assertIsInstance(self.Config.conf['dockerio_registry_url'], str)
 
     def test_02_file_override(self):
         """Test Config()._file_override"""
@@ -58,13 +63,15 @@ class ConfigTestCase(TestCase):
         """Test Config()._env_override"""
         pass
 
-    @patch('udocker.msg.Msg')
-    def test_04_username(self, mock_msg):
+    def test_04_username(self):
         """Test Config._username()."""
-        Msg = mock_msg
-        conf = Config().getconf()
-        user = conf['username']
+        self.Config.conf['uid'] = os.getuid()
+        user = self.Config._username()
         self.assertEqual(user, pwd.getpwuid(os.getuid()).pw_name)
+
+        self.Config.conf['uid'] = 20000000
+        user = self.Config._username()
+        self.assertEqual(user, "")
 
     @patch('udocker.config.platform.architecture')
     @patch('udocker.config.platform.machine')
@@ -72,102 +79,93 @@ class ConfigTestCase(TestCase):
         """Test Config._arch()."""
         mock_machine.return_value = "x86_64"
         mock_architecture.return_value = ["32bit", ]
-        conf = Config().getconf()
-        status = conf['arch']
+        status = self.Config._arch()
         self.assertEqual(status, "i386")
         #
         mock_machine.return_value = "x86_64"
         mock_architecture.return_value = ["", ]
-        conf = Config().getconf()
-        status = conf['arch']
+        status = self.Config._arch()
         self.assertEqual(status, "amd64")
         #
         mock_machine.return_value = "i686"
         mock_architecture.return_value = ["", ]
-        conf = Config().getconf()
-        status = conf['arch']
+        status = self.Config._arch()
         self.assertEqual(status, "i386")
         #
         mock_machine.return_value = "armXX"
         mock_architecture.return_value = ["32bit", ]
-        conf = Config().getconf()
-        status = conf['arch']
+        status = self.Config._arch()
         self.assertEqual(status, "arm")
         #
         mock_machine.return_value = "armXX"
         mock_architecture.return_value = ["", ]
-        conf = Config().getconf()
-        status = conf['arch']
+        status = self.Config._arch()
         self.assertEqual(status, "arm64")
 
     @patch('udocker.config.platform.system')
     def test_06_osversion(self, mock_system):
         """Test Config._osversion()."""
         mock_system.return_value = "Linux"
-        conf = Config().getconf()
-        status = conf['osversion']
+        status = self.Config._osversion()
         self.assertEqual(status, "linux")
         #
         mock_system.return_value = "Linux"
         mock_system.side_effect = NameError('platform system')
-        conf = Config().getconf()
-        status = conf['osversion']
+        status = self.Config._osversion()
         self.assertEqual(status, "")
 
     @patch('udocker.config.platform.linux_distribution')
     def test_07_osdistribution(self, mock_distribution):
         """Test Config._osdistribution()."""
         mock_distribution.return_value = ("DISTRO XX", "1.0", "DUMMY")
-        conf = Config().getconf()
-        status = conf['osdistribution']
+        status = self.Config._osdistribution()
         self.assertEqual(status, ("DISTRO", "1"))
 
     @patch('udocker.config.platform.release')
     def test_08_oskernel(self, mock_release):
         """Test Config._oskernel()."""
         mock_release.return_value = "1.2.3"
-        conf = Config().getconf()
-        status = conf['oskernel']
+        status = self.Config._oskernel()
         self.assertEqual(status, "1.2.3")
         #
         mock_release.return_value = "1.2.3"
         mock_release.side_effect = NameError('platform release')
-        conf = Config().getconf()
-        status = conf['oskernel']
+        status = self.Config._oskernel()
         self.assertEqual(status, "3.2.1")
 
-    @patch('udocker.msg.Msg')
-    def test_09_oskernel_isgreater(self, mock_msg):
+    @patch('udocker.config.Config._oskernel')
+    def test_09_oskernel_isgreater(self, mock_oskernel):
         """Test Config.oskernel_isgreater()."""
-        Msg = mock_msg
-        conf = Config().getconf()
-        #
-        conf['oskernel'] = "1.1.2-"
-        status = Config().oskernel_isgreater([1, 1, 1])
+        mock_oskernel.return_value = "1.1.2-"
+        status = self.Config.oskernel_isgreater([1, 1, 1])
         self.assertTrue(status)
         #
-        conf['oskernel'] = "1.2.1-"
-        status = Config().oskernel_isgreater([1, 1, 1])
+        mock_oskernel.return_value = "1.2.1-"
+        status = self.Config.oskernel_isgreater([1, 1, 1])
         self.assertTrue(status)
 
-        # TODO: recheck this test
-        #conf['oskernel'] = "1.0.0-"
-        #status = Config().oskernel_isgreater([1, 1, 1])
-        #self.assertFalse(status)
+        mock_oskernel.return_value = "1.0.0-"
+        status = self.Config.oskernel_isgreater([1, 1, 1])
+        self.assertFalse(status)
 
     @patch('udocker.msg.Msg')
-    def test_10_getconf(self, mock_msg):
+    @patch('udocker.config.Config._oskernel')
+    @patch('udocker.config.Config._osdistribution')
+    @patch('udocker.config.Config._osversion')
+    @patch('udocker.config.Config._arch')
+    @patch('udocker.config.Config._username')
+    @patch('udocker.config.Config')
+    def test_10_getconf(self, mock_conf, mock_user, mock_arch, mock_osver,
+                        mock_osdistr, mock_oskern, mock_msg):
         """Test Config.getconf()."""
-        conf = Config().getconf()
-        conf['topdir'] = "/.udocker"
+        mock_user.return_value = os.getuid()
+        mock_arch.return_value = "i386"
+        mock_osver.return_value = "linux"
+        mock_osdistr.return_value = ("DISTRO", "1")
+        mock_oskern.return_value = "1.1.2-"
+        mock_conf.return_value.conf['topdir'] = "/.udocker"
+        status = self.Config.getconf()
         self.assertFalse(mock_msg.return_value.err.called)
-
-        # TODO: Test raise no topdir
-        #conf = Config().getconf()
-        #conf['topdir'] = ""
-        #with self.assertRaises(SystemExit) as confexpt:
-        #    conf._verify_config()
-        #self.assertEqual(confexpt.exception.code, 1)
 
 
 if __name__ == '__main__':

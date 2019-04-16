@@ -287,10 +287,6 @@ class Config(object):
 
     def getconf(self):
         """Return all configuration variables"""
-        if not self.conf['topdir']:
-            Msg().err("Error: UDOCKER directory not found")
-            sys.exit(1)
-
         self.conf['uid'] = os.getuid()
         self.conf['gid'] = os.getgid()
         self.conf['username'] = self._username()
