@@ -3,7 +3,6 @@
 udocker unit tests: FileBind
 """
 
-import os
 import sys
 from unittest import TestCase, main
 try:
