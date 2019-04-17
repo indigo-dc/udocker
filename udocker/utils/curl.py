@@ -170,6 +170,7 @@ class GetURLpyCurl(GetURL):
         if self.insecure:
             pyc.setopt(pyc.SSL_VERIFYPEER, 0)
             pyc.setopt(pyc.SSL_VERIFYHOST, 0)
+
         pyc.setopt(pyc.FOLLOWLOCATION, False)
         pyc.setopt(pyc.FAILONERROR, False)
         pyc.setopt(pyc.NOPROGRESS, True)
@@ -178,7 +179,7 @@ class GetURLpyCurl(GetURL):
         pyc.setopt(pyc.CONNECTTIMEOUT, self.ctimeout)
         pyc.setopt(pyc.TIMEOUT, self.timeout)
         pyc.setopt(pyc.PROXY, self.http_proxy)
-        if Msg.level >= Msg.DBG:
+        if Msg.level >= Msg.VER:
             pyc.setopt(pyc.VERBOSE, True)
         else:
             pyc.setopt(pyc.VERBOSE, False)
