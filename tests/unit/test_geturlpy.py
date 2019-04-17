@@ -75,15 +75,15 @@ class GetURLpyCurlTestCase(TestCase):
         self.geturl._set_defaults(mock_pyc, mock_hdr)
         self.assertEqual(mock_pyc.setopt.call_count, 27)
 
-        @patch('udocker.utils.curl.GetURLpyCurl._select_implementation')
-        @patch('udocker.msg.Msg')
-        @patch('udocker.utils.curl.pycurl')
-        @patch('udocker.utils.curl.CurlHeader')
-        def test_04__mkpycurl(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
-            """Test GetURL()._mkpycurl()."""
-            mock_sel.return_value = True
-            self.geturl._set_defaults(mock_pyc, mock_hdr)
-            self.assertTrue(mock_pyc.setopt.called)
+    @patch('udocker.utils.curl.GetURLpyCurl._select_implementation')
+    @patch('udocker.msg.Msg')
+    @patch('udocker.utils.curl.pycurl')
+    @patch('udocker.utils.curl.CurlHeader')
+    def test_04__mkpycurl(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
+        """Test GetURL()._mkpycurl()."""
+        mock_sel.return_value = True
+        self.geturl._set_defaults(mock_pyc, mock_hdr)
+        self.assertTrue(mock_pyc.setopt.called)
 
     @patch('udocker.utils.curl.GetURLpyCurl._select_implementation')
     def test_05_get(self, mock_sel):
