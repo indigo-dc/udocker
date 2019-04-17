@@ -1,73 +1,53 @@
 #!/usr/bin/env python2
 """
-udocker unit tests.
-Unit tests for udocker, a wrapper to execute basic docker containers
-without using docker.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+udocker unit tests: GetURLexeCurl
 """
 
-import os
 import sys
-import unittest
-import mock
+from unittest import TestCase, main
+try:
+    from unittest.mock import Mock, MagicMock, patch, mock_open
+except ImportError:
+    from mock import Mock, MagicMock, patch, mock_open
 
 sys.path.append('.')
 
 from udocker.utils.curl import GetURLexeCurl
+from udocker.config import Config
 
 
-def set_env():
-    """Set environment variables."""
-    if not os.getenv("HOME"):
-        os.environ["HOME"] = os.getcwd()
-
-
-class GetURLexeCurlTestCase(unittest.TestCase):
+class GetURLexeCurlTestCase(TestCase):
     """GetURLexeCurl TestCase."""
 
-    @classmethod
-    def setUpClass(cls):
-        """Setup test."""
-        set_env()
+    def setUp(self):
+        self.conf = Config().getconf()
+        self.conf['timeout'] = 1
+        self.conf['ctimeout'] = 1
+        self.conf['download_timeout'] = 1
+        self.conf['http_agent'] = ""
+        self.conf['http_proxy'] = ""
+        self.conf['http_insecure'] = 0
 
-    def _init(self):
-        """Configure variables."""
-        Config = mock.patch('udocker.config.Config').start()
-        Config.timeout = 1
-        Config.ctimeout = 1
-        Config.download_timeout = 1
-        Config.http_agent = ""
-        Config.http_proxy = ""
-        Config.http_insecure = 0
+    def tearDown(self):
+        pass
 
     def _get(self, *args, **kwargs):
         """Mock for pycurl.get."""
         return args[0]
 
-    @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.utils.curl.GetURL')
+    @patch('udocker.msg.Msg')
+    @patch('udocker.utils.curl.GetURL')
     def test_01_init(self, mock_gcurl, mock_msg):
         """Test GetURLexeCurl() constructor."""
-        self._init()
-        self.assertIsNone(GetURLexeCurl()._opts)
-        self.assertIsNone(GetURLexeCurl()._files)
+        self.assertIsNone(GetURLexeCurl(self.conf)._opts)
+        self.assertIsNone(GetURLexeCurl(self.conf)._files)
 
-    @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.utils.fileutil.FileUtil.find_exec')
-    @mock.patch('udocker.utils.curl.GetURLexeCurl._select_implementation')
-    def test_02_is_available(self, mock_sel, mock_findexec, mock_msg):
+    @patch('udocker.msg.Msg.level')
+    @patch('udocker.utils.fileutil.FileUtil.find_exec')
+    def test_02_is_available(self, mock_findexec, mock_level):
         """Test GetURLexeCurl()._is_available()."""
-        self._init()
-        mock_msg.level = 0
-        geturl = GetURLexeCurl()
+        mock_level.return_value = 0
+        geturl = GetURLexeCurl(self.conf)
         mock_findexec.return_value = "/tmp"
         self.assertTrue(geturl.is_available())
 
@@ -78,13 +58,10 @@ class GetURLexeCurlTestCase(unittest.TestCase):
         """Test GetURLexeCurl()._select_implementation()."""
         pass
 
-    @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.utils.curl.GetURLexeCurl._select_implementation')
-    @mock.patch('udocker.utils.fileutil.FileUtil')
-    def test_04__set_defaults(self, mock_sel, mock_futil, mock_msg):
+    @patch('udocker.msg.Msg.level')
+    def test_04__set_defaults(self, mock_level):
         """Set defaults for curl command line options"""
-        self._init()
-        geturl = GetURLexeCurl()
+        geturl = GetURLexeCurl(self.conf)
         geturl._set_defaults()
         self.assertEqual(geturl._opts["insecure"], "")
 
@@ -92,10 +69,9 @@ class GetURLexeCurlTestCase(unittest.TestCase):
         geturl._set_defaults()
         self.assertEqual(geturl._opts["insecure"], "-k")
 
-        mock_msg.DBG = 0
-        mock_msg.level = 1
+        mock_level.return_value = 5
         geturl._set_defaults()
-        # self.assertEqual(geturl._opts["verbose"], "-v")
+        self.assertEqual(geturl._opts["verbose"], "-v")
 
         self.assertEqual(geturl._files["url"], "")
 
@@ -103,16 +79,13 @@ class GetURLexeCurlTestCase(unittest.TestCase):
         """Test GetURLexeCurl()._mkcurlcmd()."""
         pass
 
-    @mock.patch('udocker.utils.curl.GetURLexeCurl._select_implementation')
-    def test_06_get(self, mock_sel):
+    def test_06_get(self):
         """Test GetURLexeCurl().get() generic get."""
-        self._init()
-        #
-        geturl = GetURLexeCurl()
+        geturl = GetURLexeCurl(self.conf)
         geturl._geturl = type('test', (object,), {})()
         geturl.get = self._get
         self.assertEqual(geturl.get("http://host"), "http://host")
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()
