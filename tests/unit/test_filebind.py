@@ -21,7 +21,7 @@ class FileBindTestCase(TestCase):
     """Test FileBind()."""
 
     def setUp(self):
-        self.conf = Config()
+        self.conf = Config().getconf()
         self.bind_dir = "/.bind_host_files"
         self.orig_dir = "/.bind_orig_files"
 
@@ -29,7 +29,7 @@ class FileBindTestCase(TestCase):
         pass
 
     @patch('udocker.container.localrepo.LocalRepository')
-    @patch('os.path.realpath')
+    @patch('udocker.utils.filebind.os.path.realpath')
     def test_01_init(self, mock_realpath, mock_local):
         """Test FileBind() constructor"""
         container_id = "CONTAINERID"
@@ -47,8 +47,8 @@ class FileBindTestCase(TestCase):
 
     @patch('udocker.msg.Msg')
     @patch('udocker.container.localrepo.LocalRepository')
-    @patch('os.path.isdir')
-    @patch('os.path.realpath')
+    @patch('udocker.utils.filebind.os.path.isdir')
+    @patch('udocker.utils.filebind.os.path.realpath')
     @patch('udocker.utils.fileutil.FileUtil')
     def test_02_setup(self, mock_futil, mock_realpath, mock_isdir,
                       mock_local, mock_msg):
@@ -69,15 +69,14 @@ class FileBindTestCase(TestCase):
         self.assertFalse(status)
 
     @patch('udocker.container.localrepo.LocalRepository')
-    @patch('os.path.isdir')
-    @patch('os.path.islink')
-    @patch('os.path.isfile')
-    @patch('os.path.realpath')
-    @patch('udocker.config.Config')
-    @patch('os.listdir')
+    @patch('udocker.utils.filebind.os.path.isdir')
+    @patch('udocker.utils.filebind.os.path.islink')
+    @patch('udocker.utils.filebind.os.path.isfile')
+    @patch('udocker.utils.filebind.os.path.realpath')
+    @patch('udocker.utils.filebind.os.listdir')
     @patch('udocker.utils.fileutil.FileUtil')
     def test_03_restore(self, mock_futil, mock_listdir,
-                        mock_config, mock_realpath, mock_isfile,
+                        mock_realpath, mock_isfile,
                         mock_islink, mock_isdir, mock_local):
         """Test FileBind().restore().
         Restore container files after FileBind
@@ -85,7 +84,6 @@ class FileBindTestCase(TestCase):
         container_id = "CONTAINERID"
         mock_realpath.return_value = "/tmp"
         mock_listdir.return_value = []
-        mock_config.return_value.tmpdir.return_value = "/tmp"
         mock_futil.return_value.remove.return_value = True
 
         mock_isdir.return_value = False
@@ -106,22 +104,22 @@ class FileBindTestCase(TestCase):
         self.assertTrue(mock_islink.called)
 
     @patch('udocker.container.localrepo.LocalRepository')
-    @patch('udocker.utils.fileutil.FileUtil')
+    @patch('udocker.utils.fileutil.FileUtil.mktmp')
     @patch('udocker.utils.filebind.os.path.realpath')
     @patch('udocker.utils.filebind.os.path.isfile')
     @patch('udocker.utils.filebind.os.path.exists')
     def test_04_start(self, mock_exists, mock_isfile,
-                      mock_realpath, mock_futil, mock_local):
+                      mock_realpath, mock_mktmp, mock_local):
         """Test FileBind().start().
         Prepare to run.
         """
         container_id = "CONTAINERID"
         mock_realpath.return_value = "/tmp"
         files_list = ["file1", "dir1", "file2"]
-        mock_futil.return_value.mktmp.return_value = "tmpDir"
+        mock_mktmp.return_value = "tmpDir"
         fbind = FileBind(self.conf, mock_local, container_id)
         fbind.start(files_list)
-        self.assertTrue(mock_futil.called)
+        self.assertTrue(mock_mktmp.called)
 
         mock_isfile.side_effect = [True, False, True]
         self.assertTrue(mock_isfile.called)
@@ -136,9 +134,11 @@ class FileBindTestCase(TestCase):
         pass
 
     @patch('udocker.container.localrepo.LocalRepository')
-    @patch('udocker.utils.fileutil.FileUtil')
-    @patch('os.path.realpath')
-    def test_06_add(self, mock_realpath, mock_futil, mock_local):
+    @patch('udocker.utils.fileutil.FileUtil.remove')
+    @patch('udocker.utils.fileutil.FileUtil.copyto')
+    @patch('udocker.utils.filebind.os.path.realpath')
+    def test_06_add(self, mock_realpath, mock_futilcp,
+                    mock_futilrm, mock_local):
         """Test FileBind().add().
         Add file to be made available inside container.
         """
@@ -149,8 +149,8 @@ class FileBindTestCase(TestCase):
         fbind = FileBind(self.conf, mock_local, container_id)
         fbind.host_bind_dir = "/tmp"
         fbind.add(host_file, container_file)
-        self.assertTrue(mock_futil.return_value.remove.called)
-        self.assertTrue(mock_futil.return_value.copyto.called)
+        self.assertTrue(mock_futilrm.called)
+        self.assertTrue(mock_futilcp.called)
 
 
 if __name__ == '__main__':
