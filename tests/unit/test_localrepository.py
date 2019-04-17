@@ -23,12 +23,6 @@ else:
     BUILTINS = "__builtin__"
 
 
-def set_env():
-    """Set environment variables."""
-    if not os.getenv("HOME"):
-        os.environ["HOME"] = os.getcwd()
-
-
 class LocalRepositoryTestCase(unittest.TestCase):
     """Test LocalRepositoryTestCase().
 
@@ -41,10 +35,25 @@ class LocalRepositoryTestCase(unittest.TestCase):
     verify_image
     """
 
+    def setUp(self):
+        topdir_path = os.getenv("HOME") + "/" + topdir
+        self.conf = Config().getconf()
+        self.conf['tmpdir'] = "/tmp"
+        self.conf['homedir'] = "/tmp"
+        self.conf['bindir'] = ""
+        self.conf['libdir'] = ""
+        self.conf['reposdir'] = ""
+        self.conf['layersdir'] = ""
+        self.conf['containersdir'] = ""
+        self.localrepo = LocalRepository(topdir_path)
+
+    def tearDown(self):
+        pass
+
     def _localrepo(self, topdir):
         """Instantiate a local repository class."""
         topdir_path = os.getenv("HOME") + "/" + topdir
-        Config = mock.patch('udocker.config.Config').start()
+        Config = patch('udocker.config.Config').start()
         Config.tmpdir = "/tmp"
         Config.homedir = "/tmp"
         Config.bindir = ""
@@ -56,10 +65,6 @@ class LocalRepositoryTestCase(unittest.TestCase):
         localrepo = LocalRepository(topdir_path)
         return localrepo
 
-    @classmethod
-    def setUpClass(cls):
-        """Setup test."""
-        set_env()
 
     def test_01_init(self):
         """Test LocalRepository() constructor."""
