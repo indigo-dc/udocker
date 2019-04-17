@@ -1,24 +1,15 @@
 #!/usr/bin/env python2
 """
-udocker unit tests.
-Unit tests for udocker, a wrapper to execute basic docker containers
-without using docker.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+udocker unit tests: ContainerStructure
 """
 
-import os
 import sys
 import subprocess
-import unittest
-import mock
+from unittest import TestCase, main
+try:
+    from unittest.mock import Mock, MagicMock, patch, mock_open
+except ImportError:
+    from mock import Mock, MagicMock, patch, mock_open
 
 sys.path.append('.')
 
@@ -26,23 +17,10 @@ from udocker.container.structure import ContainerStructure
 from udocker.config import Config
 
 
-def set_env():
-    """Set environment variables."""
-    if not os.getenv("HOME"):
-        os.environ["HOME"] = os.getcwd()
-
-
-class ContainerStructureTestCase(unittest.TestCase):
+class ContainerStructureTestCase(TestCase):
     """Test ContainerStructure() class for containers structure."""
 
-    @classmethod
-    def setUpClass(cls):
-        """Setup test."""
-        set_env()
-
-    def _init(self):
-        """Configure variables."""
-        Config = mock.MagicMock()
+    def setUp(self):
         self.conf = Config().getconf()
         self.conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         self.conf['cmd'] = "/bin/bash"
@@ -54,77 +32,78 @@ class ContainerStructureTestCase(unittest.TestCase):
         self.conf['location'] = ""
         self.conf['oskernel'] = "4.8.13"
 
-    @mock.patch('udocker.container.localrepo.LocalRepository')
+    def tearDown(self):
+        pass
+
+    @patch('udocker.container.localrepo.LocalRepository')
     def test_01_init(self, mock_local):
         """Test ContainerStructure()."""
-        self._init()
-        #
         prex = ContainerStructure(mock_local, self.conf)
         self.assertEqual(prex.tag, "")
         self.assertEqual(prex.imagerepo, "")
-        #
-        prex = ContainerStructure(mock_local, "123456")
+
+        prex = ContainerStructure(mock_local, self.conf, "123456")
         self.assertEqual(prex.tag, "")
         self.assertEqual(prex.imagerepo, "")
         self.assertEqual(prex.container_id, "123456")
 
-    @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.container.localrepo.LocalRepository')
-    def test_02_get_container_attr(self, mock_local, mock_msg):
+    @patch('udocker.container.localrepo.LocalRepository.load_json')
+    @patch('udocker.container.localrepo.LocalRepository.cd_container')
+    @patch('udocker.msg.Msg.level')
+    @patch('udocker.container.localrepo.LocalRepository')
+    def test_02_get_container_attr(self, mock_local, mock_level,
+                                   mock_cd, mock_json):
         """Test ContainerStructure().get_container_attr()."""
-        self._init()
-        mock_msg.level = 0
+        mock_level.return_value = 0
         #
+        self.conf['location'] = "/"
         prex = ContainerStructure(mock_local, self.conf)
-        Config.location = "/"
         (container_dir, container_json) = prex.get_container_attr()
         self.assertEqual(container_dir, "")
         self.assertEqual(container_json, [])
         #
+        self.conf['location'] = ""
         prex = ContainerStructure(mock_local, self.conf)
-        Config.location = ""
-        mock_local.cd_container.return_value = ""
+        mock_cd.return_value = ""
         (container_dir, container_json) = prex.get_container_attr()
         self.assertEqual(container_dir, False)
         self.assertEqual(container_json, False)
         #
+        self.conf['location'] = ""
         prex = ContainerStructure(mock_local, self.conf)
-        Config.location = ""
-        mock_local.cd_container.return_value = "/"
-        mock_local.load_json.return_value = []
+        mock_cd.return_value = "/"
+        mock_json.return_value = []
         (container_dir, container_json) = prex.get_container_attr()
         self.assertEqual(container_dir, False)
         self.assertEqual(container_json, False)
         #
+        self.conf['location'] = ""
         prex = ContainerStructure(mock_local, self.conf)
-        Config.location = ""
-        mock_local.cd_container.return_value = "/"
-        mock_local.load_json.return_value = ["value", ]
+        mock_cd.return_value = "/"
+        mock_json.return_value = ["value", ]
         (container_dir, container_json) = prex.get_container_attr()
         self.assertEqual(container_dir, "/")
         self.assertEqual(container_json, ["value", ])
 
-    @mock.patch('udocker.container.structure.ContainerStructure._untar_layers')
-    @mock.patch('udocker.helper.unique.Unique.uuid')
-    @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.container.localrepo.LocalRepository')
-    def test_03_create(self, mock_local, mock_msg, mock_uuid,
+    @patch('udocker.container.structure.ContainerStructure._untar_layers')
+    @patch('udocker.helper.unique.Unique.uuid')
+    @patch('udocker.msg.Msg.level')
+    @patch('udocker.container.localrepo.LocalRepository')
+    def test_03_create(self, mock_local, mock_level, mock_uuid,
                        mock_untar):
         """Test ContainerStructure().create()."""
-        self._init()
-        mock_msg.level = 0
-        #
+        mock_level.return_value = 0
         prex = ContainerStructure(mock_local, self.conf)
         mock_local.cd_imagerepo.return_value = ""
         status = prex.create_fromimage("imagerepo", "tag")
         self.assertFalse(status)
-        #
+
         prex = ContainerStructure(mock_local, self.conf)
         mock_local.cd_imagerepo.return_value = "/"
         mock_local.get_image_attributes.return_value = ([], [])
         status = prex.create_fromimage("imagerepo", "tag")
         self.assertFalse(status)
-        #
+
         prex = ContainerStructure(mock_local, self.conf)
         mock_local.cd_imagerepo.return_value = "/"
         mock_local.get_image_attributes.return_value = (["value", ], [])
@@ -141,24 +120,22 @@ class ContainerStructureTestCase(unittest.TestCase):
         status = prex.create_fromimage("imagerepo", "tag")
         self.assertEqual(status, "123456")
 
-    @mock.patch('udocker.utils.fileutil.FileUtil')
-    @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.container.localrepo.LocalRepository')
-    def test_04__apply_whiteouts(self, mock_local, mock_msg, mock_futil):
+    @patch('udocker.utils.fileutil.FileUtil')
+    @patch('udocker.msg.Msg.level')
+    @patch('udocker.container.localrepo.LocalRepository')
+    def test_04__apply_whiteouts(self, mock_local, mock_level, mock_futil):
         """Test ContainerStructure()._apply_whiteouts()."""
-        self._init()
-        mock_msg.level = 0
-        #
+        mock_level.return_value = 0
         prex = ContainerStructure(mock_local, self.conf)
-        with mock.patch.object(subprocess, 'Popen') as mock_popen:
+        with patch.object(subprocess, 'Popen') as mock_popen:
             mock_popen.return_value.stdout.readline.side_effect = [
                 "/aaa", "", ]
             status = prex._apply_whiteouts("tarball", "/tmp")
         self.assertTrue(status)
         self.assertFalse(mock_futil.called)
-        #
+
         prex = ContainerStructure(mock_local, self.conf)
-        with mock.patch.object(subprocess, 'Popen') as mock_popen:
+        with patch.object(subprocess, 'Popen') as mock_popen:
             mock_popen.return_value.stdout.readline.side_effect = [
                 "/a/.wh.x", "", ]
             status = prex._apply_whiteouts("tarball", "/tmp")
@@ -166,30 +143,28 @@ class ContainerStructureTestCase(unittest.TestCase):
         # TODO: uncomment below after figure out why is giving false
         #self.assertTrue(mock_futil.called)
 
-    @mock.patch('subprocess.call')
-    @mock.patch('udocker.container.structure.ContainerStructure._apply_whiteouts')
-    @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.container.localrepo.LocalRepository')
-    def test_05__untar_layers(self, mock_local, mock_msg, mock_appwhite,
+    @patch('subprocess.call')
+    @patch('udocker.container.structure.ContainerStructure._apply_whiteouts')
+    @patch('udocker.msg.Msg.level')
+    @patch('udocker.container.localrepo.LocalRepository')
+    def test_05__untar_layers(self, mock_local, mock_level, mock_appwhite,
                               mock_call):
         """Test ContainerStructure()._untar_layers()."""
-        self._init()
-        mock_msg.level = 0
+        mock_level.return_value = 0
         tarfiles = ["a.tar", "b.tar", ]
-        #
         mock_call.return_value = False
         prex = ContainerStructure(mock_local, self.conf)
         status = prex._untar_layers(tarfiles, "/tmp")
         self.assertTrue(status)
         self.assertTrue(mock_call.called)
-        #
+
         mock_call.reset_mock()
         mock_call.return_value = True
         prex = ContainerStructure(mock_local, self.conf)
         status = prex._untar_layers(tarfiles, "/tmp")
         self.assertFalse(status)
         self.assertTrue(mock_call.called)
-        #
+
         mock_call.reset_mock()
         mock_call.return_value = True
         prex = ContainerStructure(mock_local, self.conf)
@@ -197,12 +172,11 @@ class ContainerStructureTestCase(unittest.TestCase):
         self.assertFalse(status)
         self.assertFalse(mock_call.called)
 
-    @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.container.localrepo.LocalRepository')
-    def test_06_get_container_meta(self, mock_local, mock_msg):
+    @patch('udocker.msg.Msg.level')
+    @patch('udocker.container.localrepo.LocalRepository')
+    def test_06_get_container_meta(self, mock_local, mock_level):
         """Test ContainerStructure().get_container_meta()."""
-        self._init()
-        mock_msg.level = 0
+        mock_level.return_value = 0
         container_json = {
             "architecture": "amd64",
             "author": "https://github.com/CentOS/sig-cloud-instance-images",
@@ -252,29 +226,25 @@ class ContainerStructureTestCase(unittest.TestCase):
         status = prex.get_container_meta("Entrypoint", "BBB", container_json)
         self.assertEqual(status, "BBB")
 
-    @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.container.localrepo.LocalRepository')
-    def test_07__dict_to_str(self, mock_local, mock_msg):
+    @patch('udocker.msg.Msg.level')
+    @patch('udocker.container.localrepo.LocalRepository')
+    def test_07__dict_to_str(self, mock_local, mock_level):
         """Test ContainerStructure()._dict_to_str()."""
-        self._init()
-        mock_msg.level = 0
-        #
+        mock_level.return_value = 0
         prex = ContainerStructure(mock_local, self.conf)
         status = prex._dict_to_str({'A': 1, 'B': 2})
         self.assertTrue(status in ("A:1 B:2 ", "B:2 A:1 ", ))
         #self.assertEqual(status, "A:1 B:2 ")
 
-    @mock.patch('udocker.msg.Msg')
-    @mock.patch('udocker.container.localrepo.LocalRepository')
-    def test_08__dict_to_list(self, mock_local, mock_msg):
+    @patch('udocker.msg.Msg.level')
+    @patch('udocker.container.localrepo.LocalRepository')
+    def test_08__dict_to_list(self, mock_local, mock_level):
         """Test ContainerStructure()._dict_to_list()."""
-        self._init()
-        mock_msg.level = 0
-        #
+        mock_level.return_value = 0
         prex = ContainerStructure(mock_local, self.conf)
         status = prex._dict_to_list({'A': 1, 'B': 2})
         self.assertEqual(sorted(status), sorted(["A:1", "B:2"]))
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()
