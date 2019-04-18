@@ -321,8 +321,7 @@ class DockerIoAPI(object):
         files = []
         if fslayers:
             for layer in reversed(fslayers):
-                Msg().err("Downloading layer:", layer["blobSum"],
-                          l=Msg.INF)
+                Msg().err("Downloading layer:", layer["blobSum"], l=Msg.INF)
                 if not self.get_v2_image_layer(imagerepo, layer["blobSum"]):
                     return []
                 files.append(layer["blobSum"])
