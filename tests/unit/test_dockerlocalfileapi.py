@@ -1,58 +1,50 @@
 #!/usr/bin/env python
 """
-udocker unit tests.
-Unit tests for udocker, a wrapper to execute basic docker containers
-without using docker.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+udocker unit tests: DockerLocalFileAPI
 """
 
-import os
 import sys
-import unittest
-import mock
+from unittest import TestCase, main
+try:
+    from unittest.mock import Mock, MagicMock, patch, mock_open
+except ImportError:
+    from mock import Mock, MagicMock, patch, mock_open
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 sys.path.append('.')
 
 from udocker.docker import DockerLocalFileAPI
+from udocker.config import Config
+from udocker.container.localrepo import LocalRepository
 
 
-def set_env():
-    """Set environment variables."""
-    if not os.getenv("HOME"):
-        os.environ["HOME"] = os.getcwd()
-
-
-class DockerLocalFileAPITestCase(unittest.TestCase):
+class DockerLocalFileAPITestCase(TestCase):
     """Test DockerLocalFileAPI() manipulate Docker images."""
 
-    @classmethod
-    def setUpClass(cls):
-        """Setup test."""
-        set_env()
+    def setUp(self):
+        self.conf = Config().getconf()
+        self.conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
+        self.conf['cmd'] = "/bin/bash"
+        self.conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
+                                                ["taskset", "-c", "%s", ])
+        self.conf['valid_host_env'] = "HOME"
+        self.conf['username'] = "user"
+        self.conf['userhome'] = "/"
+        self.conf['oskernel'] = "4.8.13"
+        self.conf['location'] = ""
+        self.conf['keystore'] = "KEYSTORE"
+        self.conf['osversion'] = "OSVERSION"
+        self.conf['arch'] = "ARCH"
 
-    def _init(self):
-        """Configure variables."""
-        Config = mock.MagicMock()
-        Config.hostauth_list = ("/etc/passwd", "/etc/group")
-        Config.cmd = "/bin/bash"
-        Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ],
-                                          ["taskset", "-c", "%s", ])
-        Config.valid_host_env = "HOME"
-        Config.return_value.username.return_value = "user"
-        Config.return_value.userhome.return_value = "/"
-        Config.return_value.oskernel.return_value = "4.8.13"
-        Config.location = ""
-        Config.keystore = "KEYSTORE"
-        Config.return_value.osversion.return_value = "OSVERSION"
-        Config.return_value.arch.return_value = "ARCH"
+        self.local = LocalRepository(self.conf)
+        self.doia = DockerLocalFileAPI(self.local, self.conf)
+
+    def tearDown(self):
+        pass
 
     @mock.patch('udocker.container.localrepo.LocalRepository')
     def test_01_init(self, mock_local):
