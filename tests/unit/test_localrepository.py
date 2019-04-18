@@ -142,7 +142,7 @@ class LocalRepositoryTestCase(TestCase):
                              "REPONAME")
 
     @patch('udocker.container.localrepo.os.path.exists')
-    @patch.object(LocalRepository, 'get_containers_list')
+    @patch('udocker.container.localrepo.LocalRepository.get_containers_list')
     def test_08_cd_container(self, mock_getlist, mock_exists):
         """Test LocalRepository().cd_container()."""
         mock_exists.return_value = True
