@@ -54,7 +54,7 @@ using tools and libraries such as:
 * Includes the required tools already compiled to work across systems
 * Tested with GPGPU and MPI applications
 * Runs both on new and older Linux distributions including:
-  CentOS 6, CentOS 7, Ubuntu 14, Ubuntu 16, Ubunto 18, Fedora, etc
+  CentOS 6, CentOS 7, Ubuntu 14.04, Ubuntu 16.04, Ubuntu 18.04, Fedora, etc
 
 ## Installation
 See the [Installation manual](doc/installation_manual.md)
