@@ -1,29 +1,22 @@
 #!/usr/bin/env python
 """
-udocker unit tests.
-Unit tests for udocker, a wrapper to execute basic docker containers
-without using docker.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+udocker unit tests: UdockerTools
 """
 
-import os
 import sys
-import unittest
-import mock
+import os
+from unittest import TestCase, main
+try:
+    from unittest.mock import Mock, patch, MagicMock, mock_open
+except ImportError:
+    from mock import Mock, patch, MagicMock, mock_open
 
 sys.path.append('.')
 
 from udocker.tools import UdockerTools
 from udocker.utils.curl import CurlHeader
 from udocker.config import Config
+from udocker.container.localrepo import LocalRepository
 
 STDOUT = sys.stdout
 STDERR = sys.stderr
@@ -35,34 +28,27 @@ else:
     BUILTINS = "__builtin__"
 
 
-def set_env():
-    """Set environment variables."""
-    if not os.getenv("HOME"):
-        os.environ["HOME"] = os.getcwd()
-
-
-class UdockerToolsTestCase(unittest.TestCase):
+class UdockerToolsTestCase(TestCase):
     """Test UdockerTools() download and setup of tools needed by udocker."""
 
-    @classmethod
-    def setUpClass(cls):
-        """Setup test."""
-        set_env()
+    def setUp(self):
+        self.conf = Config().getconf()
+        self.local = LocalRepository(self.conf)
+        self.utools = UdockerTools(self.local, self.conf)
 
-    @mock.patch('udocker.utils.curl.GetURL')
-    @mock.patch('udocker.container.localrepo.LocalRepository')
-    @mock.patch('udocker.config.Config')
-    def test_01_init(self, mock_config, mock_localrepo, mock_geturl):
+    def tearDown(self):
+        pass
+
+    @patch('udocker.utils.curl.GetURL')
+    @patch('udocker.container.localrepo.LocalRepository')
+    def test_01_init(self, mock_localrepo, mock_geturl):
         """Test UdockerTools() constructor."""
-        Config = mock_config
-        Config.tmpdir = "/tmp"
-        Config.tarball = "/tmp/xxx"
-        Config.installinfo = "/tmp/xxx"
-        Config._tarball_release = "0.0.0"
-        localrepo = mock_localrepo
-        localrepo.bindir = "/bindir"
-        utools = UdockerTools(localrepo)
-        self.assertEqual(utools.localrepo, localrepo)
+        self.conf.tmpdir = "/tmp"
+        self.conf.tarball = "/tmp/xxx"
+        self.conf.installinfo = "/tmp/xxx"
+        self.conf._tarball_release = "0.0.0"
+        self.local.bindir = "/bindir"
+        self.assertEqual(self.utools.localrepo, self.local)
 
     @mock.patch('udocker.container.localrepo.LocalRepository')
     @mock.patch('udocker.utils.fileutil.FileUtil.getdata')
@@ -311,4 +297,4 @@ class UdockerToolsTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()
