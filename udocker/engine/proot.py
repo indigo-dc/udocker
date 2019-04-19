@@ -23,7 +23,7 @@ class PRootEngine(ExecutionEngineCommon):
         self.conf = conf
         self.proot_exec = None                   # PRoot
         self.proot_noseccomp = False             # Noseccomp mode
-        self._kernel = self.conf['oskernel()']   # Emulate kernel
+        self._kernel = self.conf['oskernel']   # Emulate kernel
         self.exec_mode = xmode
 
     def _select_proot(self):
