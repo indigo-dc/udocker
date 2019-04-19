@@ -102,101 +102,103 @@ class LocalRepositoryTestCase(TestCase):
         self.assertFalse(self.lrepo.is_container_id(
             12345678))
 
-    def test_06_get_container_name(self):
+
+    @patch('udocker.container.localrepo.os.readlink')
+    @patch('udocker.container.localrepo.os.path.islink')
+    @patch('udocker.container.localrepo.os.listdir')
+    @patch('udocker.container.localrepo.os.path.isdir')
+    def test_06_get_container_name(self, mock_isdir, mock_listdir,
+                                   mock_islink, mock_readlink):
         """Test LocalRepository().get_container_name()."""
-        mock_isdir = patch('udocker.container.localrepo.os.path.isdir').start()
         mock_isdir.return_value = True
-        mock_listdir = patch('udocker.container.localrepo.os.listdir').start()
         mock_listdir.return_value = ['LINK']
-        mock_islink = patch('udocker.container.localrepo.os.path.islink').start()
         mock_islink.return_value = True
-        mock_readlink = patch('udocker.container.localrepo.os.readlink').start()
         mock_readlink.return_value = "/a/b/IMAGE:TAG"
         name_list = self.lrepo.get_container_name("IMAGE:TAG")
         self.assertEqual(name_list, ["LINK"])
 
-    # @patch('udocker.container.localrepo.os.path.isdir')
-    # @patch('udocker.container.localrepo.os.listdir')
-    # def test_07a_get_containers_list(self, mock_isdir, mock_listdir):
-    #     """Test LocalRepository().get_containers_list() - 01."""
-    #     mock_isdir.return_value = True
-    #     mock_listdir.return_value = ['LINK']
-    #     with patch(BOPEN, mock_open(read_data='REPONAME')):
-    #         containers_list = self.lrepo.get_containers_list()
-    #         self.assertEqual(os.path.basename(containers_list[0]), "LINK")
-    #
-    # @patch('udocker.container.localrepo.os.path.islink')
-    # @patch('udocker.container.localrepo.os.listdir')
-    # @patch('udocker.container.localrepo.os.path.isdir')
-    # @patch.object(LocalRepository, 'get_container_name')
-    # def test_07b_get_containers_list(self, mock_getname, mock_isdir,
-    #                                  mock_listdir, mock_islink):
-    #     """Test LocalRepository().get_containers_list() - 02."""
-    #     mock_isdir.return_value = True
-    #     mock_listdir.return_value = ['LINK']
-    #     mock_islink.return_value = False
-    #     mock_getname.return_value = ["NAME1", "NAME2"]
-    #     with patch(BOPEN, mock_open(read_data='REPONAME')):
-    #         containers_list = self.lrepo.get_containers_list(False)
-    #         self.assertEqual(os.path.basename(containers_list[0][1]),
-    #                          "REPONAME")
-    #
-    # @patch('udocker.container.localrepo.os.path.exists')
-    # @patch('udocker.container.localrepo.LocalRepository.get_containers_list')
-    # def test_08_cd_container(self, mock_getlist, mock_exists):
-    #     """Test LocalRepository().cd_container()."""
-    #     mock_exists.return_value = True
-    #     mock_getlist.return_value = [self.lrepo.containersdir +
-    #                                  "/CONTAINERNAME"]
-    #     container_path = self.lrepo.cd_container("CONTAINERNAME")
-    #     self.assertEqual(container_path, mock_getlist.return_value[0])
-    #
-    # def test_09_protect_container(self):
-    #     """Test LocalRepository().protect_container()."""
-    #     with patch(BOPEN, mock_open()) as mopen:
-    #         container_id = "d2578feb-acfc-37e0-8561-47335f85e46a"
-    #         self.lrepo.protect_container(container_id)
-    #         self.assertTrue(mopen.called)
-    #         self.assertEqual(mopen.call_args, call('/PROTECT', 'w'))
-    #
-    # def test_10_isprotected_container(self):
-    #     """Test LocalRepository().isprotected_container()."""
-    #     with patch('udocker.container.localrepo.os.path.exists') as mexists:
-    #         container_id = "d2578feb-acfc-37e0-8561-47335f85e46a"
-    #         self.lrepo.isprotected_container(container_id)
-    #         self.assertTrue(mexists.called)
-    #         self.assertEqual(mexists.call_args, call('/PROTECT'))
-    #
-    # @patch('udocker.container.localrepo.LocalRepository.cd_container')
-    # @patch('udocker.container.localrepo.LocalRepository._unprotect')
-    # def test_11_unprotect_container(self, mock_unprotect, mock_cdcont):
-    #     """Test LocalRepository().isprotected_container()."""
-    #     mock_cdcont.return_value = "/tmp"
-    #     container_id = "d2578feb-acfc-37e0-8561-47335f85e46a"
-    #     self.lrepo.unprotect_container(container_id)
-    #     self.assertTrue(mock_unprotect.called)
-    #
-    # def test_12_protect_imagerepo(self):
-    #     """Test LocalRepository().protect_imagerepo()."""
-    #     with patch(BOPEN, mock_open()) as mopen:
-    #         self.lrepo.protect_imagerepo("IMAGE", "TAG")
-    #         self.assertTrue(mopen.called)
-    #         protect = self.lrepo.reposdir + "/IMAGE/TAG/PROTECT"
-    #         self.assertEqual(mopen.call_args, call(protect, 'w'))
-    #
-    # def test_13_isprotected_imagerepo(self):
-    #     """Test LocalRepository().isprotected_imagerepo()."""
-    #     with patch('os.path.exists') as mexists:
-    #         self.lrepo.isprotected_imagerepo("IMAGE", "TAG")
-    #         self.assertTrue(mexists.called)
-    #         protect = self.lrepo.reposdir + "/IMAGE/TAG/PROTECT"
-    #         self.assertEqual(mexists.call_args, call(protect))
-    #
-    # @patch('udocker.container.localrepo.LocalRepository._unprotect')
-    # def test_14_unprotect_imagerepo(self, mock_unprotect):
-    #     """Test LocalRepository().unprotected_imagerepo()."""
-    #     self.lrepo.unprotect_imagerepo("IMAGE", "TAG")
-    #     self.assertTrue(mock_unprotect.called)
+    @patch('udocker.container.localrepo.os.path.isdir')
+    @patch('udocker.container.localrepo.os.listdir')
+    def test_07a_get_containers_list(self, mock_listdir, mock_isdir):
+        """Test LocalRepository().get_containers_list() - 01."""
+        mock_isdir.return_value = True
+        mock_listdir.return_value = ['LINK']
+        with patch(BOPEN, mock_open(read_data='REPONAME')):
+            containers_list = self.lrepo.get_containers_list()
+            self.assertEqual(os.path.basename(containers_list[0]), "LINK")
+
+    @patch('udocker.container.localrepo.os.path.islink')
+    @patch('udocker.container.localrepo.os.listdir')
+    @patch('udocker.container.localrepo.os.path.isdir')
+    @patch('udocker.container.localrepo.LocalRepository.get_container_name')
+    def test_07b_get_containers_list(self, mock_getname, mock_isdir,
+                                     mock_listdir, mock_islink):
+        """Test LocalRepository().get_containers_list() - 02."""
+        mock_isdir.return_value = True
+        mock_listdir.return_value = ['LINK']
+        mock_islink.return_value = False
+        mock_getname.return_value = ["NAME1", "NAME2"]
+        with patch(BOPEN, mock_open(read_data='REPONAME')):
+            containers_list = self.lrepo.get_containers_list(False)
+            self.assertEqual(os.path.basename(containers_list[0][1]),
+                             "REPONAME")
+
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.LocalRepository.get_containers_list')
+    def test_08_cd_container(self, mock_getlist, mock_exists):
+        """Test LocalRepository().cd_container()."""
+        mock_exists.return_value = True
+        mock_getlist.return_value = [self.lrepo.containersdir +
+                                     "/CONTAINERNAME"]
+        container_path = self.lrepo.cd_container("CONTAINERNAME")
+        self.assertEqual(container_path, mock_getlist.return_value[0])
+
+    def test_09_protect_container(self):
+        """Test LocalRepository().protect_container()."""
+        with patch(BOPEN, mock_open()) as mopen:
+            container_id = "d2578feb-acfc-37e0-8561-47335f85e46a"
+            self.lrepo.protect_container(container_id)
+            self.assertTrue(mopen.called)
+            self.assertEqual(mopen.call_args, call('/PROTECT', 'w'))
+
+    @patch('udocker.container.localrepo.os.path.exists')
+    def test_10_isprotected_container(self, mock_exists):
+        """Test LocalRepository().isprotected_container() - Protect."""
+        container_id = "d2578feb-acfc-37e0-8561-47335f85e46a"
+        self.lrepo.isprotected_container(container_id)
+        self.assertTrue(mock_exists.called)
+        self.assertEqual(mock_exists.call_args, call('/PROTECT'))
+
+    @patch('udocker.container.localrepo.LocalRepository.cd_container')
+    @patch('udocker.container.localrepo.LocalRepository._unprotect')
+    def test_11_unprotect_container(self, mock_unprotect, mock_cdcont):
+        """Test LocalRepository().isprotected_container() - Unprotect."""
+        mock_cdcont.return_value = "/tmp"
+        container_id = "d2578feb-acfc-37e0-8561-47335f85e46a"
+        self.lrepo.unprotect_container(container_id)
+        self.assertTrue(mock_unprotect.called)
+
+    def test_12_protect_imagerepo(self):
+        """Test LocalRepository().protect_imagerepo()."""
+        with patch(BOPEN, mock_open()) as mopen:
+            self.lrepo.protect_imagerepo("IMAGE", "TAG")
+            self.assertTrue(mopen.called)
+            protect = self.lrepo.reposdir + "/IMAGE/TAG/PROTECT"
+            self.assertEqual(mopen.call_args, call(protect, 'w'))
+
+    def test_13_isprotected_imagerepo(self):
+        """Test LocalRepository().isprotected_imagerepo()."""
+        with patch('os.path.exists') as mexists:
+            self.lrepo.isprotected_imagerepo("IMAGE", "TAG")
+            self.assertTrue(mexists.called)
+            protect = self.lrepo.reposdir + "/IMAGE/TAG/PROTECT"
+            self.assertEqual(mexists.call_args, call(protect))
+
+    @patch('udocker.container.localrepo.LocalRepository._unprotect')
+    def test_14_unprotect_imagerepo(self, mock_unprotect):
+        """Test LocalRepository().unprotected_imagerepo()."""
+        self.lrepo.unprotect_imagerepo("IMAGE", "TAG")
+        self.assertTrue(mock_unprotect.called)
     #
     # @patch('udocker.container.localrepo.os.access')
     # @patch('udocker.container.localrepo.os.path.isdir')
