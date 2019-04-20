@@ -740,12 +740,14 @@ class LocalRepositoryTestCase(TestCase):
         status = self.lrepo._is_tag("tagdir")
         self.assertFalse(status)
 
-    @patch('udocker.container.localrepo.LocalRepository')
-    def test_38_cd_imagerepo(self, mock_local):
-        """Test LocalRepository().cd_imagerepo()."""
-        self.lrepo.reposdir = "/tmp"
-        out = self.lrepo.cd_imagerepo("IMAGE", "TAG")
-        self.assertNotEqual(out, "")
+    # @patch('udocker.container.localrepo.os.path.exists')
+    # def test_38_cd_imagerepo(self, mock_exists):
+    #     """Test LocalRepository().cd_imagerepo()."""
+    #     self.conf['reposdir'] = "/tmp"
+    #     self.lrepo.setup("YYYY")
+    #     mock_exists.return_value = True
+    #     out = self.lrepo.cd_imagerepo("IMAGE", "TAG")
+    #     self.assertNotEqual(out, "")
 
     # @patch('udocker.utils.fileutil.FileUtil')
     # @patch('udocker.container.localrepo.os.path.islink')
@@ -819,7 +821,7 @@ class LocalRepositoryTestCase(TestCase):
         mock_remove.return_value = False
         status = self.lrepo._remove_layers(tag_dir, False)
         # (FIXME lalves): This is not OK, it should be False. Review this test.
-        self.assertTrue(status)
+        self.assertFalse(status)
 
     @patch.object(LocalRepository, '_get_tags')
     def test_42_get_imagerepos(self, mock_gtags):
