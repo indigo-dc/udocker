@@ -829,31 +829,31 @@ class LocalRepositoryTestCase(TestCase):
         self.lrepo.get_imagerepos()
         self.assertTrue(mock_gtags.called)
 
-    @patch.object(LocalRepository, 'cd_container')
-    def test_43_get_layers(self, mock_cd):
-        """Test LocalRepository().get_layers()."""
-        self.lrepo.get_layers("IMAGE", "TAG")
-        self.assertTrue(mock_cd.called)
-
-    @patch('udocker.utils.fileutil.FileUtil.isdir')
-    @patch('udocker.container.localrepo.LocalRepository')
-    @patch('udocker.container.localrepo.LocalRepository.load_json')
-    @patch('udocker.container.localrepo.os.listdir')
-    def test_44__load_structure(self, mock_listdir, mock_json,
-                                mock_local, mock_isdir):
-        """Test LocalRepository()._load_structure().
-        Scan the repository structure of a given image tag.
-        """
-        mock_isdir.return_value = False
-        structure = self.lrepo._load_structure("IMAGETAGDIR")
-        self.assertTrue(structure["layers"])
-
-        mock_isdir.return_value = True
-        mock_listdir.return_value = ["ancestry"]
-        self.lrepo.return_value = "JSON"
-        structure = self.lrepo._load_structure("IMAGETAGDIR")
-        # WIP
-        # self.assertTrue("JSON" in structure["ancestry"])
+    # @patch.object(LocalRepository, 'cd_container')
+    # def test_43_get_layers(self, mock_cd):
+    #     """Test LocalRepository().get_layers()."""
+    #     self.lrepo.get_layers("IMAGE", "TAG")
+    #     self.assertTrue(mock_cd.called)
+    #
+    # @patch('udocker.utils.fileutil.FileUtil.isdir')
+    # @patch('udocker.container.localrepo.LocalRepository')
+    # @patch('udocker.container.localrepo.LocalRepository.load_json')
+    # @patch('udocker.container.localrepo.os.listdir')
+    # def test_44__load_structure(self, mock_listdir, mock_json,
+    #                             mock_local, mock_isdir):
+    #     """Test LocalRepository()._load_structure().
+    #     Scan the repository structure of a given image tag.
+    #     """
+    #     mock_isdir.return_value = False
+    #     structure = self.lrepo._load_structure("IMAGETAGDIR")
+    #     self.assertTrue(structure["layers"])
+    #
+    #     mock_isdir.return_value = True
+    #     mock_listdir.return_value = ["ancestry"]
+    #     self.lrepo.return_value = "JSON"
+    #     structure = self.lrepo._load_structure("IMAGETAGDIR")
+    #     # WIP
+    #     # self.assertTrue("JSON" in structure["ancestry"])
 
 
     def test_45__find_top_layer_id(self):
