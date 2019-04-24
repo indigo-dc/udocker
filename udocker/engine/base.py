@@ -497,7 +497,7 @@ class ExecutionEngineCommon(object):
         later are binding/mapped/passed to the container. So
         setup this binding as well via hostauth.
         """
-        FileUtil().umask(0o077)
+        FileUtil(self.conf).umask(0o077)
         tmp_passwd = FileUtil(self.conf, "passwd").mktmp()
         tmp_group = FileUtil(self.conf, "group").mktmp()
         FileUtil(self.conf, container_auth.passwd_file).copyto(tmp_passwd)
