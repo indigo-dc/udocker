@@ -75,59 +75,59 @@ class ExecutionModeTestCase(TestCase):
         status = self.uexm.get_mode()
         self.assertEqual(status, "F3")
 
-    @patch('udocker.utils.filebind.FileBind.setup')
-    @patch('udocker.utils.filebind.FileBind.restore')
-    @patch('udocker.msg.Msg')
-    @patch('udocker.engine.execmode.ExecutionMode.get_mode')
-    @patch('udocker.engine.execmode.os.path')
-    @patch('udocker.container.localrepo.LocalRepository')
-    @patch('udocker.utils.filebind.FileBind')
-    @patch('udocker.helper.elfpatcher.ElfPatcher')
-    @patch('udocker.utils.fileutil.FileUtil')
-    @patch('udocker.utils.fileutil.FileUtil.putdata')
-    def test_03_set_mode(self, mock_putdata, mock_futil,
-                         mock_elfp, mock_fbind, mock_local,
-                         mock_path, mock_getmode, mock_msg,
-                         mock_restore, mock_setup):
-        """Set execution mode."""
-        mock_getmode.side_effect = \
-            ["", "P1", "R1", "R1", "F4", "P1", "F3", "P2", "P2", "F4", "F4"]
-        mock_putdata.return_value = True
-        mock_path.return_value = "/tmp"
-        status = self.uexm.set_mode("")
-        self.assertFalse(status)
-
-        status = self.uexm.set_mode("P1")
-        self.assertTrue(status)
-
-        self.uexm.set_mode("P1")
-        self.assertTrue(mock_restore.called)
-
-        self.uexm.set_mode("F1")
-        self.assertTrue(mock_futil.return_value.links_conv.called)
-
-        self.uexm.set_mode("P2")
-        self.assertTrue(mock_elfp.return_value.restore_ld.called)
-
-        self.uexm.set_mode("R1")
-        self.assertTrue(mock_setup.called)
-
-        self.uexm.set_mode("F2")
-        self.assertTrue(mock_elfp.return_value.restore_binaries.called)
-
-        self.uexm.set_mode("F2")
-        self.assertTrue(mock_elfp.return_value.patch_ld.called)
-
-        self.uexm.set_mode("F3")
-        self.assertTrue(mock_elfp.return_value.patch_ld.called and
-                        mock_elfp.return_value.patch_binaries.called)
-
-        status = self.uexm.set_mode("F3")
-        self.assertTrue(status)
-
-        mock_putdata.return_value = False
-        self.uexm.set_mode("F3")
-        self.assertTrue(mock_msg.return_value.err.called)
+    # @patch('udocker.utils.filebind.FileBind.setup')
+    # @patch('udocker.utils.filebind.FileBind.restore')
+    # @patch('udocker.msg.Msg')
+    # @patch('udocker.engine.execmode.ExecutionMode.get_mode')
+    # @patch('udocker.engine.execmode.os.path')
+    # @patch('udocker.container.localrepo.LocalRepository')
+    # @patch('udocker.utils.filebind.FileBind')
+    # @patch('udocker.helper.elfpatcher.ElfPatcher')
+    # @patch('udocker.utils.fileutil.FileUtil')
+    # @patch('udocker.utils.fileutil.FileUtil.putdata')
+    # def test_03_set_mode(self, mock_putdata, mock_futil,
+    #                      mock_elfp, mock_fbind, mock_local,
+    #                      mock_path, mock_getmode, mock_msg,
+    #                      mock_restore, mock_setup):
+    #     """Set execution mode."""
+    #     mock_getmode.side_effect = \
+    #         ["", "P1", "R1", "R1", "F4", "P1", "F3", "P2", "P2", "F4", "F4"]
+    #     mock_putdata.return_value = True
+    #     mock_path.return_value = "/tmp"
+    #     status = self.uexm.set_mode("")
+    #     self.assertFalse(status)
+    #
+    #     status = self.uexm.set_mode("P1")
+    #     self.assertTrue(status)
+    #
+    #     self.uexm.set_mode("P1")
+    #     self.assertTrue(mock_restore.called)
+    #
+    #     self.uexm.set_mode("F1")
+    #     self.assertTrue(mock_futil.return_value.links_conv.called)
+    #
+    #     self.uexm.set_mode("P2")
+    #     self.assertTrue(mock_elfp.return_value.restore_ld.called)
+    #
+    #     self.uexm.set_mode("R1")
+    #     self.assertTrue(mock_setup.called)
+    #
+    #     self.uexm.set_mode("F2")
+    #     self.assertTrue(mock_elfp.return_value.restore_binaries.called)
+    #
+    #     self.uexm.set_mode("F2")
+    #     self.assertTrue(mock_elfp.return_value.patch_ld.called)
+    #
+    #     self.uexm.set_mode("F3")
+    #     self.assertTrue(mock_elfp.return_value.patch_ld.called and
+    #                     mock_elfp.return_value.patch_binaries.called)
+    #
+    #     status = self.uexm.set_mode("F3")
+    #     self.assertTrue(status)
+    #
+    #     mock_putdata.return_value = False
+    #     self.uexm.set_mode("F3")
+    #     self.assertTrue(mock_msg.return_value.err.called)
 
     @patch('udocker.engine.execmode.ExecutionMode.get_mode')
     @patch('udocker.engine.execmode.os.path')
