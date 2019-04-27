@@ -13,6 +13,7 @@ except ImportError:
 sys.path.append('.')
 
 from udocker.config import Config
+from udocker.container.localrepo import LocalRepository
 from udocker.umain import UMain
 
 
@@ -34,6 +35,7 @@ class UMainTestCase(TestCase):
         self.conf['verbose_level'] = 3
         self.conf['http_insecure'] = False
         self.conf['topdir'] = "/.udocker"
+        self.local = LocalRepository(self.conf)
 
 
     def tearDown(self):
@@ -50,21 +52,73 @@ class UMainTestCase(TestCase):
     #         UMain(argv)
     #     self.assertEqual(mainexpt.exception.code, 0)
 
+    @patch('udocker.cmdparser.CmdParser.get')
+    @patch('udocker.container.localrepo.LocalRepository.create_repo')
+    @patch('udocker.container.localrepo.LocalRepository')
+    @patch('udocker.umain.os.geteuid')
     @patch('udocker.cli.UdockerCLI')
     @patch('udocker.container.localrepo.LocalRepository.is_repo')
-    @patch('udocker.container.localrepo.LocalRepository')
     @patch('udocker.msg.Msg.setlevel')
     @patch('udocker.config.Config.getconf')
     @patch('udocker.msg.Msg')
     @patch('udocker.cmdparser.CmdParser.parse')
     def test_01_init(self, mock_parse, mock_msg, mock_confget,
-                     mock_setlevel, mock_local, mock_isrepo, mock_cli):
+                     mock_setlevel, mock_isrepo,
+                     mock_cli, mock_geteuid, mock_local,
+                     mock_repocreate, mock_cmdget):
         """Test UMain() constructor."""
-        # argv = "--allow-root"
+
+        # test run as root no option --allow-root
         argv = "udocker"
-        mock_parse.return_value = 1
+        mock_parse.return_value = False
+        # mock_cmdget.side_effect = [False, False, False, False,
+        #                            False, False, False, False,
+        #                            False]
+        mock_geteuid.return_value = 0
+        mock_confget.return_value = self.conf
+        mock_local.return_value = self.local
+        with patch('udocker.umain.sys.exit') as exit_mock:
+            UMain(argv)
+            assert exit_mock.called
+
+        # test run as root with option --allow-root
+        # argv = "udocker"
+        # mock_parse.return_value = True
+        # mock_cmdget.side_effect = [True, False, False, False,
+        #                            False, False, False, False,
+        #                            False]
+        # mock_geteuid.return_value = 0
+        # mock_confget.return_value = self.conf
+        # mock_local.return_value = self.local
+        # mock_isrepo.return_value = ['/usr/lib', '/var/lib']
+        # UMain(argv)
+        # self.assertTrue(mock_confget.called)
+        # self.assertTrue(mock_isrepo.called)
+
+        # test localrepo create
+        argv = "udocker"
+        mock_parse.return_value = True
+        mock_geteuid.return_value = 1
+        mock_confget.return_value = self.conf
+        mock_local.return_value = self.local
+        mock_isrepo.return_value = False
         UMain(argv)
         self.assertTrue(mock_confget.called)
+        self.assertTrue(mock_isrepo.called)
+        #self.assertTrue(mock_repocreate.called)
+
+        argv = "udocker run"
+        mock_parse.return_value = True
+        mock_geteuid.return_value = 1
+        mock_confget.return_value = self.conf
+        mock_local.return_value = self.local
+        mock_isrepo.return_value = ['/usr/lib', '/var/lib']
+        #mock_setlevel.return_value = self.conf['verbose_level']
+        UMain(argv)
+        self.assertTrue(mock_confget.called)
+        #self.assertTrue(mock_setlevel.called)
+        self.assertTrue(mock_isrepo.called)
+        # self.assertTrue(mock_cli.called)
 
 
     # @patch('udocker.container.localrepo.LocalRepository')

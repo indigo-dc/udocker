@@ -38,8 +38,8 @@ class UMain(object):
         elif (self.cmdp.get("--quiet", "GEN_OPT") or
               self.cmdp.get("-q", "GEN_OPT")):
             self.conf['verbose_level'] = Msg.MSG
-        Msg().setlevel(self.conf['verbose_level'])
 
+        Msg().setlevel(self.conf['verbose_level'])
         if self.cmdp.get("--insecure", "GEN_OPT"):
             self.conf['http_insecure'] = True
 
@@ -54,6 +54,7 @@ class UMain(object):
         if not self.localrepo.is_repo():
             Msg().out("Info: creating repo: " + self.conf['topdir'], l=Msg.INF)
             self.localrepo.create_repo()
+
         self.cli = UdockerCLI(self.localrepo, self.conf)
 
     def _execute(self):
