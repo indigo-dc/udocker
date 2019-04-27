@@ -39,16 +39,33 @@ class UMainTestCase(TestCase):
     def tearDown(self):
         pass
 
+    # @patch('udocker.msg.Msg')
+    # @patch('udocker.cmdparser.CmdParser.parse')
+    # def test_01_init(self, mock_parse, mock_msg):
+    #     """Test UMain() constructor."""
+    #     # argv = "--allow-root"
+    #     argv = None
+    #     mock_parse.return_value = False
+    #     with self.assertRaises(SystemExit) as mainexpt:
+    #         UMain(argv)
+    #     self.assertEqual(mainexpt.exception.code, 0)
+
+    @patch('udocker.cli.UdockerCLI')
+    @patch('udocker.container.localrepo.LocalRepository.is_repo')
+    @patch('udocker.container.localrepo.LocalRepository')
+    @patch('udocker.msg.Msg.setlevel')
+    @patch('udocker.config.Config.getconf')
     @patch('udocker.msg.Msg')
     @patch('udocker.cmdparser.CmdParser.parse')
-    def test_01_init(self, mock_parse, mock_msg):
+    def test_01_init(self, mock_parse, mock_msg, mock_confget,
+                     mock_setlevel, mock_local, mock_isrepo, mock_cli):
         """Test UMain() constructor."""
         # argv = "--allow-root"
-        argv = None
-        mock_parse.return_value = False
-        with self.assertRaises(SystemExit) as mainexpt:
-            UMain(argv)
-        self.assertEqual(mainexpt.exception.code, 0)
+        argv = "udocker"
+        mock_parse.return_value = 1
+        UMain(argv)
+        self.assertTrue(mock_confget.called)
+
 
     # @patch('udocker.container.localrepo.LocalRepository')
     # @patch('udocker.cli.UdockerCLI')
