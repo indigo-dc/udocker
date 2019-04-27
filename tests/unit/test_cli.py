@@ -51,7 +51,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.docker.DockerIoAPI')
     @patch('udocker.container.localrepo.LocalRepository')
     def test_01_init(self, mock_local, mock_dioapi, mock_dlocapi, mock_ks):
-        """Test Udocker() constructor."""
+        """Test UdockerCLI() constructor."""
 
         mock_local.homedir = "/h/u/.udocker"
         mock_ks.return_value = 123
@@ -71,7 +71,7 @@ class UdockerCLITestCase(TestCase):
     # @patch('udocker.container.localrepo.LocalRepository')
     # def test_02__cdrepo(self, mock_local, mock_dioapi, mock_dlocapi, mock_ks,
     #                     mock_cmdp, mock_futil):
-    #     """Test Udocker()._cdrepo()."""
+    #     """Test UdockerCLI()._cdrepo()."""
     #
     #     mock_local.homedir = "/h/u/.udocker"
     #     mock_ks.return_value = 123
@@ -106,7 +106,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_03__check_imagespec(self, mock_local, mock_msg, mock_dioapi,
                                  mock_dlocapi, mock_ks, mock_cmdp):
-        """Test Udocker()._check_imagespec()."""
+        """Test UdockerCLI()._check_imagespec()."""
 
         mock_msg.level = 0
         #
@@ -134,7 +134,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_04_do_mkrepo(self, mock_local, mock_msg, mock_dioapi,
                           mock_dlocapi, mock_ks, mock_cmdp, mock_exists):
-        """Test Udocker().do_mkrepo()."""
+        """Test UdockerCLI().do_mkrepo()."""
 
         mock_msg.level = 0
         #
@@ -171,7 +171,7 @@ class UdockerCLITestCase(TestCase):
     def test_05_do_search(self, mock_local, mock_msg, mock_dioapi,
                           mock_dlocapi, mock_ks, mock_cmdp,
                           mock_print1, mock_print2, mock_rinput):
-        """Test Udocker().do_search()."""
+        """Test UdockerCLI().do_search()."""
 
         mock_msg.level = 0
         #
@@ -232,7 +232,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_06_do_load(self, mock_local, mock_msg, mock_dioapi,
                         mock_dlocapi, mock_ks, mock_cmdp):
-        """Test Udocker().do_load()."""
+        """Test UdockerCLI().do_load()."""
 
         mock_msg.level = 0
         #
@@ -271,7 +271,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_07_do_import(self, mock_local, mock_msg, mock_dioapi,
                           mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
-        """Test Udocker().do_import()."""
+        """Test UdockerCLI().do_import()."""
 
         mock_msg.level = 0
         cmd_options = [False, False, "", False,
@@ -327,7 +327,7 @@ class UdockerCLITestCase(TestCase):
     def test_08_do_login(self, mock_local, mock_msg, mock_dioapi,
                          mock_dlocapi, mock_ks, mock_cmdp,
                          mock_rinput, mock_gpass):
-        """Test Udocker().do_login()."""
+        """Test UdockerCLI().do_login()."""
 
         mock_msg.level = 0
         #
@@ -369,7 +369,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_09_do_logout(self, mock_local, mock_msg, mock_dioapi,
                           mock_dlocapi, mock_ks, mock_cmdp):
-        """Test Udocker().do_logout()."""
+        """Test UdockerCLI().do_logout()."""
 
         mock_msg.level = 0
         #
@@ -403,7 +403,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_10_do_pull(self, mock_local, mock_msg, mock_dioapi,
                         mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
-        """Test Udocker().do_pull()."""
+        """Test UdockerCLI().do_pull()."""
 
         mock_msg.level = 0
         #
@@ -445,7 +445,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_11_do_create(self, mock_local, mock_msg, mock_dioapi,
                           mock_dlocapi, mock_ks, mock_cmdp, mock_create):
-        """Test Udocker().do_create()."""
+        """Test UdockerCLI().do_create()."""
 
         mock_msg.level = 0
         #
@@ -477,7 +477,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_12__create(self, mock_local, mock_msg, mock_dioapi, mock_chkimg,
                         mock_cstruct):
-        """Test Udocker()._create()."""
+        """Test UdockerCLI()._create()."""
 
         mock_msg.level = 0
         #
@@ -503,7 +503,7 @@ class UdockerCLITestCase(TestCase):
     #    @patch('udocker.cmdparser.CmdParser')
     #    @patch('udocker.container.localrepo.LocalRepository')
     #    def test_14__get_run_options(self, mock_local, mock_cmdp):
-    #        """Test Udocker()._get_run_options()"""
+    #        """Test UdockerCLI()._get_run_options()"""
     #
     #        #
     #
@@ -528,7 +528,7 @@ class UdockerCLITestCase(TestCase):
     def test_15_do_run(self, mock_realpath, mock_del, mock_local,
                        mock_msg, mock_dioapi, mock_dlocapi,
                        mock_ks, mock_cmdp, mock_eng, mock_getopt):
-        """Test Udocker().do_run()."""
+        """Test UdockerCLI().do_run()."""
 
         mock_msg.level = 0
         mock_realpath.return_value = "/tmp"
@@ -649,7 +649,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_16_do_images(self, mock_local, mock_msg, mock_dioapi,
                           mock_dlocapi, mock_ks, mock_cmdp):
-        """Test Udocker().do_images()."""
+        """Test UdockerCLI().do_images()."""
 
         mock_msg.level = 0
         #
@@ -693,7 +693,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_17_do_ps(self, mock_local, mock_msg, mock_dioapi,
                       mock_dlocapi, mock_ks, mock_cmdp):
-        """Test Udocker().do_ps()."""
+        """Test UdockerCLI().do_ps()."""
 
         mock_msg.level = 0
         #
@@ -727,7 +727,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_18_do_rm(self, mock_local, mock_msg, mock_dioapi,
                       mock_dlocapi, mock_ks, mock_cmdp):
-        """Test Udocker().do_rm()."""
+        """Test UdockerCLI().do_rm()."""
 
         mock_msg.level = 0
         #
@@ -775,7 +775,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_19_do_rmi(self, mock_local, mock_msg, mock_dioapi,
                        mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
-        """Test Udocker().do_rmi()."""
+        """Test UdockerCLI().do_rmi()."""
 
         mock_msg.level = 0
         #
@@ -818,7 +818,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_20_do_protect(self, mock_local, mock_msg, mock_dioapi,
                            mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
-        """Test Udocker().do_protect()."""
+        """Test UdockerCLI().do_protect()."""
 
         mock_msg.level = 0
         #
@@ -874,7 +874,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_21_do_unprotect(self, mock_local, mock_msg, mock_dioapi,
                              mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
-        """Test Udocker().do_unprotect()."""
+        """Test UdockerCLI().do_unprotect()."""
 
         mock_msg.level = 0
         #
@@ -922,7 +922,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_22_do_name(self, mock_local, mock_msg, mock_dioapi,
                         mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
-        """Test Udocker().do_name()."""
+        """Test UdockerCLI().do_name()."""
 
         mock_msg.level = 0
         #
@@ -968,7 +968,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_23_do_rmname(self, mock_local, mock_msg, mock_dioapi,
                           mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
-        """Test Udocker().do_rmname()."""
+        """Test UdockerCLI().do_rmname()."""
 
         mock_msg.level = 0
         #
@@ -1008,7 +1008,7 @@ class UdockerCLITestCase(TestCase):
     def test_24_do_inspect(self, mock_local, mock_msg, mock_contattr,
                            mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg,
                            mock_cstruct, mock_missopt, mock_contid):
-        """Test Udocker().do_inspect()."""
+        """Test UdockerCLI().do_inspect()."""
 
         mock_msg.level = 0
         #
@@ -1055,7 +1055,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_25_do_verify(self, mock_local, mock_msg, mock_dioapi,
                           mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
-        """Test Udocker().do_verify()."""
+        """Test UdockerCLI().do_verify()."""
 
         mock_msg.level = 0
         #
@@ -1093,7 +1093,7 @@ class UdockerCLITestCase(TestCase):
     #@patch('udocker.cmdparser.CmdParser')
     #@patch('udocker.container.localrepo.LocalRepository')
     #def test_25_do_version(self, mock_local, mock_cmdp):
-    #    """Test Udocker().do_version()."""
+    #    """Test UdockerCLI().do_version()."""
     #
     #
     #   mock_cmdp.get.side_effect = ["run", "", "" "", "", ]
@@ -1104,7 +1104,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.cmdparser.CmdParser')
     @patch('udocker.container.localrepo.LocalRepository')
     def test_26_do_help(self, mock_local, mock_cmdp, mock_msgout):
-        """Test Udocker().do_help()."""
+        """Test UdockerCLI().do_help()."""
 
 
 
@@ -1118,7 +1118,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_27_do_install(self, mock_local, mock_msg, mock_cmdp,
                            mock_utools):
-        """Test Udocker().do_install()."""
+        """Test UdockerCLI().do_install()."""
 
         mock_msg.level = 0
         #
@@ -1165,7 +1165,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository')
     def test_28_do_setup(self, mock_local, mock_msg, mock_dioapi,
                          mock_dlocapi, mock_ks, mock_cmdp, mock_exec):
-        """Test Udocker().do_setup()."""
+        """Test UdockerCLI().do_setup()."""
 
         mock_msg.level = 0
         #
