@@ -242,20 +242,20 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_cmdp.missing_options.return_value = True
         status = self.udoc.do_load(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_cmdp.missing_options.return_value = False
         status = self.udoc.do_load(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.get.side_effect = ["INFILE", "", "" "", "", ]
         mock_cmdp.missing_options.return_value = False
         mock_dlocapi.return_value.load.return_value = []
         status = self.udoc.do_load(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.get.side_effect = ["INFILE", "", "" "", "", ]
@@ -264,59 +264,59 @@ class UdockerCLITestCase(TestCase):
         status = self.udoc.do_load(mock_cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.UdockerCLI._check_imagespec')
-    @patch('udocker.cmdparser.CmdParser')
-    @patch('udocker.helper.keystore.KeyStore')
-    @patch('udocker.docker.DockerLocalFileAPI')
-    @patch('udocker.docker.DockerIoAPI')
-    @patch('udocker.msg.Msg')
-    @patch('udocker.container.localrepo.LocalRepository')
-    def test_07_do_import(self, mock_local, mock_msg, mock_dioapi,
-                          mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
-        """Test UdockerCLI().do_import()."""
-
-        mock_msg.level = 0
-        cmd_options = [False, False, "", False,
-                       "INFILE", "IMAGE", "" "", "", ]
-        #
-
-        mock_cmdp.get.side_effect = ["", "", "", "", "", "", "", "", "", ]
-        status = self.udoc.do_import(mock_cmdp)
-        self.assertFalse(status)
-        #
-        mock_cmdp.reset_mock()
-
-        mock_cmdp.get.side_effect = cmd_options
-        mock_chkimg.return_value = ("", "")
-        mock_cmdp.missing_options.return_value = False
-        status = self.udoc.do_import(mock_cmdp)
-        self.assertFalse(status)
-        #
-        mock_cmdp.reset_mock()
-
-        mock_cmdp.get.side_effect = cmd_options
-        mock_chkimg.return_value = ("IMAGE", "")
-        mock_cmdp.missing_options.return_value = True
-        status = self.udoc.do_import(mock_cmdp)
-        self.assertFalse(status)
-        #
-        mock_cmdp.reset_mock()
-
-        mock_cmdp.get.side_effect = cmd_options
-        mock_chkimg.return_value = ("IMAGE", "TAG")
-        mock_cmdp.missing_options.return_value = False
-        mock_dlocapi.return_value.import_toimage.return_value = False
-        status = self.udoc.do_import(mock_cmdp)
-        self.assertFalse(status)
-        #
-        mock_cmdp.reset_mock()
-
-        mock_cmdp.get.side_effect = cmd_options
-        mock_chkimg.return_value = ("IMAGE", "TAG")
-        mock_cmdp.missing_options.return_value = False
-        mock_dlocapi.return_value.import_toimage.return_value = True
-        status = self.udoc.do_import(mock_cmdp)
-        self.assertEqual(status, 0)
+    # @patch('udocker.cli.UdockerCLI._check_imagespec')
+    # @patch('udocker.cmdparser.CmdParser')
+    # @patch('udocker.helper.keystore.KeyStore')
+    # @patch('udocker.docker.DockerLocalFileAPI')
+    # @patch('udocker.docker.DockerIoAPI')
+    # @patch('udocker.msg.Msg')
+    # @patch('udocker.container.localrepo.LocalRepository')
+    # def test_07_do_import(self, mock_local, mock_msg, mock_dioapi,
+    #                       mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
+    #     """Test UdockerCLI().do_import()."""
+    #
+    #     mock_msg.level = 0
+    #     cmd_options = [False, False, "", False,
+    #                    "INFILE", "IMAGE", "" "", "", ]
+    #     #
+    #
+    #     mock_cmdp.get.side_effect = ["", "", "", "", "", "", "", "", "", ]
+    #     status = self.udoc.do_import(mock_cmdp)
+    #     self.assertEqual(status, 1)
+    #     #
+    #     mock_cmdp.reset_mock()
+    #
+    #     mock_cmdp.get.side_effect = cmd_options
+    #     mock_chkimg.return_value = ("", "")
+    #     mock_cmdp.missing_options.return_value = False
+    #     status = self.udoc.do_import(mock_cmdp)
+    #     self.assertEqual(status, 1)
+    #     #
+    #     mock_cmdp.reset_mock()
+    #
+    #     mock_cmdp.get.side_effect = cmd_options
+    #     mock_chkimg.return_value = ("IMAGE", "")
+    #     mock_cmdp.missing_options.return_value = True
+    #     status = self.udoc.do_import(mock_cmdp)
+    #     self.assertEqual(status, 1)
+    #     #
+    #     mock_cmdp.reset_mock()
+    #
+    #     mock_cmdp.get.side_effect = cmd_options
+    #     mock_chkimg.return_value = ("IMAGE", "TAG")
+    #     mock_cmdp.missing_options.return_value = False
+    #     mock_dlocapi.return_value.import_toimage.return_value = False
+    #     status = self.udoc.do_import(mock_cmdp)
+    #     self.assertEqual(status, 1)
+    #     #
+    #     mock_cmdp.reset_mock()
+    #
+    #     mock_cmdp.get.side_effect = cmd_options
+    #     mock_chkimg.return_value = ("IMAGE", "TAG")
+    #     mock_cmdp.missing_options.return_value = False
+    #     mock_dlocapi.return_value.import_toimage.return_value = True
+    #     status = self.udoc.do_import(mock_cmdp)
+    #     self.assertEqual(status, 0)
 
     # @patch('gudocker.cli.etpass.getpass')
     # @patch.object(BUILTIN, 'raw_input')
@@ -379,7 +379,7 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_ks.return_value.delete.return_value = False
         status = self.udoc.do_logout(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.get.side_effect = ["ALL", "", "" "", "", ]
@@ -396,47 +396,47 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(mock_ks.return_value.delete.called)
 
-    @patch('udocker.cli.UdockerCLI._check_imagespec')
-    @patch('udocker.cmdparser.CmdParser')
-    @patch('udocker.helper.keystore.KeyStore')
-    @patch('udocker.docker.DockerLocalFileAPI')
-    @patch('udocker.docker.DockerIoAPI')
-    @patch('udocker.msg.Msg')
-    @patch('udocker.container.localrepo.LocalRepository')
-    def test_10_do_pull(self, mock_local, mock_msg, mock_dioapi,
-                        mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
-        """Test UdockerCLI().do_pull()."""
-
-        mock_msg.level = 0
-        #
-
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        mock_chkimg.return_value = ("", "TAG")
-        status = self.udoc.do_pull(mock_cmdp)
-        self.assertFalse(status)
-        #
-
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        mock_chkimg.return_value = ("IMAGE", "TAG")
-        mock_cmdp.missing_options.return_value = True
-        status = self.udoc.do_pull(mock_cmdp)
-        self.assertFalse(status)
-        #
-
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        mock_chkimg.return_value = ("IMAGE", "TAG")
-        mock_cmdp.missing_options.return_value = False
-        mock_dioapi.return_value.get.return_value = []
-        status = self.udoc.do_pull(mock_cmdp)
-        self.assertFalse(status)
-        #
-
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        mock_chkimg.return_value = ("IMAGE", "TAG")
-        mock_cmdp.missing_options.return_value = False
-        mock_dioapi.return_value.get.return_value = ["F1", "F2", ]
-        status = self.udoc.do_pull(mock_cmdp)
-        self.assertEqual(status, 0)
+    # @patch('udocker.cli.UdockerCLI._check_imagespec')
+    # @patch('udocker.cmdparser.CmdParser')
+    # @patch('udocker.helper.keystore.KeyStore')
+    # @patch('udocker.docker.DockerLocalFileAPI')
+    # @patch('udocker.docker.DockerIoAPI')
+    # @patch('udocker.msg.Msg')
+    # @patch('udocker.container.localrepo.LocalRepository')
+    # def test_10_do_pull(self, mock_local, mock_msg, mock_dioapi,
+    #                     mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
+    #     """Test UdockerCLI().do_pull()."""
+    #
+    #     mock_msg.level = 0
+    #     #
+    #
+    #     mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+    #     mock_chkimg.return_value = ("", "TAG")
+    #     status = self.udoc.do_pull(mock_cmdp)
+    #     self.assertEqual(status, 1)
+    #     #
+    #
+    #     mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+    #     mock_chkimg.return_value = ("IMAGE", "TAG")
+    #     mock_cmdp.missing_options.return_value = True
+    #     status = self.udoc.do_pull(mock_cmdp)
+    #     self.assertEqual(status, 1)
+    #     #
+    #
+    #     mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+    #     mock_chkimg.return_value = ("IMAGE", "TAG")
+    #     mock_cmdp.missing_options.return_value = False
+    #     mock_dioapi.return_value.get.return_value = []
+    #     status = self.udoc.do_pull(mock_cmdp)
+    #     self.assertEqual(status, 1)
+    #     #
+    #
+    #     mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+    #     mock_chkimg.return_value = ("IMAGE", "TAG")
+    #     mock_cmdp.missing_options.return_value = False
+    #     mock_dioapi.return_value.get.return_value = ["F1", "F2", ]
+    #     status = self.udoc.do_pull(mock_cmdp)
+    #     self.assertEqual(status, 0)
 
     @patch('udocker.cli.UdockerCLI._create')
     @patch('udocker.cmdparser.CmdParser')
@@ -456,14 +456,14 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_create.return_value = ""
         status = self.udoc.do_create(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_create.return_value = ""
         status = self.udoc.do_create(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -486,14 +486,14 @@ class UdockerCLITestCase(TestCase):
 
         mock_reponame.return_value = False
         status = self.udoc._create("IMAGE:TAG")
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_reponame.return_value = True
         mock_chkimg.return_value = ("", "TAG")
         mock_cstruct.return_value.create.return_value = True
         status = self.udoc._create("IMAGE:TAG")
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_reponame.return_value = True
@@ -539,7 +539,7 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.return_value.missing_options.return_value = True
         mock_cmdp.return_value.get.side_effect = ["", "", "" "", "", ]
         status = self.udoc.do_run(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
 
         mock_local.reset_mock()
         mock_cmdp.reset_mock()
@@ -550,7 +550,7 @@ class UdockerCLITestCase(TestCase):
         self.conf['location'] = "/"
         mock_eng.return_value.run.return_value = True
         status = self.udoc.do_run(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
 
         # mock_local.reset_mock()
         # mock_cmdp.reset_mock()
@@ -659,7 +659,7 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.missing_options.return_value = True
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         status = self.udoc.do_images(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -703,7 +703,7 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.missing_options.return_value = True
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         status = self.udoc.do_ps(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -737,20 +737,20 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.missing_options.return_value = True
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         status = self.udoc.do_rm(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         status = self.udoc.do_rm(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
         mock_cmdp.get.side_effect = ["X", "12", "" "", "", ]
         mock_local.get_container_id.return_value = ""
         status = self.udoc.do_rm(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -758,7 +758,7 @@ class UdockerCLITestCase(TestCase):
         mock_local.get_container_id.return_value = "1"
         mock_local.isprotected_container.return_value = True
         status = self.udoc.do_rm(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -786,14 +786,14 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
         status = self.udoc.do_rmi(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("", "TAG")
         status = self.udoc.do_rmi(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -801,7 +801,7 @@ class UdockerCLITestCase(TestCase):
         mock_chkimg.return_value = ("IMAGE", "TAG")
         mock_local.isprotected_imagerepo.return_value = True
         status = self.udoc.do_rmi(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -829,7 +829,7 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
         status = self.udoc.do_protect(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -838,7 +838,7 @@ class UdockerCLITestCase(TestCase):
         mock_local.get_container_id.return_value = "123"
         mock_local.protect_container.return_value = False
         status = self.udoc.do_protect(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -856,7 +856,7 @@ class UdockerCLITestCase(TestCase):
         mock_local.get_container_id.return_value = ""
         mock_local.protect_imagerepo.return_value = True
         status = self.udoc.do_protect(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -885,7 +885,7 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
         status = self.udoc.do_unprotect(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -894,7 +894,7 @@ class UdockerCLITestCase(TestCase):
         mock_local.get_container_id.return_value = "123"
         mock_local.unprotect_container.return_value = False
         status = self.udoc.do_unprotect(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -933,7 +933,7 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
         status = self.udoc.do_name(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -941,7 +941,7 @@ class UdockerCLITestCase(TestCase):
         mock_chkimg.return_value = ("IMAGE", "TAG")
         mock_local.get_container_id.return_value = ""
         status = self.udoc.do_name(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -950,7 +950,7 @@ class UdockerCLITestCase(TestCase):
         mock_local.get_container_id.return_value = "123"
         mock_local.set_container_name.return_value = False
         status = self.udoc.do_name(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -979,7 +979,7 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
         status = self.udoc.do_rmname(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -987,7 +987,7 @@ class UdockerCLITestCase(TestCase):
         mock_chkimg.return_value = ("IMAGE", "TAG")
         mock_local.del_container_name.return_value = False
         status = self.udoc.do_rmname(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -1019,7 +1019,7 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
         status = self.udoc.do_inspect(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_missopt.return_value = False
@@ -1028,7 +1028,7 @@ class UdockerCLITestCase(TestCase):
         mock_contid.return_value = "123"
         mock_contattr.return_value = ("", "")
         status = self.udoc.do_inspect(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_missopt.return_value = False
@@ -1066,14 +1066,14 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
         status = self.udoc.do_verify(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("", "")
         status = self.udoc.do_verify(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -1081,7 +1081,7 @@ class UdockerCLITestCase(TestCase):
         mock_chkimg.return_value = ("IMAGE", "TAG")
         mock_local.cd_imagerepo.return_value = False
         status = self.udoc.do_verify(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = False
@@ -1176,7 +1176,7 @@ class UdockerCLITestCase(TestCase):
         mock_cmdp.get.side_effect = ["", "", "" "", "", ]
         mock_local.cd_container.return_value = False
         status = self.udoc.do_setup(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = True
@@ -1184,7 +1184,7 @@ class UdockerCLITestCase(TestCase):
         mock_local.cd_container.return_value = True
         mock_exec.set_mode.return_value = False
         status = self.udoc.do_setup(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = True
@@ -1192,7 +1192,7 @@ class UdockerCLITestCase(TestCase):
         mock_local.cd_container.return_value = True
         mock_exec.set_mode.return_value = True
         status = self.udoc.do_setup(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = True
@@ -1201,7 +1201,7 @@ class UdockerCLITestCase(TestCase):
         mock_local.isprotected_container.return_value = True
         mock_exec.set_mode.return_value = True
         status = self.udoc.do_setup(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
         #
 
         mock_cmdp.missing_options.return_value = True
@@ -1210,7 +1210,7 @@ class UdockerCLITestCase(TestCase):
         mock_local.isprotected_container.return_value = False
         mock_exec.set_mode.return_value = True
         status = self.udoc.do_setup(mock_cmdp)
-        self.assertFalse(status)
+        self.assertEqual(status, 1)
 
 
 if __name__ == '__main__':
