@@ -51,6 +51,17 @@ class ExecutionEngineCommon(object):
         self.opt["portsexp"] = []                # Ports exposed by container
         self.opt["devices"] = []                 # Devices passed to container
 
+    def _oskernel_isgreater(self, ref_version):
+        """Compare kernel version is greater or equal than ref_version"""
+        os_rel = self.conf['oskernel'].split("-")[0]
+        os_ver = [int(x) for x in os_rel.split(".")]
+        for idx in (0, 1, 2):
+            if os_ver[idx] > ref_version[idx]:
+                return True
+            elif os_ver[idx] < ref_version[idx]:
+                return False
+        return True
+
     def _get_portsmap(self, by_container=True):
         """List of TCP/IP ports mapped indexed by container port"""
         indexed_portmap = dict()

@@ -138,21 +138,6 @@ class ConfigTestCase(TestCase):
         status = self.Config._oskernel()
         self.assertEqual(status, "3.2.1")
 
-    @patch('udocker.config.Config._oskernel')
-    def test_09_oskernel_isgreater(self, mock_oskernel):
-        """Test Config.oskernel_isgreater()."""
-        mock_oskernel.return_value = "1.1.2-"
-        status = self.Config.oskernel_isgreater([1, 1, 1])
-        self.assertTrue(status)
-        #
-        mock_oskernel.return_value = "1.2.1-"
-        status = self.Config.oskernel_isgreater([1, 1, 1])
-        self.assertTrue(status)
-
-        mock_oskernel.return_value = "1.0.0-"
-        status = self.Config.oskernel_isgreater([1, 1, 1])
-        self.assertFalse(status)
-
     @patch('udocker.msg.Msg')
     @patch('udocker.config.Config._oskernel')
     @patch('udocker.config.Config._osdistribution')

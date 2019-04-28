@@ -295,7 +295,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._set_spec()
         if (self.conf['runc_nomqueue'] or
                 (self.conf['runc_nomqueue'] is None and not
-                 self.conf.oskernel_isgreater("4.8.0"))):
+                 self._oskernel_isgreater("4.8.0"))):
             self._del_mount_spec("mqueue", "/dev/mqueue")
         self._add_volume_bindings()
         self._add_devices()

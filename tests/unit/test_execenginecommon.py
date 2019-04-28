@@ -66,6 +66,23 @@ class ExecutionEngineCommonTestCase(TestCase):
         self.assertEqual(self.ex_eng.opt["domain"], "")
         self.assertEqual(self.ex_eng.opt["volfrom"], [])
 
+    # TODO: this test was in config, now here after refactor
+    # @patch('udocker.config.Config._oskernel')
+    # def test_09_oskernel_isgreater(self, mock_oskernel):
+    #     """Test Config.oskernel_isgreater()."""
+    #     mock_oskernel.return_value = "1.1.2-"
+    #     status = self.Config.oskernel_isgreater([1, 1, 1])
+    #     self.assertTrue(status)
+    #     #
+    #     mock_oskernel.return_value = "1.2.1-"
+    #     status = self.Config.oskernel_isgreater([1, 1, 1])
+    #     self.assertTrue(status)
+    #
+    #     mock_oskernel.return_value = "1.0.0-"
+    #     status = self.Config.oskernel_isgreater([1, 1, 1])
+    #     self.assertFalse(status)
+
+
     @patch('udocker.msg.Msg')
     @patch('udocker.container.localrepo.LocalRepository')
     def test_02__check_exposed_ports(self, mock_local, mock_msg):

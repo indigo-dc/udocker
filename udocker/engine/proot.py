@@ -31,22 +31,22 @@ class PRootEngine(ExecutionEngineCommon):
         arch = self.conf['arch']
         image_list = []
         if arch == "amd64":
-            if self.conf.oskernel_isgreater((4, 8, 0)):
+            if self._oskernel_isgreater((4, 8, 0)):
                 image_list = ["proot-x86_64-4_8_0", "proot-x86_64", "proot"]
             else:
                 image_list = ["proot-x86_64", "proot"]
         elif arch == "i386":
-            if self.conf.oskernel_isgreater((4, 8, 0)):
+            if self._oskernel_isgreater((4, 8, 0)):
                 image_list = ["proot-x86-4_8_0", "proot-x86", "proot"]
             else:
                 image_list = ["proot-x86", "proot"]
         elif arch == "arm64":
-            if self.conf.oskernel_isgreater((4, 8, 0)):
+            if self._oskernel_isgreater((4, 8, 0)):
                 image_list = ["proot-arm64-4_8_0", "proot-arm64", "proot"]
             else:
                 image_list = ["proot-arm64", "proot"]
         elif arch == "arm":
-            if self.conf.oskernel_isgreater((4, 8, 0)):
+            if self._oskernel_isgreater((4, 8, 0)):
                 image_list = ["proot-arm-4_8_0", "proot-arm", "proot"]
             else:
                 image_list = ["proot-arm", "proot"]
@@ -55,7 +55,7 @@ class PRootEngine(ExecutionEngineCommon):
         if not self.proot_exec:
             Msg().err("Error: proot executable not found")
             sys.exit(1)
-        if self.conf.oskernel_isgreater((4, 8, 0)):
+        if self._oskernel_isgreater((4, 8, 0)):
             if self.conf['proot_noseccomp'] is not None:
                 self.proot_noseccomp = self.conf['proot_noseccomp']
             if self.exec_mode == "P2":

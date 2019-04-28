@@ -274,16 +274,17 @@ class Config(object):
         except (NameError, AttributeError):
             return "3.2.1"
 
-    def oskernel_isgreater(self, ref_version):
-        """Compare kernel version is greater or equal than ref_version"""
-        os_rel = self._oskernel().split("-")[0]
-        os_ver = [int(x) for x in os_rel.split(".")]
-        for idx in (0, 1, 2):
-            if os_ver[idx] > ref_version[idx]:
-                return True
-            elif os_ver[idx] < ref_version[idx]:
-                return False
-        return True
+    # TODO: to be removed, method now in executioncommon
+    # def oskernel_isgreater(self, ref_version):
+    #     """Compare kernel version is greater or equal than ref_version"""
+    #     os_rel = self._oskernel().split("-")[0]
+    #     os_ver = [int(x) for x in os_rel.split(".")]
+    #     for idx in (0, 1, 2):
+    #         if os_ver[idx] > ref_version[idx]:
+    #             return True
+    #         elif os_ver[idx] < ref_version[idx]:
+    #             return False
+    #     return True
 
     def getconf(self):
         """Return all configuration variables"""
