@@ -28,11 +28,11 @@ sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 from udocker.umain import UMain
 
 
-def main():
-    """main execution function"""
-    run_main = UMain(sys.argv)
-    sys.exit(run_main.start())
+# def main():
+#     """main execution function"""
+#     run_main = UMain(sys.argv)
+#     sys.exit(run_main.start())
 
 
 if __name__ == "__main__":
-    main()
+    UMain(sys.argv).start()
