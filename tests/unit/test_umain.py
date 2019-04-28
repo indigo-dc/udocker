@@ -41,145 +41,130 @@ class UMainTestCase(TestCase):
     def tearDown(self):
         pass
 
+    # @patch('udocker.cmdparser.CmdParser.get')
+    # @patch('udocker.container.localrepo.LocalRepository.create_repo')
+    # @patch('udocker.container.localrepo.LocalRepository')
+    # @patch('udocker.umain.os.geteuid')
+    # @patch('udocker.cli.UdockerCLI')
+    # @patch('udocker.container.localrepo.LocalRepository.is_repo')
+    # @patch('udocker.msg.Msg.setlevel')
+    # @patch('udocker.config.Config.getconf')
     # @patch('udocker.msg.Msg')
     # @patch('udocker.cmdparser.CmdParser.parse')
-    # def test_01_init(self, mock_parse, mock_msg):
+    # def test_01_init(self, mock_parse, mock_msg, mock_confget,
+    #                  mock_setlevel, mock_isrepo,
+    #                  mock_cli, mock_geteuid, mock_local,
+    #                  mock_repocreate, mock_cmdget):
     #     """Test UMain() constructor."""
-    #     # argv = "--allow-root"
-    #     argv = None
-    #     mock_parse.return_value = False
-    #     with self.assertRaises(SystemExit) as mainexpt:
-    #         UMain(argv)
-    #     self.assertEqual(mainexpt.exception.code, 0)
-
-    @patch('udocker.cmdparser.CmdParser.get')
-    @patch('udocker.container.localrepo.LocalRepository.create_repo')
-    @patch('udocker.container.localrepo.LocalRepository')
-    @patch('udocker.umain.os.geteuid')
-    @patch('udocker.cli.UdockerCLI')
-    @patch('udocker.container.localrepo.LocalRepository.is_repo')
-    @patch('udocker.msg.Msg.setlevel')
-    @patch('udocker.config.Config.getconf')
-    @patch('udocker.msg.Msg')
-    @patch('udocker.cmdparser.CmdParser.parse')
-    def test_01_init(self, mock_parse, mock_msg, mock_confget,
-                     mock_setlevel, mock_isrepo,
-                     mock_cli, mock_geteuid, mock_local,
-                     mock_repocreate, mock_cmdget):
-        """Test UMain() constructor."""
-
-        # test run as root no option --allow-root
-        argv = "udocker"
-        mock_parse.return_value = False
-        # mock_cmdget.side_effect = [False, False, False, False,
-        #                            False, False, False, False,
-        #                            False]
-        mock_geteuid.return_value = 0
-        mock_confget.return_value = self.conf
-        mock_local.return_value = self.local
-        with patch('udocker.umain.sys.exit') as exit_mock:
-            UMain(argv)
-            assert exit_mock.called
-
-        # test run as root with option --allow-root
-        # argv = "udocker"
-        # mock_parse.return_value = True
-        # mock_cmdget.side_effect = [True, False, False, False,
-        #                            False, False, False, False,
-        #                            False]
-        # mock_geteuid.return_value = 0
-        # mock_confget.return_value = self.conf
-        # mock_local.return_value = self.local
-        # mock_isrepo.return_value = ['/usr/lib', '/var/lib']
-        # UMain(argv)
-        # self.assertTrue(mock_confget.called)
-        # self.assertTrue(mock_isrepo.called)
-
-        # test localrepo create
-        argv = "udocker"
-        mock_parse.return_value = True
-        mock_geteuid.return_value = 1
-        mock_confget.return_value = self.conf
-        mock_local.return_value = self.local
-        mock_isrepo.return_value = False
-        UMain(argv)
-        self.assertTrue(mock_confget.called)
-        self.assertTrue(mock_isrepo.called)
-        #self.assertTrue(mock_repocreate.called)
-
-        argv = "udocker run"
-        mock_parse.return_value = True
-        mock_geteuid.return_value = 1
-        mock_confget.return_value = self.conf
-        mock_local.return_value = self.local
-        mock_isrepo.return_value = ['/usr/lib', '/var/lib']
-        #mock_setlevel.return_value = self.conf['verbose_level']
-        UMain(argv)
-        self.assertTrue(mock_confget.called)
-        #self.assertTrue(mock_setlevel.called)
-        self.assertTrue(mock_isrepo.called)
-        # self.assertTrue(mock_cli.called)
-
-
-    # @patch('udocker.container.localrepo.LocalRepository')
-    # @patch('udocker.cli.UdockerCLI')
-    # @patch('udocker.config.Config.user_init')
-    # @patch('udocker.msg.Msg')
-    # @patch('udocker.cmdparser.CmdParser')
-    # def test_02_init(self, mock_cmdp, mock_msg, mock_conf_init, mock_udocker,
-    #                  mock_localrepo):
-    #     """Test UMain() constructor."""
-    #     mock_cmdp.return_value.parse.return_value = True
-    #     mock_cmdp.return_value.get.side_effect = [False, False, False, False,
-    #                                               False, False, False, False,
-    #                                               False]
-    #     UMain()
-    #     self.assertEqual(udocker.Config.verbose_level, 3)
-    #     # --debug
-    #     mock_cmdp.return_value.parse.return_value = True
-    #     mock_cmdp.return_value.get.side_effect = [False, False, True, False,
-    #                                               False, False, False, False,
-    #                                               False]
-    #     UMain()
-    #     self.assertNotEqual(udocker.Config.verbose_level, 3)
-    #     # -D
-    #     mock_cmdp.return_value.parse.return_value = True
-    #     mock_cmdp.return_value.get.side_effect = [False, False, False, True,
-    #                                               False, False, False, False,
-    #                                               False]
-    #     UMain()
-    #     self.assertNotEqual(udocker.Config.verbose_level, 3)
-    #     # --quiet
-    #     mock_cmdp.return_value.parse.return_value = True
-    #     mock_cmdp.return_value.get.side_effect = [False, False, False, False,
-    #                                               True, False, False, False,
-    #                                               False]
-    #     UMain()
-    #     self.assertNotEqual(udocker.Config.verbose_level, 3)
-    #     # -q
-    #     mock_cmdp.return_value.parse.return_value = True
-    #     mock_cmdp.return_value.get.side_effect = [False, False, False, False,
-    #                                               False, True, False, False,
-    #                                               False]
-    #     UMain()
-    #     self.assertNotEqual(udocker.Config.verbose_level, 3)
-    #     # --insecure
-    #     mock_cmdp.return_value.parse.return_value = True
-    #     mock_cmdp.return_value.get.side_effect = [False, False, False, False,
-    #                                               False, False, True, False,
-    #                                               False, False]
-    #     UMain()
-    #     self.assertTrue(udocker.Config.http_insecure)
-    #     # --repo=
-    #     mock_localrepo.return_value.is_repo.return_value = True
-    #     mock_cmdp.return_value.parse.return_value = True
-    #     mock_cmdp.return_value.get.side_effect = [False, False, False, False,
-    #                                               False, False, False, True,
-    #                                               "/TOPDIR"]
-    #     with self.assertRaises(SystemExit) as mainexpt:
-    #         UMain()
-    #     self.assertEqual(mainexpt.exception.code, 0)
     #
+    #     # test run as root no option --allow-root
+    #     argv = "udocker"
+    #     mock_parse.return_value = False
+    #     mock_geteuid.return_value = 0
+    #     mock_confget.return_value = self.conf
+    #     mock_local.return_value = self.local
+    #     mock_isrepo.return_value = True
+    #     with patch('udocker.umain.sys.exit') as exit_mock:
+    #         UMain(argv)
+    #         assert exit_mock.called
+    #
+    #     # test run as root with option --allow-root
+    #     # argv = "udocker"
+    #     # mock_parse.return_value = True
+    #     # mock_cmdget.side_effect = [True, False, False, False,
+    #     #                            False, False, False, False,
+    #     #                            False]
+    #     # mock_geteuid.return_value = 0
+    #     # mock_confget.return_value = self.conf
+    #     # mock_local.return_value = self.local
+    #     # mock_isrepo.return_value = ['/usr/lib', '/var/lib']
+    #     # UMain(argv)
+    #     # self.assertTrue(mock_confget.called)
+    #     # self.assertTrue(mock_isrepo.called)
+    #
+    #     # test localrepo create
+    #     argv = "udocker"
+    #     mock_parse.return_value = True
+    #     mock_geteuid.return_value = 1
+    #     mock_confget.return_value = self.conf
+    #     mock_local.return_value = self.local
+    #     mock_isrepo.return_value = False
+    #     UMain(argv)
+    #     self.assertTrue(mock_confget.called)
+    #     self.assertTrue(mock_isrepo.called)
+    #     #self.assertTrue(mock_repocreate.called)
+    #
+    #     argv = "udocker run"
+    #     mock_parse.return_value = True
+    #     mock_geteuid.return_value = 1
+    #     mock_confget.return_value = self.conf
+    #     mock_local.return_value = self.local
+    #     mock_isrepo.return_value = ['/usr/lib', '/var/lib']
+    #     #mock_setlevel.return_value = self.conf['verbose_level']
+    #     UMain(argv)
+    #     self.assertTrue(mock_confget.called)
+    #     #self.assertTrue(mock_setlevel.called)
+    #     self.assertTrue(mock_isrepo.called)
+    #     # self.assertTrue(mock_cli.called)
+
+
+    @patch('udocker.config.Config.getconf')
+    @patch('udocker.container.localrepo.LocalRepository')
+    @patch('udocker.cli.UdockerCLI')
+    @patch('udocker.msg.Msg')
+    @patch('udocker.cmdparser.CmdParser')
+    def test_02_init(self, mock_cmdp, mock_msg, mock_cli,
+                     mock_localrepo, mock_confget):
+        """Test UMain() constructor - 02."""
+        argv = "udocker"
+        mock_confget.return_value = self.conf
+        mock_cmdp.return_value.parse.return_value = True
+        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
+                                                  False, False, False, False,
+                                                  False]
+        UMain(argv)
+        self.assertEqual(self.conf['verbose_level'], 3)
+
+        # --debug
+        mock_cmdp.return_value.parse.return_value = True
+        mock_cmdp.return_value.get.side_effect = [False, False, True, False,
+                                                  False, False, False, False,
+                                                  False]
+        UMain(argv)
+        self.assertNotEqual(self.conf['verbose_level'], 3)
+
+        # -D
+        mock_cmdp.return_value.parse.return_value = True
+        mock_cmdp.return_value.get.side_effect = [False, False, False, True,
+                                                  False, False, False, False,
+                                                  False]
+        self.assertNotEqual(self.conf['verbose_level'], 3)
+        # --quiet
+        mock_cmdp.return_value.parse.return_value = True
+        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
+                                                  True, False, False, False,
+                                                  False]
+        # self.assertNotEqual(self.conf['verbose_level'], 3)
+        # -q
+        mock_cmdp.return_value.parse.return_value = True
+        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
+                                                  False, True, False, False,
+                                                  False]
+        # self.assertNotEqual(self.conf['verbose_level'], 3)
+        # --insecure
+        mock_cmdp.return_value.parse.return_value = True
+        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
+                                                  False, False, True, False,
+                                                  False, False]
+        self.assertTrue(self.conf['http_insecure'])
+        # --repo=
+        mock_localrepo.return_value.is_repo.return_value = True
+        mock_cmdp.return_value.parse.return_value = True
+        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
+                                                  False, False, False, True,
+                                                  "/TOPDIR"]
+        self.assertEqual(self.conf['topdir'], "/TOPDIR")
+
     #
     # @patch('udocker.UMain.__init__')
     # @patch('udocker.container.localrepo.LocalRepository')
