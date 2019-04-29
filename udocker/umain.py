@@ -22,7 +22,6 @@ class UMain(object):
         self.argv = argv
         self.cmdp = CmdParser()
         self.cmdp.parse(argv)
-        # print os.geteuid(), self.cmdp.get("--allow-root", "GEN_OPT")
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
             sys.exit(1)

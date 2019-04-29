@@ -37,7 +37,6 @@ class UMainTestCase(TestCase):
         self.conf['topdir'] = "/.udocker"
         self.local = LocalRepository(self.conf)
 
-
     def tearDown(self):
         pass
 
