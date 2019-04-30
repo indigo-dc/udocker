@@ -87,14 +87,37 @@ class UMainTestCase(TestCase):
                      mock_local, mock_cli, mock_os, mock_exit):
         """Test UMain()._execute()."""
         argv = ['udocker']
+        mock_cli.return_value.do_help.return_value = 0
         um = UMain(argv)
         status = um._execute()
         self.assertEqual(status, 0)
-        self.assertTrue(mock_cli.do_help.called)
+        self.assertTrue(um.cli.do_help.called)
 
-    def test_03_start(self):
+        argv = ['udocker', 'listconf']
+        mock_cli.return_value.do_listconf.return_value = 0
+        um = UMain(argv)
+        status = um._execute()
+        self.assertEqual(status, 0)
+        self.assertTrue(um.cli.do_listconf.called)
+
+        argv = ['udocker', 'version']
+        mock_cli.return_value.do_version.return_value = 0
+        um = UMain(argv)
+        status = um._execute()
+        self.assertEqual(status, 0)
+        self.assertTrue(um.cli.do_version.called)
+
+    @patch('udocker.umain.UMain._execute')
+    @patch('udocker.umain.sys.exit')
+    @patch('udocker.umain.FileUtil')
+    def test_03_start(self, mock_futil, mock_exit, mock_exec):
         """Test UMain().start()."""
-        pass
+        argv = ['udocker']
+        mock_exec.return_value = 0
+        um = UMain(argv)
+        status = um.start()
+        self.assertEqual(status, 0)
+        self.assertTrue(mock_futil.cleanup.called)
 
 
 if __name__ == '__main__':

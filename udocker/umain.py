@@ -63,10 +63,10 @@ class UMain(object):
         lhelp = ['-h', '--help', 'help']
         lversion = ['-V', '--version', 'version']
         cmds = {
-            "search": self.cli.do_search,
+            "search": self.cli.do_search, "help": self.cli.do_help,
             "images": self.cli.do_images, "pull": self.cli.do_pull,
             "create": self.cli.do_create, "ps": self.cli.do_ps,
-            "run": self.cli.do_run,
+            "run": self.cli.do_run, "version": self.cli.do_version,
             "rmi": self.cli.do_rmi, "mkrepo": self.cli.do_mkrepo,
             "import": self.cli.do_import, "load": self.cli.do_load,
             "export": self.cli.do_export, "clone": self.cli.do_clone,
@@ -74,6 +74,7 @@ class UMain(object):
             "name": self.cli.do_name, "rmname": self.cli.do_rmname,
             "verify": self.cli.do_verify, "logout": self.cli.do_logout,
             "unprotect": self.cli.do_unprotect,
+            "listconf": self.cli.do_listconf,
             "inspect": self.cli.do_inspect, "login": self.cli.do_login,
             "setup": self.cli.do_setup, "install": self.cli.do_install,
         }
@@ -85,9 +86,11 @@ class UMain(object):
 
         if "listconf" in self.argv:
             exit_status = self.cli.do_listconf()
+            return exit_status
 
         if self.argv[1] in lversion:
             exit_status = self.cli.do_version()
+            return exit_status
         else:
             command = self.cmdp.get("", "CMD")
             if command != "install":
