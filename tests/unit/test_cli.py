@@ -14,8 +14,6 @@ except ImportError:
 
 sys.path.append('.')
 
-from udocker.config import Config
-from udocker.container.localrepo import LocalRepository
 from udocker.cli import UdockerCLI
 
 if sys.version_info[0] >= 3:

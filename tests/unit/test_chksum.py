@@ -19,9 +19,11 @@ except ImportError:
 from udocker.utils.chksum import ChkSUM
 
 if sys.version_info[0] >= 3:
-    BOPEN = "builtins" + '.open'
+    BUILTIN = "builtins"
 else:
-    BOPEN = "__builtin__" + '.open'
+    BUILTIN = "__builtin__"
+
+BOPEN = BUILTIN + '.open'
 
 
 class ChkSUMTestCase(TestCase):
