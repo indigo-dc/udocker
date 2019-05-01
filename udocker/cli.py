@@ -29,8 +29,8 @@ class UdockerCLI(object):
     def __init__(self, localrepo, conf):
         self.conf = conf
         self.localrepo = localrepo
-        self.dockerioapi = DockerIoAPI(localrepo, conf)
-        self.dockerlocalfileapi = DockerLocalFileAPI(localrepo, self.conf)
+        self.dockerioapi = DockerIoAPI(self.localrepo, self.conf)
+        self.dockerlocalfileapi = DockerLocalFileAPI(self.localrepo, self.conf)
         if self.conf['keystore'].startswith("/"):
             self.keystore = KeyStore(self.conf, self.conf['keystore'])
         else:
