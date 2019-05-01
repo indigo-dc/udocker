@@ -128,14 +128,16 @@ class UMainTestCase(TestCase):
         status = um.start()
         self.assertEqual(status, 0)
         self.assertTrue(mock_exec.called)
+        mock_exit.reset_mock()
 
-        mock_exec.return_value = 1
-        mock_exec.side_effect = KeyboardInterrupt("CTRLC")
-        um = UMain(argv)
-        with self.assertRaises(KeyboardInterrupt):
-            status = um.start()
-            self.assertEqual(status, 1)
-            self.assertTrue(mock_exit.called)
+        # TODO: test the try except clause
+        # mock_exec.return_value = 1
+        # um = UMain(argv)
+        # mock_exec.side_effect = SystemExit()
+        # status = um.start()
+        # with self.assertRaises(SystemExit):
+        #     # self.assertEqual(status, 1)
+        #     self.assertTrue(mock_exit.called)
 
 
 if __name__ == '__main__':
