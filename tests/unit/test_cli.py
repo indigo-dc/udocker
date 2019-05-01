@@ -77,12 +77,117 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, (None, None))
 
         mock_dioapi.is_repo_name = False
+        udoc = UdockerCLI(self.local, self.conf)
         status = udoc._check_imagespec("AAA")
         self.assertEqual(status, ("AAA", "latest"))
 
         mock_dioapi.is_repo_name = False
+        udoc = UdockerCLI(self.local, self.conf)
         status = udoc._check_imagespec("AAA:45")
         self.assertEqual(status, ("AAA", "45"))
+
+    @patch('udocker.cmdparser.CmdParser.get')
+    @patch('udocker.cmdparser.CmdParser')
+    @patch('udocker.cli.os.path.exists')
+    @patch('udocker.cli.KeyStore')
+    @patch('udocker.cli.DockerLocalFileAPI')
+    @patch('udocker.cli.DockerIoAPI')
+    @patch('udocker.cli.Msg')
+    def test_03_do_mkrepo(self, mock_msg, mock_dioapi, mock_dlocapi, mock_ks,
+                          mock_exists, mock_cmdp, mock_cmdget):
+        """Test UdockerCLI().do_mkrepo()."""
+
+        mock_msg.level = 0
+        mock_cmdget.return_value = "/"
+        mock_exists.return_value = True
+        mock_dlocapi.create_repo.return_value = True
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_mkrepo(mock_cmdp)
+        self.assertEqual(status, 1)
+
+        mock_cmdget.return_value = ""
+        mock_exists.return_value = True
+        mock_dlocapi.create_repo.return_value = True
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_mkrepo(mock_cmdp)
+        self.assertEqual(status, 0)
+
+        mock_cmdget.return_value = "/"
+        mock_exists.return_value = True
+        mock_dlocapi.create_repo.return_value = False
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_mkrepo(mock_cmdp)
+        self.assertEqual(status, 1)
+
+    def test_04__search_print_v1(self):
+        """Test UdockerCLI()._search_print_v1()."""
+        pass
+
+    def test_05__search_print_v2(self):
+        """Test UdockerCLI()._search_print_v2()."""
+        pass
+
+#    @patch('udocker.cli.BUILTIN.raw_input')
+    @patch('udocker.cli.UdockerCLI._search_print_v2')
+    @patch('udocker.cli.UdockerCLI._search_print_v1')
+    @patch('udocker.cmdparser.CmdParser')
+    @patch('udocker.cli.KeyStore')
+    @patch('udocker.cli.DockerLocalFileAPI')
+    @patch('udocker.cli.DockerIoAPI')
+    @patch('udocker.cli.Msg')
+    def test_06_do_search(self, mock_msg, mock_dioapi, mock_dlocapi, mock_ks,
+                          mock_cmdp, mock_print1, mock_print2):
+        """Test UdockerCLI().do_search()."""
+
+        mock_msg.level = 0
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_cmdp.missing_options.return_value = True
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_search(mock_cmdp)
+        self.assertEqual(status, 1)
+
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_cmdp.missing_options.return_value = False
+        mock_dioapi.return_value.search_get_page.return_value = None
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_search(mock_cmdp)
+        self.assertEqual(status, 0)
+
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_cmdp.missing_options.return_value = False
+        mock_dioapi.return_value.search_get_page.side_effect = (
+            [["results", ], ["repositories", ], [], ])
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_search(mock_cmdp)
+        self.assertEqual(status, 0)
+        self.assertTrue(mock_print1.called)
+        self.assertTrue(mock_print2.called)
+
+        mock_print1.reset_mock()
+        mock_print2.reset_mock()
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_cmdp.missing_options.return_value = False
+        mock_dioapi.return_value.search_get_page.side_effect = (
+            [["zzz", ], ["repositories", ], [], ])
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_search(mock_cmdp)
+        self.assertEqual(status, 0)
+        self.assertFalse(mock_print1.called)
+        self.assertTrue(mock_print2.called)
+
+        # mock_print1.reset_mock()
+        # mock_print2.reset_mock()
+        # mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        # mock_cmdp.missing_options.return_value = False
+        # mock_rinput.return_value = "q"
+        # mock_dioapi.return_value.search_ended = False
+        # mock_dioapi.return_value.search_get_page.side_effect = (
+        #     [["zzz", ], ["repositories", ], [], ])
+        # udoc = UdockerCLI(self.local, self.conf)
+        # status = udoc.do_search(mock_cmdp)
+        # self.assertEqual(status, 0)
+        # self.assertFalse(mock_print1.called)
+        # self.assertFalse(mock_print2.called)
 
 
 if __name__ == '__main__':

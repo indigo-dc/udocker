@@ -2,6 +2,7 @@
 """udocker Command Line Interface implementation"""
 
 import os
+import sys
 import string
 import getpass
 import json
@@ -15,6 +16,11 @@ from udocker.container.structure import ContainerStructure
 from udocker.engine.execmode import ExecutionMode
 from udocker.engine.nvidia import NvidiaMode
 from udocker.tools import UdockerTools
+
+if sys.version_info[0] >= 3:
+    BUILTIN = "builtins"
+else:
+    BUILTIN = "__builtin__"
 
 
 class UdockerCLI(object):
