@@ -19,25 +19,31 @@ except ImportError:
 from udocker.utils.chksum import ChkSUM
 
 if sys.version_info[0] >= 3:
-    BUILTINS = "builtins"
+    BOPEN = "builtins" + '.open'
 else:
-    BUILTINS = "__builtin__"
+    BOPEN = "__builtin__" + '.open'
 
 
 class ChkSUMTestCase(TestCase):
     """Test ChkSUM() performs checksums portably."""
+
     def test_01_sha256(self):
         """Test ChkSUM().sha256()."""
         sha256sum = (
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
         cksum = ChkSUM()
-        #
         file_data = StringIO("qwerty")
-        with patch(BUILTINS + '.open', mock_open()) as mopen:
+        with patch(BOPEN, mock_open()) as mopen:
             mopen.return_value.__iter__ = (
                 lambda self: iter(file_data.readline, ''))
             status = cksum.sha256("filename")
             self.assertEqual(status, sha256sum)
+
+        with patch(BOPEN, mock_open()) as mopen:
+            mopen.side_effect = IOError
+            status = cksum.sha256("filename")
+            self.assertRaises(IOError)
+            self.assertEqual(status, "")
 
 
 if __name__ == '__main__':
