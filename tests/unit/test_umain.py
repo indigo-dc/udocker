@@ -107,17 +107,35 @@ class UMainTestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(um.cli.do_version.called)
 
+    @patch('udocker.umain.FileUtil')
+    @patch('udocker.umain.FileUtil.cleanup')
     @patch('udocker.umain.UMain._execute')
     @patch('udocker.umain.sys.exit')
-    @patch('udocker.umain.FileUtil')
-    def test_03_start(self, mock_futil, mock_exit, mock_exec):
+    @patch('udocker.umain.os')
+    @patch('udocker.umain.UdockerCLI')
+    @patch('udocker.umain.LocalRepository')
+    @patch('udocker.umain.Config')
+    @patch('udocker.umain.CmdParser')
+    @patch('udocker.umain.Msg')
+    def test_03_start(self, mock_msg, mock_cmdp, mock_conf, mock_local,
+                      mock_cli, mock_os, mock_exit, mock_exec,
+                      mock_clean, mock_futil):
         """Test UMain().start()."""
         argv = ['udocker']
+        conf = mock_conf.getconf()
         mock_exec.return_value = 0
         um = UMain(argv)
         status = um.start()
         self.assertEqual(status, 0)
-        self.assertTrue(mock_futil.cleanup.called)
+        self.assertTrue(mock_exec.called)
+
+        mock_exec.return_value = 1
+        mock_exec.side_effect = KeyboardInterrupt("CTRLC")
+        um = UMain(argv)
+        with self.assertRaises(KeyboardInterrupt):
+            status = um.start()
+            self.assertEqual(status, 1)
+            self.assertTrue(mock_exit.called)
 
 
 if __name__ == '__main__':
