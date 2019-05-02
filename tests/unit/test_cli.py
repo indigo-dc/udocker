@@ -189,6 +189,42 @@ class UdockerCLITestCase(TestCase):
         # self.assertFalse(mock_print1.called)
         # self.assertFalse(mock_print2.called)
 
+    @patch('udocker.cmdparser.CmdParser')
+    @patch('udocker.cli.KeyStore')
+    @patch('udocker.cli.DockerLocalFileAPI')
+    @patch('udocker.cli.DockerIoAPI')
+    @patch('udocker.cli.Msg')
+    def test_07_do_load(self, mock_msg, mock_dioapi,
+                        mock_dlocapi, mock_ks, mock_cmdp):
+        """Test UdockerCLI().do_load()."""
+
+        mock_msg.level = 0
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_cmdp.missing_options.return_value = True
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_load(mock_cmdp)
+        self.assertEqual(status, 1)
+
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_cmdp.missing_options.return_value = False
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_load(mock_cmdp)
+        self.assertEqual(status, 1)
+
+        mock_cmdp.get.side_effect = ["INFILE", "", "" "", "", ]
+        mock_cmdp.missing_options.return_value = False
+        mock_dlocapi.return_value.load.return_value = []
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_load(mock_cmdp)
+        self.assertEqual(status, 1)
+
+        mock_cmdp.get.side_effect = ["INFILE", "", "" "", "", ]
+        mock_cmdp.missing_options.return_value = False
+        mock_dlocapi.return_value.load.return_value = ["REPO", ]
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_load(mock_cmdp)
+        self.assertEqual(status, 0)
+
 
 if __name__ == '__main__':
     main()
