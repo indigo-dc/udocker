@@ -28,7 +28,7 @@ commands = bandit udocker -f html -o bandit.html"""
         stage('Environment setup') {
             steps {
                 PipRequirements(
-                    ['pylint', 'nose', 'nosexcover', 'mock', 'bandit'],
+                    ['pylint', 'nose', 'nosexcover', 'mock', 'bandit', 'funcsigs'],
                     'test-requirements.txt')
                 ToxConfig(tox_envs, 'tox_jenkins.ini')
             }
