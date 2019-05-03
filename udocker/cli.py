@@ -4,8 +4,8 @@
 import os
 import sys
 import string
-import getpass
 import json
+from getpass import getpass
 
 from udocker import __version__
 from udocker.msg import Msg
@@ -21,6 +21,11 @@ if sys.version_info[0] >= 3:
     BUILTIN = "builtins"
 else:
     BUILTIN = "__builtin__"
+
+try:
+    input = raw_input
+except NameError:
+    pass
 
 
 class UdockerCLI(object):
@@ -132,7 +137,7 @@ class UdockerCLI(object):
             elif "repositories" in repo_list:
                 self._search_print_v2(repo_list)
             if pause and not self.dockerioapi.search_ended:
-                key_press = raw_input("[press return or q to quit]")
+                key_press = input("[press return or q to quit]")
                 if key_press in ("q", "Q", "e", "E"):
                     return exit_status
 
@@ -305,7 +310,7 @@ class UdockerCLI(object):
         if registry_url:
             self.dockerioapi.set_registry(registry_url)
         if not username:
-            username = raw_input("username: ")
+            username = input("username: ")
         if not password:
             password = getpass("password: ")
         if password and password == password.upper():
