@@ -702,46 +702,48 @@ class UdockerCLITestCase(TestCase):
         # status = udoc.do_rm(self.cmdp)
         # self.assertEqual(status, 0)
 
+    @patch('udocker.container.localrepo.LocalRepository.isprotected_imagerepo', autospec=True)
+    @patch('udocker.cmdparser.CmdParser.get', autospec=True)
+    @patch('udocker.cmdparser.CmdParser.missing_options', autospec=True)
     @patch('udocker.cli.UdockerCLI._check_imagespec')
-    @patch('udocker.cmdparser.CmdParser')
     @patch('udocker.cli.KeyStore')
     @patch('udocker.cli.DockerLocalFileAPI')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
-    def test_21_do_rmi(self, mock_msg, mock_dioapi,
-                       mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
+    def test_21_do_rmi(self, mock_msg, mock_dioapi, mock_dlocapi, mock_ks,
+                       mock_chkimg, mock_miss, mock_get, mock_protimg):
         """Test UdockerCLI().do_rmi()."""
 
         mock_msg.level = 0
-        mock_cmdp.missing_options.return_value = True
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = True
+        mock_get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_rmi(mock_cmdp)
+        status = udoc.do_rmi(self.cmdp)
         self.assertEqual(status, 1)
 
-        mock_cmdp.missing_options.return_value = False
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("", "TAG")
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_rmi(mock_cmdp)
+        status = udoc.do_rmi(self.cmdp)
         self.assertEqual(status, 1)
 
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        # mock_chkimg.return_value = ("IMAGE", "TAG")
-        # mock_local.isprotected_imagerepo.return_value = True
-        # udoc = UdockerCLI(self.local, self.conf)
-        # status = udoc.do_rmi(mock_cmdp)
-        # self.assertEqual(status, 1)
-        #
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        # mock_chkimg.return_value = ("IMAGE", "TAG")
-        # mock_local.isprotected_imagerepo.return_value = False
-        # udoc = UdockerCLI(self.local, self.conf)
-        # status = udoc.do_rmi(mock_cmdp)
-        # self.assertEqual(status, 0)
+        mock_miss.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_protimg.return_value = True
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_rmi(self.cmdp)
+        self.assertEqual(status, 1)
+
+        mock_miss.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_protimg.return_value = False
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_rmi(self.cmdp)
+        self.assertEqual(status, 0)
 
     @patch('udocker.cli.UdockerCLI._check_imagespec')
     @patch('udocker.cmdparser.CmdParser')
