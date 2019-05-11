@@ -820,33 +820,33 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_unprotect(mock_cmdp)
         self.assertEqual(status, 1)
 
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        # mock_chkimg.return_value = ("IMAGE", "TAG")
-        # mock_local.get_container_id.return_value = "123"
-        # mock_local.unprotect_container.return_value = False
-        # udoc = UdockerCLI(self.local, self.conf)
-        # status = udoc.do_unprotect(mock_cmdp)
-        # self.assertEqual(status, 1)
-        #
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        # mock_chkimg.return_value = ("IMAGE", "TAG")
-        # mock_local.get_container_id.return_value = "123"
-        # mock_local.unprotect_container.return_value = True
-        # udoc = UdockerCLI(self.local, self.conf)
-        # status = udoc.do_unprotect(mock_cmdp)
-        # self.assertEqual(status, 0)
-        #
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        # mock_chkimg.return_value = ("IMAGE", "TAG")
-        # mock_local.get_container_id.return_value = ""
-        # mock_local.unprotect_imagerepo.return_value = True
-        # udoc = UdockerCLI(self.local, self.conf)
-        # status = udoc.do_unprotect(mock_cmdp)
-        # self.assertEqual(status, 0)
-        # self.assertTrue(mock_local.unprotect_imagerepo.called)
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = "123"
+        mock_local.unprotect_container.return_value = False
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_unprotect(mock_cmdp)
+        self.assertEqual(status, 1)
+
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = "123"
+        mock_local.unprotect_container.return_value = True
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_unprotect(mock_cmdp)
+        self.assertEqual(status, 0)
+
+        mock_cmdp.missing_options.return_value = False
+        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_local.get_container_id.return_value = ""
+        mock_local.unprotect_imagerepo.return_value = True
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_unprotect(mock_cmdp)
+        self.assertEqual(status, 0)
+        self.assertTrue(mock_local.unprotect_imagerepo.called)
 
     @patch('udocker.cli.UdockerCLI._check_imagespec')
     @patch('udocker.cmdparser.CmdParser')
