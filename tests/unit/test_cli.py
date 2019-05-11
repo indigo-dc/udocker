@@ -16,6 +16,7 @@ sys.path.append('.')
 
 from udocker.config import Config
 from udocker.container.localrepo import LocalRepository
+from udocker.cmdparser import CmdParser
 from udocker.cli import UdockerCLI
 
 if sys.version_info[0] >= 3:
@@ -42,6 +43,7 @@ class UdockerCLITestCase(TestCase):
         self.conf['location'] = ""
         self.conf['keystore'] = "KEYSTORE"
         self.local = LocalRepository(self.conf)
+        self.cmdp = CmdParser()
 
     @patch('udocker.cli.KeyStore')
     @patch('udocker.cli.DockerLocalFileAPI')
@@ -86,15 +88,14 @@ class UdockerCLITestCase(TestCase):
         status = udoc._check_imagespec("AAA:45")
         self.assertEqual(status, ("AAA", "45"))
 
-    @patch('udocker.cmdparser.CmdParser.get')
-    @patch('udocker.cmdparser.CmdParser')
+    @patch('udocker.cmdparser.CmdParser.get', autospec=True)
     @patch('udocker.cli.os.path.exists')
     @patch('udocker.cli.KeyStore')
     @patch('udocker.cli.DockerLocalFileAPI')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_03_do_mkrepo(self, mock_msg, mock_dioapi, mock_dlocapi, mock_ks,
-                          mock_exists, mock_cmdp, mock_cmdget):
+                          mock_exists, mock_cmdget):
         """Test UdockerCLI().do_mkrepo()."""
 
         mock_msg.level = 0
@@ -102,21 +103,21 @@ class UdockerCLITestCase(TestCase):
         mock_exists.return_value = True
         mock_dlocapi.create_repo.return_value = True
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_mkrepo(mock_cmdp)
+        status = udoc.do_mkrepo(self.cmdp)
         self.assertEqual(status, 1)
 
         mock_cmdget.return_value = ""
         mock_exists.return_value = True
         mock_dlocapi.create_repo.return_value = True
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_mkrepo(mock_cmdp)
+        status = udoc.do_mkrepo(self.cmdp)
         self.assertEqual(status, 0)
 
         mock_cmdget.return_value = "/"
         mock_exists.return_value = True
         mock_dlocapi.create_repo.return_value = False
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_mkrepo(mock_cmdp)
+        status = udoc.do_mkrepo(self.cmdp)
         self.assertEqual(status, 1)
 
     def test_04__search_print_v1(self):
@@ -127,154 +128,153 @@ class UdockerCLITestCase(TestCase):
         """Test UdockerCLI()._search_print_v2()."""
         pass
 
+    @patch('udocker.cmdparser.CmdParser.get', autospec=True)
+    @patch('udocker.cmdparser.CmdParser.missing_options', autospec=True)
     @patch('udocker.cli.input')
     @patch('udocker.cli.UdockerCLI._search_print_v2')
     @patch('udocker.cli.UdockerCLI._search_print_v1')
-    @patch('udocker.cmdparser.CmdParser')
     @patch('udocker.cli.KeyStore')
     @patch('udocker.cli.DockerLocalFileAPI')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_06_do_search(self, mock_msg, mock_dioapi, mock_dlocapi, mock_ks,
-                          mock_cmdp, mock_print1, mock_print2, mock_input):
+                          mock_print1, mock_print2, mock_input, mock_miss, mock_get):
         """Test UdockerCLI().do_search()."""
 
         mock_msg.level = 0
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        mock_cmdp.missing_options.return_value = True
+        mock_get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = True
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_search(mock_cmdp)
+        status = udoc.do_search(self.cmdp)
         self.assertEqual(status, 1)
 
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        mock_cmdp.missing_options.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = False
         mock_dioapi.return_value.search_get_page.return_value = None
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_search(mock_cmdp)
+        status = udoc.do_search(self.cmdp)
         self.assertEqual(status, 0)
 
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        mock_cmdp.missing_options.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = False
         mock_dioapi.return_value.search_get_page.side_effect = (
             [["results", ], ["repositories", ], [], ])
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_search(mock_cmdp)
+        status = udoc.do_search(self.cmdp)
         self.assertEqual(status, 0)
         self.assertTrue(mock_print1.called)
         self.assertTrue(mock_print2.called)
 
         mock_print1.reset_mock()
         mock_print2.reset_mock()
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        mock_cmdp.missing_options.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = False
         mock_dioapi.return_value.search_get_page.side_effect = (
             [["zzz", ], ["repositories", ], [], ])
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_search(mock_cmdp)
+        status = udoc.do_search(self.cmdp)
         self.assertEqual(status, 0)
         self.assertFalse(mock_print1.called)
         self.assertTrue(mock_print2.called)
 
         mock_print1.reset_mock()
         mock_print2.reset_mock()
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        mock_cmdp.missing_options.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = False
         mock_input.return_value = "q"
         mock_dioapi.return_value.search_ended = False
         mock_dioapi.return_value.search_get_page.side_effect = (
             [["zzz", ], ["repositories", ], [], ])
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_search(mock_cmdp)
+        status = udoc.do_search(self.cmdp)
         self.assertEqual(status, 0)
         self.assertFalse(mock_print1.called)
         self.assertFalse(mock_print2.called)
 
-    @patch('udocker.cmdparser.CmdParser')
+    @patch('udocker.cmdparser.CmdParser.get', autospec=True)
+    @patch('udocker.cmdparser.CmdParser.missing_options', autospec=True)
     @patch('udocker.cli.KeyStore')
     @patch('udocker.cli.DockerLocalFileAPI')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_07_do_load(self, mock_msg, mock_dioapi,
-                        mock_dlocapi, mock_ks, mock_cmdp):
+                        mock_dlocapi, mock_ks, mock_miss, mock_get):
         """Test UdockerCLI().do_load()."""
 
         mock_msg.level = 0
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        mock_cmdp.missing_options.return_value = True
+        mock_get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = True
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_load(mock_cmdp)
+        status = udoc.do_load(self.cmdp)
         self.assertEqual(status, 1)
 
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
-        mock_cmdp.missing_options.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = False
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_load(mock_cmdp)
+        status = udoc.do_load(self.cmdp)
         self.assertEqual(status, 1)
 
-        mock_cmdp.get.side_effect = ["INFILE", "", "" "", "", ]
-        mock_cmdp.missing_options.return_value = False
+        mock_get.side_effect = ["INFILE", "", "" "", "", ]
+        mock_miss.return_value = False
         mock_dlocapi.return_value.load.return_value = []
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_load(mock_cmdp)
+        status = udoc.do_load(self.cmdp)
         self.assertEqual(status, 1)
 
-        mock_cmdp.get.side_effect = ["INFILE", "", "" "", "", ]
-        mock_cmdp.missing_options.return_value = False
+        mock_get.side_effect = ["INFILE", "", "" "", "", ]
+        mock_miss.return_value = False
         mock_dlocapi.return_value.load.return_value = ["REPO", ]
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_load(mock_cmdp)
+        status = udoc.do_load(self.cmdp)
         self.assertEqual(status, 0)
 
+    @patch('udocker.cmdparser.CmdParser.get', autospec=True)
+    @patch('udocker.cmdparser.CmdParser.missing_options', autospec=True)
     @patch('udocker.cli.UdockerCLI._check_imagespec')
-    @patch('udocker.cmdparser.CmdParser')
     @patch('udocker.cli.KeyStore')
     @patch('udocker.cli.DockerLocalFileAPI')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_08_do_import(self, mock_msg, mock_dioapi,
-                          mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
+                          mock_dlocapi, mock_ks, mock_chkimg, mock_miss, mock_get):
         """Test UdockerCLI().do_import()."""
 
         mock_msg.level = 0
         cmd_options = [False, False, "", False,
                        "INFILE", "IMAGE", "" "", "", ]
-        mock_cmdp.get.side_effect = ["", "", "", "", "", "", "", "", "", ]
+        mock_get.side_effect = ["", "", "", "", "", "", "", "", "", ]
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_import(mock_cmdp)
+        status = udoc.do_import(self.cmdp)
         self.assertEqual(status, 1)
-        mock_cmdp.reset_mock()
 
-        mock_cmdp.get.side_effect = cmd_options
+        mock_get.side_effect = cmd_options
         mock_chkimg.return_value = ("", "")
-        mock_cmdp.missing_options.return_value = False
+        mock_miss.return_value = False
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_import(mock_cmdp)
+        status = udoc.do_import(self.cmdp)
         self.assertEqual(status, 1)
-        mock_cmdp.reset_mock()
 
-        mock_cmdp.get.side_effect = cmd_options
+        mock_get.side_effect = cmd_options
         mock_chkimg.return_value = ("IMAGE", "")
-        mock_cmdp.missing_options.return_value = True
+        mock_miss.return_value = True
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_import(mock_cmdp)
+        status = udoc.do_import(self.cmdp)
         self.assertEqual(status, 1)
-        mock_cmdp.reset_mock()
 
-        mock_cmdp.get.side_effect = cmd_options
+        mock_get.side_effect = cmd_options
         mock_chkimg.return_value = ("IMAGE", "TAG")
-        mock_cmdp.missing_options.return_value = False
+        mock_miss.return_value = False
         mock_dlocapi.return_value.import_toimage.return_value = False
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_import(mock_cmdp)
+        status = udoc.do_import(self.cmdp)
         self.assertEqual(status, 1)
-        mock_cmdp.reset_mock()
 
-        mock_cmdp.get.side_effect = cmd_options
+        mock_get.side_effect = cmd_options
         mock_chkimg.return_value = ("IMAGE", "TAG")
-        mock_cmdp.missing_options.return_value = False
+        mock_miss.return_value = False
         mock_dlocapi.return_value.import_toimage.return_value = True
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_import(mock_cmdp)
+        status = udoc.do_import(self.cmdp)
         self.assertEqual(status, 0)
 
     def test_09_do_export(self):
@@ -285,150 +285,151 @@ class UdockerCLITestCase(TestCase):
         """Test UdockerCLI().do_clone()."""
         pass
 
+    @patch('udocker.cmdparser.CmdParser.get', autospec=True)
     @patch('udocker.cli.getpass')
     @patch('udocker.cli.input')
-    @patch('udocker.cmdparser.CmdParser')
     @patch('udocker.cli.KeyStore')
     @patch('udocker.cli.DockerLocalFileAPI')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
-    def test_11_do_login(self, mock_msg, mock_dioapi,
-                         mock_dlocapi, mock_ks, mock_cmdp,
-                         mock_rinput, mock_gpass):
+    def test_11_do_login(self, mock_msg, mock_dioapi, mock_dlocapi,
+                         mock_ks, mock_rinput, mock_gpass, mock_get):
         """Test UdockerCLI().do_login()."""
 
         mock_msg.level = 0
-        mock_cmdp.get.side_effect = ["user", "pass", "" "", "", ]
+        mock_get.side_effect = ["user", "pass", "" "", "", ]
         mock_rinput.return_value = "user"
         mock_gpass.return_value = "pass"
         mock_ks.return_value.put.return_value = False
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_login(mock_cmdp)
+        status = udoc.do_login(self.cmdp)
         self.assertEqual(status, 1)
         self.assertFalse(mock_rinput.called)
         self.assertFalse(mock_gpass.called)
 
         mock_rinput.reset_mock()
         mock_gpass.reset_mock()
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_get.side_effect = ["", "", "" "", "", ]
         mock_rinput.return_value = "user"
         mock_gpass.return_value = "pass"
         mock_ks.return_value.put.return_value = False
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_login(mock_cmdp)
+        status = udoc.do_login(self.cmdp)
         self.assertEqual(status, 1)
         self.assertTrue(mock_rinput.called)
         self.assertTrue(mock_gpass.called)
 
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_get.side_effect = ["", "", "" "", "", ]
         mock_rinput.return_value = "user"
         mock_gpass.return_value = "pass"
         mock_ks.return_value.put.return_value = True
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_login(mock_cmdp)
+        status = udoc.do_login(self.cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cmdparser.CmdParser')
+    @patch('udocker.cmdparser.CmdParser.get', autospec=True)
     @patch('udocker.cli.KeyStore')
     @patch('udocker.cli.DockerLocalFileAPI')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_12_do_logout(self, mock_msg, mock_dioapi,
-                          mock_dlocapi, mock_ks, mock_cmdp):
+                          mock_dlocapi, mock_ks, mock_get):
         """Test UdockerCLI().do_logout()."""
 
         mock_msg.level = 0
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_get.side_effect = ["", "", "" "", "", ]
         mock_ks.return_value.delete.return_value = 1
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_logout(mock_cmdp)
+        status = udoc.do_logout(self.cmdp)
         self.assertEqual(status, 1)
 
-        mock_cmdp.get.side_effect = ["ALL", "", "" "", "", ]
+        mock_get.side_effect = ["ALL", "", "" "", "", ]
         mock_ks.return_value.delete.return_value = 1
         mock_ks.return_value.erase.return_value = 0
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_logout(mock_cmdp)
+        status = udoc.do_logout(self.cmdp)
         self.assertEqual(status, 0)
         self.assertTrue(mock_ks.return_value.erase.called)
 
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_get.side_effect = ["", "", "" "", "", ]
         mock_ks.return_value.delete.return_value = 0
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_logout(mock_cmdp)
+        status = udoc.do_logout(self.cmdp)
         self.assertEqual(status, 0)
         self.assertTrue(mock_ks.return_value.delete.called)
 
+    @patch('udocker.cmdparser.CmdParser.get', autospec=True)
+    @patch('udocker.cmdparser.CmdParser.missing_options', autospec=True)
     @patch('udocker.cli.UdockerCLI._check_imagespec')
-    @patch('udocker.cmdparser.CmdParser')
     @patch('udocker.cli.KeyStore')
     @patch('udocker.cli.DockerLocalFileAPI')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
-    def test_13_do_pull(self, mock_msg, mock_dioapi,
-                        mock_dlocapi, mock_ks, mock_cmdp, mock_chkimg):
+    def test_13_do_pull(self, mock_msg, mock_dioapi, mock_dlocapi, mock_ks,
+                        mock_chkimg, mock_miss, mock_get):
         """Test UdockerCLI().do_pull()."""
 
         mock_msg.level = 0
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("", "TAG")
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_pull(mock_cmdp)
+        status = udoc.do_pull(self.cmdp)
         self.assertEqual(status, 1)
 
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
-        mock_cmdp.missing_options.return_value = True
+        mock_miss.return_value = True
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_pull(mock_cmdp)
+        status = udoc.do_pull(self.cmdp)
         self.assertEqual(status, 1)
 
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
-        mock_cmdp.missing_options.return_value = False
+        mock_miss.return_value = False
         mock_dioapi.return_value.get.return_value = []
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_pull(mock_cmdp)
+        status = udoc.do_pull(self.cmdp)
         self.assertEqual(status, 1)
 
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_get.side_effect = ["", "", "" "", "", ]
         mock_chkimg.return_value = ("IMAGE", "TAG")
-        mock_cmdp.missing_options.return_value = False
+        mock_miss.return_value = False
         mock_dioapi.return_value.get.return_value = ["F1", "F2", ]
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_pull(mock_cmdp)
+        status = udoc.do_pull(self.cmdp)
         self.assertEqual(status, 0)
 
+    @patch('udocker.cmdparser.CmdParser.get', autospec=True)
+    @patch('udocker.cmdparser.CmdParser.missing_options', autospec=True)
     @patch('udocker.cli.UdockerCLI._create')
-    @patch('udocker.cmdparser.CmdParser')
     @patch('udocker.cli.KeyStore')
     @patch('udocker.cli.DockerLocalFileAPI')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
-    def test_14_do_create(self, mock_msg, mock_dioapi,
-                          mock_dlocapi, mock_ks, mock_cmdp, mock_create):
+    def test_14_do_create(self, mock_msg, mock_dioapi, mock_dlocapi, mock_ks,
+                          mock_create, mock_miss, mock_get):
         """Test UdockerCLI().do_create()."""
 
         mock_msg.level = 0
-        mock_cmdp.missing_options.return_value = True
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = True
+        mock_get.side_effect = ["", "", "" "", "", ]
         mock_create.return_value = ""
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_create(mock_cmdp)
+        status = udoc.do_create(self.cmdp)
         self.assertEqual(status, 1)
 
-        mock_cmdp.missing_options.return_value = False
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
         mock_create.return_value = ""
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_create(mock_cmdp)
+        status = udoc.do_create(self.cmdp)
         self.assertEqual(status, 1)
 
-        mock_cmdp.missing_options.return_value = False
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
         mock_create.return_value = "CONTAINER_ID"
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_create(mock_cmdp)
+        status = udoc.do_create(self.cmdp)
         self.assertEqual(status, 0)
 
     # @patch('udocker.cli.ContainerStructure')
