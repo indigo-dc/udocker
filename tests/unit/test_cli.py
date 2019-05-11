@@ -617,14 +617,17 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(mock_getlayers.called)
 
+    @patch('udocker.container.localrepo.LocalRepository.iswriteable_container', autospec=True)
+    @patch('udocker.container.localrepo.LocalRepository.isprotected_container', autospec=True)
+    @patch('udocker.container.localrepo.LocalRepository.get_containers_list', autospec=True)
     @patch('udocker.cmdparser.CmdParser.get', autospec=True)
     @patch('udocker.cmdparser.CmdParser.missing_options', autospec=True)
     @patch('udocker.cli.KeyStore')
     @patch('udocker.cli.DockerLocalFileAPI')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
-    def test_19_do_ps(self, mock_msg, mock_dioapi,
-                      mock_dlocapi, mock_ks, mock_miss, mock_get):
+    def test_19_do_ps(self, mock_msg, mock_dioapi, mock_dlocapi, mock_ks,
+                      mock_miss, mock_get, mock_contlist, mock_protcont, mock_wrtcont):
         """Test UdockerCLI().do_ps()."""
 
         mock_msg.level = 0
@@ -634,66 +637,69 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_ps(self.cmdp)
         self.assertEqual(status, 1)
 
-        # mock_miss.return_value = False
-        # mock_get.side_effect = ["", "", "" "", "", ]
-        # mock_local.get_containers_list.return_value = []
-        # udoc = UdockerCLI(self.local, self.conf)
-        # udoc.do_ps(self.cmdp)
-        # self.assertTrue(mock_local.get_containers_list.called)
-        #
-        # mock_miss.return_value = False
-        # mock_get.side_effect = ["", "", "" "", "", ]
-        # mock_local.get_containers_list.return_value = [("ID", "NAME", ""), ]
-        # mock_local.isprotected_container.return_value = True
-        # mock_local.iswriteable_container.return_value = True
-        # udoc = UdockerCLI(self.local, self.conf)
-        # udoc.do_ps(self.cmdp)
-        # self.assertTrue(mock_local.isprotected_container.called)
+        mock_miss.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
+        mock_contlist.return_value = []
+        udoc = UdockerCLI(self.local, self.conf)
+        udoc.do_ps(self.cmdp)
+        self.assertTrue(mock_contlist.called)
 
-    @patch('udocker.cmdparser.CmdParser')
+        mock_miss.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
+        mock_contlist.return_value = [("ID", "NAME", ""), ]
+        mock_protcont.return_value = True
+        mock_wrtcont.return_value = True
+        udoc = UdockerCLI(self.local, self.conf)
+        udoc.do_ps(self.cmdp)
+        self.assertTrue(mock_protcont.called)
+
+    @patch('udocker.container.localrepo.LocalRepository.isprotected_container', autospec=True)
+    @patch('udocker.container.localrepo.LocalRepository.get_container_id', autospec=True)
+    @patch('udocker.cmdparser.CmdParser.get', autospec=True)
+    @patch('udocker.cmdparser.CmdParser.missing_options', autospec=True)
     @patch('udocker.cli.KeyStore')
     @patch('udocker.cli.DockerLocalFileAPI')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
-    def test_20_do_rm(self, mock_msg, mock_dioapi,
-                      mock_dlocapi, mock_ks, mock_cmdp):
+    def test_20_do_rm(self, mock_msg, mock_dioapi, mock_dlocapi, mock_ks,
+                      mock_miss, mock_get, mock_contid, mock_protcont):
         """Test UdockerCLI().do_rm()."""
 
         mock_msg.level = 0
-        mock_cmdp.missing_options.return_value = True
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = True
+        mock_get.side_effect = ["", "", "" "", "", ]
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_rm(mock_cmdp)
+        status = udoc.do_rm(self.cmdp)
         self.assertEqual(status, 1)
 
-        mock_cmdp.missing_options.return_value = False
-        mock_cmdp.get.side_effect = ["", "", "" "", "", ]
+        mock_miss.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
         udoc = UdockerCLI(self.local, self.conf)
-        status = udoc.do_rm(mock_cmdp)
+        status = udoc.do_rm(self.cmdp)
         self.assertEqual(status, 1)
 
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["X", "12", "" "", "", ]
-        # mock_local.get_container_id.return_value = ""
+        mock_miss.return_value = False
+        mock_get.side_effect = ["X", "12", "" "", "", ]
+        mock_contid.return_value = ""
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_rm(self.cmdp)
+        self.assertEqual(status, 1)
+
+        mock_miss.return_value = False
+        mock_get.side_effect = ["X", "1", "" "", "", ]
+        mock_contid.return_value = "1"
+        mock_protcont.return_value = True
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_rm(self.cmdp)
+        self.assertEqual(status, 1)
+
+        # TODO: fix test
+        # mock_miss.return_value = False
+        # mock_get.side_effect = ["X", "1", "" "", "", ]
+        # mock_contid.return_value = "1"
+        # mock_protcont.return_value = False
         # udoc = UdockerCLI(self.local, self.conf)
-        # status = udoc.do_rm(mock_cmdp)
-        # self.assertEqual(status, 1)
-        #
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["X", "1", "" "", "", ]
-        # mock_local.get_container_id.return_value = "1"
-        # mock_local.isprotected_container.return_value = True
-        # udoc = UdockerCLI(self.local, self.conf)
-        # status = udoc.do_rm(mock_cmdp)
-        # self.assertEqual(status, 1)
-        # #
-        #
-        # mock_cmdp.missing_options.return_value = False
-        # mock_cmdp.get.side_effect = ["X", "1", "" "", "", ]
-        # mock_local.get_container_id.return_value = "1"
-        # mock_local.isprotected_container.return_value = False
-        # udoc = UdockerCLI(self.local, self.conf)
-        # status = udoc.do_rm(mock_cmdp)
+        # status = udoc.do_rm(self.cmdp)
         # self.assertEqual(status, 0)
 
     @patch('udocker.cli.UdockerCLI._check_imagespec')
