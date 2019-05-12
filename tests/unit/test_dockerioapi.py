@@ -150,9 +150,8 @@ class DockerIoAPITestCase(TestCase):
         out = doia.get_v1_image_ancestry(endpoint, image_id)
         self.assertIsInstance(out, tuple)
 
-    @patch('udocker.docker.GetURL')
     @patch.object(DockerIoAPI, '_get_file')
-    def test_11_get_v1_image_json(self, mock_dgf, mock_geturl):
+    def test_11_get_v1_image_json(self, mock_dgf):
         """Test DockerIoAPI().get_v1_image_json"""
         mock_dgf.return_value = True
         endpoint = "docker.io"
@@ -166,9 +165,8 @@ class DockerIoAPITestCase(TestCase):
         status = doia.get_v1_image_json(endpoint, layer_id)
         self.assertFalse(status)
 
-    @patch('udocker.docker.GetURL')
-    @patch('udocker.docker.DockerIoAPI._get_file')
-    def test_12_get_v1_image_layer(self, mock_dgf, mock_geturl):
+    @patch.object(DockerIoAPI, '_get_file')
+    def test_12_get_v1_image_layer(self, mock_dgf):
         """Test DockerIoAPI().get_v1_image_layer"""
         mock_dgf.return_value = True
         endpoint = "docker.io"
@@ -182,9 +180,8 @@ class DockerIoAPITestCase(TestCase):
         status = doia.get_v1_image_layer(endpoint, layer_id)
         self.assertFalse(status)
 
-    @patch('udocker.docker.GetURL')
-    @patch('udocker.docker.DockerIoAPI._get_file')
-    def test_13_get_v1_layers_all(self, mock_dgf, mock_geturl):
+    @patch.object(DockerIoAPI, '_get_file')
+    def test_13_get_v1_layers_all(self, mock_dgf):
         """Test DockerIoAPI().get_v1_layers_all"""
         mock_dgf.return_value = True
         endpoint = "docker.io"
@@ -198,8 +195,7 @@ class DockerIoAPITestCase(TestCase):
         out = doia.get_v1_layers_all(endpoint, layer_list)
         self.assertEqual(out, ['b.json', 'b.layer', 'a.json', 'a.layer'])
 
-    @patch('udocker.docker.GetURL')
-    def test_14_get_v2_login_token(self, mock_geturl):
+    def test_14_get_v2_login_token(self):
         """Test DockerIoAPI().get_v2_login_token"""
         doia = DockerIoAPI(self.local, self.conf)
         out = doia.get_v2_login_token("username", "password")
@@ -209,17 +205,15 @@ class DockerIoAPITestCase(TestCase):
         out = doia.get_v2_login_token("", "")
         self.assertEqual(out, "")
 
-    @patch('udocker.docker.GetURL')
-    def test_15_set_v2_login_token(self, mock_geturl):
+    def test_15_set_v2_login_token(self):
         """Test DockerIoAPI().set_v2_login_token"""
         doia = DockerIoAPI(self.local, self.conf)
         doia.set_v2_login_token("BIG-FAT-TOKEN")
         self.assertEqual(doia.v2_auth_token, "BIG-FAT-TOKEN")
 
-    @patch('udocker.docker.GetURL')
     @patch('udocker.utils.curl.CurlHeader')
     @patch.object(DockerIoAPI, '_get_url')
-    def test_16_is_v2(self, mock_dgu, mock_hdr, mock_geturl):
+    def test_16_is_v2(self, mock_dgu, mock_hdr):
         """Test DockerIoAPI().is_v2"""
         mock_dgu.return_value = (mock_hdr, [])
         doia = DockerIoAPI(self.local, self.conf)
@@ -233,10 +227,9 @@ class DockerIoAPITestCase(TestCase):
         out = doia.is_v2()
         # self.assertTrue(out)
 
-    @patch('udocker.docker.GetURL')
     @patch('udocker.utils.curl.CurlHeader')
     @patch.object(DockerIoAPI, '_get_url')
-    def test_17_get_v2_image_manifest(self, mock_dgu, mock_hdr, mock_geturl):
+    def test_17_get_v2_image_manifest(self, mock_dgu, mock_hdr):
         """Test DockerIoAPI().get_v2_image_manifest"""
         imagerepo = "REPO"
         tag = "TAG"
@@ -246,10 +239,9 @@ class DockerIoAPITestCase(TestCase):
         out = doia.get_v2_image_manifest(imagerepo, tag)
         self.assertIsInstance(out, tuple)
 
-    @patch('udocker.docker.GetURL')
     @patch('udocker.utils.curl.CurlHeader')
-    @patch('udocker.docker.DockerIoAPI._get_file')
-    def test_18_get_v2_image_layer(self, mock_dgf, mock_hdr, mock_geturl):
+    @patch.object(DockerIoAPI, '_get_file')
+    def test_18_get_v2_image_layer(self, mock_dgf, mock_hdr):
         """Test DockerIoAPI().get_v2_image_layer"""
         imagerepo = "REPO"
         layer_id = "LAYERID"
@@ -266,9 +258,8 @@ class DockerIoAPITestCase(TestCase):
         out = doia.get_v2_image_layer(imagerepo, layer_id)
         self.assertFalse(out)
 
-    @patch('udocker.docker.GetURL')
-    @patch('udocker.docker.DockerIoAPI._get_file')
-    def test_19_get_v2_layers_all(self, mock_dgf, mock_geturl):
+    @patch.object(DockerIoAPI, '_get_file')
+    def test_19_get_v2_layers_all(self, mock_dgf):
         """Test DockerIoAPI().get_v2_layers_all"""
         mock_dgf.return_value = True
         endpoint = "docker.io"
@@ -282,12 +273,10 @@ class DockerIoAPITestCase(TestCase):
         out = doia.get_v2_layers_all(endpoint, fslayers)
         # self.assertEqual(out, ['b.json', 'b.layer', 'a.json', 'a.layer'])
 
-    @patch('udocker.docker.GetURL')
     @patch('udocker.utils.curl.CurlHeader')
-    @patch('udocker.docker.DockerIoAPI.get_v2_layers_all')
+    @patch.object(DockerIoAPI, 'get_v2_layers_all')
     @patch.object(DockerIoAPI, '_get_url')
-    def test_20_get_v2(self, mock_dgu, mock_dgv2,
-                       mock_hdr, mock_geturl):
+    def test_20_get_v2(self, mock_dgu, mock_dgv2, mock_hdr):
         """Test DockerIoAPI().get_v2"""
         mock_dgv2.return_value = []
         mock_dgu.return_value = (mock_hdr, [])
@@ -303,12 +292,10 @@ class DockerIoAPITestCase(TestCase):
         out = doia.get_v2(imagerepo, tag)
         self.assertEqual(out, [])
 
-    @patch('udocker.docker.GetURL')
     @patch('udocker.utils.curl.CurlHeader')
-    @patch('udocker.docker.DockerIoAPI.get_v1_layers_all')
+    @patch.object(DockerIoAPI, 'get_v2_layers_all')
     @patch.object(DockerIoAPI, '_get_url')
-    def test_21_get_v1(self, mock_dgu, mock_dgv1,
-                       mock_hdr, mock_geturl):
+    def test_21_get_v1(self, mock_dgu, mock_dgv1, mock_hdr):
         """Test DockerIoAPI().get_v1"""
         mock_dgv1.return_value = []
         mock_dgu.return_value = (mock_hdr, [])
@@ -325,13 +312,12 @@ class DockerIoAPITestCase(TestCase):
         self.assertEqual(out, [])
 
     @patch.object(DockerIoAPI, '_get_url')
-    @patch('udocker.docker.GetURL')
     @patch('udocker.utils.curl.CurlHeader')
-    @patch('udocker.docker.DockerIoAPI._parse_imagerepo')
+    @patch.object(DockerIoAPI, '_parse_imagerepo')
     @patch('udocker.container.localrepo.LocalRepository')
     @patch('udocker.container.localrepo.LocalRepository.cd_imagerepo')
     def test_22_get(self, mock_cdir, mock_local, mock_parse,
-                    mock_hdr, mock_geturl, mock_dgu):
+                    mock_hdr, mock_dgu):
         """Test DockerIoAPI().get"""
         mock_cdir.return_value = False
         mock_parse.return_value = ()
@@ -344,8 +330,7 @@ class DockerIoAPITestCase(TestCase):
         out = doia.get(imagerepo, tag)
         #self.assertEqual(out, [])
 
-    @patch('udocker.docker.GetURL')
-    def test_23_search_init(self, mock_geturl):
+    def test_23_search_init(self):
         """Test DockerIoAPI().search_init"""
         doia = DockerIoAPI(self.local, self.conf)
         doia.search_init("PAUSE")
@@ -355,10 +340,8 @@ class DockerIoAPITestCase(TestCase):
         self.assertEqual(doia.search_ended, False)
 
     @patch.object(DockerIoAPI, '_get_url')
-    @patch('udocker.docker.GetURL')
     @patch('udocker.utils.curl.CurlHeader')
-    def test_24_search_get_page_v1(self, mock_hdr,
-                                   mock_geturl, mock_dgu):
+    def test_24_search_get_page_v1(self, mock_hdr, mock_dgu):
         """Test DockerIoAPI().set_index"""
         mock_dgu.return_value = (mock_hdr, [])
         doia = DockerIoAPI(self.local, self.conf)
@@ -367,10 +350,8 @@ class DockerIoAPITestCase(TestCase):
         self.assertEqual(out, [])
 
     @patch.object(DockerIoAPI, '_get_url')
-    @patch('udocker.docker.GetURL')
     @patch('udocker.utils.curl.CurlHeader')
-    def test_25_catalog_get_page_v2(self, mock_hdr,
-                                    mock_geturl, mock_dgu):
+    def test_25_catalog_get_page_v2(self, mock_hdr, mock_dgu):
         """Test DockerIoAPI().catalog_get_page_v2"""
         mock_dgu.return_value = (mock_hdr, [])
         doia = DockerIoAPI(self.local, self.conf)
@@ -379,10 +360,8 @@ class DockerIoAPITestCase(TestCase):
         self.assertEqual(out, [])
 
     @patch.object(DockerIoAPI, '_get_url')
-    @patch('udocker.docker.GetURL')
     @patch('udocker.utils.curl.CurlHeader')
-    def test_26_search_get_page(self, mock_hdr,
-                                mock_geturl, mock_dgu):
+    def test_26_search_get_page(self, mock_hdr, mock_dgu):
         """Test DockerIoAPI().search_get_page"""
         mock_dgu.return_value = (mock_hdr, [])
         doia = DockerIoAPI(self.local, self.conf)
@@ -409,8 +388,7 @@ class DockerIoAPITestCase(TestCase):
     #     # mock_dgu.return_value = (mock_hdr, [])
 
 
-    @patch('udocker.docker.GetURL')
-    def test_29__get_v1_auth(self, mock_geturl):
+    def test_29__get_v1_auth(self):
         """Test DockerIoAPI()._get_v1_auth"""
         doia = DockerIoAPI(self.local, self.conf)
         doia.v1_auth_header = "Not Empty"
@@ -425,10 +403,8 @@ class DockerIoAPITestCase(TestCase):
 
     @patch.object(DockerIoAPI, '_get_url')
     @patch('udocker.utils.curl.CurlHeader')
-    @patch('json.loads')
-    @patch('udocker.docker.GetURL')
-    def test_30__get_v2_auth(self, mock_geturl,
-                             mock_jloads, mock_hdr, mock_dgu):
+    @patch('udocker.docker.json.loads')
+    def test_30__get_v2_auth(self, mock_jloads, mock_hdr, mock_dgu):
         """Test DockerIoAPI()._get_v2_auth"""
         fakedata = StringIO('token')
         mock_dgu.return_value = (mock_hdr, fakedata)
