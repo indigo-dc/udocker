@@ -48,10 +48,10 @@ class CmdParserTestCase(TestCase):
 
     def test_03_missing_options(self):
         """Test CmdParser().missing_options()."""
+
         argv = ("udocker run --bindhome --hostauth --hostenv -v /sys"
                 " -v /proc -v /var/run -v /dev --user=jorge "
                 "--dri myfed firefox")
-        self.cmdp.parse(argv)
         out = self.cmdp.missing_options()
         self.assertIsInstance(out, list)
 
