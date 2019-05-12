@@ -26,7 +26,6 @@ else:
     BUILTINS = "__builtin__"
 
 
-
 class CurlHeaderTestCase(TestCase):
     """Test CurlHeader() http header parser."""
 
@@ -54,19 +53,19 @@ class CurlHeaderTestCase(TestCase):
         self.assertEqual(status, "application/octet-stream")
         status = self.curl_header.data["X-ND-HTTPSTATUS"]
         self.assertEqual(status, "HTTP/1.1 200 OK")
-        #
+
         curl_header = CurlHeader()
         for line in buff:
             curl_header.write(line)
         buff_out = curl_header.getvalue()
         self.assertTrue("HTTP/1.1 200 OK" in buff_out)
-        #
+
         line = ""
         curl_header = CurlHeader()
         curl_header.sizeonly = True
         self.assertEqual(-1, curl_header.write(line))
 
-    @patch('udocker.utils.curl.CurlHeader.write')
+    @patch.object(CurlHeader, 'write')
     def test_03_setvalue_from_file(self, mock_write):
         """Test CurlHeader().setvalue_from_file()."""
         fakedata = StringIO('XXXX')
@@ -74,7 +73,7 @@ class CurlHeaderTestCase(TestCase):
             mopen.return_value.__iter__ = (
                 lambda self: iter(fakedata.readline, ''))
             self.assertTrue(self.curl_header.setvalue_from_file("filename"))
-            mock_write.assert_called_with('XXXX')
+            self.assertTrue(mock_write.called_with('XXXX'))
 
     def test_04_getvalue(self):
         """Test CurlHeader().getvalue()."""
