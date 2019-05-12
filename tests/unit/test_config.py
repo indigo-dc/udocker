@@ -57,9 +57,10 @@ class ConfigTestCase(TestCase):
         self.assertIsInstance(self.Config.conf['dockerio_index_url'], str)
         self.assertIsInstance(self.Config.conf['dockerio_registry_url'], str)
 
-    def test_02_file_override(self):
-        """Test Config()._file_override"""
-        pass
+    # TODO: need to be implemented
+    # def test_02_file_override(self):
+    #     """Test Config()._file_override"""
+    #     pass
 
     # TODO: this test needs further work
     @patch('udocker.config.os.getenv')
@@ -84,26 +85,27 @@ class ConfigTestCase(TestCase):
     @patch('udocker.config.platform.machine')
     def test_05_arch(self, mock_machine, mock_architecture):
         """Test Config._arch()."""
+
         mock_machine.return_value = "x86_64"
         mock_architecture.return_value = ["32bit", ]
         status = self.Config._arch()
         self.assertEqual(status, "i386")
-        #
+
         mock_machine.return_value = "x86_64"
         mock_architecture.return_value = ["", ]
         status = self.Config._arch()
         self.assertEqual(status, "amd64")
-        #
+
         mock_machine.return_value = "i686"
         mock_architecture.return_value = ["", ]
         status = self.Config._arch()
         self.assertEqual(status, "i386")
-        #
+
         mock_machine.return_value = "armXX"
         mock_architecture.return_value = ["32bit", ]
         status = self.Config._arch()
         self.assertEqual(status, "arm")
-        #
+
         mock_machine.return_value = "armXX"
         mock_architecture.return_value = ["", ]
         status = self.Config._arch()
@@ -112,10 +114,11 @@ class ConfigTestCase(TestCase):
     @patch('udocker.config.platform.system')
     def test_06_osversion(self, mock_system):
         """Test Config._osversion()."""
+
         mock_system.return_value = "Linux"
         status = self.Config._osversion()
         self.assertEqual(status, "linux")
-        #
+
         mock_system.return_value = "Linux"
         mock_system.side_effect = NameError('platform system')
         status = self.Config._osversion()
@@ -124,6 +127,7 @@ class ConfigTestCase(TestCase):
     @patch('udocker.config.platform.linux_distribution')
     def test_07_osdistribution(self, mock_distribution):
         """Test Config._osdistribution()."""
+
         mock_distribution.return_value = ("DISTRO XX", "1.0", "DUMMY")
         status = self.Config._osdistribution()
         self.assertEqual(status, ("DISTRO", "1"))
@@ -131,24 +135,24 @@ class ConfigTestCase(TestCase):
     @patch('udocker.config.platform.release')
     def test_08_oskernel(self, mock_release):
         """Test Config._oskernel()."""
+
         mock_release.return_value = "1.2.3"
         status = self.Config._oskernel()
         self.assertEqual(status, "1.2.3")
-        #
+
         mock_release.return_value = "1.2.3"
         mock_release.side_effect = NameError('platform release')
         status = self.Config._oskernel()
         self.assertEqual(status, "3.2.1")
 
-    @patch('udocker.msg.Msg')
-    @patch('udocker.config.Config._oskernel')
-    @patch('udocker.config.Config._osdistribution')
-    @patch('udocker.config.Config._osversion')
-    @patch('udocker.config.Config._arch')
-    @patch('udocker.config.Config._username')
+    @patch.object(Config, '_oskernel')
+    @patch.object(Config, '_osdistribution')
+    @patch.object(Config, '_osversion')
+    @patch.object(Config, '_arch')
+    @patch.object(Config, '_username')
     @patch('udocker.config.Config')
     def test_10_getconf(self, mock_conf, mock_user, mock_arch, mock_osver,
-                        mock_osdistr, mock_oskern, mock_msg):
+                        mock_osdistr, mock_oskern):
         """Test Config.getconf()."""
         mock_user.return_value = os.getuid()
         mock_arch.return_value = "i386"
@@ -157,8 +161,11 @@ class ConfigTestCase(TestCase):
         mock_oskern.return_value = "1.1.2-"
         mock_conf.return_value.conf['topdir'] = "/.udocker"
         status = self.Config.getconf()
-        self.assertFalse(mock_msg.return_value.err.called)
-
+        self.assertTrue(mock_user.called)
+        self.assertTrue(mock_arch.called)
+        self.assertTrue(mock_osver.called)
+        self.assertTrue(mock_osdistr.called)
+        self.assertTrue(mock_oskern.called)
 
 if __name__ == '__main__':
     main()
