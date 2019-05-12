@@ -776,6 +776,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_rmi(self.cmdp)
         self.assertEqual(status, 0)
 
+    @patch('udocker.container.localrepo.LocalRepository.protect_imagerepo', autospec=True)
     @patch('udocker.container.localrepo.LocalRepository.protect_container', autospec=True)
     @patch('udocker.container.localrepo.LocalRepository.get_container_id', autospec=True)
     @patch('udocker.cmdparser.CmdParser.get', autospec=True)
@@ -786,7 +787,8 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_22_do_protect(self, mock_msg, mock_dioapi, mock_dlocapi, mock_ks,
-                           mock_chkimg, mock_miss, mock_get, mock_contid, mock_protcont):
+                           mock_chkimg, mock_miss, mock_get, mock_contid,
+                           mock_protcont, mock_protimg):
         """Test UdockerCLI().do_protect()."""
 
         mock_msg.level = 0
@@ -824,14 +826,15 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_protect(self.cmdp)
         self.assertEqual(status, 1)
 
-        # mock_miss.return_value = False
-        # mock_get.side_effect = ["", "", "" "", "", ]
-        # mock_chkimg.return_value = ("IMAGE", "TAG")
-        # mock_contid.return_value = ""
-        # mock_protcont.return_value = True
-        # udoc = UdockerCLI(self.local, self.conf)
-        # status = udoc.do_protect(self.cmdp)
-        # self.assertEqual(status, 0)
+        mock_miss.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_contid.return_value = ""
+        mock_protcont.return_value = True
+        mock_protimg.return_value = True
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_protect(self.cmdp)
+        self.assertEqual(status, 0)
 
     @patch('udocker.container.localrepo.LocalRepository.unprotect_imagerepo', autospec=True)
     @patch('udocker.container.localrepo.LocalRepository.unprotect_container', autospec=True)
