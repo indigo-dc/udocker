@@ -681,6 +681,7 @@ class UdockerCLITestCase(TestCase):
         udoc.do_ps(self.cmdp)
         self.assertTrue(mock_isprotcont.called)
 
+    @patch('udocker.container.localrepo.LocalRepository.del_container', autospec=True)
     @patch('udocker.container.localrepo.LocalRepository.isprotected_container', autospec=True)
     @patch('udocker.container.localrepo.LocalRepository.get_container_id', autospec=True)
     @patch('udocker.cmdparser.CmdParser.get', autospec=True)
@@ -690,7 +691,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_20_do_rm(self, mock_msg, mock_dioapi, mock_dlocapi, mock_ks,
-                      mock_miss, mock_get, mock_contid, mock_isprotcont):
+                      mock_miss, mock_get, mock_contid, mock_isprotcont, mock_delcont):
         """Test UdockerCLI().do_rm()."""
 
         mock_msg.level = 0
@@ -721,15 +722,16 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_rm(self.cmdp)
         self.assertEqual(status, 1)
 
-        # TODO: fix test
-        # mock_miss.return_value = False
-        # mock_get.side_effect = ["X", "1", "" "", "", ]
-        # mock_contid.return_value = "1"
-        # mock_isprotcont.return_value = False
-        # udoc = UdockerCLI(self.local, self.conf)
-        # status = udoc.do_rm(self.cmdp)
-        # self.assertEqual(status, 0)
+        mock_miss.return_value = False
+        mock_get.side_effect = ["X", "1", "" "", "", ]
+        mock_contid.return_value = "1"
+        mock_isprotcont.return_value = False
+        mock_delcont.return_value = True
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_rm(self.cmdp)
+        self.assertEqual(status, 0)
 
+    @patch('udocker.container.localrepo.LocalRepository.del_imagerepo', autospec=True)
     @patch('udocker.container.localrepo.LocalRepository.isprotected_imagerepo', autospec=True)
     @patch('udocker.cmdparser.CmdParser.get', autospec=True)
     @patch('udocker.cmdparser.CmdParser.missing_options', autospec=True)
@@ -739,7 +741,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_21_do_rmi(self, mock_msg, mock_dioapi, mock_dlocapi, mock_ks,
-                       mock_chkimg, mock_miss, mock_get, mock_isprotimg):
+                       mock_chkimg, mock_miss, mock_get, mock_isprotimg, mock_delimg):
         """Test UdockerCLI().do_rmi()."""
 
         mock_msg.level = 0
@@ -765,13 +767,14 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_rmi(self.cmdp)
         self.assertEqual(status, 1)
 
-        # mock_miss.return_value = False
-        # mock_get.side_effect = ["", "", "" "", "", ]
-        # mock_chkimg.return_value = ("IMAGE", "TAG")
-        # mock_isprotimg.return_value = False
-        # udoc = UdockerCLI(self.local, self.conf)
-        # status = udoc.do_rmi(self.cmdp)
-        # self.assertEqual(status, 0)
+        mock_miss.return_value = False
+        mock_get.side_effect = ["", "", "" "", "", ]
+        mock_chkimg.return_value = ("IMAGE", "TAG")
+        mock_isprotimg.return_value = False
+        mock_delimg.return_value = True
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_rmi(self.cmdp)
+        self.assertEqual(status, 0)
 
     @patch('udocker.container.localrepo.LocalRepository.protect_container', autospec=True)
     @patch('udocker.container.localrepo.LocalRepository.get_container_id', autospec=True)
