@@ -281,9 +281,37 @@ class UdockerCLITestCase(TestCase):
         """Test UdockerCLI().do_export()."""
         pass
 
-    def test_10_do_clone(self):
+    @patch('udocker.container.localrepo.LocalRepository.get_container_id', autospec=True)
+    @patch('udocker.cmdparser.CmdParser.get', autospec=True)
+    @patch('udocker.cli.DockerLocalFileAPI')
+    @patch('udocker.cli.Msg')
+    def test_10_do_clone(self, mock_msg, mock_dlocapi, mock_get, mock_contid):
         """Test UdockerCLI().do_clone()."""
-        pass
+
+        mock_msg.level = 0
+        mock_get.side_effect = ["name", "P1", "" "", "", ]
+        mock_contid.return_value = ""
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_clone(self.cmdp)
+        self.assertEqual(status, 1)
+        self.assertTrue(mock_msg.return_value.err.called)
+
+        mock_get.side_effect = ["name", "P1", "" "", "", ]
+        mock_contid.return_value = "1"
+        mock_dlocapi.return_value.clone_container.return_value = True
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_clone(self.cmdp)
+        self.assertEqual(status, 0)
+        self.assertTrue(mock_msg.return_value.out.called)
+        self.assertTrue(mock_dlocapi.return_value.clone_container.called)
+
+        mock_get.side_effect = ["name", "P1", "" "", "", ]
+        mock_contid.return_value = ""
+        mock_dlocapi.return_value.clone_container.return_value = False
+        udoc = UdockerCLI(self.local, self.conf)
+        status = udoc.do_clone(self.cmdp)
+        self.assertEqual(status, 1)
+        self.assertTrue(mock_msg.return_value.err.called_with("Error: cloning"))
 
     @patch('udocker.cmdparser.CmdParser.get', autospec=True)
     @patch('udocker.cli.getpass')
