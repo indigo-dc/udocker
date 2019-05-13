@@ -22,295 +22,312 @@ class ElfPatcherTestCase(TestCase):
     def setUp(self):
         self.conf = Config().getconf()
         self.local = LocalRepository(self.conf)
-        container_id = "SOME-RANDOM-ID"
-        self.elfp = ElfPatcher(self.conf, self.local, container_id)
 
     def tearDown(self):
         pass
 
-    @patch('udocker.msg.Msg')
+    @patch('udocker.helper.elfpatcher.Msg')
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.config.Config')
-    @patch('udocker.utils.fileutil.FileUtil.find_file_in_dir')
-    @patch('udocker.container.localrepo.LocalRepository')
-    def test_02_select_patchelf(self, mock_local, mock_find,
+    @patch('udocker.helper.elfpatcher.FileUtil.find_file_in_dir')
+    def test_02_select_patchelf(self, mock_find,
                                 mock_conf, mock_path, mock_msg):
         """Test ElfPatcher().select_patchelf().
 
         Set patchelf executable."""
 
+        container_id = "SOME-RANDOM-ID"
         mock_conf.return_value.arch.side_effect = ["arm", "amd64", "i386", "arm64"]
         mock_find.return_value = "runc-arm"
-        output = self.elfp.select_patchelf()
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        output = elfp.select_patchelf()
         self.assertEqual(output, "runc-arm")
 
         mock_find.return_value = ""
         with self.assertRaises(SystemExit) as epexpt:
-            self.elfp.select_patchelf()
+            elfp = ElfPatcher(self.conf, self.local, container_id)
+            elfp.select_patchelf()
         self.assertEqual(epexpt.exception.code, 1)
 
-    # @patch('udocker.helper.elfpatcher.os.path.islink')
-    # @patch('udocker.helper.elfpatcher.os.path.stat')
-    # @patch('udocker.helper.elfpatcher.os.path')
-    # @patch('udocker.helper.elfpatcher.os.walk')
-    # @patch('udocker.helper.elfpatcher.os.access')
-    # @patch('udocker.container.localrepo.LocalRepository')
-    # def test_03__walk_fs(self, mock_local, mock_access, mock_walk,
-    #                      mock_path, mock_stat, mock_islink):
-    #     """Test ElfPatcher()._walk_fs().
-    #
-    #     Execute a shell command over each executable file in a given dir_path.
-    #     Action can be ABORT_ON_ERROR, return upon first success
-    #     ONE_SUCCESS, or return upon the first non empty output. #f is the
-    #     placeholder for the filename.
-    #     """
-    #     mock_walk.return_value = ("/tmp", ["dir"], ["file"]);
-    #     mock_islink.return_value = False
-    #     mock_stat.return_value.st_uid = ""
-    #     status = self.elfp._walk_fs("cmd", "/tmp", self.elfp.BIN)
-    #     self.assertIsNone(status)
+    @patch('udocker.helper.elfpatcher.os.path.islink')
+    @patch('udocker.helper.elfpatcher.os.path.stat')
+    @patch('udocker.helper.elfpatcher.os.path')
+    @patch('udocker.helper.elfpatcher.os.walk')
+    @patch('udocker.helper.elfpatcher.os.access')
+    def test_03__walk_fs(self, mock_access, mock_walk,
+                         mock_path, mock_stat, mock_islink):
+        """Test ElfPatcher()._walk_fs().
+
+        Execute a shell command over each executable file in a given dir_path.
+        Action can be ABORT_ON_ERROR, return upon first success
+        ONE_SUCCESS, or return upon the first non empty output. #f is the
+        placeholder for the filename.
+        """
+        container_id = "SOME-RANDOM-ID"
+        mock_walk.return_value = ("/tmp", ["dir"], ["file"]);
+        mock_islink.return_value = False
+        mock_stat.return_value.st_uid = ""
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        status = elfp._walk_fs("cmd", "/tmp", elfp.BIN)
+        self.assertIsNone(status)
 
     @patch('udocker.helper.elfpatcher.os.path')
-    @patch('udocker.container.localrepo.LocalRepository')
     @patch('udocker.helper.elfpatcher.ElfPatcher._walk_fs')
     @patch('udocker.helper.elfpatcher.ElfPatcher.select_patchelf')
     def test_04_guess_elf_loader(self, mock_spelf, mock_walk,
-                                 mock_local, mock_path):
+                                 mock_path):
         """Test ElfPatcher().guess_elf_loader().
 
         Search for executables and try to read the ld.so pathname."""
+        container_id = "SOME-RANDOM-ID"
         mock_spelf.return_value = "ld.so"
         mock_walk.return_value = ""
-        self.assertEqual(self.elfp.guess_elf_loader(), "")
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertEqual(elfp.guess_elf_loader(), "")
 
         mock_walk.return_value = "ld.so"
-        self.assertEqual(self.elfp.guess_elf_loader(), "ld.so")
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertEqual(elfp.guess_elf_loader(), "ld.so")
 
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.path.exists')
-    @patch('udocker.container.localrepo.LocalRepository')
-    @patch('udocker.utils.fileutil.FileUtil.getdata')
+    @patch('udocker.helper.elfpatcher.FileUtil.getdata')
     @patch('udocker.helper.elfpatcher.ElfPatcher.guess_elf_loader')
     def test_05_get_original_loader(self, mock_guess, mock_futils,
-                                    mock_local, mock_exists, mock_path):
+                                    mock_exists, mock_path):
         """Test ElfPatcher().get_original_loader().
 
         Get the pathname of the original ld.so.
         """
+        container_id = "SOME-RANDOM-ID"
         mock_exists.return_value = True
         mock_futils.return_value.strip.return_value = "ld.so"
-        self.assertEqual(self.elfp.get_original_loader(), "ld.so")
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertEqual(elfp.get_original_loader(), "ld.so")
 
         mock_exists.return_value = False
         mock_guess.return_value = "ld.so"
         mock_futils.return_value.strip.return_value = "ld.so"
-        self.assertEqual(self.elfp.get_original_loader(), "ld.so")
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertEqual(elfp.get_original_loader(), "ld.so")
 
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.path.exists')
-    @patch('udocker.container.localrepo.LocalRepository')
     @patch('udocker.helper.elfpatcher.ElfPatcher.get_original_loader')
-    def test_06_get_container_loader(self, mock_gol, mock_local,
-                                     mock_exists, mock_path):
+    def test_06_get_container_loader(self, mock_gol, mock_exists, mock_path):
         """Test ElfPatcher().get_container_loader().
 
         Get an absolute pathname to the container ld.so"""
+        container_id = "SOME-RANDOM-ID"
         mock_gol.return_value = ""
-        self.assertEqual(self.elfp.get_container_loader(), "")
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertEqual(elfp.get_container_loader(), "")
 
         mock_exists.return_value = True
         mock_gol.return_value = "ld.so"
-        self.assertEqual(self.elfp.get_container_loader(),
-                         self.elfp._container_root + "/" + "ld.so")
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertEqual(elfp.get_container_loader(),
+                         elfp._container_root + "/" + "ld.so")
 
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.path.exists')
-    @patch('udocker.container.localrepo.LocalRepository')
-    @patch('udocker.utils.fileutil.FileUtil.getdata')
-    def test_07_get_patch_last_path(self, mock_getdata, mock_local,
-                                    mock_exists, mock_path):
+    @patch('udocker.helper.elfpatcher.FileUtil.getdata')
+    def test_07_get_patch_last_path(self, mock_getdata, mock_exists, mock_path):
         """Test ElfPatcher().get_patch_last_path().
 
         get last host pathname to the patched container."""
+        container_id = "SOME-RANDOM-ID"
         mock_getdata.return_value = ""
-        self.assertEqual(self.elfp.get_patch_last_path(), "")
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertEqual(elfp.get_patch_last_path(), "")
 
         mock_getdata.return_value = "/tmp"
-        self.assertEqual(self.elfp.get_patch_last_path(), "/tmp")
-
-    # @patch('udocker.helper.elfpatcher.os.path')
-    # @patch('udocker.helper.elfpatcher.os.path.exists')
-    # @patch('udocker.container.localrepo.LocalRepository')
-    # @patch('udocker.helper.elfpatcher.ElfPatcher.get_patch_last_path')
-    # @patch('udocker.msg.Msg')
-    # def test_08_check_container_path(self, mock_msg, mock_lpath,
-    #                             mock_local, mock_exists, mock_path):
-    #     """Test ElfPatcher().check_container_path().
-    #
-    #     verify if path to container is ok"""
-    #     mock_lpath.return_value = "/tmp"
-    #     with self.assertRaises(SystemExit) as epexpt:
-    #         self.elfp.check_container_path()
-    #     self.assertEqual(epexpt.exception.code, 1)
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertEqual(elfp.get_patch_last_path(), "/tmp")
 
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.path.exists')
-    @patch('udocker.container.localrepo.LocalRepository')
-    @patch('udocker.utils.fileutil.FileUtil.getdata')
-    def test_09_get_patch_last_time(self, mock_getdata, mock_local,
+    @patch('udocker.helper.elfpatcher.ElfPatcher.get_patch_last_path')
+    @patch('udocker.helper.elfpatcher.Msg')
+    def test_08_check_container_path(self, mock_msg, mock_lpath, mock_exists,
+                                     mock_path):
+        """Test ElfPatcher().check_container_path().
+
+        verify if path to container is ok"""
+        container_id = "SOME-RANDOM-ID"
+        mock_lpath.return_value = "/tmp"
+        with self.assertRaises(SystemExit) as epexpt:
+            elfp = ElfPatcher(self.conf, self.local, container_id)
+            elfp.check_container_path()
+        self.assertEqual(epexpt.exception.code, 1)
+
+    @patch('udocker.helper.elfpatcher.os.path')
+    @patch('udocker.helper.elfpatcher.os.path.exists')
+    @patch('udocker.helper.elfpatcher.FileUtil.getdata')
+    def test_09_get_patch_last_time(self, mock_getdata,
                                     mock_exists, mock_path):
         """Test ElfPatcher().patch_last_time().
 
         get time in seconds of last full patch of container"""
+        container_id = "SOME-RANDOM-ID"
         mock_getdata.return_value = "30"
-        self.assertEqual(self.elfp.get_patch_last_time(), "30")
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertEqual(elfp.get_patch_last_time(), "30")
 
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.path.exists')
-    @patch('udocker.container.localrepo.LocalRepository')
-    @patch('udocker.utils.fileutil.FileUtil.putdata')
+    @patch('udocker.helper.elfpatcher.FileUtil.putdata')
     @patch('udocker.helper.elfpatcher.ElfPatcher.guess_elf_loader')
     @patch('udocker.helper.elfpatcher.ElfPatcher.select_patchelf')
     @patch('udocker.helper.elfpatcher.ElfPatcher.get_container_loader')
-    @patch('udocker.helper.elfpatcher.ElfPatcher')
-    def test_10_patch_binaries(self, mock_elfp, mock_gcl, mock_select,
-                               mock_guess, mock_putdata, mock_local,
+    def test_10_patch_binaries(self, mock_gcl, mock_select,
+                               mock_guess, mock_putdata,
                                mock_exists, mock_path):
         """Test ElfPatcher().patch_binaries().
 
         Set all executables and libs to the ld.so absolute pathname"""
+        container_id = "SOME-RANDOM-ID"
         mock_exists.return_value = True
         mock_gcl.return_value = "/usr/bin/ld"
         mock_select.return_value = "runc-arm"
         mock_putdata.side_effect = ["10", "/tmp"]
         mock_guess.return_value = "/usr/bin/ld"
         mock_elfp.return_value._container_root.return_value = "/tmp/ROOT"
-        self.assertTrue(self.elfp.patch_binaries())
-
-    # @patch('udocker.helper.elfpatcher.os.path')
-    # @patch('udocker.helper.elfpatcher.os.path.exists')
-    # @patch('udocker.container.localrepo.LocalRepository')
-    # @patch('udocker.helper.elfpatcher.ElfPatcher.guess_elf_loader')
-    # @patch('udocker.helper.elfpatcher.ElfPatcher.select_patchelf')
-    # @patch('udocker.helper.elfpatcher.ElfPatcher.get_container_loader')
-    # @patch('udocker.helper.elfpatcher.ElfPatcher')
-    # def test_11_restore_binaries(self, mock_elfp, mock_gcl, mock_select,
-    #                              mock_guess, mock_local,
-    #                              mock_exists, mock_path):
-    #     """Test ElfPatcher().restore_binaries().
-    #
-    #     Restore all executables and libs to the original ld.so pathname"""
-    #     mock_exists.return_value = True
-    #     mock_gcl.return_value = "/usr/bin/ld"
-    #     mock_select.return_value = "runc-arm"
-    #     mock_guess.return_value = "/usr/bin/ld"
-    #     mock_elfp.return_value._container_root.return_value = "/tmp/ROOT"
-    #     self.assertTrue(self.elfp.restore_binaries())
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertTrue(elfp.patch_binaries())
 
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.path.exists')
-    @patch('udocker.container.localrepo.LocalRepository')
+    @patch('udocker.helper.elfpatcher.ElfPatcher.guess_elf_loader')
+    @patch('udocker.helper.elfpatcher.ElfPatcher.select_patchelf')
     @patch('udocker.helper.elfpatcher.ElfPatcher.get_container_loader')
-    @patch('udocker.utils.fileutil.FileUtil.size')
-    @patch('udocker.utils.fileutil.FileUtil.copyto')
-    @patch('udocker.utils.fileutil.FileUtil.getdata')
+    def test_11_restore_binaries(self, mock_gcl, mock_select,
+                                 mock_guess,
+                                 mock_exists, mock_path):
+        """Test ElfPatcher().restore_binaries().
+
+        Restore all executables and libs to the original ld.so pathname"""
+        container_id = "SOME-RANDOM-ID"
+        mock_exists.return_value = True
+        mock_gcl.return_value = "/usr/bin/ld"
+        mock_select.return_value = "runc-arm"
+        mock_guess.return_value = "/usr/bin/ld"
+        mock_elfp.return_value._container_root.return_value = "/tmp/ROOT"
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertTrue(elfp.restore_binaries())
+
+    @patch('udocker.helper.elfpatcher.os.path')
+    @patch('udocker.helper.elfpatcher.os.path.exists')
+    @patch('udocker.helper.elfpatcher.ElfPatcher.get_container_loader')
+    @patch('udocker.helper.elfpatcher.FileUtil.size')
+    @patch('udocker.helper.elfpatcher.FileUtil.copyto')
+    @patch('udocker.helper.elfpatcher.FileUtil.getdata')
     def test_12_patch_ld(self, mock_getdata,
                          mock_copyto, mock_size,
-                         mock_gcl, mock_local,
+                         mock_gcl,
                          mock_exists, mock_path):
         """Test ElfPatcher().patch_ld().
 
         Patch ld.so"""
+        container_id = "SOME-RANDOM-ID"
         mock_size.return_value = -1
-        self.assertFalse(self.elfp.patch_ld())
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertFalse(elfp.patch_ld())
 
         mock_size.return_value = 20
         mock_copyto.return_value = False
-        self.assertFalse(self.elfp.patch_ld())
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertFalse(elfp.patch_ld())
 
         mock_size.return_value = 20
         mock_copyto.return_value = True
         mock_getdata.return_value = []
-        self.assertFalse(self.elfp.patch_ld())
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertFalse(elfp.patch_ld())
 
         mock_size.return_value = 20
         mock_copyto.return_value = True
         mock_getdata.return_value = []
-        self.assertFalse(self.elfp.patch_ld("OUTPUT_ELF"))
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertFalse(elfp.patch_ld("OUTPUT_ELF"))
 
-    @patch('udocker.msg.Msg')
+    @patch('udocker.helper.elfpatcher.Msg')
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.path.exists')
-    @patch('udocker.container.localrepo.LocalRepository')
     @patch('udocker.helper.elfpatcher.ElfPatcher.get_container_loader')
-    @patch('udocker.utils.fileutil.FileUtil.size')
-    @patch('udocker.utils.fileutil.FileUtil.copyto')
+    @patch('udocker.helper.elfpatcher.FileUtil.size')
+    @patch('udocker.helper.elfpatcher.FileUtil.copyto')
     def test_13_restore_ld(self, mock_copyto, mock_size,
-                           mock_gcl, mock_local,
+                           mock_gcl,
                            mock_exists, mock_path, mock_msg):
         """Test ElfPatcher().restore_ld().
 
         Restore ld.so"""
+        container_id = "SOME-RANDOM-ID"
         mock_size.return_value = -1
-        self.assertFalse(self.elfp.restore_ld())
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertFalse(elfp.restore_ld())
 
         mock_size.return_value = 20
         mock_copyto.return_value = True
-        self.assertTrue(self.elfp.restore_ld())
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        self.assertTrue(elfp.restore_ld())
 
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.path.exists')
-    @patch('udocker.container.localrepo.LocalRepository')
-    @patch('udocker.utils.uprocess.Uprocess.get_output')
+    @patch('udocker.helper.elfpatcher.Uprocess.get_output')
     def test_14__get_ld_config(self, mock_upout,
-                               mock_local, mock_exists, mock_path):
+                               mock_exists, mock_path):
         """Test ElfPatcher().get_ld_config().
 
         Get get directories from container ld.so.cache"""
+        container_id = "SOME-RANDOM-ID"
         mock_upout.return_value = []
-        status = self.elfp._get_ld_config()
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        status = elfp._get_ld_config()
         self.assertEqual(status, [])
 
         mock_upout.return_value = \
             "ld.so.cache => /tmp/ROOT/etc/ld.so.cache\n" \
             "ld.so.cache => /tmp/ROOT/etc/ld.so"
-        status = self.elfp._get_ld_config()
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        status = elfp._get_ld_config()
         self.assertIsInstance(status, list)
 
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.access')
     @patch('udocker.helper.elfpatcher.os.walk')
     @patch('udocker.helper.elfpatcher.os.path.exists')
-    @patch('udocker.container.localrepo.LocalRepository')
-    def test_15__find_ld_libdirs(self, mock_local, mock_exists,
+    def test_15__find_ld_libdirs(self, mock_exists,
                                  mock_walk, mock_access, mock_path):
         """Test ElfPatcher()._find_ld_libdirs().
-
         search for library directories in container"""
-        status = self.elfp._find_ld_libdirs()
+        container_id = "SOME-RANDOM-ID"
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        status = elfp._find_ld_libdirs()
         self.assertEqual(status, [])
 
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.path.exists')
-    @patch('udocker.container.localrepo.LocalRepository')
-    def test_16_get_ld_libdirs(self, mock_local,
+    def test_16_get_ld_libdirs(self,
                                mock_exists, mock_path):
         """Test ElfPatcher().get_ld_libdirs().
-
         Get ld library paths"""
-        status = self.elfp.get_ld_libdirs()
+        container_id = "SOME-RANDOM-ID"
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        status = elfp.get_ld_libdirs()
         self.assertEqual(status, [''])
 
-    # @patch('udocker.helper.elfpatcher.os.path')
-    # @patch('udocker.helper.elfpatcher.os.path.exists')
-    # @patch('udocker.container.localrepo.LocalRepository')
-    # def test_17_get_ld_library_path(self, mock_local,
-    #                                 mock_exists, mock_path):
-    #     """Test ElfPatcher().get_ld_library_path().
-    #
-    #     Get ld library paths"""
-    #     status = self.elfp.get_ld_library_path()
-    #     self.assertEqual(status, [''])
+    @patch('udocker.helper.elfpatcher.os.path')
+    @patch('udocker.helper.elfpatcher.os.path.exists')
+    def test_17_get_ld_library_path(self,
+                                    mock_exists, mock_path):
+        """Test ElfPatcher().get_ld_library_path().
+        Get ld library paths"""
+        container_id = "SOME-RANDOM-ID"
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        status = elfp.get_ld_library_path()
+        self.assertEqual(status, [''])
 
 
 if __name__ == '__main__':
