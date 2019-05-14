@@ -23,9 +23,9 @@ class ElfPatcher(object):
 
     def __init__(self, conf, localrepo, container_id):
         self.conf = conf
-        self._localrepo = localrepo
+        self.localrepo = localrepo
         self._container_dir = \
-            os.path.realpath(self._localrepo.cd_container(container_id))
+            os.path.realpath(self.localrepo.cd_container(container_id))
         if not self._container_dir:
             raise ValueError("invalid container id")
         self._container_root = self._container_dir + "/ROOT"
@@ -49,7 +49,7 @@ class ElfPatcher(object):
             image_list = ["patchelf-arm64", "patchelf"]
         elif arch == "arm":
             image_list = ["patchelf-arm", "patchelf"]
-        f_util = FileUtil(self.conf, self._localrepo.bindir)
+        f_util = FileUtil(self.conf, self.localrepo.bindir)
         patchelf_exec = f_util.find_file_in_dir(image_list)
         if not patchelf_exec:
             Msg().err("Error: patchelf executable not found")
