@@ -663,7 +663,7 @@ class ExecutionEngineCommon(object):
         self.opt["env"].append("LOGNAME=" + self.opt["user"])
         self.opt["env"].append("USERNAME=" + self.opt["user"])
 
-        if  str(self.opt["uid"]) == "0":
+        if str(self.opt["uid"]) == "0":
             self.opt["env"].append(r"PS1=%s# " % self.container_id[:8])
         else:
             self.opt["env"].append(r"PS1=%s\$ " % self.container_id[:8])
