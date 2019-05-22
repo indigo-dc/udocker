@@ -38,84 +38,129 @@ class FakechrootEngineTestCase(TestCase):
 
         self.local = LocalRepository(self.conf)
         self.xmode = "F1"
-        self.ufake = FakechrootEngine(self.conf, self.local, self.xmode)
 
     def tearDown(self):
         pass
 
-    @patch('udocker.container.localrepo.LocalRepository')
-    def test_01__init(self, mock_local):
+    def test_01__init(self):
         """Test FakechrootEngine Constructor."""
-        self.assertEqual(self.ufake._fakechroot_so, "")
-        self.assertIsNone(self.ufake._elfpatcher)
+        ufake = FakechrootEngine(self.conf, self.local, self.xmode)
+        self.assertEqual(ufake._fakechroot_so, "")
+        self.assertIsNone(ufake._elfpatcher)
 
-    # @patch('udocker.msg.Msg.err')
-    # @patch('udocker.engine.fakechroot.os.path')
-    # @patch('udocker.utils.fileutil.FileUtil')
-    # @patch('udocker.container.localrepo.LocalRepository')
-    # def test_02__select_fakechroot_so(self, mock_local, mock_futil,
-    #                                   mock_path, mock_msg):
-    #     """Select fakechroot sharable object library."""
-    #     out = self.ufake._select_fakechroot_so()
-    #     self.assertTrue(mock_msg.called)
+    # TODO: implement more tests/options
+    @patch('udocker.engine.fakechroot.GuestInfo')
+    @patch('udocker.engine.fakechroot.Msg.err')
+    @patch('udocker.engine.fakechroot.os.path')
+    @patch('udocker.engine.fakechroot.FileUtil')
+    def test_02__select_fakechroot_so(self, mock_futil, mock_path,
+                                      mock_msgerr, mock_guest):
+        """Select fakechroot sharable object library."""
+        mock_path.return_value.exists.return_value = True
+        mock_path.return_value.realpath.return_value = '/bin/xxx'
+        mock_futil.return_value.find_file_in_dir.return_value = 'fake1'
+        self.conf['fakechroot_so'] = ['/s/fake1', '/s/fake2']
+        ufake = FakechrootEngine(self.conf, self.local, self.xmode)
+        out = ufake._select_fakechroot_so()
+        self.assertTrue(mock_msgerr.called)
+        self.assertEqual(out, 'fake1')
 
+    @patch('udocker.engine.fakechroot.ExecutionEngineCommon')
+    def test_03__setup_container_user(self, mock_cmm):
+        """ Override method ExecutionEngineCommon._setup_container_user()."""
+        mock_cmm.return_value._setup_container_user_noroot.return_value = True
+        ufake = FakechrootEngine(self.conf, self.local, self.xmode)
+        status = ufake._setup_container_user("lalves")
+        self.assertTrue(status)
 
-    # @patch('udocker.msg.Msg')
-    # @patch('udocker.container.localrepo.LocalRepository')
-    # def test_03__uid_check(self, mock_local, mock_msg):
-    #     """Set the uid_map string for container run command"""
-    #     self.ufake.opt["user"] = "root"
-    #     self.ufake._uid_check_noroot()
-    #     self.assertTrue(mock_msg.return_value.err.called)
-
-    # @patch('udocker.msg.Msg')
-    # @patch('udocker.container.localrepo.LocalRepository')
-    # @patch('udocker.helper.nixauth.NixAuthentication')
-    # @patch('udocker.engine.base.ExecutionEngineCommon._uid_gid_from_str')
-    # def test_04__setup_container_user(self, mock_eecom, mock_auth,
-    #                                   mock_local, mock_msg):
-    #     """ Override method ExecutionEngineCommon._setup_container_user()."""
-    #     mock_eecom.side_effect = (None, None)
-    #     status = self.ufake._setup_container_user(":lalves")
-    #     self.assertFalse(status)
-
-    @patch('udocker.container.localrepo.LocalRepository')
-    def test_05__get_volume_bindings(self, mock_local):
+    def test_04__get_volume_bindings(self):
         """Get the volume bindings string for fakechroot run."""
-        out = self.ufake._get_volume_bindings()
+        ufake = FakechrootEngine(self.conf, self.local, self.xmode)
+        out = ufake._get_volume_bindings()
         self.assertEqual(out, ("", ""))
 
-    @patch('udocker.container.localrepo.LocalRepository')
-    def test_06__get_access_filesok(self, mock_local):
+    def test_05__get_access_filesok(self):
         """Circumvent mpi init issues when calling access().
         A list of certain existing files is provided
         """
-        out = self.ufake._get_access_filesok()
+        ufake = FakechrootEngine(self.conf, self.local, self.xmode)
+        out = ufake._get_access_filesok()
         self.assertEqual(out, "")
 
-    # @patch('udocker.utils.fileutil.FileUtil')
-    # @patch('udocker.msg.Msg')
-    # @patch('udocker.container.structure.ContainerStructure')
-    # @patch('udocker.container.localrepo.LocalRepository')
-    # def test_07__fakechroot_env_set(self, mock_local, mock_struct,
-    #                                 mock_msg, mock_futil):
-    #     """fakechroot environment variables to set."""
-    #     mock_futil.return_value.find_file_in_dir.return_value = True
-    #     self.ufake._fakechroot_env_set()
-    #     self.assertTrue(mock_eecom.return_value.exec_mode.called)
+    # TODO: implement WIP
+    @patch.object(FakechrootEngine, '_get_volume_bindings')
+    @patch.object(FakechrootEngine, '_select_fakechroot_so')
+    @patch.object(FakechrootEngine, '_get_access_filesok')
+    @patch.object(FakechrootEngine, '_is_volume')
+    @patch('udocker.engine.fakechroot.os.path.realpath')
+    @patch('udocker.engine.fakechroot.ElfPatcher.select_patchelf')
+    @patch('udocker.engine.fakechroot.ElfPatcher.get_container_loader')
+    @patch('udocker.engine.fakechroot.ElfPatcher.get_ld_library_path')
+    @patch('udocker.engine.fakechroot.FileUtil')
+    @patch('udocker.engine.fakechroot.Msg')
+    def test_06__fakechroot_env_set(self, mock_msg, mock_futil, mock_elfldp,
+                                    mock_elfload, mock_elfsel,
+                                    mock_rpath, mock_isvol, mock_fok, mock_sel,
+                                    mock_getvol):
+        """fakechroot environment variables to set."""
+        mock_getvol.return_value = ('v1:v2', 'm1:m2:m3')
+        mock_sel.return_value = '/ROOT/lib/libfakechroot.so'
+        mock_fok.return_value = 'a:b:c'
+        mock_rpath.return_value = '/bin/fake.so'
+        mock_elfldp.return_value = '/a:/b:/c'
+        mock_elfload.return_value = '/ROOT/elf'
+        mock_elfsel.return_value = '/bin/pelf'
+        mock_futil.return_value.find_file_in_dir.return_value = True
+        mock_isvol.return_value = True
+        self.xmode = 'F1'
+        # ufake = FakechrootEngine(self.conf, self.local, self.xmode)
+        # ufake._fakechroot_env_set()
+        # self.assertTrue(mock_eecom.return_value.exec_mode.called)
 
-    # @patch('udocker.msg.Msg')
-    # @patch('udocker.container.structure.ContainerStructure')
-    # @patch('udocker.container.localrepo.LocalRepository')
-    # def test_08_run(self, mock_local, mock_struct, mock_msg):
-    #     """Execute a Docker container using Fakechroot.
-    #     This is the main
-    #     method invoked to run the a container with Fakechroot.
-    #       * argument: container_id or name
-    #       * options:  many via self.opt see the help
-    #     """
-    #     status = self.ufake.run("container_id")
-    #     self.assertEqual(status, 2)
+    def test_08__run_invalid_options(self):
+        """FakechrootEngine._run_invalid_options()"""
+        pass
+
+    def test_09__run_add_script_support(self):
+        """FakechrootEngine._run_add_script_support()"""
+        pass
+
+    # TODO: missing more tests/options here
+    @patch.object(FakechrootEngine, '_cont2host')
+    @patch.object(FakechrootEngine, '_run_banner')
+    @patch.object(FakechrootEngine, '_run_add_script_support')
+    @patch.object(FakechrootEngine, '_set_cpu_affinity')
+    @patch.object(FakechrootEngine, '_run_env_cleanup_list')
+    @patch.object(FakechrootEngine, '_check_env')
+    @patch.object(FakechrootEngine, '_fakechroot_env_set')
+    @patch.object(FakechrootEngine, '_run_env_set')
+    @patch.object(FakechrootEngine, '_run_invalid_options')
+    @patch.object(FakechrootEngine, '_run_init')
+    @patch.object(FakechrootEngine, '_uid_check_noroot')
+    @patch('udocker.engine.fakechroot.subprocess.call')
+    @patch('udocker.engine.fakechroot.ElfPatcher')
+    @patch('udocker.engine.fakechroot.Msg')
+    def test_10_run(self, mock_msg, mock_elfp, mock_subp, mock_uidchk,
+                    mock_rinit, mock_rinval, mock_renv, mock_fakeenv,
+                    mock_chkenv, mock_renvclean, mock_setaff, mock_raddsup,
+                    mock_rbanner, mock_c2host):
+        """Execute a Docker container using Fakechroot.
+        This is the main
+        method invoked to run the a container with Fakechroot.
+          * argument: container_id or name
+          * options:  many via self.opt see the help
+        """
+        mock_rinit.return_value = '/bin/exec'
+        mock_elfp.return_value.check_container_path.return_value = True
+        mock_chkenv.return_value = True
+        mock_setaff.return_value = ['1', '2']
+        mock_elfp.return_value.get_container_loader.return_value = '/ROOT/xx'
+        mock_raddsup.return_value = ['/ROOT/xx.sh']
+        mock_c2host.return_value = '/yy/xx'
+        mock_subp.return_value = 0
+        ufake = FakechrootEngine(self.conf, self.local, self.xmode)
+        status = ufake.run("container_id")
+        self.assertEqual(status, 0)
 
 
 if __name__ == '__main__':
