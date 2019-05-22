@@ -236,8 +236,8 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.subprocess.call')
     @patch('udocker.utils.fileutil.os.path.isfile')
     def test_11_verify_tar(self, mock_isfile, mock_call, mock_msg):
-        """Test FileUtil.verify_tar() check tar file - 01."""
-        mock_msg.level = 0
+        """Test FileUtil.verify_tar() check tar file."""
+        mock_msg.return_value.level.return_value = 0
         mock_isfile.return_value = False
         mock_call.return_value = 0
         status = FileUtil(self.conf, "tarball.tar").verify_tar()
