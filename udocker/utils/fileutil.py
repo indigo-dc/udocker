@@ -68,8 +68,7 @@ class FileUtil(object):
     def mktmp(self):
         """Generate a temporary filename"""
         while True:
-            tmp_file = self._tmpdir + "/" + \
-                Unique().filename(self.basename)
+            tmp_file = self._tmpdir + "/" + Unique().filename(self.basename)
             if not os.path.exists(tmp_file):
                 FileUtil.tmptrash[tmp_file] = True
                 self.filename = tmp_file
