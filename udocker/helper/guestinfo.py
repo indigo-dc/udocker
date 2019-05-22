@@ -12,7 +12,7 @@ class GuestInfo(object):
 
     def __init__(self, conf, root_dir):
         self.conf = conf
-        self._root_dir = root_dir
+        self.root_dir = root_dir
         self.binarylist = ["/lib64/ld-linux-x86-64.so",
                            "/lib64/ld-linux-x86-64.so.2",
                            "/lib64/ld-linux-x86-64.so.3",
@@ -23,8 +23,8 @@ class GuestInfo(object):
 
     def get_filetype(self, filename):
         """Get the file architecture"""
-        if not filename.startswith(self._root_dir):
-            filename = self._root_dir + "/" + filename
+        if not filename.startswith(self.root_dir):
+            filename = self.root_dir + "/" + filename
         if os.path.islink(filename):
             f_path = os.readlink(filename)
             if not f_path.startswith("/"):
@@ -38,7 +38,7 @@ class GuestInfo(object):
     def arch(self):
         """Get guest system architecture"""
         for filename in self.binarylist:
-            f_path = self._root_dir + filename
+            f_path = self.root_dir + filename
             filetype = self.get_filetype(f_path)
             if not filetype:
                 continue
@@ -55,14 +55,14 @@ class GuestInfo(object):
 
     def osdistribution(self):
         """Get guest operating system distribution"""
-        for f_path in FileUtil(self.conf, self._root_dir + "/etc/.+-release").match():
+        for f_path in FileUtil(self.conf, self.root_dir + "/etc/.+-release").match():
             if os.path.exists(f_path):
                 osinfo = FileUtil(self.conf, f_path).getdata()
                 match = re.match(r"([^=]+) release (\d+)", osinfo)
                 if match and match.group(1):
                     return (match.group(1).split(" ")[0],
                             match.group(2).split(".")[0])
-        f_path = self._root_dir + "/etc/lsb-release"
+        f_path = self.root_dir + "/etc/lsb-release"
         if os.path.exists(f_path):
             distribution = ""
             version = ""
@@ -77,7 +77,7 @@ class GuestInfo(object):
                 version = match.group(1).split("=")[0]
             if distribution and version:
                 return (distribution, version)
-        f_path = self._root_dir + "/etc/os-release"
+        f_path = self.root_dir + "/etc/os-release"
         if os.path.exists(f_path):
             distribution = ""
             version = ""
