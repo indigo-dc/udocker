@@ -85,6 +85,7 @@ class PRootEngine(ExecutionEngineCommon):
         """Get mapping of TCP/IP ports"""
         proot_netmap_list = []
         for (cont_port, host_port) in self._get_portsmap().iteritems():
+            # TODO: Why the aditional space in "%d:%d "
             proot_netmap_list.extend(["-p", "%d:%d " % (cont_port, host_port)])
         if self.opt["netcoop"]:
             proot_netmap_list.extend(["-n", ])
