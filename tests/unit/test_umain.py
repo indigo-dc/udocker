@@ -17,11 +17,11 @@ from udocker.umain import UMain
 class UMainTestCase(TestCase):
     """Test UMain() class main udocker program."""
 
-    # def setUp(self):
-    #     pass
-    #
-    # def tearDown(self):
-    #     pass
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
 
     @patch('udocker.umain.sys.exit')
     @patch('udocker.umain.os')
@@ -109,7 +109,7 @@ class UMainTestCase(TestCase):
 
     @patch('udocker.umain.FileUtil')
     @patch('udocker.umain.FileUtil.cleanup')
-    @patch('udocker.umain.UMain._execute')
+    @patch.object(UMain, '_execute')
     @patch('udocker.umain.sys.exit')
     @patch('udocker.umain.os')
     @patch('udocker.umain.UdockerCLI')
