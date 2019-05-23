@@ -18,7 +18,7 @@ from udocker.utils.uprocess import Uprocess
 class UprocessTestCase(TestCase):
     """Test case for the Uprocess class."""
 
-    @patch('subprocess.Popen')
+    @patch('udocker.utils.uprocess.subprocess.Popen')
     def test_01__check_output(self, mock_popen):
         """Test _check_output()."""
         mock_popen.return_value.communicate.return_value = ("OUTPUT", None)
@@ -33,7 +33,7 @@ class UprocessTestCase(TestCase):
         self.assertRaises(subprocess.CalledProcessError,
                           uproc._check_output, "CMD")
 
-    @patch('subprocess.check_output')
+    @patch('udocker.utils.uprocess.subprocess.check_output')
     def test_02_check_output(self, mock_subp_chkout):
         """Test check_output()."""
         uproc = Uprocess()
