@@ -77,33 +77,48 @@ class UdockerToolsTestCase(TestCase):
         status = utools.is_available()
         self.assertTrue(status)
 
-    @patch('udocker.tools.GetURL')
-    @patch('udocker.tools.FileUtil.mktmp')
-    def test_04__download(self, mock_mktmp, mock_gurl):
+    @patch('udocker.tools.GetURL.get')
+    @patch('udocker.tools.FileUtil')
+    def test_04__download(self, mock_futil, mock_gurl):
         """Test UdockerTools.download()."""
+        utools = UdockerTools(self.local, self.conf)
+        utools.curl = mock_gurl
+        utools._tarball = "http://node.domain/filename.tgz"
         hdr = CurlHeader()
         hdr.data["X-ND-HTTPSTATUS"] = "200"
         hdr.data["X-ND-CURLSTATUS"] = 0
-        mock_mktmp.return_value = "tmptarball"
+        mock_futil.return_value.mktmp.return_value = "tmptarball"
         mock_gurl.get.return_value = (hdr, "")
-        utools = UdockerTools(self.local, self.conf)
-        utools._tarball = "http://node.domain/filename.tgz"
         status = utools._download(utools._tarball)
         self.assertEqual(status, "tmptarball")
 
-        hdr = CurlHeader()
         hdr.data["X-ND-HTTPSTATUS"] = "400"
         hdr.data["X-ND-CURLSTATUS"] = 1
-        mock_mktmp.return_value = "tmptarball"
-        mock_gurl.get.return_value = (hdr, "")
-        utools = UdockerTools(self.local, self.conf)
-        utools._tarball = "http://node.domain/filename.tgz"
         status = utools._download(utools._tarball)
         self.assertEqual(status, "")
 
-    def test_05__get_file(self):
+    @patch('udocker.tools.os.path.realpath')
+    @patch('udocker.tools.os.path.exists')
+    @patch('udocker.tools.os.path.isfile')
+    @patch.object(UdockerTools, '_download')
+    def test_05__get_file(self, mock_downl, mock_isfile,
+                          mock_exists, mock_rpath):
         """Test UdockerTools._get_file()."""
-        pass
+        location = ['http://node.domain/f.tgz']
+        mock_downl.return_value = 'f.tgz'
+        mock_isfile.return_value = True
+        utools = UdockerTools(self.local, self.conf)
+        status = utools._get_file(location)
+        self.assertEqual(status, ('f.tgz', 'http://node.domain/f.tgz'))
+
+        location = ['/bb/c/f.tgz']
+        mock_downl.return_value = 'f.tgz'
+        mock_isfile.return_value = True
+        mock_exists.return_value = True
+        mock_rpath.return_value = '/bb/c/f.tgz'
+        utools = UdockerTools(self.local, self.conf)
+        status = utools._get_file(location)
+        self.assertEqual(status, ('/bb/c/f.tgz', '/bb/c/f.tgz'))
 
     @patch('udocker.tools.os.path.isfile')
     @patch('udocker.tools.UdockerTools._version_isequal')
