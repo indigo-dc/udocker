@@ -25,6 +25,7 @@ if sys.version_info[0] >= 3:
 else:
     BUILTINS = "__builtin__"
 
+
 def is_writable_file(obj):
     """Check if obj is a file."""
     try:
@@ -55,6 +56,7 @@ class MsgTestCase(TestCase):
         msg = Msg(5)
         self._verify_descriptors(msg)
         self.assertEqual(msg.level, 5)
+
         msg = Msg(0)
         msg.setlevel(7)
         self._verify_descriptors(msg)
