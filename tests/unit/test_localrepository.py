@@ -961,11 +961,11 @@ class LocalRepositoryTestCase(TestCase):
         """Test LocalRepository()._verify_layer_file"""
         pass
 
-    @patch('udocker.container.localrepo.Msg.level')
+    @patch('udocker.container.localrepo.Msg')
     @patch.object(LocalRepository, '_load_structure')
-    def test_48_verify_image(self, mock_lstruct, mock_level):
+    def test_48_verify_image(self, mock_lstruct, mock_msg):
         """Test LocalRepository().verify_image()."""
-        mock_level.return_value = 0
+        mock_msg.level = 0
         lrepo = LocalRepository(self.conf)
         lrepo.verify_image()
         self.assertTrue(mock_lstruct.called)
