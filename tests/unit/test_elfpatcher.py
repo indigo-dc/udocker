@@ -280,11 +280,11 @@ class ElfPatcherTestCase(TestCase):
         elfp = ElfPatcher(self.conf, self.local, container_id)
         self.assertTrue(elfp.restore_ld())
 
-    @patch('udocker.helper.elfpatcher.os.path')
+    @patch('udocker.helper.elfpatcher.os.path.dirname')
     @patch('udocker.helper.elfpatcher.os.path.exists')
     @patch('udocker.helper.elfpatcher.Uprocess.get_output')
     def test_14__get_ld_config(self, mock_upout,
-                               mock_exists, mock_path):
+                               mock_exists, mock_dir):
         """Test ElfPatcher().get_ld_config().
 
         Get get directories from container ld.so.cache"""
@@ -297,6 +297,7 @@ class ElfPatcherTestCase(TestCase):
         mock_upout.return_value = \
             "ld.so.cache => /tmp/ROOT/etc/ld.so.cache\n" \
             "ld.so.cache => /tmp/ROOT/etc/ld.so"
+        mock_dir.side_effect = ['/ld.so.cache', '/ld.so']
         elfp = ElfPatcher(self.conf, self.local, container_id)
         status = elfp._get_ld_config()
         self.assertIsInstance(status, list)
@@ -314,16 +315,27 @@ class ElfPatcherTestCase(TestCase):
         status = elfp._find_ld_libdirs()
         self.assertEqual(status, [])
 
-    @patch('udocker.helper.elfpatcher.os.path')
+    @patch.object(ElfPatcher, '_find_ld_libdirs')
+    @patch('udocker.helper.elfpatcher.FileUtil.putdata')
+    @patch('udocker.helper.elfpatcher.FileUtil.getdata')
     @patch('udocker.helper.elfpatcher.os.path.exists')
-    def test_16_get_ld_libdirs(self,
-                               mock_exists, mock_path):
+    def test_16_get_ld_libdirs(self, mock_exists, mock_getdata,
+                               mock_pudata, mock_findlib):
         """Test ElfPatcher().get_ld_libdirs().
         Get ld library paths"""
         container_id = "SOME-RANDOM-ID"
+        mock_exists.return_value = True
+        mock_getdata.return_value = '/lib:/usr/lib'
         elfp = ElfPatcher(self.conf, self.local, container_id)
-        status = elfp.get_ld_libdirs()
-        self.assertEqual(status, [''])
+        status = elfp.get_ld_libdirs(False)
+        self.assertEqual(status, ['/lib', '/usr/lib'])
+
+        mock_exists.return_value = False
+        mock_pudata.return_value = '/lib:/usr/lib'
+        mock_findlib.return_value = ['/lib', '/usr/lib']
+        elfp = ElfPatcher(self.conf, self.local, container_id)
+        status = elfp.get_ld_libdirs(True)
+        self.assertEqual(status, ['/lib', '/usr/lib'])
 
     @patch.object(ElfPatcher, 'get_ld_libdirs')
     @patch.object(ElfPatcher, '_get_ld_config')

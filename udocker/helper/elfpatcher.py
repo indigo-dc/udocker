@@ -217,8 +217,8 @@ class ElfPatcher(object):
 
     def _get_ld_config(self):
         """Get get directories from container ld.so.cache"""
-        cmd = "ldconfig -p -C %s/%s" % (self._container_root,
-                                        self.conf['ld_so_cache'])
+        croot = self._container_root
+        cmd = "ldconfig -p -C %s/%s" % (croot, self.conf['ld_so_cache'])
         ld_dict = dict()
         ld_data = Uprocess().get_output(cmd)
         if not ld_data:
@@ -226,8 +226,7 @@ class ElfPatcher(object):
         for line in ld_data.split("\n"):
             match = re.search("([^ ]+) => ([^ ]+)", line)
             if match:
-                ld_dict[self._container_root + \
-                        os.path.dirname(match.group(2))] = True
+                ld_dict[croot + os.path.dirname(match.group(2))] = True
         return ld_dict.keys()
 
     # pylint: disable=too-many-nested-blocks
