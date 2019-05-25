@@ -338,16 +338,21 @@ class GetURLexeCurlTestCase(TestCase):
     @patch('udocker.utils.curl.Msg')
     def test_04__set_defaults(self, mock_msg):
         """Set defaults for curl command line options"""
+        mock_msg.level = 0
+        mock_msg.VER = 4
         geturl = GetURLexeCurl(self.conf)
         geturl._set_defaults()
         self.assertEqual(geturl._opts["insecure"], "")
 
+        mock_msg.level = 0
+        mock_msg.VER = 4
         geturl = GetURLexeCurl(self.conf)
         geturl.insecure = True
         geturl._set_defaults()
         self.assertEqual(geturl._opts["insecure"], "-k")
 
         mock_msg.level = 5
+        mock_msg.VER = 4
         geturl = GetURLexeCurl(self.conf)
         geturl._set_defaults()
         self.assertEqual(geturl._opts["verbose"], "-v")

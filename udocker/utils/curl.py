@@ -313,7 +313,7 @@ class GetURLexeCurl(GetURL):
         }
         if self.insecure:
             self._opts["insecure"] = "-k"
-        if Msg().level >= Msg.VER:
+        if Msg.level >= Msg.VER:
             self._opts["verbose"] = "-v"
         self._files = {
             "url":  "",
