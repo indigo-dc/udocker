@@ -159,8 +159,8 @@ class ContainerStructureTestCase(TestCase):
     @patch('udocker.container.structure.Msg')
     def test_08__untar_layers(self, mock_msg, mock_appwhite, mock_call):
         """Test ContainerStructure()._untar_layers()."""
-        mock_msg.return_value.level.return_value = 0
-        mock_msg.return_value.VER.return_value = 3
+        mock_msg.level = 0
+        mock_msg.VER = 3
         tarfiles = ["a.tar", "b.tar", ]
         mock_call.return_value = False
         prex = ContainerStructure(self.local, self.conf)
