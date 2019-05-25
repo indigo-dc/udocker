@@ -45,7 +45,7 @@ class FileBindTestCase(TestCase):
             fbind.container_orig_dir, fbind.container_dir + self.orig_dir)
         self.assertIsNone(fbind.host_bind_dir)
 
-    @patch('udocker.msg.Msg')
+    @patch('udocker.utils.filebind.Msg')
     @patch('udocker.utils.filebind.os.path.isdir')
     @patch('udocker.utils.filebind.os.path.realpath')
     @patch('udocker.utils.filebind.FileUtil')
