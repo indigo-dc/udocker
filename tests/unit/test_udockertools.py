@@ -135,6 +135,7 @@ class UdockerToolsTestCase(TestCase):
         self.assertFalse(status)
 
         mock_msg.level = 0
+        mock_msg.VER = 4
         mock_call.return_value = 1
         mock_isfile.return_value = True
         utools = UdockerTools(self.local, self.conf)
