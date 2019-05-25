@@ -180,17 +180,21 @@ class ElfPatcherTestCase(TestCase):
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.path.exists')
     @patch('udocker.helper.elfpatcher.FileUtil.putdata')
+    @patch.object(ElfPatcher, '_walk_fs')
     @patch.object(ElfPatcher, 'guess_elf_loader')
     @patch.object(ElfPatcher, 'select_patchelf')
     @patch.object(ElfPatcher, 'get_container_loader')
-    def test_10_patch_binaries(self, mock_gcl, mock_select,
-                               mock_guess, mock_putdata,
+    @patch.object(ElfPatcher, 'check_container_path')
+    def test_10_patch_binaries(self, mock_chkcont, mock_gcl, mock_select,
+                               mock_guess, mock_walk, mock_putdata,
                                mock_exists, mock_path):
         """Test ElfPatcher().patch_binaries().
 
         Set all executables and libs to the ld.so absolute pathname"""
         container_id = "SOME-RANDOM-ID"
         mock_exists.return_value = True
+        mock_chkcont.return_value = True
+        mock_walk.return_value = True
         mock_gcl.return_value = "/usr/bin/ld"
         mock_select.return_value = "runc-arm"
         mock_putdata.side_effect = ["10", "/tmp"]
