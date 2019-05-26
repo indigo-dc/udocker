@@ -48,12 +48,13 @@ class ElfPatcherTestCase(TestCase):
             elfp.select_patchelf()
         self.assertEqual(epexpt.exception.code, 1)
 
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
     @patch('udocker.helper.elfpatcher.os.path.islink')
     @patch('udocker.helper.elfpatcher.os.stat')
     @patch('udocker.helper.elfpatcher.os.walk')
     @patch('udocker.helper.elfpatcher.os.access')
     def test_03__walk_fs(self, mock_access, mock_walk,
-                         mock_stat, mock_islink):
+                         mock_stat, mock_islink, mock_rpath):
         """Test ElfPatcher()._walk_fs().
 
         Execute a shell command over each executable file in a given dir_path.
@@ -62,10 +63,11 @@ class ElfPatcherTestCase(TestCase):
         placeholder for the filename.
         """
         container_id = "SOME-RANDOM-ID"
+        mock_rpath.return_value = '/some/' + container_id
         mock_walk.return_value = [("/tmp", ["dir"], ["file"]), ]
         mock_islink.return_value = False
         mock_access.return_value = False
-        mock_stat.return_value.st_uid = ""
+        mock_stat.st_uid = ""
         elfp = ElfPatcher(self.conf, self.local, container_id)
         status = elfp._walk_fs("cmd", "/tmp", elfp.BIN)
         self.assertFalse(status)
