@@ -99,7 +99,7 @@ class ExecutionEngineCommon(object):
                 pass
             else:
                 if port_number < 1024:
-                    if port_number in mapped_ports.keys():
+                    if port_number in list(mapped_ports.keys()):
                         if mapped_ports[port_number] >= 1024:
                             continue
                     exposes_priv = True
@@ -637,7 +637,7 @@ class ExecutionEngineCommon(object):
             (env_var, dummy) = env_str.split("=", 1)
             if env_var:
                 container_env.append(env_var)
-        for (env_var, value) in os.environ.iteritems():
+        for (env_var, value) in list(os.environ.items()):
             if not env_var:
                 continue
             if env_var in self.conf['invalid_host_env'] or env_var in container_env:
