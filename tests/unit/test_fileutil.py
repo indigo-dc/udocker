@@ -78,8 +78,14 @@ class FileUtilTestCase(TestCase):
         pass
 
     @patch('udocker.utils.fileutil.os.umask')
-    def test_03_umask(self, mock_umask):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_03_umask(self, mock_regpre, mock_base, mock_absp, mock_umask):
         """Test FileUtil.umask()."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         mock_umask.return_value = 0
         futil = FileUtil(self.conf, "somedir")
         status = futil.umask()
@@ -99,17 +105,29 @@ class FileUtilTestCase(TestCase):
         self.assertTrue(status)
         self.assertEqual(FileUtil.orig_umask, 0)
 
-    def test_04_mktmp(self):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_04_mktmp(self, mock_regpre, mock_base, mock_absp):
         """Test FileUtil.mktmp()."""
-        self.conf['tmpdir'] = "/somewhere"
-        tmp_file = FileUtil(self.conf, "filename2.txt").mktmp()
-        self.assertTrue(tmp_file.endswith("-filename2.txt"))
-        self.assertTrue(tmp_file.startswith("/somewhere/udocker-"))
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename2.txt'
+        mock_absp.return_value = '/tmp/filename2.txt'
+        self.conf['tmpdir'] = '/somewhere'
+        tmp_file = FileUtil(self.conf, 'filename2.txt').mktmp()
+        self.assertTrue(tmp_file.endswith('-filename2.txt'))
+        self.assertTrue(tmp_file.startswith('/somewhere/udocker-'))
         self.assertGreater(len(tmp_file.strip()), 68)
 
     @patch('udocker.utils.fileutil.os.makedirs')
-    def test_05_mkdir(self, mock_mkdirs):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_05_mkdir(self, mock_regpre, mock_base, mock_absp, mock_mkdirs):
         """Create directory"""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         mock_mkdirs.return_value = True
         status = FileUtil(self.conf, "somedir").mkdir()
         self.assertTrue(status)
@@ -120,8 +138,14 @@ class FileUtilTestCase(TestCase):
 
     @patch.object(FileUtil, 'mktmp')
     @patch.object(FileUtil, 'mkdir')
-    def test_06_mktmpdir(self, mock_umkdir, mock_umktmp):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_06_mktmpdir(self, mock_regpre, mock_base, mock_absp, mock_umkdir, mock_umktmp):
         """Test FileUtil.mktmpdir()."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         mock_umktmp.return_value = "/dir"
         mock_umkdir.return_value = True
         status = FileUtil(self.conf, "somedir").mktmpdir()
@@ -133,8 +157,14 @@ class FileUtilTestCase(TestCase):
         self.assertEqual(status, None)
 
     @patch('udocker.utils.fileutil.os.stat')
-    def test_07_uid(self, mock_stat):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_07_uid(self, mock_regpre, mock_base, mock_absp, mock_stat):
         """Test FileUtil.uid()."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         mock_stat.return_value.st_uid = 1234
         self.conf['tmpdir'] = "/tmp"
         futil = FileUtil(self.conf, "filename.txt")
@@ -143,8 +173,14 @@ class FileUtilTestCase(TestCase):
 
     @patch.object(FileUtil, 'mktmp')
     @patch.object(FileUtil, 'mkdir')
-    def test_08__is_safe_prefix(self, mock_umkdir, mock_umktmp):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_08__is_safe_prefix(self, mock_regpre, mock_base, mock_absp, mock_umkdir, mock_umktmp):
         """Test FileUtil._is_safe_prefix()."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         futil = FileUtil(self.conf, "somedir")
         FileUtil.safe_prefixes = []
         status = futil._is_safe_prefix("/AAA")
@@ -164,10 +200,16 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.path.isdir')
     @patch.object(FileUtil, 'uid')
     @patch.object(FileUtil, '_is_safe_prefix')
-    def test_09_remove_file(self, mock_safe, mock_uid, mock_isdir,
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_09_remove_file(self, mock_regpre, mock_base, mock_absp, mock_safe, mock_uid, mock_isdir,
                             mock_isfile, mock_islink, mock_remove, mock_msg,
                             mock_exists, mock_realpath):
         """Test FileUtil.remove() with plain files."""
+        mock_regpre.return_value = None
+        mock_base.return_value = '/filename4.txt'
+        mock_absp.return_value = '/filename4.txt'
         mock_uid.return_value = 1000
         # file does not exist (regression of #50)
         mock_isdir.return_value = True
@@ -183,24 +225,32 @@ class FileUtilTestCase(TestCase):
         self.assertFalse(status)
 
         # wrong uid
+        mock_base.return_value = 'filename4.txt'
+        mock_absp.return_value = '/tmp/filename4.txt'
         mock_uid.return_value = 1001
         futil = FileUtil(self.conf, "/tmp/filename4.txt")
         status = futil.remove()
         self.assertFalse(status)
 
         # under /tmp
+        mock_base.return_value = 'filename4.txt'
+        mock_absp.return_value = '/tmp/filename4.txt'
         mock_uid.return_value = 1000
         futil = FileUtil(self.conf, "/tmp/filename4.txt")
         status = futil.remove()
         self.assertTrue(status)
 
         # under user home
+        mock_base.return_value = 'filename4.txt'
+        mock_absp.return_value = '/home/user/.udocker/filename4.txt'
         futil = FileUtil(self.conf, "/home/user/.udocker/filename4.txt")
         futil.safe_prefixes.append("/home/user/.udocker")
         status = futil.remove()
         self.assertTrue(status)
 
         # outside of scope 1
+        mock_base.return_value = 'filename4.txt'
+        mock_absp.return_value = '/etc/filename4.txt'
         mock_safe.return_value = False
         futil = FileUtil(self.conf, "/etc/filename4.txt")
         futil.safe_prefixes = []
@@ -215,10 +265,16 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.path.isfile')
     @patch.object(FileUtil, 'uid')
     @patch.object(FileUtil, '_is_safe_prefix')
-    def test_10_remove_dir(self, mock_safe, mock_uid, mock_isfile,
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_10_remove_dir(self, mock_regpre, mock_base, mock_absp, mock_safe, mock_uid, mock_isfile,
                            mock_islink, mock_isdir, mock_call,
                            mock_msg, mock_exists):
         """Test FileUtil.remove() with directories."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         mock_uid.return_value = 1000
         mock_isfile.return_value = False
         mock_islink.return_value = False
@@ -242,8 +298,14 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.Msg')
     @patch('udocker.utils.fileutil.subprocess.call')
     @patch('udocker.utils.fileutil.os.path.isfile')
-    def test_11_verify_tar(self, mock_isfile, mock_call, mock_msg):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_11_verify_tar(self, mock_regpre, mock_base, mock_absp, mock_isfile, mock_call, mock_msg):
         """Test FileUtil.verify_tar() check tar file."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         mock_msg.level = 0
         mock_msg.VER = 4
         mock_isfile.return_value = False
@@ -262,16 +324,28 @@ class FileUtilTestCase(TestCase):
         self.assertFalse(status)
 
     @patch.object(FileUtil, 'remove')
-    def test_12_cleanup(self, mock_remove):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_12_cleanup(self, mock_regpre, mock_base, mock_absp, mock_remove):
         """Test FileUtil.cleanup() delete tmp files."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         self.conf['tmpdir'] = "/tmp"
         FileUtil.tmptrash = {'file1.txt': None, 'file2.txt': None}
         FileUtil(self.conf, "").cleanup()
         self.assertEqual(mock_remove.call_count, 2)
 
     @patch('udocker.utils.fileutil.os.path.isdir')
-    def test_13_isdir(self, mock_isdir):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_13_isdir(self, mock_regpre, mock_base, mock_absp, mock_isdir):
         """Test FileUtil.isdir()."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         mock_isdir.return_value = True
         status = FileUtil(self.conf, "somedir").isdir()
         self.assertTrue(status)
@@ -281,14 +355,26 @@ class FileUtilTestCase(TestCase):
         self.assertFalse(status)
 
     @patch('udocker.utils.fileutil.os.stat')
-    def test_14_size(self, mock_stat):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_14_size(self, mock_regpre, mock_base, mock_absp, mock_stat):
         """Test FileUtil.size() get file size."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         mock_stat.return_value.st_size = 4321
         size = FileUtil(self.conf, "somefile").size()
         self.assertEqual(size, 4321)
 
-    def test_15_getdata(self):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_15_getdata(self, mock_regpre, mock_base, mock_absp):
         """Test FileUtil.size() get file content."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         with patch(BUILTINS + '.open', mock_open(read_data='qwerty')):
             data = FileUtil(self.conf, "somefile").getdata()
             self.assertEqual(data, 'qwerty')
@@ -297,8 +383,14 @@ class FileUtilTestCase(TestCase):
         """Test FileUtil.get1stline()."""
         pass
 
-    def test_17_putdata(self):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_17_putdata(self, mock_regpre, mock_base, mock_absp):
         """Test FileUtil.putdata()"""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         futil = FileUtil(self.conf, "somefile")
         futil.filename = ""
         data = futil.putdata("qwerty")
@@ -309,8 +401,14 @@ class FileUtilTestCase(TestCase):
             self.assertEqual(data, 'qwerty')
 
     @patch('udocker.utils.fileutil.Uprocess.get_output')
-    def test_18_find_exec(self, mock_gout):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_18_find_exec(self, mock_regpre, mock_base, mock_absp, mock_gout):
         """Test FileUtil.find_exec() find executable."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         mock_gout.return_value = None
         filename = FileUtil(self.conf, "executable").find_exec()
         self.assertEqual(filename, "")
@@ -324,9 +422,15 @@ class FileUtilTestCase(TestCase):
         self.assertEqual(filename, "")
 
     @patch('udocker.utils.fileutil.os.path.lexists')
-    def test_19_find_inpath(self, mock_exists):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_19_find_inpath(self, mock_regpre, mock_base, mock_absp, mock_exists):
         """Test FileUtil.find_inpath() file is in a path."""
         # exist
+        mock_regpre.return_value = None
+        mock_base.return_value = 'exec'
+        mock_absp.return_value = '/bin/exec'
         mock_exists.return_value = True
         filename = FileUtil(self.conf, "exec").find_inpath("/bin:/usr/bin")
         self.assertEqual(filename, "/bin/exec")
@@ -351,13 +455,25 @@ class FileUtilTestCase(TestCase):
         pass
 
     @patch('udocker.utils.fileutil.os.rename')
-    def test_21_rename(self, mock_rename):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_21_rename(self, mock_regpre, mock_base, mock_absp, mock_rename):
         """Test FileUtil.rename()."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         status = FileUtil(self.conf, "somefile").rename("otherfile")
         self.assertTrue(status)
 
-    def test_22_copyto(self):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_22_copyto(self, mock_regpre, mock_base, mock_absp):
         """Test FileUtil.copyto() file copy."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         with patch(BUILTINS + '.open', mock_open()):
             status = FileUtil(self.conf, "source").copyto("dest")
             self.assertTrue(status)
@@ -369,8 +485,14 @@ class FileUtilTestCase(TestCase):
             self.assertTrue(status)
 
     @patch('udocker.utils.fileutil.os.path.exists')
-    def test_23_find_file_in_dir(self, mock_exists):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_23_find_file_in_dir(self, mock_regpre, mock_base, mock_absp, mock_exists):
         """Test FileUtil.find_file_in_dir()."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/dir'
         file_list = []
         status = FileUtil(self.conf, "/dir").find_file_in_dir(file_list)
         self.assertEqual(status, "")
@@ -393,11 +515,17 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.path.dirname')
     @patch('udocker.utils.fileutil.os.path.realpath')
     @patch('udocker.utils.fileutil.os.readlink')
-    def test_24__link_change_apply(self, mock_readlink,
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_24__link_change_apply(self, mock_regpre, mock_base, mock_absp, mock_readlink,
                                    mock_realpath, mock_dirname,
                                    mock_access, mock_chmod, mock_stat,
                                    mock_remove, mock_symlink):
         """Actually apply the link convertion."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         mock_readlink.return_value = "/HOST/DIR"
         mock_realpath.return_value = "/HOST/DIR"
         mock_access.return_value = True
@@ -421,10 +549,17 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.path.dirname')
     @patch('udocker.utils.fileutil.os.path.realpath')
     @patch('udocker.utils.fileutil.os.readlink')
-    def test_25__link_set(self, mock_readlink, mock_realpath, mock_dirname,
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_25__link_set(self, mock_regpre, mock_base, mock_absp,
+                          mock_readlink, mock_realpath, mock_dirname,
                           mock_access, mock_chmod, mock_stat, mock_remove,
                           mock_symlink):
         """Test FileUtil._link_set()."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         mock_readlink.return_value = "X"
         status = FileUtil(self.conf, "/con")._link_set("/con/lnk", "", "/con", False)
         self.assertFalse(status)
@@ -476,15 +611,22 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.path.dirname')
     @patch('udocker.utils.fileutil.os.path.realpath')
     @patch('udocker.utils.fileutil.os.readlink')
-    def test_26__link_restore(self, mock_readlink, mock_realpath, mock_dirname,
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_26__link_restore(self, mock_regpre, mock_base, mock_absp,
+                              mock_readlink, mock_realpath, mock_dirname,
                               mock_access, mock_chmod, mock_stat, mock_remove,
                               mock_symlink):
         """Test FileUtil._link_restore()."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         mock_readlink.return_value = "/con/AAA"
         futil = FileUtil(self.conf, "/con")
         status = futil._link_restore("/con/lnk", "/con", "/root", False)
         self.assertTrue(status)
-        #
+
         mock_readlink.return_value = "/con/AAA"
         mock_symlink.reset_mock()
         mock_chmod.reset_mock()
@@ -535,10 +677,17 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.path.islink')
     @patch('udocker.utils.fileutil.os.walk')
     @patch('udocker.utils.fileutil.os.path.realpath')
-    def test_27_links_conv(self, mock_realpath, mock_walk, mock_islink,
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_27_links_conv(self, mock_regpre, mock_base, mock_absp,
+                           mock_realpath, mock_walk, mock_islink,
                            mock_lstat, mock_is_safe_prefix, mock_msg,
                            mock_link_set, mock_link_restore):
         """Test FileUtil.links_conv()."""
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
         mock_realpath.return_value = "/ROOT"
         mock_is_safe_prefix.return_value = False
         futil = FileUtil(self.conf, "/ROOT")
@@ -607,7 +756,11 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.path.isdir')
     @patch('udocker.utils.fileutil.os.path.basename')
     @patch('udocker.utils.fileutil.os.path.dirname')
-    def test_28_match(self, mock_osdir, mock_osbase, mock_isdir, mock_osls):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_28_match(self, mock_regpre, mock_base, mock_absp,
+                      mock_osdir, mock_osbase, mock_isdir, mock_osls):
         """Test FileUtil.match()."""
         pass
 
