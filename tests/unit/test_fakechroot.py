@@ -65,10 +65,10 @@ class FakechrootEngineTestCase(TestCase):
         self.assertTrue(mock_msgerr.called)
         self.assertEqual(out, 'fake1')
 
-    @patch('udocker.engine.fakechroot.ExecutionEngineCommon')
+    @patch('udocker.engine.fakechroot.ExecutionEngineCommon._setup_container_user_noroot')
     def test_03__setup_container_user(self, mock_cmm):
         """ Override method ExecutionEngineCommon._setup_container_user()."""
-        mock_cmm.return_value._setup_container_user_noroot.return_value = True
+        mock_cmm.return_value = True
         ufake = FakechrootEngine(self.conf, self.local, self.xmode)
         status = ufake._setup_container_user("lalves")
         self.assertTrue(status)
