@@ -564,7 +564,7 @@ class DockerLocalFileAPI(object):
             return []
         else:
             if not my_layer_id:
-                my_layer_id = structure["layers"].keys()[0]
+                my_layer_id = list(structure["layers"].keys())[0]
             found = ""
             for layer_id in structure["layers"]:
                 if "parent" not in structure["layers"][layer_id]["json"]:
