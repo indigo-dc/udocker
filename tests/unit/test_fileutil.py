@@ -56,15 +56,22 @@ class FileUtilTestCase(TestCase):
     def tearDown(self):
         pass
 
-    def test_01_init(self):
+    @patch('udocker.utils.fileutil.os.path.abspath')
+    @patch('udocker.utils.fileutil.os.path.basename')
+    @patch.object(FileUtil, '_register_prefix')
+    def test_01_init(self, mock_regpre, mock_base, mock_absp):
         """Test FileUtil(self.conf) constructor."""
-        self.conf['tmpdir'] = "/tmp"
-        futil = FileUtil(self.conf, "filename.txt")
-        self.assertEqual(futil.filename, os.path.abspath("filename.txt"))
+        self.conf['tmpdir'] = '/tmp'
+        mock_regpre.return_value = None
+        mock_base.return_value = 'filename.txt'
+        mock_absp.return_value = '/tmp/filename.txt'
+        futil = FileUtil(self.conf, 'filename.txt')
+        self.assertEqual(futil.filename, os.path.abspath('filename.txt'))
+        self.assertTrue(mock_regpre.called)
 
-        #mock_config.side_effect = AttributeError("abc")
-        #futil = FileUtil(self.conf)
-        #self.assertEqual(futil.filename, None)
+        futil = FileUtil(self.conf, '-')
+        self.assertEqual(futil.filename, '-')
+        self.assertEqual(futil.basename, '-')
 
     def test_02_register_prefix(self):
         """Test FileUtil.register_prefix()."""
