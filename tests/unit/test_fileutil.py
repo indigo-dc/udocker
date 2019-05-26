@@ -507,117 +507,90 @@ class FileUtilTestCase(TestCase):
         status = FileUtil(self.conf, "/dir").find_file_in_dir(file_list)
         self.assertEqual(status, "/dir/F2")
 
+    @patch('udocker.utils.fileutil.os.stat')
     @patch('udocker.utils.fileutil.os.symlink')
     @patch('udocker.utils.fileutil.os.remove')
-    @patch('udocker.utils.fileutil.os.stat')
     @patch('udocker.utils.fileutil.os.chmod')
     @patch('udocker.utils.fileutil.os.access')
-    @patch('udocker.utils.fileutil.os.path.dirname')
     @patch('udocker.utils.fileutil.os.path.realpath')
-    @patch('udocker.utils.fileutil.os.readlink')
     @patch('udocker.utils.fileutil.os.path.abspath')
     @patch('udocker.utils.fileutil.os.path.basename')
     @patch.object(FileUtil, '_register_prefix')
-    def test_24__link_change_apply(self, mock_regpre, mock_base, mock_absp, mock_readlink,
-                                   mock_realpath, mock_dirname,
-                                   mock_access, mock_chmod, mock_stat,
-                                   mock_remove, mock_symlink):
+    def test_24__link_change_apply(self, mock_regpre, mock_base, mock_absp,
+                                   mock_realpath, mock_access, mock_chmod,
+                                   mock_remove, mock_symlink, mock_stat):
         """Actually apply the link convertion."""
         mock_regpre.return_value = None
         mock_base.return_value = 'filename.txt'
         mock_absp.return_value = '/tmp/filename.txt'
-        mock_readlink.return_value = "/HOST/DIR"
         mock_realpath.return_value = "/HOST/DIR"
         mock_access.return_value = True
-        FileUtil(self.conf, "/con")._link_change_apply("/con/lnk_new", "/con/lnk", False)
+        futil = FileUtil(self.conf, "/con")
+        futil._link_change_apply("/con/lnk_new", "/con/lnk", False)
         self.assertTrue(mock_remove.called)
         self.assertTrue(mock_symlink.called)
 
         mock_access.return_value = False
-        mock_remove.reset_mock()
-        mock_symlink.reset_mock()
-        FileUtil(self.conf, "/con")._link_change_apply("/con/lnk_new", "/con/lnk", True)
+        mock_chmod.return_value = None
+        mock_remove.return_value = None
+        mock_symlink.return_value = None
+        mock_realpath.return_value = "/HOST/DIR"
+        futil = FileUtil(self.conf, "/con")
+        futil._link_change_apply("/con/lnk_new", "/con/lnk", True)
         self.assertTrue(mock_chmod.called)
         self.assertTrue(mock_remove.called)
         self.assertTrue(mock_symlink.called)
 
-    @patch('udocker.utils.fileutil.os.symlink')
-    @patch('udocker.utils.fileutil.os.remove')
-    @patch('udocker.utils.fileutil.os.stat')
-    @patch('udocker.utils.fileutil.os.chmod')
     @patch('udocker.utils.fileutil.os.access')
-    @patch('udocker.utils.fileutil.os.path.dirname')
-    @patch('udocker.utils.fileutil.os.path.realpath')
     @patch('udocker.utils.fileutil.os.readlink')
+    @patch.object(FileUtil, '_link_change_apply', return_value=None)
     @patch('udocker.utils.fileutil.os.path.abspath')
     @patch('udocker.utils.fileutil.os.path.basename')
     @patch.object(FileUtil, '_register_prefix')
-    def test_25__link_set(self, mock_regpre, mock_base, mock_absp,
-                          mock_readlink, mock_realpath, mock_dirname,
-                          mock_access, mock_chmod, mock_stat, mock_remove,
-                          mock_symlink):
+    def test_25__link_set(self, mock_regpre, mock_base, mock_absp, mock_lnchange,
+                          mock_readlink, mock_access):
         """Test FileUtil._link_set()."""
         mock_regpre.return_value = None
         mock_base.return_value = 'filename.txt'
         mock_absp.return_value = '/tmp/filename.txt'
         mock_readlink.return_value = "X"
-        status = FileUtil(self.conf, "/con")._link_set("/con/lnk", "", "/con", False)
+        futil = FileUtil(self.conf, "/con")
+        status = futil._link_set("/con/lnk", "", "/con", False)
         self.assertFalse(status)
 
         mock_readlink.return_value = "/con"
-        status = FileUtil(self.conf, "/con")._link_set("/con/lnk", "", "/con", False)
+        futil = FileUtil(self.conf, "/con")
+        status = futil._link_set("/con/lnk", "", "/con", False)
         self.assertFalse(status)
 
         mock_readlink.return_value = "/HOST/DIR"
-        mock_realpath.return_value = "/HOST/DIR"
-        mock_remove.reset_mock()
-        mock_symlink.reset_mock()
-        mock_chmod.reset_mock()
-        status = FileUtil(self.conf, "/con")._link_set("/con/lnk", "", "/con", False)
-        self.assertTrue(mock_remove.called)
-        self.assertTrue(mock_symlink.called)
-        self.assertFalse(mock_chmod.called)
+        futil = FileUtil(self.conf, "/con")
+        status = futil._link_set("/con/lnk", "", "/con", False)
+        self.assertTrue(mock_lnchange.called)
         self.assertTrue(status)
 
         mock_readlink.return_value = "/HOST/DIR"
-        mock_realpath.return_value = "/HOST/DIR"
         mock_access.return_value = True
-        mock_remove.reset_mock()
-        mock_symlink.reset_mock()
-        mock_chmod.reset_mock()
-        status = FileUtil(self.conf, "/con")._link_set("/con/lnk", "", "/con", True)
-        self.assertTrue(mock_remove.called)
-        self.assertTrue(mock_symlink.called)
-        self.assertFalse(mock_chmod.called)
+        futil = FileUtil(self.conf, "/con")
+        status = futil._link_set("/con/lnk", "", "/con", True)
+        self.assertTrue(mock_lnchange.called)
         self.assertTrue(status)
 
         mock_readlink.return_value = "/HOST/DIR"
-        mock_realpath.return_value = "/HOST/DIR"
         mock_access.return_value = False
-        mock_remove.reset_mock()
-        mock_symlink.reset_mock()
-        mock_chmod.reset_mock()
-        status = FileUtil(self.conf, "/con")._link_set("/con/lnk", "", "/con", True)
-        self.assertTrue(mock_remove.called)
-        self.assertTrue(mock_symlink.called)
-        self.assertTrue(mock_chmod.called)
+        futil = FileUtil(self.conf, "/con")
+        status = futil._link_set("/con/lnk", "", "/con", True)
+        self.assertTrue(mock_lnchange.called)
         self.assertTrue(status)
 
-    @patch('udocker.utils.fileutil.os.symlink')
-    @patch('udocker.utils.fileutil.os.remove')
-    @patch('udocker.utils.fileutil.os.stat')
-    @patch('udocker.utils.fileutil.os.chmod')
     @patch('udocker.utils.fileutil.os.access')
-    @patch('udocker.utils.fileutil.os.path.dirname')
-    @patch('udocker.utils.fileutil.os.path.realpath')
     @patch('udocker.utils.fileutil.os.readlink')
+    @patch.object(FileUtil, '_link_change_apply', return_value=None)
     @patch('udocker.utils.fileutil.os.path.abspath')
     @patch('udocker.utils.fileutil.os.path.basename')
     @patch.object(FileUtil, '_register_prefix')
-    def test_26__link_restore(self, mock_regpre, mock_base, mock_absp,
-                              mock_readlink, mock_realpath, mock_dirname,
-                              mock_access, mock_chmod, mock_stat, mock_remove,
-                              mock_symlink):
+    def test_26__link_restore(self, mock_regpre, mock_base, mock_absp, mock_lnchange,
+                              mock_readlink, mock_access):
         """Test FileUtil._link_restore()."""
         mock_regpre.return_value = None
         mock_base.return_value = 'filename.txt'
@@ -628,46 +601,35 @@ class FileUtilTestCase(TestCase):
         self.assertTrue(status)
 
         mock_readlink.return_value = "/con/AAA"
-        mock_symlink.reset_mock()
-        mock_chmod.reset_mock()
         futil = FileUtil(self.conf, "/con")
         status = futil._link_restore("/con/lnk", "/con", "/root", False)
+        self.assertTrue(mock_lnchange.called)
         self.assertTrue(status)
-        self.assertTrue(mock_symlink.called_with("/con/lnk", "/AAA"))
 
         mock_readlink.return_value = "/root/BBB"
-        mock_symlink.reset_mock()
-        mock_chmod.reset_mock()
         futil = FileUtil(self.conf, "/con")
         status = futil._link_restore("/con/lnk", "/con", "/root", False)
+        self.assertTrue(mock_lnchange.called)
         self.assertTrue(status)
-        self.assertTrue(mock_symlink.called_with("/con/lnk", "/BBB"))
 
         mock_readlink.return_value = "/XXX"
         futil = FileUtil(self.conf, "/con")
         status = futil._link_restore("/con/lnk", "/con", "/root", False)
+        self.assertTrue(mock_lnchange.called)
         self.assertFalse(status)
 
         mock_readlink.return_value = "/root/BBB"
-        mock_symlink.reset_mock()
-        mock_chmod.reset_mock()
         futil = FileUtil(self.conf, "/con")
         status = futil._link_restore("/con/lnk", "/con", "/root", True)
+        self.assertTrue(mock_lnchange.called)
         self.assertTrue(status)
-        self.assertTrue(mock_symlink.called_with("/con/lnk", "/BBB"))
-        self.assertFalse(mock_chmod.called)
 
         mock_readlink.return_value = "/root/BBB"
         mock_access.return_value = False
-        mock_symlink.reset_mock()
-        mock_chmod.reset_mock()
         futil = FileUtil(self.conf, "/con")
         status = futil._link_restore("/con/lnk", "", "/root", True)
+        self.assertTrue(mock_lnchange.called)
         self.assertTrue(status)
-        self.assertTrue(mock_symlink.called_with("/con/lnk", "/BBB"))
-        self.assertTrue(mock_chmod.called)
-        self.assertTrue(mock_remove.called)
-        self.assertTrue(mock_symlink.called)
 
     @patch.object(FileUtil, '_link_restore')
     @patch.object(FileUtil, '_link_set')
