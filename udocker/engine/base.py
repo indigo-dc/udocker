@@ -494,7 +494,7 @@ class ExecutionEngineCommon(object):
                     self.opt["user"] = user
                     self.opt["uid"] = ""
                     self.opt["gid"] = ""
-                elif self.opt["uid"] > 0:
+                elif int(self.opt["uid"]) > 0:
                     self.opt["user"] = ""
                 Msg().err("Warning: non-existing user will be created",
                           l=Msg.WAR)

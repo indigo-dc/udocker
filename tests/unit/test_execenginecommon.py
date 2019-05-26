@@ -464,7 +464,7 @@ class ExecutionEngineCommonTestCase(TestCase):
         status = ex_eng._setup_container_user("0:0")
         self.assertTrue(status)
         self.assertTrue(mock_cruser.called)
-        self.assertEqual(ex_eng.opt["user"], "")
+        self.assertEqual(ex_eng.opt["user"], 'root')
 
     # @patch('udocker.engine.base.NixAuthentication.get_group')
     # @patch('udocker.engine.base.NixAuthentication.add_group')
