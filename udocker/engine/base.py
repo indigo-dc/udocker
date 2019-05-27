@@ -673,6 +673,9 @@ class ExecutionEngineCommon(object):
         self.opt["env"].append("container_root=" + self.container_root)
         self.opt["env"].append("container_uuid=" + self.container_id)
         self.opt["env"].append("container_execmode=" + self.exec_mode)
+        # TODO: implement py3 with maketrans, in py2 import string
+        # py3: str.maketrans   py2: string.maketrans
+        # map = str.maketrans('', '', " '\"[]")
         names = str(self.container_names).translate(None, " '\"[]")
         self.opt["env"].append("container_names=" + names)
 
