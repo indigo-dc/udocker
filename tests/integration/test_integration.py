@@ -27,21 +27,12 @@ import pwd
 import unittest
 import mock
 
-__author__ = "udocker@lip.pt"
-__credits__ = ["PRoot http://proot.me",
-               "runC https://runc.io",
-               "Fakechroot https://github.com/dex4er/fakechroot"
-              ]
-__license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.0"
-__date__ = "2016"
+sys.path.append(".")
 
-try:
-    import udocker
-except ImportError:
-    sys.path.append(".")
-    sys.path.append("..")
-    import udocker
+import udocker
+from udocker.config import Config
+from udocker.msg import Msg
+from udocker.utils.fileutil import FileUtil
 
 STDOUT = sys.stdout
 DEVNULL = open("/dev/null", "w")
@@ -123,14 +114,14 @@ def do_cmd(self, mock_msg, t_argv, expect_msg=None, outfile=None, debug=False):
     """Execute a udocker command as called in the command line"""
     set_msglevels(mock_msg)
     udocker.Msg = mock_msg
-    udocker.Config()
+    Config()
     with mock.patch.object(sys, 'argv', t_argv):
         main = udocker.Main()
-        udocker.Msg.chlderr = DEVNULL
-        udocker.Msg.chldout = DEVNULL
-        udocker.Msg.chldnul = DEVNULL
-        udocker.Msg.level = 3
-        udocker.Config.verbose_level = 3
+        Msg.chlderr = DEVNULL
+        Msg.chldout = DEVNULL
+        Msg.chldnul = DEVNULL
+        Msg.level = 3
+        Config.verbose_level = 3
         if outfile:
             (orig_stdout_fd, orig_stderr_fd) = open_outfile(outfile)
         status = main.start()  # start
@@ -181,11 +172,11 @@ def do_action(t_argv):
     with mock.patch('udocker.Msg') as mock_msg:
         set_msglevels(mock_msg)
         udocker.Msg = mock_msg
-        udocker.Config()
+        Config()
         with mock.patch.object(sys, 'argv', t_argv):
             main = udocker.Main()
-            udocker.Msg.level = 3
-            udocker.Config.verbose_level = 3
+            Msg.level = 3
+            Config.verbose_level = 3
             return main.start()
 
 
@@ -210,29 +201,29 @@ class FuncTestBasic(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """Cleanup test"""
-        udocker.FileUtil().cleanup()
+        FileUtil().cleanup()
 
     def tearDown(self):
         """Cleanup test"""
-        udocker.FileUtil().cleanup()
+        FileUtil().cleanup()
 
-    @mock.patch('udocker.sys.exit')
-    @mock.patch('udocker.Msg')
+    @mock.patch('sys.exit')
+    @mock.patch('udocker.msg.Msg')
     def test_01_noargs(self, mock_msg, mock_exit):
         """Test invoke command without arguments"""
         do_cmd(self, mock_msg,
                [UDOCKER],
                "Error: invalid command")
 
-    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.msg.Msg')
     def test_02_help(self, mock_msg):
         """Test invoke help command"""
         do_cmd(self, mock_msg,
                [UDOCKER, "help"],
                " Syntax")
 
-    @mock.patch('udocker.sys.exit')
-    @mock.patch('udocker.Msg')
+    @mock.patch('sys.exit')
+    @mock.patch('udocker.msg.Msg')
     def test_03_help(self, mock_msg, mock_exit):
         """Test invoke --help option"""
         do_cmd(self, mock_msg,
@@ -246,8 +237,8 @@ class FuncTestBasic(unittest.TestCase):
                [UDOCKER, "run", "--help"],
                "=run: .*--")
 
-    @mock.patch('udocker.sys.exit')
-    @mock.patch('udocker.Msg')
+    @mock.patch('sys.exit')
+    @mock.patch('udocker.msg.Msg')
     def test_05_help_content(self, mock_msg, mock_exit):
         """Test verify help content"""
         do_cmd(self, mock_msg,
@@ -257,21 +248,21 @@ class FuncTestBasic(unittest.TestCase):
                "verify.* protect.* unprotect.* protect.* unprotect.* "
                "mkrepo.* help.* Examples:.* Notes:")
 
-    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.msg.Msg')
     def test_06_images(self, mock_msg):
         """Test invoke images command"""
         do_cmd(self, mock_msg,
                [UDOCKER, "images"],
                " REPOSITORY")
 
-    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.msg.Msg')
     def test_07_ps(self, mock_msg):
         """Test invoke ps command"""
         do_cmd(self, mock_msg,
                [UDOCKER, "ps"],
                " CONTAINER ID")
 
-    @mock.patch('udocker.Msg')
+    @mock.patch('udocker.msg.Msg')
     def test_08_search(self, mock_msg):
         """Test invoke search command"""
         do_cmd(self, mock_msg,

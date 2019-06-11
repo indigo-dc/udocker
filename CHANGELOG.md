@@ -1,4 +1,4 @@
-udocker (1.1.3)
+# udocker (1.1.3)
   * Support for nvidia drivers on ubuntu
     - closes: #162
   * Installation improvements
@@ -6,7 +6,7 @@ udocker (1.1.3)
   * Fix issue on Fn mode symlink convertion
     - partially addresses: #160
 
-udocker (1.1.2)
+# udocker (1.1.2)
   * Improve parsing of quotes in the command line
     - closes: #98
   * Fix version command to exit with 0
@@ -44,7 +44,8 @@ udocker (1.1.2)
   * Improve pathname translation in Fn modes for mounted dirs
     - partially addresses: #160
 
-udocker (1.1.1)
+# udocker (1.1.1)
+
   * New execution engine using singularity
   * Updated documentation with OpenMPI information and examples
   * Additional unit tests
@@ -67,7 +68,7 @@ udocker (1.1.1)
   * Allow run as root flag
     - closes: #91
 
-udocker (1.1.0)
+# udocker (1.1.0)
 
   * Support image names prefixed by registry similarly to docker 
   * Add execution engine selection logic
@@ -81,11 +82,11 @@ udocker (1.1.0)
   * Prevent creation of .udocker when UDOCKER_KEYSTORE is used
     - closes: #75
 
-udocker (1.0.4)
+# udocker (1.0.4)
 
   * Documentation fixes
 
-udocker (1.0.3)
+# udocker (1.0.3)
 
   * Support for import Docker containers in newer metadata structure
   * Improve the command line parsing
@@ -106,14 +107,14 @@ udocker (1.0.3)
   * Fix validation of volumes specification
     - closes: #43
 
-udocker (1.0.2)
+# udocker (1.0.2)
 
   * Improve download on repositories that fail authentication on /v2
   * Improve run verification of binaries with recursive symbolic links
   * Improve accelerated seccomp on kernels >= 4.8.0
     - closes: #40
 
-udocker (1.0.1)
+# udocker (1.0.1)
 
   * Minor bugfixes
   * Executable name changed from udocker.py to udocker
@@ -135,7 +136,7 @@ udocker (1.0.1)
   * Provide --insecure command line parameter for SSL requests
     - closes: #31
 
-udocker (1.0.0)
+# udocker (1.0.0)
 
   * Initial version
 
