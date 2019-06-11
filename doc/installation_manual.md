@@ -72,8 +72,18 @@ When using the setup.py provided in the release after downloading use:
   python setup.py install --home $HOME/bin/
 ```
 
+### 2.3. Install from pypi tarball
 
-### 2.3. OBTAINING THE URL OF THE TARBALL
+After download of tarball from PYPI, you can uncompress, and set the
+udocker executable in your PATH:
+
+```
+  ls udocker-1.0.11.tgz
+  tar zxvf udocker-1.0.11.tgz
+  export PATH=`pwd`/udocker:$PATH
+```
+
+### 2.4. OBTAINING THE URL OF THE TARBALL
 
 The udocker installation tarball mentioned in section 2.2 can be obtained using the 
 following method. First download udocker. Second use udocker itself to display the
@@ -90,7 +100,7 @@ as explained in section 2.2, udocker can be deployed without having to downloade
 everytime from the official repositories. The UDOCKER_TARBALL environment variable
 can also be pointed to an http or https URL.
 
-### 2.4. FORCE REINSTALLATION
+### 2.5. FORCE REINSTALLATION
 
 To force download and reinstallation of the udocker tools. Invoke udocker install 
 with the flag `--force`:
