@@ -26,8 +26,8 @@ PURPLE='\033[1;36m'
 NC='\033[0m'
 ASSERT_STR="${BLUE}Assert:${NC}"
 RUNNING_STR="${BLUE}Running:${NC}"
-OK_STR="${GREEN}OK${NC}"
-FAIL_STR="${RED}FAIL${NC}"
+OK_STR="${GREEN}[OK]${NC}"
+FAIL_STR="${RED}[FAIL]${NC}"
 THIS_SCRIPT_NAME=$( basename "$0" )
 
 function print_ok
@@ -45,9 +45,72 @@ echo "* This script tests all udocker CLI and options *"
 echo "================================================="
 
 echo "udocker with no options, or udocker help,-h,--help: show help message"
-udocker; return=$? >/dev/null 2>&1
+udocker ; return=$?
+echo " "
 if [ $return == 0 ]; then
     print_ok;   echo "    udocker"
 else
     print_fail; echo "    udocker"
 fi
+
+udocker help >/dev/null 2>&1 ; return=$?
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker help"
+else
+    print_fail; echo "    udocker help"
+fi
+
+udocker -h >/dev/null 2>&1 ; return=$?
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker -h"
+else
+    print_fail; echo "    udocker -h"
+fi
+
+# ##################################################################
+echo "---->"
+echo "udocker listconf"
+udocker listconf; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker listconf"
+else
+    print_fail; echo "    udocker listconf"
+fi
+
+# ##################################################################
+echo "---->"
+echo "udocker version, -V, --version"
+udocker version; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker version"
+else
+    print_fail; echo "    udocker version"
+fi
+
+udocker -V >/dev/null 2>&1 ; return=$?
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker -V"
+else
+    print_fail; echo "    udocker -V"
+fi
+
+udocker --version >/dev/null 2>&1 ; return=$?
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker --version"
+else
+    print_fail; echo "    udocker --version"
+fi
+
+# ##################################################################
+echo "---->"
+echo "udocker install, udocker install --force"
+udocker version; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker version"
+else
+    print_fail; echo "    udocker version"
+fi
+
