@@ -54,7 +54,7 @@ echo "================================================="
 echo "------------------------------------------------------------>"
 echo "udocker install, udocker install --force"
 clean
-udocker install; return=$?
+udocker install && ls ${DEFAULT_UDIR}/bin/proot-x86_64; return=$?
 echo " "
 if [ $return == 0 ]; then
     print_ok;   echo "    udocker install"
@@ -62,8 +62,7 @@ else
     print_fail; echo "    udocker install"
 fi
 
-udocker install --force >/dev/null 2>&1; return=$?
-echo " "
+udocker install --force && ls ${DEFAULT_UDIR}/bin/proot-x86_64 >/dev/null 2>&1; return=$?
 if [ $return == 0 ]; then
     print_ok;   echo "    udocker install --force"
 else
@@ -133,5 +132,12 @@ fi
 
 # ##################################################################
 echo "------------------------------------------------------------>"
-echo "udocker version, -V, --version"
+echo "udocker search -a"
+udocker search -a gromacs|grep ^gromacs; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker search -a"
+else
+    print_fail; echo "    udocker search -a"
+fi
 
