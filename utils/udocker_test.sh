@@ -133,11 +133,24 @@ fi
 # ##################################################################
 echo "------------------------------------------------------------>"
 echo "udocker search -a"
-udocker search -a gromacs|grep ^gromacs; return=$?
+udocker search -a gromacs | grep ^gromacs; return=$?
 echo " "
 if [ $return == 0 ]; then
     print_ok;   echo "    udocker search -a"
 else
     print_fail; echo "    udocker search -a"
 fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker pull"
+udocker pull ubuntu:18.04; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker pull"
+else
+    print_fail; echo "    udocker pull"
+fi
+
+## TODO: Add test to check layers after pull
 
