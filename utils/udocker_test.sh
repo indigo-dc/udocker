@@ -29,6 +29,7 @@ RUNNING_STR="${BLUE}Running:${NC}"
 OK_STR="${GREEN}[OK]${NC}"
 FAIL_STR="${RED}[FAIL]${NC}"
 THIS_SCRIPT_NAME=$( basename "$0" )
+DEFAULT_UDIR=$HOME/.udocker
 
 function print_ok
 {
@@ -40,10 +41,37 @@ function print_fail
   printf "${FAIL_STR}"
 }
 
+function clean
+{
+  rm -rf ${DEFAULT_UDIR}
+}
+
 echo "================================================="
 echo "* This script tests all udocker CLI and options *"
 echo "================================================="
 
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker install, udocker install --force"
+clean
+udocker install; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker install"
+else
+    print_fail; echo "    udocker install"
+fi
+
+udocker install --force >/dev/null 2>&1; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker install --force"
+else
+    print_fail; echo "    udocker install --force"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
 echo "udocker with no options, or udocker help,-h,--help: show help message"
 udocker ; return=$?
 echo " "
@@ -68,7 +96,7 @@ else
 fi
 
 # ##################################################################
-echo "---->"
+echo "------------------------------------------------------------>"
 echo "udocker listconf"
 udocker listconf; return=$?
 echo " "
@@ -79,7 +107,7 @@ else
 fi
 
 # ##################################################################
-echo "---->"
+echo "------------------------------------------------------------>"
 echo "udocker version, -V, --version"
 udocker version; return=$?
 echo " "
@@ -104,13 +132,6 @@ else
 fi
 
 # ##################################################################
-echo "---->"
-echo "udocker install, udocker install --force"
-udocker version; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker version"
-else
-    print_fail; echo "    udocker version"
-fi
+echo "------------------------------------------------------------>"
+echo "udocker version, -V, --version"
 
