@@ -29,7 +29,11 @@ RUNNING_STR="${BLUE}Running:${NC}"
 OK_STR="${GREEN}[OK]${NC}"
 FAIL_STR="${RED}[FAIL]${NC}"
 THIS_SCRIPT_NAME=$( basename "$0" )
+
+# Variables for the tests
 DEFAULT_UDIR=$HOME/.udocker
+DOCKER_IMG="ubuntu:18.04"
+CONT="ubuntu"
 
 function print_ok
 {
@@ -144,7 +148,7 @@ fi
 # ##################################################################
 echo "------------------------------------------------------------>"
 echo "udocker pull"
-udocker pull ubuntu:18.04; return=$?
+udocker pull ${DOCKER_IMG}; return=$?
 echo " "
 if [ $return == 0 ]; then
     print_ok;   echo "    udocker pull"
@@ -153,4 +157,45 @@ else
 fi
 
 ## TODO: Add test to check layers after pull
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker images"
+udocker images; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker images"
+else
+    print_fail; echo "    udocker images"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker create, create --name"
+udocker create ${DOCKER_IMG}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker create"
+else
+    print_fail; echo "    udocker create"
+fi
+
+udocker create --name=${CONT} ${DOCKER_IMG}; return=$?
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker create --name="
+else
+    print_fail; echo "    udocker create --name="
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker ps"
+udocker ps; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker ps"
+else
+    print_fail; echo "    udocker ps"
+fi
+
 
