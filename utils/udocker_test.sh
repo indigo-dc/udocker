@@ -156,6 +156,17 @@ else
     print_fail; echo "    udocker pull"
 fi
 
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker verify"
+udocker verify ${DOCKER_IMG}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker verify"
+else
+    print_fail; echo "    udocker verify"
+fi
+
 ## TODO: Add test to check layers after pull
 
 # ##################################################################
@@ -171,8 +182,19 @@ fi
 
 # ##################################################################
 echo "------------------------------------------------------------>"
+echo "udocker inspect (image)"
+udocker inspect ${DOCKER_IMG}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker inspect (image)"
+else
+    print_fail; echo "    udocker inspect (image)"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
 echo "udocker create, create --name"
-udocker create ${DOCKER_IMG}; return=$?
+CONT_ID=`udocker create ${DOCKER_IMG}`; return=$?
 echo " "
 if [ $return == 0 ]; then
     print_ok;   echo "    udocker create"
@@ -180,7 +202,7 @@ else
     print_fail; echo "    udocker create"
 fi
 
-udocker create --name=${CONT} ${DOCKER_IMG}; return=$?
+CONT_ID_NAME=`udocker create --name=${CONT} ${DOCKER_IMG}`; return=$?
 if [ $return == 0 ]; then
     print_ok;   echo "    udocker create --name="
 else
@@ -198,4 +220,38 @@ else
     print_fail; echo "    udocker ps"
 fi
 
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker name"
+udocker name ${CONT_ID} conti; return=$?
+udocker ps |grep conti
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker name"
+else
+    print_fail; echo "    udocker name"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker rmname"
+udocker rmname conti; return=$?
+udocker ps |grep ${CONT_ID}
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker rmname"
+else
+    print_fail; echo "    udocker rmname"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker inspect (container)"
+udocker inspect ${CONT_ID}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker inspect (container)"
+else
+    print_fail; echo "    udocker inspect (container)"
+fi
 
