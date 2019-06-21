@@ -27,12 +27,6 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 from udocker.umain import UMain
 
-# TODO: to be removed, simplified main
-# def main():
-#     """main execution function"""
-#     run_main = UMain(sys.argv)
-#     sys.exit(run_main.start())
-
 
 if __name__ == "__main__":
     UMain(sys.argv).start()

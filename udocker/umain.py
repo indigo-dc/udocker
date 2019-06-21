@@ -84,6 +84,17 @@ class UMain(object):
             exit_status = self.cli.do_help()
             return exit_status
 
+        if len(self.argv) > 2 and self.argv[1] in lhelp:
+            cmd_help = self.argv[2]
+            if cmd_help in cmds:
+                text = cmds[cmd_help].__doc__
+                Msg().out(text)
+                return exit_status
+            else:
+                Msg().err("Error: command not found: %s" % cmd_help)
+                exit_status = 1
+                return exit_status
+
         if "listconf" in self.argv:
             exit_status = self.cli.do_listconf()
             return exit_status
