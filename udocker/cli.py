@@ -1027,14 +1027,13 @@ Commands:
   images                        :List container images
   create <repo/image:tag>       :Create container from a pulled image
   ps                            :List created containers
-  rm  <container>               :Delete container
+  rm  <container|container-id>  :Delete container
   run <container>               :Execute container
   inspect <container>           :Low level information on container
   name <container_id> <name>    :Give name to container
   rmname <name>                 :Delete name from container
 
   rmi <repo/image:tag>          :Delete image
-  rm <container-id>             :Delete container
   import <tar> <repo/image:tag> :Import tar file (exported by docker)
   import - <repo/image:tag>     :Import from stdin (exported by docker)
   load -i <exported-image>      :Load image from file (saved by docker)
