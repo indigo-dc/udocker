@@ -19,6 +19,27 @@ tar is needed when using `udocker install` to unpackage binaries and libraries.
 
 ### 2.1. INSTALL LATEST VERSIONS DIRECTLY FROM GITHUB
 
+---
+**THIS Instructions will superseed the ones below**
+
+Download the install script
+
+```
+wget https://github.com/mariojmdavid/udocker/releases/download/v1.2.0/install_tarball.sh
+```
+
+Source this script, will download the tarball, unpack and set the PATH to udocker executable
+
+```
+source install_tarball.sh
+```
+
+A default configuration file can be found in directory `udocker/etc/udocker.conf`,
+you can copy it to your home directory `$HOME` or to `$UDOCKER` 
+
+
+---
+
 Just download and execute the udocker and the installation will be performed
 automatically.
 

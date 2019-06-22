@@ -837,6 +837,7 @@ class UdockerCLI(object):
         container_id = self.localrepo.get_container_id(container_or_image)
         print_dir = cmdp.get("-p")
         if cmdp.missing_options():               # syntax error
+            Msg().err("Error: missing options")
             return exit_status
 
         if container_id:
@@ -847,6 +848,8 @@ class UdockerCLI(object):
             if self.localrepo.cd_imagerepo(imagerepo, tag):
                 (container_json, dummy) = self.localrepo.get_image_attributes()
             else:
+                Msg().err("Error: image %s not found" %imagerepo)
+                exit_status = 1
                 return exit_status
 
         if print_dir:
@@ -863,6 +866,7 @@ class UdockerCLI(object):
             exit_status = 0
             return exit_status
 
+        Msg().err("Error: image or container %s not found" %container_or_image)
         return exit_status
 
     def do_verify(self, cmdp):
@@ -1027,14 +1031,13 @@ Commands:
   images                        :List container images
   create <repo/image:tag>       :Create container from a pulled image
   ps                            :List created containers
-  rm  <container>               :Delete container
+  rm  <container|container-id>  :Delete container
   run <container>               :Execute container
   inspect <container>           :Low level information on container
   name <container_id> <name>    :Give name to container
   rmname <name>                 :Delete name from container
 
   rmi <repo/image:tag>          :Delete image
-  rm <container-id>             :Delete container
   import <tar> <repo/image:tag> :Import tar file (exported by docker)
   import - <repo/image:tag>     :Import from stdin (exported by docker)
   load -i <exported-image>      :Load image from file (saved by docker)
