@@ -892,7 +892,8 @@ class UdockerCLI(object):
                 return exit_status
 
         exit_status = 1
-        Msg().err("Error: image verification failure status: {}".format(exit_status))
+        Msg().err("Error: image verification failure status: {}"\
+                  .format(exit_status))
         return exit_status
 
     def do_setup(self, cmdp):
@@ -974,7 +975,7 @@ class UdockerCLI(object):
             exit_status = 1
             return exit_status
 
-        Msg().err("Info: installation of udockertools successful", l=Msg.VER)
+        Msg().out("Info: installation of udockertools successful", l=Msg.VER)
         return exit_status
 
     def do_listconf(self):
@@ -985,7 +986,7 @@ class UdockerCLI(object):
         Msg().out(80*"-")
         Msg().out("\t\tConfiguration options")
         for varopt in self.conf:
-            Msg().out(varopt + ' = ', self.conf[varopt])
+            Msg().out(varopt + ' =', self.conf[varopt])
         Msg().out(80*"-")
         return exit_status
 
