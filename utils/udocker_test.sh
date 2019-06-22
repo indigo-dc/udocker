@@ -195,6 +195,7 @@ fi
 echo "------------------------------------------------------------>"
 echo "udocker create, create --name"
 CONT_ID=`udocker create ${DOCKER_IMG}`; return=$?
+echo "ContainerID = ${CONT_ID}"
 echo " "
 if [ $return == 0 ]; then
     print_ok;   echo "    udocker create"
@@ -222,7 +223,7 @@ fi
 
 # ##################################################################
 echo "------------------------------------------------------------>"
-echo "udocker name"
+echo "udocker name for ${CONT_ID}"
 udocker name ${CONT_ID} conti; return=$?
 udocker ps |grep conti
 echo " "
@@ -246,7 +247,7 @@ fi
 
 # ##################################################################
 echo "------------------------------------------------------------>"
-echo "udocker inspect (container)"
+echo "udocker inspect (container ${CONT_ID})"
 udocker inspect ${CONT_ID}; return=$?
 echo " "
 if [ $return == 0 ]; then
