@@ -877,18 +877,22 @@ class UdockerCLI(object):
         exit_status = 1
         (imagerepo, tag) = self._check_imagespec(cmdp.get("P1"))
         if (not imagerepo) or cmdp.missing_options():  # syntax error
+            Msg().err("Error: missing options")
+            exit_status = 1
             return exit_status
         else:
             Msg().out("Info: verifying: %s:%s" % (imagerepo, tag), l=Msg.INF)
             if not self.localrepo.cd_imagerepo(imagerepo, tag):
                 Msg().err("Error: selecting image and tag")
+                exit_status = 1
                 return exit_status
             elif self.localrepo.verify_image():
                 Msg().out("Info: image Ok", l=Msg.INF)
                 exit_status = 0
                 return exit_status
 
-        Msg().err("Error: image verification failure")
+        exit_status = 1
+        Msg().err("Error: image verification failure status: {}".format(exit_status))
         return exit_status
 
     def do_setup(self, cmdp):

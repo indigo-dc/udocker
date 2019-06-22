@@ -104,15 +104,20 @@ class UMain(object):
             return exit_status
         else:
             command = self.cmdp.get("", "CMD")
-            if command != "install":
-                self.cli.do_install(None)
-            exit_status = cmds[command](self.cmdp)  # executes command
-            if self.cmdp.missing_options():
-                Msg().err("Error: syntax error at: %s" %
-                          " ".join(self.cmdp.missing_options()))
+            if command in cmds:
+                if command != "install":
+                    self.cli.do_install(None)
+                exit_status = cmds[command](self.cmdp)  # executes command
+                if self.cmdp.missing_options():
+                    Msg().err("Error: syntax error at: %s" %
+                              " ".join(self.cmdp.missing_options()))
+                    exit_status = 1
+                    return exit_status
+                return exit_status
+            else:
+                Msg().err("Error: invalid command:", command, "\n")
                 exit_status = 1
-
-        return exit_status
+                return exit_status
 
     def start(self):
         """Program start and exception handling"""
@@ -123,4 +128,4 @@ class UMain(object):
             return sys.exit(1)
         else:
             FileUtil(self.conf).cleanup()
-            return exit_status
+            return sys.exit(exit_status)
