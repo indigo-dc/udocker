@@ -170,6 +170,7 @@ class UdockerCLI(object):
         for repo_item in repos:
             Msg().out(repo_item)
 
+        exit_status = 0
         return exit_status
 
     def do_import(self, cmdp):
@@ -216,6 +217,7 @@ class UdockerCLI(object):
                     tarfile, imagerepo, tag, name)
             if container_id:
                 Msg().out(container_id)
+                exit_status = 0
                 return exit_status
         else:
             (imagerepo, tag) = self._check_imagespec(imagespec)
@@ -224,11 +226,11 @@ class UdockerCLI(object):
                 return exit_status
             if self.dockerlocalfileapi.import_toimage(tarfile, imagerepo, tag,
                                                       move_tarball):
+                exit_status = 0
                 return exit_status
 
         Msg().err("Error: importing")
         exit_status = 1
-
         return exit_status
 
     def do_export(self, cmdp):
@@ -259,18 +261,18 @@ class UdockerCLI(object):
             exit_status = 1
             return exit_status
 
+        cstruct = ContainerStructure(self.localrepo, self.conf, container_id)
         if clone:
-            if ContainerStructure(self.localrepo, self.conf,
-                                  container_id).clone_tofile(tarfile):
+            if cstruct.clone_tofile(tarfile):
+                exit_status = 0
                 return exit_status
         else:
-            if ContainerStructure(self.localrepo, self.conf,
-                                  container_id).export_tofile(tarfile):
+            if cstruct.export_tofile(tarfile):
+                exit_status = 0
                 return exit_status
 
         Msg().err("Error: exporting")
         exit_status = 1
-
         return exit_status
 
     def do_clone(self, cmdp):
@@ -289,11 +291,11 @@ class UdockerCLI(object):
             return exit_status
         if self.dockerlocalfileapi.clone_container(container_id, name):
             Msg().out(container_id)
+            exit_status = 0
             return exit_status
 
         Msg().err("Error: cloning")
         exit_status = 1
-
         return exit_status
 
     def do_login(self, cmdp):
@@ -319,11 +321,11 @@ class UdockerCLI(object):
 
         v2_auth_token = self.dockerioapi.get_v2_login_token(username, password)
         if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, ""):
+            exit_status = 0
             return exit_status
 
         Msg().err("Error: invalid credentials")
         exit_status = 1
-
         return exit_status
 
     def do_logout(self, cmdp):
@@ -380,12 +382,12 @@ class UdockerCLI(object):
             v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
             self.dockerioapi.set_v2_login_token(v2_auth_token)
             if self.dockerioapi.get(imagerepo, tag):
+                exit_status = 0
                 return exit_status
             else:
                 Msg().err("Error: no files downloaded")
 
         exit_status = 1
-
         return exit_status
 
     def do_create(self, cmdp):
@@ -410,10 +412,10 @@ class UdockerCLI(object):
                           "or wrong format")
                 exit_status = 1
                 return exit_status
+            exit_status = 0
             return exit_status
 
         exit_status = 1
-
         return exit_status
 
     def _create(self, imagespec):
@@ -574,12 +576,14 @@ class UdockerCLI(object):
         name = cmdp.get("--name=")
         #
         if cmdp.missing_options(): # syntax error
+            exit_status = 1
             return exit_status
 
         if self.conf['location']:
             container_id = ""
         elif not container_or_image:
             Msg().err("Error: must specify container_id or image:tag")
+            exit_status = 1
             return exit_status
         else:
             container_id = self.localrepo.get_container_id(container_or_image)
@@ -594,16 +598,19 @@ class UdockerCLI(object):
                         container_id = self._create(imagerepo+":"+tag)
                     if not container_id:
                         Msg().err("Error: image or container not available")
+                        exit_status = 1
                         return exit_status
             if name and container_id:
                 if not self.localrepo.set_container_name(container_id, name):
                     Msg().err("Error: invalid container name format")
+                    exit_status = 1
                     return exit_status
 
         exec_mode = ExecutionMode(self.conf, self.localrepo, container_id)
         exec_engine = exec_mode.get_engine()
         if not exec_engine:
             Msg().err("Error: no execution engine for this execmode")
+            exit_status = 1
             return exit_status
 
         self._get_run_options(cmdp, exec_engine)
@@ -891,9 +898,9 @@ class UdockerCLI(object):
                 exit_status = 0
                 return exit_status
 
-        exit_status = 1
         Msg().err("Error: image verification failure status: {}"\
                   .format(exit_status))
+        exit_status = 1
         return exit_status
 
     def do_setup(self, cmdp):
@@ -939,8 +946,8 @@ class UdockerCLI(object):
         if nvidia:
             nvidia_mode = NvidiaMode(self.conf, self.localrepo, container_id)
             nvidia_mode.set_mode(force)
-        exec_mode = ExecutionMode(self.conf, self.localrepo, container_id)
 
+        exec_mode = ExecutionMode(self.conf, self.localrepo, container_id)
         if xmode:
             status = exec_mode.set_mode(xmode.upper(), force)
             if not status:
