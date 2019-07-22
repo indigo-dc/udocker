@@ -137,6 +137,12 @@ an ansible playbook is provided in the file ansible_install.yaml:
   ansible-playbook ansible_install.yaml
 ```
 
+Under Archlinux based systems ansible can be installed with:
+
+```
+  pacman -S ansible
+```
+
 Under debian based systems ansible can be installed with:
 
 ```
