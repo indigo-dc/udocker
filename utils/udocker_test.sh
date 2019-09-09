@@ -256,3 +256,46 @@ else
     print_fail; echo "    udocker inspect (container)"
 fi
 
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker rm ${CONT_ID}"
+udocker rm ${CONT_ID}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker rm (container)"
+else
+    print_fail; echo "    udocker rm (container)"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker setup ${CONT}"
+udocker setup ${CONT}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker setup ${CONT}"
+else
+    print_fail; echo "    udocker setup ${CONT}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker run ${CONT} env|sort"
+udocker run ${CONT} env|sort; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker run ${CONT} env|sort"
+else
+    print_fail; echo "    udocker run ${CONT} env|sort"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker setup --execmode=F3 ${CONT}"
+udocker setup --execmode=F3 ${CONT}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker setup --execmode=F3 ${CONT}"
+else
+    print_fail; echo "    udocker setup --execmode=F3 ${CONT}"
+fi
