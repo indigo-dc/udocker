@@ -32,6 +32,7 @@ THIS_SCRIPT_NAME=$( basename "$0" )
 
 # Variables for the tests
 DEFAULT_UDIR=$HOME/.udocker
+TEST_UDIR=$HOME/.udockermy
 DOCKER_IMG="ubuntu:18.04"
 CONT="ubuntu"
 
@@ -147,7 +148,7 @@ fi
 
 # ##################################################################
 echo "------------------------------------------------------------>"
-echo "udocker pull"
+echo "udocker pull ${DOCKER_IMG}"
 udocker pull ${DOCKER_IMG}; return=$?
 echo " "
 if [ $return == 0 ]; then
@@ -158,7 +159,7 @@ fi
 
 # ##################################################################
 echo "------------------------------------------------------------>"
-echo "udocker verify"
+echo "udocker verify ${DOCKER_IMG}"
 udocker verify ${DOCKER_IMG}; return=$?
 echo " "
 if [ $return == 0 ]; then
@@ -298,4 +299,37 @@ if [ $return == 0 ]; then
     print_ok;   echo "    udocker setup --execmode=F3 ${CONT}"
 else
     print_fail; echo "    udocker setup --execmode=F3 ${CONT}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker mkrepo ${TEST_UDIR}"
+udocker mkrepo ${TEST_UDIR}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker mkrepo ${TEST_UDIR}"
+else
+    print_fail; echo "    udocker mkrepo ${TEST_UDIR}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}"
+udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}"
+else
+    print_fail; echo "    udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
+udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
+else
+    print_fail; echo "    udocker --repo=${TEST_UDIR} verify"
 fi
