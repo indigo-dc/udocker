@@ -381,12 +381,12 @@ fi
 # ##################################################################
 echo "------------------------------------------------------------>"
 echo "udocker unprotect ${CONT} (container)"
-udocker protect ${CONT}; return=$?
+udocker unprotect ${CONT}; return=$?
 echo " "
 if [ $return == 0 ]; then
-    print_ok;   echo "    udocker protect ${CONT}"
+    print_ok;   echo "    udocker unprotect ${CONT}"
 else
-    print_fail; echo "    udocker protect ${CONT}"
+    print_fail; echo "    udocker unprotect ${CONT}"
 fi
 
 # ##################################################################
