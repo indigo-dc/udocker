@@ -338,8 +338,12 @@ fi
 
 # ##################################################################
 echo "------------------------------------------------------------>"
-echo "Download a docker tar img file to use - ${TAR_IMAGE_URL}"
-wget ${TAR_IMAGE_URL}
+
+if [ -z ${TAR_IMAGE_URL} ];
+then
+    echo "Download a docker tar img file ${TAR_IMAGE_URL}"
+    wget ${TAR_IMAGE_URL}
+fi
 
 # ##################################################################
 echo "------------------------------------------------------------>"
@@ -350,4 +354,48 @@ if [ $return == 0 ]; then
     print_ok;   echo "    udocker load -i ${TAR_IMAGE}"
 else
     print_fail; echo "    udocker load -i ${TAR_IMAGE}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker protect ${CONT} (container)"
+udocker protect ${CONT}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker protect ${CONT}"
+else
+    print_fail; echo "    udocker protect ${CONT}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker rm ${CONT} (try to remove protected container)"
+udocker rm ${CONT}; return=$?
+echo " "
+if [ $return == 1 ]; then
+    print_ok;   echo "    try to remove protected container ${CONT}"
+else
+    print_fail; echo "    try to remove protected container ${CONT}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker unprotect ${CONT} (container)"
+udocker protect ${CONT}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker protect ${CONT}"
+else
+    print_fail; echo "    udocker protect ${CONT}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker rm ${CONT} (try to remove unprotected container)"
+udocker rm ${CONT}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    try to remove unprotected container ${CONT}"
+else
+    print_fail; echo "    try to remove unprotected container ${CONT}"
 fi
