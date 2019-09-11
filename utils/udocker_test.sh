@@ -33,6 +33,8 @@ THIS_SCRIPT_NAME=$( basename "$0" )
 # Variables for the tests
 DEFAULT_UDIR=$HOME/.udocker
 TEST_UDIR=$HOME/.udockermy
+TAR_IMAGE="centos7.tar"
+TAR_IMAGE_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_IMAGE}"
 DOCKER_IMG="ubuntu:18.04"
 CONT="ubuntu"
 
@@ -331,5 +333,21 @@ echo " "
 if [ $return == 0 ]; then
     print_ok;   echo "    udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
 else
-    print_fail; echo "    udocker --repo=${TEST_UDIR} verify"
+    print_fail; echo "    udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "Download a docker tar img file to use - ${TAR_IMAGE_URL}"
+wget ${TAR_IMAGE_URL}
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker load -i ${TAR_IMAGE}"
+udocker load -i ${TAR_IMAGE}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker load -i ${TAR_IMAGE}"
+else
+    print_fail; echo "    udocker load -i ${TAR_IMAGE}"
 fi
