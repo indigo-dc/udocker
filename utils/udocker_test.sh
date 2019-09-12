@@ -34,7 +34,9 @@ THIS_SCRIPT_NAME=$( basename "$0" )
 DEFAULT_UDIR=$HOME/.udocker
 TEST_UDIR=$HOME/.udockermy
 TAR_IMAGE="centos7.tar"
+TAR_CONT="centos7-cont.tar"
 TAR_IMAGE_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_IMAGE}"
+TAR_CONT_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_CONT}"
 DOCKER_IMG="ubuntu:18.04"
 CONT="ubuntu"
 
@@ -339,8 +341,10 @@ fi
 # ##################################################################
 echo "------------------------------------------------------------>"
 
-if [ -z ${TAR_IMAGE_URL} ];
+if [[ -f ${TAR_IMAGE} ]];
 then
+    echo "tar img file exists ${TAR_IMAGE_URL}"
+else
     echo "Download a docker tar img file ${TAR_IMAGE_URL}"
     wget ${TAR_IMAGE_URL}
 fi
@@ -398,4 +402,37 @@ if [ $return == 0 ]; then
     print_ok;   echo "    try to remove unprotected container ${CONT}"
 else
     print_fail; echo "    try to remove unprotected container ${CONT}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+
+if [[ -f ${TAR_CONT} ]];
+then
+    echo "tar container file exists ${TAR_CONT_URL}"
+else
+    echo "Download a docker tar container file ${TAR_CONT_URL}"
+    wget ${TAR_CONT_URL}
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker import ${TAR_CONT} mycentos1:latest"
+udocker import ${TAR_CONT} mycentos1:latest; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker import ${TAR_CONT} mycentos1:latest"
+else
+    print_fail; echo "    udocker import ${TAR_CONT} mycentos1:latest"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker import --tocontainer --name=mycont ${TAR_CONT}"
+udocker import --tocontainer --name=mycont ${TAR_CONT}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker import --tocontainer --name=mycont ${TAR_CONT}"
+else
+    print_fail; echo "    udocker import --tocontainer --name=mycont ${TAR_CONT}"
 fi
