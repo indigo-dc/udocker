@@ -57,332 +57,140 @@ function clean
 
 function result
 {
+  echo " "
   if [ $return == 0 ]; then
-      print_ok; echo $STRING
+      print_ok; echo "    $STRING"
   else
-      print_fail; echo $STRING
+      print_fail; echo "    $STRING"
   fi
+  echo "------------------------------------------------------------>"
 }
 
 echo "================================================="
 echo "* This script tests all udocker CLI and options *"
 echo "================================================="
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-STRING="    T001: udocker install"
+STRING="T001: udocker install"
 clean
 udocker install && ls ${DEFAULT_UDIR}/bin/proot-x86_64; return=$?
 result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-STRING="    T002: udocker install --force"
+STRING="T002: udocker install --force"
 udocker install --force && ls ${DEFAULT_UDIR}/bin/proot-x86_64 >/dev/null 2>&1; return=$?
 result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
+STRING="T003: udocker (with no options)"
 udocker ; return=$?
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker (with no options)"
-else
-    print_fail; echo "    udocker (with no options)"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker help"
+STRING="T004: udocker help"
 udocker help >/dev/null 2>&1 ; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker help"
-else
-    print_fail; echo "    udocker help"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker -h"
+STRING="T005: udocker -h"
 udocker -h >/dev/null 2>&1 ; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker -h"
-else
-    print_fail; echo "    udocker -h"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker listconf"
+STRING="T006: udocker listconf"
 udocker listconf; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker listconf"
-else
-    print_fail; echo "    udocker listconf"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker version"
+STRING="T007: udocker version"
 udocker version; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker version"
-else
-    print_fail; echo "    udocker version"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker -V"
+STRING="T008: udocker -V"
 udocker -V >/dev/null 2>&1 ; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker -V"
-else
-    print_fail; echo "    udocker -V"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker --version"
+STRING="T009: udocker --version"
 udocker --version >/dev/null 2>&1 ; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker --version"
-else
-    print_fail; echo "    udocker --version"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker search -a"
+STRING="T010: udocker search -a"
 udocker search -a gromacs | grep ^gromacs; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker search -a"
-else
-    print_fail; echo "    udocker search -a"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker pull ${DOCKER_IMG}"
+STRING="T011: udocker pull ${DOCKER_IMG}"
 udocker pull ${DOCKER_IMG}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker pull"
-else
-    print_fail; echo "    udocker pull"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker verify ${DOCKER_IMG}"
+STRING="T012: udocker verify ${DOCKER_IMG}"
 udocker verify ${DOCKER_IMG}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker verify"
-else
-    print_fail; echo "    udocker verify"
-fi
-
+result
 ## TODO: Add test to check layers after pull
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker images"
+STRING="T013: udocker images"
 udocker images; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker images"
-else
-    print_fail; echo "    udocker images"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker inspect (image)"
+STRING="T014: udocker inspect (image)"
 udocker inspect ${DOCKER_IMG}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker inspect (image)"
-else
-    print_fail; echo "    udocker inspect (image)"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker create ${DOCKER_IMG}"
+STRING="T015: udocker create ${DOCKER_IMG}"
 CONT_ID=`udocker create ${DOCKER_IMG}`; return=$?
 echo "ContainerID = ${CONT_ID}"
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker create ${DOCKER_IMG}"
-else
-    print_fail; echo "    udocker create ${DOCKER_IMG}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker create --name=${CONT} ${DOCKER_IMG}"
+STRING="T016: udocker create --name=${CONT} ${DOCKER_IMG}"
 CONT_ID_NAME=`udocker create --name=${CONT} ${DOCKER_IMG}`; return=$?
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker create --name=${CONT} ${DOCKER_IMG}"
-else
-    print_fail; echo "    udocker create --name=${CONT} ${DOCKER_IMG}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker ps"
+STRING="T017: udocker ps"
 udocker ps; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker ps"
-else
-    print_fail; echo "    udocker ps"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker name ${CONT_ID}"
+STRING="T018: udocker name ${CONT_ID}"
 udocker name ${CONT_ID} conti; return=$?
 udocker ps |grep conti
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker name"
-else
-    print_fail; echo "    udocker name"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker rmname"
+STRING="T019: udocker rmname"
 udocker rmname conti; return=$?
 udocker ps |grep ${CONT_ID}
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker rmname"
-else
-    print_fail; echo "    udocker rmname"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker inspect (container ${CONT_ID})"
+STRING="T020: udocker inspect (container ${CONT_ID})"
 udocker inspect ${CONT_ID}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker inspect (container)"
-else
-    print_fail; echo "    udocker inspect (container)"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker clone --name=myclone ${CONT_ID}"
+STRING="T021: udocker clone --name=myclone ${CONT_ID}"
 udocker clone --name=myclone ${CONT_ID}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker clone --name=myclone ${CONT_ID}"
-else
-    print_fail; echo "    udocker clone --name=myclone ${CONT_ID}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker export -o myexportcont.tar ${CONT_ID}"
+STRING="T022: udocker export -o myexportcont.tar ${CONT_ID}"
 chmod -R u+x ${DEFAULT_UDIR}/containers/${CONT_ID}/ROOT
 udocker export -o myexportcont.tar ${CONT_ID}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker export -o myexportcont.tar ${CONT_ID}"
-else
-    print_fail; echo "    udocker export -o myexportcont.tar ${CONT_ID}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker rm ${CONT_ID}"
+STRING="T023: udocker rm ${CONT_ID}"
 udocker rm ${CONT_ID}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker rm (container)"
-else
-    print_fail; echo "    udocker rm (container)"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker setup ${CONT}"
+STRING="T024: udocker setup ${CONT}"
 udocker setup ${CONT}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker setup ${CONT}"
-else
-    print_fail; echo "    udocker setup ${CONT}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker run ${CONT} env|sort"
+STRING="T025: udocker run ${CONT} env|sort"
 udocker run ${CONT} env|sort; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker run ${CONT} env|sort"
-else
-    print_fail; echo "    udocker run ${CONT} env|sort"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker setup --execmode=F3 ${CONT}"
+STRING="T026: udocker setup --execmode=F3 ${CONT}"
 udocker setup --execmode=F3 ${CONT}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker setup --execmode=F3 ${CONT}"
-else
-    print_fail; echo "    udocker setup --execmode=F3 ${CONT}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker mkrepo ${TEST_UDIR}"
+STRING="T027: udocker mkrepo ${TEST_UDIR}"
 udocker mkrepo ${TEST_UDIR}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker mkrepo ${TEST_UDIR}"
-else
-    print_fail; echo "    udocker mkrepo ${TEST_UDIR}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}"
+STRING="T028: udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}"
 udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}"
-else
-    print_fail; echo "    udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
+STRING="T029: udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
 udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
-else
-    print_fail; echo "    udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
-fi
-
-# ##################################################################
-echo "------------------------------------------------------------>"
+result
 
 if [[ -f ${TAR_IMAGE} ]];
 then
@@ -391,64 +199,27 @@ else
     echo "Download a docker tar img file ${TAR_IMAGE_URL}"
     wget ${TAR_IMAGE_URL}
 fi
-
-# ##################################################################
 echo "------------------------------------------------------------>"
-echo "udocker load -i ${TAR_IMAGE}"
+
+STRING="T030: udocker load -i ${TAR_IMAGE}"
 udocker load -i ${TAR_IMAGE}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker load -i ${TAR_IMAGE}"
-else
-    print_fail; echo "    udocker load -i ${TAR_IMAGE}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker protect ${CONT} (container)"
+STRING="T031: udocker protect ${CONT} (container)"
 udocker protect ${CONT}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker protect ${CONT}"
-else
-    print_fail; echo "    udocker protect ${CONT}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker rm ${CONT} (try to remove protected container)"
+STRING="T032: udocker rm ${CONT} (try to remove protected container)"
 udocker rm ${CONT}; return=$?
-echo " "
-if [ $return == 1 ]; then
-    print_ok;   echo "    try to remove protected container ${CONT}"
-else
-    print_fail; echo "    try to remove protected container ${CONT}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker unprotect ${CONT} (container)"
+STRING="T033: udocker unprotect ${CONT} (container)"
 udocker unprotect ${CONT}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker unprotect ${CONT}"
-else
-    print_fail; echo "    udocker unprotect ${CONT}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker rm ${CONT} (try to remove unprotected container)"
+STRING="T034: udocker rm ${CONT} (try to remove unprotected container)"
 udocker rm ${CONT}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    try to remove unprotected container ${CONT}"
-else
-    print_fail; echo "    try to remove unprotected container ${CONT}"
-fi
-
-# ##################################################################
-echo "------------------------------------------------------------>"
+result
 
 if [[ -f ${TAR_CONT} ]];
 then
@@ -457,47 +228,20 @@ else
     echo "Download a docker tar container file ${TAR_CONT_URL}"
     wget ${TAR_CONT_URL}
 fi
-
-# ##################################################################
 echo "------------------------------------------------------------>"
-echo "udocker import ${TAR_CONT} mycentos1:latest"
+
+STRING="T035: udocker import ${TAR_CONT} mycentos1:latest"
 udocker import ${TAR_CONT} mycentos1:latest; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker import ${TAR_CONT} mycentos1:latest"
-else
-    print_fail; echo "    udocker import ${TAR_CONT} mycentos1:latest"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker import --tocontainer --name=mycont ${TAR_CONT}"
+STRING="T036: udocker import --tocontainer --name=mycont ${TAR_CONT}"
 udocker import --tocontainer --name=mycont ${TAR_CONT}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker import --tocontainer --name=mycont ${TAR_CONT}"
-else
-    print_fail; echo "    udocker import --tocontainer --name=mycont ${TAR_CONT}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker import --clone --name=clone_cont ${TAR_CONT}"
+STRING="T037: udocker import --clone --name=clone_cont ${TAR_CONT}"
 udocker import --clone --name=clone_cont ${TAR_CONT}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker import --clone --name=clone_cont ${TAR_CONT}"
-else
-    print_fail; echo "    udocker import --clone --name=clone_cont ${TAR_CONT}"
-fi
+result
 
-# ##################################################################
-echo "------------------------------------------------------------>"
-echo "udocker rmi ${DOCKER_IMG}"
+STRING="T038: udocker rmi ${DOCKER_IMG}"
 udocker rmi ${DOCKER_IMG}; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker rmi ${DOCKER_IMG}"
-else
-    print_fail; echo "    udocker rmi ${DOCKER_IMG}"
-fi
+result
