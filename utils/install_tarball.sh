@@ -30,4 +30,4 @@ rm -f udocker-${VER}.tar.gz
 rm -rf udocker
 wget https://github.com/mariojmdavid/udocker/releases/download/v${VER}/udocker-${VER}.tar.gz
 tar zxvf udocker-${VER}.tar.gz
-export PATH=${CWD}/udocker:$PATH
+export PATH=${PWD}/udocker:$PATH
