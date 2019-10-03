@@ -42,7 +42,7 @@ CONT="ubuntu"
 
 function print_ok
 {
-  printf "  ${OK_STR}"
+  printf "${OK_STR}"
 }
 
 function print_fail
@@ -55,48 +55,57 @@ function clean
   rm -rf ${DEFAULT_UDIR}
 }
 
+function result
+{
+  if [ $1 == 0 ]; then
+      print_ok; echo $2
+  else
+      print_fail; echo $2
+  fi
+}
+
 echo "================================================="
 echo "* This script tests all udocker CLI and options *"
 echo "================================================="
 
 # ##################################################################
 echo "------------------------------------------------------------>"
-echo "udocker install, udocker install --force"
+STRING="    T001-> udocker install"
 clean
 udocker install && ls ${DEFAULT_UDIR}/bin/proot-x86_64; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker install"
-else
-    print_fail; echo "    udocker install"
-fi
+result $return $STRING
 
+# ##################################################################
+echo "------------------------------------------------------------>"
+STRING="    T002-> udocker install --force"
 udocker install --force && ls ${DEFAULT_UDIR}/bin/proot-x86_64 >/dev/null 2>&1; return=$?
+result $return $STRING
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+udocker ; return=$?
 if [ $return == 0 ]; then
-    print_ok;   echo "    udocker install --force"
+    print_ok;   echo "    udocker (with no options)"
 else
-    print_fail; echo "    udocker install --force"
+    print_fail; echo "    udocker (with no options)"
 fi
 
 # ##################################################################
 echo "------------------------------------------------------------>"
-echo "udocker with no options, or udocker help,-h,--help: show help message"
-udocker ; return=$?
-echo " "
-if [ $return == 0 ]; then
-    print_ok;   echo "    udocker"
-else
-    print_fail; echo "    udocker"
-fi
-
+echo "udocker help"
 udocker help >/dev/null 2>&1 ; return=$?
+echo " "
 if [ $return == 0 ]; then
     print_ok;   echo "    udocker help"
 else
     print_fail; echo "    udocker help"
 fi
 
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker -h"
 udocker -h >/dev/null 2>&1 ; return=$?
+echo " "
 if [ $return == 0 ]; then
     print_ok;   echo "    udocker -h"
 else
@@ -116,7 +125,7 @@ fi
 
 # ##################################################################
 echo "------------------------------------------------------------>"
-echo "udocker version, -V, --version"
+echo "udocker version"
 udocker version; return=$?
 echo " "
 if [ $return == 0 ]; then
@@ -125,14 +134,22 @@ else
     print_fail; echo "    udocker version"
 fi
 
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker -V"
 udocker -V >/dev/null 2>&1 ; return=$?
+echo " "
 if [ $return == 0 ]; then
     print_ok;   echo "    udocker -V"
 else
     print_fail; echo "    udocker -V"
 fi
 
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker --version"
 udocker --version >/dev/null 2>&1 ; return=$?
+echo " "
 if [ $return == 0 ]; then
     print_ok;   echo "    udocker --version"
 else
