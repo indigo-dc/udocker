@@ -57,10 +57,10 @@ function clean
 
 function result
 {
-  if [ $1 == 0 ]; then
-      print_ok; echo $2
+  if [ $return == 0 ]; then
+      print_ok; echo $STRING
   else
-      print_fail; echo $2
+      print_fail; echo $STRING
   fi
 }
 
@@ -70,16 +70,16 @@ echo "================================================="
 
 # ##################################################################
 echo "------------------------------------------------------------>"
-STRING="    T001-> udocker install"
+STRING="    T001: udocker install"
 clean
 udocker install && ls ${DEFAULT_UDIR}/bin/proot-x86_64; return=$?
-result $return $STRING
+result
 
 # ##################################################################
 echo "------------------------------------------------------------>"
-STRING="    T002-> udocker install --force"
+STRING="    T002: udocker install --force"
 udocker install --force && ls ${DEFAULT_UDIR}/bin/proot-x86_64 >/dev/null 2>&1; return=$?
-result $return $STRING
+result
 
 # ##################################################################
 echo "------------------------------------------------------------>"
