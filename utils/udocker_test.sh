@@ -198,21 +198,24 @@ fi
 
 # ##################################################################
 echo "------------------------------------------------------------>"
-echo "udocker create, create --name"
+echo "udocker create ${DOCKER_IMG}"
 CONT_ID=`udocker create ${DOCKER_IMG}`; return=$?
 echo "ContainerID = ${CONT_ID}"
 echo " "
 if [ $return == 0 ]; then
-    print_ok;   echo "    udocker create"
+    print_ok;   echo "    udocker create ${DOCKER_IMG}"
 else
-    print_fail; echo "    udocker create"
+    print_fail; echo "    udocker create ${DOCKER_IMG}"
 fi
 
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker create --name=${CONT} ${DOCKER_IMG}"
 CONT_ID_NAME=`udocker create --name=${CONT} ${DOCKER_IMG}`; return=$?
 if [ $return == 0 ]; then
-    print_ok;   echo "    udocker create --name="
+    print_ok;   echo "    udocker create --name=${CONT} ${DOCKER_IMG}"
 else
-    print_fail; echo "    udocker create --name="
+    print_fail; echo "    udocker create --name=${CONT} ${DOCKER_IMG}"
 fi
 
 # ##################################################################
@@ -228,7 +231,7 @@ fi
 
 # ##################################################################
 echo "------------------------------------------------------------>"
-echo "udocker name for ${CONT_ID}"
+echo "udocker name ${CONT_ID}"
 udocker name ${CONT_ID} conti; return=$?
 udocker ps |grep conti
 echo " "
@@ -469,4 +472,15 @@ if [ $return == 0 ]; then
     print_ok;   echo "    udocker import --clone --name=clone_cont ${TAR_CONT}"
 else
     print_fail; echo "    udocker import --clone --name=clone_cont ${TAR_CONT}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker rmi ${DOCKER_IMG}"
+udocker rmi ${DOCKER_IMG}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker rmi ${DOCKER_IMG}"
+else
+    print_fail; echo "    udocker rmi ${DOCKER_IMG}"
 fi
