@@ -25,9 +25,8 @@ echo "* makes a link for the udocker executable and puts it in *"
 echo "* the PATH                                               *"
 echo "=========================================================="
 
-CWD=`pwd`
 rm -f udocker-${VER}.tar.gz
 rm -rf udocker
 wget https://github.com/mariojmdavid/udocker/releases/download/v${VER}/udocker-${VER}.tar.gz
 tar zxvf udocker-${VER}.tar.gz
-export PATH=${PWD}/udocker:$PATH
+export PATH=`pwd`/udocker:$PATH
