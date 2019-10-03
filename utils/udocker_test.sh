@@ -263,6 +263,29 @@ fi
 
 # ##################################################################
 echo "------------------------------------------------------------>"
+echo "udocker clone --name=myclone ${CONT_ID}"
+udocker clone --name=myclone ${CONT_ID}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker clone --name=myclone ${CONT_ID}"
+else
+    print_fail; echo "    udocker clone --name=myclone ${CONT_ID}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker export -o myexportcont.tar ${CONT_ID}"
+chmod -R u+x ${DEFAULT_UDIR}/containers/${CONT_ID}/ROOT
+udocker export -o myexportcont.tar ${CONT_ID}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker export -o myexportcont.tar ${CONT_ID}"
+else
+    print_fail; echo "    udocker export -o myexportcont.tar ${CONT_ID}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
 echo "udocker rm ${CONT_ID}"
 udocker rm ${CONT_ID}; return=$?
 echo " "
@@ -435,4 +458,15 @@ if [ $return == 0 ]; then
     print_ok;   echo "    udocker import --tocontainer --name=mycont ${TAR_CONT}"
 else
     print_fail; echo "    udocker import --tocontainer --name=mycont ${TAR_CONT}"
+fi
+
+# ##################################################################
+echo "------------------------------------------------------------>"
+echo "udocker import --clone --name=clone_cont ${TAR_CONT}"
+udocker import --clone --name=clone_cont ${TAR_CONT}; return=$?
+echo " "
+if [ $return == 0 ]; then
+    print_ok;   echo "    udocker import --clone --name=clone_cont ${TAR_CONT}"
+else
+    print_fail; echo "    udocker import --clone --name=clone_cont ${TAR_CONT}"
 fi
