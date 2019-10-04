@@ -26,9 +26,18 @@ class Uprocess(object):
 
     def check_output(self, *popenargs, **kwargs):
         """Select check_output implementation"""
-        if PY_VER >= "2.7":
-            return subprocess.check_output(*popenargs, **kwargs)
-        return self._check_output(*popenargs, **kwargs)
+        chk_out = ""
+        if PY_VER == "2.6":
+            chk_out = self._check_output(*popenargs, **kwargs)
+        if PY_VER == "2.7":
+            chk_out = subprocess.check_output(*popenargs, **kwargs)
+        if PY_VER >= "3":
+            c = subprocess.check_output(*popenargs, **kwargs)
+            chk_out = c.decode()
+
+        Msg().err("Python version:", PY_VER, l=Msg.DBG)
+        Msg().out("Check output:", chk_out)
+        return chk_out
 
     def get_output(self, cmd):
         """Execute a shell command and get its output"""
