@@ -76,7 +76,8 @@ udocker install && ls ${DEFAULT_UDIR}/bin/proot-x86_64; return=$?
 result
 
 STRING="T002: udocker install --force"
-udocker install --force && ls ${DEFAULT_UDIR}/bin/proot-x86_64 >/dev/null 2>&1; return=$?
+udocker install --force && \
+    ls ${DEFAULT_UDIR}/bin/proot-x86_64 >/dev/null 2>&1; return=$?
 result
 
 STRING="T003: udocker (with no options)"

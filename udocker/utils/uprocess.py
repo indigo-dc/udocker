@@ -35,8 +35,6 @@ class Uprocess(object):
             c = subprocess.check_output(*popenargs, **kwargs)
             chk_out = c.decode()
 
-        Msg().err("Python version:", PY_VER, l=Msg.DBG)
-        Msg().out("Check output:", chk_out)
         return chk_out
 
     def get_output(self, cmd):

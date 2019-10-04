@@ -210,7 +210,7 @@ class FileUtil(object):
         /bin/which or type to obtain the full pathname of an executable
         """
         exec_pathname = Uprocess().get_output(cmd_to_use)
-        Msg().out("Search exec_pathname:", exec_pathname)
+        Msg().err("Search exec_pathname:", exec_pathname, l=Msg.DBG)
         if exec_pathname is None:
             Msg().err("exec_pathname is None")
             return ""
