@@ -66,6 +66,17 @@ function result
   echo "------------------------------------------------------------>"
 }
 
+function result_inv
+{
+  echo " "
+  if [ $return == 1 ]; then
+      print_ok; echo "    $STRING"
+  else
+      print_fail; echo "    $STRING"
+  fi
+  echo "------------------------------------------------------------>"
+}
+
 echo "================================================="
 echo "* This script tests all udocker CLI and options *"
 echo "================================================="
@@ -212,7 +223,7 @@ result
 
 STRING="T032: udocker rm ${CONT} (try to remove protected container)"
 udocker rm ${CONT}; return=$?
-result
+result_inv
 
 STRING="T033: udocker unprotect ${CONT} (container)"
 udocker unprotect ${CONT}; return=$?
