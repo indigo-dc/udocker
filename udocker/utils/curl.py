@@ -8,6 +8,7 @@ import json
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 
+# TODO: implement and test from io import StringIO compatibility py26, py27 py3
 try:
     import cStringIO
 except ImportError:
