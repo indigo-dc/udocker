@@ -8,15 +8,17 @@ import json
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 
-# TODO: implement and test from io import StringIO compatibility py26, py27 py3
-try:
-    import cStringIO
-except ImportError:
-    from io import BytesIO as cStringIO
 try:
     import pycurl
 except ImportError:
     pass
+
+# Python version major.minor
+PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
+if PY_VER < "3":
+    from io import BytesIO as strio
+else:
+    from io import StringIO as strio
 
 
 # TODO: some variables may be called before assignment
@@ -245,7 +247,7 @@ class GetURLpyCurl(GetURL):
         while status_code >= 300 and status_code <= 308 and cont_redirs < max_redirs:
             cont_redirs += 1
             hdr = CurlHeader()
-            buf = cStringIO.StringIO()
+            buf = strio()
             pyc = pycurl.Curl()
             self._set_defaults(pyc, hdr)
             try:
@@ -372,7 +374,7 @@ class GetURLexeCurl(GetURL):
         while status_code >= 300 and status_code <= 308 and cont_redirs < max_redirs:
             cont_redirs += 1
             hdr = CurlHeader()
-            buf = cStringIO.StringIO()
+            buf = strio()
             self._set_defaults()
             cmd = self._mkcurlcmd(*args, **kwargs)
             status = subprocess.call(cmd, shell=True, close_fds=True) # call curl
@@ -407,8 +409,7 @@ class GetURLexeCurl(GetURL):
                 os.rename(self._files["output_file"], kwargs["ofile"])
         else:
             try:
-                buf = cStringIO.StringIO(open(self._files["output_file"],
-                                              "r").read())
+                buf = strio(open(self._files["output_file"], "r").read())
             except(IOError, OSError):
                 Msg().err("Error: reading curl output file to buffer")
             FileUtil(self.conf, self._files["output_file"]).remove()

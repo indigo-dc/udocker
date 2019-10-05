@@ -34,6 +34,8 @@ class Config(object):
         # udocker installation tarball
         self.conf['tarball_release'] = "1.1.3"
         self.conf['tarball'] = (
+            "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.3.tar.gz"
+            " "
             "https://owncloud.indigo-datacloud.eu/index.php"
             "/s/iv4FOV1jZcfnGFH/download"
             " "
@@ -46,8 +48,6 @@ class Config(object):
             "mZhbHNlLCJyZWFkX29ubHkiOnRydWUsInNoYXJlX25hbWUiOiJ1ZG9ja2VyLT"
             "EuMS4zLnRhci5neiIsInRva2VuIjoiQ1MzMXljS09wajJLenhPIn0._9LTvxM"
             "V12NpxcZXaCg3PJeQfz94qYui4ccscrrvgVA"
-            " "
-            "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.3.tar.gz"
             )
         self.info = ("https://raw.githubusercontent.com/"
                      "indigo-dc/udocker/master/messages")
