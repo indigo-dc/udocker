@@ -2,6 +2,7 @@
 """Classes for cURL management and tools"""
 
 import os
+import sys
 import subprocess
 import json
 
