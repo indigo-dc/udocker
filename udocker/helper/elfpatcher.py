@@ -227,7 +227,7 @@ class ElfPatcher(object):
             match = re.search("([^ ]+) => ([^ ]+)", line)
             if match:
                 ld_dict[croot + os.path.dirname(match.group(2))] = True
-        return ld_dict.keys()
+        return list(ld_dict.keys())
 
     # pylint: disable=too-many-nested-blocks
     def _find_ld_libdirs(self, root_path=None):
