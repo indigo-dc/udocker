@@ -66,6 +66,17 @@ function result
   echo "------------------------------------------------------------>"
 }
 
+function result_inv
+{
+  echo " "
+  if [ $return == 1 ]; then
+      print_ok; echo "    $STRING"
+  else
+      print_fail; echo "    $STRING"
+  fi
+  echo "------------------------------------------------------------>"
+}
+
 echo "================================================="
 echo "* This script tests all udocker CLI and options *"
 echo "================================================="
@@ -76,7 +87,8 @@ udocker install && ls ${DEFAULT_UDIR}/bin/proot-x86_64; return=$?
 result
 
 STRING="T002: udocker install --force"
-udocker install --force && ls ${DEFAULT_UDIR}/bin/proot-x86_64 >/dev/null 2>&1; return=$?
+udocker install --force && \
+    ls ${DEFAULT_UDIR}/bin/proot-x86_64 >/dev/null 2>&1; return=$?
 result
 
 STRING="T003: udocker (with no options)"
@@ -211,7 +223,7 @@ result
 
 STRING="T032: udocker rm ${CONT} (try to remove protected container)"
 udocker rm ${CONT}; return=$?
-result
+result_inv
 
 STRING="T033: udocker unprotect ${CONT} (container)"
 udocker unprotect ${CONT}; return=$?

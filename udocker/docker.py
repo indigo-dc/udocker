@@ -866,8 +866,8 @@ class DockerLocalFileAPI(object):
                           container_name)
                 return False
 
-        cstruct = ContainerStructure(self.localrepo, self.conf)
-        dest_container_id = cstruct.clone()
+        cs = ContainerStructure(self.localrepo, self.conf, container_id)
+        dest_container_id = cs.clone()
         if container_name:
             self.localrepo.set_container_name(dest_container_id,
                                               container_name)

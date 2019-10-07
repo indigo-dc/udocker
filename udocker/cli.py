@@ -285,6 +285,7 @@ class UdockerCLI(object):
         name = cmdp.get("--name=")
         container_id = cmdp.get("P1")
         container_id = self.localrepo.get_container_id(container_id)
+        Msg().err("Container_id:", container_id, l=Msg.DBG)
         if not container_id:
             Msg().err("Error: invalid container id", container_id)
             exit_status = 1
@@ -977,7 +978,7 @@ class UdockerCLI(object):
             utools.purge()
 
         status = utools.install(force)
-        if status is not None and not status:
+        if not status:
             Msg().err("Error: installation of udockertools failed")
             exit_status = 1
             return exit_status

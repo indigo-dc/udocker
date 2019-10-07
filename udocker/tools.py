@@ -184,7 +184,7 @@ class UdockerTools(object):
         elif not self._autoinstall and not force:
             Msg().err("Warning: no engine available and autoinstall disabled",
                       l=Msg.WAR)
-            return None
+            return False
         elif not self._tarball:
             Msg().err("Error: UDOCKER_TARBALL not defined")
         else:

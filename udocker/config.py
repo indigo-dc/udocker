@@ -32,23 +32,27 @@ class Config(object):
         self.conf['containersdir'] = None
 
         # udocker installation tarball
-        self.conf['tarball_release'] = "1.1.3"
-        self.conf['tarball'] = (
-            "https://owncloud.indigo-datacloud.eu/index.php"
-            "/s/iv4FOV1jZcfnGFH/download"
-            " "
-            "https://cernbox.cern.ch/index.php"
-            "/s/CS31ycKOpj2KzxO/download?x-access-token=eyJhbGciOiJIUzI1Ni"
-            "IsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDE4LTEwLTMwVDE4OjM1OjMyLjI2MD"
-            "AxMDA3OCswMTowMCIsImV4cGlyZXMiOjAsImlkIjoiMTQ1NjgwIiwiaXRlbV9"
-            "0eXBlIjowLCJtdGltZSI6MTU0MDkxNzA3Miwib3duZXIiOiJqb3JnZSIsInBh"
-            "dGgiOiJlb3Nob21lLWo6MjcyNTgzNjk2NDc1NzUwNDAiLCJwcm90ZWN0ZWQiO"
-            "mZhbHNlLCJyZWFkX29ubHkiOnRydWUsInNoYXJlX25hbWUiOiJ1ZG9ja2VyLT"
-            "EuMS4zLnRhci5neiIsInRva2VuIjoiQ1MzMXljS09wajJLenhPIn0._9LTvxM"
-            "V12NpxcZXaCg3PJeQfz94qYui4ccscrrvgVA"
-            " "
-            "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.3.tar.gz"
-            )
+        tar_url = "https://download.ncg.ingrid.pt/webdav/udocker_test/"
+        self.conf['tarball_release'] = "1.2.4"
+        self.conf['tarball'] = (tar_url + "udocker-englib-1.2.4.tar.gz")
+
+#        self.conf['tarball'] = (
+#            "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.3.tar.gz"
+#            " "
+#            "https://owncloud.indigo-datacloud.eu/index.php"
+#            "/s/iv4FOV1jZcfnGFH/download"
+#            " "
+#            "https://cernbox.cern.ch/index.php"
+#            "/s/CS31ycKOpj2KzxO/download?x-access-token=eyJhbGciOiJIUzI1Ni"
+#            "IsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDE4LTEwLTMwVDE4OjM1OjMyLjI2MD"
+#            "AxMDA3OCswMTowMCIsImV4cGlyZXMiOjAsImlkIjoiMTQ1NjgwIiwiaXRlbV9"
+#            "0eXBlIjowLCJtdGltZSI6MTU0MDkxNzA3Miwib3duZXIiOiJqb3JnZSIsInBh"
+#            "dGgiOiJlb3Nob21lLWo6MjcyNTgzNjk2NDc1NzUwNDAiLCJwcm90ZWN0ZWQiO"
+#            "mZhbHNlLCJyZWFkX29ubHkiOnRydWUsInNoYXJlX25hbWUiOiJ1ZG9ja2VyLT"
+#            "EuMS4zLnRhci5neiIsInRva2VuIjoiQ1MzMXljS09wajJLenhPIn0._9LTvxM"
+#            "V12NpxcZXaCg3PJeQfz94qYui4ccscrrvgVA"
+#            )
+
         self.info = ("https://raw.githubusercontent.com/"
                      "indigo-dc/udocker/master/messages")
         self.conf['installinfo'] = [self.info, ]

@@ -18,16 +18,15 @@
 #
 # ##################################################################
 
-VER="1.2.1"
+VER="1.2.4"
 echo "=========================================================="
 echo "* This script gets the udocker-${VER}.tar.gz, unpacks it *"
 echo "* makes a link for the udocker executable and puts it in *"
 echo "* the PATH                                               *"
 echo "=========================================================="
 
-CWD=`pwd`
 rm -f udocker-${VER}.tar.gz
 rm -rf udocker
 wget https://github.com/mariojmdavid/udocker/releases/download/v${VER}/udocker-${VER}.tar.gz
 tar zxvf udocker-${VER}.tar.gz
-export PATH=${CWD}/udocker:$PATH
+export PATH=`pwd`/udocker:$PATH
