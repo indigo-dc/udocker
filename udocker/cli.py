@@ -978,7 +978,7 @@ class UdockerCLI(object):
             utools.purge()
 
         status = utools.install(force)
-        if status is not None and not status:
+        if not status:
             Msg().err("Error: installation of udockertools failed")
             exit_status = 1
             return exit_status
