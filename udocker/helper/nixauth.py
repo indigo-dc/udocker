@@ -112,6 +112,7 @@ class NixAuthentication(object):
         except (IOError, OSError):
             return False
         else:
+            # TODO: py3 TypeError: a bytes-like object is required, not 'str'
             outpasswd.write("%s:%s:%s:%s:%s:%s:%s\n" %
                             (user, passw, uid, gid, gecos, home, shell))
             outpasswd.close()

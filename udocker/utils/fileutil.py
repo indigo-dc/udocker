@@ -201,6 +201,7 @@ class FileUtil(object):
         except (IOError, OSError, TypeError):
             return ""
         else:
+            # TODO: py3 TypeError: a bytes-like object is required, not 'str'
             filep.write(buf)
             filep.close()
             return buf
