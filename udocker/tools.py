@@ -29,14 +29,16 @@ class UdockerTools(object):
         self._install_json = dict()
         self.curl = GetURL(self.conf)
 
-    def _version_isequal(self, filename):
-        """Is version inside file equal to the taball release requirement"""
-        version = FileUtil(self.conf, filename).getdata().strip()
-        return version and version == self._tarball_release
+#    def _version_isequal(self, filename):
+#        """Is version inside file equal to the taball release requirement"""
+#        version = FileUtil(self.conf, filename).getdata().strip()
+#        return version and version == self._tarball_release
 
     def _is_available(self):
         """Are the tools already installed"""
-        return self._version_isequal(self.localrepo.libdir + "/VERSION")
+        fname = self.localrepo.libdir + "/VERSION"
+        version = FileUtil(self.conf, fname).getdata().strip()
+        return version and version == self._tarball_release
 
     def _download(self, url):
         """Download a file """
