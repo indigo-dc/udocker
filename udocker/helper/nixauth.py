@@ -108,26 +108,46 @@ class NixAuthentication(object):
                  home, shell):
         """Add a *nix user to a /etc/passwd file"""
         try:
-            outpasswd = open(self.passwd_file, "ab")
+            with open(self.passwd_file, "a") as op:
+                op.write("%s:%s:%s:%s:%s:%s:%s\n" %
+                        (user, passw, uid, gid, gecos, home, shell))
+            return True
         except (IOError, OSError):
             return False
-        else:
-            # TODO: py3 TypeError: a bytes-like object is required, not 'str'
-            outpasswd.write("%s:%s:%s:%s:%s:%s:%s\n" %
-                            (user, passw, uid, gid, gecos, home, shell))
-            outpasswd.close()
-            return True
 
     def add_group(self, group, gid):
         """Add a group to a /etc/passwd file"""
         try:
-            outgroup = open(self.group_file, "ab")
+            with open(self.group_file, "a") as og:
+                og.write("%s:x:%s:\n" % (group, gid))
+                return True
         except (IOError, OSError):
             return False
-        else:
-            outgroup.write("%s:x:%s:\n" % (group, gid))
-            outgroup.close()
-            return True
+
+    # def add_user(self, user, passw, uid, gid, gecos,
+    #              home, shell):
+    #     """Add a *nix user to a /etc/passwd file"""
+    #     try:
+    #         outpasswd = open(self.passwd_file, "ab")
+    #     except (IOError, OSError):
+    #         return False
+    #     else:
+    #         # TODO: py3 TypeError: a bytes-like object is required, not 'str'
+    #         outpasswd.write("%s:%s:%s:%s:%s:%s:%s\n" %
+    #                         (user, passw, uid, gid, gecos, home, shell))
+    #         outpasswd.close()
+    #         return True
+    #
+    # def add_group(self, group, gid):
+    #     """Add a group to a /etc/passwd file"""
+    #     try:
+    #         outgroup = open(self.group_file, "ab")
+    #     except (IOError, OSError):
+    #         return False
+    #     else:
+    #         outgroup.write("%s:x:%s:\n" % (group, gid))
+    #         outgroup.close()
+    #         return True
 
     def get_user(self, wanted_user):
         """Get host or container user"""

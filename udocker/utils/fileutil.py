@@ -11,6 +11,8 @@ from udocker.msg import Msg
 from udocker.helper.unique import Unique
 from udocker.utils.uprocess import Uprocess
 
+PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
+
 
 class FileUtil(object):
     """Some utilities to manipulate files"""
@@ -197,14 +199,26 @@ class FileUtil(object):
     def putdata(self, buf, mode="wb"):
         """Write buffer to file"""
         try:
-            filep = open(self.filename, mode)
+            with open(self.filename, mode) as fp:
+                if PY_VER >= "3":
+                    fp.write(buf.encode())
+                else:
+                    fp.write(buf)
+            return buf
         except (IOError, OSError, TypeError):
             return ""
-        else:
-            # TODO: py3 TypeError: a bytes-like object is required, not 'str'
-            filep.write(buf)
-            filep.close()
-            return buf
+
+    # def putdata(self, buf, mode="wb"):
+    #     """Write buffer to file"""
+    #     try:
+    #         filep = open(self.filename, mode)
+    #     except (IOError, OSError, TypeError):
+    #         return ""
+    #     else:
+    #         # TODO: py3 TypeError: a bytes-like object is required, not 'str'
+    #         filep.write(buf)
+    #         filep.close()
+    #         return buf
 
     def _find_exec(self, cmd_to_use):
         """This method is called by find_exec() invokes a command like
