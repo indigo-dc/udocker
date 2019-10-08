@@ -177,13 +177,23 @@ class FileUtil(object):
     def getdata(self, mode="rb"):
         """Read file content to a buffer"""
         try:
-            filep = open(self.filename, mode)
+            with open(self.filename, mode) as fp:
+                buf = fp.read()
+            Msg().err("The type of buf:", type(buf), l=Msg.DBG)
+            return buf
         except (IOError, OSError, TypeError):
             return ""
-        else:
-            buf = filep.read()
-            filep.close()
-            return buf
+
+    # def getdata(self, mode="rb"):
+    #     """Read file content to a buffer"""
+    #     try:
+    #         filep = open(self.filename, mode)
+    #     except (IOError, OSError, TypeError):
+    #         return ""
+    #     else:
+    #         buf = filep.read()
+    #         filep.close()
+    #         return buf
 
     def get1stline(self, mode="rb"):
         """Read file 1st line to a buffer"""

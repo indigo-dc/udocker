@@ -2,6 +2,7 @@
 """Superclass for the execution engines"""
 
 import os
+import sys
 import string
 import re
 
@@ -10,6 +11,9 @@ from udocker.utils.fileutil import FileUtil
 from udocker.helper.nixauth import NixAuthentication
 from udocker.container.structure import ContainerStructure
 from udocker.utils.filebind import FileBind
+
+# Python version major.minor
+PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
 
 
 class ExecutionEngineCommon(object):
@@ -673,10 +677,12 @@ class ExecutionEngineCommon(object):
         self.opt["env"].append("container_root=" + self.container_root)
         self.opt["env"].append("container_uuid=" + self.container_id)
         self.opt["env"].append("container_execmode=" + self.exec_mode)
-        # TODO: implement py3 with maketrans, in py2 import string
-        # py3: str.maketrans   py2: string.maketrans
-        # map = str.maketrans('', '', " '\"[]")
-        names = str(self.container_names).translate(None, " '\"[]")
+        cn = self.container_names
+        if PY_VER >= "3":
+            names = str(cn).translate(str.maketrans('', '', " '\"[]"))
+        else:
+            names = str(cn).translate(None, " '\"[]")
+
         self.opt["env"].append("container_names=" + names)
 
     def _run_init(self, container_id):
