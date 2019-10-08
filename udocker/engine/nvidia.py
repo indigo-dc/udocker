@@ -144,7 +144,11 @@ class NvidiaMode(object):
             self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
         self._copy_files('/etc', '/etc', self.conf['nvi_etc_list'], force)
         self._copy_files('/usr/bin', '/usr/bin', self.conf['nvi_bin_list'], force)
-        FileUtil(self.conf, self._container_nvidia_set).putdata("")
+        try:
+            os.mknod(self._container_nvidia_set)
+            Msg().err("Created:", self._container_nvidia_set, l=Msg.DBG)
+        except (IOError, OSError, TypeError):
+            Msg().err("Error creating:", self._container_nvidia_set)
 
     def get_mode(self):
         """Get nvidia mode"""
@@ -152,7 +156,7 @@ class NvidiaMode(object):
 
     def get_devices(self):
         """Get list of nvidia devices related to cuda"""
-        dev_list = []
+        dev_list = list()
         for dev in self.conf['nvi_dev_list']:
             for expanded_devs in glob.glob(dev + '*'):
                 dev_list.append(expanded_devs)

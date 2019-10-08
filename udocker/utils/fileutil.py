@@ -179,7 +179,7 @@ class FileUtil(object):
         try:
             with open(self.filename, mode) as fp:
                 buf = fp.read()
-            Msg().err("The type of buf:", type(buf), l=Msg.DBG)
+            Msg().err("Read buf:", buf, l=Msg.DBG)
             return buf
         except (IOError, OSError, TypeError):
             return ""

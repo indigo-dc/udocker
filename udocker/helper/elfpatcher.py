@@ -103,7 +103,7 @@ class ElfPatcher(object):
     def get_original_loader(self):
         """Get the pathname of the original ld.so"""
         if os.path.exists(self._container_ld_so_path):
-            return FileUtil(self.conf, self._container_ld_so_path).getdata().strip()
+            return FileUtil(self.conf, self._container_ld_so_path).getdata("r").strip()
         elf_loader = self.guess_elf_loader()
         if elf_loader:
             FileUtil(self.conf, self._container_ld_so_path).putdata(elf_loader)
@@ -119,7 +119,7 @@ class ElfPatcher(object):
 
     def get_patch_last_path(self):
         """get last host pathname to the patched container"""
-        last_path = FileUtil(self.conf, self._container_patch_path).getdata()
+        last_path = FileUtil(self.conf, self._container_patch_path).getdata("r").strip()
         if last_path and isinstance(last_path, str):
             return last_path.strip()
         return ""
@@ -133,7 +133,7 @@ class ElfPatcher(object):
 
     def get_patch_last_time(self):
         """get time in seconds of last full patch of container"""
-        last_time = FileUtil(self.conf, self._container_patch_time).getdata()
+        last_time = FileUtil(self.conf, self._container_patch_time).getdata("r").strip()
         try:
             return str(int(last_time))
         except ValueError:
