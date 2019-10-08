@@ -82,15 +82,20 @@ class ExecutionMode(object):
                           elfpatcher.patch_binaries())
             elif prev_xmode in ("F3", "F4"):
                 status = True
+
         if xmode[0] in ("P", "R", "S"):
             if force or (status and prev_xmode.startswith("F")):
-                status = FileUtil(self.conf, self.container_root).links_conv(force, False,
-                                                                  orig_path)
+                futil = FileUtil(self.conf, self.container_root)
+                status = futil.links_conv(force, False, orig_path)
+
         if status or force:
-            status = FileUtil(self.conf, self.container_execmode).putdata(xmode)
+            futil = FileUtil(self.conf, self.container_execmode)
+            status = futil.putdata(xmode)
+
         if status or force:
-            status = FileUtil(self.conf, self.container_orig_root).putdata(
-                os.path.realpath(self.container_root))
+            futil = FileUtil(self.conf, self.container_orig_root)
+            status = futil.putdata(os.path.realpath(self.container_root))
+
         if (not status) and (not force):
             Msg().err("Error: container setup failed")
         return status
