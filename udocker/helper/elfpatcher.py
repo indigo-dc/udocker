@@ -184,7 +184,7 @@ class ElfPatcher(object):
             status = FileUtil(self.conf, elf_loader).copyto(self._container_ld_so_orig)
             if not status:
                 return False
-        ld_data = FileUtil(self.conf, self._container_ld_so_orig).getdata("r")
+        ld_data = FileUtil(self.conf, self._container_ld_so_orig).getdata("rb")
         if not ld_data:
             ld_data = FileUtil(self.conf, elf_loader).getdata("r")
             if not ld_data:
@@ -254,9 +254,9 @@ class ElfPatcher(object):
         if force or not os.path.exists(self._container_ld_libdirs):
             ld_list = self._find_ld_libdirs()
             ld_str = ":".join(ld_list)
-            FileUtil(self.conf, self._container_ld_libdirs).putdata(ld_str)
+            FileUtil(self.conf, self._container_ld_libdirs).putdata(ld_str, "w")
             return ld_list
-        ld_str = FileUtil(self.conf, self._container_ld_libdirs).getdata()
+        ld_str = FileUtil(self.conf, self._container_ld_libdirs).getdata("r")
         return ld_str.split(":")
 
     def get_ld_library_path(self):
