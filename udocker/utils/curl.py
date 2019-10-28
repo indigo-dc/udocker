@@ -383,7 +383,7 @@ class GetURLexeCurl(GetURL):
             hdr.data["X-ND-CURLSTATUS"] = status
             if status:
                 Msg().err("Error: in download: %s"
-                          % str(FileUtil(self.conf, self._files["error_file"]).getdata()))
+                          % FileUtil(self.conf, self._files["error_file"]).getdata("r"))
                 FileUtil(self.conf, self._files["output_file"]).remove()
                 return(hdr, buf)
             status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])

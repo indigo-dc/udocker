@@ -90,11 +90,11 @@ class ExecutionMode(object):
 
         if status or force:
             futil = FileUtil(self.conf, self.container_execmode)
-            status = futil.putdata(xmode)
+            status = futil.putdata(xmode, "w")
 
         if status or force:
             futil = FileUtil(self.conf, self.container_orig_root)
-            status = futil.putdata(os.path.realpath(self.container_root))
+            status = futil.putdata(os.path.realpath(self.container_root), "w")
 
         if (not status) and (not force):
             Msg().err("Error: container setup failed")

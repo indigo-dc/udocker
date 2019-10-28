@@ -79,7 +79,7 @@ class FileBind(object):
                 if os.path.exists(cont_file):
                     os.rename(cont_file, orig_file_path)
                 else:
-                    FileUtil(self.conf, orig_file_path).putdata("")
+                    FileUtil(self.conf, orig_file_path).putdata("", "w")
                 os.symlink(link_path, cont_file)
             FileUtil(self.conf, orig_file_path).copyto(self.host_bind_dir)
         return (self.host_bind_dir, self.bind_dir)

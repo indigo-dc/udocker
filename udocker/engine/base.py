@@ -202,7 +202,7 @@ class ExecutionEngineCommon(object):
         if os.path.exists(mountpoint):
             return True
         if os.path.isfile(host_path):
-            return FileUtil(self.conf, mountpoint).putdata("")
+            return FileUtil(self.conf, mountpoint).putdata("", "w")
         elif os.path.isdir(host_path):
             return FileUtil(self.conf, mountpoint).mkdir()
         return False

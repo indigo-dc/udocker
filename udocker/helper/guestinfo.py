@@ -57,7 +57,7 @@ class GuestInfo(object):
         """Get guest operating system distribution"""
         for f_path in FileUtil(self.conf, self.root_dir + "/etc/.+-release").match():
             if os.path.exists(f_path):
-                osinfo = FileUtil(self.conf, f_path).getdata()
+                osinfo = FileUtil(self.conf, f_path).getdata("r")
                 match = re.match(r"([^=]+) release (\d+)", osinfo)
                 if match and match.group(1):
                     return (match.group(1).split(" ")[0],
@@ -66,7 +66,7 @@ class GuestInfo(object):
         if os.path.exists(f_path):
             distribution = ""
             version = ""
-            osinfo = FileUtil(self.conf, f_path).getdata()
+            osinfo = FileUtil(self.conf, f_path).getdata("r")
             match = re.search(r"DISTRIB_ID=(.+)(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
@@ -81,7 +81,7 @@ class GuestInfo(object):
         if os.path.exists(f_path):
             distribution = ""
             version = ""
-            osinfo = FileUtil(self.conf, f_path).getdata()
+            osinfo = FileUtil(self.conf, f_path).getdata("r")
             match = re.search(r"NAME=\"?(.+)\"?(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
