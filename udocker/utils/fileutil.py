@@ -177,8 +177,8 @@ class FileUtil(object):
     def getdata(self, mode="rb"):
         """Read file content to a buffer"""
         try:
-            with open(self.filename, mode) as fp:
-                buf = fp.read()
+            with open(self.filename, mode) as filep:
+                buf = filep.read()
             Msg().err("Read buf:", buf, l=Msg.DBG)
             return buf
         except (IOError, OSError, TypeError):

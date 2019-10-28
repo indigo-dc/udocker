@@ -184,9 +184,9 @@ class ElfPatcher(object):
             status = FileUtil(self.conf, elf_loader).copyto(self._container_ld_so_orig)
             if not status:
                 return False
-        ld_data = FileUtil(self.conf, self._container_ld_so_orig).getdata()
+        ld_data = FileUtil(self.conf, self._container_ld_so_orig).getdata("r")
         if not ld_data:
-            ld_data = FileUtil(self.conf, elf_loader).getdata()
+            ld_data = FileUtil(self.conf, elf_loader).getdata("r")
             if not ld_data:
                 return False
         nul_etc = "\x00/\x00\x00\x00\x00\x00\x00\x00\x00\x00"

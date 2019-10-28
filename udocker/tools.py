@@ -37,7 +37,7 @@ class UdockerTools(object):
     def _is_available(self):
         """Are the tools already installed"""
         fname = self.localrepo.libdir + "/VERSION"
-        version = FileUtil(self.conf, fname).getdata().strip()
+        version = FileUtil(self.conf, fname).getdata("r").strip()
         return version and version == self._tarball_release
 
     def _download(self, url):
@@ -75,12 +75,12 @@ class UdockerTools(object):
         if not (tarball_file and os.path.isfile(tarball_file)):
             return status
 
-        t = tarfile.open(tarball_file, "r:gz")
-        for ti in t.getmembers():
-            if ti.name.startswith("udocker_dir/lib/VERSION"):
-                ti.name = os.path.basename(ti.name)
-                t.extract(ti)
-        t.close()
+        tfile = tarfile.open(tarball_file, "r:gz")
+        for tar_in in tfile.getmembers():
+            if tar_in.name.startswith("udocker_dir/lib/VERSION"):
+                tar_in.name = os.path.basename(tar_in.name)
+                tfile.extract(tar_in)
+        tfile.close()
 
         with open("VERSION") as f:
             tar_version = f.readline().strip()
@@ -106,19 +106,19 @@ class UdockerTools(object):
         if not (tarball_file and os.path.isfile(tarball_file)):
             return False
 
-        t = tarfile.open(tarball_file, "r:gz")
-        for ti in t.getmembers():
-            if ti.name.startswith("udocker_dir/bin/"):
-                ti.name = os.path.basename(ti.name)
-                Msg().err("Extrating", ti.name, l=Msg.DBG)
-                t.extract(ti, self.localrepo.bindir)
-        for ti in t.getmembers():
-            if ti.name.startswith("udocker_dir/lib/"):
-                ti.name = os.path.basename(ti.name)
-                Msg().err("Extrating", ti.name, l=Msg.DBG)
-                t.extract(ti, self.localrepo.libdir)
+        tfile = tarfile.open(tarball_file, "r:gz")
+        for tar_in in tfile.getmembers():
+            if tar_in.name.startswith("udocker_dir/bin/"):
+                tar_in.name = os.path.basename(tar_in.name)
+                Msg().err("Extrating", tar_in.name, l=Msg.DBG)
+                tfile.extract(tar_in, self.localrepo.bindir)
+        for tar_in in tfile.getmembers():
+            if tar_in.name.startswith("udocker_dir/lib/"):
+                tar_in.name = os.path.basename(tar_in.name)
+                Msg().err("Extrating", tar_in.name, l=Msg.DBG)
+                tfile.extract(tar_in, self.localrepo.libdir)
 
-        t.close()
+        tfile.close()
         return True
 
     def _instructions(self):
@@ -191,16 +191,16 @@ class UdockerTools(object):
             Msg().err("Error: UDOCKER_TARBALL not defined")
         else:
             Msg().err("Info: installing", self._tarball_release, l=Msg.INF)
-            (tarfile, url) = self._get_file(self._get_mirrors(self._tarball))
-            if tarfile:
+            (tfile, url) = self._get_file(self._get_mirrors(self._tarball))
+            if tfile:
                 Msg().err("Info: installing from:", url, l=Msg.VER)
                 status = False
-                if not self._verify_version(tarfile):
+                if not self._verify_version(tfile):
                     Msg().err("Error: wrong tarball version:", url)
                 else:
-                    status = self._install(tarfile)
+                    status = self._install(tfile)
                 if "://" in url:
-                    FileUtil(self.conf, tarfile).remove()
+                    FileUtil(self.conf, tfile).remove()
                     if status:
                         self.get_installinfo()
                 if status:
