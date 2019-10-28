@@ -62,7 +62,7 @@ class ElfPatcher(object):
         ONE_SUCCESS, or return upon the first non empty output. #f is the
         placeholder for the filename.
         """
-        status = False
+        status = ""
         for dir_path, dummy, files in os.walk(root_path):
             for f_name in files:
                 try:
@@ -71,7 +71,7 @@ class ElfPatcher(object):
                         continue
                     if os.stat(f_path).st_uid != self._uid:
                         if action & self.ABORT_ON_ERROR:
-                            return None
+                            return ""
                         else:
                             continue
                     if ((action & self.BIN and os.access(f_path, os.X_OK)) or
@@ -79,9 +79,9 @@ class ElfPatcher(object):
                         out = Uprocess().get_output(cmd.replace("#f", f_path))
                         if out:
                             status = out
-                    if action & self.ABORT_ON_ERROR and status is None:
-                        return None
-                    elif action & self.ONE_SUCCESS and status is not None:
+                    if action & self.ABORT_ON_ERROR and status is "":
+                        return ""
+                    elif action & self.ONE_SUCCESS and status is not "":
                         return status
                     elif action & self.ONE_OUTPUT and status:
                         return status
@@ -106,7 +106,7 @@ class ElfPatcher(object):
             return FileUtil(self.conf, self._container_ld_so_path).getdata("r").strip()
         elf_loader = self.guess_elf_loader()
         if elf_loader:
-            FileUtil(self.conf, self._container_ld_so_path).putdata(elf_loader)
+            FileUtil(self.conf, self._container_ld_so_path).putdata(elf_loader, "w")
         return elf_loader
 
     def get_container_loader(self):
