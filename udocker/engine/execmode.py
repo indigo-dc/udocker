@@ -61,7 +61,7 @@ class ExecutionMode(object):
         if xmode.startswith("F"):
             if force or prev_xmode[0] in ("P", "R", "S"):
                 status = (FileUtil(self.conf, self.container_root).links_conv(force, True,
-                                                                   orig_path)
+                                                                              orig_path)
                           and elfpatcher.get_ld_libdirs(force))
         if xmode in ("P1", "P2", "F1", "R1", "S1"):
             if prev_xmode in ("P1", "P2", "F1", "R1", "S1"):

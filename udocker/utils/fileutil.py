@@ -195,14 +195,15 @@ class FileUtil(object):
             filep.close()
             return buf
 
+    # TODO: buf.encode only if mode=wb and py3
     def putdata(self, buf, mode="wb"):
         """Write buffer to file"""
         try:
-            with open(self.filename, mode) as fp:
+            with open(self.filename, mode) as filep:
                 if PY_VER >= "3":
-                    fp.write(buf.encode())
+                    filep.write(buf.encode())
                 else:
-                    fp.write(buf)
+                    filep.write(buf)
             return buf
         except (IOError, OSError, TypeError):
             return ""
