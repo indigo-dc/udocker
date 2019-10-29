@@ -138,7 +138,7 @@ class FileUtil(object):
 
     # TODO: tarfile is part of the standard lib
     def verify_tar(self):
-        """Verify a tar file"""
+        """Verify a tar file: tar tvf file.tar"""
         if not os.path.isfile(self.filename):
             return False
         else:
@@ -184,17 +184,6 @@ class FileUtil(object):
         except (IOError, OSError, TypeError):
             return ""
 
-    # def getdata(self, mode="rb"):
-    #     """Read file content to a buffer"""
-    #     try:
-    #         filep = open(self.filename, mode)
-    #     except (IOError, OSError, TypeError):
-    #         return ""
-    #     else:
-    #         buf = filep.read()
-    #         filep.close()
-    #         return buf
-
     def get1stline(self, mode="rb"):
         """Read file 1st line to a buffer"""
         try:
@@ -217,18 +206,6 @@ class FileUtil(object):
             return buf
         except (IOError, OSError, TypeError):
             return ""
-
-    # def putdata(self, buf, mode="wb"):
-    #     """Write buffer to file"""
-    #     try:
-    #         filep = open(self.filename, mode)
-    #     except (IOError, OSError, TypeError):
-    #         return ""
-    #     else:
-    #         # TODO: py3 TypeError: a bytes-like object is required, not 'str'
-    #         filep.write(buf)
-    #         filep.close()
-    #         return buf
 
     def _find_exec(self, cmd_to_use):
         """This method is called by find_exec() invokes a command like
