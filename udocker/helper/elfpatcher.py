@@ -186,19 +186,19 @@ class ElfPatcher(object):
                 return False
         ld_data = FileUtil(self.conf, self._container_ld_so_orig).getdata("rb")
         if not ld_data:
-            ld_data = FileUtil(self.conf, elf_loader).getdata("r")
+            ld_data = FileUtil(self.conf, elf_loader).getdata("rb")
             if not ld_data:
                 return False
-        nul_etc = "\x00/\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-        nul_lib = "\x00/\x00\x00\x00"
-        nul_usr = "\x00/\x00\x00\x00"
-        etc = "\x00/etc/ld.so"
-        lib = "\x00/lib"
-        usr = "\x00/usr"
+        nul_etc = "\x00/\x00\x00\x00\x00\x00\x00\x00\x00\x00".encode()
+        nul_lib = "\x00/\x00\x00\x00".encode()
+        nul_usr = "\x00/\x00\x00\x00".encode()
+        etc = "\x00/etc/ld.so".encode()
+        lib = "\x00/lib".encode()
+        usr = "\x00/usr".encode()
         ld_data = ld_data.replace(etc, nul_etc).\
             replace(lib, nul_lib).replace(usr, nul_usr)
-        ld_library_path_orig = "\x00LD_LIBRARY_PATH\x00"
-        ld_library_path_new = "\x00LD_LIBRARY_REAL\x00"
+        ld_library_path_orig = "\x00LD_LIBRARY_PATH\x00".encode()
+        ld_library_path_new = "\x00LD_LIBRARY_REAL\x00".encode()
         ld_data = ld_data.replace(ld_library_path_orig, ld_library_path_new)
         if output_elf is None:
             return bool(FileUtil(self.conf, elf_loader).putdata(ld_data))

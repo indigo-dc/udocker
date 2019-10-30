@@ -199,10 +199,7 @@ class FileUtil(object):
         """Write buffer to file"""
         try:
             with open(self.filename, mode) as filep:
-                if (PY_VER >= "3" and mode == "wb"):
-                    filep.write(buf.encode())
-                else:
-                    filep.write(buf)
+                filep.write(buf)
             return buf
         except (IOError, OSError, TypeError):
             return ""
