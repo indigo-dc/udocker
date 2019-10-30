@@ -155,8 +155,8 @@ class ElfPatcher(object):
                 last_time = str(int(time.time()))
             except ValueError:
                 pass
-            return (FileUtil(self.conf, self._container_patch_time).putdata(last_time) and
-                    FileUtil(self.conf, self._container_patch_path).putdata(self._container_dir))
+            return (FileUtil(self.conf, self._container_patch_time).putdata(last_time, "w") and
+                    FileUtil(self.conf, self._container_patch_path).putdata(self._container_dir, "w"))
         return False
 
     def restore_binaries(self):
