@@ -1,3 +1,31 @@
+udocker (1.1.4)
+  * Further improved pathname translation in Fn modes
+  * Added support for nameat() and statx() in Pn and Fn modes
+  * Added Fn libraries for Ubuntu18, Fedora29, Fedora30, CentOS8
+  * Added Fn libraries for Alpine 3.8, 3.9, 3.10
+  * Added Pn support for Fedora30 and ubuntu19
+    - closes: #192
+  * Remove shell context from created processes
+  * Safer parsing of config files
+  * Safer removal of directories
+  * Move to registry.hub.docker.com as default registry
+  * Improve robustness of the installation of udockertools
+    - closes: #220, #228
+  * Read environment variables from file with --env-file=
+    - closes: #212
+  * Prepare for pypy
+    - closes: #211
+  * Fix for verification of container images
+    - closes: #209
+  * Fix command line processing for "-" in argument
+    - closes: #202
+  * Fix file protections on extraction making files u+r
+    - closes: #202, #206
+  * Fix comparison of kernel versions having non-integers
+    - closes: #183
+  * Support for both manifest V2 schema 1 and V2 schema 2
+    - closes: #218
+
 udocker (1.1.3)
   * Support for nvidia drivers on ubuntu
     - closes: #162
