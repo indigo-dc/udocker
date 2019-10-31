@@ -362,7 +362,7 @@ class GetURLexeCurl(GetURL):
         curl_executable = "curl"
         if self._curl_executable and isinstance(self._curl_executable, str):
             curl_executable = self._curl_executable
-        return(curl_executable + " " + " ".join(self._opts.values()) +
+        return(curl_executable + " " + " ".join(list(self._opts.values())) +
                " -D %s -o %s --stderr %s '%s'" %
                (self._files["header_file"], self._files["output_file"],
                 self._files["error_file"], self._files["url"]))
@@ -383,7 +383,7 @@ class GetURLexeCurl(GetURL):
             hdr.data["X-ND-CURLSTATUS"] = status
             if status:
                 Msg().err("Error: in download: %s"
-                          % str(FileUtil(self.conf, self._files["error_file"]).getdata()))
+                          % FileUtil(self.conf, self._files["error_file"]).getdata("r"))
                 FileUtil(self.conf, self._files["output_file"]).remove()
                 return(hdr, buf)
             status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])

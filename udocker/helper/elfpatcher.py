@@ -62,7 +62,7 @@ class ElfPatcher(object):
         ONE_SUCCESS, or return upon the first non empty output. #f is the
         placeholder for the filename.
         """
-        status = False
+        status = ""
         for dir_path, dummy, files in os.walk(root_path):
             for f_name in files:
                 try:
@@ -71,7 +71,7 @@ class ElfPatcher(object):
                         continue
                     if os.stat(f_path).st_uid != self._uid:
                         if action & self.ABORT_ON_ERROR:
-                            return None
+                            return ""
                         else:
                             continue
                     if ((action & self.BIN and os.access(f_path, os.X_OK)) or
@@ -79,9 +79,9 @@ class ElfPatcher(object):
                         out = Uprocess().get_output(cmd.replace("#f", f_path))
                         if out:
                             status = out
-                    if action & self.ABORT_ON_ERROR and status is None:
-                        return None
-                    elif action & self.ONE_SUCCESS and status is not None:
+                    if action & self.ABORT_ON_ERROR and status is "":
+                        return ""
+                    elif action & self.ONE_SUCCESS and status is not "":
                         return status
                     elif action & self.ONE_OUTPUT and status:
                         return status
@@ -103,10 +103,10 @@ class ElfPatcher(object):
     def get_original_loader(self):
         """Get the pathname of the original ld.so"""
         if os.path.exists(self._container_ld_so_path):
-            return FileUtil(self.conf, self._container_ld_so_path).getdata().strip()
+            return FileUtil(self.conf, self._container_ld_so_path).getdata("r").strip()
         elf_loader = self.guess_elf_loader()
         if elf_loader:
-            FileUtil(self.conf, self._container_ld_so_path).putdata(elf_loader)
+            FileUtil(self.conf, self._container_ld_so_path).putdata(elf_loader, "w")
         return elf_loader
 
     def get_container_loader(self):
@@ -119,7 +119,7 @@ class ElfPatcher(object):
 
     def get_patch_last_path(self):
         """get last host pathname to the patched container"""
-        last_path = FileUtil(self.conf, self._container_patch_path).getdata()
+        last_path = FileUtil(self.conf, self._container_patch_path).getdata("r").strip()
         if last_path and isinstance(last_path, str):
             return last_path.strip()
         return ""
@@ -133,7 +133,7 @@ class ElfPatcher(object):
 
     def get_patch_last_time(self):
         """get time in seconds of last full patch of container"""
-        last_time = FileUtil(self.conf, self._container_patch_time).getdata()
+        last_time = FileUtil(self.conf, self._container_patch_time).getdata("r").strip()
         try:
             return str(int(last_time))
         except ValueError:
@@ -155,8 +155,8 @@ class ElfPatcher(object):
                 last_time = str(int(time.time()))
             except ValueError:
                 pass
-            return (FileUtil(self.conf, self._container_patch_time).putdata(last_time) and
-                    FileUtil(self.conf, self._container_patch_path).putdata(self._container_dir))
+            return (FileUtil(self.conf, self._container_patch_time).putdata(last_time, "w") and
+                    FileUtil(self.conf, self._container_patch_path).putdata(self._container_dir, "w"))
         return False
 
     def restore_binaries(self):
@@ -184,21 +184,21 @@ class ElfPatcher(object):
             status = FileUtil(self.conf, elf_loader).copyto(self._container_ld_so_orig)
             if not status:
                 return False
-        ld_data = FileUtil(self.conf, self._container_ld_so_orig).getdata()
+        ld_data = FileUtil(self.conf, self._container_ld_so_orig).getdata("rb")
         if not ld_data:
-            ld_data = FileUtil(self.conf, elf_loader).getdata()
+            ld_data = FileUtil(self.conf, elf_loader).getdata("rb")
             if not ld_data:
                 return False
-        nul_etc = "\x00/\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-        nul_lib = "\x00/\x00\x00\x00"
-        nul_usr = "\x00/\x00\x00\x00"
-        etc = "\x00/etc/ld.so"
-        lib = "\x00/lib"
-        usr = "\x00/usr"
+        nul_etc = "\x00/\x00\x00\x00\x00\x00\x00\x00\x00\x00".encode()
+        nul_lib = "\x00/\x00\x00\x00".encode()
+        nul_usr = "\x00/\x00\x00\x00".encode()
+        etc = "\x00/etc/ld.so".encode()
+        lib = "\x00/lib".encode()
+        usr = "\x00/usr".encode()
         ld_data = ld_data.replace(etc, nul_etc).\
             replace(lib, nul_lib).replace(usr, nul_usr)
-        ld_library_path_orig = "\x00LD_LIBRARY_PATH\x00"
-        ld_library_path_new = "\x00LD_LIBRARY_REAL\x00"
+        ld_library_path_orig = "\x00LD_LIBRARY_PATH\x00".encode()
+        ld_library_path_new = "\x00LD_LIBRARY_REAL\x00".encode()
         ld_data = ld_data.replace(ld_library_path_orig, ld_library_path_new)
         if output_elf is None:
             return bool(FileUtil(self.conf, elf_loader).putdata(ld_data))
@@ -227,7 +227,7 @@ class ElfPatcher(object):
             match = re.search("([^ ]+) => ([^ ]+)", line)
             if match:
                 ld_dict[croot + os.path.dirname(match.group(2))] = True
-        return ld_dict.keys()
+        return list(ld_dict.keys())
 
     # pylint: disable=too-many-nested-blocks
     def _find_ld_libdirs(self, root_path=None):
@@ -254,9 +254,9 @@ class ElfPatcher(object):
         if force or not os.path.exists(self._container_ld_libdirs):
             ld_list = self._find_ld_libdirs()
             ld_str = ":".join(ld_list)
-            FileUtil(self.conf, self._container_ld_libdirs).putdata(ld_str)
+            FileUtil(self.conf, self._container_ld_libdirs).putdata(ld_str, "w")
             return ld_list
-        ld_str = FileUtil(self.conf, self._container_ld_libdirs).getdata()
+        ld_str = FileUtil(self.conf, self._container_ld_libdirs).getdata("r")
         return ld_str.split(":")
 
     def get_ld_library_path(self):

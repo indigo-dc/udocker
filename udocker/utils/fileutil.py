@@ -11,6 +11,8 @@ from udocker.msg import Msg
 from udocker.helper.unique import Unique
 from udocker.utils.uprocess import Uprocess
 
+PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
+
 
 class FileUtil(object):
     """Some utilities to manipulate files"""
@@ -136,7 +138,7 @@ class FileUtil(object):
 
     # TODO: tarfile is part of the standard lib
     def verify_tar(self):
-        """Verify a tar file"""
+        """Verify a tar file: tar tvf file.tar"""
         if not os.path.isfile(self.filename):
             return False
         else:
@@ -175,13 +177,12 @@ class FileUtil(object):
     def getdata(self, mode="rb"):
         """Read file content to a buffer"""
         try:
-            filep = open(self.filename, mode)
+            with open(self.filename, mode) as filep:
+                buf = filep.read()
+            Msg().err("Read buf:", buf, l=Msg.DBG)
+            return buf
         except (IOError, OSError, TypeError):
             return ""
-        else:
-            buf = filep.read()
-            filep.close()
-            return buf
 
     def get1stline(self, mode="rb"):
         """Read file 1st line to a buffer"""
@@ -197,13 +198,11 @@ class FileUtil(object):
     def putdata(self, buf, mode="wb"):
         """Write buffer to file"""
         try:
-            filep = open(self.filename, mode)
+            with open(self.filename, mode) as filep:
+                filep.write(buf)
+            return buf
         except (IOError, OSError, TypeError):
             return ""
-        else:
-            filep.write(buf)
-            filep.close()
-            return buf
 
     def _find_exec(self, cmd_to_use):
         """This method is called by find_exec() invokes a command like

@@ -39,7 +39,7 @@ class ExecutionMode(object):
 
     def get_mode(self):
         """Get execution mode"""
-        xmode = FileUtil(self.conf, self.container_execmode).getdata().strip()
+        xmode = FileUtil(self.conf, self.container_execmode).getdata("r").strip()
         if not xmode:
             xmode = self.conf['default_execution_mode']
         return xmode
@@ -50,7 +50,7 @@ class ExecutionMode(object):
         prev_xmode = self.get_mode()
         elfpatcher = ElfPatcher(self.conf, self.localrepo, self.container_id)
         filebind = FileBind(self.conf, self.localrepo, self.container_id)
-        orig_path = FileUtil(self.conf, self.container_orig_root).getdata().strip()
+        orig_path = FileUtil(self.conf, self.container_orig_root).getdata("r").strip()
         if xmode not in self.valid_modes:
             Msg().err("Error: invalid execmode:", xmode)
             return status
@@ -61,7 +61,7 @@ class ExecutionMode(object):
         if xmode.startswith("F"):
             if force or prev_xmode[0] in ("P", "R", "S"):
                 status = (FileUtil(self.conf, self.container_root).links_conv(force, True,
-                                                                   orig_path)
+                                                                              orig_path)
                           and elfpatcher.get_ld_libdirs(force))
         if xmode in ("P1", "P2", "F1", "R1", "S1"):
             if prev_xmode in ("P1", "P2", "F1", "R1", "S1"):
@@ -82,15 +82,20 @@ class ExecutionMode(object):
                           elfpatcher.patch_binaries())
             elif prev_xmode in ("F3", "F4"):
                 status = True
+
         if xmode[0] in ("P", "R", "S"):
             if force or (status and prev_xmode.startswith("F")):
-                status = FileUtil(self.conf, self.container_root).links_conv(force, False,
-                                                                  orig_path)
+                futil = FileUtil(self.conf, self.container_root)
+                status = futil.links_conv(force, False, orig_path)
+
         if status or force:
-            status = FileUtil(self.conf, self.container_execmode).putdata(xmode)
+            futil = FileUtil(self.conf, self.container_execmode)
+            status = futil.putdata(xmode, "w")
+
         if status or force:
-            status = FileUtil(self.conf, self.container_orig_root).putdata(
-                os.path.realpath(self.container_root))
+            futil = FileUtil(self.conf, self.container_orig_root)
+            status = futil.putdata(os.path.realpath(self.container_root), "w")
+
         if (not status) and (not force):
             Msg().err("Error: container setup failed")
         return status

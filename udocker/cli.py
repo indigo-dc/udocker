@@ -521,7 +521,7 @@ class UdockerCLI(object):
                 "p2": "CMD_OPT", "p3": True
             }
         }
-        for option, cmdp_args in cmd_options.iteritems():
+        for option, cmdp_args in list(cmd_options.items()):
             last_value = None
             for cmdp_fl in cmdp_args["fl"]:
                 option_value = cmdp.get(cmdp_fl, cmdp_args["p2"],
