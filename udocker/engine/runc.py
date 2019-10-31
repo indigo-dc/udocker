@@ -342,7 +342,7 @@ class RuncEngine(ExecutionEngineCommon):
                 break
             if readable:
                 try:
-                    sys.stdout.write(os.read(pmaster, 1))
+                    sys.stdout.write(os.read(pmaster, 1).decode())
                 except OSError:
                     break
         try:
