@@ -188,38 +188,55 @@ STRING="T025: udocker run ${CONT} env|sort"
 udocker run ${CONT} env|sort; return=$?
 result
 
-STRING="T026: udocker setup --execmode=F1 ${CONT}"
+STRING="T026: udocker setup --execmode=P2 ${CONT}"
+udocker setup --execmode=P2 ${CONT}; return=$?
+result
+
+STRING="T027: udocker run ${CONT} env|sort [MODE=P2]"
+udocker run ${CONT} env|sort; return=$?
+result
+
+STRING="T028: udocker setup --execmode=F1 ${CONT}"
 udocker setup --execmode=F1 ${CONT}; return=$?
 result
 
-STRING="T027: udocker run ${CONT} env|sort [MODE=F1]"
+STRING="T029: udocker run ${CONT} env|sort [MODE=F1]"
 udocker run ${CONT} env|sort; return=$?
 result
 
-STRING="T028: udocker setup --execmode=F2 ${CONT}"
+STRING="T030: udocker setup --execmode=F2 ${CONT}"
 udocker setup --execmode=F2 ${CONT}; return=$?
 result
 
-STRING="T029: udocker run ${CONT} env|sort [MODE=F2]"
+STRING="T031: udocker run ${CONT} env|sort [MODE=F2]"
 udocker run ${CONT} env|sort; return=$?
 result
-STRING="T030: udocker setup --execmode=F3 ${CONT}"
+
+STRING="T032: udocker setup --execmode=F3 ${CONT}"
 udocker setup --execmode=F3 ${CONT}; return=$?
 result
 
-STRING="T031: udocker run ${CONT} env|sort [MODE=F3]"
+STRING="T033: udocker run ${CONT} env|sort [MODE=F3]"
 udocker run ${CONT} env|sort; return=$?
 result
 
-STRING="T032: udocker mkrepo ${TEST_UDIR}"
+STRING="T034: udocker setup --execmode=R1 ${CONT}"
+udocker setup --execmode=R1 ${CONT}; return=$?
+result
+
+STRING="T035: udocker run ${CONT} env|sort [MODE=R1]"
+udocker run ${CONT} env|sort; return=$?
+result
+
+STRING="T036: udocker mkrepo ${TEST_UDIR}"
 udocker mkrepo ${TEST_UDIR}; return=$?
 result
 
-STRING="T033: udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}"
+STRING="T037: udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}"
 udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}; return=$?
 result
 
-STRING="T034: udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
+STRING="T038: udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
 udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}; return=$?
 result
 
@@ -232,23 +249,23 @@ else
 fi
 echo "------------------------------------------------------------>"
 
-STRING="T035: udocker load -i ${TAR_IMAGE}"
+STRING="T039: udocker load -i ${TAR_IMAGE}"
 udocker load -i ${TAR_IMAGE}; return=$?
 result
 
-STRING="T036: udocker protect ${CONT} (container)"
+STRING="T040: udocker protect ${CONT} (container)"
 udocker protect ${CONT}; return=$?
 result
 
-STRING="T037: udocker rm ${CONT} (try to remove protected container)"
+STRING="T041: udocker rm ${CONT} (try to remove protected container)"
 udocker rm ${CONT}; return=$?
 result_inv
 
-STRING="T038: udocker unprotect ${CONT} (container)"
+STRING="T042: udocker unprotect ${CONT} (container)"
 udocker unprotect ${CONT}; return=$?
 result
 
-STRING="T039: udocker rm ${CONT} (try to remove unprotected container)"
+STRING="T043: udocker rm ${CONT} (try to remove unprotected container)"
 udocker rm ${CONT}; return=$?
 result
 
@@ -261,18 +278,18 @@ else
 fi
 echo "------------------------------------------------------------>"
 
-STRING="T040: udocker import ${TAR_CONT} mycentos1:latest"
+STRING="T044: udocker import ${TAR_CONT} mycentos1:latest"
 udocker import ${TAR_CONT} mycentos1:latest; return=$?
 result
 
-STRING="T041: udocker import --tocontainer --name=mycont ${TAR_CONT}"
+STRING="T045: udocker import --tocontainer --name=mycont ${TAR_CONT}"
 udocker import --tocontainer --name=mycont ${TAR_CONT}; return=$?
 result
 
-STRING="T042: udocker import --clone --name=clone_cont ${TAR_CONT}"
+STRING="T046: udocker import --clone --name=clone_cont ${TAR_CONT}"
 udocker import --clone --name=clone_cont ${TAR_CONT}; return=$?
 result
 
-STRING="T043: udocker rmi ${DOCKER_IMG}"
+STRING="T047: udocker rmi ${DOCKER_IMG}"
 udocker rmi ${DOCKER_IMG}; return=$?
 result
