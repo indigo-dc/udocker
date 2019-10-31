@@ -46,4 +46,3 @@ class Uprocess(object):
         except subprocess.CalledProcessError:
             return None
         return content.strip()
-

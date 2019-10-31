@@ -241,7 +241,8 @@ class DockerIoAPI(object):
                 header = []
                 if self.v2_auth_token:
                     header = ["Authorization: Basic %s" % (self.v2_auth_token)]
-                (dummy, auth_buf) = self._get_url(auth_url, header=header, RETRY=retry)
+                (dum, auth_buf) = \
+                    self._get_url(auth_url, header=header, RETRY=retry)
                 token_buf = auth_buf.getvalue()
                 if token_buf and "token" in token_buf:
                     try:
@@ -809,7 +810,7 @@ class DockerLocalFileAPI(object):
         Msg().out("Info: added layer", layer_id, l=Msg.INF)
         return layer_id
 
-    def import_tocontainer(self, tarfile, imagerepo, tag, container_name):
+    def import_tocontainer(self, tarfile, imagerepo, tag, cont_name):
         """Import a tar file containing a simple directory tree possibly
         created with Docker export and create local container ready to use"""
         if not imagerepo:
@@ -818,23 +819,20 @@ class DockerLocalFileAPI(object):
         if not os.path.exists(tarfile) and tarfile != "-":
             Msg().err("Error: tar file does not exist:", tarfile)
             return False
-        if container_name:
-            if self.localrepo.get_container_id(container_name):
+        if cont_name:
+            if self.localrepo.get_container_id(cont_name):
                 Msg().err("Error: container name already exists:",
-                          container_name)
+                          cont_name)
                 return False
         layer_id = Unique().layer_v1()
-        container_json = self.create_container_meta(layer_id)
-        container_id = ContainerStructure(self.localrepo,
-                                          self.conf).create_fromlayer(imagerepo,
-                                                                      tag,
-                                                                      tarfile,
-                                                                      container_json)
-        if container_name:
-            self.localrepo.set_container_name(container_id, container_name)
-        return container_id
+        cont_json = self.create_container_meta(layer_id)
+        cont_str = ContainerStructure(self.localrepo, self.conf)
+        cont_id = cont_str.create_fromlayer(imagerepo, tag, tarfile, cont_json)
+        if cont_name:
+            self.localrepo.set_container_name(cont_id, cont_name)
+        return cont_id
 
-    def import_clone(self, tarfile, container_name):
+    def import_clone(self, tarfile, cont_name):
         """Import a tar file containing a clone of a udocker container
         created with export --clone and create local cloned container
         ready to use
@@ -842,40 +840,40 @@ class DockerLocalFileAPI(object):
         if not os.path.exists(tarfile) and tarfile != "-":
             Msg().err("Error: tar file does not exist:", tarfile)
             return False
-        if container_name:
-            if self.localrepo.get_container_id(container_name):
+        if cont_name:
+            if self.localrepo.get_container_id(cont_name):
                 Msg().err("Error: container name already exists:",
-                          container_name)
+                          cont_name)
                 return False
 
         cstruct = ContainerStructure(self.localrepo, self.conf)
-        container_id = cstruct.clone_fromfile(tarfile)
-        if container_name:
-            self.localrepo.set_container_name(container_id, container_name)
+        cont_id = cstruct.clone_fromfile(tarfile)
+        if cont_name:
+            self.localrepo.set_container_name(cont_id, cont_name)
 
-        return container_id
+        return cont_id
 
-    def clone_container(self, container_id, container_name):
+    def clone_container(self, cont_id, cont_name):
         """Clone/duplicate an existing container creating a complete
         copy including metadata, control files, and rootfs, The copy
         will have a new id.
         """
-        if container_name:
-            if self.localrepo.get_container_id(container_name):
+        if cont_name:
+            if self.localrepo.get_container_id(cont_name):
                 Msg().err("Error: container name already exists:",
-                          container_name)
+                          cont_name)
                 return False
 
-        cs = ContainerStructure(self.localrepo, self.conf, container_id)
-        dest_container_id = cs.clone()
-        if container_name:
-            self.localrepo.set_container_name(dest_container_id,
-                                              container_name)
+        cont_str = ContainerStructure(self.localrepo, self.conf, cont_id)
+        dest_cont_id = cont_str.clone()
+        if cont_name:
+            self.localrepo.set_container_name(dest_cont_id,
+                                              cont_name)
 
         exec_mode = ExecutionMode(self.conf, self.localrepo,
-                                  dest_container_id)
+                                  dest_cont_id)
         xmode = exec_mode.get_mode()
         if xmode.startswith("F"):
             exec_mode.set_mode(xmode, True)
 
-        return dest_container_id
+        return dest_cont_id

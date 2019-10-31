@@ -263,13 +263,14 @@ class ContainerStructure(object):
     def export_tofile(self, clone_file):
         """Export a container creating a tar file of the rootfs
         """
-        container_dir = self.localrepo.cd_container(self.container_id)
-        if not container_dir:
+        cont_dir = self.localrepo.cd_container(self.container_id)
+        if not cont_dir:
             Msg().err("Error: container not found:", self.container_id)
             return False
-        status = self._tar(clone_file, container_dir + "/ROOT")
+        status = self._tar(clone_file, cont_dir + "/ROOT")
         if not status:
-            Msg().err("Error: exporting container file system:", self.container_id)
+            Msg().err("Error: exporting container file system:", \
+                self.container_id)
         return self.container_id
 
     def clone_tofile(self, clone_file):

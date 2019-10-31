@@ -82,8 +82,8 @@ class UdockerTools(object):
                 tfile.extract(tar_in)
         tfile.close()
 
-        with open("VERSION") as f:
-            tar_version = f.readline().strip()
+        with open("VERSION") as filep:
+            tar_version = filep.readline().strip()
 
         Msg().err("Engine mode tarbal version", tar_version, l=Msg.DBG)
         Msg().err("tarball_release", self._tarball_release, l=Msg.DBG)
@@ -95,11 +95,13 @@ class UdockerTools(object):
     def purge(self):
         """Remove existing files in bin and lib"""
         for f_name in os.listdir(self.localrepo.bindir):
-            FileUtil(self.conf, self.localrepo.bindir + "/" + f_name).register_prefix()
-            FileUtil(self.conf, self.localrepo.bindir + "/" + f_name).remove()
+            full_path = self.localrepo.bindir + "/" + f_name
+            FileUtil(self.conf, full_path).register_prefix()
+            FileUtil(self.conf, full_path).remove()
         for f_name in os.listdir(self.localrepo.libdir):
-            FileUtil(self.conf, self.localrepo.libdir + "/" + f_name).register_prefix()
-            FileUtil(self.conf, self.localrepo.libdir + "/" + f_name).remove()
+            full_path = self.localrepo.libdir + "/" + f_name
+            FileUtil(self.conf, full_path).register_prefix()
+            FileUtil(self.conf, full_path).remove()
 
     def _install(self, tarball_file):
         """Install the tarball"""

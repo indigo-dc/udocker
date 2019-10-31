@@ -212,13 +212,13 @@ class ExecutionEngineCommon(object):
         for vol in list(self.opt["vol"]):
             (host_path, cont_path) = self._vol_split(vol)
             if not host_path:
-                Msg().err("Error: invalid volume host directory:", host_path)
+                Msg().err("Error: invalid volume host dir:", host_path)
                 return False
             if cont_path and not cont_path.startswith("/"):
-                Msg().err("Error: invalid volume container directory:", cont_path)
+                Msg().err("Error: invalid volume container dir:", cont_path)
                 return False
             if host_path and not host_path.startswith("/"):
-                Msg().err("Error: invalid volume host directory:", host_path)
+                Msg().err("Error: invalid volume host dir:", host_path)
                 return False
             if not os.path.exists(host_path):
                 if (host_path in self.conf['dri_list'] or
@@ -644,10 +644,11 @@ class ExecutionEngineCommon(object):
         for (env_var, value) in list(os.environ.items()):
             if not env_var:
                 continue
-            if env_var in self.conf['invalid_host_env'] or env_var in container_env:
+            if   (env_var in self.conf['invalid_host_env'] or
+                  env_var in container_env):
                 continue
-            if ((not self.opt["hostenv"]) and
-                    env_var not in self.conf['valid_host_env']):
+            if   ((not self.opt["hostenv"]) and
+                  env_var not in self.conf['valid_host_env']):
                 continue
             self.opt["env"].append("%s=%s" % (env_var, value))
 

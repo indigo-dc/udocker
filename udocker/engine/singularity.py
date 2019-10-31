@@ -42,7 +42,8 @@ class SingularityEngine(ExecutionEngineCommon):
         f_util = FileUtil(self.conf, self.localrepo.bindir)
         self.singularity_exec = f_util.find_file_in_dir(image_list)
         if not self.singularity_exec:
-            self.singularity_exec = FileUtil(self.conf, "singularity").find_exec()
+            futil_sing = FileUtil(self.conf, "singularity")
+            self.singularity_exec = futil_sing.find_exec()
         if not self.singularity_exec:
             Msg().err("Error: singularity executable not found")
             sys.exit(1)
@@ -50,8 +51,8 @@ class SingularityEngine(ExecutionEngineCommon):
     def _get_volume_bindings(self):
         """Get the volume bindings string for singularity exec"""
         vol_list = []
-        (tmphost_path, tmpcont_path) = self._filebind.start(self.conf['sysdirs_list'])
-        vol_list.extend(["-B", "%s:%s" % (tmphost_path, tmpcont_path), ])
+        (host_path, cont_path) = self._filebind.start(self.conf['sysdirs_list'])
+        vol_list.extend(["-B", "%s:%s" % (host_path, cont_path), ])
         home_dir = NixAuthentication(self.conf).get_home()
         home_is_binded = False
         tmp_is_binded = False
@@ -74,11 +75,13 @@ class SingularityEngine(ExecutionEngineCommon):
                 else:
                     self._filebind.add(host_path, cont_path)
         if not home_is_binded:
-            vol_list.extend(["--home", "%s/root:%s" % (self.container_root, "/root"), ])
+            vol_list.extend(["--home", "%s/root:%s" % \
+                             (self.container_root, "/root"), ])
         if not tmp_is_binded:
             vol_list.extend(["-B", "%s/tmp:/tmp" % (self.container_root), ])
         if not vartmp_is_binded:
-            vol_list.extend(["-B", "%s/var/tmp:/var/tmp" % (self.container_root), ])
+            vol_list.extend(["-B", "%s/var/tmp:/var/tmp" % \
+                             (self.container_root), ])
         return vol_list
 
     def _singularity_env_get(self):

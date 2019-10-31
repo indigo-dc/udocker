@@ -114,7 +114,8 @@ class FakechrootEngine(ExecutionEngineCommon):
                                os.path.realpath(self.container_root))
         self.opt["env"].append("LD_PRELOAD=" + self._fakechroot_so)
         if not self._is_volume("/tmp"):
-            self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" + self.conf['tmpdir'])
+            fkch_path = "FAKECHROOT_AF_UNIX_PATH=" + self.conf['tmpdir']
+            self.opt["env"].append(fkch_path)
         #
         if host_volumes:
             self.opt["env"].append("FAKECHROOT_EXCLUDE_PATH=" + host_volumes)
@@ -166,15 +167,18 @@ class FakechrootEngine(ExecutionEngineCommon):
 
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non binary executables (scripts)"""
-        filetype = GuestInfo(self.conf, self.container_root).get_filetype(exec_path)
+        ginfo = GuestInfo(self.conf, self.container_root)
+        filetype = ginfo.get_filetype(exec_path)
         if "ELF" in filetype and ("static" in filetype or
                                   "dynamic" in filetype):
             self.opt["cmd"][0] = exec_path
             return []
-        env_exec = FileUtil(self.conf, "env").find_inpath("/bin:/usr/bin",
-                                               self.container_root)
+
+        futil_env = FileUtil(self.conf, "env")
+        env_exec = futil_env.find_inpath("/bin:/usr/bin", self.container_root)
         if env_exec:
             return [self.container_root + "/" + env_exec, ]
+
         real_path = self._cont2host(exec_path.split(self.container_root, 1)[-1])
         hashbang = FileUtil(self.conf, real_path).get1stline()
         match = re.match("#! *([^ ]+)(.*)", hashbang)
@@ -187,8 +191,10 @@ class FakechrootEngine(ExecutionEngineCommon):
                 interpreter.extend(match.group(2).strip().split(" "))
             self.opt["cmd"][0] = exec_path.split(self.container_root, 1)[-1]
             return interpreter
-        sh_exec = FileUtil(self.conf, "sh").find_inpath(self._getenv("PATH"),
-                                             self.container_root)
+
+        futil_sh = FileUtil(self.conf, "sh")
+        sh_exec = futil_sh.find_inpath(self._getenv("PATH"),
+                                       self.container_root)
         if sh_exec:
             return [self.container_root + "/" + sh_exec, ]
         Msg().err("Error: sh not found")

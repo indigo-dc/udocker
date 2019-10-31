@@ -55,13 +55,15 @@ class GuestInfo(object):
 
     def osdistribution(self):
         """Get guest operating system distribution"""
-        for f_path in FileUtil(self.conf, self.root_dir + "/etc/.+-release").match():
+        futil_rel = FileUtil(self.conf, self.root_dir + "/etc/.+-release")
+        for f_path in futil_rel.match():
             if os.path.exists(f_path):
                 osinfo = FileUtil(self.conf, f_path).getdata("r")
                 match = re.match(r"([^=]+) release (\d+)", osinfo)
                 if match and match.group(1):
                     return (match.group(1).split(" ")[0],
                             match.group(2).split(".")[0])
+
         f_path = self.root_dir + "/etc/lsb-release"
         if os.path.exists(f_path):
             distribution = ""
@@ -69,14 +71,17 @@ class GuestInfo(object):
             osinfo = FileUtil(self.conf, f_path).getdata("r")
             match = re.search(r"DISTRIB_ID=(.+)(\n|$)",
                               osinfo, re.MULTILINE)
+
             if match:
                 distribution = match.group(1).split(" ")[0]
+
             match = re.search(r"DISTRIB_RELEASE=(.+)(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
                 version = match.group(1).split("=")[0]
             if distribution and version:
                 return (distribution, version)
+
         f_path = self.root_dir + "/etc/os-release"
         if os.path.exists(f_path):
             distribution = ""
@@ -86,12 +91,15 @@ class GuestInfo(object):
                               osinfo, re.MULTILINE)
             if match:
                 distribution = match.group(1).split(" ")[0]
+
             match = re.search(r"VERSION_ID=\"?(.+)\"?(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
                 version = match.group(1).split(".")[0]
+
             if distribution and version:
                 return (distribution, version)
+
         return ("", "")
 
     def osversion(self):

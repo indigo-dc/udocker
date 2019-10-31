@@ -342,10 +342,12 @@ class FileUtil(object):
         """Actually apply the link convertion"""
         p_path = os.path.realpath(os.path.dirname(f_path))
         if force and not os.access(p_path, os.W_OK):
-            os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
+            os.chmod(p_path,
+                     stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
             os.remove(f_path)
             os.symlink(new_l_path, f_path)
-            os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) & ~stat.S_IWUSR)
+            os.chmod(p_path,
+                     stat.S_IMODE(os.stat(p_path).st_mode) & ~stat.S_IWUSR)
         else:
             os.remove(f_path)
             os.symlink(new_l_path, f_path)
@@ -362,7 +364,9 @@ class FileUtil(object):
             match = recomp.match(l_path)
             if match:
                 orig_path = match.group(1)
-        if orig_path and l_path.startswith(orig_path) and orig_path != root_path:
+        if   (orig_path and
+              l_path.startswith(orig_path) and
+              orig_path != root_path):
             new_l_path = l_path.replace(orig_path, root_path, 1)
         elif not l_path.startswith(root_path):
             new_l_path = root_path + l_path
@@ -413,7 +417,8 @@ class FileUtil(object):
                         if self._link_set(f_path, orig_path, root_path, force):
                             links.append(f_path)
                     else:
-                        if self._link_restore(f_path, orig_path, root_path, force):
+                        if self._link_restore(f_path, orig_path,
+                                              root_path, force):
                             links.append(f_path)
                 except OSError:
                     continue

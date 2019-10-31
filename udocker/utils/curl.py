@@ -22,7 +22,6 @@ else:
     from io import StringIO as strio
 
 
-# TODO: some variables may be called before assignment
 class CurlHeader(object):
     """An http header parser to be used with PyCurl
     Allows to retrieve the header fields and the status.
@@ -224,7 +223,8 @@ class GetURLpyCurl(GetURL):
             pyc.setopt(pyc.TIMEOUT, self.download_timeout)
             openflags = "wb"
             if "resume" in kwargs and kwargs["resume"]:
-                pyc.setopt(pyc.RESUME_FROM, FileUtil(self.conf, output_file).size())
+                futil = FileUtil(self.conf, output_file)
+                pyc.setopt(pyc.RESUME_FROM, futil.size())
                 openflags = "ab"
             try:
                 filep = open(output_file, openflags)
@@ -245,14 +245,17 @@ class GetURLpyCurl(GetURL):
         max_redirs = 10
         status_code = 302
         hdr = ""
-        while status_code >= 300 and status_code <= 308 and cont_redirs < max_redirs:
+        while (status_code >= 300 and
+               status_code <= 308 and
+               cont_redirs < max_redirs):
             cont_redirs += 1
             hdr = CurlHeader()
             buf = strio()
             pyc = pycurl.Curl()
             self._set_defaults(pyc, hdr)
             try:
-                (output_file, filep) = self._mkpycurl(pyc, hdr, buf, *args, **kwargs)
+                (out_file, filep) = \
+                    self._mkpycurl(pyc, hdr, buf, *args, **kwargs)
                 Msg().err("curl url: ", self._url, l=Msg.DBG)
                 Msg().err("curl arg: ", kwargs, l=Msg.DBG)
                 pyc.perform()     # call pyculr
@@ -282,7 +285,7 @@ class GetURLpyCurl(GetURL):
             elif status_code != 200:
                 Msg().err("Error: in download: " + str(
                     hdr.data["X-ND-HTTPSTATUS"]))
-                FileUtil(self.conf, output_file).remove()
+                FileUtil(self.conf, out_file).remove()
         return(hdr, buf)
 
 
@@ -372,18 +375,20 @@ class GetURLexeCurl(GetURL):
         cont_redirs = 0
         max_redirs = 10
         status_code = 302
-        while status_code >= 300 and status_code <= 308 and cont_redirs < max_redirs:
+        while (status_code >= 300 and
+               status_code <= 308 and
+               cont_redirs < max_redirs):
             cont_redirs += 1
             hdr = CurlHeader()
             buf = strio()
             self._set_defaults()
             cmd = self._mkcurlcmd(*args, **kwargs)
-            status = subprocess.call(cmd, shell=True, close_fds=True) # call curl
+            status = subprocess.call(cmd, shell=True, close_fds=True)
             hdr.setvalue_from_file(self._files["header_file"])
             hdr.data["X-ND-CURLSTATUS"] = status
             if status:
-                Msg().err("Error: in download: %s"
-                          % FileUtil(self.conf, self._files["error_file"]).getdata("r"))
+                futil = FileUtil(self.conf, self._files["error_file"])
+                Msg().err("Error: in download: %s" % futil.getdata("r"))
                 FileUtil(self.conf, self._files["output_file"]).remove()
                 return(hdr, buf)
             status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])

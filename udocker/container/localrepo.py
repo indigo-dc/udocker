@@ -77,7 +77,8 @@ class LocalRepository(object):
                 os.makedirs(self.bindir)
             if not os.path.exists(self.libdir):
                 os.makedirs(self.libdir)
-            if not (self.conf['keystore'].startswith("/") or os.path.exists(self.homedir)):
+            if not (self.conf['keystore'].startswith("/") or \
+                    os.path.exists(self.homedir)):
                 os.makedirs(self.homedir)
         except(IOError, OSError):
             return False
@@ -336,12 +337,12 @@ class LocalRepository(object):
         for fname in os.listdir(tag_dir):
             f_path = tag_dir + "/" + fname  # link to layer
             if os.path.islink(f_path):
-                layer_file = tag_dir + "/" + os.readlink(f_path)
+                f_layer = tag_dir + "/" + os.readlink(f_path)
                 if not FileUtil(self.conf, f_path).remove() and not force:
                     return False
                 if not self._inrepository(fname):
                     # removing actual layers not reference by other repos
-                    if not FileUtil(self.conf, layer_file).remove() and not force:
+                    if not FileUtil(self.conf, f_layer).remove() and not force:
                         return False
         return True
 
@@ -475,10 +476,10 @@ class LocalRepository(object):
             layer_list = self.load_json("ancestry")
             if layer_list:
                 for layer_id in reversed(layer_list):
-                    layer_file = directory + "/" + layer_id + ".layer"
-                    if not os.path.exists(layer_file):
+                    f_layer = directory + "/" + layer_id + ".layer"
+                    if not os.path.exists(f_layer):
                         return(None, None)
-                    files.append(layer_file)
+                    files.append(f_layer)
                 json_file = directory + "/" + layer_list[0] + ".json"
                 if os.path.exists(json_file):
                     container_json = self.load_json(json_file)
@@ -487,10 +488,10 @@ class LocalRepository(object):
             manifest = self.load_json("manifest")
             if manifest and manifest["fsLayers"]:
                 for layer in reversed(manifest["fsLayers"]):
-                    layer_file = directory + "/" + layer["blobSum"]
-                    if not os.path.exists(layer_file):
+                    f_layer = directory + "/" + layer["blobSum"]
+                    if not os.path.exists(f_layer):
                         return(None, None)
-                    files.append(layer_file)
+                    files.append(f_layer)
                 json_string = manifest["history"][0]["v1Compatibility"].strip()
                 try:
                     container_json = json.loads(json_string)
