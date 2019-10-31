@@ -48,8 +48,8 @@ class UdockerCLI(object):
         if self.conf['keystore'].startswith("/"):
             self.keystore = KeyStore(self.conf, self.conf['keystore'])
         else:
-            self.keystore = \
-                KeyStore(self.conf, self.localrepo.homedir + "/" + self.conf['keystore'])
+            homedir = self.localrepo.homedir + "/" + self.conf['keystore']
+            self.keystore = KeyStore(self.conf, homedir)
 
     def _check_imagespec(self, imagespec, def_imagespec=None):
         """Perform the image verification"""
@@ -181,10 +181,10 @@ class UdockerCLI(object):
         import : import image (directory tree) from tar file or stdin
         import <tar-file> <repo/image:tag>
         import - <repo/image:tag>
-        --mv                       :if possible move tar-file instead of copy
-        --tocontainer              :import to container, no image is created
-        --clone                    :import udocker container format with metadata
-        --name=<container-name>    :with --tocontainer or --clone to add an alias
+        --mv                    :if possible move tar-file instead of copy
+        --tocontainer           :import to container, no image is created
+        --clone                 :import udocker container format with metadata
+        --name=<container-name> :with --tocontainer or --clone to add an alias
         """
         exit_status = 0
         move_tarball = cmdp.get("--mv")
@@ -1009,7 +1009,8 @@ class UdockerCLI(object):
         try:
             Msg().out("%s %s" % ("version:", __version__))
             Msg().out("%s %s" % ("tarball:", self.conf['tarball']))
-            Msg().out("%s %s" % ("tarball_release:", self.conf['tarball_release']))
+            Msg().out("%s %s" % \
+                ("tarball_release:", self.conf['tarball_release']))
         except NameError:
             exit_status = 1
             return exit_status
@@ -1027,7 +1028,7 @@ Syntax:
   udocker  [general_options] <command>  [command_options]  <command_args>
 
   udocker [-h|--help|help]        :Display this help and exits
-  udocker [-V|--version|version]  :Display udocker version and tarball version and exits
+  udocker [-V|--version|version]  :Display udocker and tarball version and exits
 
 General options common to all commands must appear before the command:
   -D, --debug                   :Debug
