@@ -89,13 +89,13 @@ class GetURL(object):
         self.http_proxy = self.conf['http_proxy']
         self.cache_support = False
         self.insecure = self.conf['http_insecure']
-        self._curl_executable = self.conf['use_curl_executable']
+        self._curl_exec = self.conf['use_curl_exec']
         self._select_implementation()
 
     # pylint: disable=locally-disabled
     def _select_implementation(self):
         """Select which implementation to use"""
-        if GetURLpyCurl(self.conf).is_available() and not self._curl_executable:
+        if GetURLpyCurl(self.conf).is_available() and not self._curl_exec:
             self._geturl = GetURLpyCurl(self.conf)
             self.cache_support = True
         elif GetURLexeCurl(self.conf).is_available():
@@ -359,10 +359,10 @@ class GetURLexeCurl(GetURL):
             self._opts["timeout"] = "-m %s" % (str(self.download_timeout))
             if "resume" in kwargs and kwargs["resume"]:
                 self._opts["resume"] = "-C -"
-        curl_executable = "curl"
-        if self._curl_executable and isinstance(self._curl_executable, str):
-            curl_executable = self._curl_executable
-        return(curl_executable + " " + " ".join(list(self._opts.values())) +
+        curl_exec = "curl"
+        if self._curl_exec and isinstance(self._curl_exec, str):
+            curl_exec = self._curl_exec
+        return(curl_exec + " " + " ".join(list(self._opts.values())) +
                " -D %s -o %s --stderr %s '%s'" %
                (self._files["header_file"], self._files["output_file"],
                 self._files["error_file"], self._files["url"]))

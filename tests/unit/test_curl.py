@@ -101,7 +101,7 @@ class GetURLTestCase(TestCase):
         self.conf['http_agent'] = ""
         self.conf['http_proxy'] = ""
         self.conf['http_insecure'] = 0
-        self.conf['use_curl_executable'] = ""
+        self.conf['use_curl_exec'] = ""
 
     def tearDown(self):
         pass

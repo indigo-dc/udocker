@@ -133,7 +133,7 @@ class Config(object):
         self.conf['ctimeout'] = 6       # default TCP connect timeout (secs)
         self.conf['http_agent'] = ""
         self.conf['http_insecure'] = False
-        self.conf['use_curl_executable'] = ""  # force use of executable
+        self.conf['use_curl_exec'] = ""  # force use of executable
 
         # docker hub v1
         self.conf['dockerio_index_url'] = "https://index.docker.io"
@@ -209,25 +209,25 @@ class Config(object):
         self.conf['topdir'] = os.getenv("UDOCKER_DIR", self.conf['topdir'])
         self.conf['bindir'] = os.getenv("UDOCKER_BIN", self.conf['bindir'])
         self.conf['libdir'] = os.getenv("UDOCKER_LIB", self.conf['libdir'])
-        self.conf['reposdir'] = os.getenv("UDOCKER_REPOS",
-                                          self.conf['reposdir'])
-        self.conf['layersdir'] = os.getenv("UDOCKER_LAYERS",
-                                           self.conf['layersdir'])
-        self.conf['containersdir'] = os.getenv("UDOCKER_CONTAINERS",
-                                               self.conf['containersdir'])
-        self.conf['dockerio_index_url'] = os.getenv("UDOCKER_INDEX",
-                                                    self.conf['dockerio_index_url'])
-        self.conf['dockerio_registry_url'] = os.getenv("UDOCKER_REGISTRY",
-                                                       self.conf['dockerio_registry_url'])
-        self.conf['tarball'] = os.getenv("UDOCKER_TARBALL",
-                                         self.conf['tarball'])
-        self.conf['fakechroot_so'] = os.getenv("UDOCKER_FAKECHROOT_SO",
-                                               self.conf['fakechroot_so'])
+        self.conf['reposdir'] = \
+            os.getenv("UDOCKER_REPOS", self.conf['reposdir'])
+        self.conf['layersdir'] = \
+            os.getenv("UDOCKER_LAYERS", self.conf['layersdir'])
+        self.conf['containersdir'] = \
+            os.getenv("UDOCKER_CONTAINERS", self.conf['containersdir'])
+        self.conf['dockerio_index_url'] = \
+            os.getenv("UDOCKER_INDEX", self.conf['dockerio_index_url'])
+        self.conf['dockerio_registry_url'] = \
+            os.getenv("UDOCKER_REGISTRY", self.conf['dockerio_registry_url'])
+        self.conf['tarball'] = \
+            os.getenv("UDOCKER_TARBALL", self.conf['tarball'])
+        self.conf['fakechroot_so'] = \
+            os.getenv("UDOCKER_FAKECHROOT_SO", self.conf['fakechroot_so'])
         self.conf['tmpdir'] = os.getenv("UDOCKER_TMP", self.conf['tmpdir'])
-        self.conf['keystore'] = os.getenv("UDOCKER_KEYSTORE",
-                                          self.conf['keystore'])
-        self.conf['use_curl_executable'] = os.getenv("UDOCKER_USE_CURL_EXECUTABLE",
-                                                     self.conf['use_curl_executable'])
+        self.conf['keystore'] = \
+            os.getenv("UDOCKER_KEYSTORE", self.conf['keystore'])
+        self.conf['use_curl_exec'] = \
+            os.getenv("UDOCKER_USE_CURL_EXEC", self.conf['use_curl_exec'])
 
     def _username(self):
         """Get username"""
