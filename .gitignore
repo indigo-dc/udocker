@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# tar, gz
+*.tar
+*.gz
+
 # Distribution / packaging
 .Python
 env/

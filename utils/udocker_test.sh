@@ -189,7 +189,7 @@ udocker run ${CONT} env|sort; return=$?
 result
 
 STRING="T026: udocker setup --execmode=F1 ${CONT}"
-udocker setup --execmode=F3 ${CONT}; return=$?
+udocker setup --execmode=F1 ${CONT}; return=$?
 result
 
 STRING="T027: udocker run ${CONT} env|sort [MODE=F1]"
@@ -197,7 +197,7 @@ udocker run ${CONT} env|sort; return=$?
 result
 
 STRING="T028: udocker setup --execmode=F2 ${CONT}"
-udocker setup --execmode=F3 ${CONT}; return=$?
+udocker setup --execmode=F2 ${CONT}; return=$?
 result
 
 STRING="T029: udocker run ${CONT} env|sort [MODE=F2]"
