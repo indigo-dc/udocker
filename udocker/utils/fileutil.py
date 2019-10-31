@@ -11,8 +11,6 @@ from udocker.msg import Msg
 from udocker.helper.unique import Unique
 from udocker.utils.uprocess import Uprocess
 
-PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
-
 
 class FileUtil(object):
     """Some utilities to manipulate files"""
