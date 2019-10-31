@@ -4,12 +4,15 @@ import os
 import sys
 import platform
 import pwd
-try:
-    from ConfigParser import ConfigParser
-except ImportError:
-    from configparser import ConfigParser
-
 from udocker.msg import Msg
+
+# Python version major.minor
+PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
+
+if PY_VER >= "3":
+    from configparser import ConfigParser
+else:
+    from ConfigParser import ConfigParser
 
 
 class Config(object):
@@ -264,6 +267,8 @@ class Config(object):
         except (NameError, AttributeError):
             return ""
 
+    # TODO: substitute deprecated platform.linux_distribution
+    #       check https://github.com/nir0s/distro
     @staticmethod
     def _osdistribution():
         """Get operating system distribution"""
@@ -277,18 +282,6 @@ class Config(object):
             return platform.release()
         except (NameError, AttributeError):
             return "3.2.1"
-
-    # TODO: to be removed, method now in executioncommon
-    # def oskernel_isgreater(self, ref_version):
-    #     """Compare kernel version is greater or equal than ref_version"""
-    #     os_rel = self._oskernel().split("-")[0]
-    #     os_ver = [int(x) for x in os_rel.split(".")]
-    #     for idx in (0, 1, 2):
-    #         if os_ver[idx] > ref_version[idx]:
-    #             return True
-    #         elif os_ver[idx] < ref_version[idx]:
-    #             return False
-    #     return True
 
     def getconf(self):
         """Return all configuration variables"""

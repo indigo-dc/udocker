@@ -677,11 +677,11 @@ class ExecutionEngineCommon(object):
         self.opt["env"].append("container_root=" + self.container_root)
         self.opt["env"].append("container_uuid=" + self.container_id)
         self.opt["env"].append("container_execmode=" + self.exec_mode)
-        cn = self.container_names
+        cont_name = self.container_names
         if PY_VER >= "3":
-            names = str(cn).translate(str.maketrans('', '', " '\"[]"))
+            names = str(cont_name).translate(str.maketrans('', '', " '\"[]"))
         else:
-            names = str(cn).translate(None, " '\"[]")
+            names = str(cont_name).translate(None, " '\"[]")
 
         self.opt["env"].append("container_names=" + names)
 

@@ -113,7 +113,7 @@ comment=no
 #required-attributes=
 
 # List of builtins function names that should not be used, separated by a comma
-bad-functions=map,filter,input
+bad-functions=map,filter,raw_input
 
 # Good variable names which should always be accepted, separated by a comma
 good-names=i,j,k,ex,Run,_
@@ -206,7 +206,7 @@ ignore-mixin-members=yes
 # List of module names for which member attributes should not be checked
 # (useful for modules/projects where namespaces are manipulated during runtime
 # and thus existing member attributes cannot be deduced by static analysis
-ignored-modules=
+ignored-modules=ConfigParser
 
 # List of classes names for which member attributes should not be checked
 # (useful for classes with attributes dynamically set).
@@ -246,7 +246,7 @@ notes=FIXME,XXX,TODO
 [FORMAT]
 
 # Maximum number of characters on a single line.
-max-line-length=100
+max-line-length=80
 
 # Regexp for a line that is allowed to be longer than the limit.
 ignore-long-lines=^\s*(# )?<?https?://\S+>?$
@@ -296,7 +296,7 @@ init-import=no
 
 # A regular expression matching the name of dummy variables (i.e. expectedly
 # not used).
-dummy-variables-rgx=_$|dummy
+dummy-variables-rgx=_$|dum
 
 # List of additional names supposed to be defined in builtins. Remember that
 # you should avoid to define new builtins when possible.
