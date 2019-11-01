@@ -586,7 +586,7 @@ class LocalRepository(object):
                               l=Msg.WAR)
         return structure
 
-    def _find_top_layer_id(self, structure, my_layer_id=""):
+    def find_top_layer_id(self, structure, my_layer_id=""):
         """Find the id of the top layer of a given image tag in a
         structure produced by _load_structure()
         """
@@ -603,7 +603,7 @@ class LocalRepository(object):
                     continue
                 elif (my_layer_id ==
                       structure["layers"][layer_id]["json"]["parent"]):
-                    found = self._find_top_layer_id(structure, layer_id)
+                    found = self.find_top_layer_id(structure, layer_id)
                     break
             if not found:
                 return my_layer_id
@@ -656,7 +656,7 @@ class LocalRepository(object):
             Msg().err("Error: load of image tag structure failed")
             return False
         Msg().out("Info: finding top layer id", l=Msg.INF)
-        top_layer_id = self._find_top_layer_id(structure)
+        top_layer_id = self.find_top_layer_id(structure)
         if not top_layer_id:
             Msg().err("Error: finding top layer id")
             return False

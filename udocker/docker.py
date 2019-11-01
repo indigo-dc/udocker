@@ -559,25 +559,6 @@ class DockerLocalFileAPI(object):
                               l=Msg.WAR)
         return structure
 
-    def _find_top_layer_id(self, structure, my_layer_id=""):
-        """Find the top layer within a Docker image"""
-        if "layers" not in structure:
-            return []
-        else:
-            if not my_layer_id:
-                my_layer_id = list(structure["layers"].keys())[0]
-            found = ""
-            for layer_id in structure["layers"]:
-                if "parent" not in structure["layers"][layer_id]["json"]:
-                    continue
-                elif (my_layer_id ==
-                      structure["layers"][layer_id]["json"]["parent"]):
-                    found = self._find_top_layer_id(structure, layer_id)
-                    break
-            if not found:
-                return my_layer_id
-            return found
-
     def _sorted_layers(self, structure, top_layer_id):
         """Return the layers sorted"""
         sorted_layers = []
@@ -626,7 +607,7 @@ class DockerLocalFileAPI(object):
             try:
                 top_layer_id = structure["repositories"][imagerepo][tag]
             except (IndexError, NameError, KeyError):
-                top_layer_id = self._find_top_layer_id(structure)
+                top_layer_id = self.localrepo.find_top_layer_id(structure)
             for layer_id in self._sorted_layers(structure, top_layer_id):
                 if str(structure["layers"][layer_id]["VERSION"]) != "1.0":
                     Msg().err("Error: layer version unknown")
