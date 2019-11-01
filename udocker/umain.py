@@ -89,11 +89,11 @@ class UMain(object):
             if cmd_help in cmds:
                 text = cmds[cmd_help].__doc__
                 Msg().out(text)
-                return exit_status
             else:
                 Msg().err("Error: command not found: %s" % cmd_help)
                 exit_status = 1
-                return exit_status
+
+            return exit_status
 
         if "listconf" in self.argv:
             exit_status = self.cli.do_listconf()
@@ -101,7 +101,6 @@ class UMain(object):
 
         if self.argv[1] in lversion:
             exit_status = self.cli.do_version()
-            return exit_status
         else:
             command = self.cmdp.get("", "CMD")
             if command in cmds:
@@ -117,7 +116,8 @@ class UMain(object):
             else:
                 Msg().err("Error: invalid command:", command, "\n")
                 exit_status = 1
-                return exit_status
+
+        return exit_status
 
     def start(self):
         """Program start and exception handling"""

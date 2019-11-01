@@ -554,7 +554,7 @@ class ExecutionEngineCommon(object):
         """
         if ("user" not in self.opt or (not self.opt["user"]) or
                 self.opt["user"] == "root" or self.opt["user"] == "0"):
-            Msg().err("Warning: running as uid 0 is not supported by this engine",
+            Msg().err("Warning: run as uid 0 is not supported by this engine",
                       l=Msg.WAR)
             self.opt["user"] = self.conf['username']
 
