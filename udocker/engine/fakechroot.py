@@ -22,7 +22,6 @@ class FakechrootEngine(ExecutionEngineCommon):
 
     def __init__(self, conf, localrepo, xmode):
         super(FakechrootEngine, self).__init__(conf, localrepo, xmode)
-        self.conf = conf
         self._fakechroot_so = ""
         self._elfpatcher = None
         self.exec_mode = xmode
@@ -155,15 +154,6 @@ class FakechrootEngine(ExecutionEngineCommon):
                                        self._elfpatcher.get_container_loader())
                 self.opt["env"].append("FAKECHROOT_PATCH_LAST_TIME=" +
                                        self._elfpatcher.get_patch_last_time())
-
-    def _run_invalid_options(self):
-        """check -p --publish -P --publish-all --net-coop"""
-        if self.opt["portsmap"]:
-            Msg().err("Warning: this execution mode does not support "
-                      "-p --publish", l=Msg.WAR)
-        if self.opt["netcoop"]:
-            Msg().err("Warning: this execution mode does not support "
-                      "-P --netcoop --publish-all", l=Msg.WAR)
 
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non binary executables (scripts)"""

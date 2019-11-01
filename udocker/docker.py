@@ -559,20 +559,6 @@ class DockerLocalFileAPI(object):
                               l=Msg.WAR)
         return structure
 
-    def _sorted_layers(self, structure, top_layer_id):
-        """Return the layers sorted"""
-        sorted_layers = []
-        next_layer = top_layer_id
-        while next_layer:
-            sorted_layers.append(next_layer)
-            if "parent" not in structure["layers"][next_layer]["json"]:
-                break
-            else:
-                next_layer = structure["layers"][next_layer]["json"]["parent"]
-                if not next_layer:
-                    break
-        return sorted_layers
-
     def _copy_layer_to_repo(self, filepath, layer_id):
         """Move an image layer file to a repository (mv or cp)"""
         if filepath.endswith("json"):
@@ -601,26 +587,30 @@ class DockerLocalFileAPI(object):
             if not tag_dir:
                 Msg().err("Error: setting up repository", imagerepo, tag)
                 return []
+
             if not self.localrepo.set_version("v1"):
                 Msg().err("Error: setting repository version")
                 return []
+
             try:
                 top_layer_id = structure["repositories"][imagerepo][tag]
             except (IndexError, NameError, KeyError):
                 top_layer_id = self.localrepo.find_top_layer_id(structure)
-            for layer_id in self._sorted_layers(structure, top_layer_id):
+
+            sort_lay = self.localrepo.sorted_layers(structure, top_layer_id)
+            for layer_id in sort_lay:
                 if str(structure["layers"][layer_id]["VERSION"]) != "1.0":
                     Msg().err("Error: layer version unknown")
                     return []
+
                 for layer_item in ("json_f", "layer_f"):
                     filename = str(structure["layers"][layer_id][layer_item])
                     if not self._copy_layer_to_repo(filename, layer_id):
                         Msg().err("Error: copying %s file %s"
                                   % (layer_item[:-2], filename))
                         return []
-            self.localrepo.save_json("ancestry",
-                                     self._sorted_layers(structure,
-                                                         top_layer_id))
+
+            self.localrepo.save_json("ancestry", sort_lay)
             return [imagerepo + ":" + tag]
 
     def _load_repositories(self, structure):

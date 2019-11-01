@@ -20,7 +20,6 @@ class PRootEngine(ExecutionEngineCommon):
 
     def __init__(self, conf, localrepo, xmode):
         super(PRootEngine, self).__init__(conf, localrepo, xmode)
-        self.conf = conf
         self.proot_exec = None                   # PRoot
         self.proot_noseccomp = False             # Noseccomp mode
         self._kernel = self.conf['oskernel']   # Emulate kernel

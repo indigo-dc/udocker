@@ -24,36 +24,37 @@ class ExecutionEngineCommon(object):
 
     def __init__(self, conf, localrepo, xmode):
         self.conf = conf
-        self.localrepo = localrepo               # LocalRepository instance
-        self.container_id = ""                   # Container id
-        self.container_dir = ""                  # Container directory
-        self.container_root = ""                 # ROOT of container filesystem
-        self.container_names = []                # Container names
-        self.imagerepo = None                    # Imagerepo of container image
+        self.localrepo = localrepo            # LocalRepository instance
+        self.container_id = ""                # Container id
+        self.container_dir = ""               # Container directory
+        self.container_root = ""              # ROOT of container filesystem
+        self.container_names = []             # Container names
+        self.imagerepo = None                 # Imagerepo of container image
         self.hostauth_list = self.conf['hostauth_list']  # passwd and group
-        self.exec_mode = xmode                   # ExecutionMode instance
+        self.exec_mode = xmode                # ExecutionMode instance
         # Metadata defaults
-        self.opt = dict()                        # Run options
-        self.opt["nometa"] = False               # Don't load metadata
-        self.opt["nosysdirs"] = False            # Bind host dirs
-        self.opt["dri"] = False                  # Directories needed for DRI
-        self.opt["bindhome"] = False             # Bind user home dir
-        self.opt["hostenv"] = False              # Pass host env
-        self.opt["hostauth"] = False             # Use hostauth_list
-        self.opt["novol"] = []                   # Volume bindings to ignore
-        self.opt["env"] = []                     # Environment from container
-        self.opt["vol"] = []                     # Volumes to mount
-        self.opt["cpuset"] = ""                  # Container CPU affinity
-        self.opt["user"] = ""                    # User to run in the container
-        self.opt["cwd"] = ""                     # Default dir in the container
-        self.opt["entryp"] = ""                  # Container entrypoint
-        self.opt["cmd"] = self.conf['cmd']       # Comand to execute
-        self.opt["hostname"] = ""                # Hostname TBD
-        self.opt["domain"] = ""                  # Host domainname TBD
-        self.opt["volfrom"] = []                 # Mount vol from container TBD
-        self.opt["portsmap"] = []                # Ports mapped in container
-        self.opt["portsexp"] = []                # Ports exposed by container
-        self.opt["devices"] = []                 # Devices passed to container
+        self.opt = dict()                     # Run options
+        self.opt["nometa"] = False            # Don't load metadata
+        self.opt["nosysdirs"] = False         # Bind host dirs
+        self.opt["dri"] = False               # Directories needed for DRI
+        self.opt["bindhome"] = False          # Bind user home dir
+        self.opt["hostenv"] = False           # Pass host env
+        self.opt["hostauth"] = False          # Use hostauth_list
+        self.opt["novol"] = []                # Volume bindings to ignore
+        self.opt["env"] = []                  # Environment from container
+        self.opt["vol"] = []                  # Volumes to mount
+        self.opt["cpuset"] = ""               # Container CPU affinity
+        self.opt["user"] = ""                 # User to run in the container
+        self.opt["cwd"] = ""                  # Default dir in the container
+        self.opt["entryp"] = ""               # Container entrypoint
+        self.opt["cmd"] = self.conf['cmd']    # Comand to execute
+        self.opt["hostname"] = ""             # Hostname TBD
+        self.opt["domain"] = ""               # Host domainname TBD
+        self.opt["volfrom"] = []              # Mount vol from container TBD
+        self.opt["portsmap"] = []             # Ports mapped in container
+        self.opt["portsexp"] = []             # Ports exposed by container
+        self.opt["devices"] = []              # Devices passed to container
+        self.opt["netcoop"] = []              # Networks mapped in container
 
     def _oskernel_isgreater(self, ref_version):
         """Compare kernel version is greater or equal than ref_version"""
@@ -389,6 +390,7 @@ class ExecutionEngineCommon(object):
             if " " in key or key[0] in string.digits:
                 Msg().err("Error: in environment:", pair)
                 return False
+            # TODO: Why this conditional is not for runc
             if " " in pair and "'" not in pair and '"' not in pair:
                 self.opt["env"].remove(pair)
                 self.opt["env"].append('%s=%s' % (key, val))
@@ -685,6 +687,15 @@ class ExecutionEngineCommon(object):
             names = str(cont_name).translate(None, " '\"[]")
 
         self.opt["env"].append("container_names=" + names)
+
+    def _run_invalid_options(self):
+        """check -p --publish -P --publish-all --net-coop"""
+        if self.opt["portsmap"]:
+            Msg().err("Warning: this execution mode does not support "
+                      "-p --publish", l=Msg.WAR)
+        if self.opt["netcoop"]:
+            Msg().err("Warning: this execution mode does not support "
+                      "-P --netcoop --publish-all", l=Msg.WAR)
 
     def _run_init(self, container_id):
         """Prepare execution of the container

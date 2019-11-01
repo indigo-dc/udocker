@@ -21,7 +21,6 @@ class SingularityEngine(ExecutionEngineCommon):
 
     def __init__(self, conf, localrepo, xmode):
         super(SingularityEngine, self).__init__(conf, localrepo, xmode)
-        self.conf = conf
         self.singularity_exec = None
         self._filebind = None
         self.execution_id = None
@@ -106,15 +105,6 @@ class SingularityEngine(ExecutionEngineCommon):
         FileUtil(self.conf, self.container_root + "/dev").mkdir()
         FileUtil(self.conf, self.container_root + "/sys").mkdir()
         FileUtil(self.conf, self.container_root + "/root").mkdir()
-
-    def _run_invalid_options(self):
-        """check -p --publish -P --publish-all --net-coop"""
-        if self.opt["portsmap"]:
-            Msg().err("Warning: this execution mode does not support "
-                      "-p --publish", l=Msg.WAR)
-        if self.opt["netcoop"]:
-            Msg().err("Warning: this execution mode does not support "
-                      "-P --netcoop --publish-all", l=Msg.WAR)
 
     def _has_option(self, option):
         """Check if singularity has a given cli option"""

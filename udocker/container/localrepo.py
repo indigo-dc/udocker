@@ -609,7 +609,7 @@ class LocalRepository(object):
                 return my_layer_id
             return found
 
-    def _sorted_layers(self, structure, top_layer_id):
+    def sorted_layers(self, structure, top_layer_id):
         """Return the image layers sorted"""
         sorted_layers = []
         next_layer = top_layer_id
@@ -661,7 +661,7 @@ class LocalRepository(object):
             Msg().err("Error: finding top layer id")
             return False
         Msg().out("Info: sorting layers", l=Msg.INF)
-        layers_list = self._sorted_layers(structure, top_layer_id)
+        layers_list = self.sorted_layers(structure, top_layer_id)
         status = True
         if "ancestry" in structure:
             layer = iter(layers_list)

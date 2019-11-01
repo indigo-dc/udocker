@@ -8,7 +8,6 @@ import platform
 import stat
 import string
 import select
-import json
 
 from udocker.engine.base import ExecutionEngineCommon
 from udocker.msg import Msg
@@ -26,7 +25,6 @@ class RuncEngine(ExecutionEngineCommon):
 
     def __init__(self, conf, localrepo, xmode):
         super(RuncEngine, self).__init__(conf, localrepo, xmode)
-        self.conf = conf
         self.runc_exec = None
         self._container_specjson = None
         self._container_specfile = None
@@ -63,30 +61,10 @@ class RuncEngine(ExecutionEngineCommon):
                                      close_fds=True)
             if status:
                 return False
-        json_obj = None
-        infile = None
-        try:
-            infile = open(self._container_specfile, "r")
-            json_obj = json.load(infile)
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
-            json_obj = None
-        if infile:
-            infile.close()
+
+        json_obj = self.localrepo.load_json(self._container_specfile)
         self._container_specjson = json_obj
         return json_obj
-
-    def _save_spec(self):
-        """Save spec file"""
-        outfile = None
-        try:
-            outfile = open(self._container_specfile, 'w')
-            json.dump(self._container_specjson, outfile)
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
-            if outfile:
-                outfile.close()
-            return False
-        outfile.close()
-        return True
 
     def _remove_quotes(self, argv):
         """Remove quotes from string"""
@@ -245,15 +223,6 @@ class RuncEngine(ExecutionEngineCommon):
                 return False
         return True
 
-    def _run_invalid_options(self):
-        """check -p --publish -P --publish-all --net-coop"""
-        if self.opt["portsmap"]:
-            Msg().err("Warning: this execution mode does not support "
-                      "-p --publish", l=Msg.WAR)
-        if self.opt["netcoop"]:
-            Msg().err("Warning: this execution mode does not support "
-                      "-P --netcoop --publish-all", l=Msg.WAR)
-
     def run(self, container_id):
         """Execute a Docker container using runc. This is the main method
         invoked to run the a container with runc.
@@ -299,7 +268,8 @@ class RuncEngine(ExecutionEngineCommon):
             self._del_mount_spec("mqueue", "/dev/mqueue")
         self._add_volume_bindings()
         self._add_devices()
-        self._save_spec()
+        self.localrepo.save_json(self._container_specfile,
+                                 self._container_specjson)
 
         if Msg.level >= Msg.DBG:
             runc_debug = ["--debug", ]
