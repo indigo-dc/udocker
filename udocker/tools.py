@@ -151,7 +151,8 @@ class UdockerTools(object):
         """
         Msg().out(self._instructions.__doc__, l=Msg.ERR)
         Msg().out("        udocker version:", __version__,
-                  "requires tarball release:", self._tarball_release, l=Msg.ERR)
+                  "requires tarball release:",
+                  self._tarball_release, l=Msg.ERR)
 
     def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
@@ -165,7 +166,8 @@ class UdockerTools(object):
 
     def get_installinfo(self):
         """Get json containing installation info"""
-        (infofile, dummy) = self._get_file(self._get_mirrors(self._installinfo))
+        mirrors = self._get_mirrors(self._installinfo)
+        (infofile, dummy) = self._get_file(mirrors)
         try:
             with open(infofile, "r") as filep:
                 self._install_json = json.load(filep)

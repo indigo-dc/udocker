@@ -75,8 +75,8 @@ class DockerIoAPI(object):
         kwargs["RETRY"] -= 1
         (hdr, buf) = self.curl.get(*args, **kwargs)
         Msg().err("header: %s" % (hdr.data), l=Msg.DBG)
-        if ("X-ND-HTTPSTATUS" in hdr.data and
-                "401" in hdr.data["X-ND-HTTPSTATUS"]):
+        if   ("X-ND-HTTPSTATUS" in hdr.data and
+              "401" in hdr.data["X-ND-HTTPSTATUS"]):
             if "www-authenticate" in hdr.data and hdr.data["www-authenticate"]:
                 if "RETRY" in kwargs and kwargs["RETRY"]:
                     auth_header = ""
@@ -94,6 +94,12 @@ class DockerIoAPI(object):
                 else:
                     hdr.data["X-ND-CURLSTATUS"] = 13  # Permission denied
         return(hdr, buf)
+
+    def _get_v1_auth(self, www_authenticate):
+        """Authentication for v1 API"""
+        if "Token" in www_authenticate:
+            return self.v1_auth_header
+        return ""
 
     def _get_file(self, url, filename, cache_mode):
         """Get a file and check its size. Optionally enable other
@@ -154,12 +160,6 @@ class DockerIoAPI(object):
                 ValueError, TypeError, KeyError):
             self.v1_auth_header = ""
             return hdr.data, []
-
-    def _get_v1_auth(self, www_authenticate):
-        """Authentication for v1 API"""
-        if "Token" in www_authenticate:
-            return self.v1_auth_header
-        return ""
 
     def get_v1_image_tags(self, endpoint, imagerepo):
         """Get list of tags in a repo from Docker Hub"""
@@ -676,18 +676,17 @@ class DockerLocalFileAPI(object):
         A file for import is a tarball of a directory tree, does not contain
         metadata. This method creates minimal metadata.
         """
-        container_json = dict()
-        container_json["id"] = layer_id
-        container_json["comment"] = comment
-        container_json["created"] = \
-            time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z")
-        container_json["architecture"] = self.conf['arch']
-        container_json["os"] = self.conf['osversion']
+        cont_json = dict()
+        cont_json["id"] = layer_id
+        cont_json["comment"] = comment
+        cont_json["created"] = time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z")
+        cont_json["architecture"] = self.conf['arch']
+        cont_json["os"] = self.conf['osversion']
         layer_file = self.localrepo.layersdir + "/" + layer_id + ".layer"
-        container_json["size"] = FileUtil(self.conf, layer_file).size()
-        if container_json["size"] == -1:
-            container_json["size"] = 0
-        container_json["container_config"] = {
+        cont_json["size"] = FileUtil(self.conf, layer_file).size()
+        if cont_json["size"] == -1:
+            cont_json["size"] = 0
+        cont_json["container_config"] = {
             "Hostname": "",
             "Domainname": "",
             "User": "",
@@ -714,7 +713,7 @@ class DockerLocalFileAPI(object):
             "OnBuild": None,
             "Labels": None
         }
-        container_json["config"] = {
+        cont_json["config"] = {
             "Hostname": "",
             "Domainname": "",
             "User": "",
@@ -741,7 +740,7 @@ class DockerLocalFileAPI(object):
             "OnBuild": None,
             "Labels": None
         }
-        return container_json
+        return cont_json
 
     def import_toimage(self, tarfile, imagerepo, tag, move_tarball=True):
         """Import a tar file containing a simple directory tree possibly
