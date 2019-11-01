@@ -141,7 +141,7 @@ class PRootEngineTestCase(TestCase):
         prex = PRootEngine(self.conf, self.local, self.xmode)
         prex.opt['netcoop'] = True
         status = prex._get_network_map()
-        self.assertEqual(status, ['-p', '80:8080 ', '-p', '443:8443 ', '-n'])
+        self.assertEqual(status, ['-p', '80:8080', '-p', '443:8443', '-n'])
 
     @patch.object(PRootEngine, '_run_banner')
     @patch.object(PRootEngine, '_run_env_cleanup_dict')
