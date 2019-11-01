@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-"""Information about the guest/container"""
+"""Information about the host or guest/container"""
 
 import os
 import re
+
 from udocker.utils.uprocess import Uprocess
 from udocker.utils.fileutil import FileUtil
 
 
-class GuestInfo(object):
+class OSInfo(object):
     """Get os information from a directory tree"""
 
     def __init__(self, conf, root_dir):

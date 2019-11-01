@@ -7,7 +7,7 @@ import re
 import subprocess
 
 from udocker.engine.base import ExecutionEngineCommon
-from udocker.helper.guestinfo import GuestInfo
+from udocker.helper.osinfo import OSInfo
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.elfpatcher import ElfPatcher
@@ -43,7 +43,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             lib = "libfakechroot"
             deflib = "libfakechroot.so"
             image_list = [deflib, ]
-            guest = GuestInfo(self.conf, self.container_root)
+            guest = OSInfo(self.conf, self.container_root)
             arch = guest.arch()
             (distro, version) = guest.osdistribution()
             version = version.split(".")[0]
@@ -157,7 +157,7 @@ class FakechrootEngine(ExecutionEngineCommon):
 
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non binary executables (scripts)"""
-        ginfo = GuestInfo(self.conf, self.container_root)
+        ginfo = OSInfo(self.conf, self.container_root)
         filetype = ginfo.get_filetype(exec_path)
         if "ELF" in filetype and ("static" in filetype or
                                   "dynamic" in filetype):

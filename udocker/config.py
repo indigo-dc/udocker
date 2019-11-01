@@ -5,6 +5,8 @@ import sys
 import platform
 import pwd
 from udocker.msg import Msg
+from udocker.helper.osinfo import OSInfo
+
 
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
@@ -229,71 +231,16 @@ class Config(object):
         self.conf['use_curl_exec'] = \
             os.getenv("UDOCKER_USE_CURL_EXEC", self.conf['use_curl_exec'])
 
-    def _username(self):
-        """Get username"""
-        try:
-            return pwd.getpwuid(self.conf['uid']).pw_name
-        except KeyError:
-            return ""
-
-    @staticmethod
-    def _arch():
-        """Get the host system architecture"""
-        arch = ""
-        try:
-            machine = platform.machine()
-            bits = platform.architecture()[0]
-            if machine == "x86_64":
-                if bits == "32bit":
-                    arch = "i386"
-                else:
-                    arch = "amd64"
-            elif machine in ("i386", "i486", "i586", "i686"):
-                arch = "i386"
-            elif machine.startswith("arm"):
-                if bits == "32bit":
-                    arch = "arm"
-                else:
-                    arch = "arm64"
-        except (NameError, AttributeError):
-            pass
-        return arch
-
-    @staticmethod
-    def _osversion():
-        """Get operating system"""
-        try:
-            return platform.system().lower()
-        except (NameError, AttributeError):
-            return ""
-
-    # TODO: substitute deprecated platform.linux_distribution
-    #       check https://github.com/nir0s/distro
-    @staticmethod
-    def _osdistribution():
-        """Get operating system distribution"""
-        (distribution, version, dummy) = platform.linux_distribution()
-        return distribution.split(" ")[0], version.split(".")[0]
-
-    @staticmethod
-    def _oskernel():
-        """Get operating system"""
-        try:
-            return platform.release()
-        except (NameError, AttributeError):
-            return "3.2.1"
-
     def getconf(self):
         """Return all configuration variables"""
+        osinfo = OSInfo(self.conf, "")
         self.conf['uid'] = os.getuid()
         self.conf['gid'] = os.getgid()
-        self.conf['username'] = self._username()
-        self.conf['arch'] = self._arch()
-        self.conf['osversion'] = self._osversion()
-        self.conf['osdistribution'] = self._osdistribution()
-        self.conf['oskernel'] = self._oskernel()
-
+        self.conf['username'] = pwd.getpwuid(self.conf['uid']).pw_name
+        self.conf['oskernel'] = platform.release()
+        self.conf['arch'] = osinfo.arch()
+        self.conf['osversion'] = osinfo.osversion()
+        self.conf['osdistribution'] = osinfo.osdistribution()
         self._file_override()   # Override with variables in conf file
         self._env_override()    # Override with variables in environment
-
         return self.conf
