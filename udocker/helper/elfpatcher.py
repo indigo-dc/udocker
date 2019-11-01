@@ -85,9 +85,9 @@ class ElfPatcher(object):
                     bool_err = bool(action & self.ABORT_ON_ERROR)
                     bool_suc = bool(action & self.ONE_SUCCESS)
                     bool_out = bool(action & self.ONE_OUTPUT)
-                    if bool_err and (status is ""):
+                    if bool_err and (status == ""):
                         return ""
-                    elif bool_suc and (status is not ""):
+                    elif bool_suc and (status != ""):
                         return status
                     elif bool_out and status:
                         return status
