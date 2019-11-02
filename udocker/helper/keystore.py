@@ -18,6 +18,51 @@ class KeyStore(object):
         self.keystore_file = keystore_file
         self.credential = dict()
 
+    def get(self, url):
+        """Get credential from keystore for given url"""
+        auths = self._read_all()
+        try:
+            self.credential = auths[url]
+            return self.credential["auth"]
+        except KeyError:
+            pass
+        return ""
+
+    def put(self, url, credential, email):
+        """Put credential in keystore for given url"""
+        if not credential:
+            return False
+        auths = self._read_all()
+        auths[url] = {"auth": credential, "email": email, }
+        self._shred()
+        return self._write_all(auths)
+
+    def delete(self, url):
+        """Delete credential from keystore for given url"""
+        exit_status = 0
+        self._verify_keystore()
+        auths = self._read_all()
+        try:
+            del auths[url]
+        except KeyError:
+            exit_status = 1
+            return exit_status
+        self._shred()
+        exit_status = self._write_all(auths)
+        return exit_status
+
+    def erase(self):
+        """Delete all credentials from keystore"""
+        exit_status = 0
+        self._verify_keystore()
+        try:
+            self._shred()
+            os.unlink(self.keystore_file)
+        except (IOError, OSError):
+            exit_status = 1
+            return exit_status
+        return exit_status
+
     def _verify_keystore(self):
         """Verify the keystore file and directory"""
         keystore_uid = FileUtil(self.conf, self.keystore_file).uid()
@@ -66,51 +111,6 @@ class KeyStore(object):
         except (IOError, OSError):
             if oldmask is not None:
                 os.umask(oldmask)
-            exit_status = 1
-            return exit_status
-        return exit_status
-
-    def get(self, url):
-        """Get credential from keystore for given url"""
-        auths = self._read_all()
-        try:
-            self.credential = auths[url]
-            return self.credential["auth"]
-        except KeyError:
-            pass
-        return ""
-
-    def put(self, url, credential, email):
-        """Put credential in keystore for given url"""
-        if not credential:
-            return False
-        auths = self._read_all()
-        auths[url] = {"auth": credential, "email": email, }
-        self._shred()
-        return self._write_all(auths)
-
-    def delete(self, url):
-        """Delete credential from keystore for given url"""
-        exit_status = 0
-        self._verify_keystore()
-        auths = self._read_all()
-        try:
-            del auths[url]
-        except KeyError:
-            exit_status = 1
-            return exit_status
-        self._shred()
-        exit_status = self._write_all(auths)
-        return exit_status
-
-    def erase(self):
-        """Delete all credentials from keystore"""
-        exit_status = 0
-        self._verify_keystore()
-        try:
-            self._shred()
-            os.unlink(self.keystore_file)
-        except (IOError, OSError):
             exit_status = 1
             return exit_status
         return exit_status
