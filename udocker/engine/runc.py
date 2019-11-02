@@ -154,7 +154,7 @@ class RuncEngine(ExecutionEngineCommon):
         if "/dev/nvidiactl" not in added_devices:
             nvidia_mode = NvidiaMode(self.conf, self.localrepo,
                                      self.container_id)
-            if nvidia_mode.get_mode():
+            if nvidia_mode.get_nvidia():
                 for dev_name in nvidia_mode.get_devices():
                     if dev_name not in added_devices:
                         self._add_device_spec(dev_name)

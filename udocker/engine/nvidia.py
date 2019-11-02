@@ -126,7 +126,7 @@ class NvidiaMode(object):
             return True
         return False
 
-    def set_mode(self, force=False):
+    def set_nvidia(self, force=False):
         """Set nvidia mode"""
         if not self.container_dir:
             Msg().err("Error: nvidia set mode container dir not found")
@@ -161,7 +161,7 @@ class NvidiaMode(object):
         except (IOError, OSError, TypeError):
             Msg().err("Error creating:", self._container_nvidia_set)
 
-    def get_mode(self):
+    def get_nvidia(self):
         """Get nvidia mode"""
         return os.path.exists(self._container_nvidia_set)
 

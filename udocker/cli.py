@@ -949,7 +949,7 @@ class UdockerCLI(object):
 
         if nvidia:
             nvidia_mode = NvidiaMode(self.conf, self.localrepo, container_id)
-            nvidia_mode.set_mode(force)
+            nvidia_mode.set_nvidia(force)
 
         exec_mode = ExecutionMode(self.conf, self.localrepo, container_id)
         if xmode:
