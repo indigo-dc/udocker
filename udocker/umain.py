@@ -50,12 +50,11 @@ class UMain(object):
                           self.conf['topdir'])
                 sys.exit(1)
 
-        self.localrepo = LocalRepository(self.conf)
-        if not self.localrepo.is_repo():
+        if not LocalRepository(self.conf).is_repo():
             Msg().out("Info: creating repo: " + self.conf['topdir'], l=Msg.INF)
-            self.localrepo.create_repo()
+            LocalRepository(self.conf).create_repo()
 
-        self.cli = UdockerCLI(self.localrepo, self.conf)
+        self.cli = UdockerCLI(LocalRepository(self.conf), self.conf)
 
     def _execute(self):
         """Command parsing and selection"""

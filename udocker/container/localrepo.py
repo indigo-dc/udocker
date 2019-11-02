@@ -95,18 +95,6 @@ class LocalRepository(object):
                       os.path.exists(self.homedir)]
         return all(dirs_exist)
 
-    def is_container_id(self, obj):
-        """Verify if the provided object matches the format of a
-        local container id.
-        """
-        if not isinstance(obj, str):
-            return False
-        match = re.match(
-            "^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$", obj)
-        if match:
-            return True
-        return False
-
     def protect_container(self, container_id):
         """Protect a container directory against deletion"""
         return self._protect(self.cd_container(container_id))
