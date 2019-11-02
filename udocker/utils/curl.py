@@ -103,6 +103,17 @@ class GetURL(object):
             Msg().err("Error: need curl or pycurl to perform downloads")
             raise NameError('need curl or pycurl')
 
+    def _get_status_code(self, status_line):
+        """
+        get http status code from http status line.
+        Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+        """
+        parts = status_line.split(" ")
+        try:
+            return int(parts[1])
+        except ValueError:
+            return 400
+
     def get_content_length(self, hdr):
         """Get content length from the http header"""
         try:
@@ -135,17 +146,6 @@ class GetURL(object):
             raise TypeError('wrong number of arguments')
         kwargs["post"] = args[1]
         return self._geturl.get(args[0], **kwargs)
-
-    def _get_status_code(self, status_line):
-        """
-        get http status code from http status line.
-        Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
-        """
-        parts = status_line.split(" ")
-        try:
-            return int(parts[1])
-        except ValueError:
-            return 400
 
 
 class GetURLpyCurl(GetURL):
@@ -262,7 +262,7 @@ class GetURLpyCurl(GetURL):
             except(IOError, OSError):
                 return(None, None)
             except pycurl.error as error:
-                errno, errstr = error
+                (errno, errstr) = error
                 hdr.data["X-ND-CURLSTATUS"] = errno
                 if not hdr.data["X-ND-HTTPSTATUS"]:
                     hdr.data["X-ND-HTTPSTATUS"] = errstr
