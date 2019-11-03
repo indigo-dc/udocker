@@ -87,17 +87,6 @@ class UdockerTools(object):
         Msg().err("Verify version status", status, l=Msg.DBG)
         return status
 
-    def purge(self):
-        """Remove existing files in bin and lib"""
-        for f_name in os.listdir(self.localrepo.bindir):
-            full_path = self.localrepo.bindir + "/" + f_name
-            FileUtil(self.conf, full_path).register_prefix()
-            FileUtil(self.conf, full_path).remove()
-        for f_name in os.listdir(self.localrepo.libdir):
-            full_path = self.localrepo.libdir + "/" + f_name
-            FileUtil(self.conf, full_path).register_prefix()
-            FileUtil(self.conf, full_path).remove()
-
     def _install(self, tarball_file):
         """Install the tarball"""
         if not (tarball_file and os.path.isfile(tarball_file)):
@@ -164,7 +153,7 @@ class UdockerTools(object):
             pass
         return mirrors
 
-    def get_installinfo(self):
+    def _get_installinfo(self):
         """Get json containing installation info"""
         mirrors = self._get_mirrors(self._installinfo)
         (infofile, dummy) = self._get_file(mirrors)
@@ -177,6 +166,17 @@ class UdockerTools(object):
                 OSError, IOError):
             Msg().err("Info: no messages available", l=Msg.VER)
         return self._install_json
+
+    def purge(self):
+        """Remove existing files in bin and lib"""
+        for f_name in os.listdir(self.localrepo.bindir):
+            full_path = self.localrepo.bindir + "/" + f_name
+            FileUtil(self.conf, full_path).register_prefix()
+            FileUtil(self.conf, full_path).remove()
+        for f_name in os.listdir(self.localrepo.libdir):
+            full_path = self.localrepo.libdir + "/" + f_name
+            FileUtil(self.conf, full_path).register_prefix()
+            FileUtil(self.conf, full_path).remove()
 
     def install(self, force=False):
         """Get the udocker tarball and install the binaries"""
@@ -201,7 +201,7 @@ class UdockerTools(object):
                 if "://" in url:
                     FileUtil(self.conf, tfile).remove()
                     if status:
-                        self.get_installinfo()
+                        self._get_installinfo()
                 if status:
                     return True
             Msg().err("Error: installing tarball:", self._tarball)
