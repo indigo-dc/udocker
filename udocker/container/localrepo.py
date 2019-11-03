@@ -4,9 +4,9 @@
 import os
 import re
 import json
+import hashlib
 
 from udocker.utils.fileutil import FileUtil
-from udocker.utils.chksum import ChkSUM
 from udocker.msg import Msg
 
 
@@ -59,6 +59,17 @@ class LocalRepository(object):
         """change to a different localrepo"""
         self.conf['topdir'] = topdir
         self.__init__(self.conf)
+
+    def sha256(self, filename):
+        """sha256 calculation using hashlib"""
+        hash_sha256 = hashlib.sha256()
+        try:
+            with open(filename, "rb") as filep:
+                for chunk in iter(lambda: filep.read(4096), b""):
+                    hash_sha256.update(chunk)
+            return hash_sha256.hexdigest()
+        except (IOError, OSError):
+            return ""
 
     def create_repo(self):
         """creates properties with pathnames for easy
@@ -674,7 +685,7 @@ class LocalRepository(object):
             return False
         match = re.search("/sha256:(\\S+)$", layer_f)
         if match:
-            layer_f_chksum = ChkSUM().sha256(layer_f)
+            layer_f_chksum = self.sha256(layer_f)
             if layer_f_chksum != match.group(1):
                 Msg().err("Error: layer file chksum error:", layer_f)
                 return False

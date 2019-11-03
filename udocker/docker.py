@@ -11,7 +11,6 @@ import json
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.curl import GetURL
-from udocker.utils.chksum import ChkSUM
 from udocker.helper.unique import Unique
 from udocker.container.structure import ContainerStructure
 from udocker.engine.execmode import ExecutionMode
@@ -110,7 +109,7 @@ class DockerIoAPI(object):
         hdr = ""
         match = re.search("/sha256:(\\S+)$", filename)
         if match:
-            layer_f_chksum = ChkSUM().sha256(filename)
+            layer_f_chksum = self.localrepo.sha256(filename)
             if layer_f_chksum == match.group(1):
                 return True             # is cached skip download
             else:
