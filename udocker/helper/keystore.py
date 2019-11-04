@@ -90,7 +90,7 @@ class KeyStore(object):
         exit_status = 0
         self._verify_keystore()
         try:
-            size = os.stat(self.keystore_file).st_size
+            size = FileUtil(self.conf, self.keystore_file).size()
             with open(self.keystore_file, "rb+") as filep:
                 filep.write(" " * size)
         except (IOError, OSError):

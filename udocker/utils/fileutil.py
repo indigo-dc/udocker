@@ -74,7 +74,6 @@ class FileUtil(object):
                 self.filename = tmp_file
                 return tmp_file
 
-    # TODO: check if it can be removed
     def mkdir(self):
         """Create directory"""
         try:
@@ -83,7 +82,6 @@ class FileUtil(object):
             return False
         return True
 
-    # TODO: check if it can be removed
     def mktmpdir(self):
         """Create temporary directory"""
         dirname = self.mktmp()
@@ -91,7 +89,6 @@ class FileUtil(object):
             return dirname
         return None
 
-    # TODO: check if it can be removed
     def uid(self):
         """Get the file owner user id"""
         try:
@@ -137,7 +134,6 @@ class FileUtil(object):
             del FileUtil.tmptrash[self.filename]
         return True
 
-    # TODO: tarfile is part of the standard lib
     def verify_tar(self):
         """Verify a tar file: tar tvf file.tar"""
         if not os.path.isfile(self.filename):
@@ -158,17 +154,6 @@ class FileUtil(object):
         for filename in tmptrash_copy:
             FileUtil(self.conf, filename).remove()
 
-    # TODO: check if it can be removed
-    def isdir(self):
-        """Is filename a directory"""
-        try:
-            if os.path.isdir(self.filename):
-                return True
-        except (IOError, OSError, TypeError):
-            pass
-        return False
-
-    # TODO: check if it can be removed
     def size(self):
         """File size in bytes"""
         try:
@@ -258,15 +243,6 @@ class FileUtil(object):
             for directory in path:
                 full_path_list.append(rootdir + directory + "/" + self.basename)
         return full_path_list
-
-    # TODO: check if it can be removed
-    def rename(self, dest_filename):
-        """Rename/move file"""
-        try:
-            os.rename(self.filename, dest_filename)
-        except (IOError, OSError):
-            return False
-        return True
 
     def _stream2file(self, dest_filename, mode="w"):
         """Copy from stdin to another file. We avoid shutil to have

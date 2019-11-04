@@ -524,7 +524,7 @@ class DockerLocalFileAPI(object):
         """Load the structure of a Docker pulled image"""
         structure = dict()
         structure["layers"] = dict()
-        if FileUtil(self.conf, tmp_imagedir).isdir():
+        if os.path.isdir(tmp_imagedir):
             for fname in os.listdir(tmp_imagedir):
                 f_path = tmp_imagedir + "/" + fname
                 if fname == "repositories":
@@ -534,7 +534,7 @@ class DockerLocalFileAPI(object):
                     pass
                 elif len(fname) == 69 and fname.endswith(".json"):
                     pass
-                elif len(fname) == 64 and FileUtil(self.conf, f_path).isdir():
+                elif len(fname) == 64 and os.path.isdir(f_path):
                     layer_id = fname
                     structure["layers"][layer_id] = dict()
                     for layer_f in os.listdir(f_path):

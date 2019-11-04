@@ -337,23 +337,6 @@ class FileUtilTestCase(TestCase):
         FileUtil(self.conf, "").cleanup()
         self.assertEqual(mock_remove.call_count, 2)
 
-    @patch('udocker.utils.fileutil.os.path.isdir')
-    @patch('udocker.utils.fileutil.os.path.abspath')
-    @patch('udocker.utils.fileutil.os.path.basename')
-    @patch.object(FileUtil, '_register_prefix')
-    def test_13_isdir(self, mock_regpre, mock_base, mock_absp, mock_isdir):
-        """Test FileUtil.isdir()."""
-        mock_regpre.return_value = None
-        mock_base.return_value = 'filename.txt'
-        mock_absp.return_value = '/tmp/filename.txt'
-        mock_isdir.return_value = True
-        status = FileUtil(self.conf, "somedir").isdir()
-        self.assertTrue(status)
-
-        mock_isdir.return_value = False
-        status = FileUtil(self.conf, "somedir").isdir()
-        self.assertFalse(status)
-
     @patch('udocker.utils.fileutil.os.stat')
     @patch('udocker.utils.fileutil.os.path.abspath')
     @patch('udocker.utils.fileutil.os.path.basename')
@@ -453,18 +436,6 @@ class FileUtilTestCase(TestCase):
     def test_20_list_inpath(self):
         """Test FileUtil.list_inpath()."""
         pass
-
-    @patch('udocker.utils.fileutil.os.rename')
-    @patch('udocker.utils.fileutil.os.path.abspath')
-    @patch('udocker.utils.fileutil.os.path.basename')
-    @patch.object(FileUtil, '_register_prefix')
-    def test_21_rename(self, mock_regpre, mock_base, mock_absp, mock_rename):
-        """Test FileUtil.rename()."""
-        mock_regpre.return_value = None
-        mock_base.return_value = 'filename.txt'
-        mock_absp.return_value = '/tmp/filename.txt'
-        status = FileUtil(self.conf, "somefile").rename("otherfile")
-        self.assertTrue(status)
 
     @patch('udocker.utils.fileutil.os.path.abspath')
     @patch('udocker.utils.fileutil.os.path.basename')

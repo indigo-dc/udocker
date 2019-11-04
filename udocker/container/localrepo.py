@@ -590,7 +590,7 @@ class LocalRepository(object):
     def _find(self, filename, in_dir):
         """is a specific layer filename referenced by another image TAG"""
         found_list = []
-        if FileUtil(self.conf, in_dir).isdir():
+        if os.path.isdir(in_dir):
             for fullname in os.listdir(in_dir):
                 f_path = in_dir + "/" + fullname
                 if os.path.islink(f_path):
@@ -625,7 +625,7 @@ class LocalRepository(object):
         The tags identify actual usable containers
         """
         tag_list = []
-        if FileUtil(self.conf, tag_dir).isdir():
+        if os.path.isdir(tag_dir):
             for fname in os.listdir(tag_dir):
                 f_path = tag_dir + "/" + fname
                 if self._is_tag(f_path):
@@ -639,7 +639,7 @@ class LocalRepository(object):
         """Scan the repository structure of a given image tag"""
         structure = {}
         structure["layers"] = dict()
-        if FileUtil(self.conf, imagetagdir).isdir():
+        if os.path.isdir(imagetagdir):
             for fname in os.listdir(imagetagdir):
                 f_path = imagetagdir + "/" + fname
                 if fname == "ancestry":
