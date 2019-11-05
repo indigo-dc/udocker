@@ -4,10 +4,7 @@
 """
 udocker unit tests: CmdParser
 """
-import sys
 from unittest import TestCase, main
-
-sys.path.append('.')
 from udocker.cmdparser import CmdParser
 
 
@@ -20,19 +17,19 @@ class CmdParserTestCase(TestCase):
     def tearDown(self):
         pass
 
-    def test_01__init(self):
-        """Test CmdParser() Constructor."""
-        self.assertEqual(self.cmdp._argv, "")
-        self.assertIsInstance(self.cmdp._argv_split, dict)
-        self.assertIsInstance(self.cmdp._argv_consumed_options, dict)
-        self.assertIsInstance(self.cmdp._argv_consumed_params, dict)
-        self.assertEqual(self.cmdp._argv_split['CMD'], "")
-        self.assertEqual(self.cmdp._argv_split['GEN_OPT'], [])
-        self.assertEqual(self.cmdp._argv_split['CMD_OPT'], [])
-        self.assertEqual(self.cmdp._argv_consumed_options['GEN_OPT'], [])
-        self.assertEqual(self.cmdp._argv_consumed_options['CMD_OPT'], [])
-        self.assertEqual(self.cmdp._argv_consumed_params['GEN_OPT'], [])
-        self.assertEqual(self.cmdp._argv_consumed_params['CMD_OPT'], [])
+    #def test_01__init(self):
+    #    """Test CmdParser() Constructor."""
+    #    self.assertEqual(self.cmdp._argv, "")
+    #    self.assertIsInstance(self.cmdp._argv_split, dict)
+    #    self.assertIsInstance(self.cmdp._argv_consumed_options, dict)
+    #    self.assertIsInstance(self.cmdp._argv_consumed_params, dict)
+    #    self.assertEqual(self.cmdp._argv_split['CMD'], "")
+    #    self.assertEqual(self.cmdp._argv_split['GEN_OPT'], [])
+    #    self.assertEqual(self.cmdp._argv_split['CMD_OPT'], [])
+    #    self.assertEqual(self.cmdp._argv_consumed_options['GEN_OPT'], [])
+    #    self.assertEqual(self.cmdp._argv_consumed_options['CMD_OPT'], [])
+    #    self.assertEqual(self.cmdp._argv_consumed_params['GEN_OPT'], [])
+    #    self.assertEqual(self.cmdp._argv_consumed_params['CMD_OPT'], [])
 
     def test_02_parse(self):
         """Test CmdParser().parse()."""
@@ -78,14 +75,6 @@ class CmdParserTestCase(TestCase):
 
     def test_05_declare_options(self):
         """Test CmdParser().declare_options()."""
-        pass
-
-    def test_06__get_options(self):
-        """Test CmdParser()._get_options()."""
-        pass
-
-    def test_07__get_params(self):
-        """Test CmdParser()._get_params()."""
         pass
 
 
