@@ -6,9 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
-# tar, gz
+# tar, gz, html
 *.tar
 *.gz
+*.html
+*.htm
 
 # Distribution / packaging
 .Python
