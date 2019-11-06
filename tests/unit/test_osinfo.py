@@ -2,17 +2,13 @@
 """
 udocker unit tests: OSInfo
 """
-import sys
 from unittest import TestCase, main
-try:
-    from unittest.mock import Mock, MagicMock, patch, mock_open
-except ImportError:
-    from mock import Mock, MagicMock, patch, mock_open
-
-sys.path.append('.')
-
 from udocker.helper.osinfo import OSInfo
 from udocker.config import Config
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
 
 
 class GuestInfoTestCase(TestCase):
@@ -90,14 +86,14 @@ class GuestInfoTestCase(TestCase):
     @patch('udocker.helper.osinfo.FileUtil.getdata')
     def test_04_osdistribution(self, mock_gdata, mock_match, mock_exists):
         """Test OSInfo.osdistribution()"""
-        self.lsbdata = "DISTRIB_ID=Ubuntu\n" \
-                       "DISTRIB_RELEASE=16.04\n" \
-                       "DISTRIB_CODENAME=xenial\n" \
-                       "DISTRIB_DESCRIPTION=Ubuntu 16.04.5 LTS\n"
+        lsbdata = "DISTRIB_ID=Ubuntu\n" \
+                  "DISTRIB_RELEASE=16.04\n" \
+                  "DISTRIB_CODENAME=xenial\n" \
+                  "DISTRIB_DESCRIPTION=Ubuntu 16.04.5 LTS\n"
         mock_match.return_value = ["/etc/lsb-release"]
         osdist = ("Ubuntu", "16.04")
         mock_exists.return_value = True
-        mock_gdata.return_value = self.lsbdata
+        mock_gdata.return_value = lsbdata
         ginfo = OSInfo(self.conf, self.rootdir)
         status = ginfo.osdistribution()
         self.assertEqual(status, osdist)
