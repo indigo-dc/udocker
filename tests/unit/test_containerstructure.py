@@ -271,13 +271,47 @@ class ContainerStructureTestCase(TestCase):
         status = prex.get_container_meta("Entrypoint", "BBB", container_json)
         self.assertEqual(status, "BBB")
 
-    def test_07_export_tofile(self):
+    @patch.object(ContainerStructure, '_tar')
+    @patch('udocker.container.localrepo.LocalRepository.cd_container', autospec=True)
+    @patch('udocker.container.structure.Msg')
+    def test_07_export_tofile(self, mock_msg, mock_cdcont, mock_tar):
         """Test ContainerStructure().export_tofile()."""
-        pass
+        # Empty container dir
+        mock_msg.return_value.level.return_value = 0
+        mock_cdcont.return_value = ""
+        mock_tar.return_value = True
+        prex = ContainerStructure(self.local, self.conf)
+        status = prex.export_tofile("clone_file")
+        self.assertFalse(status)
 
-    def test_08_clone_tofile(self):
+        # Non-empty container dir
+        mock_msg.return_value.level.return_value = 0
+        mock_cdcont.return_value = "/ROOT"
+        mock_tar.return_value = True
+        prex = ContainerStructure(self.local, self.conf, "123456")
+        status = prex.export_tofile("clone_file")
+        self.assertEqual(status, "123456")
+
+    @patch.object(ContainerStructure, '_tar')
+    @patch('udocker.container.localrepo.LocalRepository.cd_container', autospec=True)
+    @patch('udocker.container.structure.Msg')
+    def test_08_clone_tofile(self, mock_msg, mock_cdcont, mock_tar):
         """Test ContainerStructure().clone_tofile()."""
-        pass
+        # Empty container dir
+        mock_msg.return_value.level.return_value = 0
+        mock_cdcont.return_value = ""
+        mock_tar.return_value = True
+        prex = ContainerStructure(self.local, self.conf)
+        status = prex.clone_tofile("clone_file")
+        self.assertFalse(status)
+
+        # Non-empty container dir
+        mock_msg.return_value.level.return_value = 0
+        mock_cdcont.return_value = "/ROOT"
+        mock_tar.return_value = True
+        prex = ContainerStructure(self.local, self.conf, "123456")
+        status = prex.clone_tofile("clone_file")
+        self.assertEqual(status, "123456")
 
     def test_09_clone(self):
         """Test ContainerStructure().clone()."""

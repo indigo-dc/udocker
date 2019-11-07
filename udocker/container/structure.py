@@ -166,10 +166,12 @@ class ContainerStructure(object):
         if not cont_dir:
             Msg().err("Error: container not found:", self.container_id)
             return False
+
         status = self._tar(clone_file, cont_dir + "/ROOT")
         if not status:
             Msg().err("Error: exporting container file system:", \
                 self.container_id)
+
         return self.container_id
 
     def clone_tofile(self, clone_file):
@@ -180,9 +182,11 @@ class ContainerStructure(object):
         if not container_dir:
             Msg().err("Error: container not found:", self.container_id)
             return False
+
         status = self._tar(clone_file, container_dir)
         if not status:
-            Msg().err("Error: exporting container as clone:", self.container_id)
+            Msg().err("Error: export container as clone:", self.container_id)
+
         return self.container_id
 
     def clone(self):
@@ -192,18 +196,21 @@ class ContainerStructure(object):
         if not source_container_dir:
             Msg().err("Error: source container not found:", self.container_id)
             return False
+
         dest_container_id = Unique().uuid(os.path.basename(self.imagerepo))
         dest_container_dir = self.localrepo.setup_container(
             "CLONING", "inprogress", dest_container_id)
         if not dest_container_dir:
             Msg().err("Error: create destination container: setting up")
             return False
+
         status = self._copy(source_container_dir, dest_container_dir)
         if not status:
             Msg().err("Error: creating container:", dest_container_id)
         elif not self._chk_container_root(dest_container_id):
             Msg().err("Warning: check container content:", dest_container_id,
                       l=Msg.WAR)
+
         return dest_container_id
 
     def _chk_container_root(self, container_id=None):
