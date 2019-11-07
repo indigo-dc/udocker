@@ -33,11 +33,13 @@ class ContainerStructure(object):
             if not container_dir:
                 Msg().err("Error: container id or name not found")
                 return(False, False)
-            container_json = self.localrepo.load_json(
-                container_dir + "/container.json")
+
+            fjson = container_dir + "/container.json"
+            container_json = self.localrepo.load_json(fjson)
             if not container_json:
                 Msg().err("Error: invalid container json metadata")
                 return(False, False)
+
         return(container_dir, container_json)
 
     def create_fromimage(self, imagerepo, tag):
@@ -54,17 +56,21 @@ class ContainerStructure(object):
         if not image_dir:
             Msg().err("Error: create container: imagerepo is invalid")
             return False
+
         (container_json, layer_files) = self.localrepo.get_image_attributes()
         if not container_json:
             Msg().err("Error: create container: getting layers or json")
             return False
+
         if not self.container_id:
             self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
+
         container_dir = self.localrepo.setup_container(
             self.imagerepo, self.tag, self.container_id)
         if not container_dir:
             Msg().err("Error: create container: setting up container")
             return False
+
         self.localrepo.save_json(
             container_dir + "/container.json", container_json)
         status = self._untar_layers(layer_files, container_dir + "/ROOT")
@@ -73,6 +79,7 @@ class ContainerStructure(object):
         elif not self._chk_container_root():
             Msg().err("Warning: check container content:", self.container_id,
                       l=Msg.WAR)
+
         return self.container_id
 
     def create_fromlayer(self, imagerepo, tag, layer_file, container_json):
@@ -82,22 +89,26 @@ class ContainerStructure(object):
         self.tag = tag
         if not self.container_id:
             self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
+
         if not container_json:
             Msg().err("Error: create container: getting json")
             return False
+
         container_dir = self.localrepo.setup_container(
             self.imagerepo, self.tag, self.container_id)
         if not container_dir:
             Msg().err("Error: create container: setting up")
             return False
-        self.localrepo.save_json(
-            container_dir + "/container.json", container_json)
+
+        fjson = container_dir + "/container.json"
+        self.localrepo.save_json(fjson, container_json)
         status = self._untar_layers([layer_file, ], container_dir + "/ROOT")
         if not status:
             Msg().err("Error: creating container:", self.container_id)
         elif not self._chk_container_root():
             Msg().err("Warning: check container content:", self.container_id,
                       l=Msg.WAR)
+
         return self.container_id
 
     def clone_fromfile(self, clone_file):
@@ -106,17 +117,20 @@ class ContainerStructure(object):
         """
         if not self.container_id:
             self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
+
         container_dir = self.localrepo.setup_container(
             "CLONING", "inprogress", self.container_id)
         if not container_dir:
             Msg().err("Error: create container: setting up")
             return False
+
         status = self._untar_layers([clone_file, ], container_dir)
         if not status:
             Msg().err("Error: creating container clone:", self.container_id)
         elif not self._chk_container_root():
             Msg().err("Warning: check container content:", self.container_id,
                       l=Msg.WAR)
+
         return self.container_id
 
     def get_container_meta(self, param, default, container_json):

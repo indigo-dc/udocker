@@ -90,7 +90,7 @@ class ContainerStructureTestCase(TestCase):
     @patch('udocker.container.structure.Unique.uuid')
     @patch('udocker.container.structure.Msg')
     def test_03_create_fromimage(self, mock_msg, mock_uuid, mock_untar,
-                       mock_cdimg, mock_getimgattr, mock_setcont):
+                                 mock_cdimg, mock_getimgattr, mock_setcont):
         """Test ContainerStructure().create_fromimage()."""
         mock_msg.return_value.level.return_value = 0
         mock_cdimg.return_value = ""
@@ -120,13 +120,104 @@ class ContainerStructureTestCase(TestCase):
         status = prex.create_fromimage("imagerepo", "tag")
         self.assertEqual(status, "123456")
 
-    def test_04_create_fromlayer(self):
+    @patch.object(ContainerStructure, '_chk_container_root')
+    @patch.object(ContainerStructure, '_untar_layers')
+    @patch('udocker.container.localrepo.LocalRepository.save_json', autospec=True)
+    @patch('udocker.container.localrepo.LocalRepository.setup_container', autospec=True)
+    @patch('udocker.container.structure.Unique.uuid')
+    @patch('udocker.container.structure.Msg')
+    def test_04_create_fromlayer(self, mock_msg, mock_uuid, mock_setcont,
+                                 mock_save, mock_untar, mock_chkcont):
         """Test ContainerStructure().create_fromlayer()."""
-        pass
+        # Empty container_json
+        cont_json = dict()
+        mock_msg.return_value.level.return_value = 0
+        mock_uuid.return_value = "123456"
+        prex = ContainerStructure(self.local, self.conf)
+        status = prex.create_fromlayer("imagerepo", "tag", "layer", cont_json)
+        self.assertFalse(status)
 
-    def test_05_clone_fromfile(self):
+        # Non-empty container_json, empty cont dir
+        cont_json = {
+            "architecture": "amd64",
+            "author": "https://github.com/CentOS/sig-cloud-instance-images",
+            "config": {
+                "AttachStderr": False,
+                "AttachStdin": False,
+                "AttachStdout": False,
+                "Cmd": [
+                    "/bin/bash"
+                ],
+                "Domainname": "",
+                "Entrypoint": None,
+                "Env": [
+                    "PATH=\
+                    /usr/local/sbin:\
+                    /usr/local/bin:/usr/sbin:\
+                    /usr/bin:/sbin:\
+                    /bin"
+                ],
+                "Hostname": "9aac06993d69",
+                "Image": "sha256:4f64745dd34556af8f644a7886fcf" +
+                         "cb11c059f64e1b0a753cb41188656ec8b33",
+                "Labels": {
+                    "build-date": "20161102",
+                    "license": "GPLv2",
+                    "name": "CentOS Base Image",
+                    "vendor": "CentOS"
+                },
+                "OnBuild": None,
+                "OpenStdin": False,
+                "StdinOnce": False,
+                "Tty": False,
+                "User": "",
+                "Volumes": None,
+                "WorkingDir": ""
+            },
+        }
+        mock_msg.return_value.level.return_value = 0
+        mock_uuid.return_value = "123456"
+        mock_setcont.return_value = ""
+        prex = ContainerStructure(self.local, self.conf)
+        status = prex.create_fromlayer("imagerepo", "tag", "layer", cont_json)
+        self.assertFalse(status)
+
+        # Non-empty container_json, non empty cont dir
+        mock_msg.return_value.level.return_value = 0
+        mock_uuid.return_value = "123456"
+        mock_setcont.return_value = "/ROOT"
+        mock_save.return_value = True
+        mock_untar.return_value = True
+        mock_chkcont.return_value = 3
+        prex = ContainerStructure(self.local, self.conf)
+        status = prex.create_fromlayer("imagerepo", "tag", "layer", cont_json)
+        self.assertEqual(status, "123456")
+
+    @patch.object(ContainerStructure, '_chk_container_root')
+    @patch.object(ContainerStructure, '_untar_layers')
+    @patch('udocker.container.localrepo.LocalRepository.setup_container', autospec=True)
+    @patch('udocker.container.structure.Unique.uuid')
+    @patch('udocker.container.structure.Msg')
+    def test_05_clone_fromfile(self, mock_msg, mock_uuid, mock_setcont,
+                               mock_untar, mock_chkcont):
         """Test ContainerStructure().clone_fromfile()."""
-        pass
+        # Empty container_dir
+        mock_msg.return_value.level.return_value = 0
+        mock_setcont.return_value = ""
+        mock_uuid.return_value = "123456"
+        prex = ContainerStructure(self.local, self.conf)
+        status = prex.clone_fromfile("clone_file")
+        self.assertFalse(status)
+
+        # Non-empty container_dir
+        mock_msg.return_value.level.return_value = 0
+        mock_setcont.return_value = "/ROOT"
+        mock_uuid.return_value = "123456"
+        mock_untar.return_value = True
+        mock_chkcont.return_value = 3
+        prex = ContainerStructure(self.local, self.conf)
+        status = prex.clone_fromfile("clone_file")
+        self.assertEqual(status, "123456")
 
     def test_06_get_container_meta(self):
         """Test ContainerStructure().get_container_meta()."""
