@@ -313,9 +313,33 @@ class ContainerStructureTestCase(TestCase):
         status = prex.clone_tofile("clone_file")
         self.assertEqual(status, "123456")
 
-    def test_09_clone(self):
+    @patch.object(ContainerStructure, '_chk_container_root')
+    @patch.object(ContainerStructure, '_copy')
+    @patch('udocker.container.localrepo.LocalRepository.cd_container', autospec=True)
+    @patch('udocker.container.localrepo.LocalRepository.setup_container', autospec=True)
+    @patch('udocker.container.structure.Unique.uuid')
+    @patch('udocker.container.structure.Msg')
+    def test_09_clone(self, mock_msg, mock_uuid, mock_setcont, mock_cdcont,
+                      mock_copy, mock_chkcont):
         """Test ContainerStructure().clone()."""
-        pass
+        # Empty source container_dir
+        mock_msg.return_value.level.return_value = 0
+        mock_cdcont.return_value = ""
+        mock_uuid.return_value = "123456"
+        prex = ContainerStructure(self.local, self.conf)
+        status = prex.clone()
+        self.assertFalse(status)
+
+        # Non-empty source container_dir
+        mock_msg.return_value.level.return_value = 0
+        mock_cdcont.return_value = "/ROOT/src"
+        mock_setcont.return_value = "/ROOT/dst"
+        mock_uuid.return_value = "123456"
+        mock_copy.return_value = True
+        mock_chkcont.return_value = 3
+        prex = ContainerStructure(self.local, self.conf)
+        status = prex.clone()
+        self.assertEqual(status, "123456")
 
     @patch('udocker.container.structure.FileUtil')
     def test_10__apply_whiteouts(self, mock_futil):
