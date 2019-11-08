@@ -38,25 +38,6 @@ class DockerIoAPI(object):
         self.search_link = ""
         self.search_ended = False
 
-    def set_proxy(self, http_proxy):
-        """Select a socks http proxy for API access and file download"""
-        self.curl.set_proxy(http_proxy)
-
-    def set_registry(self, registry_url):
-        """Change docker registry url"""
-        self.registry_url = registry_url
-
-    def set_index(self, index_url):
-        """Change docker index url"""
-        self.index_url = index_url
-
-    def is_repo_name(self, imagerepo):
-        """Check if name matches authorized characters for a docker repo"""
-        if imagerepo and re.match("^[a-zA-Z0-9][a-zA-Z0-9-_./:]+$", imagerepo):
-            return True
-        Msg().err("Error: invalid repo name syntax")
-        return False
-
     def _is_docker_registry(self):
         """Check if registry is dockerhub"""
         regexp = r"%s(\:\d+)?(\/)?$" % (self.docker_registry_domain)
@@ -98,6 +79,32 @@ class DockerIoAPI(object):
         """Authentication for v1 API"""
         if "Token" in www_authenticate:
             return self.v1_auth_header
+        return ""
+
+    def _get_v1_id_from_tags(self, tags_obj, tag):
+        """Get image id from array of tags"""
+        if isinstance(tags_obj, dict):
+            try:
+                return tags_obj[tag]
+            except KeyError:
+                pass
+        elif isinstance(tags_obj, []):
+            try:
+                for tag_dict in tags_obj:
+                    if tag_dict["name"] == tag:
+                        return tag_dict["layer"]
+            except KeyError:
+                pass
+        return ""
+
+    def _get_v1_id_from_images(self, images_array, short_id):
+        """Get long image id from array of images using the short id"""
+        try:
+            for image_dict in images_array:
+                if image_dict["id"][0:8] == short_id:
+                    return image_dict["id"]
+        except KeyError:
+            pass
         return ""
 
     def _get_file(self, url, filename, cache_mode):
@@ -145,6 +152,90 @@ class DockerIoAPI(object):
             if len(pair) == 2:
                 all_fields[pair[0]] = pair[1].strip('"')
         return all_fields
+
+    def _get_v2_auth(self, www_authenticate, retry):
+        """Authentication for v2 API"""
+        auth_header = ""
+        (bearer, auth_data) = www_authenticate.rsplit(" ", 1)
+        if bearer == "Bearer":
+            auth_fields = self._split_fields(auth_data)
+            if "realm" in auth_fields:
+                auth_url = auth_fields["realm"] + "?"
+                for field in auth_fields:
+                    if field != "realm":
+                        auth_url += field + "=" + auth_fields[field] + "&"
+                header = []
+                if self.v2_auth_token:
+                    header = ["Authorization: Basic %s" % (self.v2_auth_token)]
+                (dum, auth_buf) = \
+                    self._get_url(auth_url, header=header, RETRY=retry)
+                token_buf = auth_buf.getvalue()
+                if token_buf and "token" in token_buf:
+                    try:
+                        auth_token = json.loads(token_buf)
+                    except (IOError, OSError, AttributeError,
+                            ValueError, TypeError):
+                        return auth_header
+                    auth_header = "Authorization: Bearer " + \
+                        auth_token["token"]
+                    self.v2_auth_header = auth_header
+        # PR #126
+        elif 'BASIC' in bearer or 'Basic' in bearer:
+            auth_header = "Authorization: Basic %s" %(self.v2_auth_token)
+            self.v2_auth_header = auth_header
+        return auth_header
+
+    def _parse_imagerepo(self, imagerepo):
+        """Parse imagerepo to extract registry"""
+        remoterepo = imagerepo
+        registry = ""
+        registry_url = ""
+        index_url = ""
+        components = imagerepo.split("/")
+        if '.' in components[0] and len(components) >= 2:
+            registry = components[0]
+            if components[1] == "library":
+                remoterepo = "/".join(components[2:])
+                del components[1]
+                imagerepo = "/".join(components)
+            else:
+                remoterepo = "/".join(components[1:])
+        else:
+            if components[0] == "library" and len(components) >= 1:
+                del components[0]
+                remoterepo = "/".join(components)
+                imagerepo = "/".join(components)
+        if registry:
+            try:
+                registry_url = self.conf['docker_registries'][registry][0]
+                index_url = self.conf['docker_registries'][registry][1]
+            except (KeyError, NameError, TypeError):
+                registry_url = "https://%s" % registry
+                index_url = registry_url
+            if registry_url:
+                self.registry_url = registry_url
+            if index_url:
+                self.index_url = index_url
+        return (imagerepo, remoterepo)
+
+    def set_proxy(self, http_proxy):
+        """Select a socks http proxy for API access and file download"""
+        self.curl.set_proxy(http_proxy)
+
+    def set_registry(self, registry_url):
+        """Change docker registry url"""
+        self.registry_url = registry_url
+
+    def set_index(self, index_url):
+        """Change docker index url"""
+        self.index_url = index_url
+
+    def is_repo_name(self, imagerepo):
+        """Check if name matches authorized characters for a docker repo"""
+        if imagerepo and re.match("^[a-zA-Z0-9][a-zA-Z0-9-_./:]+$", imagerepo):
+            return True
+        Msg().err("Error: invalid repo name syntax")
+        return False
 
     def get_v1_repo(self, imagerepo):
         """Get list of images in a repo from Docker Hub"""
@@ -226,37 +317,40 @@ class DockerIoAPI(object):
                 files.append(layer_id + ".layer")
         return files
 
-    def _get_v2_auth(self, www_authenticate, retry):
-        """Authentication for v2 API"""
-        auth_header = ""
-        (bearer, auth_data) = www_authenticate.rsplit(" ", 1)
-        if bearer == "Bearer":
-            auth_fields = self._split_fields(auth_data)
-            if "realm" in auth_fields:
-                auth_url = auth_fields["realm"] + "?"
-                for field in auth_fields:
-                    if field != "realm":
-                        auth_url += field + "=" + auth_fields[field] + "&"
-                header = []
-                if self.v2_auth_token:
-                    header = ["Authorization: Basic %s" % (self.v2_auth_token)]
-                (dum, auth_buf) = \
-                    self._get_url(auth_url, header=header, RETRY=retry)
-                token_buf = auth_buf.getvalue()
-                if token_buf and "token" in token_buf:
-                    try:
-                        auth_token = json.loads(token_buf)
-                    except (IOError, OSError, AttributeError,
-                            ValueError, TypeError):
-                        return auth_header
-                    auth_header = "Authorization: Bearer " + \
-                        auth_token["token"]
-                    self.v2_auth_header = auth_header
-        # PR #126
-        elif 'BASIC' in bearer or 'Basic' in bearer:
-            auth_header = "Authorization: Basic %s" %(self.v2_auth_token)
-            self.v2_auth_header = auth_header
-        return auth_header
+    def get_v1(self, imagerepo, tag):
+        """Pull container with v1 API"""
+        Msg().err("v1 image id: %s" % (imagerepo), l=Msg.DBG)
+        (hdr, images_array) = self.get_v1_repo(imagerepo)
+        if not images_array:
+            Msg().err("Error: image not found")
+            return []
+        try:
+            endpoint = "http://" + hdr["x-docker-endpoints"]
+        except KeyError:
+            endpoint = self.index_url
+        (dummy, tags_array) = self.get_v1_image_tags(endpoint, imagerepo)
+        image_id = self._get_v1_id_from_tags(tags_array, tag)
+        if not image_id:
+            Msg().err("Error: image tag not found")
+            return []
+        if len(image_id) <= 8:
+            image_id = self._get_v1_id_from_images(images_array, image_id)
+            if not image_id:
+                Msg().err("Error: image id not found")
+                return []
+        if not (self.localrepo.setup_tag(tag) and
+                self.localrepo.set_version("v1")):
+            Msg().err("Error: setting localrepo v1 tag and version")
+            return []
+        Msg().err("v1 ancestry: %s" % image_id, l=Msg.DBG)
+        (dummy, ancestry) = self.get_v1_image_ancestry(endpoint, image_id)
+        if not ancestry:
+            Msg().err("Error: ancestry not found")
+            return []
+        self.localrepo.save_json("ancestry", ancestry)
+        Msg().err("v1 layers: %s" % image_id, l=Msg.DBG)
+        files = self.get_v1_layers_all(endpoint, ancestry)
+        return files
 
     def get_v2_login_token(self, username, password):
         """Get a login token from username and password"""
@@ -343,100 +437,6 @@ class DockerIoAPI(object):
         except (KeyError, AttributeError, IndexError, ValueError, TypeError):
             pass
         return files
-
-    def _get_v1_id_from_tags(self, tags_obj, tag):
-        """Get image id from array of tags"""
-        if isinstance(tags_obj, dict):
-            try:
-                return tags_obj[tag]
-            except KeyError:
-                pass
-        elif isinstance(tags_obj, []):
-            try:
-                for tag_dict in tags_obj:
-                    if tag_dict["name"] == tag:
-                        return tag_dict["layer"]
-            except KeyError:
-                pass
-        return ""
-
-    def _get_v1_id_from_images(self, images_array, short_id):
-        """Get long image id from array of images using the short id"""
-        try:
-            for image_dict in images_array:
-                if image_dict["id"][0:8] == short_id:
-                    return image_dict["id"]
-        except KeyError:
-            pass
-        return ""
-
-    def get_v1(self, imagerepo, tag):
-        """Pull container with v1 API"""
-        Msg().err("v1 image id: %s" % (imagerepo), l=Msg.DBG)
-        (hdr, images_array) = self.get_v1_repo(imagerepo)
-        if not images_array:
-            Msg().err("Error: image not found")
-            return []
-        try:
-            endpoint = "http://" + hdr["x-docker-endpoints"]
-        except KeyError:
-            endpoint = self.index_url
-        (dummy, tags_array) = self.get_v1_image_tags(endpoint, imagerepo)
-        image_id = self._get_v1_id_from_tags(tags_array, tag)
-        if not image_id:
-            Msg().err("Error: image tag not found")
-            return []
-        if len(image_id) <= 8:
-            image_id = self._get_v1_id_from_images(images_array, image_id)
-            if not image_id:
-                Msg().err("Error: image id not found")
-                return []
-        if not (self.localrepo.setup_tag(tag) and
-                self.localrepo.set_version("v1")):
-            Msg().err("Error: setting localrepo v1 tag and version")
-            return []
-        Msg().err("v1 ancestry: %s" % image_id, l=Msg.DBG)
-        (dummy, ancestry) = self.get_v1_image_ancestry(endpoint, image_id)
-        if not ancestry:
-            Msg().err("Error: ancestry not found")
-            return []
-        self.localrepo.save_json("ancestry", ancestry)
-        Msg().err("v1 layers: %s" % image_id, l=Msg.DBG)
-        files = self.get_v1_layers_all(endpoint, ancestry)
-        return files
-
-    def _parse_imagerepo(self, imagerepo):
-        """Parse imagerepo to extract registry"""
-        remoterepo = imagerepo
-        registry = ""
-        registry_url = ""
-        index_url = ""
-        components = imagerepo.split("/")
-        if '.' in components[0] and len(components) >= 2:
-            registry = components[0]
-            if components[1] == "library":
-                remoterepo = "/".join(components[2:])
-                del components[1]
-                imagerepo = "/".join(components)
-            else:
-                remoterepo = "/".join(components[1:])
-        else:
-            if components[0] == "library" and len(components) >= 1:
-                del components[0]
-                remoterepo = "/".join(components)
-                imagerepo = "/".join(components)
-        if registry:
-            try:
-                registry_url = self.conf['docker_registries'][registry][0]
-                index_url = self.conf['docker_registries'][registry][1]
-            except (KeyError, NameError, TypeError):
-                registry_url = "https://%s" % registry
-                index_url = registry_url
-            if registry_url:
-                self.registry_url = registry_url
-            if index_url:
-                self.index_url = index_url
-        return (imagerepo, remoterepo)
 
     def get(self, imagerepo, tag):
         """Pull a docker image from a v2 registry or v1 index"""

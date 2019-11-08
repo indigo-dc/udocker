@@ -3,23 +3,19 @@
 udocker unit tests: DockerIoAPI
 """
 
-import sys
 from unittest import TestCase, main
+from udocker.docker import DockerIoAPI
+from udocker.config import Config
+from udocker.container.localrepo import LocalRepository
 try:
-    from unittest.mock import Mock, MagicMock, patch, mock_open
+    from unittest.mock import patch
 except ImportError:
-    from mock import Mock, MagicMock, patch, mock_open
+    from mock import patch
 
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
-
-sys.path.append('.')
-
-from udocker.docker import DockerIoAPI
-from udocker.config import Config
-from udocker.container.localrepo import LocalRepository
 
 
 class DockerIoAPITestCase(TestCase):
@@ -88,24 +84,6 @@ class DockerIoAPITestCase(TestCase):
         self.assertTrue(doia.is_repo_name("os-cli-centos7:latest"))
         self.assertTrue(doia.is_repo_name("lipcomputing/os-cli-centos7"))
         self.assertTrue(doia.is_repo_name("lipcomputing/os-cli-centos7:latest"))
-
-    def test_06__is_docker_registry(self):
-        """Test DockerIoAPI().is_docker_registry()."""
-        doia = DockerIoAPI(self.local, self.conf)
-        doia.set_registry("https://registry-1.docker.io")
-        self.assertTrue(doia._is_docker_registry())
-
-        doia = DockerIoAPI(self.local, self.conf)
-        doia.set_registry("")
-        self.assertFalse(doia._is_docker_registry())
-
-        doia = DockerIoAPI(self.local, self.conf)
-        doia.set_registry("https://registry-1.docker.pt")
-        self.assertFalse(doia._is_docker_registry())
-
-        doia = DockerIoAPI(self.local, self.conf)
-        doia.set_registry("docker.io")
-        self.assertTrue(doia._is_docker_registry())
 
     @patch('udocker.docker.Msg')
     @patch('udocker.utils.curl.CurlHeader')
@@ -210,6 +188,27 @@ class DockerIoAPITestCase(TestCase):
         doia = DockerIoAPI(self.local, self.conf)
         out = doia.get_v1_layers_all(endpoint, layer_list)
         self.assertEqual(out, ['b.json', 'b.layer', 'a.json', 'a.layer'])
+
+    @patch('udocker.docker.Msg')
+    @patch('udocker.utils.curl.CurlHeader')
+    @patch.object(DockerIoAPI, 'get_v2_layers_all')
+    @patch.object(DockerIoAPI, '_get_url')
+    def test_21_get_v1(self, mock_dgu, mock_dgv1, mock_hdr, mock_msg):
+        """Test DockerIoAPI().get_v1"""
+        mock_msg.level = 0
+        mock_dgv1.return_value = []
+        mock_dgu.return_value = (mock_hdr, [])
+        imagerepo = "REPO"
+        tag = "TAG"
+        doia = DockerIoAPI(self.local, self.conf)
+        doia.registry_url = "https://registry-1.docker.io"
+        out = doia.get_v1(imagerepo, tag)
+        self.assertEqual(out, [])
+
+        mock_dgv1.return_value = ["a", "b"]
+        doia = DockerIoAPI(self.local, self.conf)
+        out = doia.get_v1(imagerepo, tag)
+        self.assertEqual(out, [])
 
     def test_14_get_v2_login_token(self):
         """Test DockerIoAPI().get_v2_login_token"""
@@ -316,27 +315,6 @@ class DockerIoAPITestCase(TestCase):
         out = doia.get_v2(imagerepo, tag)
         self.assertEqual(out, [])
 
-    @patch('udocker.docker.Msg')
-    @patch('udocker.utils.curl.CurlHeader')
-    @patch.object(DockerIoAPI, 'get_v2_layers_all')
-    @patch.object(DockerIoAPI, '_get_url')
-    def test_21_get_v1(self, mock_dgu, mock_dgv1, mock_hdr, mock_msg):
-        """Test DockerIoAPI().get_v1"""
-        mock_msg.level = 0
-        mock_dgv1.return_value = []
-        mock_dgu.return_value = (mock_hdr, [])
-        imagerepo = "REPO"
-        tag = "TAG"
-        doia = DockerIoAPI(self.local, self.conf)
-        doia.registry_url = "https://registry-1.docker.io"
-        out = doia.get_v1(imagerepo, tag)
-        self.assertEqual(out, [])
-
-        mock_dgv1.return_value = ["a", "b"]
-        doia = DockerIoAPI(self.local, self.conf)
-        out = doia.get_v1(imagerepo, tag)
-        self.assertEqual(out, [])
-
     # @patch('udocker.docker.Msg')
     # @patch.object(DockerIoAPI, '_get_url')
     # @patch('udocker.utils.curl.CurlHeader')
@@ -394,6 +372,24 @@ class DockerIoAPITestCase(TestCase):
         doia.set_index("index.docker.io")
         out = doia.search_get_page("SOMETHING")
         self.assertEqual(out, [])
+
+    def test_06__is_docker_registry(self):
+        """Test DockerIoAPI().is_docker_registry()."""
+        doia = DockerIoAPI(self.local, self.conf)
+        doia.set_registry("https://registry-1.docker.io")
+        self.assertTrue(doia._is_docker_registry())
+
+        doia = DockerIoAPI(self.local, self.conf)
+        doia.set_registry("")
+        self.assertFalse(doia._is_docker_registry())
+
+        doia = DockerIoAPI(self.local, self.conf)
+        doia.set_registry("https://registry-1.docker.pt")
+        self.assertFalse(doia._is_docker_registry())
+
+        doia = DockerIoAPI(self.local, self.conf)
+        doia.set_registry("docker.io")
+        self.assertTrue(doia._is_docker_registry())
 
     # @patch.object(DockerIoAPI, '_get_url')
     # @patch('udocker.docker.GetURL')
