@@ -278,15 +278,15 @@ class DockerIoAPITestCase(TestCase):
         self.assertFalse(out)
 
     @patch('udocker.docker.Msg')
-    @patch.object(DockerIoAPI, '_get_file')
-    def test_19_get_v2_layers_all(self, mock_dgf, mock_msg):
+    @patch.object(DockerIoAPI, 'get_v2_image_layer')
+    def test_19_get_v2_layers_all(self, mock_v2il, mock_msg):
         """Test DockerIoAPI().get_v2_layers_all"""
         mock_msg.level = 0
-        mock_dgf.return_value = True
-        endpoint = "docker.io"
+        mock_v2il.return_value = True
+        imagerepo = "REPO"
         fslayers = []
         doia = DockerIoAPI(self.local, self.conf)
-        out = doia.get_v2_layers_all(endpoint, fslayers)
+        out = doia.get_v2_layers_all(imagerepo, fslayers)
         self.assertEqual(out, [])
 
         # fslayers = ["a", "b"]
