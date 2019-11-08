@@ -289,10 +289,13 @@ class DockerIoAPITestCase(TestCase):
         out = doia.get_v2_layers_all(imagerepo, fslayers)
         self.assertEqual(out, [])
 
-        # fslayers = ["a", "b"]
-        # doia = DockerIoAPI(self.local, self.conf)
-        # out = doia.get_v2_layers_all(endpoint, fslayers)
-        # self.assertEqual(out, ['b.json', 'b.layer', 'a.json', 'a.layer'])
+        mock_msg.level = 0
+        mock_v2il.return_value = True
+        imagerepo = "REPO"
+        fslayers = ["a", "b"]
+        doia = DockerIoAPI(self.local, self.conf)
+        out = doia.get_v2_layers_all(imagerepo, fslayers)
+        self.assertEqual(out, ['b.json', 'b.layer', 'a.json', 'a.layer'])
 
     @patch('udocker.docker.Msg')
     @patch('udocker.utils.curl.CurlHeader')
