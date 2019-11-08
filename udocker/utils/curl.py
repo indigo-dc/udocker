@@ -22,7 +22,6 @@ else:
     from io import StringIO as strio
 
 
-# TODO: some variables may be called before assignment
 class CurlHeader(object):
     """An http header parser to be used with PyCurl
     Allows to retrieve the header fields and the status.
@@ -89,13 +88,13 @@ class GetURL(object):
         self.http_proxy = self.conf['http_proxy']
         self.cache_support = False
         self.insecure = self.conf['http_insecure']
-        self._curl_executable = self.conf['use_curl_executable']
+        self._curl_exec = self.conf['use_curl_exec']
         self._select_implementation()
 
     # pylint: disable=locally-disabled
     def _select_implementation(self):
         """Select which implementation to use"""
-        if GetURLpyCurl(self.conf).is_available() and not self._curl_executable:
+        if GetURLpyCurl(self.conf).is_available() and not self._curl_exec:
             self._geturl = GetURLpyCurl(self.conf)
             self.cache_support = True
         elif GetURLexeCurl(self.conf).is_available():
@@ -103,6 +102,17 @@ class GetURL(object):
         else:
             Msg().err("Error: need curl or pycurl to perform downloads")
             raise NameError('need curl or pycurl')
+
+    def _get_status_code(self, status_line):
+        """
+        get http status code from http status line.
+        Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+        """
+        parts = status_line.split(" ")
+        try:
+            return int(parts[1])
+        except ValueError:
+            return 400
 
     def get_content_length(self, hdr):
         """Get content length from the http header"""
@@ -136,17 +146,6 @@ class GetURL(object):
             raise TypeError('wrong number of arguments')
         kwargs["post"] = args[1]
         return self._geturl.get(args[0], **kwargs)
-
-    def _get_status_code(self, status_line):
-        """
-        get http status code from http status line.
-        Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
-        """
-        parts = status_line.split(" ")
-        try:
-            return int(parts[1])
-        except ValueError:
-            return 400
 
 
 class GetURLpyCurl(GetURL):
@@ -224,7 +223,8 @@ class GetURLpyCurl(GetURL):
             pyc.setopt(pyc.TIMEOUT, self.download_timeout)
             openflags = "wb"
             if "resume" in kwargs and kwargs["resume"]:
-                pyc.setopt(pyc.RESUME_FROM, FileUtil(self.conf, output_file).size())
+                futil = FileUtil(self.conf, output_file)
+                pyc.setopt(pyc.RESUME_FROM, futil.size())
                 openflags = "ab"
             try:
                 filep = open(output_file, openflags)
@@ -245,21 +245,24 @@ class GetURLpyCurl(GetURL):
         max_redirs = 10
         status_code = 302
         hdr = ""
-        while status_code >= 300 and status_code <= 308 and cont_redirs < max_redirs:
+        while (status_code >= 300 and
+               status_code <= 308 and
+               cont_redirs < max_redirs):
             cont_redirs += 1
             hdr = CurlHeader()
             buf = strio()
             pyc = pycurl.Curl()
             self._set_defaults(pyc, hdr)
             try:
-                (output_file, filep) = self._mkpycurl(pyc, hdr, buf, *args, **kwargs)
+                (out_file, filep) = \
+                    self._mkpycurl(pyc, hdr, buf, *args, **kwargs)
                 Msg().err("curl url: ", self._url, l=Msg.DBG)
                 Msg().err("curl arg: ", kwargs, l=Msg.DBG)
                 pyc.perform()     # call pyculr
             except(IOError, OSError):
                 return(None, None)
             except pycurl.error as error:
-                errno, errstr = error
+                (errno, errstr) = error
                 hdr.data["X-ND-CURLSTATUS"] = errno
                 if not hdr.data["X-ND-HTTPSTATUS"]:
                     hdr.data["X-ND-HTTPSTATUS"] = errstr
@@ -282,7 +285,7 @@ class GetURLpyCurl(GetURL):
             elif status_code != 200:
                 Msg().err("Error: in download: " + str(
                     hdr.data["X-ND-HTTPSTATUS"]))
-                FileUtil(self.conf, output_file).remove()
+                FileUtil(self.conf, out_file).remove()
         return(hdr, buf)
 
 
@@ -359,10 +362,10 @@ class GetURLexeCurl(GetURL):
             self._opts["timeout"] = "-m %s" % (str(self.download_timeout))
             if "resume" in kwargs and kwargs["resume"]:
                 self._opts["resume"] = "-C -"
-        curl_executable = "curl"
-        if self._curl_executable and isinstance(self._curl_executable, str):
-            curl_executable = self._curl_executable
-        return(curl_executable + " " + " ".join(list(self._opts.values())) +
+        curl_exec = "curl"
+        if self._curl_exec and isinstance(self._curl_exec, str):
+            curl_exec = self._curl_exec
+        return(curl_exec + " " + " ".join(list(self._opts.values())) +
                " -D %s -o %s --stderr %s '%s'" %
                (self._files["header_file"], self._files["output_file"],
                 self._files["error_file"], self._files["url"]))
@@ -372,18 +375,20 @@ class GetURLexeCurl(GetURL):
         cont_redirs = 0
         max_redirs = 10
         status_code = 302
-        while status_code >= 300 and status_code <= 308 and cont_redirs < max_redirs:
+        while (status_code >= 300 and
+               status_code <= 308 and
+               cont_redirs < max_redirs):
             cont_redirs += 1
             hdr = CurlHeader()
             buf = strio()
             self._set_defaults()
             cmd = self._mkcurlcmd(*args, **kwargs)
-            status = subprocess.call(cmd, shell=True, close_fds=True) # call curl
+            status = subprocess.call(cmd, shell=True, close_fds=True)
             hdr.setvalue_from_file(self._files["header_file"])
             hdr.data["X-ND-CURLSTATUS"] = status
             if status:
-                Msg().err("Error: in download: %s"
-                          % FileUtil(self.conf, self._files["error_file"]).getdata("r"))
+                futil = FileUtil(self.conf, self._files["error_file"])
+                Msg().err("Error: in download: %s" % futil.getdata("r"))
                 FileUtil(self.conf, self._files["output_file"]).remove()
                 return(hdr, buf)
             status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])

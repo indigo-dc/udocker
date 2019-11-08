@@ -4,12 +4,17 @@ import os
 import sys
 import platform
 import pwd
-try:
-    from ConfigParser import ConfigParser
-except ImportError:
-    from configparser import ConfigParser
-
 from udocker.msg import Msg
+from udocker.helper.osinfo import OSInfo
+
+
+# Python version major.minor
+PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
+
+if PY_VER >= "3":
+    from configparser import ConfigParser
+else:
+    from ConfigParser import ConfigParser
 
 
 class Config(object):
@@ -37,21 +42,21 @@ class Config(object):
         self.conf['tarball'] = (tar_url + "udocker-englib-1.2.4.tar.gz")
 
 #        self.conf['tarball'] = (
-#            "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.3.tar.gz"
-#            " "
-#            "https://owncloud.indigo-datacloud.eu/index.php"
-#            "/s/iv4FOV1jZcfnGFH/download"
-#            " "
-#            "https://cernbox.cern.ch/index.php"
-#            "/s/CS31ycKOpj2KzxO/download?x-access-token=eyJhbGciOiJIUzI1Ni"
-#            "IsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDE4LTEwLTMwVDE4OjM1OjMyLjI2MD"
-#            "AxMDA3OCswMTowMCIsImV4cGlyZXMiOjAsImlkIjoiMTQ1NjgwIiwiaXRlbV9"
-#            "0eXBlIjowLCJtdGltZSI6MTU0MDkxNzA3Miwib3duZXIiOiJqb3JnZSIsInBh"
-#            "dGgiOiJlb3Nob21lLWo6MjcyNTgzNjk2NDc1NzUwNDAiLCJwcm90ZWN0ZWQiO"
-#            "mZhbHNlLCJyZWFkX29ubHkiOnRydWUsInNoYXJlX25hbWUiOiJ1ZG9ja2VyLT"
-#            "EuMS4zLnRhci5neiIsInRva2VuIjoiQ1MzMXljS09wajJLenhPIn0._9LTvxM"
-#            "V12NpxcZXaCg3PJeQfz94qYui4ccscrrvgVA"
-#            )
+#           "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.3.tar.gz"
+#           " "
+#           "https://owncloud.indigo-datacloud.eu/index.php"
+#           "/s/iv4FOV1jZcfnGFH/download"
+#           " "
+#           "https://cernbox.cern.ch/index.php"
+#           "/s/CS31ycKOpj2KzxO/download?x-access-token=eyJhbGciOiJIUzI1Ni"
+#           "IsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDE4LTEwLTMwVDE4OjM1OjMyLjI2MD"
+#           "AxMDA3OCswMTowMCIsImV4cGlyZXMiOjAsImlkIjoiMTQ1NjgwIiwiaXRlbV9"
+#           "0eXBlIjowLCJtdGltZSI6MTU0MDkxNzA3Miwib3duZXIiOiJqb3JnZSIsInBh"
+#           "dGgiOiJlb3Nob21lLWo6MjcyNTgzNjk2NDc1NzUwNDAiLCJwcm90ZWN0ZWQiO"
+#           "mZhbHNlLCJyZWFkX29ubHkiOnRydWUsInNoYXJlX25hbWUiOiJ1ZG9ja2VyLT"
+#           "EuMS4zLnRhci5neiIsInRva2VuIjoiQ1MzMXljS09wajJLenhPIn0._9LTvxM"
+#           "V12NpxcZXaCg3PJeQfz94qYui4ccscrrvgVA"
+#           )
 
         self.info = ("https://raw.githubusercontent.com/"
                      "indigo-dc/udocker/master/messages")
@@ -130,7 +135,7 @@ class Config(object):
         self.conf['ctimeout'] = 6       # default TCP connect timeout (secs)
         self.conf['http_agent'] = ""
         self.conf['http_insecure'] = False
-        self.conf['use_curl_executable'] = ""  # force use of executable
+        self.conf['use_curl_exec'] = ""  # force use of executable
 
         # docker hub v1
         self.conf['dockerio_index_url'] = "https://index.docker.io"
@@ -206,101 +211,36 @@ class Config(object):
         self.conf['topdir'] = os.getenv("UDOCKER_DIR", self.conf['topdir'])
         self.conf['bindir'] = os.getenv("UDOCKER_BIN", self.conf['bindir'])
         self.conf['libdir'] = os.getenv("UDOCKER_LIB", self.conf['libdir'])
-        self.conf['reposdir'] = os.getenv("UDOCKER_REPOS",
-                                          self.conf['reposdir'])
-        self.conf['layersdir'] = os.getenv("UDOCKER_LAYERS",
-                                           self.conf['layersdir'])
-        self.conf['containersdir'] = os.getenv("UDOCKER_CONTAINERS",
-                                               self.conf['containersdir'])
-        self.conf['dockerio_index_url'] = os.getenv("UDOCKER_INDEX",
-                                                    self.conf['dockerio_index_url'])
-        self.conf['dockerio_registry_url'] = os.getenv("UDOCKER_REGISTRY",
-                                                       self.conf['dockerio_registry_url'])
-        self.conf['tarball'] = os.getenv("UDOCKER_TARBALL",
-                                         self.conf['tarball'])
-        self.conf['fakechroot_so'] = os.getenv("UDOCKER_FAKECHROOT_SO",
-                                               self.conf['fakechroot_so'])
+        self.conf['reposdir'] = \
+            os.getenv("UDOCKER_REPOS", self.conf['reposdir'])
+        self.conf['layersdir'] = \
+            os.getenv("UDOCKER_LAYERS", self.conf['layersdir'])
+        self.conf['containersdir'] = \
+            os.getenv("UDOCKER_CONTAINERS", self.conf['containersdir'])
+        self.conf['dockerio_index_url'] = \
+            os.getenv("UDOCKER_INDEX", self.conf['dockerio_index_url'])
+        self.conf['dockerio_registry_url'] = \
+            os.getenv("UDOCKER_REGISTRY", self.conf['dockerio_registry_url'])
+        self.conf['tarball'] = \
+            os.getenv("UDOCKER_TARBALL", self.conf['tarball'])
+        self.conf['fakechroot_so'] = \
+            os.getenv("UDOCKER_FAKECHROOT_SO", self.conf['fakechroot_so'])
         self.conf['tmpdir'] = os.getenv("UDOCKER_TMP", self.conf['tmpdir'])
-        self.conf['keystore'] = os.getenv("UDOCKER_KEYSTORE",
-                                          self.conf['keystore'])
-        self.conf['use_curl_executable'] = os.getenv("UDOCKER_USE_CURL_EXECUTABLE",
-                                                     self.conf['use_curl_executable'])
-
-    def _username(self):
-        """Get username"""
-        try:
-            return pwd.getpwuid(self.conf['uid']).pw_name
-        except KeyError:
-            return ""
-
-    @staticmethod
-    def _arch():
-        """Get the host system architecture"""
-        arch = ""
-        try:
-            machine = platform.machine()
-            bits = platform.architecture()[0]
-            if machine == "x86_64":
-                if bits == "32bit":
-                    arch = "i386"
-                else:
-                    arch = "amd64"
-            elif machine in ("i386", "i486", "i586", "i686"):
-                arch = "i386"
-            elif machine.startswith("arm"):
-                if bits == "32bit":
-                    arch = "arm"
-                else:
-                    arch = "arm64"
-        except (NameError, AttributeError):
-            pass
-        return arch
-
-    @staticmethod
-    def _osversion():
-        """Get operating system"""
-        try:
-            return platform.system().lower()
-        except (NameError, AttributeError):
-            return ""
-
-    @staticmethod
-    def _osdistribution():
-        """Get operating system distribution"""
-        (distribution, version, dummy) = platform.linux_distribution()
-        return distribution.split(" ")[0], version.split(".")[0]
-
-    @staticmethod
-    def _oskernel():
-        """Get operating system"""
-        try:
-            return platform.release()
-        except (NameError, AttributeError):
-            return "3.2.1"
-
-    # TODO: to be removed, method now in executioncommon
-    # def oskernel_isgreater(self, ref_version):
-    #     """Compare kernel version is greater or equal than ref_version"""
-    #     os_rel = self._oskernel().split("-")[0]
-    #     os_ver = [int(x) for x in os_rel.split(".")]
-    #     for idx in (0, 1, 2):
-    #         if os_ver[idx] > ref_version[idx]:
-    #             return True
-    #         elif os_ver[idx] < ref_version[idx]:
-    #             return False
-    #     return True
+        self.conf['keystore'] = \
+            os.getenv("UDOCKER_KEYSTORE", self.conf['keystore'])
+        self.conf['use_curl_exec'] = \
+            os.getenv("UDOCKER_USE_CURL_EXEC", self.conf['use_curl_exec'])
 
     def getconf(self):
         """Return all configuration variables"""
+        osinfo = OSInfo(self.conf, "")
         self.conf['uid'] = os.getuid()
         self.conf['gid'] = os.getgid()
-        self.conf['username'] = self._username()
-        self.conf['arch'] = self._arch()
-        self.conf['osversion'] = self._osversion()
-        self.conf['osdistribution'] = self._osdistribution()
-        self.conf['oskernel'] = self._oskernel()
-
+        self.conf['username'] = pwd.getpwuid(self.conf['uid']).pw_name
+        self.conf['oskernel'] = platform.release()
+        self.conf['arch'] = osinfo.arch()
+        self.conf['osversion'] = osinfo.osversion()
+        self.conf['osdistribution'] = osinfo.osdistribution()
         self._file_override()   # Override with variables in conf file
         self._env_override()    # Override with variables in environment
-
         return self.conf

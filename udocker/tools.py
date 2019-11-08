@@ -29,11 +29,6 @@ class UdockerTools(object):
         self._install_json = dict()
         self.curl = GetURL(self.conf)
 
-#    def _version_isequal(self, filename):
-#        """Is version inside file equal to the taball release requirement"""
-#        version = FileUtil(self.conf, filename).getdata().strip()
-#        return version and version == self._tarball_release
-
     def _is_available(self):
         """Are the tools already installed"""
         fname = self.localrepo.libdir + "/VERSION"
@@ -82,8 +77,8 @@ class UdockerTools(object):
                 tfile.extract(tar_in)
         tfile.close()
 
-        with open("VERSION") as f:
-            tar_version = f.readline().strip()
+        with open("VERSION") as filep:
+            tar_version = filep.readline().strip()
 
         Msg().err("Engine mode tarbal version", tar_version, l=Msg.DBG)
         Msg().err("tarball_release", self._tarball_release, l=Msg.DBG)
@@ -91,15 +86,6 @@ class UdockerTools(object):
         os.remove("VERSION")
         Msg().err("Verify version status", status, l=Msg.DBG)
         return status
-
-    def purge(self):
-        """Remove existing files in bin and lib"""
-        for f_name in os.listdir(self.localrepo.bindir):
-            FileUtil(self.conf, self.localrepo.bindir + "/" + f_name).register_prefix()
-            FileUtil(self.conf, self.localrepo.bindir + "/" + f_name).remove()
-        for f_name in os.listdir(self.localrepo.libdir):
-            FileUtil(self.conf, self.localrepo.libdir + "/" + f_name).register_prefix()
-            FileUtil(self.conf, self.localrepo.libdir + "/" + f_name).remove()
 
     def _install(self, tarball_file):
         """Install the tarball"""
@@ -154,7 +140,8 @@ class UdockerTools(object):
         """
         Msg().out(self._instructions.__doc__, l=Msg.ERR)
         Msg().out("        udocker version:", __version__,
-                  "requires tarball release:", self._tarball_release, l=Msg.ERR)
+                  "requires tarball release:",
+                  self._tarball_release, l=Msg.ERR)
 
     def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
@@ -166,9 +153,10 @@ class UdockerTools(object):
             pass
         return mirrors
 
-    def get_installinfo(self):
+    def _get_installinfo(self):
         """Get json containing installation info"""
-        (infofile, dummy) = self._get_file(self._get_mirrors(self._installinfo))
+        mirrors = self._get_mirrors(self._installinfo)
+        (infofile, dummy) = self._get_file(mirrors)
         try:
             with open(infofile, "r") as filep:
                 self._install_json = json.load(filep)
@@ -178,6 +166,17 @@ class UdockerTools(object):
                 OSError, IOError):
             Msg().err("Info: no messages available", l=Msg.VER)
         return self._install_json
+
+    def purge(self):
+        """Remove existing files in bin and lib"""
+        for f_name in os.listdir(self.localrepo.bindir):
+            full_path = self.localrepo.bindir + "/" + f_name
+            FileUtil(self.conf, full_path).register_prefix()
+            FileUtil(self.conf, full_path).remove()
+        for f_name in os.listdir(self.localrepo.libdir):
+            full_path = self.localrepo.libdir + "/" + f_name
+            FileUtil(self.conf, full_path).register_prefix()
+            FileUtil(self.conf, full_path).remove()
 
     def install(self, force=False):
         """Get the udocker tarball and install the binaries"""
@@ -202,7 +201,7 @@ class UdockerTools(object):
                 if "://" in url:
                     FileUtil(self.conf, tfile).remove()
                     if status:
-                        self.get_installinfo()
+                        self._get_installinfo()
                 if status:
                     return True
             Msg().err("Error: installing tarball:", self._tarball)

@@ -11,8 +11,6 @@ from udocker.msg import Msg
 from udocker.helper.unique import Unique
 from udocker.utils.uprocess import Uprocess
 
-PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
-
 
 class FileUtil(object):
     """Some utilities to manipulate files"""
@@ -136,7 +134,6 @@ class FileUtil(object):
             del FileUtil.tmptrash[self.filename]
         return True
 
-    # TODO: tarfile is part of the standard lib
     def verify_tar(self):
         """Verify a tar file: tar tvf file.tar"""
         if not os.path.isfile(self.filename):
@@ -156,15 +153,6 @@ class FileUtil(object):
         tmptrash_copy = dict(FileUtil.tmptrash)
         for filename in tmptrash_copy:
             FileUtil(self.conf, filename).remove()
-
-    def isdir(self):
-        """Is filename a directory"""
-        try:
-            if os.path.isdir(self.filename):
-                return True
-        except (IOError, OSError, TypeError):
-            pass
-        return False
 
     def size(self):
         """File size in bytes"""
@@ -256,14 +244,6 @@ class FileUtil(object):
                 full_path_list.append(rootdir + directory + "/" + self.basename)
         return full_path_list
 
-    def rename(self, dest_filename):
-        """Rename/move file"""
-        try:
-            os.rename(self.filename, dest_filename)
-        except (IOError, OSError):
-            return False
-        return True
-
     def _stream2file(self, dest_filename, mode="w"):
         """Copy from stdin to another file. We avoid shutil to have
         the fewest possible dependencies on other Python modules.
@@ -344,10 +324,12 @@ class FileUtil(object):
         """Actually apply the link convertion"""
         p_path = os.path.realpath(os.path.dirname(f_path))
         if force and not os.access(p_path, os.W_OK):
-            os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
+            os.chmod(p_path,
+                     stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
             os.remove(f_path)
             os.symlink(new_l_path, f_path)
-            os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) & ~stat.S_IWUSR)
+            os.chmod(p_path,
+                     stat.S_IMODE(os.stat(p_path).st_mode) & ~stat.S_IWUSR)
         else:
             os.remove(f_path)
             os.symlink(new_l_path, f_path)
@@ -364,7 +346,9 @@ class FileUtil(object):
             match = recomp.match(l_path)
             if match:
                 orig_path = match.group(1)
-        if orig_path and l_path.startswith(orig_path) and orig_path != root_path:
+        if   (orig_path and
+              l_path.startswith(orig_path) and
+              orig_path != root_path):
             new_l_path = l_path.replace(orig_path, root_path, 1)
         elif not l_path.startswith(root_path):
             new_l_path = root_path + l_path
@@ -415,7 +399,8 @@ class FileUtil(object):
                         if self._link_set(f_path, orig_path, root_path, force):
                             links.append(f_path)
                     else:
-                        if self._link_restore(f_path, orig_path, root_path, force):
+                        if self._link_restore(f_path, orig_path,
+                                              root_path, force):
                             links.append(f_path)
                 except OSError:
                     continue

@@ -20,7 +20,6 @@ class PRootEngine(ExecutionEngineCommon):
 
     def __init__(self, conf, localrepo, xmode):
         super(PRootEngine, self).__init__(conf, localrepo, xmode)
-        self.conf = conf
         self.proot_exec = None                   # PRoot
         self.proot_noseccomp = False             # Noseccomp mode
         self._kernel = self.conf['oskernel']   # Emulate kernel
@@ -85,8 +84,7 @@ class PRootEngine(ExecutionEngineCommon):
         """Get mapping of TCP/IP ports"""
         proot_netmap_list = []
         for (cont_port, host_port) in list(self._get_portsmap().items()):
-            # TODO: Why the aditional space in "%d:%d "
-            proot_netmap_list.extend(["-p", "%d:%d " % (cont_port, host_port)])
+            proot_netmap_list.extend(["-p", "%d:%d" % (cont_port, host_port)])
         if self.opt["netcoop"]:
             proot_netmap_list.extend(["-n", ])
         return proot_netmap_list

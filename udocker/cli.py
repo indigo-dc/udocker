@@ -22,10 +22,13 @@ if sys.version_info[0] >= 3:
 else:
     BUILTIN = "__builtin__"
 
-try:
-    input = raw_input
-except NameError:
-    pass
+# Python version major.minor
+PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
+
+if PY_VER >= "3":
+    GET_INPUT = input
+else:
+    GET_INPUT = raw_input
 
 
 class UdockerCLI(object):
@@ -45,8 +48,8 @@ class UdockerCLI(object):
         if self.conf['keystore'].startswith("/"):
             self.keystore = KeyStore(self.conf, self.conf['keystore'])
         else:
-            self.keystore = \
-                KeyStore(self.conf, self.localrepo.homedir + "/" + self.conf['keystore'])
+            homedir = self.localrepo.homedir + "/" + self.conf['keystore']
+            self.keystore = KeyStore(self.conf, homedir)
 
     def _check_imagespec(self, imagespec, def_imagespec=None):
         """Perform the image verification"""
@@ -137,7 +140,7 @@ class UdockerCLI(object):
             elif "repositories" in repo_list:
                 self._search_print_v2(repo_list)
             if pause and not self.dockerioapi.search_ended:
-                key_press = input("[press return or q to quit]")
+                key_press = GET_INPUT("[press return or q to quit]")
                 if key_press in ("q", "Q", "e", "E"):
                     return exit_status
 
@@ -178,10 +181,10 @@ class UdockerCLI(object):
         import : import image (directory tree) from tar file or stdin
         import <tar-file> <repo/image:tag>
         import - <repo/image:tag>
-        --mv                       :if possible move tar-file instead of copy
-        --tocontainer              :import to container, no image is created
-        --clone                    :import udocker container format with metadata
-        --name=<container-name>    :with --tocontainer or --clone to add an alias
+        --mv                    :if possible move tar-file instead of copy
+        --tocontainer           :import to container, no image is created
+        --clone                 :import udocker container format with metadata
+        --name=<container-name> :with --tocontainer or --clone to add an alias
         """
         exit_status = 0
         move_tarball = cmdp.get("--mv")
@@ -313,7 +316,7 @@ class UdockerCLI(object):
         if registry_url:
             self.dockerioapi.set_registry(registry_url)
         if not username:
-            username = input("username: ")
+            username = GET_INPUT("username: ")
         if not password:
             password = getpass("password: ")
         if password and password == password.upper():
@@ -946,7 +949,7 @@ class UdockerCLI(object):
 
         if nvidia:
             nvidia_mode = NvidiaMode(self.conf, self.localrepo, container_id)
-            nvidia_mode.set_mode(force)
+            nvidia_mode.set_nvidia(force)
 
         exec_mode = ExecutionMode(self.conf, self.localrepo, container_id)
         if xmode:
@@ -1006,7 +1009,8 @@ class UdockerCLI(object):
         try:
             Msg().out("%s %s" % ("version:", __version__))
             Msg().out("%s %s" % ("tarball:", self.conf['tarball']))
-            Msg().out("%s %s" % ("tarball_release:", self.conf['tarball_release']))
+            Msg().out("%s %s" % \
+                ("tarball_release:", self.conf['tarball_release']))
         except NameError:
             exit_status = 1
             return exit_status
@@ -1024,7 +1028,7 @@ Syntax:
   udocker  [general_options] <command>  [command_options]  <command_args>
 
   udocker [-h|--help|help]        :Display this help and exits
-  udocker [-V|--version|version]  :Display udocker version and tarball version and exits
+  udocker [-V|--version|version]  :Display udocker and tarball version and exits
 
 General options common to all commands must appear before the command:
   -D, --debug                   :Debug

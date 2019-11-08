@@ -84,11 +84,11 @@ class ElfPatcherTestCase(TestCase):
         mock_spelf.return_value = "ld.so"
         mock_walk.return_value = ""
         elfp = ElfPatcher(self.conf, self.local, container_id)
-        self.assertEqual(elfp.guess_elf_loader(), "")
+        self.assertEqual(elfp._guess_elf_loader(), "")
 
         mock_walk.return_value = "ld.so"
         elfp = ElfPatcher(self.conf, self.local, container_id)
-        self.assertEqual(elfp.guess_elf_loader(), "ld.so")
+        self.assertEqual(elfp._guess_elf_loader(), "ld.so")
 
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.path.exists')
@@ -104,13 +104,13 @@ class ElfPatcherTestCase(TestCase):
         mock_exists.return_value = True
         mock_futils.return_value.strip.return_value = "ld.so"
         elfp = ElfPatcher(self.conf, self.local, container_id)
-        self.assertEqual(elfp.get_original_loader(), "ld.so")
+        self.assertEqual(elfp._get_original_loader(), "ld.so")
 
         mock_exists.return_value = False
         mock_guess.return_value = "ld.so"
         mock_futils.return_value.strip.return_value = "ld.so"
         elfp = ElfPatcher(self.conf, self.local, container_id)
-        self.assertEqual(elfp.get_original_loader(), "ld.so")
+        self.assertEqual(elfp._get_original_loader(), "ld.so")
 
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.path.exists')
@@ -140,11 +140,11 @@ class ElfPatcherTestCase(TestCase):
         container_id = "SOME-RANDOM-ID"
         mock_getdata.return_value = ""
         elfp = ElfPatcher(self.conf, self.local, container_id)
-        self.assertEqual(elfp.get_patch_last_path(), "")
+        self.assertEqual(elfp._get_patch_last_path(), "")
 
         mock_getdata.return_value = "/tmp"
         elfp = ElfPatcher(self.conf, self.local, container_id)
-        self.assertEqual(elfp.get_patch_last_path(), "/tmp")
+        self.assertEqual(elfp._get_patch_last_path(), "/tmp")
 
     @patch('udocker.helper.elfpatcher.os.path')
     @patch('udocker.helper.elfpatcher.os.path.exists')

@@ -6,23 +6,20 @@ udocker unit tests: CurlHeader
 """
 import sys
 from unittest import TestCase, main
-try:
-    from unittest.mock import Mock, MagicMock, patch, mock_open
-except ImportError:
-    from mock import Mock, MagicMock, patch, mock_open
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-sys.path.append('.')
-
 from udocker.utils.curl import CurlHeader
 from udocker.utils.curl import GetURL
 from udocker.utils.curl import GetURLpyCurl
 from udocker.utils.curl import GetURLexeCurl
 from udocker.config import Config
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 if sys.version_info[0] >= 3:
     BUILTINS = "builtins"
@@ -101,7 +98,7 @@ class GetURLTestCase(TestCase):
         self.conf['http_agent'] = ""
         self.conf['http_proxy'] = ""
         self.conf['http_insecure'] = 0
-        self.conf['use_curl_executable'] = ""
+        self.conf['use_curl_exec'] = ""
 
     def tearDown(self):
         pass

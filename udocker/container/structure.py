@@ -33,12 +33,185 @@ class ContainerStructure(object):
             if not container_dir:
                 Msg().err("Error: container id or name not found")
                 return(False, False)
-            container_json = self.localrepo.load_json(
-                container_dir + "/container.json")
+
+            fjson = container_dir + "/container.json"
+            container_json = self.localrepo.load_json(fjson)
             if not container_json:
                 Msg().err("Error: invalid container json metadata")
                 return(False, False)
+
         return(container_dir, container_json)
+
+    def create_fromimage(self, imagerepo, tag):
+        """Create a container from an image in the repository.
+        Since images are stored as layers in tar files, this
+        step consists in extracting those layers into a ROOT
+        directory in the appropriate sequence.
+        first argument: imagerepo
+        second argument: image tag in that repo
+        """
+        self.imagerepo = imagerepo
+        self.tag = tag
+        image_dir = self.localrepo.cd_imagerepo(self.imagerepo, self.tag)
+        if not image_dir:
+            Msg().err("Error: create container: imagerepo is invalid")
+            return False
+
+        (container_json, layer_files) = self.localrepo.get_image_attributes()
+        if not container_json:
+            Msg().err("Error: create container: getting layers or json")
+            return False
+
+        if not self.container_id:
+            self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
+
+        container_dir = self.localrepo.setup_container(
+            self.imagerepo, self.tag, self.container_id)
+        if not container_dir:
+            Msg().err("Error: create container: setting up container")
+            return False
+
+        self.localrepo.save_json(
+            container_dir + "/container.json", container_json)
+        status = self._untar_layers(layer_files, container_dir + "/ROOT")
+        if not status:
+            Msg().err("Error: creating container:", self.container_id)
+        elif not self._chk_container_root():
+            Msg().err("Warning: check container content:", self.container_id,
+                      l=Msg.WAR)
+
+        return self.container_id
+
+    def create_fromlayer(self, imagerepo, tag, layer_file, container_json):
+        """Create a container from a layer file exported by Docker.
+        """
+        self.imagerepo = imagerepo
+        self.tag = tag
+        if not self.container_id:
+            self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
+
+        if not container_json:
+            Msg().err("Error: create container: getting json")
+            return False
+
+        container_dir = self.localrepo.setup_container(
+            self.imagerepo, self.tag, self.container_id)
+        if not container_dir:
+            Msg().err("Error: create container: setting up")
+            return False
+
+        fjson = container_dir + "/container.json"
+        self.localrepo.save_json(fjson, container_json)
+        status = self._untar_layers([layer_file, ], container_dir + "/ROOT")
+        if not status:
+            Msg().err("Error: creating container:", self.container_id)
+        elif not self._chk_container_root():
+            Msg().err("Warning: check container content:", self.container_id,
+                      l=Msg.WAR)
+
+        return self.container_id
+
+    def clone_fromfile(self, clone_file):
+        """Create a cloned container from a file containing a cloned container
+        exported by udocker.
+        """
+        if not self.container_id:
+            self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
+
+        container_dir = self.localrepo.setup_container(
+            "CLONING", "inprogress", self.container_id)
+        if not container_dir:
+            Msg().err("Error: create container: setting up")
+            return False
+
+        status = self._untar_layers([clone_file, ], container_dir)
+        if not status:
+            Msg().err("Error: creating container clone:", self.container_id)
+        elif not self._chk_container_root():
+            Msg().err("Warning: check container content:", self.container_id,
+                      l=Msg.WAR)
+
+        return self.container_id
+
+    def get_container_meta(self, param, default, container_json):
+        """Get the container metadata from the container"""
+        confidx = ""
+        if "config" in container_json:
+            confidx = "config"
+        elif "container_config" in container_json:
+            confidx = "container_config"
+        if container_json[confidx]  and param in container_json[confidx]:
+            if container_json[confidx][param] is None:
+                pass
+            elif (isinstance(container_json[confidx][param], str) and (
+                    isinstance(default, (list, tuple)))):
+                return container_json[confidx][param].strip().split()
+            elif (isinstance(default, str) and (
+                    isinstance(container_json[confidx][param], (list, tuple)))):
+                return " ".join(container_json[confidx][param])
+            elif (isinstance(default, str) and (
+                    isinstance(container_json[confidx][param], dict))):
+                return self._dict_to_str(container_json[confidx][param])
+            elif (isinstance(default, list) and (
+                    isinstance(container_json[confidx][param], dict))):
+                return self._dict_to_list(container_json[confidx][param])
+            else:
+                return container_json[confidx][param]
+        return default
+
+    def export_tofile(self, clone_file):
+        """Export a container creating a tar file of the rootfs
+        """
+        cont_dir = self.localrepo.cd_container(self.container_id)
+        if not cont_dir:
+            Msg().err("Error: container not found:", self.container_id)
+            return False
+
+        status = self._tar(clone_file, cont_dir + "/ROOT")
+        if not status:
+            Msg().err("Error: exporting container file system:", \
+                self.container_id)
+
+        return self.container_id
+
+    def clone_tofile(self, clone_file):
+        """Create a cloned container tar file containing both the rootfs
+        and all udocker control files. This is udocker specific.
+        """
+        container_dir = self.localrepo.cd_container(self.container_id)
+        if not container_dir:
+            Msg().err("Error: container not found:", self.container_id)
+            return False
+
+        status = self._tar(clone_file, container_dir)
+        if not status:
+            Msg().err("Error: export container as clone:", self.container_id)
+
+        return self.container_id
+
+    def clone(self):
+        """Clone a container by creating a complete copy
+        """
+        source_container_dir = self.localrepo.cd_container(self.container_id)
+        if not source_container_dir:
+            Msg().err("Error: source container not found:", self.container_id)
+            return False
+
+        dest_container_id = Unique().uuid(os.path.basename(self.imagerepo))
+        dest_container_dir = self.localrepo.setup_container(
+            "CLONING", "inprogress", dest_container_id)
+        if not dest_container_dir:
+            Msg().err("Error: create destination container: setting up")
+            return False
+
+        status = self._copy(source_container_dir, dest_container_dir)
+        if not status:
+            Msg().err("Error: creating container:", dest_container_id)
+        elif not self._chk_container_root(dest_container_id):
+            Msg().err("Warning: check container content:", dest_container_id,
+                      l=Msg.WAR)
+
+        return dest_container_id
 
     def _chk_container_root(self, container_id=None):
         """Check container ROOT sanity"""
@@ -56,85 +229,6 @@ class ContainerStructure(object):
             if os.path.exists(container_root + f_path):
                 found += 1
         return found
-
-    def create_fromimage(self, imagerepo, tag):
-        """Create a container from an image in the repository.
-        Since images are stored as layers in tar files, this
-        step consists in extracting those layers into a ROOT
-        directory in the appropriate sequence.
-        first argument: imagerepo
-        second argument: image tag in that repo
-        """
-        self.imagerepo = imagerepo
-        self.tag = tag
-        image_dir = self.localrepo.cd_imagerepo(self.imagerepo, self.tag)
-        if not image_dir:
-            Msg().err("Error: create container: imagerepo is invalid")
-            return False
-        (container_json, layer_files) = self.localrepo.get_image_attributes()
-        if not container_json:
-            Msg().err("Error: create container: getting layers or json")
-            return False
-        if not self.container_id:
-            self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
-        container_dir = self.localrepo.setup_container(
-            self.imagerepo, self.tag, self.container_id)
-        if not container_dir:
-            Msg().err("Error: create container: setting up container")
-            return False
-        self.localrepo.save_json(
-            container_dir + "/container.json", container_json)
-        status = self._untar_layers(layer_files, container_dir + "/ROOT")
-        if not status:
-            Msg().err("Error: creating container:", self.container_id)
-        elif not self._chk_container_root():
-            Msg().err("Warning: check container content:", self.container_id,
-                      l=Msg.WAR)
-        return self.container_id
-
-    def create_fromlayer(self, imagerepo, tag, layer_file, container_json):
-        """Create a container from a layer file exported by Docker.
-        """
-        self.imagerepo = imagerepo
-        self.tag = tag
-        if not self.container_id:
-            self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
-        if not container_json:
-            Msg().err("Error: create container: getting json")
-            return False
-        container_dir = self.localrepo.setup_container(
-            self.imagerepo, self.tag, self.container_id)
-        if not container_dir:
-            Msg().err("Error: create container: setting up")
-            return False
-        self.localrepo.save_json(
-            container_dir + "/container.json", container_json)
-        status = self._untar_layers([layer_file, ], container_dir + "/ROOT")
-        if not status:
-            Msg().err("Error: creating container:", self.container_id)
-        elif not self._chk_container_root():
-            Msg().err("Warning: check container content:", self.container_id,
-                      l=Msg.WAR)
-        return self.container_id
-
-    def clone_fromfile(self, clone_file):
-        """Create a cloned container from a file containing a cloned container
-        exported by udocker.
-        """
-        if not self.container_id:
-            self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
-        container_dir = self.localrepo.setup_container(
-            "CLONING", "inprogress", self.container_id)
-        if not container_dir:
-            Msg().err("Error: create container: setting up")
-            return False
-        status = self._untar_layers([clone_file, ], container_dir)
-        if not status:
-            Msg().err("Error: creating container clone:", self.container_id)
-        elif not self._chk_container_root():
-            Msg().err("Warning: check container content:", self.container_id,
-                      l=Msg.WAR)
-        return self.container_id
 
     def _apply_whiteouts(self, tarf, destdir):
         """The layered filesystem of docker uses whiteout files
@@ -220,32 +314,6 @@ class ContainerStructure(object):
             Msg().err("Error: copying:", sourcedir, " to ", destdir)
         return not status
 
-    def get_container_meta(self, param, default, container_json):
-        """Get the container metadata from the container"""
-        confidx = ""
-        if "config" in container_json:
-            confidx = "config"
-        elif "container_config" in container_json:
-            confidx = "container_config"
-        if container_json[confidx]  and param in container_json[confidx]:
-            if container_json[confidx][param] is None:
-                pass
-            elif (isinstance(container_json[confidx][param], str) and (
-                    isinstance(default, (list, tuple)))):
-                return container_json[confidx][param].strip().split()
-            elif (isinstance(default, str) and (
-                    isinstance(container_json[confidx][param], (list, tuple)))):
-                return " ".join(container_json[confidx][param])
-            elif (isinstance(default, str) and (
-                    isinstance(container_json[confidx][param], dict))):
-                return self._dict_to_str(container_json[confidx][param])
-            elif (isinstance(default, list) and (
-                    isinstance(container_json[confidx][param], dict))):
-                return self._dict_to_list(container_json[confidx][param])
-            else:
-                return container_json[confidx][param]
-        return default
-
     def _dict_to_str(self, in_dict):
         """Convert dict to str"""
         out_str = ""
@@ -259,49 +327,3 @@ class ContainerStructure(object):
         for (key, val) in list(in_dict.items()):
             out_list.append("%s:%s" % (str(key), str(val)))
         return out_list
-
-    def export_tofile(self, clone_file):
-        """Export a container creating a tar file of the rootfs
-        """
-        container_dir = self.localrepo.cd_container(self.container_id)
-        if not container_dir:
-            Msg().err("Error: container not found:", self.container_id)
-            return False
-        status = self._tar(clone_file, container_dir + "/ROOT")
-        if not status:
-            Msg().err("Error: exporting container file system:", self.container_id)
-        return self.container_id
-
-    def clone_tofile(self, clone_file):
-        """Create a cloned container tar file containing both the rootfs
-        and all udocker control files. This is udocker specific.
-        """
-        container_dir = self.localrepo.cd_container(self.container_id)
-        if not container_dir:
-            Msg().err("Error: container not found:", self.container_id)
-            return False
-        status = self._tar(clone_file, container_dir)
-        if not status:
-            Msg().err("Error: exporting container as clone:", self.container_id)
-        return self.container_id
-
-    def clone(self):
-        """Clone a container by creating a complete copy
-        """
-        source_container_dir = self.localrepo.cd_container(self.container_id)
-        if not source_container_dir:
-            Msg().err("Error: source container not found:", self.container_id)
-            return False
-        dest_container_id = Unique().uuid(os.path.basename(self.imagerepo))
-        dest_container_dir = self.localrepo.setup_container(
-            "CLONING", "inprogress", dest_container_id)
-        if not dest_container_dir:
-            Msg().err("Error: create destination container: setting up")
-            return False
-        status = self._copy(source_container_dir, dest_container_dir)
-        if not status:
-            Msg().err("Error: creating container:", dest_container_id)
-        elif not self._chk_container_root(dest_container_id):
-            Msg().err("Warning: check container content:", dest_container_id,
-                      l=Msg.WAR)
-        return dest_container_id

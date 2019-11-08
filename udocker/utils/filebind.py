@@ -50,15 +50,24 @@ class FileBind(object):
                 continue
             cont_file = os.path.basename(f_name).replace('#', '/')
             cont_file = self.container_root + "/" + cont_file
+
             if os.path.islink(cont_file):
                 FileUtil(self.conf, cont_file).remove()
             elif os.path.exists(cont_file):
                 continue
-            if not FileUtil(self.conf, orig_file).rename(cont_file):
+
+            try:
+                os.rename(orig_file, cont_file)
+                bool_rename = True
+            except (IOError, OSError):
+                bool_rename = False
+            if not bool_rename:
                 Msg().err("Error: restoring binded file:", cont_file)
                 error = True
+
         if not error:
             FileUtil(self.conf, self.container_orig_dir).remove()
+
         FileUtil(self.conf, self.container_bind_dir).remove()
 
     def start(self, files_list):

@@ -39,7 +39,8 @@ class ExecutionMode(object):
 
     def get_mode(self):
         """Get execution mode"""
-        xmode = FileUtil(self.conf, self.container_execmode).getdata("r").strip()
+        futil_xm = FileUtil(self.conf, self.container_execmode)
+        xmode = futil_xm.getdata("r").strip()
         if not xmode:
             xmode = self.conf['default_execution_mode']
         return xmode
@@ -50,19 +51,24 @@ class ExecutionMode(object):
         prev_xmode = self.get_mode()
         elfpatcher = ElfPatcher(self.conf, self.localrepo, self.container_id)
         filebind = FileBind(self.conf, self.localrepo, self.container_id)
-        orig_path = FileUtil(self.conf, self.container_orig_root).getdata("r").strip()
+        futil_croot = FileUtil(self.conf, self.container_orig_root)
+        orig_path = futil_croot.getdata("r").strip()
         if xmode not in self.valid_modes:
             Msg().err("Error: invalid execmode:", xmode)
             return status
+
         if not (force or xmode != prev_xmode):
             return True
+
         if prev_xmode in ("R1", "S1") and xmode not in ("R1", "S1"):
             filebind.restore()
+
         if xmode.startswith("F"):
             if force or prev_xmode[0] in ("P", "R", "S"):
-                status = (FileUtil(self.conf, self.container_root).links_conv(force, True,
-                                                                              orig_path)
+                futil_cont = FileUtil(self.conf, self.container_root)
+                status = (futil_cont.links_conv(force, True, orig_path)
                           and elfpatcher.get_ld_libdirs(force))
+
         if xmode in ("P1", "P2", "F1", "R1", "S1"):
             if prev_xmode in ("P1", "P2", "F1", "R1", "S1"):
                 status = True
@@ -98,17 +104,22 @@ class ExecutionMode(object):
 
         if (not status) and (not force):
             Msg().err("Error: container setup failed")
+
         return status
 
     def get_engine(self):
         """get execution engine instance"""
         xmode = self.get_mode()
         if xmode.startswith("P"):
-            self.exec_engine = PRootEngine(self.conf, self.localrepo, xmode)
+            self.exec_engine = \
+                PRootEngine(self.conf, self.localrepo, xmode)
         elif xmode.startswith("F"):
-            self.exec_engine = FakechrootEngine(self.conf, self.localrepo, xmode)
+            self.exec_engine = \
+                FakechrootEngine(self.conf, self.localrepo, xmode)
         elif xmode.startswith("R"):
-            self.exec_engine = RuncEngine(self.conf, self.localrepo, xmode)
+            self.exec_engine = \
+                RuncEngine(self.conf, self.localrepo, xmode)
         elif xmode.startswith("S"):
-            self.exec_engine = SingularityEngine(self.conf, self.localrepo, xmode)
+            self.exec_engine = \
+                SingularityEngine(self.conf, self.localrepo, xmode)
         return self.exec_engine

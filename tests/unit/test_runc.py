@@ -65,12 +65,11 @@ class RuncEngineTestCase(TestCase):
 
     @patch('udocker.engine.runc.FileUtil.size.remove')
     @patch('udocker.engine.runc.FileUtil.size')
-    @patch('udocker.engine.runc.json.load')
     @patch('udocker.engine.runc.subprocess.call')
     @patch('udocker.engine.runc.os.path.realpath')
     @patch('udocker.engine.runc.FileUtil')
     def test_03__load_spec(self, mock_futil, mock_realpath,
-                           mock_call, mock_jsonload, mock_size, mock_rm):
+                           mock_call, mock_size, mock_rm):
         """Test RuncEngine()._load_spec()."""
         mock_futil.reset()
         mock_size.return_value = 1
@@ -115,22 +114,6 @@ class RuncEngineTestCase(TestCase):
         with patch(BOPEN, mock_open()):
             status = rcex._load_spec(False)
         self.assertEqual(status, None)
-
-    @patch('udocker.engine.runc.json.dump')
-    def test_04__save_spec(self, mock_jsondump):
-        """Test RuncEngine()._save_spec()."""
-        rcex = RuncEngine(self.conf, self.local, self.xmode)
-        rcex._container_specjson = "JSON"
-        with patch(BOPEN, mock_open()):
-            status = rcex._save_spec()
-        self.assertTrue(status)
-
-        mock_jsondump.side_effect = OSError("in open")
-        rcex = RuncEngine(self.conf, self.local, self.xmode)
-        rcex._container_specjson = "JSON"
-        with patch(BOPEN, mock_open()):
-            status = rcex._save_spec()
-        self.assertFalse(status)
 
     def test_05__remove_quotes(self):
         """Test RuncEngine()._remove_quotes()."""
@@ -468,7 +451,6 @@ class RuncEngineTestCase(TestCase):
     @patch.object(RuncEngine, '_load_spec')
     @patch.object(RuncEngine, '_select_runc')
     @patch.object(RuncEngine, '_run_init')
-
     def test_16_run(self, mock_run_init, mock_sel_runc,
                     mock_load_spec, mock_uid_check,
                     mock_run_env_cleanup_list, mock_env_set, mock_check_env,

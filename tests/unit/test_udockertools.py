@@ -49,33 +49,18 @@ class UdockerToolsTestCase(TestCase):
         self.assertEqual(utools.localrepo, self.local)
         self.assertTrue(mock_geturl.called)
 
-    @patch('udocker.tools.FileUtil.getdata')
-    def test_02__version_isequal(self, mock_getdata):
-        """Test UdockerTools._version_isequal()."""
-        mock_getdata.return_value = "0.0.0"
-        self.conf['tarball_release'] = "0.0.0"
-        utools = UdockerTools(self.local, self.conf)
-        status = utools._version_isequal("versionfile")
-        self.assertTrue(status)
+#    @patch.object(UdockerTools, '_version_isequal')
+#    def test_03_is_available(self, mock_version_isequal):
+#        """Test UdockerTools.is_available()."""
+#        mock_version_isequal.return_value = False
+#        utools = UdockerTools(self.local, self.conf)
+#        status = utools.is_available()
+#        self.assertFalse(status)
 
-        mock_getdata.return_value = "0.0.0"
-        self.conf['tarball_release'] = "1.1.1"
-        utools = UdockerTools(self.local, self.conf)
-        status = utools._version_isequal("versionfile")
-        self.assertFalse(status)
-
-    @patch.object(UdockerTools, '_version_isequal')
-    def test_03_is_available(self, mock_version_isequal):
-        """Test UdockerTools.is_available()."""
-        mock_version_isequal.return_value = False
-        utools = UdockerTools(self.local, self.conf)
-        status = utools.is_available()
-        self.assertFalse(status)
-
-        mock_version_isequal.return_value = True
-        utools = UdockerTools(self.local, self.conf)
-        status = utools.is_available()
-        self.assertTrue(status)
+#        mock_version_isequal.return_value = True
+#        utools = UdockerTools(self.local, self.conf)
+#        status = utools.is_available()
+#        self.assertTrue(status)
 
     @patch('udocker.tools.GetURL.get')
     @patch('udocker.tools.FileUtil')

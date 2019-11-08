@@ -7,7 +7,7 @@ import re
 import subprocess
 
 from udocker.engine.base import ExecutionEngineCommon
-from udocker.helper.guestinfo import GuestInfo
+from udocker.helper.osinfo import OSInfo
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.elfpatcher import ElfPatcher
@@ -22,7 +22,6 @@ class FakechrootEngine(ExecutionEngineCommon):
 
     def __init__(self, conf, localrepo, xmode):
         super(FakechrootEngine, self).__init__(conf, localrepo, xmode)
-        self.conf = conf
         self._fakechroot_so = ""
         self._elfpatcher = None
         self.exec_mode = xmode
@@ -44,7 +43,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             lib = "libfakechroot"
             deflib = "libfakechroot.so"
             image_list = [deflib, ]
-            guest = GuestInfo(self.conf, self.container_root)
+            guest = OSInfo(self.conf, self.container_root)
             arch = guest.arch()
             (distro, version) = guest.osdistribution()
             version = version.split(".")[0]
@@ -114,7 +113,8 @@ class FakechrootEngine(ExecutionEngineCommon):
                                os.path.realpath(self.container_root))
         self.opt["env"].append("LD_PRELOAD=" + self._fakechroot_so)
         if not self._is_volume("/tmp"):
-            self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" + self.conf['tmpdir'])
+            fkch_path = "FAKECHROOT_AF_UNIX_PATH=" + self.conf['tmpdir']
+            self.opt["env"].append(fkch_path)
         #
         if host_volumes:
             self.opt["env"].append("FAKECHROOT_EXCLUDE_PATH=" + host_volumes)
@@ -155,26 +155,20 @@ class FakechrootEngine(ExecutionEngineCommon):
                 self.opt["env"].append("FAKECHROOT_PATCH_LAST_TIME=" +
                                        self._elfpatcher.get_patch_last_time())
 
-    def _run_invalid_options(self):
-        """check -p --publish -P --publish-all --net-coop"""
-        if self.opt["portsmap"]:
-            Msg().err("Warning: this execution mode does not support "
-                      "-p --publish", l=Msg.WAR)
-        if self.opt["netcoop"]:
-            Msg().err("Warning: this execution mode does not support "
-                      "-P --netcoop --publish-all", l=Msg.WAR)
-
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non binary executables (scripts)"""
-        filetype = GuestInfo(self.conf, self.container_root).get_filetype(exec_path)
+        ginfo = OSInfo(self.conf, self.container_root)
+        filetype = ginfo.get_filetype(exec_path)
         if "ELF" in filetype and ("static" in filetype or
                                   "dynamic" in filetype):
             self.opt["cmd"][0] = exec_path
             return []
-        env_exec = FileUtil(self.conf, "env").find_inpath("/bin:/usr/bin",
-                                               self.container_root)
+
+        futil_env = FileUtil(self.conf, "env")
+        env_exec = futil_env.find_inpath("/bin:/usr/bin", self.container_root)
         if env_exec:
             return [self.container_root + "/" + env_exec, ]
+
         real_path = self._cont2host(exec_path.split(self.container_root, 1)[-1])
         hashbang = FileUtil(self.conf, real_path).get1stline()
         match = re.match("#! *([^ ]+)(.*)", hashbang)
@@ -187,8 +181,10 @@ class FakechrootEngine(ExecutionEngineCommon):
                 interpreter.extend(match.group(2).strip().split(" "))
             self.opt["cmd"][0] = exec_path.split(self.container_root, 1)[-1]
             return interpreter
-        sh_exec = FileUtil(self.conf, "sh").find_inpath(self._getenv("PATH"),
-                                             self.container_root)
+
+        futil_sh = FileUtil(self.conf, "sh")
+        sh_exec = futil_sh.find_inpath(self._getenv("PATH"),
+                                       self.container_root)
         if sh_exec:
             return [self.container_root + "/" + sh_exec, ]
         Msg().err("Error: sh not found")

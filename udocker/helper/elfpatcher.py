@@ -69,27 +69,34 @@ class ElfPatcher(object):
                     f_path = dir_path + "/" + f_name
                     if os.path.islink(f_path):
                         continue
+
                     if os.stat(f_path).st_uid != self._uid:
                         if action & self.ABORT_ON_ERROR:
                             return ""
                         else:
                             continue
-                    if ((action & self.BIN and os.access(f_path, os.X_OK)) or
-                            (action & self.LIB and self._shlib.match(f_name))):
+
+                    if   ((bool(action & self.BIN) and
+                           os.access(f_path, os.X_OK)) or
+                          (bool(action & self.LIB) and
+                           self._shlib.match(f_name))):
                         out = Uprocess().get_output(cmd.replace("#f", f_path))
                         if out:
                             status = out
-                    if action & self.ABORT_ON_ERROR and status is "":
+
+                    if bool(action & self.ABORT_ON_ERROR) and (status == ""):
                         return ""
-                    elif action & self.ONE_SUCCESS and status is not "":
+                    elif bool(action & self.ONE_SUCCESS) and (status != ""):
                         return status
-                    elif action & self.ONE_OUTPUT and status:
+                    elif bool(action & self.ONE_OUTPUT) and status:
                         return status
+
                 except OSError:
                     pass
+
         return status
 
-    def guess_elf_loader(self):
+    def _guess_elf_loader(self):
         """Search for executables and try to read the ld.so pathname"""
         patchelf_exec = self.select_patchelf()
         cmd = "%s -q --print-interpreter #f" % (patchelf_exec)
@@ -100,40 +107,44 @@ class ElfPatcher(object):
                 return elf_loader
         return ""
 
-    def get_original_loader(self):
+    def _get_original_loader(self):
         """Get the pathname of the original ld.so"""
         if os.path.exists(self._container_ld_so_path):
-            return FileUtil(self.conf, self._container_ld_so_path).getdata("r").strip()
-        elf_loader = self.guess_elf_loader()
+            futil = FileUtil(self.conf, self._container_ld_so_path)
+            return futil.getdata("r").strip()
+        elf_loader = self._guess_elf_loader()
         if elf_loader:
-            FileUtil(self.conf, self._container_ld_so_path).putdata(elf_loader, "w")
+            futil = FileUtil(self.conf, self._container_ld_so_path)
+            futil.putdata(elf_loader, "w")
         return elf_loader
 
     def get_container_loader(self):
         """Get an absolute pathname to the container ld.so"""
-        elf_loader = self.get_original_loader()
+        elf_loader = self._get_original_loader()
         if not elf_loader:
             return ""
         elf_loader = self._container_root + "/" + elf_loader
         return elf_loader if os.path.exists(elf_loader) else ""
 
-    def get_patch_last_path(self):
+    def _get_patch_last_path(self):
         """get last host pathname to the patched container"""
-        last_path = FileUtil(self.conf, self._container_patch_path).getdata("r").strip()
+        futil = FileUtil(self.conf, self._container_patch_path)
+        last_path = futil.getdata("r").strip()
         if last_path and isinstance(last_path, str):
             return last_path.strip()
         return ""
 
     def check_container_path(self):
         """verify if path to container is ok"""
-        last_path = self.get_patch_last_path()
+        last_path = self._get_patch_last_path()
         if last_path and last_path != self._container_dir:
             return False
         return True
 
     def get_patch_last_time(self):
         """get time in seconds of last full patch of container"""
-        last_time = FileUtil(self.conf, self._container_patch_time).getdata("r").strip()
+        futil = FileUtil(self.conf, self._container_patch_time)
+        last_time = futil.getdata("r").strip()
         try:
             return str(int(last_time))
         except ValueError:
@@ -149,21 +160,24 @@ class ElfPatcher(object):
         cmd = "%s --set-root-prefix %s #f" % \
             (patchelf_exec, self._container_root)
         self._walk_fs(cmd, self._container_root, self.BIN | self.LIB)
-        newly_set = self.guess_elf_loader()
+        newly_set = self._guess_elf_loader()
         if newly_set == elf_loader:
             try:
                 last_time = str(int(time.time()))
             except ValueError:
                 pass
-            return (FileUtil(self.conf, self._container_patch_time).putdata(last_time, "w") and
-                    FileUtil(self.conf, self._container_patch_path).putdata(self._container_dir, "w"))
+
+            futil_time = FileUtil(self.conf, self._container_patch_time)
+            futil_path = FileUtil(self.conf, self._container_patch_path)
+            return (futil_time.putdata(last_time, "w") and
+                    futil_path.putdata(self._container_dir, "w"))
         return False
 
     def restore_binaries(self):
         """Restore all executables and libs to the original ld.so pathname"""
         patchelf_exec = self.select_patchelf()
-        elf_loader = self.get_original_loader()
-        last_path = self.get_patch_last_path()
+        elf_loader = self._get_original_loader()
+        last_path = self._get_patch_last_path()
         if last_path:
             cmd = "%s --restore-root-prefix %s #f" % \
                 (patchelf_exec, last_path + "/ROOT")
@@ -171,7 +185,7 @@ class ElfPatcher(object):
             cmd = "%s --restore-root-prefix %s #f" % \
                 (patchelf_exec, self._container_root)
         self._walk_fs(cmd, self._container_root, self.BIN | self.LIB)
-        newly_set = self.guess_elf_loader()
+        newly_set = self._guess_elf_loader()
         if newly_set == elf_loader:
             FileUtil(self.conf, self._container_patch_path).remove()
             FileUtil(self.conf, self._container_patch_time).remove()
@@ -181,14 +195,17 @@ class ElfPatcher(object):
         """Patch ld.so"""
         elf_loader = self.get_container_loader()
         if FileUtil(self.conf, self._container_ld_so_orig).size() == -1:
-            status = FileUtil(self.conf, elf_loader).copyto(self._container_ld_so_orig)
+            futil_elf = FileUtil(self.conf, elf_loader)
+            status = futil_elf.copyto(self._container_ld_so_orig)
             if not status:
                 return False
+
         ld_data = FileUtil(self.conf, self._container_ld_so_orig).getdata("rb")
         if not ld_data:
             ld_data = FileUtil(self.conf, elf_loader).getdata("rb")
             if not ld_data:
                 return False
+
         nul_etc = "\x00/\x00\x00\x00\x00\x00\x00\x00\x00\x00".encode()
         nul_lib = "\x00/\x00\x00\x00".encode()
         nul_usr = "\x00/\x00\x00\x00".encode()
@@ -202,17 +219,21 @@ class ElfPatcher(object):
         ld_data = ld_data.replace(ld_library_path_orig, ld_library_path_new)
         if output_elf is None:
             return bool(FileUtil(self.conf, elf_loader).putdata(ld_data))
+
         return bool(FileUtil(self.conf, output_elf).putdata(ld_data))
 
     def restore_ld(self):
         """Restore ld.so"""
         elf_loader = self.get_container_loader()
-        if FileUtil(self.conf, self._container_ld_so_orig).size() <= 0:
+        futil_ldso = FileUtil(self.conf, self._container_ld_so_orig)
+        if futil_ldso.size() <= 0:
             Msg().err("Error: original loader not found or empty")
             return False
-        if not FileUtil(self.conf, self._container_ld_so_orig).copyto(elf_loader):
+
+        if not futil_ldso.copyto(elf_loader):
             Msg().err("Error: in loader copy or file locked by other process")
             return False
+
         return True
 
     def _get_ld_config(self):
@@ -251,12 +272,14 @@ class ElfPatcher(object):
 
     def get_ld_libdirs(self, force=False):
         """Get ld library paths"""
+        futil_lib = FileUtil(self.conf, self._container_ld_libdirs)
         if force or not os.path.exists(self._container_ld_libdirs):
             ld_list = self._find_ld_libdirs()
             ld_str = ":".join(ld_list)
-            FileUtil(self.conf, self._container_ld_libdirs).putdata(ld_str, "w")
+            futil_lib.putdata(ld_str, "w")
             return ld_list
-        ld_str = FileUtil(self.conf, self._container_ld_libdirs).getdata("r")
+
+        ld_str = futil_lib.getdata("r")
         return ld_str.split(":")
 
     def get_ld_library_path(self):

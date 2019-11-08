@@ -50,12 +50,11 @@ class UMain(object):
                           self.conf['topdir'])
                 sys.exit(1)
 
-        self.localrepo = LocalRepository(self.conf)
-        if not self.localrepo.is_repo():
+        if not LocalRepository(self.conf).is_repo():
             Msg().out("Info: creating repo: " + self.conf['topdir'], l=Msg.INF)
-            self.localrepo.create_repo()
+            LocalRepository(self.conf).create_repo()
 
-        self.cli = UdockerCLI(self.localrepo, self.conf)
+        self.cli = UdockerCLI(LocalRepository(self.conf), self.conf)
 
     def _execute(self):
         """Command parsing and selection"""
@@ -89,11 +88,11 @@ class UMain(object):
             if cmd_help in cmds:
                 text = cmds[cmd_help].__doc__
                 Msg().out(text)
-                return exit_status
             else:
                 Msg().err("Error: command not found: %s" % cmd_help)
                 exit_status = 1
-                return exit_status
+
+            return exit_status
 
         if "listconf" in self.argv:
             exit_status = self.cli.do_listconf()
@@ -101,7 +100,6 @@ class UMain(object):
 
         if self.argv[1] in lversion:
             exit_status = self.cli.do_version()
-            return exit_status
         else:
             command = self.cmdp.get("", "CMD")
             if command in cmds:
@@ -117,7 +115,8 @@ class UMain(object):
             else:
                 Msg().err("Error: invalid command:", command, "\n")
                 exit_status = 1
-                return exit_status
+
+        return exit_status
 
     def start(self):
         """Program start and exception handling"""

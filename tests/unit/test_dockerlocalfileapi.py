@@ -108,35 +108,6 @@ class DockerLocalFileAPITestCase(TestCase):
             'layer_f': '/tmp/' + "x" * 64 + '/layer'}}}
         self.assertEqual(structure, expected)
 
-    def test_03__find_top_layer_id(self):
-        """Test DockerLocalFileAPI()._find_top_layer_id()."""
-        structure = {}
-        dlocapi = DockerLocalFileAPI(self.local, self.conf)
-        status = dlocapi._find_top_layer_id(structure)
-        self.assertFalse(status)
-
-        structure = {'layers': {"LID": {"json": {}, }, }, }
-        dlocapi = DockerLocalFileAPI(self.local, self.conf)
-        status = dlocapi._find_top_layer_id(structure)
-        self.assertEqual(status, "LID")
-
-        structure = {'layers': {"LID": {"json": {"parent": "x", }, }, }, }
-        dlocapi = DockerLocalFileAPI(self.local, self.conf)
-        status = dlocapi._find_top_layer_id(structure)
-        self.assertEqual(status, "LID")
-
-    def test_04__sorted_layers(self):
-        """Test DockerLocalFileAPI()._sorted_layers()."""
-        structure = {}
-        dlocapi = DockerLocalFileAPI(self.local, self.conf)
-        status = dlocapi._sorted_layers(structure, "")
-        self.assertFalse(status)
-
-        structure = {'layers': {"LID": {"json": {"parent": {}, }, }, }, }
-        dlocapi = DockerLocalFileAPI(self.local, self.conf)
-        status = dlocapi._sorted_layers(structure, "LID")
-        self.assertEqual(status, ["LID"])
-
     @patch('udocker.docker.os.rename')
     def test_05__copy_layer_to_repo(self, mock_rename):
         """Test DockerLocalFileAPI()._copy_layer_to_repo()."""
@@ -152,10 +123,10 @@ class DockerLocalFileAPITestCase(TestCase):
     @patch('udocker.container.localrepo.LocalRepository.set_version', autospec=True)
     @patch('udocker.container.localrepo.LocalRepository.setup_tag', autospec=True)
     @patch('udocker.container.localrepo.LocalRepository.cd_imagerepo', autospec=True)
+    @patch('udocker.container.localrepo.LocalRepository.sorted_layers', autospec=True)
+    @patch('udocker.container.localrepo.LocalRepository.find_top_layer_id', autospec=True)
     @patch.object(DockerLocalFileAPI, '_copy_layer_to_repo')
-    @patch.object(DockerLocalFileAPI, '_sorted_layers')
-    @patch.object(DockerLocalFileAPI, '_find_top_layer_id')
-    def test_06__load_image(self, mock_findtop, mock_slayers, mock_copylayer,
+    def test_06__load_image(self, mock_copylayer, mock_findtop, mock_slayers, 
                             mock_cdimg, mock_settag, mock_setversion):
         """Test DockerLocalFileAPI()._load_image()."""
         mock_cdimg.return_value = True

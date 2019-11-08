@@ -95,12 +95,16 @@ class NvidiaMode(object):
         if not ld_data:
             return ""
         for line in ld_data.split("\n"):
-            match = re.search("[ |\t]libnvidia-cfg.so[^ ]* .*x86-64.*=> (/.*)", line)
+            str_re = "[ |\t]libnvidia-cfg.so[^ ]* .*x86-64.*=> (/.*)"
+            match = re.search(str_re, line)
             if match:
                 dir_list.add(os.path.dirname(match.group(1)) + '/')
-            match = re.search("[ |\t]libcuda.so[^ ]* .*x86-64.*=> (/.*)", line)
+
+            str_re = "[ |\t]libcuda.so[^ ]* .*x86-64.*=> (/.*)"
+            match = re.search(str_re, line)
             if match:
                 dir_list.add(os.path.dirname(match.group(1)) + '/')
+
         return dir_list
 
     def _find_cont_dir(self):
@@ -122,35 +126,42 @@ class NvidiaMode(object):
             return True
         return False
 
-    def set_mode(self, force=False):
+    def set_nvidia(self, force=False):
         """Set nvidia mode"""
         if not self.container_dir:
             Msg().err("Error: nvidia set mode container dir not found")
             return
+
         nvi_host_dir_list = self._find_host_dir()
         nvi_cont_dir = self._find_cont_dir()
         if not nvi_host_dir_list:
             Msg().err("Error: host nvidia libraries not found")
             return
+
         if not nvi_cont_dir:
             Msg().err("Error: destination directory for nvidia libs not found")
             return
-        if (not force) and self._installation_exists(nvi_host_dir_list, nvi_cont_dir):
+
+        if   (not force and
+              self._installation_exists(nvi_host_dir_list, nvi_cont_dir)):
             Msg().err("Error: nvidia installation already exists"
                       ", use --force to overwrite")
             return
+
         for nvi_host_dir in nvi_host_dir_list:
             lib_list = self._get_nvidia_libs(nvi_host_dir)
             self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
+
         self._copy_files('/etc', '/etc', self.conf['nvi_etc_list'], force)
-        self._copy_files('/usr/bin', '/usr/bin', self.conf['nvi_bin_list'], force)
+        self._copy_files('/usr/bin', '/usr/bin',
+                         self.conf['nvi_bin_list'], force)
         try:
             os.mknod(self._container_nvidia_set)
             Msg().err("Created:", self._container_nvidia_set, l=Msg.DBG)
         except (IOError, OSError, TypeError):
             Msg().err("Error creating:", self._container_nvidia_set)
 
-    def get_mode(self):
+    def get_nvidia(self):
         """Get nvidia mode"""
         return os.path.exists(self._container_nvidia_set)
 

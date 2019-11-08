@@ -43,20 +43,6 @@ class CmdParser(object):
                 self._argv_split['CMD_OPT'].append(arg)
         return step == 2
 
-    def missing_options(self):
-        """Get command line options not used/fetched by Cmdp.get()
-        """
-        all_opt = []
-        for pos in range(len(self._argv_split['GEN_OPT'])):
-            if (pos not in self._argv_consumed_options['GEN_OPT'] and
-                    pos not in self._argv_consumed_params['GEN_OPT']):
-                all_opt.append(self._argv_split['GEN_OPT'][pos])
-        for pos in range(len(self._argv_split['CMD_OPT'])):
-            if (pos not in self._argv_consumed_options['CMD_OPT'] and
-                    pos not in self._argv_consumed_params['CMD_OPT']):
-                all_opt.append(self._argv_split['CMD_OPT'][pos])
-        return all_opt
-
     def get(self, opt_name, opt_where="CMD_OPT", opt_multiple=False):
         """Get the value of a command line option --xyz=
         multiple=true  multiple occurrences of option can be present
@@ -75,6 +61,20 @@ class CmdParser(object):
                                         self._argv_consumed_options[opt_where],
                                         opt_multiple))
         return None
+
+    def missing_options(self):
+        """Get command line options not used/fetched by Cmdp.get()
+        """
+        all_opt = []
+        for pos in range(len(self._argv_split['GEN_OPT'])):
+            if (pos not in self._argv_consumed_options['GEN_OPT'] and
+                    pos not in self._argv_consumed_params['GEN_OPT']):
+                all_opt.append(self._argv_split['GEN_OPT'][pos])
+        for pos in range(len(self._argv_split['CMD_OPT'])):
+            if (pos not in self._argv_consumed_options['CMD_OPT'] and
+                    pos not in self._argv_consumed_params['CMD_OPT']):
+                all_opt.append(self._argv_split['CMD_OPT'][pos])
+        return all_opt
 
     def declare_options(self, opts_string, opt_where="CMD_OPT"):
         """Declare in advance options that are part of the command line
