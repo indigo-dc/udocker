@@ -56,68 +56,6 @@ class ElfPatcher(object):
             sys.exit(1)
         return patchelf_exec
 
-    def _walk_fs(self, cmd, root_path, action=BIN):
-        """Execute a shell command over each executable file in a given
-        dir_path, action can be ABORT_ON_ERROR, return upon first success
-        ONE_SUCCESS, or return upon the first non empty output. #f is the
-        placeholder for the filename.
-        """
-        status = ""
-        for dir_path, dummy, files in os.walk(root_path):
-            for f_name in files:
-                try:
-                    f_path = dir_path + "/" + f_name
-                    if os.path.islink(f_path):
-                        continue
-
-                    if os.stat(f_path).st_uid != self._uid:
-                        if action & self.ABORT_ON_ERROR:
-                            return ""
-                        else:
-                            continue
-
-                    if   ((bool(action & self.BIN) and
-                           os.access(f_path, os.X_OK)) or
-                          (bool(action & self.LIB) and
-                           self._shlib.match(f_name))):
-                        out = Uprocess().get_output(cmd.replace("#f", f_path))
-                        if out:
-                            status = out
-
-                    if bool(action & self.ABORT_ON_ERROR) and (status == ""):
-                        return ""
-                    elif bool(action & self.ONE_SUCCESS) and (status != ""):
-                        return status
-                    elif bool(action & self.ONE_OUTPUT) and status:
-                        return status
-
-                except OSError:
-                    pass
-
-        return status
-
-    def _guess_elf_loader(self):
-        """Search for executables and try to read the ld.so pathname"""
-        patchelf_exec = self.select_patchelf()
-        cmd = "%s -q --print-interpreter #f" % (patchelf_exec)
-        for d_name in ("/bin", "/usr/bin", "/lib64"):
-            elf_loader = self._walk_fs(cmd, self._container_root + d_name,
-                                       self.ONE_OUTPUT | self.BIN)
-            if elf_loader and ".so" in elf_loader:
-                return elf_loader
-        return ""
-
-    def _get_original_loader(self):
-        """Get the pathname of the original ld.so"""
-        if os.path.exists(self._container_ld_so_path):
-            futil = FileUtil(self.conf, self._container_ld_so_path)
-            return futil.getdata("r").strip()
-        elf_loader = self._guess_elf_loader()
-        if elf_loader:
-            futil = FileUtil(self.conf, self._container_ld_so_path)
-            futil.putdata(elf_loader, "w")
-        return elf_loader
-
     def get_container_loader(self):
         """Get an absolute pathname to the container ld.so"""
         elf_loader = self._get_original_loader()
@@ -125,14 +63,6 @@ class ElfPatcher(object):
             return ""
         elf_loader = self._container_root + "/" + elf_loader
         return elf_loader if os.path.exists(elf_loader) else ""
-
-    def _get_patch_last_path(self):
-        """get last host pathname to the patched container"""
-        futil = FileUtil(self.conf, self._container_patch_path)
-        last_path = futil.getdata("r").strip()
-        if last_path and isinstance(last_path, str):
-            return last_path.strip()
-        return ""
 
     def check_container_path(self):
         """verify if path to container is ok"""
@@ -236,6 +166,99 @@ class ElfPatcher(object):
 
         return True
 
+    def get_ld_libdirs(self, force=False):
+        """Get ld library paths"""
+        futil_lib = FileUtil(self.conf, self._container_ld_libdirs)
+        if force or not os.path.exists(self._container_ld_libdirs):
+            ld_list = self._find_ld_libdirs()
+            ld_str = ":".join(ld_list)
+            futil_lib.putdata(ld_str, "w")
+            return ld_list
+
+        ld_str = futil_lib.getdata("r")
+        return ld_str.split(":")
+
+    def get_ld_library_path(self):
+        """Get ld library paths"""
+        ld_list = self._get_ld_config()
+        ld_list.extend(self.get_ld_libdirs())
+        for ld_dir in self.conf['lib_dirs_list_essential']:
+            ld_dir = self._container_root + "/" + ld_dir
+            if ld_dir not in ld_list:
+                ld_list.insert(0, ld_dir)
+        ld_list.extend(self.conf['lib_dirs_list_append'])
+        return ":".join(ld_list)
+
+    def _walk_fs(self, cmd, root_path, action=BIN):
+        """Execute a shell command over each executable file in a given
+        dir_path, action can be ABORT_ON_ERROR, return upon first success
+        ONE_SUCCESS, or return upon the first non empty output. #f is the
+        placeholder for the filename.
+        """
+        status = ""
+        for dir_path, dummy, files in os.walk(root_path):
+            for f_name in files:
+                try:
+                    f_path = dir_path + "/" + f_name
+                    if os.path.islink(f_path):
+                        continue
+
+                    if os.stat(f_path).st_uid != self._uid:
+                        if action & self.ABORT_ON_ERROR:
+                            return ""
+                        else:
+                            continue
+
+                    if   ((bool(action & self.BIN) and
+                           os.access(f_path, os.X_OK)) or
+                          (bool(action & self.LIB) and
+                           self._shlib.match(f_name))):
+                        out = Uprocess().get_output(cmd.replace("#f", f_path))
+                        if out:
+                            status = out
+
+                    if bool(action & self.ABORT_ON_ERROR) and (status == ""):
+                        return ""
+                    elif bool(action & self.ONE_SUCCESS) and (status != ""):
+                        return status
+                    elif bool(action & self.ONE_OUTPUT) and status:
+                        return status
+
+                except OSError:
+                    pass
+
+        return status
+
+    def _guess_elf_loader(self):
+        """Search for executables and try to read the ld.so pathname"""
+        patchelf_exec = self.select_patchelf()
+        cmd = "%s -q --print-interpreter #f" % (patchelf_exec)
+        for d_name in ("/bin", "/usr/bin", "/lib64"):
+            elf_loader = self._walk_fs(cmd, self._container_root + d_name,
+                                       self.ONE_OUTPUT | self.BIN)
+            if elf_loader and ".so" in elf_loader:
+                return elf_loader
+        return ""
+
+    def _get_original_loader(self):
+        """Get the pathname of the original ld.so"""
+        if os.path.exists(self._container_ld_so_path):
+            futil = FileUtil(self.conf, self._container_ld_so_path)
+            return futil.getdata("r").strip()
+        elf_loader = self._guess_elf_loader()
+        if elf_loader:
+            futil = FileUtil(self.conf, self._container_ld_so_path)
+            futil.putdata(elf_loader, "w")
+        return elf_loader
+
+    def _get_patch_last_path(self):
+        """get last host pathname to the patched container"""
+        futil = FileUtil(self.conf, self._container_patch_path)
+        last_path = futil.getdata("r").strip()
+        if last_path and isinstance(last_path, str):
+            return last_path.strip()
+        return ""
+
     def _get_ld_config(self):
         """Get get directories from container ld.so.cache"""
         croot = self._container_root
@@ -269,26 +292,3 @@ class ElfPatcher(object):
                 except OSError:
                     continue
         return ld_list
-
-    def get_ld_libdirs(self, force=False):
-        """Get ld library paths"""
-        futil_lib = FileUtil(self.conf, self._container_ld_libdirs)
-        if force or not os.path.exists(self._container_ld_libdirs):
-            ld_list = self._find_ld_libdirs()
-            ld_str = ":".join(ld_list)
-            futil_lib.putdata(ld_str, "w")
-            return ld_list
-
-        ld_str = futil_lib.getdata("r")
-        return ld_str.split(":")
-
-    def get_ld_library_path(self):
-        """Get ld library paths"""
-        ld_list = self._get_ld_config()
-        ld_list.extend(self.get_ld_libdirs())
-        for ld_dir in self.conf['lib_dirs_list_essential']:
-            ld_dir = self._container_root + "/" + ld_dir
-            if ld_dir not in ld_list:
-                ld_list.insert(0, ld_dir)
-        ld_list.extend(self.conf['lib_dirs_list_append'])
-        return ":".join(ld_list)
