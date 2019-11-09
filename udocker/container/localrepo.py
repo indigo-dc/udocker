@@ -424,6 +424,9 @@ class LocalRepository(object):
         that has been previously selected via cd_imagerepo()
         or if the file starts with "/" from that specific file.
         """
+        if filename is None:
+            Msg().err("Error: Empty filename")
+            return False
         if filename.startswith("/"):
             in_filename = filename
         else:
