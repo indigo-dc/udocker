@@ -114,11 +114,13 @@ class ElfPatcher(object):
         else:
             cmd = "%s --restore-root-prefix %s #f" % \
                 (patchelf_exec, self._container_root)
+
         self._walk_fs(cmd, self._container_root, self.BIN | self.LIB)
         newly_set = self._guess_elf_loader()
         if newly_set == elf_loader:
             FileUtil(self.conf, self._container_patch_path).remove()
             FileUtil(self.conf, self._container_patch_time).remove()
+
         return newly_set == elf_loader
 
     def patch_ld(self, output_elf=None):
