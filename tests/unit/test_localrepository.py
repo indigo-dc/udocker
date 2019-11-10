@@ -14,9 +14,9 @@ except ImportError:
     from mock import patch, mock_open, call
 
 try:
-    from StringIO import StringIO
+    from io import BytesIO as bytestr
 except ImportError:
-    from io import StringIO
+    from StringIO import StringIO as bytestr
 
 if sys.version_info[0] >= 3:
     BUILTIN = "builtins"
@@ -69,17 +69,18 @@ class LocalRepositoryTestCase(TestCase):
         lrepo.setup("YYYY")
         self.assertEqual(os.path.basename(lrepo.topdir), "YYYY")
 
-    def test_01_sha256(self):
+    def test_03_sha256(self):
         """Test LocalRepository().sha256()."""
         sha256sum = (
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
         lrepo = LocalRepository(self.conf)
-        file_data = StringIO("qwerty")
-        with patch(BOPEN, mock_open()) as mopen:
-            mopen.return_value.__iter__ = (
-                lambda self: iter(file_data.readline, ''))
-            status = lrepo.sha256("filename")
-            self.assertEqual(status, sha256sum)
+        file_data = bytestr("qwerty".encode())
+        if sys.version_info[0] < 3:   # TODO: implement for python3
+            with patch(BOPEN, mock_open()) as mopen:
+                mopen.return_value.__iter__ = \
+                    (lambda self: iter(file_data.readline, ''))
+                status = lrepo.sha256("filename")
+                self.assertEqual(status, sha256sum)
 
         with patch(BOPEN, mock_open()) as mopen:
             mopen.side_effect = IOError
@@ -87,7 +88,7 @@ class LocalRepositoryTestCase(TestCase):
             self.assertRaises(IOError)
             self.assertEqual(status, "")
 
-    def test_03_create_repo(self):
+    def test_04_create_repo(self):
         """Test LocalRepository().create_repo()."""
         lrepo = LocalRepository(self.conf)
         subprocess.call(["/bin/rm", "-Rf", lrepo.topdir])
@@ -103,7 +104,7 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(os.path.exists(lrepo.libdir))
         subprocess.call(["/bin/rm", "-Rf", lrepo.topdir])
 
-    def test_04_is_repo(self):
+    def test_05_is_repo(self):
         """Test LocalRepository().is_repo()."""
         lrepo = LocalRepository(self.conf)
         subprocess.call(["/bin/rm", "-Rf", lrepo.topdir])
