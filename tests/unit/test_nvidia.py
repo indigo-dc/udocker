@@ -2,8 +2,6 @@
 """
 udocker unit tests: NVIDIA mode
 """
-
-import sys
 from unittest import TestCase, main
 from udocker.config import Config
 from udocker.container.localrepo import LocalRepository
