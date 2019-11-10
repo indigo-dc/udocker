@@ -28,6 +28,53 @@ class NvidiaMode(object):
         self.container_root = self.container_dir + "/ROOT"
         self._container_nvidia_set = self.container_dir + "/nvidia"
 
+    def set_nvidia(self, force=False):
+        """Set nvidia mode"""
+        if not self.container_dir:
+            Msg().err("Error: nvidia set mode container dir not found")
+            return
+
+        nvi_host_dir_list = self._find_host_dir()
+        nvi_cont_dir = self._find_cont_dir()
+        if not nvi_host_dir_list:
+            Msg().err("Error: host nvidia libraries not found")
+            return
+
+        if not nvi_cont_dir:
+            Msg().err("Error: destination directory for nvidia libs not found")
+            return
+
+        if   (not force and
+              self._installation_exists(nvi_host_dir_list, nvi_cont_dir)):
+            Msg().err("Error: nvidia installation already exists"
+                      ", use --force to overwrite")
+            return
+
+        for nvi_host_dir in nvi_host_dir_list:
+            lib_list = self._get_nvidia_libs(nvi_host_dir)
+            self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
+
+        self._copy_files('/etc', '/etc', self.conf['nvi_etc_list'], force)
+        self._copy_files('/usr/bin', '/usr/bin',
+                         self.conf['nvi_bin_list'], force)
+        try:
+            os.mknod(self._container_nvidia_set)
+            Msg().err("Created:", self._container_nvidia_set, l=Msg.DBG)
+        except (IOError, OSError, TypeError):
+            Msg().err("Error creating:", self._container_nvidia_set)
+
+    def get_nvidia(self):
+        """Get nvidia mode"""
+        return os.path.exists(self._container_nvidia_set)
+
+    def get_devices(self):
+        """Get list of nvidia devices related to cuda"""
+        dev_list = list()
+        for dev in self.conf['nvi_dev_list']:
+            for expanded_devs in glob.glob(dev + '*'):
+                dev_list.append(expanded_devs)
+        return dev_list
+
     def _files_exist(self, cont_dst_dir, files_list):
         """Verify if files already exists"""
         for fname in files_list:
@@ -125,50 +172,3 @@ class NvidiaMode(object):
         except OSError:
             return True
         return False
-
-    def set_nvidia(self, force=False):
-        """Set nvidia mode"""
-        if not self.container_dir:
-            Msg().err("Error: nvidia set mode container dir not found")
-            return
-
-        nvi_host_dir_list = self._find_host_dir()
-        nvi_cont_dir = self._find_cont_dir()
-        if not nvi_host_dir_list:
-            Msg().err("Error: host nvidia libraries not found")
-            return
-
-        if not nvi_cont_dir:
-            Msg().err("Error: destination directory for nvidia libs not found")
-            return
-
-        if   (not force and
-              self._installation_exists(nvi_host_dir_list, nvi_cont_dir)):
-            Msg().err("Error: nvidia installation already exists"
-                      ", use --force to overwrite")
-            return
-
-        for nvi_host_dir in nvi_host_dir_list:
-            lib_list = self._get_nvidia_libs(nvi_host_dir)
-            self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
-
-        self._copy_files('/etc', '/etc', self.conf['nvi_etc_list'], force)
-        self._copy_files('/usr/bin', '/usr/bin',
-                         self.conf['nvi_bin_list'], force)
-        try:
-            os.mknod(self._container_nvidia_set)
-            Msg().err("Created:", self._container_nvidia_set, l=Msg.DBG)
-        except (IOError, OSError, TypeError):
-            Msg().err("Error creating:", self._container_nvidia_set)
-
-    def get_nvidia(self):
-        """Get nvidia mode"""
-        return os.path.exists(self._container_nvidia_set)
-
-    def get_devices(self):
-        """Get list of nvidia devices related to cuda"""
-        dev_list = list()
-        for dev in self.conf['nvi_dev_list']:
-            for expanded_devs in glob.glob(dev + '*'):
-                dev_list.append(expanded_devs)
-        return dev_list
