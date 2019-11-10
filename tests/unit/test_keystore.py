@@ -4,15 +4,12 @@ udocker unit tests: Keystore
 """
 import sys
 from unittest import TestCase, main
-try:
-    from unittest.mock import Mock, MagicMock, patch, mock_open
-except ImportError:
-    from mock import Mock, MagicMock, patch, mock_open
-
-sys.path.append('.')
-
 from udocker.helper.keystore import KeyStore
 from udocker.config import Config
+try:
+    from unittest.mock import patch, mock_open
+except ImportError:
+    from mock import patch, mock_open
 
 if sys.version_info[0] >= 3:
     BUILTINS = "builtins"
@@ -53,15 +50,15 @@ class KeyStoreTestCase(TestCase):
             self.assertEqual(status, credentials)
 
     @patch.object(KeyStore, '_verify_keystore')
-    @patch('udocker.helper.keystore.os.stat')
-    def test_04__shred(self, mock_stat, mock_verks):
+    @patch('udocker.helper.keystore.FileUtil.size')
+    def test_04__shred(self, mock_size, mock_verks):
         """Test KeyStore()._shred() erase file content."""
         with patch(BUILTINS + '.open', mock_open()):
             kstore = KeyStore(self.conf, "filename")
             status = kstore._shred()
             self.assertEqual(status, 0)
 
-        mock_stat.return_value.st_size = 123
+        mock_size.return_value = 123
         with patch(BUILTINS + '.open', mock_open()):
             kstore = KeyStore(self.conf, "filename")
             status = kstore._shred()
