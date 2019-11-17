@@ -5,17 +5,14 @@ udocker unit tests: UdockerTools
 
 import sys
 from unittest import TestCase, main
-try:
-    from unittest.mock import Mock, patch, MagicMock, mock_open
-except ImportError:
-    from mock import Mock, patch, MagicMock, mock_open
-
-sys.path.append('.')
-
 from udocker.tools import UdockerTools
 from udocker.utils.curl import CurlHeader
 from udocker.config import Config
 from udocker.container.localrepo import LocalRepository
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
 
 STDOUT = sys.stdout
 STDERR = sys.stderr
@@ -49,98 +46,6 @@ class UdockerToolsTestCase(TestCase):
         self.assertEqual(utools.localrepo, self.local)
         self.assertTrue(mock_geturl.called)
 
-#    @patch.object(UdockerTools, '_version_isequal')
-#    def test_03_is_available(self, mock_version_isequal):
-#        """Test UdockerTools.is_available()."""
-#        mock_version_isequal.return_value = False
-#        utools = UdockerTools(self.local, self.conf)
-#        status = utools.is_available()
-#        self.assertFalse(status)
-
-#        mock_version_isequal.return_value = True
-#        utools = UdockerTools(self.local, self.conf)
-#        status = utools.is_available()
-#        self.assertTrue(status)
-
-    @patch('udocker.tools.GetURL.get')
-    @patch('udocker.tools.FileUtil')
-    def test_04__download(self, mock_futil, mock_gurl):
-        """Test UdockerTools.download()."""
-        utools = UdockerTools(self.local, self.conf)
-        utools.curl = mock_gurl
-        utools._tarball = "http://node.domain/filename.tgz"
-        hdr = CurlHeader()
-        hdr.data["X-ND-HTTPSTATUS"] = "200"
-        hdr.data["X-ND-CURLSTATUS"] = 0
-        mock_futil.return_value.mktmp.return_value = "tmptarball"
-        mock_gurl.get.return_value = (hdr, "")
-        status = utools._download(utools._tarball)
-        self.assertEqual(status, "tmptarball")
-
-        hdr.data["X-ND-HTTPSTATUS"] = "400"
-        hdr.data["X-ND-CURLSTATUS"] = 1
-        status = utools._download(utools._tarball)
-        self.assertEqual(status, "")
-
-    @patch('udocker.tools.os.path.realpath')
-    @patch('udocker.tools.os.path.exists')
-    @patch('udocker.tools.os.path.isfile')
-    @patch.object(UdockerTools, '_download')
-    def test_05__get_file(self, mock_downl, mock_isfile,
-                          mock_exists, mock_rpath):
-        """Test UdockerTools._get_file()."""
-        location = ['http://node.domain/f.tgz']
-        mock_downl.return_value = 'f.tgz'
-        mock_isfile.return_value = True
-        utools = UdockerTools(self.local, self.conf)
-        status = utools._get_file(location)
-        self.assertEqual(status, ('f.tgz', 'http://node.domain/f.tgz'))
-
-        location = ['/bb/c/f.tgz']
-        mock_downl.return_value = 'f.tgz'
-        mock_isfile.return_value = True
-        mock_exists.return_value = True
-        mock_rpath.return_value = '/bb/c/f.tgz'
-        utools = UdockerTools(self.local, self.conf)
-        status = utools._get_file(location)
-        self.assertEqual(status, ('/bb/c/f.tgz', '/bb/c/f.tgz'))
-
-    @patch('udocker.tools.os.path.isfile')
-    @patch('udocker.tools.UdockerTools._version_isequal')
-    @patch('udocker.tools.Msg')
-    @patch('udocker.tools.subprocess.call')
-    @patch('udocker.tools.FileUtil')
-    def test_06__verify_version(self, mock_futil, mock_call,
-                                mock_msg, mock_versioneq, mock_isfile):
-        """Test UdockerTools._verify_version()."""
-        mock_isfile.return_value = False
-        mock_futil.return_value.mktmp.return_value = ""
-        utools = UdockerTools(self.local, self.conf)
-        status = utools._verify_version("tarballfile")
-        self.assertFalse(status)
-
-        mock_msg.level = 0
-        mock_msg.VER = 4
-        mock_call.return_value = 1
-        mock_isfile.return_value = True
-        utools = UdockerTools(self.local, self.conf)
-        status = utools._verify_version("tarballfile")
-        self.assertFalse(status)
-
-        mock_call.return_value = 0
-        mock_versioneq.return_value = False
-        mock_isfile.return_value = True
-        utools = UdockerTools(self.local, self.conf)
-        status = utools._verify_version("tarballfile")
-        self.assertFalse(status)
-
-        mock_call.return_value = 0
-        mock_versioneq.return_value = True
-        mock_isfile.return_value = True
-        utools = UdockerTools(self.local, self.conf)
-        status = utools._verify_version("tarballfile")
-        self.assertTrue(status)
-
     @patch('udocker.tools.FileUtil.remove')
     @patch('udocker.tools.os.listdir')
     def test_07_purge(self, mock_listdir, mock_remove):
@@ -155,47 +60,6 @@ class UdockerToolsTestCase(TestCase):
         utools.purge()
         self.assertTrue(mock_remove.called)
 
-    @patch('udocker.tools.os.path.isfile')
-    @patch.object(UdockerTools, '_install')
-    @patch.object(UdockerTools, '_verify_version')
-    @patch('udocker.tools.Msg')
-    @patch('udocker.tools.subprocess.call')
-    def test_08__install(self, mock_call, mock_msg,
-                         mock_ver_version, mock_ins, mock_isfile):
-        """Test UdockerTools._install()."""
-        self.local.bindir = ""
-        mock_msg.level = 0
-        mock_call.return_value = 1
-        mock_ver_version.return_value = False
-        mock_ins.return_value = False
-        mock_isfile.return_value = False
-        utools = UdockerTools(self.local, self.conf)
-        status = utools._install("tarballfile")
-        self.assertFalse(status)
-
-        mock_call.return_value = 0
-        mock_ver_version.return_value = True
-        mock_ins.return_value = True
-        mock_isfile.return_value = True
-        utools = UdockerTools(self.local, self.conf)
-        status = utools._install("tarballfile")
-        self.assertTrue(status)
-
-    @patch('udocker.tools.Msg.out')
-    def test_09__instructions(self, mock_msgout):
-        """Test UdockerTools._instructions()."""
-        utools = UdockerTools(self.local, self.conf)
-        utools._instructions()
-        self.assertTrue(mock_msgout.called)
-
-    def test_10__get_mirrors(self):
-        """Test UdockerTools._get_mirrors()."""
-        pass
-
-    def test_11_get_installinfo(self):
-        """Test UdockerTools.get_installinfo()."""
-        pass
-
     @patch('udocker.tools.FileUtil.mktmp')
     @patch('udocker.tools.os.path.isfile')
     @patch('udocker.tools.os.path.exists')
@@ -206,7 +70,7 @@ class UdockerToolsTestCase(TestCase):
     @patch.object(UdockerTools, '_verify_version')
     @patch.object(UdockerTools, '_instructions')
     @patch.object(UdockerTools, '_download')
-    @patch.object(UdockerTools, 'is_available')
+    @patch.object(UdockerTools, '_is_available')
     def test_12_install(self, mock_is, mock_down, mock_instr, mock_ver,
                          mock_install, mock_geturl, mock_remove,
                          mock_msg, mock_exists, mock_isfile,
@@ -228,7 +92,7 @@ class UdockerToolsTestCase(TestCase):
         utools._tarball_release = self.conf['tarball_release']
         utools._autoinstall = False
         status = utools.install()
-        self.assertEqual(status, None)
+        self.assertFalse(status)
 
         # NO TARBALL
         mock_is.return_value = False
@@ -310,6 +174,126 @@ class UdockerToolsTestCase(TestCase):
         self.assertTrue(mock_instr.called)
         # self.assertFalse(mock_remove.called)
         self.assertFalse(status)
+
+#    @patch.object(UdockerTools, '_version_isequal')
+#    def test_03__is_available(self, mock_version_isequal):
+#        """Test UdockerTools._is_available()."""
+#        mock_version_isequal.return_value = False
+#        utools = UdockerTools(self.local, self.conf)
+#        status = utools._is_available()
+#        self.assertFalse(status)
+
+#        mock_version_isequal.return_value = True
+#        utools = UdockerTools(self.local, self.conf)
+#        status = utools._is_available()
+#        self.assertTrue(status)
+
+    @patch('udocker.tools.GetURL.get')
+    @patch('udocker.tools.FileUtil')
+    def test_04__download(self, mock_futil, mock_gurl):
+        """Test UdockerTools._download()."""
+        utools = UdockerTools(self.local, self.conf)
+        utools.curl = mock_gurl
+        utools._tarball = "http://node.domain/filename.tgz"
+        hdr = CurlHeader()
+        hdr.data["X-ND-HTTPSTATUS"] = "200"
+        hdr.data["X-ND-CURLSTATUS"] = 0
+        mock_futil.return_value.mktmp.return_value = "tmptarball"
+        mock_gurl.get.return_value = (hdr, "")
+        status = utools._download(utools._tarball)
+        self.assertEqual(status, "tmptarball")
+
+        hdr.data["X-ND-HTTPSTATUS"] = "400"
+        hdr.data["X-ND-CURLSTATUS"] = 1
+        status = utools._download(utools._tarball)
+        self.assertEqual(status, "")
+
+    @patch('udocker.tools.os.path.realpath')
+    @patch('udocker.tools.os.path.exists')
+    @patch('udocker.tools.os.path.isfile')
+    @patch.object(UdockerTools, '_download')
+    def test_05__get_file(self, mock_downl, mock_isfile,
+                          mock_exists, mock_rpath):
+        """Test UdockerTools._get_file()."""
+        location = ['http://node.domain/f.tgz']
+        mock_downl.return_value = 'f.tgz'
+        mock_isfile.return_value = True
+        utools = UdockerTools(self.local, self.conf)
+        status = utools._get_file(location)
+        self.assertEqual(status, ('f.tgz', 'http://node.domain/f.tgz'))
+
+        location = ['/bb/c/f.tgz']
+        mock_downl.return_value = 'f.tgz'
+        mock_isfile.return_value = True
+        mock_exists.return_value = True
+        mock_rpath.return_value = '/bb/c/f.tgz'
+        utools = UdockerTools(self.local, self.conf)
+        status = utools._get_file(location)
+        self.assertEqual(status, ('/bb/c/f.tgz', '/bb/c/f.tgz'))
+
+    # @patch('udocker.tools.os.path.isfile')
+    # @patch('udocker.tools.Msg')
+    # @patch('udocker.tools.FileUtil')
+    # def test_06__verify_version(self, mock_futil,
+    #                             mock_msg, mock_isfile):
+    #     """Test UdockerTools._verify_version()."""
+    #     mock_isfile.return_value = False
+    #     mock_futil.return_value.mktmp.return_value = ""
+    #     utools = UdockerTools(self.local, self.conf)
+    #     status = utools._verify_version("tarballfile")
+    #     self.assertFalse(status)
+
+    #     mock_msg.level = 0
+    #     mock_msg.VER = 4
+    #     mock_isfile.return_value = True
+    #     utools = UdockerTools(self.local, self.conf)
+    #     status = utools._verify_version("tarballfile")
+    #     self.assertFalse(status)
+
+    #     mock_isfile.return_value = True
+    #     utools = UdockerTools(self.local, self.conf)
+    #     status = utools._verify_version("tarballfile")
+    #     self.assertFalse(status)
+
+    #     mock_isfile.return_value = True
+    #     utools = UdockerTools(self.local, self.conf)
+    #     status = utools._verify_version("tarballfile")
+    #     self.assertTrue(status)
+
+    # @patch('udocker.tools.os.path.isfile')
+    # @patch.object(UdockerTools, '_verify_version')
+    # @patch('udocker.tools.Msg')
+    # def test_08__install(self, mock_msg,
+    #                      mock_ver_version, mock_isfile):
+    #     """Test UdockerTools._install()."""
+    #     self.local.bindir = ""
+    #     mock_msg.level = 0
+    #     mock_ver_version.return_value = False
+    #     mock_isfile.return_value = False
+    #     utools = UdockerTools(self.local, self.conf)
+    #     status = utools._install("tarballfile")
+    #     self.assertFalse(status)
+
+    #     mock_ver_version.return_value = True
+    #     mock_isfile.return_value = True
+    #     utools = UdockerTools(self.local, self.conf)
+    #     status = utools._install("tarballfile")
+    #     self.assertTrue(status)
+
+    @patch('udocker.tools.Msg.out')
+    def test_09__instructions(self, mock_msgout):
+        """Test UdockerTools._instructions()."""
+        utools = UdockerTools(self.local, self.conf)
+        utools._instructions()
+        self.assertTrue(mock_msgout.called)
+
+    def test_10__get_mirrors(self):
+        """Test UdockerTools._get_mirrors()."""
+        pass
+
+    def test_11_get_installinfo(self):
+        """Test UdockerTools.get_installinfo()."""
+        pass
 
 
 if __name__ == '__main__':

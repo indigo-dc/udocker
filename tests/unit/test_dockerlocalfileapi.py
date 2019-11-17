@@ -3,23 +3,18 @@
 udocker unit tests: DockerLocalFileAPI
 """
 
-import sys
 from unittest import TestCase, main
+from udocker.docker import DockerLocalFileAPI
+from udocker.config import Config
+from udocker.container.localrepo import LocalRepository
 try:
-    from unittest.mock import Mock, MagicMock, patch, mock_open
+    from unittest.mock import patch
 except ImportError:
-    from mock import Mock, MagicMock, patch, mock_open
-
+    from mock import patch
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
-
-sys.path.append('.')
-
-from udocker.docker import DockerLocalFileAPI
-from udocker.config import Config
-from udocker.container.localrepo import LocalRepository
 
 
 class DockerLocalFileAPITestCase(TestCase):
@@ -29,8 +24,8 @@ class DockerLocalFileAPITestCase(TestCase):
         self.conf = Config().getconf()
         self.conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         self.conf['cmd'] = "/bin/bash"
-        self.conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
-                                                ["taskset", "-c", "%s", ])
+        self.conf['cpu_affinity_exec_tools'] = \
+            (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
         self.conf['valid_host_env'] = "HOME"
         self.conf['username'] = "user"
         self.conf['userhome'] = "/"
@@ -39,7 +34,6 @@ class DockerLocalFileAPITestCase(TestCase):
         self.conf['keystore'] = "KEYSTORE"
         self.conf['osversion'] = "OSVERSION"
         self.conf['arch'] = "ARCH"
-
         self.local = LocalRepository(self.conf)
 
     def tearDown(self):
@@ -51,7 +45,7 @@ class DockerLocalFileAPITestCase(TestCase):
         self.assertEqual(dlocapi.localrepo, self.local)
 
     @patch('udocker.docker.os.listdir')
-    @patch('udocker.docker.FileUtil.isdir')
+    @patch('udocker.docker.os.path.isdir')
     @patch('udocker.container.localrepo.LocalRepository.load_json', autospec=True)
     def test_02__load_structure(self, mock_ljson, mock_isdir, mock_ldir):
         """Test DockerLocalFileAPI()._load_structure()."""
@@ -354,6 +348,18 @@ class DockerLocalFileAPITestCase(TestCase):
         status = dlocapi.import_toimage("TARFILE", "IMAGE", "TAG", False)
         self.assertEqual(status, "LAYERID")
         self.assertFalse(mock_rename.called)
+
+    def test_12_import_tocontainer(self):
+        """Test DockerLocalFileAPI().import_tocontainer()."""
+        pass
+
+    def test_13_import_clone(self):
+        """Test DockerLocalFileAPI().import_clone()."""
+        pass
+
+    def test_14_clone_container(self):
+        """Test DockerLocalFileAPI().clone_container()."""
+        pass
 
 
 if __name__ == '__main__':

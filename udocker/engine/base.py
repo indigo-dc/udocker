@@ -390,7 +390,7 @@ class ExecutionEngineCommon(object):
             if " " in key or key[0] in string.digits:
                 Msg().err("Error: in environment:", pair)
                 return False
-            # TODO: Why this conditional is not for runc
+            # check: Why this conditional is not for runc
             if " " in pair and "'" not in pair and '"' not in pair:
                 self.opt["env"].remove(pair)
                 self.opt["env"].append('%s=%s' % (key, val))

@@ -6,28 +6,25 @@ import sys
 import os
 import subprocess
 from unittest import TestCase, main
-try:
-    from unittest.mock import Mock, patch, MagicMock, mock_open, call
-except ImportError:
-    from mock import Mock, patch, MagicMock, mock_open, call
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-sys.path.append('.')
-
 from udocker.container.localrepo import LocalRepository
 from udocker.config import Config
+try:
+    from unittest.mock import patch, mock_open, call
+except ImportError:
+    from mock import patch, mock_open, call
 
-UDOCKER_TOPDIR = "test_topdir"
+try:
+    from io import BytesIO as bytestr
+except ImportError:
+    from StringIO import StringIO as bytestr
+
 if sys.version_info[0] >= 3:
     BUILTIN = "builtins"
 else:
     BUILTIN = "__builtin__"
 
 BOPEN = BUILTIN + '.open'
+UDOCKER_TOPDIR = "test_topdir"
 
 
 class LocalRepositoryTestCase(TestCase):
@@ -72,17 +69,18 @@ class LocalRepositoryTestCase(TestCase):
         lrepo.setup("YYYY")
         self.assertEqual(os.path.basename(lrepo.topdir), "YYYY")
 
-    def test_01_sha256(self):
+    def test_03_sha256(self):
         """Test LocalRepository().sha256()."""
         sha256sum = (
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
         lrepo = LocalRepository(self.conf)
-        file_data = StringIO("qwerty")
-        with patch(BOPEN, mock_open()) as mopen:
-            mopen.return_value.__iter__ = (
-                lambda self: iter(file_data.readline, ''))
-            status = lrepo.sha256("filename")
-            self.assertEqual(status, sha256sum)
+        file_data = bytestr("qwerty".encode())
+        if sys.version_info[0] < 3:   # TODO: implement for python3
+            with patch(BOPEN, mock_open()) as mopen:
+                mopen.return_value.__iter__ = \
+                    (lambda self: iter(file_data.readline, ''))
+                status = lrepo.sha256("filename")
+                self.assertEqual(status, sha256sum)
 
         with patch(BOPEN, mock_open()) as mopen:
             mopen.side_effect = IOError
@@ -90,7 +88,7 @@ class LocalRepositoryTestCase(TestCase):
             self.assertRaises(IOError)
             self.assertEqual(status, "")
 
-    def test_03_create_repo(self):
+    def test_04_create_repo(self):
         """Test LocalRepository().create_repo()."""
         lrepo = LocalRepository(self.conf)
         subprocess.call(["/bin/rm", "-Rf", lrepo.topdir])
@@ -106,28 +104,13 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(os.path.exists(lrepo.libdir))
         subprocess.call(["/bin/rm", "-Rf", lrepo.topdir])
 
-    def test_04_is_repo(self):
+    def test_05_is_repo(self):
         """Test LocalRepository().is_repo()."""
         lrepo = LocalRepository(self.conf)
         subprocess.call(["/bin/rm", "-Rf", lrepo.topdir])
         lrepo.create_repo()
         self.assertTrue(lrepo.is_repo())
         subprocess.call(["/bin/rm", "-Rf", lrepo.topdir])
-
-    def test_05_is_container_id(self):
-        """Test LocalRepository().is_container_id."""
-        lrepo = LocalRepository(self.conf)
-        self.assertTrue(lrepo.is_container_id(
-            "10860ac1-6962-3a9b-a5f8-63bcfb67ce39"))
-        self.assertFalse(lrepo.is_container_id(
-            "10860ac1-6962-3a9b-a5f863bcfb67ce37"))
-        self.assertFalse(lrepo.is_container_id(
-            "10860ac1-6962--3a9b-a5f863bcfb67ce37"))
-        self.assertFalse(lrepo.is_container_id(
-            "-6962--3a9b-a5f863bcfb67ce37"))
-        self.assertFalse(lrepo.is_container_id(
-            12345678))
-
 
     @patch('udocker.container.localrepo.os.readlink')
     @patch('udocker.container.localrepo.os.path.islink')
@@ -461,60 +444,57 @@ class LocalRepositoryTestCase(TestCase):
         self.assertEqual(lrepo.cur_tagdir, "")
         self.assertTrue(status)
 
-    def _sideffect_test_23(self, arg):
-        """Side effect for isdir on test 23 _get_tags()."""
-        if self.iter < 3:
-            self.iter += 1
-            return False
-        else:
-            return True
+    # def _sideffect_test_23(self, arg):
+    #     """Side effect for isdir on test 23 _get_tags()."""
+    #     if self.iter < 3:
+    #         self.iter += 1
+    #         return False
+    #     else:
+    #         return True
 
-    @patch('udocker.container.localrepo.os.path.isdir')
-    @patch('udocker.container.localrepo.os.listdir')
-    @patch('udocker.container.localrepo.FileUtil.isdir')
-    @patch.object(LocalRepository, '_is_tag')
-    def test_23__get_tags(self, mock_is, mock_futilisdir,
-                          mock_listdir, mock_isdir):
-        """Test LocalRepository()._get_tags()."""
-        mock_futilisdir.return_value = False
-        lrepo = LocalRepository(self.conf)
-        status = lrepo._get_tags("CONTAINERS_DIR")
-        self.assertEqual(status, [])
+    # @patch('udocker.container.localrepo.os.path.isdir')
+    # @patch('udocker.container.localrepo.os.listdir')
+    # @patch.object(LocalRepository, '_is_tag')
+    # def test_23__get_tags(self, mock_is, mock_listdir, mock_isdir):
+    #     """Test LocalRepository()._get_tags()."""
+    #     mock_isdir.return_value = False
+    #     lrepo = LocalRepository(self.conf)
+    #     status = lrepo._get_tags("CONTAINERS_DIR")
+    #     self.assertEqual(status, [])
 
-        mock_futilisdir.return_value = True
-        mock_listdir.return_value = []
-        lrepo = LocalRepository(self.conf)
-        status = lrepo._get_tags("CONTAINERS_DIR")
-        self.assertEqual(status, [])
+    #     mock_isdir.return_value = True
+    #     mock_listdir.return_value = []
+    #     lrepo = LocalRepository(self.conf)
+    #     status = lrepo._get_tags("CONTAINERS_DIR")
+    #     self.assertEqual(status, [])
 
-        mock_futilisdir.return_value = True
-        mock_listdir.return_value = ["FILE1", "FILE2"]
-        mock_is.return_value = False
-        mock_isdir.return_value = False
-        lrepo = LocalRepository(self.conf)
-        status = lrepo._get_tags("CONTAINERS_DIR")
-        self.assertEqual(status, [])
+    #     mock_isdir.return_value = True
+    #     mock_listdir.return_value = ["FILE1", "FILE2"]
+    #     mock_is.return_value = False
+    #     lrepo = LocalRepository(self.conf)
+    #     status = lrepo._get_tags("CONTAINERS_DIR")
+    #     self.assertEqual(status, [])
 
-        mock_futilisdir.return_value = True
-        mock_listdir.return_value = ["FILE1", "FILE2"]
-        mock_is.return_value = True
-        lrepo = LocalRepository(self.conf)
-        status = lrepo._get_tags("CONTAINERS_DIR")
-        expected_status = [('CONTAINERS_DIR', 'FILE1'),
-                           ('CONTAINERS_DIR', 'FILE2')]
-        self.assertEqual(status, expected_status)
+    #     mock_isdir.return_value = True
+    #     mock_listdir.return_value = ["FILE1", "FILE2"]
+    #     mock_is.return_value = True
+    #     lrepo = LocalRepository(self.conf)
+    #     status = lrepo._get_tags("CONTAINERS_DIR")
+    #     expected_status = [('CONTAINERS_DIR', 'FILE1'),
+    #                        ('CONTAINERS_DIR', 'FILE2')]
+    #     self.assertEqual(status, expected_status)
 
-        mock_futilisdir.return_value = True
-        mock_listdir.return_value = ["FILE1", "FILE2"]
-        mock_is.return_value = False
-        self.iter = 0
-        mock_isdir.side_effect = self._sideffect_test_23
-        lrepo = LocalRepository(self.conf)
-        status = lrepo._get_tags("CONTAINERS_DIR")
-        expected_status = [('CONTAINERS_DIR', 'FILE1'),
-                           ('CONTAINERS_DIR', 'FILE2')]
-        self.assertEqual(self.iter, 2)
-        self.assertEqual(status, [])
+    #     mock_isdir.return_value = True
+    #     mock_listdir.return_value = ["FILE1", "FILE2"]
+    #     mock_is.return_value = False
+    #     self.iter = 0
+    #     mock_isdir.side_effect = self._sideffect_test_23
+    #     lrepo = LocalRepository(self.conf)
+    #     status = lrepo._get_tags("CONTAINERS_DIR")
+    #     expected_status = [('CONTAINERS_DIR', 'FILE1'),
+    #                        ('CONTAINERS_DIR', 'FILE2')]
+    #     self.assertEqual(self.iter, 2)
+    #     self.assertEqual(status, [])
 
     @patch('udocker.container.localrepo.FileUtil.remove')
     @patch('udocker.container.localrepo.os.path.islink')
@@ -747,14 +727,15 @@ class LocalRepositoryTestCase(TestCase):
         status = lrepo._protect
         self.assertTrue(status)
 
-    @patch('udocker.container.localrepo.FileUtil.isdir')
-    def test_32__unprotect(self, mock_futilisdir):
+    @patch('udocker.container.localrepo.FileUtil.remove')
+    def test_32__unprotect(self, mock_rm):
         """Test LocalRepository()._unprotect().
         Remove protection mark from container or image tag.
         """
-        mock_futilisdir.return_value = True
+        mock_rm.return_value = True
         lrepo = LocalRepository(self.conf)
         status = lrepo._unprotect("dir")
+        self.assertTrue(mock_rm.called)
         self.assertTrue(status)
 
     @patch('udocker.container.localrepo.FileUtil')
@@ -951,7 +932,7 @@ class LocalRepositoryTestCase(TestCase):
         lrepo.get_layers("IMAGE", "TAG")
         # self.assertTrue(mock_cd.called)
 
-    @patch('udocker.container.localrepo.FileUtil.isdir')
+    @patch('udocker.container.localrepo.os.path.isdir')
     @patch.object(LocalRepository, 'load_json')
     @patch('udocker.container.localrepo.os.listdir')
     def test_44__load_structure(self, mock_listdir, mock_json, mock_isdir):
@@ -970,7 +951,6 @@ class LocalRepositoryTestCase(TestCase):
         structure = lrepo._load_structure("IMAGETAGDIR")
         # WIP
         # self.assertTrue("JSON" in structure["ancestry"])
-
 
     def test_45__find_top_layer_id(self):
         """Test LocalRepository()._find_top_layer_id"""

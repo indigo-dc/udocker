@@ -3,18 +3,14 @@
 udocker unit tests: FakechrootEngine
 """
 
-import sys
 from unittest import TestCase, main
-try:
-    from unittest.mock import Mock, patch, MagicMock, mock_open
-except ImportError:
-    from mock import Mock, patch, MagicMock, mock_open
-
-sys.path.append('.')
-
 from udocker.config import Config
 from udocker.container.localrepo import LocalRepository
 from udocker.engine.fakechroot import FakechrootEngine
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
 
 
 class FakechrootEngineTestCase(TestCase):
@@ -49,16 +45,19 @@ class FakechrootEngineTestCase(TestCase):
         self.assertIsNone(ufake._elfpatcher)
 
     # TODO: implement more tests/options
-    @patch('udocker.engine.fakechroot.GuestInfo')
+    @patch('udocker.engine.fakechroot.OSInfo.osdistribution')
+    @patch('udocker.engine.fakechroot.OSInfo.arch')
     @patch('udocker.engine.fakechroot.Msg.err')
     @patch('udocker.engine.fakechroot.os.path')
     @patch('udocker.engine.fakechroot.FileUtil')
     def test_02__select_fakechroot_so(self, mock_futil, mock_path,
-                                      mock_msgerr, mock_guest):
+                                      mock_msgerr, mock_arch, mock_distro):
         """Select fakechroot sharable object library."""
         mock_path.return_value.exists.return_value = True
         mock_path.return_value.realpath.return_value = '/bin/xxx'
         mock_futil.return_value.find_file_in_dir.return_value = 'fake1'
+        mock_arch.return_value = "amd64"
+        mock_distro.return_value = ("linux", "4.8.1")
         self.conf['fakechroot_so'] = ['/s/fake1', '/s/fake2']
         ufake = FakechrootEngine(self.conf, self.local, self.xmode)
         out = ufake._select_fakechroot_so()

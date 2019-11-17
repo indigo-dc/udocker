@@ -241,10 +241,8 @@ class RuncEngine(ExecutionEngineCommon):
             return 2
 
         self._run_invalid_options()
-
         self._container_specfile = self.container_dir + "/config.json"
         self._filebind = FileBind(self.conf, self.localrepo, self.container_id)
-
         self._select_runc()
 
         # create new OCI spec file
@@ -266,6 +264,7 @@ class RuncEngine(ExecutionEngineCommon):
                 (self.conf['runc_nomqueue'] is None and not
                  self._oskernel_isgreater((4, 8, 0)))):
             self._del_mount_spec("mqueue", "/dev/mqueue")
+
         self._add_volume_bindings()
         self._add_devices()
         self.localrepo.save_json(self._container_specfile,

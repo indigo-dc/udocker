@@ -29,6 +29,47 @@ class UdockerTools(object):
         self._install_json = dict()
         self.curl = GetURL(self.conf)
 
+    def purge(self):
+        """Remove existing files in bin and lib"""
+        for f_name in os.listdir(self.localrepo.bindir):
+            full_path = self.localrepo.bindir + "/" + f_name
+            FileUtil(self.conf, full_path).register_prefix()
+            FileUtil(self.conf, full_path).remove()
+        for f_name in os.listdir(self.localrepo.libdir):
+            full_path = self.localrepo.libdir + "/" + f_name
+            FileUtil(self.conf, full_path).register_prefix()
+            FileUtil(self.conf, full_path).remove()
+
+    def install(self, force=False):
+        """Get the udocker tarball and install the binaries"""
+        if self._is_available() and not force:
+            return True
+        elif not self._autoinstall and not force:
+            Msg().err("Warning: no engine available and autoinstall disabled",
+                      l=Msg.WAR)
+            return False
+        elif not self._tarball:
+            Msg().err("Error: UDOCKER_TARBALL not defined")
+        else:
+            Msg().err("Info: installing", self._tarball_release, l=Msg.INF)
+            (tfile, url) = self._get_file(self._get_mirrors(self._tarball))
+            if tfile:
+                Msg().err("Info: installing from:", url, l=Msg.VER)
+                status = False
+                if not self._verify_version(tfile):
+                    Msg().err("Error: wrong tarball version:", url)
+                else:
+                    status = self._install(tfile)
+                if "://" in url:
+                    FileUtil(self.conf, tfile).remove()
+                    if status:
+                        self._get_installinfo()
+                if status:
+                    return True
+            Msg().err("Error: installing tarball:", self._tarball)
+        self._instructions()
+        return False
+
     def _is_available(self):
         """Are the tools already installed"""
         fname = self.localrepo.libdir + "/VERSION"
@@ -166,44 +207,3 @@ class UdockerTools(object):
                 OSError, IOError):
             Msg().err("Info: no messages available", l=Msg.VER)
         return self._install_json
-
-    def purge(self):
-        """Remove existing files in bin and lib"""
-        for f_name in os.listdir(self.localrepo.bindir):
-            full_path = self.localrepo.bindir + "/" + f_name
-            FileUtil(self.conf, full_path).register_prefix()
-            FileUtil(self.conf, full_path).remove()
-        for f_name in os.listdir(self.localrepo.libdir):
-            full_path = self.localrepo.libdir + "/" + f_name
-            FileUtil(self.conf, full_path).register_prefix()
-            FileUtil(self.conf, full_path).remove()
-
-    def install(self, force=False):
-        """Get the udocker tarball and install the binaries"""
-        if self._is_available() and not force:
-            return True
-        elif not self._autoinstall and not force:
-            Msg().err("Warning: no engine available and autoinstall disabled",
-                      l=Msg.WAR)
-            return False
-        elif not self._tarball:
-            Msg().err("Error: UDOCKER_TARBALL not defined")
-        else:
-            Msg().err("Info: installing", self._tarball_release, l=Msg.INF)
-            (tfile, url) = self._get_file(self._get_mirrors(self._tarball))
-            if tfile:
-                Msg().err("Info: installing from:", url, l=Msg.VER)
-                status = False
-                if not self._verify_version(tfile):
-                    Msg().err("Error: wrong tarball version:", url)
-                else:
-                    status = self._install(tfile)
-                if "://" in url:
-                    FileUtil(self.conf, tfile).remove()
-                    if status:
-                        self._get_installinfo()
-                if status:
-                    return True
-            Msg().err("Error: installing tarball:", self._tarball)
-        self._instructions()
-        return False
