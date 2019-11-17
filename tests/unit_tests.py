@@ -723,6 +723,69 @@ class UniqueTestCase(unittest.TestCase):
         self.assertGreater(len(rand.strip()), 50)
 
 
+class ChkSUMTestCase(unittest.TestCase):
+    """Test ChkSUM() performs checksums portably."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup test."""
+        set_env()
+
+    def _init(self):
+        """Configure variables."""
+        pass
+
+    @mock.patch('udocker.hashlib.sha256')
+    def test_01_init(self, mock_hashlib_sha):
+        """Test ChkSUM() constructor."""
+        self._init()
+        mock_hashlib_sha.return_value = True
+        cksum = udocker.ChkSUM()
+        self.assertEqual(cksum._sha256_call, cksum._hashlib_sha256)
+
+    def test_02_sha256(self):
+        """Test ChkSUM().sha256()."""
+        self._init()
+        mock_call = mock.MagicMock()
+        cksum = udocker.ChkSUM()
+        #
+        mock_call.return_value = True
+        cksum._sha256_call = mock_call
+        status = cksum.sha256("filename")
+        self.assertTrue(status)
+        #
+        mock_call.return_value = False
+        cksum._sha256_call = mock_call
+        status = cksum.sha256("filename")
+        self.assertFalse(status)
+
+    def test_03__hashlib_sha256(self):
+        """Test ChkSUM()._hashlib_sha256()."""
+        sha256sum = (
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+        self._init()
+        cksum = udocker.ChkSUM()
+        file_data = StringIO("qwerty")
+        with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
+            mopen.return_value.__iter__ = (
+                lambda self: iter(file_data.readline, ''))
+            status = cksum._hashlib_sha256("filename")
+            self.assertEqual(status, sha256sum)
+
+    @mock.patch('udocker.Uprocess.get_output')
+    @mock.patch('udocker.Msg')
+    def test_04__openssl_sha256(self, mock_msg, mock_subproc):
+        """Test ChkSUM()._openssl_sha256()."""
+        self._init()
+        udocker.Msg = mock_msg
+        udocker.Msg.return_value.chlderr = open("/dev/null", "w")
+        udocker.Msg.chlderr = open("/dev/null", "w")
+        mock_subproc.return_value = "123456 "
+        cksum = udocker.ChkSUM()
+        status = cksum._openssl_sha256("filename")
+        self.assertEqual(status, "123456")
+
+
 class FileUtilTestCase(unittest.TestCase):
     """Test FileUtil() file manipulation methods."""
 
@@ -846,7 +909,7 @@ class FileUtilTestCase(unittest.TestCase):
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.os.path.isfile')
     def test_06_verify_tar01(self, mock_isfile, mock_call, mock_msg):
-        """Test FileUtil.verify_tar() check tar file."""
+        """Test01 FileUtil.verify_tar() check tar file False."""
         mock_msg.level = 0
         mock_isfile.return_value = False
         mock_call.return_value = 0
@@ -857,7 +920,7 @@ class FileUtilTestCase(unittest.TestCase):
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.os.path.isfile')
     def test_07_verify_tar02(self, mock_isfile, mock_call, mock_msg):
-        """Test FileUtil.verify_tar() check tar file."""
+        """Test02 FileUtil.verify_tar() check tar file True."""
         mock_msg.level = 0
         mock_isfile.return_value = True
         mock_call.return_value = 0
@@ -868,7 +931,7 @@ class FileUtilTestCase(unittest.TestCase):
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.os.path.isfile')
     def test_08_verify_tar03(self, mock_isfile, mock_call, mock_msg):
-        """Test FileUtil.verify_tar() check tar file."""
+        """Test03 FileUtil.verify_tar() check tar file True call 1."""
         mock_msg.level = 0
         mock_isfile.return_value = True
         mock_call.return_value = 1
@@ -903,7 +966,7 @@ class FileUtilTestCase(unittest.TestCase):
         self.assertEqual(size, 4321)
 
     def test_12_getdata(self):
-        """Test FileUtil.size() get file content."""
+        """Test FileUtil.getdata() get file content."""
         with mock.patch(BUILTINS + '.open',
                         mock.mock_open(read_data='qwerty')):
             data = udocker.FileUtil("somefile").getdata()
@@ -957,7 +1020,7 @@ class FileUtilTestCase(unittest.TestCase):
     @mock.patch('udocker.os.makedirs')
     @mock.patch('udocker.FileUtil')
     def test_16_mkdir(self, mock_mkdirs, mock_futil):
-        """Create directory"""
+        """Test FileUtil.mkdir Create directory"""
         mock_mkdirs.return_value = True
         status = mock_futil.mkdir()
         self.assertTrue(status)
@@ -1065,7 +1128,7 @@ class FileUtilTestCase(unittest.TestCase):
                                    mock_realpath, mock_dirname,
                                    mock_access, mock_chmod, mock_stat,
                                    mock_remove, mock_symlink):
-        """Actually apply the link convertion."""
+        """Test FileUtil._link_change_apply Apply the link convertion."""
         mock_readlink.return_value = "/HOST/DIR"
         mock_realpath.return_value = "/HOST/DIR"
         mock_access.return_value = True
@@ -1096,11 +1159,13 @@ class FileUtilTestCase(unittest.TestCase):
                           mock_symlink):
         """Test FileUtil._link_set()."""
         mock_readlink.return_value = "X"
-        status = udocker.FileUtil("/con")._link_set("/con/lnk", "", "/con", False)
+        status = udocker.FileUtil("/con").\
+            _link_set("/con/lnk", "", "/con", False)
         self.assertFalse(status)
         #
         mock_readlink.return_value = "/con"
-        status = udocker.FileUtil("/con")._link_set("/con/lnk", "", "/con", False)
+        status = udocker.FileUtil("/con").\
+            _link_set("/con/lnk", "", "/con", False)
         self.assertFalse(status)
         #
         mock_readlink.return_value = "/HOST/DIR"
@@ -1108,7 +1173,8 @@ class FileUtilTestCase(unittest.TestCase):
         mock_remove.reset_mock()
         mock_symlink.reset_mock()
         mock_chmod.reset_mock()
-        status = udocker.FileUtil("/con")._link_set("/con/lnk", "", "/con", False)
+        status = udocker.FileUtil("/con").\
+            _link_set("/con/lnk", "", "/con", False)
         self.assertTrue(mock_remove.called)
         self.assertTrue(mock_symlink.called)
         self.assertFalse(mock_chmod.called)
@@ -1120,7 +1186,8 @@ class FileUtilTestCase(unittest.TestCase):
         mock_remove.reset_mock()
         mock_symlink.reset_mock()
         mock_chmod.reset_mock()
-        status = udocker.FileUtil("/con")._link_set("/con/lnk", "", "/con", True)
+        status = udocker.FileUtil("/con").\
+            _link_set("/con/lnk", "", "/con", True)
         self.assertTrue(mock_remove.called)
         self.assertTrue(mock_symlink.called)
         self.assertFalse(mock_chmod.called)
@@ -1132,7 +1199,8 @@ class FileUtilTestCase(unittest.TestCase):
         mock_remove.reset_mock()
         mock_symlink.reset_mock()
         mock_chmod.reset_mock()
-        status = udocker.FileUtil("/con")._link_set("/con/lnk", "", "/con", True)
+        status = udocker.FileUtil("/con").\
+            _link_set("/con/lnk", "", "/con", True)
         self.assertTrue(mock_remove.called)
         self.assertTrue(mock_symlink.called)
         self.assertTrue(mock_chmod.called)
@@ -1146,9 +1214,9 @@ class FileUtilTestCase(unittest.TestCase):
     @mock.patch('udocker.os.path.dirname')
     @mock.patch('udocker.os.path.realpath')
     @mock.patch('udocker.os.readlink')
-    def test_25__link_restore(self, mock_readlink, mock_realpath, mock_dirname,
-                              mock_access, mock_chmod, mock_stat, mock_remove,
-                              mock_symlink):
+    def test_25__link_restore(self, mock_readlink, mock_realpath,
+                              mock_dirname, mock_access, mock_chmod,
+                              mock_stat, mock_remove, mock_symlink):
         """Test FileUtil._link_restore()."""
         mock_readlink.return_value = "/con/AAA"
         status = udocker.FileUtil("/con")._link_restore("/con/lnk", "/con",
@@ -1429,7 +1497,7 @@ class UdockerToolsTestCase(unittest.TestCase):
     @mock.patch('udocker.FileUtil')
     @mock.patch('udocker.UdockerTools.__init__')
     def test_04__download(self, mock_init, mock_futil, mock_gurl):
-        """Test UdockerTools.download()."""
+        """Test UdockerTools._download()."""
         mock_init.return_value = None
         utools = udocker.UdockerTools(None)
         utools.curl = mock_gurl
@@ -1553,13 +1621,12 @@ class ElfPatcherTestCase(unittest.TestCase):
     @mock.patch('udocker.LocalRepository')
     def test_02_select_patchelf(self, mock_local, mock_futil,
                                 mock_conf, mock_path, mock_msg):
-        """Test ElfPatcher().select_patchelf().
-
-        Set patchelf executable."""
+        """Test ElfPatcher().select_patchelf(). Set patchelf executable."""
         container_id = "SOME-RANDOM-ID"
         self._init()
 
-        mock_conf.return_value.arch.side_effect = ["arm", "amd64", "i386", "arm64"]
+        mock_conf.return_value.arch.side_effect = ["arm", "amd64",
+                                                   "i386", "arm64"]
         mock_futil.return_value.find_file_in_dir.return_value = "runc-arm"
         elfp = udocker.ElfPatcher(mock_local, container_id)
         output = elfp.select_patchelf()
@@ -1580,22 +1647,19 @@ class ElfPatcherTestCase(unittest.TestCase):
     def test_03__walk_fs(self, mock_local, mock_access, mock_walk,
                          mock_path, mock_stat, mock_islink):
         """Test ElfPatcher()._walk_fs().
-
         Execute a shell command over each executable file in a given dir_path.
         Action can be ABORT_ON_ERROR, return upon first success
         ONE_SUCCESS, or return upon the first non empty output. #f is the
         placeholder for the filename.
         """
-        # self._init()
-        # container_id = "SOME-RANDOM-ID"
-        # elfp = udocker.ElfPatcher(mock_local, container_id)
-        #
-        # mock_walk.return_value = ("/tmp", ["dir"], ["file"]);
-        # mock_islink.return_value = False
-        # mock_stat.return_value.st_uid = ""
-        # status = elfp._walk_fs("cmd", "/tmp", elfp.BIN)
-        # self.assertIsNone(status)
-        pass
+        self._init()
+        container_id = "SOME-RANDOM-ID"
+        mock_walk.return_value = [('/tmp', ('dir',), ('file',)), ]
+        mock_islink.return_value = False
+        mock_stat.return_value.st_uid = ""
+        elfp = udocker.ElfPatcher(mock_local, container_id)
+        status = elfp._walk_fs("cmd", "/tmp", elfp.BIN)
+        self.assertFalse(status)
 
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.LocalRepository')
@@ -1604,7 +1668,6 @@ class ElfPatcherTestCase(unittest.TestCase):
     def test_04_guess_elf_loader(self, mock_spelf, mock_walk,
                                  mock_local, mock_path):
         """Test ElfPatcher().guess_elf_loader().
-
         Search for executables and try to read the ld.so pathname."""
         self._init()
         container_id = "SOME-RANDOM-ID"
@@ -1625,7 +1688,6 @@ class ElfPatcherTestCase(unittest.TestCase):
     def test_05_get_original_loader(self, mock_guess, mock_futils,
                                     mock_local, mock_exists, mock_path):
         """Test ElfPatcher().get_original_loader().
-
         Get the pathname of the original ld.so.
         """
         self._init()
@@ -1648,7 +1710,6 @@ class ElfPatcherTestCase(unittest.TestCase):
     def test_06_get_container_loader(self, mock_gol, mock_local,
                                      mock_exists, mock_path):
         """Test ElfPatcher().get_container_loader().
-
         Get an absolute pathname to the container ld.so"""
         self._init()
         container_id = "SOME-RANDOM-ID"
@@ -1669,7 +1730,6 @@ class ElfPatcherTestCase(unittest.TestCase):
     def test_07_get_patch_last_path(self, mock_getdata, mock_local,
                                     mock_exists, mock_path):
         """Test ElfPatcher().get_patch_last_path().
-
         get last host pathname to the patched container."""
         self._init()
         container_id = "SOME-RANDOM-ID"
@@ -1686,18 +1746,16 @@ class ElfPatcherTestCase(unittest.TestCase):
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.ElfPatcher.get_patch_last_path')
     @mock.patch('udocker.Msg')
-    def test_08_check_container(self, mock_msg, mock_lpath,
-                                mock_local, mock_exists, mock_path):
-        """Test ElfPatcher().check_container().
-
+    def test_08_check_container_path(self, mock_msg, mock_lpath,
+                                     mock_local, mock_exists, mock_path):
+        """Test ElfPatcher().check_container_path().
         verify if path to container is ok"""
         self._init()
         container_id = "SOME-RANDOM-ID"
         mock_lpath.return_value = "/tmp"
         elfp = udocker.ElfPatcher(mock_local, container_id)
-        # with self.assertRaises(SystemExit) as epexpt:
-        #     elfp.check_container()
-        # self.assertEqual(epexpt.exception.code, 1)
+        status = elfp.check_container_path()
+        self.assertFalse(status)
 
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.os.path.exists')
@@ -1705,9 +1763,8 @@ class ElfPatcherTestCase(unittest.TestCase):
     @mock.patch('udocker.FileUtil.getdata')
     def test_09_get_patch_last_time(self, mock_getdata, mock_local,
                                     mock_exists, mock_path):
-        """Test ElfPatcher().patch_last_time().
-
-        get time in seconds of last full patch of container"""
+        """Test ElfPatcher().get_patch_last_time().
+        Get time in seconds of last full patch of container"""
         self._init()
         container_id = "SOME-RANDOM-ID"
         mock_getdata.return_value = "30"
@@ -1726,7 +1783,6 @@ class ElfPatcherTestCase(unittest.TestCase):
                                mock_guess, mock_putdata, mock_local,
                                mock_exists, mock_path):
         """Test ElfPatcher().patch_binaries().
-
         Set all executables and libs to the ld.so absolute pathname"""
         self._init()
         container_id = "SOME-RANDOM-ID"
@@ -1750,7 +1806,6 @@ class ElfPatcherTestCase(unittest.TestCase):
                                  mock_guess, mock_local,
                                  mock_exists, mock_path):
         """Test ElfPatcher().restore_binaries().
-
         Restore all executables and libs to the original ld.so pathname"""
         self._init()
         container_id = "SOME-RANDOM-ID"
@@ -1773,9 +1828,7 @@ class ElfPatcherTestCase(unittest.TestCase):
                          mock_copyto, mock_size,
                          mock_gcl, mock_local,
                          mock_exists, mock_path):
-        """Test ElfPatcher().patch_ld().
-
-        Patch ld.so"""
+        """Test ElfPatcher().patch_ld(). Patch ld.so"""
         self._init()
         container_id = "SOME-RANDOM-ID"
         mock_size.return_value = -1
@@ -1809,9 +1862,7 @@ class ElfPatcherTestCase(unittest.TestCase):
     def test_13_restore_ld(self, mock_copyto, mock_size,
                            mock_gcl, mock_local,
                            mock_exists, mock_path, mock_msg):
-        """Test ElfPatcher().restore_ld().
-
-        Restore ld.so"""
+        """Test ElfPatcher().restore_ld(). Restore ld.so"""
         self._init()
         container_id = "SOME-RANDOM-ID"
         mock_size.return_value = -1
@@ -1829,8 +1880,7 @@ class ElfPatcherTestCase(unittest.TestCase):
     @mock.patch('udocker.Uprocess.get_output')
     def test_14__get_ld_config(self, mock_upout,
                                mock_local, mock_exists, mock_path):
-        """Test ElfPatcher().get_ld_config().
-
+        """Test ElfPatcher()._get_ld_config().
         Get get directories from container ld.so.cache"""
         self._init()
         container_id = "SOME-RANDOM-ID"
@@ -1839,60 +1889,78 @@ class ElfPatcherTestCase(unittest.TestCase):
         status = elfp._get_ld_config()
         self.assertEqual(status, [])
 
-        # mock_upout.return_value = \
-        #     "ld.so.cache => /tmp/ROOT/etc/ld.so.cache\n" \
-        #     "ld.so.cache => /tmp/ROOT/etc/ld.so"
-        # elfp = udocker.ElfPatcher(mock_local, container_id)
-        # status = elfp._get_ld_config()
-        # self.assertIsInstance(status, list)
+        mock_upout.return_value = \
+            "ld.so.cache => /tmp/ROOT/etc/ld.so.cache\n" \
+            "ld.so.cache => /tmp/ROOT/etc/ld.so"
+        elfp = udocker.ElfPatcher(mock_local, container_id)
+        status = elfp._get_ld_config()
+        self.assertIsInstance(status, list)
 
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.os.access')
     @mock.patch('udocker.os.walk')
-    @mock.patch('udocker.os.path.exists')
+    @mock.patch('udocker.os.path.isfile')
     @mock.patch('udocker.LocalRepository')
-    def test_15__find_ld_libdirs(self, mock_local, mock_exists,
-                                 mock_walk, mock_access, mock_path):
+    def test_15__find_ld_libdirs(self, mock_local, mock_isfile, mock_walk,
+                                 mock_access, mock_path):
         """Test ElfPatcher()._find_ld_libdirs().
-
         search for library directories in container"""
         self._init()
         container_id = "SOME-RANDOM-ID"
-
         elfp = udocker.ElfPatcher(mock_local, container_id)
         status = elfp._find_ld_libdirs()
         self.assertEqual(status, [])
 
+        # root_path = "/udocker/cont"
+        # mock_walk.return_value = [('/tmp', ('dir',), ('file',)), ]
+        # mock_access.return_value = True
+        # mock_isfile.return_value = True
+        # elfp = udocker.ElfPatcher(mock_local, container_id)
+        # elfp._shlib.match = True
+        # status = elfp._find_ld_libdirs(root_path)
+        # self.assertEqual(status, ['dir'])
+
+    @mock.patch.object(udocker.ElfPatcher, '_find_ld_libdirs')
+    @mock.patch('udocker.FileUtil.putdata')
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.os.path.exists')
     @mock.patch('udocker.LocalRepository')
-    def test_16_get_ld_libdirs(self, mock_local,
-                               mock_exists, mock_path):
-        """Test ElfPatcher().get_ld_libdirs().
-
-        Get ld library paths"""
+    def test_16_get_ld_libdirs(self, mock_local, mock_exists,
+                               mock_path, mock_put, mock_find):
+        """Test ElfPatcher().get_ld_libdirs(). Get ld library paths"""
         self._init()
         container_id = "SOME-RANDOM-ID"
-
         elfp = udocker.ElfPatcher(mock_local, container_id)
         status = elfp.get_ld_libdirs()
         self.assertEqual(status, [''])
 
+        mock_exists.return_value = False
+        mock_find.return_value = ['/lib', '/usr/lib']
+        mock_put.return_value = '/lib:/usr/lib'
+        elfp = udocker.ElfPatcher(mock_local, container_id)
+        status = elfp.get_ld_libdirs(True)
+        self.assertTrue(mock_find.called)
+        self.assertTrue(mock_put.called)
+        self.assertEqual(status, ['/lib', '/usr/lib'])
+
+    @mock.patch.object(udocker.ElfPatcher, '_get_ld_config')
     @mock.patch('udocker.os.path')
     @mock.patch('udocker.os.path.exists')
     @mock.patch('udocker.LocalRepository')
     def test_17_get_ld_library_path(self, mock_local,
-                                    mock_exists, mock_path):
-        """Test ElfPatcher().get_ld_library_path().
-
-        Get ld library paths"""
+                                    mock_exists, mock_path, mock_get_ld):
+        """Test ElfPatcher().get_ld_library_path(). Get ld library paths"""
         self._init()
         container_id = "SOME-RANDOM-ID"
-
+        mock_get_ld.return_value = []
         elfp = udocker.ElfPatcher(mock_local, container_id)
-        # status = elfp.get_ld_library_path()
-        # self.assertEqual(status, [''])
+        status = elfp.get_ld_library_path()
+        self.assertEqual(status, '')
 
+        mock_get_ld.return_value = ['/lib', '/usr/lib']
+        elfp = udocker.ElfPatcher(mock_local, container_id)
+        status = elfp.get_ld_library_path()
+        self.assertEqual(status, '/lib:/usr/lib:')
 
 class LocalRepositoryTestCase(unittest.TestCase):
     """Test LocalRepositoryTestCase().
@@ -3699,68 +3767,6 @@ class DockerIoAPITestCase(unittest.TestCase):
         www_authenticate = "BASIC realm=Sonatype Nexus Repository"
         out = doia._get_v2_auth(www_authenticate, False)
         self.assertEqual(out, "Authorization: Basic %s" %doia.v2_auth_token)
-
-class ChkSUMTestCase(unittest.TestCase):
-    """Test ChkSUM() performs checksums portably."""
-
-    @classmethod
-    def setUpClass(cls):
-        """Setup test."""
-        set_env()
-
-    def _init(self):
-        """Configure variables."""
-        pass
-
-    @mock.patch('udocker.hashlib.sha256')
-    def test_01_init(self, mock_hashlib_sha):
-        """Test ChkSUM() constructor."""
-        self._init()
-        mock_hashlib_sha.return_value = True
-        cksum = udocker.ChkSUM()
-        self.assertEqual(cksum._sha256_call, cksum._hashlib_sha256)
-
-    def test_02_sha256(self):
-        """Test ChkSUM().sha256()."""
-        self._init()
-        mock_call = mock.MagicMock()
-        cksum = udocker.ChkSUM()
-        #
-        mock_call.return_value = True
-        cksum._sha256_call = mock_call
-        status = cksum.sha256("filename")
-        self.assertTrue(status)
-        #
-        mock_call.return_value = False
-        cksum._sha256_call = mock_call
-        status = cksum.sha256("filename")
-        self.assertFalse(status)
-
-    def test_03__hashlib_sha256(self):
-        """Test ChkSUM()._hashlib_sha256()."""
-        sha256sum = (
-            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-        self._init()
-        cksum = udocker.ChkSUM()
-        file_data = StringIO("qwerty")
-        with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
-            mopen.return_value.__iter__ = (
-                lambda self: iter(file_data.readline, ''))
-            status = cksum._hashlib_sha256("filename")
-            self.assertEqual(status, sha256sum)
-
-    @mock.patch('udocker.Uprocess.get_output')
-    @mock.patch('udocker.Msg')
-    def test_04__openssl_sha256(self, mock_msg, mock_subproc):
-        """Test ChkSUM()._openssl_sha256()."""
-        self._init()
-        udocker.Msg = mock_msg
-        udocker.Msg.return_value.chlderr = open("/dev/null", "w")
-        udocker.Msg.chlderr = open("/dev/null", "w")
-        mock_subproc.return_value = "123456 "
-        cksum = udocker.ChkSUM()
-        status = cksum._openssl_sha256("filename")
-        self.assertEqual(status, "123456")
 
 
 class NixAuthenticationTestCase(unittest.TestCase):
