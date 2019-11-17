@@ -497,10 +497,10 @@ class GuestInfo(object):
                               osinfo, re.MULTILINE)
             if match:
                 distribution = match.group(1).split(" ")[0]
-            match = re.search(r"VERSION_ID=\"?(.+)\"?(\n|$)",
+            match = re.search(r"VERSION=\"?(.+)\"?(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
-                version = match.group(1).split(".")[0]
+                version = match.group(1).split(" ")[0]
             if distribution and version:
                 return (distribution, version)
         return ("", "")

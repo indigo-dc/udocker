@@ -42,8 +42,8 @@ except ImportError:
 __author__ = "udocker@lip.pt"
 __credits__ = ["PRoot http://proot.me"]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "0.0.2-1"
-__date__ = "2016"
+__version__ = "1.1.3"
+__date__ = "2019"
 
 STDOUT = sys.stdout
 STDERR = sys.stderr
@@ -93,7 +93,7 @@ class UprocessTestCase(unittest.TestCase):
 
     @mock.patch('udocker.subprocess.Popen')
     def test_01__check_output(self, mock_popen):
-        """Test _check_output()."""
+        """Test Uprocess._check_output()."""
         mock_popen.return_value.communicate.return_value = ("OUTPUT", None)
         mock_popen.return_value.poll.return_value = 0
         uproc = udocker.Uprocess()
@@ -109,14 +109,14 @@ class UprocessTestCase(unittest.TestCase):
     @mock.patch('udocker.Uprocess._check_output')
     @mock.patch('udocker.subprocess.check_output')
     def test_02_check_output(self, mock_subp_chkout, mock_uproc_chkout):
-        """Test check_output()."""
+        """Test Uprocess.check_output()."""
         uproc = udocker.Uprocess()
         uproc.check_output("CMD")
-        # udocker.PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
-        # if udocker.PY_VER >= "2.7":
-        #     self.assertTrue(mock_subp_chkout.called)
-        # else:
-        #     self.assertTrue(mock_uproc_chkout.called)
+        udocker.PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
+        if udocker.PY_VER >= "2.7":
+            self.assertTrue(mock_subp_chkout.called)
+        else:
+            self.assertTrue(mock_uproc_chkout.called)
 
         # Making sure we cover both cases
         udocker.PY_VER = "3.5"
@@ -128,13 +128,13 @@ class UprocessTestCase(unittest.TestCase):
 
     @mock.patch('udocker.Uprocess.check_output')
     def test_03_get_output(self, mock_uproc_chkout):
-        """Test get_output()."""
+        """Test Uprocess.get_output()."""
         mock_uproc_chkout.return_value = "OUTPUT"
         uproc = udocker.Uprocess()
         self.assertEqual("OUTPUT", uproc.get_output("CMD"))
 
     def test_04_get_output(self):
-        """Test get_output()."""
+        """Test Raises Uprocess.get_output()."""
         uproc = udocker.Uprocess()
         self.assertRaises(subprocess.CalledProcessError,
                           uproc.get_output("/bin/false"))
@@ -149,9 +149,8 @@ class ConfigTestCase(unittest.TestCase):
         set_env()
 
     def _verify_config(self, conf):
-        """Verify config parameters."""
+        """Test Config._verify_config() parameters."""
         self.assertIsInstance(conf.verbose_level, int)
-
         self.assertIsInstance(conf.topdir, str)
         self.assertIs(conf.bindir, None)
         self.assertIs(conf.libdir, None)
@@ -169,14 +168,12 @@ class ConfigTestCase(unittest.TestCase):
         self.assertIsInstance(conf.dri_list, tuple)
         self.assertIsInstance(conf.cpu_affinity_exec_tools, tuple)
         self.assertIsInstance(conf.location, str)
-
         self.assertIsInstance(conf.http_proxy, str)
         self.assertIsInstance(conf.timeout, int)
         self.assertIsInstance(conf.download_timeout, int)
         self.assertIsInstance(conf.ctimeout, int)
         self.assertIsInstance(conf.http_agent, str)
         self.assertIsInstance(conf.http_insecure, bool)
-
         self.assertIsInstance(conf.dockerio_index_url, str)
         self.assertIsInstance(conf.dockerio_registry_url, str)
 
@@ -220,8 +217,9 @@ class ConfigTestCase(unittest.TestCase):
         conf_data = '# comment\nverbose_level = 100\n'
         conf_data += 'tmpdir = "/xpto"\ncmd = ["/bin/ls", "-l"]\n'
         mock_readc.return_value = conf_data
-        status = conf.user_init("filename.conf")
+        conf.user_init("filename.conf")
         self.assertFalse(mock_verify.called)
+        self.assertTrue(mock_readc.called)
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.FileUtil')
@@ -387,7 +385,7 @@ class GuestInfoTestCase(unittest.TestCase):
         self.file = "/bin/ls"
         self.ftype = "/bin/ls: yyy, x86-64, xxx"
         self.nofile = "ddd: cannot open"
-        self.osdist = ("Ubuntu", "16.04")
+        self.osdist = ("Ubuntu", "16")
         self.noosdist = ("", "xx")
 
     def test_01_init(self):
@@ -412,34 +410,67 @@ class GuestInfoTestCase(unittest.TestCase):
         ginfo = udocker.GuestInfo(self.rootdir)
         self.assertEqual(ginfo.get_filetype(self.nofile), "")
 
-#    @mock.patch('udocker.Uprocess.get_output')
-#    @mock.patch('udocker.GuestInfo')
-#    @mock.patch('udocker.GuestInfo._binarylist')
-#    def test_03_arch(self, mock_binlist, mock_gi, mock_getout):
-#        """Test GuestInfo.arch()"""
-#        self._init()
-#        # arch is x86_64
-#        mock_binlist.return_value = ["/bin/bash", "/bin/ls"]
-#        mock_getout.return_value.get_filetype.side_effect = [self.ftype, self.ftype]
-#        ginfo = udocker.GuestInfo(self.rootdir)
-#        self.assertEqual(ginfo.arch(), "amd64")
+    @mock.patch('udocker.GuestInfo.get_filetype')
+    def test_03_arch(self, mock_getftype):
+        """Test GuestInfo.arch()"""
+        self._init()
+        # arch is x86_64
+        filetype = "/bin/ls: yyy, x86-64, xxx"
+        mock_getftype.return_value = filetype
+        ginfo = udocker.GuestInfo(self.rootdir)
+        status = ginfo.arch()
+        self.assertEqual(status, "amd64")
 
-    # @mock.patch('udocker.os.path.exists')
-    # @mock.patch('udocker.FileUtil.match')
-    # @mock.patch('udocker.FileUtil.getdata')
-    # def test_04_osdistribution(self, mock_gdata, mock_match, mock_exists):
-    #     """Test GuestInfo.osdistribution()"""
-    #     self._init()
-    #     # has osdistro
-    #     self.lsbdata = "DISTRIB_ID=Ubuntu\n" \
-    #                    "DISTRIB_RELEASE=16.04\n" \
-    #                    "DISTRIB_CODENAME=xenial\n" \
-    #                    "DISTRIB_DESCRIPTION=Ubuntu 16.04.5 LTS\n"
-    #     mock_match.return_value = ["/etc/lsb-release"]
-    #     mock_exists.return_value = True
-    #     mock_gdata.return_value = self.lsbdata
-    #     ginfo = udocker.GuestInfo(self.rootdir)
-    #     self.assertEqual(ginfo.osdistribution(), self.osdist)
+    @mock.patch('udocker.os.path.exists')
+    @mock.patch('udocker.FileUtil')
+    def test_04_osdistribution(self, mock_futil, mock_exists):
+        """Test GuestInfo.osdistribution()"""
+        self._init()
+        # has /etc/lsb-release
+        lsbdata = "DISTRIB_ID=Ubuntu\n" \
+                  "DISTRIB_RELEASE=16.04\n" \
+                  "DISTRIB_CODENAME=xenial\n" \
+                  "DISTRIB_DESCRIPTION=Ubuntu 16.04.5 LTS\n"
+        mock_futil.return_value.match.return_value = ["/etc/lsb-release"]
+        mock_exists.return_value = True
+        mock_futil.return_value.getdata.return_value = lsbdata
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo.osdistribution(), self.osdist)
+
+        # has /etc/centos-release
+        centos_rel = "CentOS release 6.10 (Final)\n"
+        c6dist = ("CentOS", "6")
+        mock_futil.return_value.match.return_value = ["/etc/centos-release"]
+        mock_exists.return_value = True
+        mock_futil.return_value.getdata.return_value = centos_rel
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo.osdistribution(), c6dist)
+
+        # has /etc/os-release
+        os_rel = '''
+            NAME="CentOS Linux"
+            VERSION="7 (Core)"
+            ID="centos"
+            ID_LIKE="rhel fedora"
+            VERSION_ID="7"
+            PRETTY_NAME="CentOS Linux 7 (Core)"
+            ANSI_COLOR="0;31"
+            CPE_NAME="cpe:/o:centos:centos:7"
+            HOME_URL="https://www.centos.org/"
+            BUG_REPORT_URL="https://bugs.centos.org/"
+
+            CENTOS_MANTISBT_PROJECT="CentOS-7"
+            CENTOS_MANTISBT_PROJECT_VERSION="7"
+            REDHAT_SUPPORT_PRODUCT="centos"
+            REDHAT_SUPPORT_PRODUCT_VERSION="7"
+            '''
+
+        c7dist = ("CentOS", "7")
+        mock_futil.return_value.match.return_value = ["/etc/os-release"]
+        mock_exists.return_value = True
+        mock_futil.return_value.getdata.return_value = os_rel
+        ginfo = udocker.GuestInfo(self.rootdir)
+        self.assertEqual(ginfo.osdistribution(), c7dist)
 
     @mock.patch('udocker.GuestInfo.osdistribution')
     def test_05_osversion(self, mock_osdist):
