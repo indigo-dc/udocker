@@ -35,15 +35,15 @@ import select
 import ast
 
 __author__ = "udocker@lip.pt"
-__copyright__ = "Copyright 2017, LIP"
+__copyright__ = "Copyright 2019, LIP"
 __credits__ = ["PRoot http://proot.me",
                "runC https://runc.io",
                "Fakechroot https://github.com/dex4er/fakechroot",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.3-1"
-__date__ = "2018"
+__version__ = "1.1.3-2"
+__date__ = "2019"
 
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
@@ -236,9 +236,9 @@ class Config(object):
     http_insecure = False
     use_curl_executable = "" # force use of executable
 
-    # docker hub v1
-    dockerio_index_url = "https://index.docker.io"
-    # docker hub v2
+    # docker hub index
+    dockerio_index_url = "https://hub.docker.com"
+    # docker hub registry
     dockerio_registry_url = "https://registry.hub.docker.com"
     # private repository v2
     # dockerio_registry_url = "http://localhost:5000"
@@ -449,7 +449,7 @@ class Uprocess(object):
         return self._check_output(*popenargs, **kwargs)
 
     def get_output(self, cmd, ignore_error=False):
-        """Execute a shell command and get its output"""
+        """Execute a command and get its output"""
         if not cmd[0].startswith("/"):
             cmd[0] = FileUtil(cmd[0]).find_inpath(Config.root_path + ":" +
                                                   os.getenv("PATH", ""))
@@ -584,6 +584,16 @@ class GuestInfo(object):
             return "linux"
         return ""
 
+    def termsize(self):
+        """Get guest operating system terminal size"""
+        try:
+            with open("/dev/tty") as tty:
+                cmd = ['stty', 'size']
+                lines, cols = Uprocess().check_output(cmd, stdin=tty).split()
+                return (int(lines), int(cols))
+        except (OSError, IOError):
+            pass
+        return (24, 80)
 
 class KeyStore(object):
     """Basic storage for authentication tokens to be used
@@ -4318,6 +4328,16 @@ class LocalRepository(object):
             return 1
         return 0
 
+    def get_size(self, container_id):
+        """See if a container root dir is writable by this user"""
+        container_root = self.cd_container(container_id) + "/ROOT"
+        try:
+            size, dummy = Uprocess().get_output(["du", "-s", "-m", "-x",
+                                                 container_root]).split()
+            return int(size)
+        except (ValueError, NameError):
+            return 0
+
     def get_containers_list(self, dir_only=True):
         """Get a list of all containers in the local repo
         dir_only: is optional and indicates
@@ -5273,12 +5293,9 @@ class DockerIoAPI(object):
         self.v2_auth_token = ""
         self.localrepo = localrepo
         self.curl = GetURL()
-        self.docker_registry_domain = "docker.io"
-        self.search_link = ""
+        self.docker_registry_domain = "(docker.io|docker.com)"
         self.search_pause = True
         self.search_page = 0
-        self.search_lines = 25
-        self.search_link = ""
         self.search_ended = False
 
     def set_proxy(self, http_proxy):
@@ -5381,6 +5398,31 @@ class DockerIoAPI(object):
             if len(pair) == 2:
                 all_fields[pair[0]] = pair[1].strip('"')
         return all_fields
+
+    def is_v1(self):
+        """Check if registry is of type v1"""
+        for prefix in ("/v1", "/v1/_ping"):
+            (hdr, dummy) = self._get_url(self.index_url + prefix)
+            try:
+                if ("200" in hdr.data["X-ND-HTTPSTATUS"] or
+                        "401" in hdr.data["X-ND-HTTPSTATUS"]):
+                    return True
+            except (KeyError, AttributeError, TypeError):
+                pass
+        return False
+
+    def has_search_v1(self, url=None):
+        """Check if registry has search capabilities in v1"""
+        if url is None:
+            url = self.index_url
+        (hdr, dummy) = self._get_url(url + "/v1/search")
+        try:
+            if ("200" in hdr.data["X-ND-HTTPSTATUS"] or
+                    "401" in hdr.data["X-ND-HTTPSTATUS"]):
+                return True
+        except (KeyError, AttributeError, TypeError):
+            pass
+        return False
 
     def get_v1_repo(self, imagerepo):
         """Get list of images in a repo from Docker Hub"""
@@ -5517,6 +5559,19 @@ class DockerIoAPI(object):
     def is_v2(self):
         """Check if registry is of type v2"""
         (hdr, dummy) = self._get_url(self.registry_url + "/v2/")
+        try:
+            if ("200" in hdr.data["X-ND-HTTPSTATUS"] or
+                    "401" in hdr.data["X-ND-HTTPSTATUS"]):
+                return True
+        except (KeyError, AttributeError, TypeError):
+            pass
+        return False
+
+    def has_search_v2(self, url=None):
+        """Check if registry has search capabilities in v2"""
+        if url is None:
+            url = self.registry_url
+        (hdr, dummy) = self._get_url(url + "/v2/search/repositories")
         try:
             if ("200" in hdr.data["X-ND-HTTPSTATUS"] or
                     "401" in hdr.data["X-ND-HTTPSTATUS"]):
@@ -5714,16 +5769,15 @@ class DockerIoAPI(object):
         """Setup new search"""
         self.search_pause = pause
         self.search_page = 0
-        self.search_link = ""
         self.search_ended = False
 
-    def search_get_page_v1(self, expression):
+    def search_get_page_v1(self, expression, url):
         """Get search results from Docker Hub using v1 API"""
         if expression:
-            url = self.index_url + "/v1/search?q=" + expression
+            url = url + "/v1/search?q=%s" % expression
         else:
-            url = self.index_url + "/v1/search?"
-        url += "&page=" + str(self.search_page)
+            url = url + "/v1/search?"
+        url += "&page=%s" % str(self.search_page)
         (dummy, buf) = self._get_url(url)
         try:
             repo_list = json.loads(buf.getvalue())
@@ -5735,38 +5789,49 @@ class DockerIoAPI(object):
             self.search_ended = True
             return []
 
-    def catalog_get_page_v2(self, lines):
-        """Get search results from Docker Hub using v2 API"""
-        url = self.registry_url + "/v2/_catalog"
-        if self.search_pause:
-            if self.search_page == 1:
-                url += "?n=" + str(lines)
-            else:
-                url = self.registry_url + self.search_link
-        (hdr, buf) = self._get_url(url)
+    def search_get_page_v2(self, expression, url, lines=22, official=None):
+        """Search results from Docker Hub using v2 API"""
+        if (not expression):
+            expression='*'
+        if expression and official is None:
+            url = url + \
+                    "/v2/search/repositories?query=%s" % (expression)
+        elif expression and official is True:
+            url = url + \
+                    "/v2/search/repositories?query=%s&is_official=%s" % (expression, "true")
+        elif expression and official is False:
+            url = url + \
+                    "/v2/search/repositories?query=%s&is_official=%s" % (expression, "false")
+        else:
+            return []
+        url += "&page_size=%d" % (lines)
+        if self.search_page != 1:
+            url += "&page=%d" % (self.search_page)
+        (dummy, buf) = self._get_url(url)
         try:
-            match = re.search(r"\<([^>]+)\>", hdr.data["link"])
-            if match:
-                self.search_link = match.group(1)
-        except (AttributeError, NameError, KeyError):
-            self.search_ended = True
-        try:
-            return json.loads(buf.getvalue())
+            repo_list = json.loads(buf.getvalue())
+            if repo_list["count"] == self.search_page:
+                self.search_ended = True
+            return repo_list
         except (IOError, OSError, AttributeError,
                 ValueError, TypeError):
             self.search_ended = True
             return []
 
-    def search_get_page(self, expression):
+    def search_get_page(self, expression, lines=22):
         """Get search results from Docker Hub"""
         if self.search_ended:
             return []
-        else:
-            self.search_page += 1
-        if self.is_v2() and not self._is_docker_registry():
-            return self.catalog_get_page_v2(self.search_lines)
-        return self.search_get_page_v1(expression)
-
+        self.search_page += 1
+        if self.has_search_v2(self.index_url):
+            return self.search_get_page_v2(expression, self.index_url, lines)
+        if self.has_search_v1():
+            return self.search_get_page_v1(expression, self.index_url)
+        if self.has_search_v2(self.registry_url):
+            return self.search_get_page_v2(expression, self.registry_url, lines)
+        if self.has_search_v1(self.registry_url):
+            return self.search_get_page_v1(expression, self.registry_url)
+        return []
 
 class DockerLocalFileAPI(object):
     """Manipulate container and/or image files produced by Docker"""
@@ -6188,34 +6253,43 @@ class Udocker(object):
             Msg().err("Error: localrepo directory already exists: ", topdir)
             return False
 
-    def _search_print_v1(self, repo_list):
-        """Print search results from v1 API"""
+    def _search_print(self, repo_list, lines):
+        """Print search results from v1 or v2 API"""
         for repo in repo_list["results"]:
             if "is_official" in repo and repo["is_official"]:
                 is_official = "[OK]"
             else:
                 is_official = "----"
             description = ""
-            if "description" in repo and repo["description"] is not None:
-                for char in repo["description"]:
-                    if char in string.printable:
-                        description += char
-            Msg().out("%-40.40s %8.8s %s"
-                      % (repo["name"], is_official, description))
-
-    def _search_print_v2(self, repo_list):
-        """Print catalog results from v2 API"""
-        for reponame in repo_list["repositories"]:
-            Msg().out("%-40.40s %8.8s"
-                      % (reponame, "    "))
+            for dfield in ("description", "short_description"):
+                if dfield in repo and repo[dfield] is not None:
+                    for char in repo[dfield]:
+                        if char == '\n':
+                            break
+                        if char in string.printable:
+                            description += char
+                    break
+            name = ""
+            for nfield in ("name", "repo_name"):
+                if nfield in repo and repo[nfield] is not None:
+                    name = repo[nfield]
+                    break
+            stars = ""
+            if "star_count" in repo and repo["star_count"] is not None:
+                stars = str(repo["star_count"])
+            Msg().out("%-55.80s %8.8s %-70.70s %5.5s"
+                      % (name, is_official, description, stars))
+            lines -= 1
+            if not lines:
+                break
 
     def do_search(self, cmdp):
         """
         search: search dockerhub for container images
         search [options]  <expression>
         -a                                              :do not pause
-        --index=https://index.docker.io/v1              :docker index
-        --registry=https://registry-1.docker.io         :docker registry
+        --index=<url>                ex. https://index.docker.io/v1
+        --registry=<url>             ex. https://registry-1.docker.io
         """
         pause = not cmdp.get("-a")
         index_url = cmdp.get("--index=")
@@ -6227,22 +6301,28 @@ class Udocker(object):
             self.dockerioapi.set_registry(registry_url)
         if cmdp.missing_options():               # syntax error
             return False
-        Msg().out("%-40.40s %8.8s %s" %
-                  ("NAME", "OFFICIAL", "DESCRIPTION"), l=Msg.INF)
         self.dockerioapi.search_init(pause)
         v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
         self.dockerioapi.set_v2_login_token(v2_auth_token)
+        term_lines, dummy = GuestInfo("HOST").termsize()
+        term_lines -= 2
         while True:
-            repo_list = self.dockerioapi.search_get_page(expression)
-            if not repo_list:
-                return True
-            elif "results" in repo_list:
-                self._search_print_v1(repo_list)
-            elif "repositories" in repo_list:
-                self._search_print_v2(repo_list)
+            lines = term_lines
+            while lines > 0:
+                repo_list = self.dockerioapi.search_get_page(expression, term_lines)
+                if not repo_list:
+                    return True
+                if lines == term_lines:
+                    Msg().out("%-55.80s %8.8s %-70.70s %5.5s" % \
+                        ("NAME", "OFFICIAL", "DESCRIPTION", "STARS"), l=Msg.INF)
+                if len(repo_list["results"]) > lines:
+                    print_lines = lines
+                else:
+                    print_lines = len(repo_list["results"])
+                lines -= print_lines 
+                self._search_print(repo_list, print_lines)
             if pause and not self.dockerioapi.search_ended:
-                key_press = raw_input("[press return or q to quit]")
-                if key_press in ('q', 'Q', 'e', 'E'):
+                if raw_input("[press return or q to quit]") in ('q', 'Q', 'e', 'E'):
                     return True
 
     def do_load(self, cmdp):
@@ -6372,9 +6452,9 @@ class Udocker(object):
     def do_login(self, cmdp):
         """
         login: authenticate into docker repository e.g. dockerhub
-        --username=username
-        --password=password
-        --registry=https://registry-1.docker.io
+        --username=<username>
+        --password=<password>
+        --registry=<url>         ex. https://registry-1.docker.io
         """
         username = cmdp.get("--username=")
         password = cmdp.get("--password=")
@@ -6399,7 +6479,7 @@ class Udocker(object):
         """
         logout: authenticate into docker repository e.g. dockerhub
         -a remove all authentication credentials
-        --registry=https://registry-1.docker.io
+        --registry=<url>          ex. https://registry-1.docker.io
         """
         all_credentials = cmdp.get("-a")
         registry_url = cmdp.get("--registry=")
@@ -6451,7 +6531,7 @@ class Udocker(object):
         """
         create: extract image layers and create a container
         create [options]  <repo/image:tag>
-        --name=xxxx                :set or change the name of the container
+        --name=<container-name>    :set or change the name of the container
         """
         imagespec = cmdp.get("P1")
         name = cmdp.get("--name=")
@@ -6696,19 +6776,28 @@ class Udocker(object):
     def do_ps(self, cmdp):
         """
         ps: list containers
+        -m                         :print execution mode
+        -s                         :print size in MB
         """
+        print_mode = cmdp.get("-m")
+        print_size = cmdp.get("-s")
         if cmdp.missing_options():               # syntax error
             return False
         containers_list = self.localrepo.get_containers_list(False)
-        Msg().out("%-36.36s %c %c %-18s %-s" %
-                  ("CONTAINER ID", 'P', 'M', "NAMES", "IMAGE"), l=Msg.INF)
+        pl = "MOD" if print_mode else ""
+        ps = "SIZE" if print_size else ""
+        Msg().out("%-36.36s %c %c %-18s %-20.20s %3.3s %4s" %
+                  ("CONTAINER ID", 'P', 'M', "NAMES", "IMAGE", pl, ps), l=Msg.INF)
         for (container_id, reponame, names) in containers_list:
+            mode = ExecutionMode(self.localrepo,
+                                 container_id).get_mode() if print_mode else ""
             prot = ('.', 'P')[
                 self.localrepo.isprotected_container(container_id)]
             write = ('R', 'W', 'N', 'D')[
                 self.localrepo.iswriteable_container(container_id)]
-            Msg().out("%-36.36s %c %c %-18.100s %-s" %
-                      (container_id, prot, write, names, reponame))
+            size = self.localrepo.get_size(container_id) if print_size else ""
+            Msg().out("%-36.36s %c %c %-18.100s %-20.100s %2.2s %5s" %
+                      (container_id, prot, write, names, reponame, mode, size))
         return True
 
     def do_rm(self, cmdp):

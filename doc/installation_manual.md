@@ -230,10 +230,14 @@ can be achieved by executing with UDOCKER_LOGLEVEL=2
 
  * UDOCKER_LOGLEVEL : set verbosity level from 0 to 5 (MIN to MAX verbosity)
 
-Forces the use of a curl executable instead of pycurl and enables selection of a given 
-curl executable pathname:
+Forcing the use of a given curl executable instead of pycurl can be specified with:
 
  * UDOCKER_USE_CURL_EXECUTABLE : pathname to the location of curl executable
+
+In Fn modes the translation of symbolic links to the actual links can be controlled
+the env variable accepts the values: true, false, none
+
+ * UDOCKER_FAKECHROOT_EXPAND_SYMLINKS : default is none
 
 ## 9. CONFIGURATION
 

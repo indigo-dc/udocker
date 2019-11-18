@@ -32,7 +32,7 @@ verbose_level = 5
  * UDOCKER_USE_CURL_EXECUTABLE : pathname for curl executable
  * UDOCKER_REGISTRY : override default registry default is Docker Hub.
  * UDOCKER_INDEX : override default index default is Docker Hub.
-
+ * UDOCKER_FAKECHROOT_EXPAND_SYMLINKS : translate symbolic links in Fn modes
 
 ## Verbosity
 

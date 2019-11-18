@@ -1,7 +1,7 @@
 .\" Manpage for udocker
 .\" Contact udocker@lip.pt to correct errors or typos.
 .\" To read this man page use:   man -l udocker.1
-.TH udocker 1 "25 Oct 2018" "version 1.1.3" "udocker man page"
+.TH udocker 1 "31 Oct 2019" "version 1.1.4" "udocker man page"
 .SH NAME
 udocker \- execute Docker containers in user space without privileges
 .SH SYNOPSIS
@@ -50,8 +50,8 @@ Lists IMAGES available in the local udocker repository. The \-l option provides 
 .BR create " " [ " " --name=ALIAS " " ] " " IMAGE
 Extracts a container for execution from an IMAGE available in the local repository. Multiple containers can be extracted from a single image. Each created container is identified by a CONTAINER-ID which is printed upon successful extraction. The option --name allows an ALIAS name to be assigned to the newly created container to facilitate identification. The ALIAS can then be used instead of the CONTAINER-ID.
 .TP
-.BR ps
-List containers in the local repository. These are containers that have been extracted with the command "create" and which can be executed with the command "run". The list contains the CONTAINER-ID, protection against deletion, write status, ALIASEs, and the corresponding IMAGE. The command name "ps" has been kept for compatibility with the Docker command line.
+.BR ps " " [ " " \-m " " ] " " | " " [ " " \-s " " ]
+List containers in the local repository. These are containers that have been extracted with the command "create" and that can be executed with the command "run". The list contains the CONTAINER-ID, the protection flag against deletion, write status, ALIASEs, and the corresponding IMAGE. The command name "ps" has been kept for compatibility with the Docker command line, in udocker the command ps does not show running containers instead shows the created containers. The option \-m adds the execution mode. The option \-s adds the size in MB.
 .TP
 .BR rm " " CONTAINER\-ID " " | " " ALIAS " " ...
 Delete containers using the CONTAINER\-ID or ALIAS.

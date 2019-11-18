@@ -212,28 +212,28 @@ class ConfigTestCase(unittest.TestCase):
     @mock.patch('udocker.Config._read_config')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.FileUtil')
-    def test_03_user_init_good(self, mock_fileutil, mock_msg,
+    def test_03_init_good(self, mock_fileutil, mock_msg,
                                mock_readc, mock_overrride, mock_verify):
-        """Test Config.user_init() with good data."""
+        """Test Config.init() with good data."""
         udocker.Msg = mock_msg
         conf = udocker.Config()
         conf_data = '# comment\nverbose_level = 100\n'
         conf_data += 'tmpdir = "/xpto"\ncmd = ["/bin/ls", "-l"]\n'
         mock_readc.return_value = conf_data
-        status = conf.user_init("filename.conf")
+        status = conf.init("filename.conf")
         self.assertFalse(mock_verify.called)
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.FileUtil')
     @mock.patch('udocker.sys.exit')
-    def test_04_user_init_bad(self, mock_exit, mock_fileutil, mock_msg):
-        """Test Config.user_init() with bad config data."""
+    def test_04_init_bad(self, mock_exit, mock_fileutil, mock_msg):
+        """Test Config.init() with bad config data."""
         udocker.Msg = mock_msg
         conf = udocker.Config()
         conf_data = 'hh +=* ffhdklfh\n'
         mock_fileutil.return_value.size.return_value = 10
         mock_fileutil.return_value.getdata.return_value = conf_data
-        conf.user_init("filename.conf")
+        conf.init("filename.conf")
         self.assertTrue(mock_exit.called)
 
     @mock.patch('udocker.Msg')
@@ -4077,7 +4077,8 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
 
     def _init(self):
         """Configure variables."""
-        udocker.Config = type('test', (object,), {})()
+        #udocker.Config = type('test', (object,), {})()
+        udocker.Config = mock.MagicMock()
         udocker.Config.hostauth_list = ("/etc/passwd", "/etc/group")
         udocker.Config.cmd = "/bin/bash"
         udocker.Config.cpu_affinity_exec_tools = (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
@@ -4086,6 +4087,7 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         udocker.Config.sysdirs_list = ["/", ]
         udocker.Config.root_path = "/usr/sbin:/sbin:/usr/bin:/bin"
         udocker.Config.user_path = "/usr/bin:/bin:/usr/local/bin"
+        udocker.Config.container = mock.MagicMock()
 
     @mock.patch('udocker.LocalRepository')
     def test_01_init(self, mock_local):
@@ -7574,7 +7576,7 @@ class MainTestCase(unittest.TestCase):
 
     @mock.patch('udocker.LocalRepository')
     @mock.patch('udocker.Udocker')
-    @mock.patch('udocker.Config.user_init')
+    @mock.patch('udocker.Config.init')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.CmdParser')
     def test_02_init(self, mock_cmdp, mock_msg, mock_conf_init, mock_udocker,
