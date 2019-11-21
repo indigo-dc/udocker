@@ -4657,40 +4657,68 @@ class LocalRepository(object):
             return False
         return True
 
+    def _get_image_attributes_v1(self, directory):
+        """Get image attributes from image directory in v1 format"""
+        files = []
+        layer_list = self.load_json("ancestry")
+        if layer_list:
+            for layer_id in reversed(layer_list):
+                layer_file = directory + '/' + layer_id + ".layer"
+                if not os.path.exists(layer_file):
+                    return(None, None)
+                files.append(layer_file)
+            json_file = directory + '/' + layer_list[0] + ".json"
+            if os.path.exists(json_file):
+                container_json = self.load_json(json_file)
+                return(container_json, files)
+        return(None, None)
+
+    def _get_image_attributes_v2_s1(self, directory, manifest):
+        """Get image attributes from image directory in v2 schema 1 format"""
+        files = []
+        for layer in reversed(manifest["fsLayers"]):
+            layer_file = directory + '/' + layer["blobSum"]
+            if not os.path.exists(layer_file):
+                return(None, None)
+            files.append(layer_file)
+        try:
+            json_string = manifest["history"][0]["v1Compatibility"].strip()
+            container_json = json.loads(json_string)
+        except (IOError, OSError, AttributeError, ValueError, TypeError,
+                IndexError, KeyError):
+            return(None, files)
+        return(container_json, files)
+
+    def _get_image_attributes_v2_s2(self, directory, manifest):
+        """Get image attributes from image directory in v2 schema 2 format"""
+        files = []
+        for layer in manifest["layers"]:
+            layer_file = directory + '/' + layer["digest"]
+            if not os.path.exists(layer_file):
+                return(None, None)
+            files.append(layer_file)
+        try:
+            json_file = directory + '/' + manifest["config"]["digest"]
+            container_json = json.loads(FileUtil(json_file).getdata())
+        except (IOError, OSError, AttributeError, ValueError, TypeError,
+                IndexError, KeyError):
+            return(None, files)
+        return(container_json, files)
+
     def get_image_attributes(self):
         """Load attributes from image TAGs that have been previously
         selected via cd_imagerepo(). Supports images of type v1 and v2.
         Returns: (container JSON, list of layer files).
         """
-        files = []
         directory = self.cur_tagdir
         if os.path.exists(directory + "/v1"):   # if dockerhub API v1
-            layer_list = self.load_json("ancestry")
-            if layer_list:
-                for layer_id in reversed(layer_list):
-                    layer_file = directory + '/' + layer_id + ".layer"
-                    if not os.path.exists(layer_file):
-                        return(None, None)
-                    files.append(layer_file)
-                json_file = directory + '/' + layer_list[0] + ".json"
-                if os.path.exists(json_file):
-                    container_json = self.load_json(json_file)
-                    return(container_json, files)
+            return self._get_image_attributes_v1(directory)
         elif os.path.exists(directory + "/v2"):  # if dockerhub API v1
             manifest = self.load_json("manifest")
-            if manifest and manifest["fsLayers"]:
-                for layer in reversed(manifest["fsLayers"]):
-                    layer_file = directory + '/' + layer["blobSum"]
-                    if not os.path.exists(layer_file):
-                        return(None, None)
-                    files.append(layer_file)
-                json_string = manifest["history"][0]["v1Compatibility"].strip()
-                try:
-                    container_json = json.loads(json_string)
-                except (IOError, OSError, AttributeError,
-                        ValueError, TypeError):
-                    return(None, None)
-                return(container_json, files)
+            if manifest and "fsLayers" in manifest:
+                return self._get_image_attributes_v1_s1(directory, manifest)
+            elif manifest and "layers" in manifest:
+                return self._get_image_attributes_v2_s2(directory, manifest)
         return(None, None)
 
     def save_json(self, filename, data):
@@ -4748,7 +4776,7 @@ class LocalRepository(object):
     def _load_structure(self, imagetagdir):
         """Scan the repository structure of a given image tag"""
         structure = {}
-        structure["layers"] = dict()
+        structure["repolayers"] = dict()
         if FileUtil(imagetagdir).isdir():
             for fname in os.listdir(imagetagdir):
                 f_path = imagetagdir + '/' + fname
@@ -4758,16 +4786,16 @@ class LocalRepository(object):
                     structure["manifest"] = self.load_json(f_path)
                 elif len(fname) >= 64:
                     layer_id = fname.replace(".json", "").replace(".layer", "")
-                    if layer_id not in structure["layers"]:
-                        structure["layers"][layer_id] = dict()
+                    if layer_id not in structure["repolayers"]:
+                        structure["repolayers"][layer_id] = dict()
                     if fname.endswith("json"):
-                        structure["layers"][layer_id]["json"] = \
+                        structure["repolayers"][layer_id]["json"] = \
                             self.load_json(f_path)
-                        structure["layers"][layer_id]["json_f"] = f_path
+                        structure["repolayers"][layer_id]["json_f"] = f_path
                     elif fname.endswith("layer"):
-                        structure["layers"][layer_id]["layer_f"] = f_path
+                        structure["repolayers"][layer_id]["layer_f"] = f_path
                     elif fname.startswith("sha"):
-                        structure["layers"][layer_id]["layer_f"] = f_path
+                        structure["repolayers"][layer_id]["layer_f"] = f_path
                     else:
                         Msg().err("Warning: unkwnon file in layer:", f_path,
                                   l=Msg.WAR)
@@ -4782,19 +4810,19 @@ class LocalRepository(object):
         """Find the id of the top layer of a given image tag in a
         structure produced by _load_structure()
         """
-        if "layers" not in structure:
-            return []
+        if "repolayers" not in structure:
+            return ""
         else:
             if not my_layer_id:
-                my_layer_id = structure["layers"].keys()[0]
+                my_layer_id = structure["repolayers"].keys()[0]
             found = ""
-            for layer_id in structure["layers"]:
-                if "json" not in structure["layers"][layer_id]:   # v2
+            for layer_id in structure["repolayers"]:
+                if "json" not in structure["repolayers"][layer_id]:   # v2
                     continue
-                elif "parent" not in structure["layers"][layer_id]["json"]:
+                elif "parent" not in structure["repolayers"][layer_id]["json"]:
                     continue
                 elif (my_layer_id ==
-                      structure["layers"][layer_id]["json"]["parent"]):
+                      structure["repolayers"][layer_id]["json"]["parent"]):
                     found = self._find_top_layer_id(structure, layer_id)
                     break
             if not found:
@@ -4807,19 +4835,19 @@ class LocalRepository(object):
         next_layer = top_layer_id
         while next_layer:
             sorted_layers.append(next_layer)
-            if "json" not in structure["layers"][next_layer]:   # v2
+            if "json" not in structure["repolayers"][next_layer]:   # v2
                 break
-            if "parent" not in structure["layers"][next_layer]["json"]:
+            if "parent" not in structure["repolayers"][next_layer]["json"]:
                 break
             else:
-                next_layer = structure["layers"][next_layer]["json"]["parent"]
+                next_layer = structure["repolayers"][next_layer]["json"]["parent"]
                 if not next_layer:
                     break
         return sorted_layers
 
     def _verify_layer_file(self, structure, layer_id):
         """Verify layer file in repository"""
-        layer_f = structure["layers"][layer_id]["layer_f"]
+        layer_f = structure["repolayers"][layer_id]["layer_f"]
         if not (os.path.exists(layer_f) and
                 os.path.islink(layer_f)):
             Msg().err("Error: layer data file symbolic link not found",
@@ -4829,16 +4857,58 @@ class LocalRepository(object):
                               os.readlink(layer_f)):
             Msg().err("Error: layer data file not found")
             return False
-        if not FileUtil(layer_f).verify_tar():
-            Msg().err("Error: layer file not ok:", layer_f)
-            return False
+        if "gzip" in GuestInfo('/').get_filetype(layer_f):
+            if not FileUtil(layer_f).verify_tar():
+                Msg().err("Error: layer tar verify failed:", layer_f)
+                return False
         match = re.search("/sha256:(\\S+)$", layer_f)
         if match:
             layer_f_chksum = ChkSUM().sha256(layer_f)
             if layer_f_chksum != match.group(1):
-                Msg().err("Error: layer file chksum error:", layer_f)
+                Msg().err("Error: layer file chksum failed:", layer_f)
                 return False
         return True
+
+    def _verify_image_v1(self, structure):
+        """Verify the structure of a v1 image repository"""
+        Msg().out("Info: finding top layer id", l=Msg.INF)
+        top_layer_id = self._find_top_layer_id(structure)
+        if not top_layer_id:
+            Msg().err("Error: finding top layer id")
+            return False
+        layers_list = self._sorted_layers(structure, top_layer_id)
+        layer = iter(layers_list)
+        status = True
+        for ancestry_layer in structure["ancestry"]:
+            verify_layer = layer.next()
+            if ancestry_layer != verify_layer:
+                Msg().err("Error: ancestry and layers do not match",
+                          ancestry_layer, verify_layer)
+                status = False
+                continue
+        return status
+
+    def _verify_image_v2_s1(self, structure):
+        """Verify the structure of a v2 schema 1 image repository"""
+        status = True
+        for manifest_layer in structure["manifest"]["fsLayers"]:
+            if manifest_layer["blobSum"] not in structure["repolayers"]:
+                Msg().err("Error: layer in manifest does not exist",
+                          " in repo", manifest_layer)
+                status = False
+                continue
+        return status
+
+    def _verify_image_v2_s2(self, structure):
+        """Verify the structure of a v2 schema 2 image repository"""
+        status = True
+        for manifest_layer in structure["manifest"]["layers"]:
+            if manifest_layer["digest"] not in structure["repolayers"]:
+                Msg().err("Error: layer in manifest does not exist",
+                          " in repo", manifest_layer)
+                status = False
+                continue
+        return status
 
     def verify_image(self):
         """Verify the structure of an image repository"""
@@ -4847,32 +4917,17 @@ class LocalRepository(object):
         if not structure:
             Msg().err("Error: load of image tag structure failed")
             return False
-        Msg().out("Info: finding top layer id", l=Msg.INF)
-        top_layer_id = self._find_top_layer_id(structure)
-        if not top_layer_id:
-            Msg().err("Error: finding top layer id")
-            return False
-        Msg().out("Info: sorting layers", l=Msg.INF)
-        layers_list = self._sorted_layers(structure, top_layer_id)
+        Msg().out("Info: verifying layers", l=Msg.INF)
         status = True
         if "ancestry" in structure:
-            layer = iter(layers_list)
-            for ancestry_layer in structure["ancestry"]:
-                verify_layer = layer.next()
-                if ancestry_layer != verify_layer:
-                    Msg().err("Error: ancestry and layers do not match",
-                              ancestry_layer, verify_layer)
-                    status = False
-                    continue
+            status = self._verify_image_v1(structure)
         elif "manifest" in structure:
-            for manifest_layer in structure["manifest"]["fsLayers"]:
-                if manifest_layer["blobSum"] not in structure["layers"]:
-                    Msg().err("Error: layer in manifest does not exist",
-                              " in repo", manifest_layer)
-                    status = False
-                    continue
-        for layer_id in structure["layers"]:
-            if "layer_f" not in structure["layers"][layer_id]:
+            if "fsLayers" in structure["manifest"]:
+                status = self._verify_image_v2_s1(structure)
+            elif "layers" in structure["manifest"]:
+                status = self._verify_image_v2_s2(structure)
+        for layer_id in structure["repolayers"]:
+            if "layer_f" not in structure["repolayers"][layer_id]:
                 Msg().err("Error: layer file not found in structure",
                           layer_id)
                 status = False
@@ -5646,6 +5701,9 @@ class DockerIoAPI(object):
                 files = self.get_v2_layers_all(imagerepo,
                                                manifest["fsLayers"])
             elif "layers" in manifest:
+                print manifest["config"]
+                if "config" in manifest:
+                    manifest["layers"].append(manifest["config"])
                 files = self.get_v2_layers_all(imagerepo,
                                                manifest["layers"])
             else:
@@ -5842,32 +5900,35 @@ class DockerLocalFileAPI(object):
     def _load_structure(self, tmp_imagedir):
         """Load the structure of a Docker pulled image"""
         structure = {}
-        structure["layers"] = dict()
+        structure["repolayers"] = dict()
+        structure["repoconfigs"] = dict()
         if FileUtil(tmp_imagedir).isdir():
             for fname in os.listdir(tmp_imagedir):
                 f_path = tmp_imagedir + '/' + fname
                 if fname == "repositories":
-                    structure["repositories"] = (
-                        self.localrepo.load_json(f_path))
+                    structure["repositories"] = \
+                            self.localrepo.load_json(f_path)
                 elif fname == "manifest.json":
-                    pass
+                    structure["manifest"] = \
+                            self.localrepo.load_json(f_path)
                 elif len(fname) == 69 and fname.endswith(".json"):
-                    pass
+                    structure["repoconfigs"][fname] = \
+                            self.localrepo.load_json(f_path)
                 elif len(fname) == 64 and FileUtil(f_path).isdir():
                     layer_id = fname
-                    structure["layers"][layer_id] = dict()
+                    structure["repolayers"][layer_id] = dict()
                     for layer_f in os.listdir(f_path):
                         layer_f_path = f_path + '/' + layer_f
                         if layer_f == "VERSION":
-                            structure["layers"][layer_id]["VERSION"] = \
+                            structure["repolayers"][layer_id]["VERSION"] = \
                                 self.localrepo.load_json(layer_f_path)
                         elif layer_f == "json":
-                            structure["layers"][layer_id]["json"] = \
+                            structure["repolayers"][layer_id]["json"] = \
                                 self.localrepo.load_json(layer_f_path)
-                            structure["layers"][layer_id]["json_f"] = (
+                            structure["repolayers"][layer_id]["json_f"] = (
                                 layer_f_path)
                         elif "layer" in layer_f:
-                            structure["layers"][layer_id]["layer_f"] = (
+                            structure["repolayers"][layer_id]["layer_f"] = (
                                 layer_f_path)
                         else:
                             Msg().err("Warning: unkwnon file in layer:",
@@ -5883,13 +5944,13 @@ class DockerLocalFileAPI(object):
             return []
         else:
             if not my_layer_id:
-                my_layer_id = structure["layers"].keys()[0]
+                my_layer_id = structure["repolayers"].keys()[0]
             found = ""
-            for layer_id in structure["layers"]:
-                if "parent" not in structure["layers"][layer_id]["json"]:
+            for layer_id in structure["repolayers"]:
+                if "parent" not in structure["repolayers"][layer_id]["json"]:
                     continue
                 elif (my_layer_id ==
-                      structure["layers"][layer_id]["json"]["parent"]):
+                      structure["repolayers"][layer_id]["json"]["parent"]):
                     found = self._find_top_layer_id(structure, layer_id)
                     break
             if not found:
@@ -5902,10 +5963,10 @@ class DockerLocalFileAPI(object):
         next_layer = top_layer_id
         while next_layer:
             sorted_layers.append(next_layer)
-            if "parent" not in structure["layers"][next_layer]["json"]:
+            if "parent" not in structure["repolayers"][next_layer]["json"]:
                 break
             else:
-                next_layer = structure["layers"][next_layer]["json"]["parent"]
+                next_layer = structure["repolayers"][next_layer]["json"]["parent"]
                 if not next_layer:
                     break
         return sorted_layers
@@ -5926,6 +5987,29 @@ class DockerLocalFileAPI(object):
         self.localrepo.add_image_layer(target_file)
         return True
 
+    def _load_image_v1(self, structure, imagerepo, tag):
+        """Load a container image v1 into a repository mimic docker load"""
+        if not self.localrepo.set_version("v1"):
+            Msg().err("Error: setting repository version")
+            return []
+        try:
+            top_layer_id = structure["repositories"][imagerepo][tag]
+        except (IndexError, NameError, KeyError):
+            top_layer_id = self._find_top_layer_id(structure)
+        for layer_id in self._sorted_layers(structure, top_layer_id):
+            if str(structure["repolayers"][layer_id]["VERSION"]) != "1.0":
+                Msg().err("Error: layer version unknown")
+                return []
+            for layer_item in ("json_f", "layer_f"):
+                filename = str(structure["repolayers"][layer_id][layer_item])
+                if not self._copy_layer_to_repo(filename, layer_id):
+                    Msg().err("Error: copying %s file %s"
+                              % (layer_item[:-2], filename), l=Msg.VER)
+                    return []
+        self.localrepo.save_json("ancestry",
+                                 self._sorted_layers(structure, top_layer_id))
+        return [imagerepo + ':' + tag]
+
     def _load_image(self, structure, imagerepo, tag):
         """Load a container image into a repository mimic docker load"""
         if self.localrepo.cd_imagerepo(imagerepo, tag):
@@ -5938,27 +6022,7 @@ class DockerLocalFileAPI(object):
             if not tag_dir:
                 Msg().err("Error: setting up repository", imagerepo, tag)
                 return []
-            if not self.localrepo.set_version("v1"):
-                Msg().err("Error: setting repository version")
-                return []
-            try:
-                top_layer_id = structure["repositories"][imagerepo][tag]
-            except (IndexError, NameError, KeyError):
-                top_layer_id = self._find_top_layer_id(structure)
-            for layer_id in self._sorted_layers(structure, top_layer_id):
-                if str(structure["layers"][layer_id]["VERSION"]) != "1.0":
-                    Msg().err("Error: layer version unknown")
-                    return []
-                for layer_item in ("json_f", "layer_f"):
-                    filename = str(structure["layers"][layer_id][layer_item])
-                    if not self._copy_layer_to_repo(filename, layer_id):
-                        Msg().err("Error: copying %s file %s"
-                                  % (layer_item[:-2], filename), l=Msg.VER)
-                        return []
-            self.localrepo.save_json("ancestry",
-                                     self._sorted_layers(structure,
-                                                         top_layer_id))
-            return [imagerepo + ':' + tag]
+            return self._load_image_v1(structure, imagerepo, tag)
 
     def _load_repositories(self, structure):
         """Load other image repositories into this local repo"""
@@ -6527,6 +6591,17 @@ class Udocker(object):
                 Msg().err("Error: no files downloaded")
         return False
 
+    def _create(self, imagespec):
+        """Auxiliary to create(), performs the creation"""
+        if not self.dockerioapi.is_repo_name(imagespec):
+            Msg().err("Error: must specify image:tag or repository/image:tag")
+            return False
+        (imagerepo, tag) = self._check_imagespec(imagespec)
+        if imagerepo:
+            return ContainerStructure(self.localrepo).create_fromimage(
+                imagerepo, tag)
+        return False
+
     def do_create(self, cmdp):
         """
         create: extract image layers and create a container
@@ -6546,17 +6621,6 @@ class Udocker(object):
                           "or wrong format")
                 return False
             return True
-        return False
-
-    def _create(self, imagespec):
-        """Auxiliary to create(), performs the creation"""
-        if not self.dockerioapi.is_repo_name(imagespec):
-            Msg().err("Error: must specify image:tag or repository/image:tag")
-            return False
-        (imagerepo, tag) = self._check_imagespec(imagespec)
-        if imagerepo:
-            return ContainerStructure(self.localrepo).create_fromimage(
-                imagerepo, tag)
         return False
 
     def _get_run_options(self, cmdp, exec_engine=None):
