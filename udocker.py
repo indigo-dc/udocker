@@ -921,6 +921,14 @@ class FileUtil(object):
             return False
         return True
 
+    def rmdir(self):
+        """Remove an empty directory"""
+        try:
+            os.rmdir(self.filename)
+        except (OSError, IOError, AttributeError):
+            return False
+        return True
+
     def mktmpdir(self):
         """Create temporary directory"""
         dirname = self.mktmp()
@@ -4528,10 +4536,11 @@ class LocalRepository(object):
         for fname in os.listdir(tag_dir):
             f_path = tag_dir + '/' + fname  # link to layer
             if os.path.islink(f_path):
-                layer_file = tag_dir + '/' + os.readlink(f_path)
+                linkname = os.readlink(f_path)
+                layer_file = tag_dir + '/' + linkname
                 if not FileUtil(f_path).remove() and not force:
                     return False
-                if not self._inrepository(fname):
+                if not self._inrepository(linkname):
                     # removing actual layers not reference by other repos
                     if not FileUtil(layer_file).remove() and not force:
                         return False
@@ -4545,6 +4554,9 @@ class LocalRepository(object):
                 FileUtil(tag_dir).remove()):
             self.cur_repodir = ""
             self.cur_tagdir = ""
+            while imagerepo:
+                FileUtil(self.reposdir + '/' + imagerepo).rmdir()
+                imagerepo = "/".join(imagerepo.split("/")[:-1])
             return True
         return False
 
@@ -4579,17 +4591,18 @@ class LocalRepository(object):
                     layers_list.append((filename, size))
         return layers_list
 
-    def add_image_layer(self, filename):
+    def add_image_layer(self, filename, linkname=None):
         """Add a layer to an image TAG"""
-        if not (self.cur_repodir and self.cur_tagdir):
+        if not self.cur_tagdir:
             return False
         if not os.path.exists(filename):
             return False
-        if not os.path.exists(self.cur_repodir):
-            return False
         if not os.path.exists(self.cur_tagdir):
             return False
-        linkname = self.cur_tagdir + '/' + os.path.basename(filename)
+        if linkname:
+            linkname = self.cur_tagdir + '/' + os.path.basename(linkname)
+        else:
+            linkname = self.cur_tagdir + '/' + os.path.basename(filename)
         if os.path.islink(linkname):
             FileUtil(linkname).remove()
         self._symlink(filename, linkname)
@@ -4667,10 +4680,12 @@ class LocalRepository(object):
                 if not os.path.exists(layer_file):
                     return(None, None)
                 files.append(layer_file)
-            json_file = directory + '/' + layer_list[0] + ".json"
-            if os.path.exists(json_file):
-                container_json = self.load_json(json_file)
-                return(container_json, files)
+            json_file_list = [directory + "/container.json",
+                              directory + '/' + layer_list[0] + ".json", ]
+            for json_file in json_file_list:
+                if os.path.exists(json_file):
+                    container_json = self.load_json(json_file)
+                    return(container_json, files)
         return(None, None)
 
     def _get_image_attributes_v2_s1(self, directory, manifest):
@@ -4799,7 +4814,7 @@ class LocalRepository(object):
                     else:
                         Msg().err("Warning: unkwnon file in layer:", f_path,
                                   l=Msg.WAR)
-                elif fname in ("TAG", "v1", "v2", "PROTECT"):
+                elif fname in ("TAG", "v1", "v2", "PROTECT", "container.json"):
                     pass
                 else:
                     Msg().err("Warning: unkwnon file in image:", f_path,
@@ -5701,7 +5716,6 @@ class DockerIoAPI(object):
                 files = self.get_v2_layers_all(imagerepo,
                                                manifest["fsLayers"])
             elif "layers" in manifest:
-                print manifest["config"]
                 if "config" in manifest:
                     manifest["layers"].append(manifest["config"])
                 files = self.get_v2_layers_all(imagerepo,
@@ -5912,8 +5926,11 @@ class DockerLocalFileAPI(object):
                     structure["manifest"] = \
                             self.localrepo.load_json(f_path)
                 elif len(fname) == 69 and fname.endswith(".json"):
-                    structure["repoconfigs"][fname] = \
+                    structure["repoconfigs"][fname] = dict()
+                    structure["repoconfigs"][fname]["json"] = \
                             self.localrepo.load_json(f_path)
+                    structure["repoconfigs"][fname]["json_f"] = \
+                            f_path
                 elif len(fname) == 64 and FileUtil(f_path).isdir():
                     layer_id = fname
                     structure["repolayers"][layer_id] = dict()
@@ -5921,15 +5938,15 @@ class DockerLocalFileAPI(object):
                         layer_f_path = f_path + '/' + layer_f
                         if layer_f == "VERSION":
                             structure["repolayers"][layer_id]["VERSION"] = \
-                                self.localrepo.load_json(layer_f_path)
+                                    self.localrepo.load_json(layer_f_path)
                         elif layer_f == "json":
                             structure["repolayers"][layer_id]["json"] = \
-                                self.localrepo.load_json(layer_f_path)
-                            structure["repolayers"][layer_id]["json_f"] = (
-                                layer_f_path)
+                                    self.localrepo.load_json(layer_f_path)
+                            structure["repolayers"][layer_id]["json_f"] = \
+                                    layer_f_path
                         elif "layer" in layer_f:
-                            structure["repolayers"][layer_id]["layer_f"] = (
-                                layer_f_path)
+                            structure["repolayers"][layer_id]["layer_f"] = \
+                                    layer_f_path
                         else:
                             Msg().err("Warning: unkwnon file in layer:",
                                       f_path, l=Msg.WAR)
@@ -5971,8 +5988,8 @@ class DockerLocalFileAPI(object):
                     break
         return sorted_layers
 
-    def _copy_layer_to_repo(self, filepath, layer_id):
-        """Move an image layer file to a repository (mv or cp)"""
+    def _copy_layer_to_repo(self, filepath, layer_id, linkname=None):
+        """Copy or rename an image layer file to a repository"""
         if filepath.endswith("json"):
             target_file = self.localrepo.layersdir + '/' + layer_id + ".json"
         elif filepath.endswith("layer.tar"):
@@ -5984,11 +6001,12 @@ class DockerLocalFileAPI(object):
         except(IOError, OSError):
             if not FileUtil(filepath).copyto(target_file):
                 return False
-        self.localrepo.add_image_layer(target_file)
+        self.localrepo.add_image_layer(target_file, linkname)
         return True
 
     def _load_image_v1(self, structure, imagerepo, tag):
         """Load a container image v1 into a repository mimic docker load"""
+        imagetag = imagerepo + ':' + tag 
         if not self.localrepo.set_version("v1"):
             Msg().err("Error: setting repository version")
             return []
@@ -6008,7 +6026,13 @@ class DockerLocalFileAPI(object):
                     return []
         self.localrepo.save_json("ancestry",
                                  self._sorted_layers(structure, top_layer_id))
-        return [imagerepo + ':' + tag]
+        if "manifest" in structure:
+            for repotag in structure["manifest"]:
+                if imagetag in repotag["RepoTags"]:
+                    layer_id = (repotag["Config"]).replace(".json", "")
+                    json_file = structure["repoconfigs"][repotag["Config"]]["json_f"]
+                    self._copy_layer_to_repo(json_file, layer_id, "container.json")
+        return [imagetag]
 
     def _load_image(self, structure, imagerepo, tag):
         """Load a container image into a repository mimic docker load"""
