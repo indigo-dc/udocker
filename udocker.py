@@ -1024,14 +1024,46 @@ class FileUtil(object):
         if not os.path.isfile(self.filename):
             return False
         else:
+            verbose = ''
             if Msg.level >= Msg.VER:
-                cmd = ["tar", "tvf", self.filename]
-            else:
-                cmd = ["tar", "tf", self.filename]
+                verbose = 'v'
+            cmd = ["tar", "t" + verbose + "f", self.filename]
             if Uprocess().call(cmd, stderr=Msg.chlderr, stdout=Msg.chlderr,
                                close_fds=True):
                 return False
             return True
+
+    def tar(self, tarfile, sourcedir=None):
+        """Create a tar file for a given sourcedir
+        """
+        #cmd += r" --xform 's:^\./::' "
+        if sourcedir is None:
+            sourcedir = self.filename
+        verbose = ''
+        if Msg.level >= Msg.VER:
+            verbose = 'v'
+        cmd = ["tar", "-C", sourcedir, "-c" + verbose, "--one-file-system",
+               "-S", "--xattrs", "-f", tarfile, "."]
+        status = Uprocess().call(cmd, stderr=Msg.chlderr, close_fds=True)
+        if status:
+            Msg().err("Error: creating tar file:", tarfile)
+        return not status
+
+    def copydir(self, sourcedir, destdir=None):
+        """Copy directories
+        """
+        if destdir is None:
+            destdir = self.filename
+        verbose = 'v'
+        if Msg.level >= Msg.VER:
+            verbose = 'v'
+        cmd_tarc = ["tar", "-C", sourcedir, "-c" + verbose,
+                    "--one-file-system", "-S", "--xattrs", "-f", "-", "." ]
+        cmd_tarx = [ "tar", "-C", destdir, "-x", "-f", "-" ]
+        status = Uprocess().pipe(cmd_tarc, cmd_tarx)
+        if not status:
+            Msg().err("Error: copying:", sourcedir, " to ", destdir, l=Msg.VER)
+        return status
 
     def cleanup(self):
         """Delete all temporary files"""
@@ -1410,12 +1442,11 @@ class UdockerTools(object):
         tmpdir = FileUtil("VERSION").mktmpdir()
         if not tmpdir:
             return False
+        verbose = ''
         if Msg.level >= Msg.VER:
-            cmd = ["tar", "-C", tmpdir, "--strip-components=2", "-xvzf",
-                   tarball_file, "udocker_dir/lib/VERSION"]
-        else:
-            cmd = ["tar", "-C", tmpdir, "--strip-components=2", "-xzf",
-                   tarball_file, "udocker_dir/lib/VERSION"]
+            verbose = 'v'
+        cmd = ["tar", "-C", tmpdir, "--strip-components=2",
+               "-x" + verbose + "zf", tarball_file, "udocker_dir/lib/VERSION"]
         status = Uprocess().call(cmd, close_fds=True, stderr=Msg.chlderr,
                                  stdout=Msg.chlderr)
         if status:
@@ -4056,13 +4087,12 @@ class ContainerStructure(object):
         for tarf in tarfiles:
             if tarf != '-':
                 self._apply_whiteouts(tarf, destdir)
-            cmd = [ "tar", "-C", destdir, "-x", "--one-file-system",
-                    "--no-same-owner", "--no-same-permissions",
-                    "--overwrite" ]
+            verbose = ''
             if Msg.level >= Msg.VER:
-                cmd.append("-v")
-            cmd.append("-f")
-            cmd.append(tarf)
+                verbose = 'v'
+            cmd = [ "tar", "-C", destdir, "-x" + verbose, "--one-file-system",
+                    "--no-same-owner", "--no-same-permissions",
+                    "--overwrite", "-f", tarf ]
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
                 status = False
                 Msg().err("Error: while extracting image layer")
@@ -4080,35 +4110,6 @@ class ContainerStructure(object):
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
                 status = False
                 Msg().err("Error: while modifying attributes of image layer")
-        return status
-
-    def _tar(self, tarfile, sourcedir):
-        """Create a tar file for a given sourcedir
-        """
-        #cmd += r" --xform 's:^\./::' "
-        if Msg.level >= Msg.VER:
-            cmd = ["tar", "-C", sourcedir, "-cv", "--one-file-system",
-                   "-S", "--xattrs", "-f", tarfile, "."]
-        else:
-            cmd = ["tar", "-C", sourcedir, "-c", "--one-file-system",
-                   "-S", "--xattrs", "-f", tarfile, "."]
-        status = Uprocess().call(cmd, stderr=Msg.chlderr, close_fds=True)
-        if status:
-            Msg().err("Error: creating tar file:", tarfile)
-        return not status
-
-    def _copy(self, sourcedir, destdir):
-        """Copy directories
-        """
-        cmd_tarc = [ "tar", "-C", sourcedir, "-c", "--one-file-system", "-S",
-                "--xattrs" ]
-        if Msg.level >= Msg.VER:
-            cmd_tarc.append("-v")
-        cmd_tarc.extend([ "-f", "-", "." ])
-        cmd_tarx = [ "tar", "-C", destdir, "-x", "-f", "-" ]
-        status = Uprocess().pipe(cmd_tarc, cmd_tarx)
-        if not status:
-            Msg().err("Error: copying:", sourcedir, " to ", destdir, l=Msg.VER)
         return status
 
     def get_container_meta(self, param, default, container_json):
@@ -4157,7 +4158,7 @@ class ContainerStructure(object):
         if not container_dir:
             Msg().err("Error: container not found:", self.container_id)
             return False
-        status = self._tar(clone_file, container_dir + "/ROOT")
+        status = FileUtil(container_dir + "/ROOT").tar(clone_file)
         if not status:
             Msg().err("Error: exporting container file system:", self.container_id)
         return self.container_id
@@ -4170,7 +4171,7 @@ class ContainerStructure(object):
         if not container_dir:
             Msg().err("Error: container not found:", self.container_id)
             return False
-        status = self._tar(clone_file, container_dir)
+        status = FileUtil(container_dir).tar(clone_file)
         if not status:
             Msg().err("Error: exporting container as clone:", self.container_id)
         return self.container_id
@@ -4188,7 +4189,7 @@ class ContainerStructure(object):
         if not dest_container_dir:
             Msg().err("Error: create destination container: setting up")
             return False
-        status = self._copy(source_container_dir, dest_container_dir)
+        status = FileUtil(source_container_dir).copydir(dest_container_dir)
         if not status:
             Msg().err("Error: creating container:", dest_container_id)
             return False
@@ -4731,7 +4732,7 @@ class LocalRepository(object):
         elif os.path.exists(directory + "/v2"):  # if dockerhub API v1
             manifest = self.load_json("manifest")
             if manifest and "fsLayers" in manifest:
-                return self._get_image_attributes_v1_s1(directory, manifest)
+                return self._get_image_attributes_v2_s1(directory, manifest)
             elif manifest and "layers" in manifest:
                 return self._get_image_attributes_v2_s2(directory, manifest)
         return(None, None)
@@ -6064,14 +6065,13 @@ class DockerLocalFileAPI(object):
     def _untar_saved_container(self, tarfile, destdir):
         """Untar container created with docker save"""
         # umask 022
+        verbose = ''
         if Msg.level >= Msg.VER:
-            cmd = ["tar", "-C", destdir, "-x", "--delay-directory-restore",
-                   "-v", "--one-file-system", "--no-same-owner",
-                   "--no-same-permissions", "--overwrite", "-f", tarfile]
-        else:
-            cmd = ["tar", "-C", destdir, "-x", "--delay-directory-restore",
-                   "--one-file-system", "--no-same-owner",
-                   "--no-same-permissions", "--overwrite", "-f", tarfile]
+            verbose = 'v'
+        cmd = ["tar", "-C", destdir, "-x" + verbose,
+               "--delay-directory-restore", "--one-file-system",
+               "--no-same-owner", "--no-same-permissions", "--overwrite",
+               "-f", tarfile]
         status = Uprocess().call(cmd, stderr=Msg.chlderr, close_fds=True)
         return not status
 
@@ -6084,7 +6084,7 @@ class DockerLocalFileAPI(object):
         if not os.path.exists(imagefile) and imagefile != '-':
             Msg().err("Error: image file does not exist:", imagefile)
             return False
-        tmp_imagedir = FileUtil("import").mktmp()
+        tmp_imagedir = FileUtil("load").mktmp()
         try:
             os.makedirs(tmp_imagedir)
         except (IOError, OSError):
@@ -6107,6 +6107,78 @@ class DockerLocalFileAPI(object):
                 repositories = self._load_image(structure, imagerepo, tag)
             FileUtil(tmp_imagedir).remove()
             return repositories
+
+    def _save_image(self, imagerepo, tag, structure, tmp_imagedir):
+        """Prepare structure with metadata for the image"""
+        if not self.localrepo.cd_imagerepo(imagerepo, tag):
+            return False
+        (container_json, layer_files) = self.localrepo.get_image_attributes()
+        if not container_json:
+            return False
+        json_file = tmp_imagedir + "/container.json"
+        if not self.localrepo.save_json(json_file, container_json):
+            return False
+        config_layer_id = str(ChkSUM().sha256(json_file))
+        FileUtil(json_file).rename(tmp_imagedir + '/' +
+                                   config_layer_id + ".json")
+        manifest_item = dict()
+        manifest_item["Config"] = config_layer_id + ".json"
+        manifest_item["RepoTags"] = [imagerepo + ':' + tag, ]
+        manifest_item["Layers"] = []
+        if imagerepo not in structure["repositories"]:
+            structure["repositories"][imagerepo] = dict()
+        first = True
+        for layer_f in layer_files:
+            layer_id = (os.path.basename(layer_f).
+                        replace("sha256:", "").replace(".layer", ""))
+            if first:
+                structure["repositories"][imagerepo][tag] = layer_id
+                first = False
+            if os.path.exists(tmp_imagedir + "/" + layer_id):
+                continue
+            FileUtil(tmp_imagedir + "/" + layer_id).mkdir()
+            layer_f_path = tmp_imagedir + "/" + layer_id + "/layer.tar"
+            if not FileUtil(layer_f).copyto(layer_f_path):
+                return False
+            manifest_item["Layers"].append(layer_id + "/layer.tar")
+            json_string = self.create_container_meta(layer_id)
+            json_f_path = tmp_imagedir + "/" + layer_id + "/json"
+            if not self.localrepo.save_json(json_f_path, json_string):
+                return False
+            version_f_path = tmp_imagedir + "/" + layer_id + "/VERSION"
+            if not FileUtil(version_f_path).putdata("1.0"):
+                return False
+        structure["manifest"].append(manifest_item)
+        return True
+
+    def save(self, imagetag_list, imagefile):
+        """Save a set of image tags to a file similarly to docker save
+        """
+        tmp_imagedir = FileUtil("save").mktmp()
+        try:
+            os.makedirs(tmp_imagedir)
+        except (IOError, OSError):
+            return False
+        structure = dict()
+        structure["manifest"] = []
+        structure["repositories"] = dict()
+        #structure["repoconfigs"] = dict()
+        #structure["repolayers"] = dict()
+        for (imagerepo, tag) in imagetag_list:
+            status = self._save_image(imagerepo, tag, structure, tmp_imagedir)
+            if not status:
+                Msg().err("Error: save image failed:", imagerepo + ':' + tag)
+                break
+        if status:
+            self.localrepo.save_json(tmp_imagedir + "/manifest.json",
+                                     structure["manifest"])
+            self.localrepo.save_json(tmp_imagedir + "/repositories",
+                                     structure["repositories"])
+            if not FileUtil(tmp_imagedir).tar(imagefile):
+                Msg().err("Error: save image failed in writing tar", imagefile)
+                status = False
+        FileUtil(tmp_imagedir).remove()
+        return status
 
     def create_container_meta(self, layer_id, comment="created by udocker"):
         """Create metadata for a given container layer, used in import.
@@ -6415,16 +6487,20 @@ class Udocker(object):
 
     def do_load(self, cmdp):
         """
-        load: load a container image saved by docker with 'docker save'
-        load --input=<docker-saved-container-file>
-        load -i <docker-saved-container-file>
-        load < <docker-saved-container-file>
+        load: load an  image saved by docker with 'docker save'
+        load [options] <repo/image:tag>
+        --input=<image-file>        :load image file saved by docker
+        -i <image-file>             :load image file saved by docker
         """
         imagefile = cmdp.get("--input=")
         if not imagefile:
             imagefile = cmdp.get("-i=")
-            if imagefile is False:
+            if not imagefile:
                 imagefile = '-'
+        from_stdin = cmdp.get('-')
+        if from_stdin:
+            imagefile = '-'
+            cmdp.get("-i")
         if cmdp.missing_options():  # syntax error
             return False
         if not imagefile:
@@ -6432,12 +6508,49 @@ class Udocker(object):
             return False
         repos = self.dockerlocalfileapi.load(imagefile)
         if not repos:
-            Msg().err("Error: loading failed")
+            Msg().err("Error: load failed")
             return False
         else:
             for repo_item in repos:
                 Msg().out(repo_item)
             return True
+
+    def do_save(self, cmdp):
+        """
+        save: save an image to file
+        save [options] IMAGE
+        --output=<image-file>       :save image to file
+        -o <image-file>             :save image to file
+        """
+        imagefile = cmdp.get("--output=")
+        if not imagefile:
+            imagefile = cmdp.get("-o=")
+            if not imagefile:
+                imagefile = '-'
+        from_stdin = cmdp.get('-')
+        imagespec_list = cmdp.get("P*")
+        if from_stdin:
+            del(imagespec_list[0])
+            imagefile = '-'
+            cmdp.get("-o")
+        if cmdp.missing_options():  # syntax error
+            return False
+        if imagefile != '-':
+            if os.path.exists(imagefile):
+                Msg().err("Error: output file already exists:", imagefile)
+                return False
+        imagetag_list = []
+        for imagespec in imagespec_list:
+            (imagerepo, tag) = self._check_imagespec(imagespec)
+            if not imagerepo:
+                return False
+            imagetag_list.append((imagerepo, tag))
+        if not imagefile:
+            Msg().err("Error: must specify filename of image file for output")
+            return False
+        if not self.dockerlocalfileapi.save(imagetag_list, imagefile):
+            return False
+        return True
 
     def do_import(self, cmdp):
         """
@@ -7454,7 +7567,7 @@ class Main(object):
             "help": self.udocker.do_help, "search": self.udocker.do_search,
             "images": self.udocker.do_images, "pull": self.udocker.do_pull,
             "create": self.udocker.do_create, "ps": self.udocker.do_ps,
-            "run": self.udocker.do_run,
+            "run": self.udocker.do_run, "save": self.udocker.do_save,
             "rmi": self.udocker.do_rmi, "mkrepo": self.udocker.do_mkrepo,
             "import": self.udocker.do_import, "load": self.udocker.do_load,
             "export": self.udocker.do_export, "clone": self.udocker.do_clone,

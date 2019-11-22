@@ -578,7 +578,7 @@ Examples:
 ```
 
 
-### 3.22. Login
+### 3.22. login
 ```
   udocker login [--username=USERNAME] [--password=PASSWORD] [--registry=REGISTRY]
 ```
@@ -602,7 +602,7 @@ Examples:
   password: ****
 ```
 
-### 3.23. Logout
+### 3.23. logout
 ```
   udocker logout [-a]
 ```
@@ -622,7 +622,7 @@ Examples:
   udocker logout -a
 ```
 
-### 3.24. Clone
+### 3.24. clone
 ```
   udocker clone [--name=NAME] CONTAINER-ID|CONTAINER-NAME
 ```
@@ -639,7 +639,7 @@ Examples:
   udocker clone --name=RED  BLUE
 ```
 
-### 3.25. Setup
+### 3.25. setup
 ```
   udocker setup [--execmode=XY] [--force] [--nvidia] CONTAINER-ID|CONTAINER-NAME
 ```
@@ -741,6 +741,23 @@ Quick examples:
   udocker setup  --execmode=S1  mycontainer
   udocker run  mycontainer  /bin/ls
 ```
+
+### 3.26. save
+```
+  udocker save -o IMAGE-FILE REPO/IMAGE:TAG
+  udocker save -o - REPO/IMAGE:TAG
+```
+Saves an image including all its layers and metadata to a tarball.
+The input is an image not a container, to produce a tarball of a 
+container use export. The saved images can be read by udocker or Docker
+using the command load.
+
+Examples:
+```
+  udocker save -o docker-image.tar centos:centos7
+  udocker save -o - > docker-image.tar ubuntu:16.04 ubuntu:18.04 ubuntu:19.04
+```
+
 
 ## 4. Running MPI Jobs
 

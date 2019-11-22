@@ -30,6 +30,8 @@ udocker (1.1.4)
     - closes: #218, #225
   * Further improved pathname translation in Fn modes
     - closes: #160
+  * Implement save images
+    - closes: #74
 
 udocker (1.1.3)
   * Support for nvidia drivers on ubuntu

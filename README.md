@@ -80,6 +80,8 @@ Commands:
   load                          :Load image from stdin (saved by docker)
   export -o <tar> <container>   :Export container rootfs to file
   export - <container>          :Export container rootfs to stdin
+  save -i tar <repo/image:tag>  :Save image (not container) to file
+  save -i - <repo/image:tag>    :Save image (not container) to stdout
   inspect <repo/image:tag>      :Return low level information on image
   verify <repo/image:tag>       :Verify a pulled image
   clone <container>             :duplicate container

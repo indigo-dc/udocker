@@ -80,6 +80,11 @@ Import a tarball from file or stdin. The tarball can be imported into a new imag
 .BR load " " -i " " IMAGE\-TARBALL
 Load an IMAGE\-TARBALL previously saved by "docker save". The IMAGE\-TARBALL contains the several layers of a Docker layered filesystem plus the associated metadata. The image and its layers are loaded into the local images repository.
 .TP
+.BR save " " -o " " - " " IMAGE
+.TP
+.BR save " " -o " " IMAGE\-TARBALL " " IMAGE
+Save an image stored in the local images repository to a tarball. The IMAGE\-TARBALL contains the several layers of a Docker layered filesystem plus the associated metadata. The tarball will contain the image metadata and all the individual layers that compose it. The saved tarball can be loaded into another repository using the command load. 
+.TP
 .BR verify " " IMAGE
 Verify the integrity of an IMAGE in the local repository.
 .TP
