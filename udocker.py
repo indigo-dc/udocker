@@ -270,6 +270,9 @@ class Config(object):
 
     nvi_dev_list = ['/dev/nvidia', ]
 
+    ignore_layers = \
+        ["a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4", ]
+
     # -------------------------------------------------------------
 
     def _verify_config(self):
@@ -4090,12 +4093,13 @@ class ContainerStructure(object):
             verbose = ''
             if Msg.level >= Msg.VER:
                 verbose = 'v'
+                Msg().out("Info: extracting:", tarf, l=Msg.INF)
             cmd = [ "tar", "-C", destdir, "-x" + verbose, "--one-file-system",
-                    "--no-same-owner", "--no-same-permissions",
+                    "--exclude=dev/*", "--no-same-owner", "--no-same-permissions",
                     "--overwrite", "-f", tarf ]
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
-                status = False
                 Msg().err("Error: while extracting image layer")
+                status = False
             cmd = [ "find", destdir,
                     "(", "-type", "d", "!", "-perm", "-u=x", "-exec",
                     "/bin/chmod", "u+x", "{}", ";", ")", ",",
@@ -5958,8 +5962,8 @@ class DockerLocalFileAPI(object):
 
     def _find_top_layer_id(self, structure, my_layer_id=""):
         """Find the top layer within a Docker image"""
-        if "layers" not in structure:
-            return []
+        if "repolayers" not in structure:
+            return ""
         else:
             if not my_layer_id:
                 my_layer_id = structure["repolayers"].keys()[0]
@@ -6005,17 +6009,35 @@ class DockerLocalFileAPI(object):
         self.localrepo.add_image_layer(target_file, linkname)
         return True
 
+    def _get_from_manifest(self, structure, imagetag):
+        """Search for image:tag in manifest and return Config and layer ids"""
+        if "manifest" in structure:
+            for repotag in structure["manifest"]:
+                if imagetag in repotag["RepoTags"]:
+                    layers = []
+                    for layer_file in repotag["Layers"]:
+                        layers.append(layer_file.replace("/layer.tar", ""))
+                    layers.reverse()
+                    return (repotag["Config"], layers) 
+        return ("", [])
+
     def _load_image_v1(self, structure, imagerepo, tag):
         """Load a container image v1 into a repository mimic docker load"""
-        imagetag = imagerepo + ':' + tag 
         if not self.localrepo.set_version("v1"):
             Msg().err("Error: setting repository version")
             return []
-        try:
-            top_layer_id = structure["repositories"][imagerepo][tag]
-        except (IndexError, NameError, KeyError):
+        imagetag = imagerepo + ':' + tag 
+        (json_config_file, layers) = \
+                self._get_from_manifest(structure, imagetag)
+        if json_config_file:
+            layer_id = json_config_file.replace(".json", "")
+            json_file = structure["repoconfigs"][json_config_file]["json_f"]
+            self._copy_layer_to_repo(json_file, layer_id, "container.json")
+        else:
             top_layer_id = self._find_top_layer_id(structure)
-        for layer_id in self._sorted_layers(structure, top_layer_id):
+            layers = self._sorted_layers(structure, top_layer_id)
+        for layer_id in layers:
+            Msg().out("Info: adding layer:", layer_id, l=Msg.INF)
             if str(structure["repolayers"][layer_id]["VERSION"]) != "1.0":
                 Msg().err("Error: layer version unknown")
                 return []
@@ -6025,14 +6047,7 @@ class DockerLocalFileAPI(object):
                     Msg().err("Error: copying %s file %s"
                               % (layer_item[:-2], filename), l=Msg.VER)
                     return []
-        self.localrepo.save_json("ancestry",
-                                 self._sorted_layers(structure, top_layer_id))
-        if "manifest" in structure:
-            for repotag in structure["manifest"]:
-                if imagetag in repotag["RepoTags"]:
-                    layer_id = (repotag["Config"]).replace(".json", "")
-                    json_file = structure["repoconfigs"][repotag["Config"]]["json_f"]
-                    self._copy_layer_to_repo(json_file, layer_id, "container.json")
+        self.localrepo.save_json("ancestry", layers)
         return [imagetag]
 
     def _load_image(self, structure, imagerepo, tag):
@@ -6127,13 +6142,12 @@ class DockerLocalFileAPI(object):
         manifest_item["Layers"] = []
         if imagerepo not in structure["repositories"]:
             structure["repositories"][imagerepo] = dict()
-        first = True
+        parent_layer_id = ""
         for layer_f in layer_files:
             layer_id = (os.path.basename(layer_f).
                         replace("sha256:", "").replace(".layer", ""))
-            if first:
-                structure["repositories"][imagerepo][tag] = layer_id
-                first = False
+            if layer_id in Config.ignore_layers:
+                continue
             if os.path.exists(tmp_imagedir + "/" + layer_id):
                 continue
             FileUtil(tmp_imagedir + "/" + layer_id).mkdir()
@@ -6142,6 +6156,11 @@ class DockerLocalFileAPI(object):
                 return False
             manifest_item["Layers"].append(layer_id + "/layer.tar")
             json_string = self.create_container_meta(layer_id)
+            if parent_layer_id:
+                json_string["parent"] = parent_layer_id
+            else:
+                structure["repositories"][imagerepo][tag] = layer_id
+            parent_layer_id = layer_id
             json_f_path = tmp_imagedir + "/" + layer_id + "/json"
             if not self.localrepo.save_json(json_f_path, json_string):
                 return False
@@ -6164,6 +6183,7 @@ class DockerLocalFileAPI(object):
         structure["repositories"] = dict()
         #structure["repoconfigs"] = dict()
         #structure["repolayers"] = dict()
+        status = False
         for (imagerepo, tag) in imagetag_list:
             status = self._save_image(imagerepo, tag, structure, tmp_imagedir)
             if not status:
@@ -6177,6 +6197,8 @@ class DockerLocalFileAPI(object):
             if not FileUtil(tmp_imagedir).tar(imagefile):
                 Msg().err("Error: save image failed in writing tar", imagefile)
                 status = False
+        else:
+            Msg().err("Error: no images specified")
         FileUtil(tmp_imagedir).remove()
         return status
 
