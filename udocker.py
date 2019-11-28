@@ -7357,7 +7357,7 @@ class Udocker(object):
                 Msg().out(text)
                 return True
         except (AttributeError, SyntaxError, KeyError):
-            return False
+            pass
         Msg().out(self.do_help.__doc__)
         return True
 
