@@ -819,26 +819,39 @@ class ChkSUM(object):
     """Checksumming for files"""
 
     def __init__(self):
+        self._algorithms = dict()
         try:
             dummy = hashlib.sha256()
-            self._sha256_call = self._hashlib_sha256
+            self._algorithms["sha256"] = self._hashlib_sha256
         except NameError:
-            self._sha256_call = self._openssl_sha256
+            self._algorithms["sha256"] = self._openssl_sha256
+        try:
+            dummy = hashlib.sha512()
+            self._algorithms["sha512"] = self._hashlib_sha512
+        except NameError:
+            self._algorithms["sha512"] = self._openssl_sha512
 
-    def _hashlib_sha256(self, filename):
-        """sha256 calculation using hashlib"""
-        hash_sha256 = hashlib.sha256()
+    def _hashlib(self, algorithm, filename):
+        """hash calculation using hashlib"""
         try:
             with open(filename, "rb") as filep:
                 for chunk in iter(lambda: filep.read(4096), b""):
-                    hash_sha256.update(chunk)
-            return hash_sha256.hexdigest()
+                    algorithm.update(chunk)
+            return algorithm.hexdigest()
         except (IOError, OSError):
             return ""
 
-    def _openssl_sha256(self, filename):
-        """sha256 calculation using openssl"""
-        cmd = ["openssl", "dgst", "-hex", "-r", "-sha256", filename]
+    def _hashlib_sha256(self, filename):
+        """sha256 calculation using hashlib"""
+        return self._hashlib(hashlib.sha256(), filename)
+
+    def _hashlib_sha512(self, filename):
+        """sha512 calculation using hashlib"""
+        return self._hashlib(hashlib.sha512(), filename)
+
+    def _openssl(self, algorithm, filename):
+        """hash calculation using openssl"""
+        cmd = ["openssl", "dgst", "-hex", "-r", algorithm, filename]
         output = Uprocess().get_output(cmd)
         if output is None:
             return ""
@@ -847,11 +860,27 @@ class ChkSUM(object):
             return match.group(1)
         return ""
 
+    def _openssl_sha256(self, filename):
+        """sha256 calculation using openssl"""
+        return self._openssl("-sha256", filename)
+
+    def _openssl_sha512(self, filename):
+        """sha512 calculation using openssl"""
+        return self._openssl("-sha512", filename)
+
     def sha256(self, filename):
-        """
-        Call the actual sha256 implementation selected in __init__
-        """
-        return self._sha256_call(filename)
+        """Call the actual implementation selected in __init__"""
+        return self._algorithms["sha256"](filename)
+
+    def sha512(self, filename):
+        """Call the actual implementation selected in __init__"""
+        return self._algorithms["sha512"](filename)
+
+    def hash(self, filename, algorithm):
+        """Compute hash algorithm for file"""
+        if algorithm in self._algorithms:
+            return self._algorithms[algorithm](filename)
+        return ""
 
 
 class FileUtil(object):
@@ -4865,8 +4894,18 @@ class LocalRepository(object):
                     break
         return sorted_layers
 
+    def _split_layer_id(self, layer_id):
+        """Split layer_id (sha256:xxxxx)"""
+        try:
+            return layer_id.split(":", 1)
+        except (ValueError):
+            return ("", "")
+
     def _verify_layer_file(self, structure, layer_id):
         """Verify layer file in repository"""
+        (layer_algorithm, layer_hash) = self._split_layer_id(layer_id)
+        if layer_hash in Config.ignore_layers:
+            return True
         layer_f = structure["repolayers"][layer_id]["layer_f"]
         if not (os.path.exists(layer_f) and
                 os.path.islink(layer_f)):
@@ -4881,10 +4920,9 @@ class LocalRepository(object):
             if not FileUtil(layer_f).verify_tar():
                 Msg().err("Error: layer tar verify failed:", layer_f)
                 return False
-        match = re.search("/sha256:(\\S+)$", layer_f)
-        if match:
-            layer_f_chksum = ChkSUM().sha256(layer_f)
-            if layer_f_chksum != match.group(1):
+        if layer_algorithm:
+            layer_f_chksum = ChkSUM().hash(layer_f, layer_algorithm)
+            if layer_f_chksum and layer_f_chksum != layer_hash:
                 Msg().err("Error: layer file chksum failed:", layer_f)
                 return False
         return True
@@ -5435,10 +5473,10 @@ class DockerIoAPI(object):
         file already exists locally and whether its size is the
         same to avoid downloaded it again.
         """
-        match = re.search("/sha256:(\\S+)$", filename)
+        match = re.search("/([^/:]+):(\\S+)$", filename)
         if match:
-            layer_f_chksum = ChkSUM().sha256(filename)
-            if layer_f_chksum == match.group(1):
+            layer_f_chksum = ChkSUM().hash(filename, match.group(1))
+            if layer_f_chksum == match.group(2):
                 return True             # is cached skip download
             else:
                 cache_mode = 0
@@ -6144,8 +6182,11 @@ class DockerLocalFileAPI(object):
             structure["repositories"][imagerepo] = dict()
         parent_layer_id = ""
         for layer_f in layer_files:
-            layer_id = (os.path.basename(layer_f).
-                        replace("sha256:", "").replace(".layer", ""))
+            try:
+                layer_id = re.search("^(?:[^:]+:)?([a-z0-9]+)(?:\.layer)?$",
+                                     os.path.basename(layer_f)).group(1)
+            except AttributeError:
+                return False
             if layer_id in Config.ignore_layers:
                 continue
             if os.path.exists(tmp_imagedir + "/" + layer_id):
