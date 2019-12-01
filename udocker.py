@@ -477,7 +477,7 @@ class Uprocess(object):
         """Pipe two shell commands"""
         try:
             proc_1 = subprocess.Popen(cmd1, stderr=Msg.chlderr,
-                                      stdout=subprocess.PIPE)
+                                      stdout=subprocess.PIPE, **kwargs)
         except (OSError, ValueError):
             return False
         try:
@@ -489,7 +489,7 @@ class Uprocess(object):
         while proc_1.returncode is None or proc_2.returncode is None:
             proc_1.wait()
             proc_2.wait()
-        return not (proc_1.returncode or proc_2.returncode) 
+        return not (proc_1.returncode or proc_2.returncode)
 
 
 class GuestInfo(object):
@@ -1090,8 +1090,8 @@ class FileUtil(object):
         if Msg.level >= Msg.VER:
             verbose = 'v'
         cmd_tarc = ["tar", "-C", sourcedir, "-c" + verbose,
-                    "--one-file-system", "-S", "--xattrs", "-f", "-", "." ]
-        cmd_tarx = [ "tar", "-C", destdir, "-x", "-f", "-" ]
+                    "--one-file-system", "-S", "--xattrs", "-f", "-", "."]
+        cmd_tarx = ["tar", "-C", destdir, "-x", "-f", "-"]
         status = Uprocess().pipe(cmd_tarc, cmd_tarx)
         if not status:
             Msg().err("Error: copying:", sourcedir, " to ", destdir, l=Msg.VER)
@@ -1735,7 +1735,7 @@ class ElfPatcher(object):
         last_time = '0'
         patchelf_exec = self.select_patchelf()
         elf_loader = self.get_container_loader()
-        cmd = [patchelf_exec, "--set-root-prefix", self._container_root, "#f"] 
+        cmd = [patchelf_exec, "--set-root-prefix", self._container_root, "#f"]
         self._walk_fs(cmd, self._container_root, self.BIN | self.LIB)
         newly_set = self.guess_elf_loader()
         if newly_set == elf_loader:
@@ -3781,7 +3781,7 @@ class NvidiaMode(object):
         """Find host nvidia libraries via ldconfig"""
         dir_list = set()
         ld_data = Uprocess().get_output("ldconfig", "-p")
-        if ldconfig and ld_data:
+        if ld_data:
             regexp = "[ |\t]%s[^ ]* .*%s.*=> (/.*)"
             for line in ld_data.split('\n'):
                 for lib in self._nvidia_main_libs:
@@ -4123,23 +4123,23 @@ class ContainerStructure(object):
             if Msg.level >= Msg.VER:
                 verbose = 'v'
                 Msg().out("Info: extracting:", tarf, l=Msg.INF)
-            cmd = [ "tar", "-C", destdir, "-x" + verbose, "--one-file-system",
-                    "--exclude=dev/*", "--no-same-owner", "--no-same-permissions",
-                    "--overwrite", "-f", tarf ]
+            cmd = ["tar", "-C", destdir, "-x" + verbose, "--one-file-system",
+                   "--exclude=dev/*", "--no-same-owner", "--no-same-permissions",
+                   "--overwrite", "-f", tarf]
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
                 Msg().err("Error: while extracting image layer")
                 status = False
-            cmd = [ "find", destdir,
-                    "(", "-type", "d", "!", "-perm", "-u=x", "-exec",
-                    "/bin/chmod", "u+x", "{}", ";", ")", ",",
-                    "(", "!", "-perm", "-u=w", "-exec", "/bin/chmod",
-                    "u+w", "{}", ";", ")", ",", 
-                    "(", "!", "-perm", "-u=r", "-exec", "/bin/chmod",
-                    "u+r", "{}", ";", ")", ",", 
-                    "(", "!", "-gid", gid, "-exec", "/bin/chgrp", gid,
-                    "{}", ";", ")", ",",
-                    "(", "-name", ".wh.*", "-exec", "/bin/rm", "-f",
-                    "--preserve-root", "{}", ";", ")" ]
+            cmd = ["find", destdir,
+                   "(", "-type", "d", "!", "-perm", "-u=x", "-exec",
+                   "/bin/chmod", "u+x", "{}", ";", ")", ",",
+                   "(", "!", "-perm", "-u=w", "-exec", "/bin/chmod",
+                   "u+w", "{}", ";", ")", ",",
+                   "(", "!", "-perm", "-u=r", "-exec", "/bin/chmod",
+                   "u+r", "{}", ";", ")", ",",
+                   "(", "!", "-gid", gid, "-exec", "/bin/chgrp", gid,
+                   "{}", ";", ")", ",",
+                   "(", "-name", ".wh.*", "-exec", "/bin/rm", "-f",
+                   "--preserve-root", "{}", ";", ")"]
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
                 status = False
                 Msg().err("Error: while modifying attributes of image layer")
@@ -5333,11 +5333,11 @@ class GetURLexeCurl(GetURL):
         curl_executable = "curl"
         if self._curl_executable and isinstance(self._curl_executable, str):
             curl_executable = self._curl_executable
-        cmd = [curl_executable, ].extend(self._opts.values())    
+        cmd = [curl_executable, ].extend(self._opts.values())
         cmd += ["-D", self._files["header_file"], "-o",
                 self._files["output_file"], "--stderr",
                 self._files["error_file"], self._files["url"]]
-        return(cmd)
+        return cmd
 
     def get(self, *args, **kwargs):
         """http get implementation using the curl cli executable"""
@@ -5906,8 +5906,8 @@ class DockerIoAPI(object):
 
     def search_get_page_v2(self, expression, url, lines=22, official=None):
         """Search results from Docker Hub using v2 API"""
-        if (not expression):
-            expression='*'
+        if not expression:
+            expression = '*'
         if expression and official is None:
             url = url + \
                     "/v2/search/repositories?query=%s" % (expression)
@@ -6056,7 +6056,7 @@ class DockerLocalFileAPI(object):
                     for layer_file in repotag["Layers"]:
                         layers.append(layer_file.replace("/layer.tar", ""))
                     layers.reverse()
-                    return (repotag["Config"], layers) 
+                    return (repotag["Config"], layers)
         return ("", [])
 
     def _load_image_v1(self, structure, imagerepo, tag):
@@ -6064,7 +6064,7 @@ class DockerLocalFileAPI(object):
         if not self.localrepo.set_version("v1"):
             Msg().err("Error: setting repository version")
             return []
-        imagetag = imagerepo + ':' + tag 
+        imagetag = imagerepo + ':' + tag
         (json_config_file, layers) = \
                 self._get_from_manifest(structure, imagetag)
         if json_config_file:
@@ -6166,10 +6166,9 @@ class DockerLocalFileAPI(object):
         if not self.localrepo.cd_imagerepo(imagerepo, tag):
             return False
         (container_json, layer_files) = self.localrepo.get_image_attributes()
-        if not container_json:
-            return False
         json_file = tmp_imagedir + "/container.json"
-        if not self.localrepo.save_json(json_file, container_json):
+        if (not container_json) or \
+           (not self.localrepo.save_json(json_file, container_json)):
             return False
         config_layer_id = str(ChkSUM().sha256(json_file))
         FileUtil(json_file).rename(tmp_imagedir + '/' +
@@ -6542,7 +6541,7 @@ class Udocker(object):
                     print_lines = lines
                 else:
                     print_lines = len(repo_list["results"])
-                lines -= print_lines 
+                lines -= print_lines
                 self._search_print(repo_list, print_lines)
             if pause and not self.dockerioapi.search_ended:
                 if raw_input("[press return or q to quit]") in ('q', 'Q', 'e', 'E'):
@@ -6593,7 +6592,7 @@ class Udocker(object):
         from_stdin = cmdp.get('-')
         imagespec_list = cmdp.get("P*")
         if from_stdin:
-            del(imagespec_list[0])
+            del imagespec_list[0]
             imagefile = '-'
             cmdp.get("-o")
         if cmdp.missing_options():  # syntax error
@@ -6683,6 +6682,8 @@ class Udocker(object):
         if not tarfile:
             Msg().err("Error: invalid output file name", tarfile)
             return False
+        if to_file:
+            Msg().out("Info: exporting to file", tarfile)
         if clone:
             if ContainerStructure(self.localrepo,
                                   container_id).clone_tofile(tarfile):
@@ -7048,10 +7049,11 @@ class Udocker(object):
         if cmdp.missing_options():               # syntax error
             return False
         containers_list = self.localrepo.get_containers_list(False)
-        pl = "MOD" if print_mode else ""
-        ps = "SIZE" if print_size else ""
+        pmod = "MOD" if print_mode else ""
+        psize = "SIZE" if print_size else ""
         Msg().out("%-36.36s %c %c %-18s %-20.20s %3.3s %4s" %
-                  ("CONTAINER ID", 'P', 'M', "NAMES", "IMAGE", pl, ps), l=Msg.INF)
+                  ("CONTAINER ID", 'P', 'M', "NAMES", "IMAGE", pmod, psize),
+                  l=Msg.INF)
         for (container_id, reponame, names) in containers_list:
             mode = ExecutionMode(self.localrepo,
                                  container_id).get_mode() if print_mode else ""
@@ -7395,7 +7397,7 @@ class Udocker(object):
             text = cmds[cmd_help].__doc__
             if text:
                 Msg().out(text)
-                return
+                return True
         except (AttributeError, SyntaxError, KeyError):
             pass
         Msg().out(self.do_help.__doc__)
@@ -7412,7 +7414,7 @@ class Udocker(object):
             Msg().out("%s %s" % ("tarball:", Config.tarball))
             Msg().out("%s %s" % ("tarball_release:", Config.tarball_release))
         except NameError:
-            pass
+            return False
         return True
 
 
@@ -7562,7 +7564,7 @@ class CmdParser(object):
         param_num = 0
         skip_opts = True
         while pos < len(opt_list):
-            if (opt_list[pos] == "-"):
+            if opt_list[pos] == "-":
                 skip_opts = False
             if not (skip_opts and
                     (opt_list[pos].startswith('-') or pos in consumed)):
