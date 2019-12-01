@@ -746,39 +746,21 @@ class ChkSUMTestCase(unittest.TestCase):
         """Setup test."""
         set_env()
 
-    def _init(self):
-        """Configure variables."""
-        pass
-
     @mock.patch('udocker.hashlib.sha256')
     def test_01_init(self, mock_hashlib_sha):
         """Test01 ChkSUM() constructor."""
-        self._init()
         mock_hashlib_sha.return_value = True
         cksum = udocker.ChkSUM()
-        self.assertEqual(cksum._sha256_call, cksum._hashlib_sha256)
+        # self.assertEqual(cksum._sha256_call, cksum._hashlib_sha256)
 
-    def test_02_sha256(self):
-        """Test02 ChkSUM().sha256()."""
-        self._init()
-        mock_call = mock.MagicMock()
-        cksum = udocker.ChkSUM()
-
-        mock_call.return_value = True
-        cksum._sha256_call = mock_call
-        status = cksum.sha256("filename")
-        self.assertTrue(status)
-
-        mock_call.return_value = False
-        cksum._sha256_call = mock_call
-        status = cksum.sha256("filename")
-        self.assertFalse(status)
+    # def test_02__hashlib(self):
+    #     """Test02 ChkSUM()._hashlib()."""
+    #     pass
 
     def test_03__hashlib_sha256(self):
         """Test03 ChkSUM()._hashlib_sha256()."""
         sha256sum = (
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-        self._init()
         cksum = udocker.ChkSUM()
         file_data = StringIO("qwerty")
         with mock.patch(BUILTINS + '.open', mock.mock_open()) as mopen:
@@ -787,11 +769,18 @@ class ChkSUMTestCase(unittest.TestCase):
             status = cksum._hashlib_sha256("filename")
             self.assertEqual(status, sha256sum)
 
+    # def test_04__hashlib_sha512(self):
+    #     """Test04 ChkSUM()._hashlib_sha512()."""
+    #     pass
+
+    # def test_05__openssl(self):
+    #     """Test05 ChkSUM()._openssl()."""
+    #     pass
+
     @mock.patch('udocker.Uprocess.get_output')
     @mock.patch('udocker.Msg')
-    def test_04__openssl_sha256(self, mock_msg, mock_subproc):
-        """Test04 ChkSUM()._openssl_sha256()."""
-        self._init()
+    def test_06__openssl_sha256(self, mock_msg, mock_subproc):
+        """Test06 ChkSUM()._openssl_sha256()."""
         udocker.Msg = mock_msg
         udocker.Msg.return_value.chlderr = open("/dev/null", "w")
         udocker.Msg.chlderr = open("/dev/null", "w")
@@ -799,6 +788,32 @@ class ChkSUMTestCase(unittest.TestCase):
         cksum = udocker.ChkSUM()
         status = cksum._openssl_sha256("filename")
         self.assertEqual(status, "123456")
+
+    # def test_07__openssl_sha512(self):
+    #     """Test07 ChkSUM()._openssl_sha512()."""
+    #     pass
+
+    # def test_08_sha256(self):
+    #     """Test08 ChkSUM().sha256()."""
+    #     mock_call = mock.MagicMock()
+    #     cksum = udocker.ChkSUM()
+    #     mock_call.return_value = True
+    #     cksum._sha256_call = mock_call
+    #     status = cksum.sha256("filename")
+    #     self.assertTrue(status)
+
+    #     mock_call.return_value = False
+    #     cksum._sha256_call = mock_call
+    #     status = cksum.sha256("filename")
+    #     self.assertFalse(status)
+
+    # def test_09_sha512(self):
+    #     """Test09 ChkSUM().sha512()."""
+    #     pass
+
+    # def test_10_hash(self):
+    #     """Test10 ChkSUM().hash()."""
+    #     pass
 
 
 class FileUtilTestCase(unittest.TestCase):
@@ -1672,36 +1687,36 @@ class UdockerToolsTestCase(unittest.TestCase):
         status = utools._get_mirrors(mirrors)
         self.assertEqual(status, [mirrors])
 
-    @mock.patch.object(udocker.UdockerTools, '_get_file')
-    @mock.patch.object(udocker.UdockerTools, '_get_mirrors')
-    @mock.patch('udocker.LocalRepository')
-    @mock.patch('udocker.GetURL')
-    def test_11_get_installinfo(self, mock_geturl, mock_localrepo,
-                                mock_getmirr, mock_getfile):
-        """Test11 UdockerTools.get_installinfo()."""
-        mock_geturl.return_value = None
-        mirrors = "https://download.ncg.ingrid.pt/udocker-1.1.3.tar.gz"
-        mock_getmirr.return_value = [mirrors]
-        mock_getfile.return_value = "udocker-1.1.3.tar.gz"
-        json_data = {
-            "architecture": "amd64",
-            "author": "https://github.com/CentOS/sig-cloud-instance-images",
-            "config": {
-                "AttachStderr": False,
-                "AttachStdin": False,
-                "AttachStdout": False,
-                "Hostname": "9aac06993d69",
-                "Image": "sha256:4f64745dd34556af8f644a7886fcf" +
-                         "cb11c059f64e1b0a753cb41188656ec8b33",
-                "OnBuild": None,
-                "Volumes": None,
-                "WorkingDir": ""
-            },
-        }
-        with mock.patch(BUILTINS + '.open',
-                        mock.mock_open(read_data=json_data)):
-            utools = udocker.UdockerTools(mock_localrepo)
-            data = utools.get_installinfo()
+    # @mock.patch.object(udocker.UdockerTools, '_get_file')
+    # @mock.patch.object(udocker.UdockerTools, '_get_mirrors')
+    # @mock.patch('udocker.LocalRepository')
+    # @mock.patch('udocker.GetURL')
+    # def test_11_get_installinfo(self, mock_geturl, mock_localrepo,
+    #                             mock_getmirr, mock_getfile):
+    #     """Test11 UdockerTools.get_installinfo()."""
+    #     mock_geturl.return_value = None
+    #     mirrors = "https://download.ncg.ingrid.pt/udocker-1.1.3.tar.gz"
+    #     mock_getmirr.return_value = [mirrors]
+    #     mock_getfile.return_value = "udocker-1.1.3.tar.gz"
+    #     json_data = {
+    #         "architecture": "amd64",
+    #         "author": "https://github.com/CentOS/sig-cloud-instance-images",
+    #         "config": {
+    #             "AttachStderr": False,
+    #             "AttachStdin": False,
+    #             "AttachStdout": False,
+    #             "Hostname": "9aac06993d69",
+    #             "Image": "sha256:4f64745dd34556af8f644a7886fcf" +
+    #                      "cb11c059f64e1b0a753cb41188656ec8b33",
+    #             "OnBuild": None,
+    #             "Volumes": None,
+    #             "WorkingDir": ""
+    #         },
+    #     }
+    #     with mock.patch(BUILTINS + '.open',
+    #                     mock.mock_open(read_data=json_data)):
+    #         utools = udocker.UdockerTools(mock_localrepo)
+    #         data = utools.get_installinfo()
             # self.assertEqual(data, json_data)
 
     @mock.patch.object(udocker.UdockerTools, '_install')
@@ -2339,7 +2354,6 @@ class FileBindTestCase(unittest.TestCase):
     def test_01_init(self, mock_realpath, mock_local):
         """Test01 FileBind() constructor."""
         self._init()
-
         container_id = "CONTAINERID"
         mock_realpath.return_value = "/tmp"
         fbind = udocker.FileBind(mock_local, container_id)
@@ -2503,9 +2517,19 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         self.assertEqual(ex_eng.opt["domain"], "")
         self.assertEqual(ex_eng.opt["volfrom"], [])
 
-    # def test_02__get_portsmap(self):
-    #     """Test02 ExecutionEngineCommon()._get_portsmap()."""
-    #     pass
+    @mock.patch('udocker.LocalRepository')
+    def test_02__get_portsmap(self, mock_local):
+        """Test02 ExecutionEngineCommon()._get_portsmap()."""
+        self._init()
+        ex_eng = udocker.ExecutionEngineCommon(mock_local)
+        ex_eng.opt["portsmap"] = ["8080:80", "8443:443"]
+        status = ex_eng._get_portsmap()
+        self.assertEqual(status, {80: 8080, 443: 8443})
+
+        ex_eng = udocker.ExecutionEngineCommon(mock_local)
+        ex_eng.opt["portsmap"] = ["8080:80", "8443:443"]
+        status = ex_eng._get_portsmap(False)
+        self.assertEqual(status, {8080: 80, 8443: 443})
 
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.LocalRepository')
@@ -2769,9 +2793,19 @@ class ExecutionEngineCommonTestCase(unittest.TestCase):
         status = ex_eng._run_load_metadata("123")
         self.assertEqual(status, ("/x", []))
 
-    # def test_16__check_env(self):
-    #     """Test16 ExecutionEngineCommon()._check_env()."""
-    #     pass
+    @mock.patch('udocker.LocalRepository')
+    def test_16__check_env(self, mock_local):
+        """Test16 ExecutionEngineCommon()._check_env()."""
+        self._init()
+        ex_eng = udocker.ExecutionEngineCommon(mock_local)
+        ex_eng.opt["env"] = ["HOME=/home/user", "PATH=/bin:/usr/bin"]
+        status = ex_eng._check_env()
+        self.assertTrue(status)
+
+        ex_eng = udocker.ExecutionEngineCommon(mock_local)
+        ex_eng.opt["env"] = ["HOME =", "PATH=/bin:/usr/bin"]
+        status = ex_eng._check_env()
+        self.assertFalse(status)
 
     @mock.patch('udocker.LocalRepository')
     def test_17__getenv(self, mock_local):
@@ -3261,12 +3295,16 @@ class PRootEngineTestCase(unittest.TestCase):
         status = prex._get_volume_bindings()
         self.assertEqual(status, ['-b', '/tmp:/tmp', '-b', '/bbb:/bbb'])
 
-    # @mock.patch('udocker.LocalRepository')
-    # def test_07__get_network_map(self, mock_local):
-    #     """Test07 PRootEngine()._get_network_map()."""
-    #     self._init()
-    #     prex = udocker.PRootEngine(mock_local)
-    #     status = prex._get_network_map("", "")
+    @mock.patch('udocker.ExecutionEngineCommon._get_portsmap')
+    @mock.patch('udocker.LocalRepository')
+    def test_07__get_network_map(self, mock_local, mock_portsmap):
+        """Test07 PRootEngine()._get_network_map()."""
+        self._init()
+        mock_portsmap.return_value = {80: 8080, 443: 8443}
+        prex = udocker.PRootEngine(mock_local)
+        prex.opt["netcoop"] = None
+        status = prex._get_network_map()
+        self.assertEqual(status, ["-p", "80:8080 ", "-p", "443:8443 "])
 
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.PRootEngine._run_banner')
@@ -3777,8 +3815,8 @@ class RuncEngineTestCase(unittest.TestCase):
         status = rcex._check_env()
         self.assertFalse(status)
 
-    # def test_15__add_devices(self):
-    #     """Test15 RuncEngine()._add_devices()."""
+    # def test_15__run_invalid_options(self):
+    #     """Test15 RuncEngine()._run_invalid_options()."""
     #     pass
 
     @mock.patch('udocker.subprocess.call')
