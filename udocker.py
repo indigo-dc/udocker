@@ -611,7 +611,7 @@ class KeyStore(object):
     def _verify_keystore(self):
         """Verify the keystore file and directory"""
         keystore_uid = FileUtil(self.keystore_file).uid()
-        if keystore_uid != -1 and keystore_uid != Config.uid:
+        if keystore_uid not in (-1, Config.uid):
             raise IOError("not owner of keystore: %s" %
                           (self.keystore_file))
         keystore_dir = os.path.dirname(self.keystore_file)
@@ -4100,9 +4100,15 @@ class ContainerStructure(object):
         for wh_filename in whiteouts.split('\n'):
             if wh_filename:
                 wh_basename = os.path.basename(wh_filename.strip())
-                if wh_basename.startswith(".wh."):
+                wh_dirname = os.path.dirname(wh_filename)
+                if wh_basename == ".wh..wh..opq":
+                    for f_name in os.listdir(destdir + '/' + wh_dirname):
+                        rm_filename = destdir + '/' \
+                            + wh_dirname + '/' + f_name
+                        FileUtil(rm_filename).remove()
+                elif wh_basename.startswith(".wh."):
                     rm_filename = destdir + '/' \
-                        + os.path.dirname(wh_filename) + '/' \
+                        + wh_dirname + '/' \
                         + wh_basename.replace(".wh.", "", 1)
                     FileUtil(rm_filename).remove()
         return
@@ -4896,10 +4902,10 @@ class LocalRepository(object):
 
     def _split_layer_id(self, layer_id):
         """Split layer_id (sha256:xxxxx)"""
-        try:
+        if ':' in layer_id:
             return layer_id.split(":", 1)
-        except (ValueError):
-            return ("", "")
+        else:
+            return ("", layer_id)
 
     def _verify_layer_file(self, structure, layer_id):
         """Verify layer file in repository"""
@@ -5968,13 +5974,13 @@ class DockerLocalFileAPI(object):
                 elif fname == "manifest.json":
                     structure["manifest"] = \
                             self.localrepo.load_json(f_path)
-                elif len(fname) == 69 and fname.endswith(".json"):
+                elif len(fname) >= 69 and fname.endswith(".json"):
                     structure["repoconfigs"][fname] = dict()
                     structure["repoconfigs"][fname]["json"] = \
                             self.localrepo.load_json(f_path)
                     structure["repoconfigs"][fname]["json_f"] = \
                             f_path
-                elif len(fname) == 64 and FileUtil(f_path).isdir():
+                elif len(fname) >= 64 and FileUtil(f_path).isdir():
                     layer_id = fname
                     structure["repolayers"][layer_id] = dict()
                     for layer_f in os.listdir(f_path):
@@ -6163,8 +6169,7 @@ class DockerLocalFileAPI(object):
 
     def _save_image(self, imagerepo, tag, structure, tmp_imagedir):
         """Prepare structure with metadata for the image"""
-        if not self.localrepo.cd_imagerepo(imagerepo, tag):
-            return False
+        self.localrepo.cd_imagerepo(imagerepo, tag)
         (container_json, layer_files) = self.localrepo.get_image_attributes()
         json_file = tmp_imagedir + "/container.json"
         if (not container_json) or \
@@ -6182,17 +6187,16 @@ class DockerLocalFileAPI(object):
         parent_layer_id = ""
         for layer_f in layer_files:
             try:
-                layer_id = re.search("^(?:[^:]+:)?([a-z0-9]+)(?:\.layer)?$",
+                layer_id = re.search(r"^(?:[^:]+:)?([a-z0-9]+)(?:\.layer)?$",
                                      os.path.basename(layer_f)).group(1)
             except AttributeError:
                 return False
-            if layer_id in Config.ignore_layers:
-                continue
-            if os.path.exists(tmp_imagedir + "/" + layer_id):
+            if (layer_id in Config.ignore_layers or
+                    os.path.exists(tmp_imagedir + "/" + layer_id)):
                 continue
             FileUtil(tmp_imagedir + "/" + layer_id).mkdir()
-            layer_f_path = tmp_imagedir + "/" + layer_id + "/layer.tar"
-            if not FileUtil(layer_f).copyto(layer_f_path):
+            if not FileUtil(layer_f).copyto(tmp_imagedir + "/"
+                                            + layer_id + "/layer.tar"):
                 return False
             manifest_item["Layers"].append(layer_id + "/layer.tar")
             json_string = self.create_container_meta(layer_id)
@@ -6201,8 +6205,8 @@ class DockerLocalFileAPI(object):
             else:
                 structure["repositories"][imagerepo][tag] = layer_id
             parent_layer_id = layer_id
-            json_f_path = tmp_imagedir + "/" + layer_id + "/json"
-            if not self.localrepo.save_json(json_f_path, json_string):
+            if not self.localrepo.save_json(tmp_imagedir + "/"
+                                            + layer_id + "/json", json_string):
                 return False
             version_f_path = tmp_imagedir + "/" + layer_id + "/VERSION"
             if not FileUtil(version_f_path).putdata("1.0"):
