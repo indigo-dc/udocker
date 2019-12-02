@@ -18,6 +18,9 @@
 #
 # ##################################################################
 
+UDOCKER_VERSION_OVERRIDE=1.1.4
+TARBALL_VERSION_OVERRIDE=1.1.4
+
 sanity_check() 
 {
     echo "sanity_check"
@@ -33,12 +36,20 @@ sanity_check()
 
 udocker_version()
 {
-    $REPO_DIR/udocker.py version | grep "version:" | cut -f2- '-d ' | cut -f1 '-d-'
+    if [ -n "$UDOCKER_VERSION_OVERRIDE" ]; then
+        echo "$UDOCKER_VERSION_OVERRIDE"
+    else
+        $REPO_DIR/udocker.py version | grep "version:" | cut -f2- '-d ' | cut -f1 '-d-'
+    fi
 }
 
 tarball_version()
 {
-    $REPO_DIR/udocker.py version | grep "tarball_release:" | cut -f2- '-d ' | cut -f1 '-d-'
+    if [ -n "$TARBALL_VERSION_OVERRIDE" ]; then
+	echo "$TARBALL_VERSION_OVERRIDE"
+    else
+        $REPO_DIR/udocker.py version | grep "tarball_release:" | cut -f2- '-d ' | cut -f1 '-d-'
+    fi
 }
 
 get_proot_static() 
@@ -1417,8 +1428,8 @@ centos8_setup()
     centos8_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            dnf dnf-data gcc make libtalloc libtalloc-devel glibc-static glibc-devel tar python2 gzip zlib diffutils file
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --setopt=module_platform_id=platform:el$OS_RELVER \
+            dnf dnf-data gcc make libtalloc libtalloc-devel glibc-static glibc-devel tar python3 python2 gzip zlib diffutils file
 
     if [ "$OS_ARCH" = "x86_64" ]; then
         $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
