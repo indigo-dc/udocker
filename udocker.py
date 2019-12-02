@@ -129,7 +129,6 @@ class Config(object):
         "mZhbHNlLCJyZWFkX29ubHkiOnRydWUsInNoYXJlX25hbWUiOiJ1ZG9ja2VyLT"
         "EuMS4zLnRhci5neiIsInRva2VuIjoiQ1MzMXljS09wajJLenhPIn0._9LTvxM"
         "V12NpxcZXaCg3PJeQfz94qYui4ccscrrvgVA"
-        "XXXXXXXXXXXXXXXXXXXXXX"
         ' '
         "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.3.tar.gz"
     )
