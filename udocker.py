@@ -5338,8 +5338,8 @@ class GetURLexeCurl(GetURL):
         for opt in self._opts.values():
             cmd += opt
         cmd.extend(["-D", self._files["header_file"], "-o",
-                self._files["output_file"], "--stderr",
-                self._files["error_file"], self._files["url"]])
+                    self._files["output_file"], "--stderr",
+                    self._files["error_file"], self._files["url"]])
         return cmd
 
     def get(self, *args, **kwargs):
@@ -5437,8 +5437,10 @@ class DockerIoAPI(object):
              _get_url(url, ctimeout=5, timeout=5, header=[]):
         """
         url = str(args[0])
-        if "RETRY" not in kwargs: kwargs["RETRY"] = 3
-        if "FOLLOW" not in kwargs: kwargs["FOLLOW"] = 3
+        if "RETRY" not in kwargs:
+            kwargs["RETRY"] = 3
+        if "FOLLOW" not in kwargs:
+            kwargs["FOLLOW"] = 3
         kwargs["RETRY"] -= 1
         (hdr, buf) = self.curl.get(*args, **kwargs)
         Msg().err("header: %s" % (hdr.data), l=Msg.DBG)
@@ -5459,7 +5461,7 @@ class DockerIoAPI(object):
             kwargs["FOLLOW"] -= 1
             args = [hdr.data['location']]
             if "header" in auth_kwargs:
-                del(auth_kwargs["header"])
+                del auth_kwargs["header"]
         elif status_code == 401:
             if "www-authenticate" in hdr.data and hdr.data["www-authenticate"]:
                 auth_header = ""
@@ -6641,15 +6643,15 @@ class Udocker(object):
             return None
         return imagerepo
 
-    def _set_repository(self,
-            registry_url, index_url, imagerepo=None, http_proxy=None):
+    def _set_repository(self, registry_url, index_url,
+                        imagerepo=None, http_proxy=None):
         """Select docker respository"""
         transport = "https:"
         if http_proxy:
             self.dockerioapi.set_proxy(http_proxy)
         if registry_url:
             self.dockerioapi.set_registry(registry_url)
-        if index_url: 
+        if index_url:
             self.dockerioapi.set_index(index_url)
         if not (registry_url or index_url):
             try:
@@ -6661,15 +6663,15 @@ class Udocker(object):
                 return
             if "." in hostname:
                 try:
-                    self.dockerioapi.set_registry(
+                    self.dockerioapi.set_registry( \
                             Config.docker_registries[hostname][0])
-                    self.dockerioapi.set_index(
+                    self.dockerioapi.set_index( \
                             Config.docker_registries[hostname][1])
                 except (KeyError, NameError, TypeError):
                     self.dockerioapi.set_registry(transport + "//" + hostname)
                     self.dockerioapi.set_index(transport + "//" + hostname)
         return
-  
+
     def _split_imagespec(self, imagerepo):
         """Split image repo into hostname, repo, tag"""
         transport = ""
@@ -6686,7 +6688,7 @@ class Udocker(object):
         if hostname and '.' not in hostname:
             image = hostname + '/' + image
             hostname = ""
-        if ':' in image:    
+        if ':' in image:
             (image, tag) = image.split(':', 1)
         return (transport, hostname, image, tag)
 
