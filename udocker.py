@@ -799,8 +799,12 @@ class Unique(object):
         """Get a container image name"""
         return self._rnd(16)
 
+    def imagetag(self):
+        """Get a container image name"""
+        return self._rnd(10)
+
     def layer_v1(self):
-        """Get a container layer name"""
+        """Get a random container layer name"""
         return self._rnd(64)
 
     def filename(self, filename):
@@ -5432,7 +5436,6 @@ class DockerIoAPI(object):
         """Check if name matches authorized characters for a docker repo"""
         if imagerepo and re.match("^[a-zA-Z0-9][a-zA-Z0-9-_./:]+$", imagerepo):
             return True
-        Msg().err("Error: invalid repo name syntax")
         return False
 
     def _is_docker_registry(self):
@@ -5953,94 +5956,22 @@ class DockerIoAPI(object):
             return self.search_get_page_v1(expression, self.registry_url)
         return []
 
-class DockerLocalFileAPI(object):
-    """Manipulate container and/or image files produced by Docker"""
+
+class CommonLocalFileApi(object):
+    """Common methods for Docker and OCI files"""
 
     def __init__(self, localrepo):
         self.localrepo = localrepo
+        self._imagerepo = None
 
-    def _load_structure(self, tmp_imagedir):
-        """Load the structure of a Docker pulled image"""
-        structure = {}
-        structure["repolayers"] = dict()
-        structure["repoconfigs"] = dict()
-        if FileUtil(tmp_imagedir).isdir():
-            for fname in os.listdir(tmp_imagedir):
-                f_path = tmp_imagedir + '/' + fname
-                if fname == "repositories":
-                    structure["repositories"] = \
-                            self.localrepo.load_json(f_path)
-                elif fname == "manifest.json":
-                    structure["manifest"] = \
-                            self.localrepo.load_json(f_path)
-                elif len(fname) >= 69 and fname.endswith(".json"):
-                    structure["repoconfigs"][fname] = dict()
-                    structure["repoconfigs"][fname]["json"] = \
-                            self.localrepo.load_json(f_path)
-                    structure["repoconfigs"][fname]["json_f"] = \
-                            f_path
-                elif len(fname) >= 64 and FileUtil(f_path).isdir():
-                    layer_id = fname
-                    structure["repolayers"][layer_id] = dict()
-                    for layer_f in os.listdir(f_path):
-                        layer_f_path = f_path + '/' + layer_f
-                        if layer_f == "VERSION":
-                            structure["repolayers"][layer_id]["VERSION"] = \
-                                    self.localrepo.load_json(layer_f_path)
-                        elif layer_f == "json":
-                            structure["repolayers"][layer_id]["json"] = \
-                                    self.localrepo.load_json(layer_f_path)
-                            structure["repolayers"][layer_id]["json_f"] = \
-                                    layer_f_path
-                        elif "layer" in layer_f:
-                            structure["repolayers"][layer_id]["layer_f"] = \
-                                    layer_f_path
-                        else:
-                            Msg().err("Warning: unkwnon file in layer:",
-                                      f_path, l=Msg.WAR)
-                else:
-                    Msg().err("Warning: unkwnon file in image:", f_path,
-                              l=Msg.WAR)
-        return structure
-
-    def _find_top_layer_id(self, structure, my_layer_id=""):
-        """Find the top layer within a Docker image"""
-        if "repolayers" not in structure:
-            return ""
-        else:
-            if not my_layer_id:
-                my_layer_id = structure["repolayers"].keys()[0]
-            found = ""
-            for layer_id in structure["repolayers"]:
-                if "parent" not in structure["repolayers"][layer_id]["json"]:
-                    continue
-                elif (my_layer_id ==
-                      structure["repolayers"][layer_id]["json"]["parent"]):
-                    found = self._find_top_layer_id(structure, layer_id)
-                    break
-            if not found:
-                return my_layer_id
-            return found
-
-    def _sorted_layers(self, structure, top_layer_id):
-        """Return the layers sorted"""
-        sorted_layers = []
-        next_layer = top_layer_id
-        while next_layer:
-            sorted_layers.append(next_layer)
-            if "parent" not in structure["repolayers"][next_layer]["json"]:
-                break
-            else:
-                next_layer = structure["repolayers"][next_layer]["json"]["parent"]
-                if not next_layer:
-                    break
-        return sorted_layers
-
-    def _copy_layer_to_repo(self, filepath, layer_id, linkname=None):
-        """Copy or rename an image layer file to a repository"""
+    def _move_layer_to_v1repo(self, filepath, layer_id, linkname=None):
+        """Copy or rename an image layer file to a v1 repository"""
         if filepath.endswith("json"):
             target_file = self.localrepo.layersdir + '/' + layer_id + ".json"
         elif filepath.endswith("layer.tar"):
+            target_file = self.localrepo.layersdir + '/' + layer_id + ".layer"
+        elif ':' in layer_id:
+            (dummy, layer_id) = layer_id.split(':', 1)
             target_file = self.localrepo.layersdir + '/' + layer_id + ".layer"
         else:
             return False
@@ -6052,77 +5983,33 @@ class DockerLocalFileAPI(object):
         self.localrepo.add_image_layer(target_file, linkname)
         return True
 
-    def _get_from_manifest(self, structure, imagetag):
-        """Search for image:tag in manifest and return Config and layer ids"""
-        if "manifest" in structure:
-            for repotag in structure["manifest"]:
-                if imagetag in repotag["RepoTags"]:
-                    layers = []
-                    for layer_file in repotag["Layers"]:
-                        layers.append(layer_file.replace("/layer.tar", ""))
-                    layers.reverse()
-                    return (repotag["Config"], layers)
-        return ("", [])
-
-    def _load_image_v1(self, structure, imagerepo, tag):
-        """Load a container image v1 into a repository mimic docker load"""
-        if not self.localrepo.set_version("v1"):
-            Msg().err("Error: setting repository version")
-            return []
-        imagetag = imagerepo + ':' + tag
-        (json_config_file, layers) = \
-                self._get_from_manifest(structure, imagetag)
-        if json_config_file:
-            layer_id = json_config_file.replace(".json", "")
-            json_file = structure["repoconfigs"][json_config_file]["json_f"]
-            self._copy_layer_to_repo(json_file, layer_id, "container.json")
-        else:
-            top_layer_id = self._find_top_layer_id(structure)
-            layers = self._sorted_layers(structure, top_layer_id)
-        for layer_id in layers:
-            Msg().out("Info: adding layer:", layer_id, l=Msg.INF)
-            if str(structure["repolayers"][layer_id]["VERSION"]) != "1.0":
-                Msg().err("Error: layer version unknown")
-                return []
-            for layer_item in ("json_f", "layer_f"):
-                filename = str(structure["repolayers"][layer_id][layer_item])
-                if not self._copy_layer_to_repo(filename, layer_id):
-                    Msg().err("Error: copying %s file %s"
-                              % (layer_item[:-2], filename), l=Msg.VER)
-                    return []
-        self.localrepo.save_json("ancestry", layers)
-        return [imagetag]
+    def _load_image_step2(self, structure, imagerepo, tag):
+        """Implementation specific image load"""
 
     def _load_image(self, structure, imagerepo, tag):
         """Load a container image into a repository mimic docker load"""
-        if self.localrepo.cd_imagerepo(imagerepo, tag):
+        if self._imagerepo and self._imagerepo != imagerepo:
+            cd_imagerepo = self._imagerepo
+        else:
+            cd_imagerepo = imagerepo
+        if self.localrepo.cd_imagerepo(cd_imagerepo, tag):
             Msg().err("Error: repository and tag already exist",
-                      imagerepo, tag)
+                      cd_imagerepo, tag)
             return []
         else:
-            self.localrepo.setup_imagerepo(imagerepo)
+            self.localrepo.setup_imagerepo(cd_imagerepo)
             tag_dir = self.localrepo.setup_tag(tag)
             if not tag_dir:
-                Msg().err("Error: setting up repository", imagerepo, tag)
+                Msg().err("Error: setting up repository", cd_imagerepo, tag)
                 return []
-            return self._load_image_v1(structure, imagerepo, tag)
-
-    def _load_repositories(self, structure):
-        """Load other image repositories into this local repo"""
-        if "repositories" not in structure:
-            return False
-        loaded_repositories = []
-        for imagerepo in structure["repositories"]:
-            for tag in structure["repositories"][imagerepo]:
-                if imagerepo and tag:
-                    if self._load_image(structure,
-                                        imagerepo, tag):
-                        loaded_repositories.append(imagerepo + ':' + tag)
-        return loaded_repositories
+            if not self.localrepo.set_version("v1"):
+                Msg().err("Error: setting repository version")
+                return []
+            return self._load_image_step2(structure, imagerepo, tag)
 
     def _untar_saved_container(self, tarfile, destdir):
         """Untar container created with docker save"""
-        # umask 022
+        #umask 022
         verbose = ''
         if Msg.level >= Msg.VER:
             verbose = 'v'
@@ -6132,118 +6019,6 @@ class DockerLocalFileAPI(object):
                "-f", tarfile]
         status = Uprocess().call(cmd, stderr=Msg.chlderr, close_fds=True)
         return not status
-
-    def load(self, imagefile):
-        """Load a Docker file created with docker save, mimic Docker
-        load. The file is a tarball containing several layers, each
-        layer has metadata and data content (directory tree) stored
-        as a tar file.
-        """
-        if not os.path.exists(imagefile) and imagefile != '-':
-            Msg().err("Error: image file does not exist:", imagefile)
-            return False
-        tmp_imagedir = FileUtil("load").mktmp()
-        try:
-            os.makedirs(tmp_imagedir)
-        except (IOError, OSError):
-            return False
-        if not self._untar_saved_container(imagefile, tmp_imagedir):
-            Msg().err("Error: failed to extract container:", imagefile)
-            FileUtil(tmp_imagedir).remove()
-            return False
-        structure = self._load_structure(tmp_imagedir)
-        if not structure:
-            Msg().err("Error: failed to load image structure", imagefile)
-            FileUtil(tmp_imagedir).remove()
-            return False
-        else:
-            if "repositories" in structure and structure["repositories"]:
-                repositories = self._load_repositories(structure)
-            else:
-                imagerepo = Unique().imagename()
-                tag = "latest"
-                repositories = self._load_image(structure, imagerepo, tag)
-            FileUtil(tmp_imagedir).remove()
-            return repositories
-
-    def _save_image(self, imagerepo, tag, structure, tmp_imagedir):
-        """Prepare structure with metadata for the image"""
-        self.localrepo.cd_imagerepo(imagerepo, tag)
-        (container_json, layer_files) = self.localrepo.get_image_attributes()
-        json_file = tmp_imagedir + "/container.json"
-        if (not container_json) or \
-           (not self.localrepo.save_json(json_file, container_json)):
-            return False
-        config_layer_id = str(ChkSUM().sha256(json_file))
-        FileUtil(json_file).rename(tmp_imagedir + '/' +
-                                   config_layer_id + ".json")
-        manifest_item = dict()
-        manifest_item["Config"] = config_layer_id + ".json"
-        manifest_item["RepoTags"] = [imagerepo + ':' + tag, ]
-        manifest_item["Layers"] = []
-        if imagerepo not in structure["repositories"]:
-            structure["repositories"][imagerepo] = dict()
-        parent_layer_id = ""
-        for layer_f in layer_files:
-            try:
-                layer_id = re.search(r"^(?:[^:]+:)?([a-z0-9]+)(?:\.layer)?$",
-                                     os.path.basename(layer_f)).group(1)
-            except AttributeError:
-                return False
-            if (layer_id in Config.ignore_layers or
-                    os.path.exists(tmp_imagedir + "/" + layer_id)):
-                continue
-            FileUtil(tmp_imagedir + "/" + layer_id).mkdir()
-            if not FileUtil(layer_f).copyto(tmp_imagedir + "/"
-                                            + layer_id + "/layer.tar"):
-                return False
-            manifest_item["Layers"].append(layer_id + "/layer.tar")
-            json_string = self.create_container_meta(layer_id)
-            if parent_layer_id:
-                json_string["parent"] = parent_layer_id
-            else:
-                structure["repositories"][imagerepo][tag] = layer_id
-            parent_layer_id = layer_id
-            if not self.localrepo.save_json(tmp_imagedir + "/"
-                                            + layer_id + "/json", json_string):
-                return False
-            version_f_path = tmp_imagedir + "/" + layer_id + "/VERSION"
-            if not FileUtil(version_f_path).putdata("1.0"):
-                return False
-        structure["manifest"].append(manifest_item)
-        return True
-
-    def save(self, imagetag_list, imagefile):
-        """Save a set of image tags to a file similarly to docker save
-        """
-        tmp_imagedir = FileUtil("save").mktmp()
-        try:
-            os.makedirs(tmp_imagedir)
-        except (IOError, OSError):
-            return False
-        structure = dict()
-        structure["manifest"] = []
-        structure["repositories"] = dict()
-        #structure["repoconfigs"] = dict()
-        #structure["repolayers"] = dict()
-        status = False
-        for (imagerepo, tag) in imagetag_list:
-            status = self._save_image(imagerepo, tag, structure, tmp_imagedir)
-            if not status:
-                Msg().err("Error: save image failed:", imagerepo + ':' + tag)
-                break
-        if status:
-            self.localrepo.save_json(tmp_imagedir + "/manifest.json",
-                                     structure["manifest"])
-            self.localrepo.save_json(tmp_imagedir + "/repositories",
-                                     structure["repositories"])
-            if not FileUtil(tmp_imagedir).tar(imagefile):
-                Msg().err("Error: save image failed in writing tar", imagefile)
-                status = False
-        else:
-            Msg().err("Error: no images specified")
-        FileUtil(tmp_imagedir).remove()
-        return status
 
     def create_container_meta(self, layer_id, comment="created by udocker"):
         """Create metadata for a given container layer, used in import.
@@ -6417,6 +6192,401 @@ class DockerLocalFileAPI(object):
             exec_mode.set_mode(xmode, True)
         return dest_container_id
 
+    def _get_imagedir_type(self, tmp_imagedir):
+        """Identify type of image from extracted image directory"""
+        image_types_list = [(tmp_imagedir + "/oci-layout", "OCI"),
+                            (tmp_imagedir + "/manifest.json", "Docker"), ]
+        for (checkfile, imagetype) in image_types_list:
+            if os.path.exists(checkfile):
+                return imagetype
+        return ""
+
+
+class DockerLocalFileAPI(CommonLocalFileApi):
+    """Manipulate Docker container and/or image files"""
+
+    def __init__(self, localrepo):
+        CommonLocalFileApi.__init__(self, localrepo)
+
+    def _load_structure(self, tmp_imagedir):
+        """Load the structure of a Docker image"""
+        structure = {}
+        structure["repolayers"] = dict()
+        structure["repoconfigs"] = dict()
+        for fname in os.listdir(tmp_imagedir):
+            f_path = tmp_imagedir + '/' + fname
+            if fname == "repositories":
+                structure["repositories"] = \
+                        self.localrepo.load_json(f_path)
+            elif fname == "manifest.json":
+                structure["manifest"] = \
+                        self.localrepo.load_json(f_path)
+            elif len(fname) >= 69 and fname.endswith(".json"):
+                structure["repoconfigs"][fname] = dict()
+                structure["repoconfigs"][fname]["json"] = \
+                        self.localrepo.load_json(f_path)
+                structure["repoconfigs"][fname]["json_f"] = \
+                        f_path
+            elif len(fname) >= 64 and FileUtil(f_path).isdir():
+                layer_id = fname
+                structure["repolayers"][layer_id] = dict()
+                for layer_f in os.listdir(f_path):
+                    layer_f_path = f_path + '/' + layer_f
+                    if layer_f == "VERSION":
+                        structure["repolayers"][layer_id]["VERSION"] = \
+                                self.localrepo.load_json(layer_f_path)
+                    elif layer_f == "json":
+                        structure["repolayers"][layer_id]["json"] = \
+                                self.localrepo.load_json(layer_f_path)
+                        structure["repolayers"][layer_id]["json_f"] = \
+                                layer_f_path
+                    elif "layer" in layer_f:
+                        structure["repolayers"][layer_id]["layer_f"] = \
+                                layer_f_path
+                    else:
+                        Msg().err("Warning: unkwnon file in layer:",
+                                  f_path, l=Msg.WAR)
+            else:
+                Msg().err("Warning: unkwnon file in image:", f_path,
+                          l=Msg.WAR)
+        return structure
+
+    def _find_top_layer_id(self, structure, my_layer_id=""):
+        """Find the top layer within a Docker image"""
+        if "repolayers" not in structure:
+            return ""
+        else:
+            if not my_layer_id:
+                my_layer_id = structure["repolayers"].keys()[0]
+            found = ""
+            for layer_id in structure["repolayers"]:
+                if "parent" not in structure["repolayers"][layer_id]["json"]:
+                    continue
+                elif (my_layer_id ==
+                      structure["repolayers"][layer_id]["json"]["parent"]):
+                    found = self._find_top_layer_id(structure, layer_id)
+                    break
+            if not found:
+                return my_layer_id
+            return found
+
+    def _sorted_layers(self, structure, top_layer_id):
+        """Return the layers sorted"""
+        sorted_layers = []
+        next_layer = top_layer_id
+        while next_layer:
+            sorted_layers.append(next_layer)
+            if "parent" not in structure["repolayers"][next_layer]["json"]:
+                break
+            else:
+                next_layer = structure["repolayers"][next_layer]["json"]["parent"]
+                if not next_layer:
+                    break
+        return sorted_layers
+
+    def _get_from_manifest(self, structure, imagetag):
+        """Search for image:tag in manifest and return Config and layer ids"""
+        if "manifest" in structure:
+            for repotag in structure["manifest"]:
+                if imagetag in repotag["RepoTags"]:
+                    layers = []
+                    for layer_file in repotag["Layers"]:
+                        layers.append(layer_file.replace("/layer.tar", ""))
+                    layers.reverse()
+                    return (repotag["Config"], layers)
+        return ("", [])
+
+    def _load_image_step2(self, structure, imagerepo, tag):
+        """Load a container image into a repository mimic docker load"""
+        imagetag = imagerepo + ':' + tag
+        (json_config_file, layers) = \
+                self._get_from_manifest(structure, imagetag)
+        if json_config_file:
+            layer_id = json_config_file.replace(".json", "")
+            json_file = structure["repoconfigs"][json_config_file]["json_f"]
+            self._move_layer_to_v1repo(json_file, layer_id, "container.json")
+        else:
+            top_layer_id = self._find_top_layer_id(structure)
+            layers = self._sorted_layers(structure, top_layer_id)
+        for layer_id in layers:
+            Msg().out("Info: adding layer:", layer_id, l=Msg.INF)
+            if str(structure["repolayers"][layer_id]["VERSION"]) != "1.0":
+                Msg().err("Error: layer version unknown")
+                return []
+            for layer_item in ("json_f", "layer_f"):
+                filename = str(structure["repolayers"][layer_id][layer_item])
+                if not self._move_layer_to_v1repo(filename, layer_id):
+                    Msg().err("Error: copying %s file %s"
+                              % (layer_item[:-2], filename), l=Msg.VER)
+                    return []
+        self.localrepo.save_json("ancestry", layers)
+        if self._imagerepo:
+            imagetag = self._imagerepo + ':' + tag
+        return [imagetag]
+
+    def _load_repositories(self, structure):
+        """Load other image repositories into this local repo"""
+        if "repositories" not in structure:
+            return False
+        loaded_repositories = []
+        for imagerepo in structure["repositories"]:
+            for tag in structure["repositories"][imagerepo]:
+                if imagerepo and tag:
+                    loaded_repo = self._load_image(structure, imagerepo, tag)
+                    if loaded_repo:
+                        loaded_repositories.extend(loaded_repo)
+        return loaded_repositories
+
+    def load(self, tmp_imagedir, imagerepo=None):
+        """Load a Docker file created with docker save, mimic Docker
+        load. The file is a tarball containing several layers, each
+        layer has metadata and data content (directory tree) stored
+        as a tar file.
+        """
+        self._imagerepo = imagerepo
+        structure = self._load_structure(tmp_imagedir)
+        if not structure:
+            Msg().err("Error: failed to load image structure")
+            return []
+        if "repositories" in structure and structure["repositories"]:
+            repositories = self._load_repositories(structure)
+        else:
+            if not imagerepo:
+                imagerepo = Unique().imagename()
+            tag = Unique().imagetag()
+            repositories = self._load_image(structure, imagerepo, tag)
+        return repositories
+
+    def _save_image(self, imagerepo, tag, structure, tmp_imagedir):
+        """Prepare structure with metadata for the image"""
+        self.localrepo.cd_imagerepo(imagerepo, tag)
+        (container_json, layer_files) = self.localrepo.get_image_attributes()
+        json_file = tmp_imagedir + "/container.json"
+        if (not container_json) or \
+           (not self.localrepo.save_json(json_file, container_json)):
+            return False
+        config_layer_id = str(ChkSUM().sha256(json_file))
+        FileUtil(json_file).rename(tmp_imagedir + '/' +
+                                   config_layer_id + ".json")
+        manifest_item = dict()
+        manifest_item["Config"] = config_layer_id + ".json"
+        manifest_item["RepoTags"] = [imagerepo + ':' + tag, ]
+        manifest_item["Layers"] = []
+        if imagerepo not in structure["repositories"]:
+            structure["repositories"][imagerepo] = dict()
+        parent_layer_id = ""
+        for layer_f in layer_files:
+            try:
+                layer_id = re.search(r"^(?:[^:]+:)?([a-z0-9]+)(?:\.layer)?$",
+                                     os.path.basename(layer_f)).group(1)
+            except AttributeError:
+                return False
+            if (layer_id in Config.ignore_layers or
+                    os.path.exists(tmp_imagedir + "/" + layer_id)):
+                continue
+            FileUtil(tmp_imagedir + "/" + layer_id).mkdir()
+            if not FileUtil(layer_f).copyto(tmp_imagedir + "/"
+                                            + layer_id + "/layer.tar"):
+                return False
+            manifest_item["Layers"].append(layer_id + "/layer.tar")
+            json_string = self.create_container_meta(layer_id)
+            if parent_layer_id:
+                json_string["parent"] = parent_layer_id
+            else:
+                structure["repositories"][imagerepo][tag] = layer_id
+            parent_layer_id = layer_id
+            if not self.localrepo.save_json(tmp_imagedir + "/"
+                                            + layer_id + "/json", json_string):
+                return False
+            version_f_path = tmp_imagedir + "/" + layer_id + "/VERSION"
+            if not FileUtil(version_f_path).putdata("1.0"):
+                return False
+        structure["manifest"].append(manifest_item)
+        return True
+
+    def save(self, imagetag_list, imagefile):
+        """Save a set of image tags to a file similarly to docker save
+        """
+        tmp_imagedir = FileUtil("save").mktmp()
+        try:
+            os.makedirs(tmp_imagedir)
+        except (IOError, OSError):
+            return False
+        structure = dict()
+        structure["manifest"] = []
+        structure["repositories"] = dict()
+        status = False
+        for (imagerepo, tag) in imagetag_list:
+            status = self._save_image(imagerepo, tag, structure, tmp_imagedir)
+            if not status:
+                Msg().err("Error: save image failed:", imagerepo + ':' + tag)
+                break
+        if status:
+            self.localrepo.save_json(tmp_imagedir + "/manifest.json",
+                                     structure["manifest"])
+            self.localrepo.save_json(tmp_imagedir + "/repositories",
+                                     structure["repositories"])
+            if not FileUtil(tmp_imagedir).tar(imagefile):
+                Msg().err("Error: save image failed in writing tar", imagefile)
+                status = False
+        else:
+            Msg().err("Error: no images specified")
+        FileUtil(tmp_imagedir).remove()
+        return status
+
+
+class OciLocalFileAPI(CommonLocalFileApi):
+    """Manipulate OCI container and/or image files"""
+
+    def __init__(self, localrepo):
+        CommonLocalFileApi.__init__(self, localrepo)
+
+    def _load_structure(self, tmp_imagedir):
+        """Load OCI image structure"""
+        structure = {}
+        structure["repolayers"] = dict()
+        structure["manifest"] = dict()
+        f_path = tmp_imagedir + '/'
+        structure["oci-layout"] = \
+                self.localrepo.load_json(f_path + "oci-layout")
+        structure["index"] = \
+                self.localrepo.load_json(f_path + "index.json")
+        if not (structure["index"] and structure["oci-layout"]):
+            return {}
+        for fname in os.listdir(tmp_imagedir + "/blobs"):
+            f_path = tmp_imagedir + "/blobs/" + fname
+            if FileUtil(f_path).isdir():
+                layer_algorithm = fname
+                for layer_f in os.listdir(f_path):
+                    layer_id = layer_algorithm + ':' + layer_f
+                    structure["repolayers"][layer_id] = dict()
+                    structure["repolayers"][layer_id]["layer_f"] = \
+                            f_path + '/' + layer_f
+                    structure["repolayers"][layer_id]["layer_a"] = \
+                            layer_algorithm
+                    structure["repolayers"][layer_id]["layer_h"] = \
+                            layer_f
+        return structure
+
+    def _get_from_manifest(self, structure, imagetag):
+        """Search for OCI manifest and return Config and layer ids"""
+        try:
+            config_layer = \
+                    structure["manifest"][imagetag]["json"]["config"]["digest"]
+        except (KeyError, ValueError, TypeError):
+            config_layer = ""
+        try:
+            layers = []
+            for layer in structure["manifest"][imagetag]["json"]["layers"]:
+                layers.append(layer["digest"])
+            layers.reverse()
+            return (config_layer, layers)
+        except (KeyError, ValueError, TypeError):
+            return (config_layer, [])
+
+    def _load_manifest(self, structure, manifest):
+        """Load OCI manifest"""
+        try:
+            tag = manifest["annotations"]["org.opencontainers.image.ref.name"]
+        except KeyError:
+            tag = Unique().imagetag()
+        if not self._imagerepo:
+            self._imagerepo = Unique().imagename()
+        imagetag = self._imagerepo +  ':' + tag
+        structure["manifest"][imagetag] = dict()
+        structure["manifest"][imagetag]["json"] = \
+                self.localrepo.load_json(structure["repolayers"]\
+                [manifest["digest"]]["layer_f"])
+        structure["manifest"][imagetag]["json_f"] = \
+                structure["repolayers"][manifest["digest"]]["layer_f"]
+        return self._load_image(structure, self._imagerepo, tag)
+
+    def _load_repositories(self, structure):
+        """Load OCI image repositories"""
+        loaded_repositories = []
+        for manifest in structure["index"]["manifests"]:
+            if manifest["mediaType"] == \
+                    "application/vnd.oci.image.manifest.v1+json":
+                loaded_repositories.append(
+                    self._load_manifest(structure, manifest))
+            elif manifest["mediaType"] == \
+                    "application/vnd.oci.image.index.v1+json":
+                loaded_repositories.extend(self._load_repositories(
+                    self.localrepo.load_json(
+                        structure["repolayers"]
+                        [manifest["digest"]]["layer_f"])))
+        return loaded_repositories
+
+    def _load_image_step2(self, structure, imagerepo, tag):
+        """Prepare load of OCI image"""
+        imagetag = imagerepo + ':' + tag
+        (config_layer_id, layers) = \
+                self._get_from_manifest(structure, imagetag)
+        if config_layer_id:
+            json_file = structure["repolayers"][config_layer_id]["layer_f"]
+            self._move_layer_to_v1repo(json_file, config_layer_id,
+                                       "container.json")
+        layer_hash_list = []
+        for layer_id in layers:
+            Msg().out("Info: adding layer:", layer_id, l=Msg.INF)
+            filename = str(structure["repolayers"][layer_id]["layer_f"])
+            if not self._move_layer_to_v1repo(filename, layer_id):
+                Msg().err("Error: copying layer file", filename, l=Msg.VER)
+                return []
+            layer_hash_list.append(structure["repolayers"][layer_id]["layer_h"])
+        self.localrepo.save_json("ancestry", layer_hash_list)
+        return [imagetag]
+
+    def load(self, tmp_imagedir, imagerepo=None):
+        """Load an OCI image file The file is a tarball containing several
+        layers, each layer has metadata and data content (directory tree)
+        stored as a tar file.
+        """
+        self._imagerepo = imagerepo
+        structure = self._load_structure(tmp_imagedir)
+        if not structure:
+            Msg().err("Error: failed to load image structure")
+            return []
+        return self._load_repositories(structure)
+
+
+class LocalFileAPI(CommonLocalFileApi):
+    """Generic manipulation of containers and/or image files"""
+
+    def __init__(self, localrepo):
+        CommonLocalFileApi.__init__(self, localrepo)
+
+    def load(self, imagefile, imagerepo=None):
+        """Generic load of image tags to a file"""
+        if not os.path.exists(imagefile) and imagefile != '-':
+            Msg().err("Error: image file does not exist:", imagefile)
+            return False
+        tmp_imagedir = FileUtil("load").mktmp()
+        try:
+            os.makedirs(tmp_imagedir)
+        except (IOError, OSError):
+            return False
+        if not self._untar_saved_container(imagefile, tmp_imagedir):
+            Msg().err("Error: failed to extract container:", imagefile)
+            FileUtil(tmp_imagedir).remove()
+            return False
+        imagetype = self._get_imagedir_type(tmp_imagedir)
+        if imagetype == "Docker":
+            repositories = DockerLocalFileAPI(
+                self.localrepo).load(tmp_imagedir, imagerepo)
+        elif imagetype == "OCI":
+            repositories = OciLocalFileAPI(
+                self.localrepo).load(tmp_imagedir, imagerepo)
+        else:
+            repositories = []
+        FileUtil(tmp_imagedir).remove()
+        return repositories
+
+    def save(self, imagetag_list, imagefile):
+        """Generic save of image tags to a file"""
+        return DockerLocalFileAPI(self.localrepo).save(
+            imagetag_list, imagefile)
+
 
 class Udocker(object):
     """Implements most of the command line interface.
@@ -6427,7 +6597,7 @@ class Udocker(object):
     def __init__(self, localrepo):
         self.localrepo = localrepo
         self.dockerioapi = DockerIoAPI(localrepo)
-        self.dockerlocalfileapi = DockerLocalFileAPI(localrepo)
+        self.dockerlocalfileapi = LocalFileAPI(localrepo)
         if Config.keystore.startswith('/'):
             self.keystore = KeyStore(Config.keystore)
         else:
@@ -6447,7 +6617,7 @@ class Udocker(object):
         return True
 
     def _check_imagespec(self, imagespec, def_imagespec=None):
-        """Perform the image verification"""
+        """Check image:tag syntax"""
         if (not imagespec) and def_imagespec:
             imagespec = def_imagespec
         try:
@@ -6460,6 +6630,16 @@ class Udocker(object):
             Msg().err("Error: must specify image:tag or repository/image:tag")
             return(None, None)
         return imagerepo, tag
+
+    def _check_imagerepo(self, imagerepo, def_imagerepo=None):
+        """Check image repository syntax"""
+        if (not imagerepo) and def_imagerepo:
+            imagerepo = def_imagerepo
+        if not (imagerepo and
+                self.dockerioapi.is_repo_name(imagerepo)):
+            Msg().err("Error: must specify image or repository/image without tag")
+            return None
+        return imagerepo
 
     def do_mkrepo(self, cmdp):
         """
@@ -6553,7 +6733,7 @@ class Udocker(object):
     def do_load(self, cmdp):
         """
         load: load an  image saved by docker with 'docker save'
-        load [options] <repo/image:tag>
+        load [options] <repo/image>
         --input=<image-file>        :load image file saved by docker
         -i <image-file>             :load image file saved by docker
         """
@@ -6566,12 +6746,18 @@ class Udocker(object):
         if from_stdin:
             imagefile = '-'
             cmdp.get("-i")
+        imagerepo = cmdp.get("P1")
+        if imagerepo == '-':
+            imagefile = '-'
+            imagerepo = cmdp.get("P2")
         if cmdp.missing_options():  # syntax error
             return False
         if not imagefile:
             Msg().err("Error: must specify filename of docker exported image")
             return False
-        repos = self.dockerlocalfileapi.load(imagefile)
+        if imagerepo and not self._check_imagerepo(imagerepo):
+            return False
+        repos = self.dockerlocalfileapi.load(imagefile, imagerepo)
         if not repos:
             Msg().err("Error: load failed")
             return False

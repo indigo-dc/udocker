@@ -12,6 +12,8 @@ udocker (1.1.4)
   * Added Fn libraries for Alpine 3.8, 3.9, 3.10
   * Added support for sha512 hashes
   * Added support for opaque whiteouts
+  * Added minimal support to import OCI images
+    - closes: #111
   * Added Pn support for Fedora30 and ubuntu19
     - closes: #192
   * Improve robustness of the installation of udockertools
