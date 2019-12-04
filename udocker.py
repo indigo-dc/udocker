@@ -5285,20 +5285,20 @@ class GetURLexeCurl(GetURL):
     def _set_defaults(self):
         """Set defaults for curl command line options"""
         self._opts = {
-            "insecure": "",
-            "header": "",
-            "verbose": "",
-            "nobody": "",
-            "proxy": "",
-            "resume": "",
-            "ctimeout": "--connect-timeout " + str(self.ctimeout),
-            "timeout": "-m " + str(self.timeout),
-            "other": "-s -q -S"
+            "insecure": [],
+            "header": [],
+            "verbose": [],
+            "nobody": [],
+            "proxy": [],
+            "resume": [],
+            "ctimeout": ["--connect-timeout", str(self.ctimeout)],
+            "timeout": ["-m", str(self.timeout)],
+            "other": ["-s", "-q", "-S"]
         }
         if self.insecure:
-            self._opts["insecure"] = "-k"
+            self._opts["insecure"] = ["-k"]
         if Msg().level > Msg.DBG:
-            self._opts["verbose"] = "-v"
+            self._opts["verbose"] = ["-v"]
         self._files = {
             "url":  "",
             "error_file": FileUtil("execurl_err").mktmp(),
@@ -5310,17 +5310,16 @@ class GetURLexeCurl(GetURL):
         """Prepare curl command line according to invocation options"""
         self._files["url"] = str(args[0])
         if "post" in kwargs:
-            self._opts["post"] = "-X POST -H Content-Type: application/json' "
-            self._opts["post"] += "-d '%s'" % (json.dumps(kwargs["post"]))
+            self._opts["post"] = ["-X", "POST", "-H", "Content-Type: application/json"]
+            self._opts["post"] += ["-d", json.dumps(kwargs["post"])]
         if "ctimeout" in kwargs:
-            self._opts["ctimeout"] = "--connect-timeout %s" \
-                % (str(kwargs["ctimeout"]))
+            self._opts["ctimeout"] = ["--connect-timeout", str(kwargs["ctimeout"])]
         if "timeout" in kwargs:
-            self._opts["timeout"] = "-m %s" % (str(kwargs["timeout"]))
+            self._opts["timeout"] = ["-m", str(kwargs["timeout"])]
         if "proxy" in kwargs and kwargs["proxy"]:
-            self._opts["proxy"] = "--proxy '%s'" % (str(kwargs["proxy"]))
+            self._opts["proxy"] = ["--proxy", str(kwargs["proxy"])]
         elif self.http_proxy:
-            self._opts["proxy"] = "--proxy '%s'" % (self.http_proxy)
+            self._opts["proxy"] = ["--proxy", self.http_proxy]
         if "header" in kwargs:
             for header_item in kwargs["header"]:
                 if str(header_item).startswith("Authorization: Bearer"):
@@ -5328,24 +5327,25 @@ class GetURLexeCurl(GetURL):
                         continue
                     if "redirect" in kwargs:
                         continue
-                    self._opts["header"] += "-H '%s'" % (str(header_item))
+                    self._opts["header"] += ["-H", str(header_item)]
         if 'v' in kwargs and kwargs['v']:
-            self._opts["verbose"] = "-v"
+            self._opts["verbose"] = ["-v"]
         if "nobody" in kwargs and kwargs["nobody"]:
-            self._opts["nobody"] = "--head"
+            self._opts["nobody"] = ["--head"]
         if "ofile" in kwargs:
             FileUtil(self._files["output_file"]).remove()
             self._files["output_file"] = kwargs["ofile"] + ".tmp"
-            self._opts["timeout"] = "-m %s" % (str(self.download_timeout))
+            self._opts["timeout"] = ["-m", str(self.download_timeout)]
             if "resume" in kwargs and kwargs["resume"]:
-                self._opts["resume"] = "-C -"
-        curl_executable = "curl"
+                self._opts["resume"] = ["-C", "-"]
+        cmd = ["curl"]
         if self._curl_executable and isinstance(self._curl_executable, str):
-            curl_executable = self._curl_executable
-        cmd = [curl_executable, ].extend(self._opts.values())
-        cmd += ["-D", self._files["header_file"], "-o",
+            cmd = [self._curl_executable]
+        for opt in self._opts.values():
+            cmd += opt
+        cmd.extend(["-D", self._files["header_file"], "-o",
                 self._files["output_file"], "--stderr",
-                self._files["error_file"], self._files["url"]]
+                self._files["error_file"], self._files["url"]])
         return cmd
 
     def get(self, *args, **kwargs):
