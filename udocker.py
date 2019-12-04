@@ -4850,6 +4850,7 @@ class LocalRepository(object):
                         structure["repolayers"][layer_id]["json"] = \
                             self.load_json(f_path)
                         structure["repolayers"][layer_id]["json_f"] = f_path
+                        structure["has_json_f"] = True
                     elif fname.endswith("layer"):
                         structure["repolayers"][layer_id]["layer_f"] = f_path
                     elif ':' in fname:
@@ -4986,7 +4987,7 @@ class LocalRepository(object):
             return False
         Msg().out("Info: verifying layers", l=Msg.INF)
         status = True
-        if "ancestry" in structure:
+        if "ancestry" in structure and "has_json_f" in structure:
             status = self._verify_image_v1(structure)
         elif "manifest" in structure:
             if "fsLayers" in structure["manifest"]:
