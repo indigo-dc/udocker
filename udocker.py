@@ -4852,7 +4852,7 @@ class LocalRepository(object):
                         structure["repolayers"][layer_id]["json_f"] = f_path
                     elif fname.endswith("layer"):
                         structure["repolayers"][layer_id]["layer_f"] = f_path
-                    elif fname.startswith("sha"):
+                    elif ':' in fname:
                         structure["repolayers"][layer_id]["layer_f"] = f_path
                     else:
                         Msg().err("Warning: unkwnon file in layer:", f_path,
