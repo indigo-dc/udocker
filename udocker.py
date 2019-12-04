@@ -5121,7 +5121,7 @@ class GetURL(object):
         kwargs["post"] = args[1]
         return self._geturl.get(args[0], **kwargs)
 
-    def _get_status_code(self, status_line):
+    def get_status_code(self, status_line):
         """
         get http status code from http status line.
         Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
@@ -5223,39 +5223,32 @@ class GetURLpyCurl(GetURL):
 
     def get(self, *args, **kwargs):
         """http get implementation using the PyCurl"""
-        cont_redirs = 0
-        max_redirs = 10
-        status_code = 302
-        while status_code >= 300 and status_code <= 308 and cont_redirs < max_redirs:
-            cont_redirs += 1
-            hdr = CurlHeader()
-            buf = cStringIO.StringIO()
-            pyc = pycurl.Curl()
-            self._set_defaults(pyc, hdr)
-            try:
-                (output_file, filep) = self._mkpycurl(pyc, hdr, buf, *args, **kwargs)
-                Msg().err("curl url: ", self._url, l=Msg.DBG)
-                Msg().err("curl arg: ", kwargs, l=Msg.DBG)
-                pyc.perform()     # call pyculr
-            except(IOError, OSError):
-                return(None, None)
-            except pycurl.error as error:
-                errno, errstr = error
-                hdr.data["X-ND-CURLSTATUS"] = errno
-                if not hdr.data["X-ND-HTTPSTATUS"]:
-                    hdr.data["X-ND-HTTPSTATUS"] = errstr
-            status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])
-            if status_code >= 300 and status_code <= 308:
-                args = (hdr.data['location'],)
-                kwargs["redirect"] = True
-
+        hdr = CurlHeader()
+        buf = cStringIO.StringIO()
+        pyc = pycurl.Curl()
+        self._set_defaults(pyc, hdr)
+        try:
+            (output_file, filep) = self._mkpycurl(pyc, hdr, buf, *args, **kwargs)
+            Msg().err("curl url: ", self._url, l=Msg.DBG)
+            Msg().err("curl arg: ", kwargs, l=Msg.DBG)
+            pyc.perform()     # call pyculr
+        except(IOError, OSError):
+            return(None, None)
+        except pycurl.error as error:
+            errno, errstr = error
+            hdr.data["X-ND-CURLSTATUS"] = errno
+            if not hdr.data["X-ND-HTTPSTATUS"]:
+                hdr.data["X-ND-HTTPSTATUS"] = errstr
+        status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
-        if "ofile" in kwargs:
+        if status_code == 401: # needs authentication
+            pass
+        elif status_code >= 300 and status_code <= 308: # redirect
+            pass
+        elif "ofile" in kwargs:
             filep.close()
-            if status_code == 401:  # needs authentication
-                pass
-            elif status_code == 206 and "resume" in kwargs:
+            if status_code == 206 and "resume" in kwargs:
                 pass
             elif status_code == 416 and "resume" in kwargs:
                 kwargs["resume"] = False
@@ -5328,7 +5321,7 @@ class GetURLexeCurl(GetURL):
                         continue
                     if "redirect" in kwargs:
                         continue
-                    self._opts["header"] += ["-H", str(header_item)]
+                self._opts["header"] += ["-H", str(header_item)]
         if 'v' in kwargs and kwargs['v']:
             self._opts["verbose"] = ["-v"]
         if "nobody" in kwargs and kwargs["nobody"]:
@@ -5351,47 +5344,40 @@ class GetURLexeCurl(GetURL):
 
     def get(self, *args, **kwargs):
         """http get implementation using the curl cli executable"""
-        cont_redirs = 0
-        max_redirs = 10
-        status_code = 302
-        while status_code >= 300 and status_code <= 308 and cont_redirs < max_redirs:
-            cont_redirs += 1
-            hdr = CurlHeader()
-            buf = cStringIO.StringIO()
-            self._set_defaults()
-            cmd = self._mkcurlcmd(*args, **kwargs)
-            status = Uprocess().call(cmd, close_fds=True, stderr=Msg.chlderr,
-                                     stdout=Msg.chlderr) # call curl
-            hdr.setvalue_from_file(self._files["header_file"])
-            hdr.data["X-ND-CURLSTATUS"] = status
-            if status:
-                Msg().err("Error: in download: %s"
-                          % str(FileUtil(self._files["error_file"]).getdata()))
-                FileUtil(self._files["output_file"]).remove()
-                return(hdr, buf)
-            status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])
-            if status_code >= 300 and status_code <= 308:
-                args = (hdr.data['location'],)
-                kwargs["redirect"] = True
-
+        hdr = CurlHeader()
+        buf = cStringIO.StringIO()
+        self._set_defaults()
+        cmd = self._mkcurlcmd(*args, **kwargs)
+        status = Uprocess().call(cmd, close_fds=True, stderr=Msg.chlderr,
+                                 stdout=Msg.chlderr) # call curl
+        hdr.setvalue_from_file(self._files["header_file"])
+        hdr.data["X-ND-CURLSTATUS"] = status
+        if status:
+            Msg().err("Error: in download: %s"
+                      % str(FileUtil(self._files["error_file"]).getdata()))
+            FileUtil(self._files["output_file"]).remove()
+            return(hdr, buf)
+        status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
-        if "ofile" in kwargs:
-            if " 401" in hdr.data["X-ND-HTTPSTATUS"]:  # needs authentication
-                pass
-            elif " 206" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
+        if status_code == 401: # needs authentication
+            pass
+        elif status_code >= 300 and status_code <= 308: # redirect
+            pass
+        elif "ofile" in kwargs:
+            if status_code == 206 and "resume" in kwargs:
                 os.rename(self._files["output_file"], kwargs["ofile"])
-            elif " 416" in hdr.data["X-ND-HTTPSTATUS"]:
+            elif status_code == 416:
                 if "resume" in kwargs:
                     kwargs["resume"] = False
                 (hdr, buf) = self.get(self._files["url"], **kwargs)
-            elif " 200" not in hdr.data["X-ND-HTTPSTATUS"]:
+            elif status_code != 200:
                 Msg().err("Error: in download: ", str(
                     hdr.data["X-ND-HTTPSTATUS"]), ": ", str(status))
                 FileUtil(self._files["output_file"]).remove()
             else:  # OK downloaded
                 os.rename(self._files["output_file"], kwargs["ofile"])
-        else:
+        if "ofile" not in kwargs:
             try:
                 buf = cStringIO.StringIO(open(self._files["output_file"],
                                               'r').read())
@@ -5451,29 +5437,40 @@ class DockerIoAPI(object):
              _get_url(url, ctimeout=5, timeout=5, header=[]):
         """
         url = str(args[0])
-        if "RETRY" not in kwargs:
-            kwargs["RETRY"] = 3
+        if "RETRY" not in kwargs: kwargs["RETRY"] = 3
+        if "FOLLOW" not in kwargs: kwargs["FOLLOW"] = 3
         kwargs["RETRY"] -= 1
         (hdr, buf) = self.curl.get(*args, **kwargs)
         Msg().err("header: %s" % (hdr.data), l=Msg.DBG)
-        if ("X-ND-HTTPSTATUS" in hdr.data and
-                "401" in hdr.data["X-ND-HTTPSTATUS"]):
+        Msg().err("buffer: %s" % (buf.getvalue()), l=Msg.DBG)
+        status_code = self.curl.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
+        if status_code == 200:
+            return(hdr, buf)
+        if not kwargs["RETRY"]:
+            hdr.data["X-ND-CURLSTATUS"] = 13  # Permission denied
+            return(hdr, buf)
+        auth_kwargs = kwargs.copy()
+        if "location" not in hdr.data:
+            kwargs["FOLLOW"] = 3
+        if "location" in hdr.data and hdr.data['location']:
+            if not kwargs["FOLLOW"]:
+                hdr.data["X-ND-CURLSTATUS"] = 13
+                return(hdr, buf)
+            kwargs["FOLLOW"] -= 1
+            args = [hdr.data['location']]
+            if "header" in auth_kwargs:
+                del(auth_kwargs["header"])
+        elif status_code == 401:
             if "www-authenticate" in hdr.data and hdr.data["www-authenticate"]:
-                if "RETRY" in kwargs and kwargs["RETRY"]:
-                    auth_header = ""
-                    if "/v2/" in url:
-                        auth_header = self._get_v2_auth(
-                            hdr.data["www-authenticate"], kwargs["RETRY"])
-                    elif "/v1/" in url:
-                        auth_header = self._get_v1_auth(
-                            hdr.data["www-authenticate"])
-                    auth_kwargs = kwargs.copy()
-                    auth_kwargs.update({"header": [auth_header]})
-                    if "location" in hdr.data and hdr.data['location']:
-                        args = hdr.data['location']
-                    (hdr, buf) = self._get_url(*args, **auth_kwargs)
-                else:
-                    hdr.data["X-ND-CURLSTATUS"] = 13  # Permission denied
+                auth_header = ""
+                if "/v2/" in url:
+                    auth_header = self._get_v2_auth(
+                        hdr.data["www-authenticate"], kwargs["RETRY"])
+                elif "/v1/" in url:
+                    auth_header = self._get_v1_auth(
+                        hdr.data["www-authenticate"])
+                auth_kwargs.update({"header": [auth_header]})
+        (hdr, buf) = self._get_url(*args, **auth_kwargs)
         return(hdr, buf)
 
     def _get_file(self, url, filename, cache_mode):
@@ -5864,7 +5861,9 @@ class DockerIoAPI(object):
                 registry_url = Config.docker_registries[registry][0]
                 index_url = Config.docker_registries[registry][1]
             except (KeyError, NameError, TypeError):
-                registry_url = "https://%s" % registry
+                registry_url = registry
+                if "://" not in registry:
+                    registry_url = "https://%s" % registry
                 index_url = registry_url
             if registry_url:
                 self.registry_url = registry_url
@@ -6642,6 +6641,55 @@ class Udocker(object):
             return None
         return imagerepo
 
+    def _set_repository(self,
+            registry_url, index_url, imagerepo=None, http_proxy=None):
+        """Select docker respository"""
+        transport = "https:"
+        if http_proxy:
+            self.dockerioapi.set_proxy(http_proxy)
+        if registry_url:
+            self.dockerioapi.set_registry(registry_url)
+        if index_url: 
+            self.dockerioapi.set_index(index_url)
+        if not (registry_url or index_url):
+            try:
+                if "://" in imagerepo:
+                    (transport, dummy, hostname) = imagerepo.split('/')[:3]
+                else:
+                    (hostname, dummy) = imagerepo.split('/')[:2]
+            except (ValueError, IndexError, TypeError):
+                return
+            if "." in hostname:
+                try:
+                    self.dockerioapi.set_registry(
+                            Config.docker_registries[hostname][0])
+                    self.dockerioapi.set_index(
+                            Config.docker_registries[hostname][1])
+                except (KeyError, NameError, TypeError):
+                    self.dockerioapi.set_registry(transport + "//" + hostname)
+                    self.dockerioapi.set_index(transport + "//" + hostname)
+        return
+  
+    def _split_imagespec(self, imagerepo):
+        """Split image repo into hostname, repo, tag"""
+        transport = ""
+        hostname = ""
+        image = imagerepo
+        tag = ""
+        try:
+            if "://" in imagerepo:
+                (transport, dummy, hostname, image) = imagerepo.split('/', 4)
+            elif '/' in imagerepo:
+                (hostname, image) = imagerepo.split('/', 2)
+        except (ValueError, IndexError, TypeError):
+            pass
+        if hostname and '.' not in hostname:
+            image = hostname + '/' + image
+            hostname = ""
+        if ':' in image:    
+            (image, tag) = image.split(':', 1)
+        return (transport, hostname, image, tag)
+
     def do_mkrepo(self, cmdp):
         """
         mkrepo: create a local repository in a specified directory
@@ -6696,17 +6744,20 @@ class Udocker(object):
         -a                                              :do not pause
         --index=<url>                ex. https://index.docker.io/v1
         --registry=<url>             ex. https://registry-1.docker.io
+        --httpproxy=socks4://user:pass@host:port        :use http proxy
+        --httpproxy=socks5://user:pass@host:port        :use http proxy
+        --httpproxy=socks4://host:port                  :use http proxy
+        --httpproxy=socks5://host:port                  :use http proxy
         """
         pause = not cmdp.get("-a")
         index_url = cmdp.get("--index=")
         registry_url = cmdp.get("--registry=")
-        expression = cmdp.get("P1").split("/")[0].split(":")[0]
-        if index_url:
-            self.dockerioapi.set_index(index_url)
-        if registry_url:
-            self.dockerioapi.set_registry(registry_url)
+        http_proxy = cmdp.get("--httpproxy=")
+        expression = cmdp.get("P1")
         if cmdp.missing_options():               # syntax error
             return False
+        self._set_repository(registry_url, index_url, expression, http_proxy)
+        (dummy, dummy, expression, dummy) = self._split_imagespec(expression)
         self.dockerioapi.search_init(pause)
         v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
         self.dockerioapi.set_v2_login_token(v2_auth_token)
@@ -6963,23 +7014,15 @@ class Udocker(object):
         registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
         (imagerepo, tag) = self._check_imagespec(cmdp.get("P1"))
-        if not registry_url and self.keystore.get(imagerepo.split('/')[0]):
-            registry_url = imagerepo.split('/')[0]
         if (not imagerepo) or cmdp.missing_options():    # syntax error
             return False
+        self._set_repository(registry_url, index_url, imagerepo, http_proxy)
+        v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
+        self.dockerioapi.set_v2_login_token(v2_auth_token)
+        if self.dockerioapi.get(imagerepo, tag):
+            return True
         else:
-            if http_proxy:
-                self.dockerioapi.set_proxy(http_proxy)
-            if index_url:
-                self.dockerioapi.set_index(index_url)
-            if registry_url:
-                self.dockerioapi.set_registry(registry_url)
-            v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
-            self.dockerioapi.set_v2_login_token(v2_auth_token)
-            if self.dockerioapi.get(imagerepo, tag):
-                return True
-            else:
-                Msg().err("Error: no files downloaded")
+            Msg().err("Error: no files downloaded")
         return False
 
     def _create(self, imagespec):
