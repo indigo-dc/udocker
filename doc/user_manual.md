@@ -1,7 +1,7 @@
 # udocker USER MANUAL
 
 A basic user tool to execute simple Docker containers in user space 
-without requiring root privileges. Enables basic download and execution 
+without requiring root privileges. udocker enables basic download and execution 
 of Docker containers by non-privileged users in Linux systems where Docker 
 is not available. It can be used to access and execute the content of 
 docker containers in Linux batch systems and interactive clusters that 
@@ -31,25 +31,33 @@ udocker "executes" the containers by simply providing a chroot like
 environment to the extracted container. udocker is meant to integrate
 several technologies and approaches hence providing an integrated environment
 that offers several execution options. This version provides execution engines
-based on PRoot, Fakechroot, runC and Singularity as methods to execute Docker
-containers without privileges.
+based on PRoot, Fakechroot, runC and Singularity to facilitate the execution
+of Docker containers without privileges.
 
-The basic usage flow starts by downloading the image from an image repository in the usual way; create the container out of that image (flatenning the image on the filesystem), and finally run the container with the name we gave it in the creation process:
+The basic usage flow starts by downloading the image from an image repository
+in the usual way; create the container out of that image (flatenning the image
+on the filesystem), and finally run the container with the name we gave it in
+the creation process:
 
   * `udocker pull` busybox
   * `udocker create` --name=verybusy busybox
   * `udocker run` verybusy
 
-This sequence allows the created container to be executed many times. If simultaneous executions are envisage just make sure that input/output files are not overwritten by giving them different names during execution as the container will be shared among executions.
+This sequence allows the created container to be executed many times. If simultaneous
+executions are envisage just make sure that input/output files are not overwritten by
+giving them different names during execution as the container will be shared among
+executions.
 
-Containers can also be pulled, created and executed in a single step. However in this case a new container is created for every run invocation thus occupying more storage space. To pull, create and execute in a single step invoke run with an image name instead of container name:
+Containers can also be pulled, created and executed in a single step. However in this
+case a new container is created for every run invocation thus occupying more storage
+space. To pull, create and execute in a single step invoke run with an image name
+instead of container name:
 
  * `udocker run` busybox
 
 ### 1.2. Limitations
-Since root privileges are not involved, any operation that really 
-requires privileges is not possible. The following are
-examples of operations that are not possible:
+Since root privileges are not involved, any operation that really requires privileges
+is not possible. The following are examples of operations that are not possible:
 
 * accessing host protected devices and files;
 * listening on TCP/IP privileged ports (range below 1024);
@@ -226,7 +234,7 @@ Examples:
   udocker pull busybox
   udocker pull fedora:latest
   udocker pull indigodatacloudapps/disvis
-  udocker pull --registry=https://registry.access.redhat.com  rhel7
+  udocker pull quay.io/something/somewhere
   udocker pull --httpproxy=socks4://host:port busybox
   udocker pull --httpproxy=socks5://host:port busybox
   udocker pull --httpproxy=socks4://user:pass@host:port busybox
@@ -420,6 +428,7 @@ Examples:
 ### 3.16. load
 ```
   udocker load -i IMAGE-FILE
+  udocker load -i IMAGE-FILE NAME
   udocker load -
 ```
 Loads into the local repository a tarball containing a Docker image with
@@ -427,12 +436,17 @@ its layers and metadata. This is equivalent to pulling an image from
 Docker Hub but instead loading from a locally available file. It can be
 used to load a Docker image saved with `docker save`. A typical saved
 image is a tarball containing additional tar files corresponding to the
-layers and metadata.
+layers and metadata. From version 1.1.4 onwards, udocker can also load 
+images in OCI format.
+The optional NAME argument can be used to change the name of the loaded 
+image. This argument is particularly relevant to provide adequate names
+to OCI loaded images as these only provide names for the tags.
 
 Examples:
 ```
   udocker load -i docker-image.tar
   udocker load - < docker-image.tar
+  udocker load -i oci-image.tar test-image
 ```
 
 ### 3.17. protect
@@ -502,6 +516,7 @@ Options:
 * `--volume=DIR:DIR` map an host file or directory to appear inside the container
 * `--novol=DIR` excludes a host file or directory from being mapped
 * `--env="VAR=VAL"` set environment variables
+* `--env-file=FILE` load environment variables from file
 * `--hostauth` make the host /etc/passwd and /etc/group appear inside the container
 * `--nosysdirs` prevent udocker from mapping /proc /sys /run and /dev inside the container
 * `--nometa` ignore the container metadata settings
@@ -510,8 +525,15 @@ Options:
 * `--bindhome` attempt to make the user home directory appear inside the container
 * `--kernel=KERNELID` use a specific kernel id to emulate useful when the host kernel is too old
 * `--location=DIR` execute a container in a certain directory
+
+Options valid only in Pn execution modes:
+
 * `--publish=HOST_PORT:CONT_PORT` map a container port to another host port
 * `--publish-all` map all container ports to random different ones
+
+Options valid only in Rn execution modes:
+
+* `--device=/dev/xxx` pass device to container
 
 Examples:
 ```

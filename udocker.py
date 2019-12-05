@@ -7009,8 +7009,12 @@ class Udocker(object):
         --httpproxy=socks5://user:pass@host:port        :use http proxy
         --httpproxy=socks4://host:port                  :use http proxy
         --httpproxy=socks5://host:port                  :use http proxy
-        --index=https://index.docker.io/v1              :docker index
+        --index=https://index.docker.io                 :docker index
         --registry=https://registry-1.docker.io         :docker registry
+
+        Examples:
+          pull fedora:latest
+          pull quay.io/something/somewhere:latest
         """
         index_url = cmdp.get("--index=")
         registry_url = cmdp.get("--registry=")
@@ -7187,8 +7191,10 @@ class Udocker(object):
         --cpuset-cpus=<1,2,3-4>    :CPUs in which to allow execution
         --name=<container-name>    :set or change the name of the container
         --bindhome                 :bind the home directory into the container
-        --location=<path-to-dir>   :use root tree outside the repository
         --kernel=<kernel-id>       :use this Linux kernel identifier
+        --location=<path-to-dir>   :use root tree outside the repository
+
+        Only available in Rn execution modes:
         --device=/dev/xxx          :pass device to container (R1 mode only)
 
         Only available in Pn execution modes:
