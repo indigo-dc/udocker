@@ -1,6 +1,6 @@
 
 <!---
-[![Build Status](https://travis-ci.com/undu/udocker.svg?branch=master)](https://travis-ci.com/undu/udocker)
+[![Build Status](https://jenkins.indigo-datacloud.eu/buildStatus/icon?job=Pipeline-as-code/udocker/master)](https://jenkins.indigo-datacloud.eu/job/Pipeline-as-code/job/udocker/job/master/)
 -->
 
 [![logo](https://raw.githubusercontent.com/indigo-dc/udocker/master/doc/logo-small.png)]()
@@ -30,8 +30,8 @@ udocker does not make use of docker nor requires its presence.
 
 udocker "executes" the containers by simply providing a chroot like
 environment over the extracted container. The current implementation
-supports different methods to mimic chroot enabling execution of
-containers without requiring privileges under a chroot like environment.
+supports different methods to mimic chroot thus enabling execution of
+containers under a chroot like environment without requiring privileges.
 udocker transparently supports several methods to execute the containers
 using tools and libraries such as:
 
@@ -43,66 +43,67 @@ using tools and libraries such as:
 ## Advantages
 * Provides a docker like command line interface
 * Supports a subset of docker commands:
-  search, pull, import, export, load, create and run
+  search, pull, import, export, load, save, create and run
 * Understands docker container metadata
+* Allows importing of OCI containers
 * Can be deployed by the end-user
 * Does not require privileges for installation
 * Does not require privileges for execution
 * Does not require compilation, just transfer the Python script and run
-* Encapsulates several execution methods
-* Includes the required tools already compiled to work across systems
+* Encapsulates several tools and execution methods
+* Includes the required tools already statically compiled to work across systems
 * Tested with GPGPU and MPI applications
 * Runs both on new and older Linux distributions including: 
   CentOS 6, CentOS 7, Ubuntu 14, Ubuntu 16, Ubunto 18, Fedora, etc
 
 ## Installation
-See the [Installation manual](doc/installation_manual.md)
+See the **[Installation manual](doc/installation_manual.md)**
 
 ## Syntax
 ```
 Commands:
-  search <repo/image:tag>       :Search dockerhub for container images
-  pull <repo/image:tag>         :Pull container image from dockerhub
-  images                        :List container images
-  create <repo/image:tag>       :Create container from a pulled image
-  ps                            :List created containers
-  rm  <container>               :Delete container
-  run <container>               :Execute container
-  inspect <container>           :Low level information on container
-  name <container_id> <name>    :Give name to container
-  rmname <name>                 :Delete name from container
+  search <repo/image:tag>        :Search dockerhub for container images
+  pull <repo/image:tag>          :Pull container image from dockerhub
+  images                         :List container images
+  create <repo/image:tag>        :Create container from a pulled image
+  ps                             :List created containers
+  rm  <container>                :Delete container
+  run <container>                :Execute container
+  inspect <container>            :Low level information on container
+  name <container_id> <name>     :Give name to container
+  rmname <name>                  :Delete name from container
 
-  rmi <repo/image:tag>          :Delete image
-  rm <container-id>             :Delete container
-  import <tar> <repo/image:tag> :Import tar file (exported by docker)
-  import - <repo/image:tag>     :Import from stdin (exported by docker)
-  load -i <exported-image>      :Load image from file (saved by docker)
-  load                          :Load image from stdin (saved by docker)
-  export -o <tar> <container>   :Export container rootfs to file
-  export - <container>          :Export container rootfs to stdin
-  save -i tar <repo/image:tag>  :Save image (not container) to file
-  save -i - <repo/image:tag>    :Save image (not container) to stdout
-  inspect <repo/image:tag>      :Return low level information on image
-  verify <repo/image:tag>       :Verify a pulled image
-  clone <container>             :duplicate container
+  rmi <repo/image:tag>           :Delete image
+  rm <container-id>              :Delete container
+  import <tar> <repo/image:tag>  :Import tar file (exported by docker)
+  import - <repo/image:tag>      :Import from stdin (exported by docker)
+  load -i <exported-image>       :Load image from file (saved by docker)
+  load                           :Load image from stdin (saved by docker)
+  export -o <tar> <container>    :Export container rootfs to file
+  export - <container>           :Export container rootfs to stdin
+  save -o <tar> <repo/image:tag> :Save image (not container) to file
+  save -o - <repo/image:tag>     :Save image (not container) to stdout
+  inspect <repo/image:tag>       :Return low level information on image
+  verify <repo/image:tag>        :Verify a pulled image
+  clone <container>              :duplicate container
 
-  protect <repo/image:tag>      :Protect repository
-  unprotect <repo/image:tag>    :Unprotect repository
-  protect <container>           :Protect container
-  unprotect <container>         :Unprotect container
+  protect <repo/image:tag>       :Protect repository
+  unprotect <repo/image:tag>     :Unprotect repository
+  protect <container>            :Protect container
+  unprotect <container>          :Unprotect container
 
-  mkrepo <topdir>               :Create repository in another location
-  setup                         :Change container execution settings
-  login                         :Login into docker repository
-  logout                        :Logout from docker repository
+  mkrepo <topdir>                :Create repository in another location
+  setup                          :Change container execution settings
+  login                          :Login into docker repository
+  logout                         :Logout from docker repository
 
-  help                          :This help
-  run --help                    :Command specific help
+  help                           :This help
+  run --help                     :Command specific help
 
 
 Options common to all commands must appear before the command:
-  -D                          :Debug
-  --repo=<directory>          :Use repository at directory
+  -D                             :Debug
+  --repo=<directory>             :Use repository at directory
 ```
 
 ## Examples
@@ -224,16 +225,14 @@ Debugging inside of udocker with the PRoot engine will not work due to
 the way PRoot implements the chroot environment
 
 udocker is mainly oriented at providing a run-time environment for
-containers execution in user space.
-
-udocker is particularly suited to run user applications encapsulated
-in docker containers.
+containers execution in user space. udocker is particularly suited to 
+run user applications encapsulated in docker containers.
 
 ## Security
 Because of the limitations described in the previous section udocker does
-not offer isolation features such as the ones offered by docker. If the
-containers content is not trusted then these containers should not be
-executed with udocker as they will run inside the user environment.
+not offer robust isolation features such as the ones offered by docker. 
+If the containers content is not trusted then these containers should not 
+be executed with udocker as they will run inside the user environment.
 
 The containers data will be unpacked and stored in the user home directory or
 other location of choice. Therefore the containers data will be subjected to
@@ -261,10 +260,14 @@ Notice that when using execution engines other than PRoot (Pn modes) the
 created containers cannot be moved across hosts. In this case convert back
 to a Pn mode before transfer.
 
-The accelerated mode of PRoot (mode P1) may exhibit failures in Linux kernels
-above 4.0 with some applications due to kernel changes and upstream issues in
-this case use mode P2 or any of the other modes.
+The default accelerated mode of PRoot (mode P1) may exhibit failures in Linux 
+kernels above 4.0 with some applications due to kernel changes and upstream 
+issues, in this case use mode P2 or any of the other modes.
 
+```
+./udocker setup  --execmode=P2  my-container-id
+```
+ 
 The runC mode requires a recent kernel with user namespaces enabled.
 
 The singularity mode requires the availability of Singularity in the host
@@ -293,7 +296,7 @@ When citing udocker please use the following:
 * Fakechroot https://github.com/dex4er/fakechroot/wiki
 * runC https://runc.io/
 * Singularity https://www.sylabs.io/
+* Open Container Initiative https://www.opencontainers.org/
 * INDIGO DataCloud https://www.indigo-datacloud.eu
 * EOSC-hub https://eosc-hub.eu
 * DEEP-Hybrid-DataCloud https://deep-hybrid-datacloud.eu
-
