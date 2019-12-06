@@ -5558,15 +5558,23 @@ class DockerIoAPI(object):
             return self.v1_auth_header
         return ""
 
-    def get_v1_image_tags(self, endpoint, imagerepo):
+    def get_v1_image_tags(self, imagerepo):
         """Get list of tags in a repo from Docker Hub"""
+        (hdr_data, dummy) = self.get_v1_repo(imagerepo)
+        try:
+            endpoint = "http://" + hdr_data["x-docker-endpoints"]
+        except KeyError:
+            endpoint = self.index_url
         url = endpoint + "/v1/repositories/" + imagerepo + "/tags"
         Msg().err("tags url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
+        tags = []
         try:
-            return(hdr.data, json.loads(buf.getvalue()))
+            for tag in json.loads(buf.getvalue()):
+                tags.append(tag["name"])
+            return(tags)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
-            return(hdr.data, [])
+            return([])
 
     def get_v1_image_tag(self, endpoint, imagerepo, tag):
         """Get list of tags in a repo from Docker Hub"""
@@ -5693,6 +5701,21 @@ class DockerIoAPI(object):
         except (KeyError, AttributeError, TypeError):
             pass
         return False
+
+    def get_v2_image_tags(self, imagerepo):
+        """Get list of tags in a repo from Docker Hub"""
+        if '/' not in imagerepo:
+             imagerepo = "library/" + imagerepo
+        url = self.registry_url + "/v2/" + imagerepo + "/tags/list"
+        Msg().err("tags url:", url, l=Msg.DBG)
+        (hdr, buf) = self._get_url(url)
+        tags = []
+        try:
+            for tag in json.loads(buf.getvalue())["tags"]:
+                tags.append(tag)
+            return tags
+        except (IOError, OSError, AttributeError, ValueError, TypeError):
+            return([])
 
     def get_v2_image_manifest(self, imagerepo, tag):
         """Get the image manifest which contains JSON metadata
@@ -5891,6 +5914,14 @@ class DockerIoAPI(object):
         if new_repo and not files:
             self.localrepo.del_imagerepo(imagerepo, tag, False)
         return files
+
+    def get_tags(self, imagerepo):
+        """List tags from a v2 or v1 repositories"""
+        Msg().err("get tags: %s " % (imagerepo), l=Msg.DBG)
+        if self.is_v2():
+            return self.get_v2_image_tags(imagerepo)  # try v2
+        else:
+            return self.get_v1_image_tags(imagerepo)  # try v1
 
     def search_init(self, pause):
         """Setup new search"""
@@ -6654,8 +6685,11 @@ class Udocker(object):
             self.dockerioapi.set_proxy(http_proxy)
         if registry_url:
             self.dockerioapi.set_registry(registry_url)
+            self.dockerioapi.set_index("")
         if index_url:
             self.dockerioapi.set_index(index_url)
+            if not registry_url:
+                self.dockerioapi.set_registry("")
         if not (registry_url or index_url):
             try:
                 if "://" in imagerepo:
@@ -6685,7 +6719,7 @@ class Udocker(object):
             if "://" in imagerepo:
                 (transport, dummy, hostname, image) = imagerepo.split('/', 4)
             elif '/' in imagerepo:
-                (hostname, image) = imagerepo.split('/', 2)
+                (hostname, image) = imagerepo.split('/', 1)
         except (ValueError, IndexError, TypeError):
             pass
         if hostname and '.' not in hostname:
@@ -6712,7 +6746,7 @@ class Udocker(object):
             Msg().err("Error: localrepo directory already exists: ", topdir)
             return False
 
-    def _search_print(self, repo_list, lines, fmt):
+    def _search_print_lines(self, repo_list, lines, fmt):
         """Print search results from v1 or v2 API"""
         for repo in repo_list["results"]:
             if "is_official" in repo and repo["is_official"]:
@@ -6741,32 +6775,8 @@ class Udocker(object):
             if not lines:
                 break
 
-    def do_search(self, cmdp):
-        """
-        search: search dockerhub for container images
-        search [options]  <expression>
-        -a                                              :do not pause
-        --no-trunc                                      :do not trunc lines
-        --index=<url>                ex. https://index.docker.io/v1
-        --registry=<url>             ex. https://registry-1.docker.io
-        --httpproxy=socks4://user:pass@host:port        :use http proxy
-        --httpproxy=socks5://user:pass@host:port        :use http proxy
-        --httpproxy=socks4://host:port                  :use http proxy
-        --httpproxy=socks5://host:port                  :use http proxy
-        """
-        pause = not cmdp.get("-a")
-        index_url = cmdp.get("--index=")
-        registry_url = cmdp.get("--registry=")
-        http_proxy = cmdp.get("--httpproxy=")
-        no_trunc = cmdp.get("--no-trunc")
-        expression = cmdp.get("P1")
-        if cmdp.missing_options():               # syntax error
-            return False
-        self._set_repository(registry_url, index_url, expression, http_proxy)
-        (dummy, dummy, expression, dummy) = self._split_imagespec(expression)
-        self.dockerioapi.search_init(pause)
-        v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
-        self.dockerioapi.set_v2_login_token(v2_auth_token)
+    def _search_repositories(self, expression, pause="", no_trunc=""):
+        """Print search header and loop over search results"""
         term_lines, dummy = GuestInfo("HOST").termsize()
         term_lines -= 2
         fmt = "%-55.80s %8.8s %-70.70s %5.5s"
@@ -6786,10 +6796,52 @@ class Udocker(object):
                 else:
                     print_lines = len(repo_list["results"])
                 lines -= print_lines
-                self._search_print(repo_list, print_lines, fmt)
+                self._search_print_lines(repo_list, print_lines, fmt)
             if pause and not self.dockerioapi.search_ended:
                 if raw_input("[press return or q to quit]") in ('q', 'Q', 'e', 'E'):
                     return True
+
+    def _list_tags(self, expression):
+        """List tags for repository"""
+        try:
+            for tag in self.dockerioapi.get_tags(expression):
+               Msg().out(tag)
+            return True
+        except (KeyError, TypeError, ValueError):
+            return False
+
+    def do_search(self, cmdp):
+        """
+        search: search dockerhub for container images
+        search [options]  <expression>
+        -a                                              :do not pause
+        --no-trunc                                      :do not trunc lines
+        --list-tags                                     :list repository tags
+        --index=<url>                ex. https://index.docker.io/v1
+        --registry=<url>             ex. https://registry-1.docker.io
+        --httpproxy=socks4://user:pass@host:port        :use http proxy
+        --httpproxy=socks5://user:pass@host:port        :use http proxy
+        --httpproxy=socks4://host:port                  :use http proxy
+        --httpproxy=socks5://host:port                  :use http proxy
+        """
+        pause = not cmdp.get("-a")
+        index_url = cmdp.get("--index=")
+        registry_url = cmdp.get("--registry=")
+        http_proxy = cmdp.get("--httpproxy=")
+        no_trunc = cmdp.get("--no-trunc")
+        list_tags = cmdp.get("--list-tags")
+        expression = cmdp.get("P1")
+        if cmdp.missing_options():               # syntax error
+            return False
+        self._set_repository(registry_url, index_url, expression, http_proxy)
+        (dummy, dummy, expression, dummy) = self._split_imagespec(expression)
+        self.dockerioapi.search_init(pause)
+        v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
+        self.dockerioapi.set_v2_login_token(v2_auth_token)
+        if list_tags:
+            return self._list_tags(expression)
+        else:
+            return self._search_repositories(expression, pause, no_trunc)
 
     def do_load(self, cmdp):
         """
