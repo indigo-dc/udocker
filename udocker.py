@@ -797,7 +797,7 @@ class Unique(object):
         return self._rnd(16)
 
     def imagetag(self):
-        """Get a container image name"""
+        """Get a container image tag"""
         return self._rnd(10)
 
     def layer_v1(self):
@@ -4948,7 +4948,7 @@ class LocalRepository(object):
         for manifest_layer in structure["manifest"]["fsLayers"]:
             if manifest_layer["blobSum"] not in structure["repolayers"]:
                 Msg().err("Error: layer in manifest does not exist",
-                          " in repo", manifest_layer)
+                          "in repo", manifest_layer["blobSum"])
                 status = False
                 continue
         return status
@@ -4959,7 +4959,7 @@ class LocalRepository(object):
         for manifest_layer in structure["manifest"]["layers"]:
             if manifest_layer["digest"] not in structure["repolayers"]:
                 Msg().err("Error: layer in manifest does not exist",
-                          " in repo", manifest_layer)
+                          "in repo", manifest_layer["blobSum"])
                 status = False
                 continue
         return status
@@ -5450,14 +5450,18 @@ class DockerIoAPI(object):
             if "header" in auth_kwargs:
                 del auth_kwargs["header"]
         elif status_code == 401:
-            if "www-authenticate" in hdr.data and hdr.data["www-authenticate"]:
+            if "www-authenticate" in hdr.data:
+                www_authenticate = hdr.data["www-authenticate"]  
+                if not "realm" in www_authenticate:
+                    return(hdr, buf)
+                elif 'error="insufficient_scope"' in www_authenticate:
+                    return(hdr, buf)
                 auth_header = ""
                 if "/v2/" in url:
-                    auth_header = self._get_v2_auth(
-                        hdr.data["www-authenticate"], kwargs["RETRY"])
+                    auth_header = self._get_v2_auth(www_authenticate,
+                            kwargs["RETRY"])
                 elif "/v1/" in url:
-                    auth_header = self._get_v1_auth(
-                        hdr.data["www-authenticate"])
+                    auth_header = self._get_v1_auth(www_authenticate)
                 auth_kwargs.update({"header": [auth_header]})
         (hdr, buf) = self._get_url(*args, **auth_kwargs)
         return(hdr, buf)
@@ -5489,6 +5493,8 @@ class DockerIoAPI(object):
         if filename.endswith("layer"):
             resume = True
         (hdr, dummy) = self._get_url(url, ofile=filename, resume=resume)
+        if self.curl.get_status_code(hdr.data["X-ND-HTTPSTATUS"]) != 200:
+            return False
         if remote_size == -1:
             remote_size = self.curl.get_content_length(hdr)
         if (remote_size != FileUtil(filename).size() and
@@ -5699,7 +5705,6 @@ class DockerIoAPI(object):
         else:
             url = self.registry_url + "/v2/" + imagerepo + \
                 "/manifests/" + tag
-        #DEBUG
         Msg().err("manifest url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
@@ -5741,8 +5746,14 @@ class DockerIoAPI(object):
     def get_v2(self, imagerepo, tag):
         """Pull container with v2 API"""
         files = []
-        (dummy, manifest) = self.get_v2_image_manifest(imagerepo, tag)
-        #DEBUG
+        (hdr_data, manifest) = self.get_v2_image_manifest(imagerepo, tag)
+        status = self.curl.get_status_code(hdr_data["X-ND-HTTPSTATUS"])
+        if status == 401:
+            Msg().err("Error: manifest not found or not authorized")
+            return([])
+        if status != 200:
+            Msg().err("Error: pulling manifest:")
+            return([])
         try:
             if not (self.localrepo.setup_tag(tag) and
                     self.localrepo.set_version("v2")):
@@ -5793,12 +5804,16 @@ class DockerIoAPI(object):
     def get_v1(self, imagerepo, tag):
         """Pull container with v1 API"""
         Msg().err("v1 image id: %s" % (imagerepo), l=Msg.DBG)
-        (hdr, images_array) = self.get_v1_repo(imagerepo)
+        (hdr_data, images_array) = self.get_v1_repo(imagerepo)
+        status = self.curl.get_status_code(hdr_data["X-ND-HTTPSTATUS"])
+        if status == 401:
+            Msg().err("Error: image not found or not authorized")
+            return([])
         if not images_array:
             Msg().err("Error: image not found")
             return []
         try:
-            endpoint = "http://" + hdr["x-docker-endpoints"]
+            endpoint = "http://" + hdr_data["x-docker-endpoints"]
         except KeyError:
             endpoint = self.index_url
         (dummy, tags_array) = self.get_v1_image_tags(endpoint, imagerepo)
@@ -5922,7 +5937,8 @@ class DockerIoAPI(object):
         (dummy, buf) = self._get_url(url)
         try:
             repo_list = json.loads(buf.getvalue())
-            if repo_list["count"] == self.search_page:
+            if (not repo_list or (not repo_list["count"]) or
+                    repo_list["count"] == self.search_page):
                 self.search_ended = True
             return repo_list
         except (IOError, OSError, AttributeError,
@@ -6478,16 +6494,20 @@ class OciLocalFileAPI(CommonLocalFileApi):
             tag = manifest["annotations"]["org.opencontainers.image.ref.name"]
         except KeyError:
             tag = Unique().imagetag()
-        if not self._imagerepo:
-            self._imagerepo = Unique().imagename()
-        imagetag = self._imagerepo +  ':' + tag
+        if '/' in tag and ':' in tag:
+            (imagerepo, tag) = tag.split(':', 1)
+        else:
+            imagerepo = Unique().imagename()
+        if self._imagerepo:
+            imagerepo = self._imagerepo
+        imagetag = imagerepo + ':' + tag
         structure["manifest"][imagetag] = dict()
         structure["manifest"][imagetag]["json"] = \
                 self.localrepo.load_json(structure["repolayers"]\
                 [manifest["digest"]]["layer_f"])
         structure["manifest"][imagetag]["json_f"] = \
                 structure["repolayers"][manifest["digest"]]["layer_f"]
-        return self._load_image(structure, self._imagerepo, tag)
+        return self._load_image(structure, imagerepo, tag)
 
     def _load_repositories(self, structure):
         """Load OCI image repositories"""
