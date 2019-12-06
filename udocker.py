@@ -6712,7 +6712,7 @@ class Udocker(object):
             Msg().err("Error: localrepo directory already exists: ", topdir)
             return False
 
-    def _search_print(self, repo_list, lines):
+    def _search_print(self, repo_list, lines, fmt):
         """Print search results from v1 or v2 API"""
         for repo in repo_list["results"]:
             if "is_official" in repo and repo["is_official"]:
@@ -6736,8 +6736,7 @@ class Udocker(object):
             stars = ""
             if "star_count" in repo and repo["star_count"] is not None:
                 stars = str(repo["star_count"])
-            Msg().out("%-55.80s %8.8s %-70.70s %5.5s"
-                      % (name, is_official, description, stars))
+            Msg().out(fmt % (name, is_official, description, stars))
             lines -= 1
             if not lines:
                 break
@@ -6747,6 +6746,7 @@ class Udocker(object):
         search: search dockerhub for container images
         search [options]  <expression>
         -a                                              :do not pause
+        --no-trunc                                      :do not trunc lines
         --index=<url>                ex. https://index.docker.io/v1
         --registry=<url>             ex. https://registry-1.docker.io
         --httpproxy=socks4://user:pass@host:port        :use http proxy
@@ -6758,6 +6758,7 @@ class Udocker(object):
         index_url = cmdp.get("--index=")
         registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
+        no_trunc = cmdp.get("--no-trunc")
         expression = cmdp.get("P1")
         if cmdp.missing_options():               # syntax error
             return False
@@ -6768,6 +6769,9 @@ class Udocker(object):
         self.dockerioapi.set_v2_login_token(v2_auth_token)
         term_lines, dummy = GuestInfo("HOST").termsize()
         term_lines -= 2
+        fmt = "%-55.80s %8.8s %-70.70s %5.5s"
+        if no_trunc:
+            fmt = "%-55s %8s %-70s %5s"
         while True:
             lines = term_lines
             while lines > 0:
@@ -6775,14 +6779,14 @@ class Udocker(object):
                 if not repo_list:
                     return True
                 if lines == term_lines:
-                    Msg().out("%-55.80s %8.8s %-70.70s %5.5s" % \
+                    Msg().out(fmt % \
                         ("NAME", "OFFICIAL", "DESCRIPTION", "STARS"), l=Msg.INF)
                 if len(repo_list["results"]) > lines:
                     print_lines = lines
                 else:
                     print_lines = len(repo_list["results"])
                 lines -= print_lines
-                self._search_print(repo_list, print_lines)
+                self._search_print(repo_list, print_lines, fmt)
             if pause and not self.dockerioapi.search_ended:
                 if raw_input("[press return or q to quit]") in ('q', 'Q', 'e', 'E'):
                     return True
