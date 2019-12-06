@@ -269,9 +269,6 @@ class Config(object):
 
     nvi_dev_list = ['/dev/nvidia', ]
 
-    ignore_layers = \
-        ["a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4", ]
-
     # -------------------------------------------------------------
 
     def _verify_config(self):
@@ -3012,16 +3009,6 @@ class RuncEngine(ExecutionEngineCommon):
         outfile.close()
         return True
 
-    def _remove_quotes(self, argv):
-        """Remove quotes from string"""
-        unquoted_argv = []
-        for arg in argv:
-            if ' ' in arg and arg[0] in ('"', "'") and arg[-1] in ('"', "'"):
-                unquoted_argv.append(arg.strip(arg[0]))
-            else:
-                unquoted_argv.append(arg)
-        return unquoted_argv
-
     def _set_spec(self):
         """Set spec values"""
         json_obj = self._container_specjson
@@ -3045,7 +3032,6 @@ class RuncEngine(ExecutionEngineCommon):
         for idmap in json_obj["linux"]["gidMappings"]:
             if "hostID" in idmap:
                 idmap["hostID"] = Config.gid
-        #json_obj["process"]["args"] = self._remove_quotes(self.opt["cmd"])
         json_obj["process"]["args"] = self.opt["cmd"]
         return json_obj
 
@@ -3413,7 +3399,7 @@ class SingularityEngine(ExecutionEngineCommon):
             return 5
 
         if Msg.level >= Msg.DBG:
-            singularity_debug = ["--debug", "-x", "-v", ]
+            singularity_debug = ["--debug", "-v", ]
         elif self._has_option("--silent"):
             singularity_debug = ["--silent", ]
         elif self._has_option("--quiet"):
@@ -4092,7 +4078,7 @@ class ContainerStructure(object):
         return self.container_id
 
     def _apply_whiteouts(self, tarf, destdir):
-        """The layered filesystem od docker uses whiteout files
+        """The layered filesystem of docker uses whiteout files
         to identify files or directories to be removed.
         The format is .wh.<filename>
         """
@@ -4105,6 +4091,8 @@ class ContainerStructure(object):
                 wh_basename = os.path.basename(wh_filename.strip())
                 wh_dirname = os.path.dirname(wh_filename)
                 if wh_basename == ".wh..wh..opq":
+                    if not os.path.isdir(destdir + '/' + wh_dirname):
+                        continue
                     for f_name in os.listdir(destdir + '/' + wh_dirname):
                         rm_filename = destdir + '/' \
                             + wh_dirname + '/' + f_name
@@ -4914,8 +4902,6 @@ class LocalRepository(object):
     def _verify_layer_file(self, structure, layer_id):
         """Verify layer file in repository"""
         (layer_algorithm, layer_hash) = self._split_layer_id(layer_id)
-        if layer_hash in Config.ignore_layers:
-            return True
         layer_f = structure["repolayers"][layer_id]["layer_f"]
         if not (os.path.exists(layer_f) and
                 os.path.islink(layer_f)):
@@ -5123,14 +5109,15 @@ class GetURL(object):
 
     def get_status_code(self, status_line):
         """
-        get http status code from http status line.
-        Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+        Get http status code from http status line.
+        Status-Line = HTTP-Version Status-Code Reason-Phrase CRLF
         """
-        parts = status_line.split(' ')
         try:
-            return int(parts[1])
+            return int(status_line.split(' ')[1])
         except ValueError:
             return 400
+        except IndexError:
+            return 404
 
 
 class GetURLpyCurl(GetURL):
@@ -6383,8 +6370,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                                      os.path.basename(layer_f)).group(1)
             except AttributeError:
                 return False
-            if (layer_id in Config.ignore_layers or
-                    os.path.exists(tmp_imagedir + "/" + layer_id)):
+            if os.path.exists(tmp_imagedir + "/" + layer_id):
                 continue
             FileUtil(tmp_imagedir + "/" + layer_id).mkdir()
             if not FileUtil(layer_f).copyto(tmp_imagedir + "/"
@@ -7289,22 +7275,30 @@ class Udocker(object):
         print_size = cmdp.get("-s")
         if cmdp.missing_options():               # syntax error
             return False
+        mod_h = size_h = ""
+        mod_l = size_l = "%0s"
+        if print_mode:
+            mod_h = "MOD "
+            mod_l = "%2.2s "
+        if print_size:
+            size_h = "SIZE "
+            size_l = "%5.5s "
+        fmt = "%-36.36s %c %c " + mod_h + size_h + "%-18s %-20.20s"
+        Msg().out(fmt % ("CONTAINER ID", 'P', 'M', "NAMES", "IMAGE"))
+        fmt = "%-36.36s %c %c " + mod_l + size_l + "%-18.100s %-20.100s"
+        line = [''] * 7
         containers_list = self.localrepo.get_containers_list(False)
-        pmod = "MOD" if print_mode else ""
-        psize = "SIZE" if print_size else ""
-        Msg().out("%-36.36s %c %c %-18s %-20.20s %3.3s %4s" %
-                  ("CONTAINER ID", 'P', 'M', "NAMES", "IMAGE", pmod, psize),
-                  l=Msg.INF)
-        for (container_id, reponame, names) in containers_list:
-            mode = ExecutionMode(self.localrepo,
-                                 container_id).get_mode() if print_mode else ""
-            prot = ('.', 'P')[
+        for (line[0], line[6], line[5]) in containers_list:
+            container_id = line[0]
+            line[3] = ExecutionMode(self.localrepo, container_id).get_mode() \
+                    if print_mode else ""
+            line[1] = ('.', 'P')[
                 self.localrepo.isprotected_container(container_id)]
-            write = ('R', 'W', 'N', 'D')[
+            line[2] = ('R', 'W', 'N', 'D')[
                 self.localrepo.iswriteable_container(container_id)]
-            size = self.localrepo.get_size(container_id) if print_size else ""
-            Msg().out("%-36.36s %c %c %-18.100s %-20.100s %2.2s %5s" %
-                      (container_id, prot, write, names, reponame, mode, size))
+            line[4] = self.localrepo.get_size(container_id) \
+                    if print_size else ""
+            Msg().out(fmt % tuple(line))
         return True
 
     def do_rm(self, cmdp):
