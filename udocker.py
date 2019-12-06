@@ -145,8 +145,8 @@ class Config(object):
     # for tmp files only
     tmpdir = "/tmp"
 
-    # defaults for container execution
-    cmd = ["/bin/bash", "-i"]  # Comand to execute
+    # default command to be executed within the containers
+    cmd = ["/bin/bash", "-i"]
 
     # default path for executables
     root_path = "/usr/sbin:/sbin:/usr/bin:/bin"
@@ -224,16 +224,16 @@ class Config(object):
                                ["taskset", "-c", "%s", ])
 
     # Containers execution defaults
-    location = ""         # run container in this location
+    location = ""                 # run container in this location
 
     # Curl settings
-    http_proxy = ""    # ex. socks5://user:pass@127.0.0.1:1080
-    timeout = 12       # default timeout (secs)
+    http_proxy = ""               # ex. socks5://user:pass@127.0.0.1:1080
+    timeout = 12                  # default timeout (secs)
     download_timeout = 30 * 60    # file download timeout (secs)
-    ctimeout = 6       # default TCP connect timeout (secs)
+    ctimeout = 6                  # default TCP connect timeout (secs)
     http_agent = ""
     http_insecure = False
-    use_curl_executable = "" # force use of executable
+    use_curl_executable = ""      # force use of executable
 
     # docker hub index
     dockerio_index_url = "https://hub.docker.com"
@@ -6251,9 +6251,6 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                     else:
                         Msg().err("Warning: unkwnon file in layer:",
                                   f_path, l=Msg.WAR)
-            else:
-                Msg().err("Warning: unkwnon file in image:", f_path,
-                          l=Msg.WAR)
         return structure
 
     def _find_top_layer_id(self, structure, my_layer_id=""):
@@ -6296,7 +6293,8 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                 if imagetag in repotag["RepoTags"]:
                     layers = []
                     for layer_file in repotag["Layers"]:
-                        layers.append(layer_file.replace("/layer.tar", ""))
+                        #layers.append(layer_file.replace("/layer.tar", ""))
+                        layers.append(layer_file)
                     layers.reverse()
                     return (repotag["Config"], layers)
         return ("", [])
@@ -6310,9 +6308,8 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             layer_id = json_config_file.replace(".json", "")
             json_file = structure["repoconfigs"][json_config_file]["json_f"]
             self._move_layer_to_v1repo(json_file, layer_id, "container.json")
-        else:
-            top_layer_id = self._find_top_layer_id(structure)
-            layers = self._sorted_layers(structure, top_layer_id)
+        top_layer_id = self._find_top_layer_id(structure)
+        layers = self._sorted_layers(structure, top_layer_id)
         for layer_id in layers:
             Msg().out("Info: adding layer:", layer_id, l=Msg.INF)
             if str(structure["repolayers"][layer_id]["VERSION"]) != "1.0":
