@@ -2,19 +2,24 @@ udocker (1.1.4)
   * Create processes without shell context
   * Safer parsing of config files
   * Safer removal of directories
-  * Move to registry.hub.docker.com as default registry
-  * Implement API /v2/search/repositories
+  * Use hub.docker.com as default registry
   * Search using v1 and v2 APIs
+  * Implement API /v2/search/repositories
   * Adjust search results to screen size
-  * Print container size with ps -s
+  * List container size with ps -s
+  * List container execution modes with ps -m
   * Added support for nameat() and statx() in Pn and Fn modes
   * Added Fn libraries for Ubuntu18, Fedora29, Fedora30, CentOS8
   * Added Fn libraries for Alpine 3.8, 3.9, 3.10
   * Added support for sha512 hashes
   * Added support for opaque whiteouts
+  * Added search --list-tags to available tags for a given repository
+  * CLI support for image names in format host/repository:tag
+  * Support for fake root in Sn execution modes via --user=root
+  * Improve verify of loaded/pulled images
   * Fixes to address authentication and redirects in pull
     - closes: #225
-  * Added minimal support to import OCI images
+  * Added minimal support to load OCI images
     - closes: #111
   * Added Pn support for Fedora30 and ubuntu19
     - closes: #192
@@ -24,7 +29,7 @@ udocker (1.1.4)
     - closes: #212
   * Prepare for pypy
     - closes: #211
-  * Fix for verification of container images
+  * Fixes for verification of container images
     - closes: #209
   * Fix command line processing for "-" in argument
     - closes: #202
@@ -36,7 +41,7 @@ udocker (1.1.4)
     - closes: #218, #225
   * Further improved pathname translation in Fn modes
     - closes: #160
-  * Implement save images
+  * Implement save images in docker format
     - closes: #74
 
 udocker (1.1.3)

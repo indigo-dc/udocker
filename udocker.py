@@ -42,7 +42,7 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.3-2"
+__version__ = "1.1.3-3"
 __date__ = "2019"
 
 # Python version major.minor
@@ -115,22 +115,13 @@ class Config(object):
     gid = os.getgid()
 
     # udocker installation tarball
-    tarball_release = "1.1.3"
+    tarball_release = "1.1.3-3"
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/iv4FOV1jZcfnGFH/download"
-        ' '
-        "https://cernbox.cern.ch/index.php"
-        "/s/CS31ycKOpj2KzxO/download?x-access-token=eyJhbGciOiJIUzI1Ni"
-        "IsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDE4LTEwLTMwVDE4OjM1OjMyLjI2MD"
-        "AxMDA3OCswMTowMCIsImV4cGlyZXMiOjAsImlkIjoiMTQ1NjgwIiwiaXRlbV9"
-        "0eXBlIjowLCJtdGltZSI6MTU0MDkxNzA3Miwib3duZXIiOiJqb3JnZSIsInBh"
-        "dGgiOiJlb3Nob21lLWo6MjcyNTgzNjk2NDc1NzUwNDAiLCJwcm90ZWN0ZWQiO"
-        "mZhbHNlLCJyZWFkX29ubHkiOnRydWUsInNoYXJlX25hbWUiOiJ1ZG9ja2VyLT"
-        "EuMS4zLnRhci5neiIsInRva2VuIjoiQ1MzMXljS09wajJLenhPIn0._9LTvxM"
-        "V12NpxcZXaCg3PJeQfz94qYui4ccscrrvgVA"
-        ' '
-        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.3.tar.gz"
+        "/s/BjqWC7vyFiVhgna/download"
+        " "
+        "curl https://raw.githubusercontent.com"
+        "/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.3-3.tar.gz"
     )
 
     installinfo = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
@@ -788,9 +779,9 @@ class Unique(object):
         try:
             return str(uuid.uuid3(uuid.uuid4(), str(name) + str(time.time())))
         except (NameError, AttributeError):
-            return(("%s-%s-%s-%s-%s") %
-                   (self._rnd(8), self._rnd(4), self._rnd(4),
-                    self._rnd(4), self._rnd(12)))
+            return (("%s-%s-%s-%s-%s") %
+                    (self._rnd(8), self._rnd(4), self._rnd(4),
+                     self._rnd(4), self._rnd(12)))
 
     def imagename(self):
         """Get a container image name"""
@@ -808,9 +799,9 @@ class Unique(object):
         """Get a filename"""
         prefix = self.def_name + '-' + str(os.getpid()) + '-'
         try:
-            return(prefix +
-                   str(uuid.uuid3(uuid.uuid4(), str(time.time()))) +
-                   '-' + str(filename))
+            return (prefix +
+                    str(uuid.uuid3(uuid.uuid4(), str(time.time()))) +
+                    '-' + str(filename))
         except (NameError, AttributeError):
             return prefix + self.uuid(filename) + '-' + str(filename)
 
@@ -1866,9 +1857,48 @@ class NixAuthentication(object):
     system authentication databases are used.
     """
 
-    def __init__(self, passwd_file=None, group_file=None):
+    def __init__(self, passwd_file=None, group_file=None,
+                 subuid_file=None, subgid_file=None):
         self.passwd_file = passwd_file
         self.group_file = group_file
+        self.subuid_file = subuid_file
+        self.subgid_file = subgid_file
+        if not self.subuid_file:
+            self.subuid_file = "/etc/subuid"
+        if not self.subgid_file:
+            self.subgid_file = "/etc/subgid"
+
+    def _user_in_subid(self, sub_file, wanted_user):
+        """get user information from the host /etc/sub*"""
+        if self.passwd_file:
+            (user, dummy, dummy, dummy, dummy, dummy) = \
+                    self._get_user_from_file(wanted_user)
+        else:
+            (user, dummy, dummy, dummy, dummy, dummy) = \
+                    self._get_user_from_host(wanted_user)
+        try:
+            insub = open(sub_file)
+        except (IOError, OSError):
+            return False
+        else:
+            for line in insub:
+                try:
+                    (subuser, dummy, dummy) = line.strip().split(':')
+                except ValueError:
+                    continue
+                if subuser == user:
+                    return True
+                continue
+            insub.close()
+        return False
+
+    def user_in_subuid(self, wanted_user):
+        """Find if wanted_user is in /etc/subuid"""
+        return self._user_in_subid(self.subuid_file, wanted_user)
+
+    def user_in_subgid(self, wanted_user):
+        """Find if wanted_user is in /etc/subgid"""
+        return self._user_in_subid(self.subgid_file, wanted_user)
 
     def _get_user_from_host(self, wanted_user):
         """get user information from the host /etc/passwd"""
@@ -1881,16 +1911,16 @@ class NixAuthentication(object):
             try:
                 usr = pwd.getpwuid(int(wanted_uid))
             except (IOError, OSError, KeyError):
-                return("", "", "", "", "", "")
-            return(str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
-                   str(usr.pw_gecos), usr.pw_dir, usr.pw_shell)
+                return ("", "", "", "", "", "")
+            return (str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
+                    str(usr.pw_gecos), usr.pw_dir, usr.pw_shell)
         else:
             try:
                 usr = pwd.getpwnam(wanted_user)
             except (IOError, OSError, KeyError):
-                return("", "", "", "", "", "")
-            return(str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
-                   str(usr.pw_gecos), usr.pw_dir, usr.pw_shell)
+                return ("", "", "", "", "", "")
+            return (str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
+                    str(usr.pw_gecos), usr.pw_dir, usr.pw_shell)
 
     def _get_group_from_host(self, wanted_group):
         """get group information from the host /etc/group"""
@@ -1903,14 +1933,14 @@ class NixAuthentication(object):
             try:
                 hgr = grp.getgrgid(int(wanted_gid))
             except (IOError, OSError, KeyError):
-                return("", "", "")
-            return(str(hgr.gr_name), str(hgr.gr_gid), str(hgr.gr_mem))
+                return ("", "", "")
+            return (str(hgr.gr_name), str(hgr.gr_gid), str(hgr.gr_mem))
         else:
             try:
                 hgr = grp.getgrnam(wanted_group)
             except (IOError, OSError, KeyError):
-                return("", "", "")
-            return(str(hgr.gr_name), str(hgr.gr_gid), str(hgr.gr_mem))
+                return ("", "", "")
+            return (str(hgr.gr_name), str(hgr.gr_gid), str(hgr.gr_mem))
 
     def _get_user_from_file(self, wanted_user):
         """Get user from a passwd file"""
@@ -1922,17 +1952,17 @@ class NixAuthentication(object):
         try:
             inpasswd = open(self.passwd_file)
         except (IOError, OSError):
-            return("", "", "", "", "", "")
+            return ("", "", "", "", "", "")
         else:
             for line in inpasswd:
                 (user, dummy, uid, gid, gecos, home,
                  shell) = line.strip().split(':')
                 if wanted_user and user == wanted_user:
-                    return(user, uid, gid, gecos, home, shell)
+                    return (user, uid, gid, gecos, home, shell)
                 if wanted_uid and uid == wanted_uid:
-                    return(user, uid, gid, gecos, home, shell)
+                    return (user, uid, gid, gecos, home, shell)
             inpasswd.close()
-            return("", "", "", "", "", "")
+            return ("", "", "", "", "", "")
 
     def _get_group_from_file(self, wanted_group):
         """Get group from a group file"""
@@ -1944,16 +1974,16 @@ class NixAuthentication(object):
         try:
             ingroup = open(self.group_file)
         except (IOError, OSError):
-            return("", "", "")
+            return ("", "", "")
         else:
             for line in ingroup:
                 (group, dummy, gid, users) = line.strip().split(':')
                 if wanted_group and group == wanted_group:
-                    return(group, gid, users)
+                    return (group, gid, users)
                 if wanted_gid and gid == wanted_gid:
-                    return(group, gid, users)
+                    return (group, gid, users)
             ingroup.close()
-            return("", "", "")
+            return ("", "", "")
 
     def add_user(self, user, passw, uid, gid, gecos,
                  home, shell):
@@ -2394,7 +2424,7 @@ class ExecutionEngineCommon(object):
             (container_dir, container_json) = \
                 container_structure.get_container_attr()
             if not container_dir:
-                return(None, None)
+                return (None, None)
             # load metadata from container
             if not self.opt["nometa"]:
                 if not self.opt["user"]:
@@ -2433,7 +2463,7 @@ class ExecutionEngineCommon(object):
                 if meta_env:
                     meta_env.extend(self.opt["env"])
                     self.opt["env"] = meta_env
-        return(container_dir, container_json)
+        return (container_dir, container_json)
 
     def _check_env(self):
         """Sanitize the environment variables"""
@@ -3359,10 +3389,37 @@ class SingularityEngine(ExecutionEngineCommon):
             Msg().err("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
 
-    def _has_option(self, option):
+    def _has_option(self, option, command_str=""):
         """Check if singularity has a given cli option"""
-        if option in Uprocess().get_output(["singularity", "--help"]):
+        command_item = []
+        if command_str:
+            command_item = [command_str]
+        if option in Uprocess().get_output(
+                ["singularity"] + command_item + ["--help"]):
             return True
+        return False
+
+    def _run_as_root(self):
+        """Set configure running as normal user or as root via --fakeroot
+        """
+        username = Config().username()
+        uid = str(Config().uid)
+        if "user" in self.opt:
+            if (self.opt["user"] == username or
+                    self.opt["user"] == uid):
+                return False
+            elif self.opt["user"] != "root" and self.opt["user"] != '0':
+                Msg().err("Warning: running as another user not supported")
+                self.opt["user"] = username
+                return False
+            elif self._has_option("--fakeroot", "exec"):
+                if (NixAuthentication().user_in_subuid(username) and
+                        NixAuthentication().user_in_subgid(username)):
+                    Config.singularity_options.extend(["--fakeroot", ])
+                    return True
+            Msg().err("Warning: running as uid 0 is not supported by this",
+                      "installation", l=Msg.WAR)
+        self.opt["user"] = username
         return False
 
     def run(self, container_id):
@@ -3391,7 +3448,7 @@ class SingularityEngine(ExecutionEngineCommon):
 
         self._select_singularity()
 
-        self._uid_check_noroot()
+        self._run_as_root()
 
         # set environment variables
         self._run_env_set()
@@ -3973,13 +4030,13 @@ class ContainerStructure(object):
             container_dir = self.localrepo.cd_container(self.container_id)
             if not container_dir:
                 Msg().err("Error: container id or name not found")
-                return(False, False)
+                return (False, False)
             container_json = self.localrepo.load_json(
                 container_dir + "/container.json")
             if not container_json:
                 Msg().err("Error: invalid container json metadata")
-                return(False, False)
-        return(container_dir, container_json)
+                return (False, False)
+        return (container_dir, container_json)
 
     def _chk_container_root(self, container_id=None):
         """Check container ROOT sanity"""
@@ -4709,15 +4766,15 @@ class LocalRepository(object):
             for layer_id in reversed(layer_list):
                 layer_file = directory + '/' + layer_id + ".layer"
                 if not os.path.exists(layer_file):
-                    return(None, None)
+                    return (None, None)
                 files.append(layer_file)
             json_file_list = [directory + "/container.json",
                               directory + '/' + layer_list[0] + ".json", ]
             for json_file in json_file_list:
                 if os.path.exists(json_file):
                     container_json = self.load_json(json_file)
-                    return(container_json, files)
-        return(None, None)
+                    return (container_json, files)
+        return (None, None)
 
     def _get_image_attributes_v2_s1(self, directory, manifest):
         """Get image attributes from image directory in v2 schema 1 format"""
@@ -4725,15 +4782,15 @@ class LocalRepository(object):
         for layer in reversed(manifest["fsLayers"]):
             layer_file = directory + '/' + layer["blobSum"]
             if not os.path.exists(layer_file):
-                return(None, None)
+                return (None, None)
             files.append(layer_file)
         try:
             json_string = manifest["history"][0]["v1Compatibility"].strip()
             container_json = json.loads(json_string)
         except (IOError, OSError, AttributeError, ValueError, TypeError,
                 IndexError, KeyError):
-            return(None, files)
-        return(container_json, files)
+            return (None, files)
+        return (container_json, files)
 
     def _get_image_attributes_v2_s2(self, directory, manifest):
         """Get image attributes from image directory in v2 schema 2 format"""
@@ -4741,15 +4798,15 @@ class LocalRepository(object):
         for layer in manifest["layers"]:
             layer_file = directory + '/' + layer["digest"]
             if not os.path.exists(layer_file):
-                return(None, None)
+                return (None, None)
             files.append(layer_file)
         try:
             json_file = directory + '/' + manifest["config"]["digest"]
             container_json = json.loads(FileUtil(json_file).getdata())
         except (IOError, OSError, AttributeError, ValueError, TypeError,
                 IndexError, KeyError):
-            return(None, files)
-        return(container_json, files)
+            return (None, files)
+        return (container_json, files)
 
     def get_image_attributes(self):
         """Load attributes from image TAGs that have been previously
@@ -4765,7 +4822,7 @@ class LocalRepository(object):
                 return self._get_image_attributes_v2_s1(directory, manifest)
             elif manifest and "layers" in manifest:
                 return self._get_image_attributes_v2_s2(directory, manifest)
-        return(None, None)
+        return (None, None)
 
     def save_json(self, filename, data):
         """Save container json to a file in the image TAG directory
@@ -5206,7 +5263,7 @@ class GetURLpyCurl(GetURL):
             output_file = ""
             pyc.setopt(pyc.WRITEFUNCTION, buf.write)
         hdr.data["X-ND-CURLSTATUS"] = 0
-        return(output_file, filep)
+        return (output_file, filep)
 
     def get(self, *args, **kwargs):
         """http get implementation using the PyCurl"""
@@ -5220,7 +5277,7 @@ class GetURLpyCurl(GetURL):
             Msg().err("curl arg: ", kwargs, l=Msg.DBG)
             pyc.perform()     # call pyculr
         except(IOError, OSError):
-            return(None, None)
+            return (None, None)
         except pycurl.error as error:
             errno, errstr = error
             hdr.data["X-ND-CURLSTATUS"] = errno
@@ -5244,7 +5301,7 @@ class GetURLpyCurl(GetURL):
                 Msg().err("Error: in download: " + str(
                     hdr.data["X-ND-HTTPSTATUS"]))
                 FileUtil(output_file).remove()
-        return(hdr, buf)
+        return (hdr, buf)
 
 
 class GetURLexeCurl(GetURL):
@@ -5343,7 +5400,7 @@ class GetURLexeCurl(GetURL):
             Msg().err("Error: in download: %s"
                       % str(FileUtil(self._files["error_file"]).getdata()))
             FileUtil(self._files["output_file"]).remove()
-            return(hdr, buf)
+            return (hdr, buf)
         status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
@@ -5373,7 +5430,7 @@ class GetURLexeCurl(GetURL):
             FileUtil(self._files["output_file"]).remove()
         FileUtil(self._files["error_file"]).remove()
         FileUtil(self._files["header_file"]).remove()
-        return(hdr, buf)
+        return (hdr, buf)
 
 
 class DockerIoAPI(object):
@@ -5434,37 +5491,37 @@ class DockerIoAPI(object):
         Msg().err("buffer: %s" % (buf.getvalue()), l=Msg.DBG)
         status_code = self.curl.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if status_code == 200:
-            return(hdr, buf)
+            return (hdr, buf)
         if not kwargs["RETRY"]:
             hdr.data["X-ND-CURLSTATUS"] = 13  # Permission denied
-            return(hdr, buf)
+            return (hdr, buf)
         auth_kwargs = kwargs.copy()
         if "location" not in hdr.data:
             kwargs["FOLLOW"] = 3
         if "location" in hdr.data and hdr.data['location']:
             if not kwargs["FOLLOW"]:
                 hdr.data["X-ND-CURLSTATUS"] = 13
-                return(hdr, buf)
+                return (hdr, buf)
             kwargs["FOLLOW"] -= 1
             args = [hdr.data['location']]
             if "header" in auth_kwargs:
                 del auth_kwargs["header"]
         elif status_code == 401:
             if "www-authenticate" in hdr.data:
-                www_authenticate = hdr.data["www-authenticate"]  
+                www_authenticate = hdr.data["www-authenticate"]
                 if not "realm" in www_authenticate:
-                    return(hdr, buf)
+                    return (hdr, buf)
                 elif 'error="insufficient_scope"' in www_authenticate:
-                    return(hdr, buf)
+                    return (hdr, buf)
                 auth_header = ""
                 if "/v2/" in url:
                     auth_header = self._get_v2_auth(www_authenticate,
-                            kwargs["RETRY"])
+                                                    kwargs["RETRY"])
                 elif "/v1/" in url:
                     auth_header = self._get_v1_auth(www_authenticate)
                 auth_kwargs.update({"header": [auth_header]})
         (hdr, buf) = self._get_url(*args, **auth_kwargs)
-        return(hdr, buf)
+        return (hdr, buf)
 
     def _get_file(self, url, filename, cache_mode):
         """Get a file and check its size. Optionally enable other
@@ -5558,7 +5615,7 @@ class DockerIoAPI(object):
             return self.v1_auth_header
         return ""
 
-    def get_v1_image_tags(self, imagerepo):
+    def get_v1_image_tags(self, imagerepo, tags_only=False):
         """Get list of tags in a repo from Docker Hub"""
         (hdr_data, dummy) = self.get_v1_repo(imagerepo)
         try:
@@ -5567,14 +5624,17 @@ class DockerIoAPI(object):
             endpoint = self.index_url
         url = endpoint + "/v1/repositories/" + imagerepo + "/tags"
         Msg().err("tags url:", url, l=Msg.DBG)
-        (hdr, buf) = self._get_url(url)
+        (dummy, buf) = self._get_url(url)
         tags = []
         try:
-            for tag in json.loads(buf.getvalue()):
-                tags.append(tag["name"])
-            return(tags)
+            if tags_only:
+                for tag in json.loads(buf.getvalue()):
+                    tags.append(tag["name"])
+                return tags
+            else:
+                return json.loads(buf.getvalue())
         except (IOError, OSError, AttributeError, ValueError, TypeError):
-            return([])
+            return []
 
     def get_v1_image_tag(self, endpoint, imagerepo, tag):
         """Get list of tags in a repo from Docker Hub"""
@@ -5582,9 +5642,9 @@ class DockerIoAPI(object):
         Msg().err("tags url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return(hdr.data, json.loads(buf.getvalue()))
+            return (hdr.data, json.loads(buf.getvalue()))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
-            return(hdr.data, [])
+            return (hdr.data, [])
 
     def get_v1_image_ancestry(self, endpoint, image_id):
         """Get the ancestry which is an ordered list of layers"""
@@ -5592,9 +5652,9 @@ class DockerIoAPI(object):
         Msg().err("ancestry url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return(hdr.data, json.loads(buf.getvalue()))
+            return (hdr.data, json.loads(buf.getvalue()))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
-            return(hdr.data, [])
+            return (hdr.data, [])
 
     def get_v1_image_json(self, endpoint, layer_id):
         """Get the JSON metadata for a specific layer"""
@@ -5702,20 +5762,23 @@ class DockerIoAPI(object):
             pass
         return False
 
-    def get_v2_image_tags(self, imagerepo):
+    def get_v2_image_tags(self, imagerepo, tags_only=False):
         """Get list of tags in a repo from Docker Hub"""
         if '/' not in imagerepo:
-             imagerepo = "library/" + imagerepo
+            imagerepo = "library/" + imagerepo
         url = self.registry_url + "/v2/" + imagerepo + "/tags/list"
         Msg().err("tags url:", url, l=Msg.DBG)
-        (hdr, buf) = self._get_url(url)
+        (dummy, buf) = self._get_url(url)
         tags = []
         try:
-            for tag in json.loads(buf.getvalue())["tags"]:
-                tags.append(tag)
-            return tags
+            if tags_only:
+                for tag in json.loads(buf.getvalue())["tags"]:
+                    tags.append(tag)
+                return tags
+            else:
+                return json.loads(buf.getvalue())
         except (IOError, OSError, AttributeError, ValueError, TypeError):
-            return([])
+            return []
 
     def get_v2_image_manifest(self, imagerepo, tag):
         """Get the image manifest which contains JSON metadata
@@ -5731,9 +5794,9 @@ class DockerIoAPI(object):
         Msg().err("manifest url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return(hdr.data, json.loads(buf.getvalue()))
+            return (hdr.data, json.loads(buf.getvalue()))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
-            return(hdr.data, [])
+            return (hdr.data, [])
 
     def get_v2_image_layer(self, imagerepo, layer_id):
         """Get one image layer data file (tarball)"""
@@ -5773,10 +5836,10 @@ class DockerIoAPI(object):
         status = self.curl.get_status_code(hdr_data["X-ND-HTTPSTATUS"])
         if status == 401:
             Msg().err("Error: manifest not found or not authorized")
-            return([])
+            return []
         if status != 200:
             Msg().err("Error: pulling manifest:")
-            return([])
+            return []
         try:
             if not (self.localrepo.setup_tag(tag) and
                     self.localrepo.set_version("v2")):
@@ -5829,17 +5892,14 @@ class DockerIoAPI(object):
         Msg().err("v1 image id: %s" % (imagerepo), l=Msg.DBG)
         (hdr_data, images_array) = self.get_v1_repo(imagerepo)
         status = self.curl.get_status_code(hdr_data["X-ND-HTTPSTATUS"])
-        if status == 401:
+        if status == 401 or not images_array:
             Msg().err("Error: image not found or not authorized")
-            return([])
-        if not images_array:
-            Msg().err("Error: image not found")
             return []
         try:
             endpoint = "http://" + hdr_data["x-docker-endpoints"]
         except KeyError:
             endpoint = self.index_url
-        (dummy, tags_array) = self.get_v1_image_tags(endpoint, imagerepo)
+        (tags_array) = self.get_v1_image_tags(endpoint, imagerepo)
         image_id = self._get_v1_id_from_tags(tags_array, tag)
         if not image_id:
             Msg().err("Error: image tag not found")
@@ -5919,9 +5979,9 @@ class DockerIoAPI(object):
         """List tags from a v2 or v1 repositories"""
         Msg().err("get tags: %s " % (imagerepo), l=Msg.DBG)
         if self.is_v2():
-            return self.get_v2_image_tags(imagerepo)  # try v2
+            return self.get_v2_image_tags(imagerepo, True)  # try v2
         else:
-            return self.get_v1_image_tags(imagerepo)  # try v1
+            return self.get_v1_image_tags(imagerepo, True)  # try v1
 
     def search_init(self, pause):
         """Setup new search"""
@@ -6664,7 +6724,7 @@ class Udocker(object):
         if not (imagerepo and tag and
                 self.dockerioapi.is_repo_name(imagespec)):
             Msg().err("Error: must specify image:tag or repository/image:tag")
-            return(None, None)
+            return (None, None)
         return imagerepo, tag
 
     def _check_imagerepo(self, imagerepo, def_imagerepo=None):
@@ -6805,7 +6865,7 @@ class Udocker(object):
         """List tags for repository"""
         try:
             for tag in self.dockerioapi.get_tags(expression):
-               Msg().out(tag)
+                Msg().out(tag)
             return True
         except (KeyError, TypeError, ValueError):
             return False
@@ -7787,15 +7847,15 @@ class CmdParser(object):
             return self._argv_split["CMD"]
         elif opt_where in ("CMD_OPT", "GEN_OPT"):
             if opt_name.startswith('P'):
-                return(self._get_param(opt_name,
-                                       self._argv_split[opt_where],
-                                       self._argv_consumed_options[opt_where],
-                                       self._argv_consumed_params[opt_where]))
-            elif opt_name.startswith('-'):
-                return(self._get_option(opt_name,
+                return (self._get_param(opt_name,
                                         self._argv_split[opt_where],
                                         self._argv_consumed_options[opt_where],
-                                        opt_multiple))
+                                        self._argv_consumed_params[opt_where]))
+            elif opt_name.startswith('-'):
+                return (self._get_option(opt_name,
+                                         self._argv_split[opt_where],
+                                         self._argv_consumed_options[opt_where],
+                                         opt_multiple))
         return None
 
     def declare_options(self, opts_string, opt_where="CMD_OPT"):
