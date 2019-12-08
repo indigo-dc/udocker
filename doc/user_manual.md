@@ -199,20 +199,24 @@ Examples:
 
 ### 3.4. search
 ```
-  udocker search [OPTIONS] REPO/IMAGE:TAG
+  udocker search [-a] STRING
+  udocker search --list-tags REPO/IMAGE
 ```
 Search Docker Hub for container images. The command displays containers one
-page at a time and pauses for user input.
+page at a time and pauses for user input. Not all registries have search
+capabilities.
 
 Options:
 
 * `-a` display pages continuously without pause.
+* `--list-tags` list the tags for a given repository
 
 Examples:
 ```
   udocker search busybox
   udocker search -a busybox
   udocker search iscampos/openqcd
+  udocker search --list-tags centos
 ```
 
 ### 3.5. pull
