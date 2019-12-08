@@ -18,8 +18,8 @@
 #
 # ##################################################################
 
-UDOCKER_VERSION_OVERRIDE=1.1.4
-TARBALL_VERSION_OVERRIDE=1.1.4
+UDOCKER_VERSION_OVERRIDE="1.1.3-3"
+TARBALL_VERSION_OVERRIDE="1.1.3-3"
 
 sanity_check() 
 {
