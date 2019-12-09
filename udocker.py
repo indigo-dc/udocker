@@ -5446,7 +5446,6 @@ class DockerIoAPI(object):
         self.v2_auth_token = ""
         self.localrepo = localrepo
         self.curl = GetURL()
-        self.docker_registry_domain = "(docker.io|docker.com)"
         self.search_pause = True
         self.search_page = 0
         self.search_ended = False
@@ -5468,11 +5467,6 @@ class DockerIoAPI(object):
         if imagerepo and re.match("^[a-zA-Z0-9][a-zA-Z0-9-_./:]+$", imagerepo):
             return True
         return False
-
-    def _is_docker_registry(self):
-        """Check if registry is dockerhub"""
-        regexp = r"%s(\:\d+)?(\/)?$" % (self.docker_registry_domain)
-        return re.search(regexp, self.registry_url)
 
     def _get_url(self, *args, **kwargs):
         """Encapsulates the call to GetURL.get() so that authentication
@@ -5784,7 +5778,6 @@ class DockerIoAPI(object):
         """Get the image manifest which contains JSON metadata
         that is common to all layers in this image tag
         """
-        # self._is_docker_registry() and
         if '/' not in imagerepo:
             url = self.registry_url + "/v2/library/" + \
                 imagerepo + "/manifests/" + tag
@@ -5800,7 +5793,6 @@ class DockerIoAPI(object):
 
     def get_v2_image_layer(self, imagerepo, layer_id):
         """Get one image layer data file (tarball)"""
-        # self._is_docker_registry() and
         if '/' not in imagerepo:
             url = self.registry_url + "/v2/library/" + \
                 imagerepo + "/blobs/" + layer_id
@@ -6737,16 +6729,21 @@ class Udocker(object):
             return None
         return imagerepo
 
-    def _set_repository(self, registry_url, index_url,
+    def _set_repository(self, registry_url, index_url=None,
                         imagerepo=None, http_proxy=None):
         """Select docker respository"""
         transport = "https:"
         if http_proxy:
             self.dockerioapi.set_proxy(http_proxy)
         if registry_url:
+            if "://" not in registry_url:
+                registry_url = "https://" + registry_url
             self.dockerioapi.set_registry(registry_url)
-            self.dockerioapi.set_index("")
+            if not index_url:
+                self.dockerioapi.set_index("")
         if index_url:
+            if "://" not in index_url:
+                index_url = "https://" + index_url
             self.dockerioapi.set_index(index_url)
             if not registry_url:
                 self.dockerioapi.set_registry("")
@@ -6757,7 +6754,7 @@ class Udocker(object):
                 else:
                     (hostname, dummy) = imagerepo.split('/')[:2]
             except (ValueError, IndexError, TypeError):
-                return
+                return False
             if "." in hostname:
                 try:
                     self.dockerioapi.set_registry( \
@@ -6767,7 +6764,7 @@ class Udocker(object):
                 except (KeyError, NameError, TypeError):
                     self.dockerioapi.set_registry(transport + "//" + hostname)
                     self.dockerioapi.set_index(transport + "//" + hostname)
-        return
+        return True
 
     def _split_imagespec(self, imagerepo):
         """Split image repo into hostname, repo, tag"""
@@ -7086,8 +7083,7 @@ class Udocker(object):
         username = cmdp.get("--username=")
         password = cmdp.get("--password=")
         registry_url = cmdp.get("--registry=")
-        if registry_url:
-            self.dockerioapi.set_registry(registry_url)
+        self._set_repository(registry_url, None, None, None)
         if not username:
             username = raw_input("username: ")
         if not password:
@@ -7110,8 +7106,7 @@ class Udocker(object):
         """
         all_credentials = cmdp.get("-a")
         registry_url = cmdp.get("--registry=")
-        if registry_url:
-            self.dockerioapi.set_registry(registry_url)
+        self._set_repository(registry_url, None, None, None)
         if all_credentials:
             status = self.keystore.erase()
         else:
