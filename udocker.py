@@ -6792,6 +6792,8 @@ class Udocker(object):
         mkrepo <directory>
         """
         topdir = cmdp.get("P1")
+        if cmdp.missing_options():  # syntax error
+            return False
         if not topdir or not os.path.exists(topdir):
             self.localrepo.setup(topdir)
             if self.localrepo.create_repo():
@@ -6995,10 +6997,10 @@ class Udocker(object):
         else:
             tarfile = cmdp.get("P1")
             imagespec = cmdp.get("P2")
+        if cmdp.missing_options():  # syntax error
+            return False
         if not tarfile:
             Msg().err("Error: must specify tar filename")
-            return False
-        if cmdp.missing_options():  # syntax error
             return False
         if to_container or clone:
             if clone:
@@ -7034,6 +7036,8 @@ class Udocker(object):
         clone = cmdp.get("--clone")
         tarfile = cmdp.get("P1")
         container_id = cmdp.get("P2")
+        if cmdp.missing_options():  # syntax error
+            return False
         container_id = self.localrepo.get_container_id(container_id)
         if not container_id:
             Msg().err("Error: invalid container id", container_id)
@@ -7062,6 +7066,8 @@ class Udocker(object):
         """
         name = cmdp.get("--name=")
         container_id = cmdp.get("P1")
+        if cmdp.missing_options():  # syntax error
+            return False
         container_id = self.localrepo.get_container_id(container_id)
         if not container_id:
             Msg().err("Error: invalid container id", container_id)
@@ -7083,6 +7089,8 @@ class Udocker(object):
         username = cmdp.get("--username=")
         password = cmdp.get("--password=")
         registry_url = cmdp.get("--registry=")
+        if cmdp.missing_options():  # syntax error
+            return False
         self._set_repository(registry_url, None, None, None)
         if not username:
             username = raw_input("username: ")
@@ -7106,6 +7114,8 @@ class Udocker(object):
         """
         all_credentials = cmdp.get("-a")
         registry_url = cmdp.get("--registry=")
+        if cmdp.missing_options():  # syntax error
+            return False
         self._set_repository(registry_url, None, None, None)
         if all_credentials:
             status = self.keystore.erase()
@@ -7662,6 +7672,8 @@ class Udocker(object):
         if cmdp is not None:
             force = cmdp.get("--force")
             purge = cmdp.get("--purge")
+            if cmdp.missing_options():  # syntax error
+                return False
         else:
             force = False
             purge = False
