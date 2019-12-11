@@ -521,7 +521,7 @@ Options:
 * `--novol=DIR` excludes a host file or directory from being mapped
 * `--env="VAR=VAL"` set environment variables
 * `--env-file=FILE` load environment variables from file
-* `--hostauth` make the host /etc/passwd and /etc/group appear inside the container
+* `--hostauth` obtain user account from the host and add it to the container passwd and group
 * `--nosysdirs` prevent udocker from mapping /proc /sys /run and /dev inside the container
 * `--nometa` ignore the container metadata settings
 * `--hostenv` pass the user host environment to the container
