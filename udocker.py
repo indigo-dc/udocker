@@ -42,7 +42,7 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.3-3"
+__version__ = "1.1.3-4"
 __date__ = "2019"
 
 # Python version major.minor
@@ -149,12 +149,6 @@ class Config(object):
         "/lib/modules",
     )
 
-    # directories to be mapped in contaners with: run --hostauth
-    hostauth_list = (
-        "/etc/passwd", "/etc/group",
-        "/etc/shadow", "/etc/gshadow",
-    )
-
     # directories for DRI (direct rendering)
     dri_list = (
         "/usr/lib64/dri", "/lib64/dri",
@@ -200,8 +194,20 @@ class Config(object):
         "/dev/mic/scif", "/dev/scif",
     )
 
+    # Force the use of specific executables 
+    # UDOCKER = use executable from the udocker binary distribution/tarball
+    use_proot_executable = "UDOCKER"
+    use_runc_executable = ""
+    use_singularity_executable = ""
+
     # runc parameters
     runc_nomqueue = None
+    runc_capabilities = [
+        "CAP_KILL", "CAP_NET_BIND_SERVICE", "CAP_CHOWN", "CAP_DAC_OVERRIDE",
+        "CAP_FOWNER", "CAP_FSETID", "CAP_KILL", "CAP_SETGID", "CAP_SETUID",
+        "CAP_SETPCAP", "CAP_NET_BIND_SERVICE", "CAP_NET_RAW", "CAP_SYS_CHROOT",
+        "CAP_MKNOD", "CAP_AUDIT_WRITE", "CAP_SETFCAP",
+    ]
 
     # singularity options -u --nv -w
     singularity_options = ["-w", ]
@@ -224,7 +230,7 @@ class Config(object):
     ctimeout = 6                  # default TCP connect timeout (secs)
     http_agent = ""
     http_insecure = False
-    use_curl_executable = ""      # force use of executable
+    use_curl_executable = ""
 
     # docker hub index
     dockerio_index_url = "https://hub.docker.com"
@@ -288,6 +294,13 @@ class Config(object):
         Config.keystore = os.getenv("UDOCKER_KEYSTORE", Config.keystore)
         Config.use_curl_executable = os.getenv("UDOCKER_USE_CURL_EXECUTABLE",
                                                Config.use_curl_executable)
+        Config.use_proot_executable = os.getenv("UDOCKER_USE_PROOT_EXECUTABLE",
+                                                Config.use_proot_executable)
+        Config.use_runc_executable = os.getenv("UDOCKER_USE_RUNC_EXECUTABLE",
+                                               Config.use_runc_executable)
+        Config.use_singularity_executable = \
+                os.getenv("UDOCKER_USE_SINGULARITY_EXECUTABLE",
+                          Config.use_singularity_executable)
         fakechroot_expand_symlinks = \
                 os.getenv("UDOCKER_FAKECHROOT_EXPAND_SYMLINKS",
                           str(Config.fakechroot_expand_symlinks)).lower()
@@ -377,7 +390,7 @@ class Config(object):
                     arch = "amd64"
             elif machine in ("i386", "i486", "i586", "i686"):
                 arch = "i386"
-            elif machine.startswith("arm"):
+            elif machine.startswith("arm") or machine.startswith("aarch"):
                 if bits == "32bit":
                     arch = "arm"
                 else:
@@ -1143,6 +1156,15 @@ class FileUtil(object):
             filep.write(buf)
             filep.close()
             return buf
+
+    def getvalid_path(self):
+        """Get the portion of a pathname that exists"""
+        f_path = self.filename
+        while f_path:
+            if os.path.exists(f_path):
+                return f_path
+            (f_path, dummy) = os.path.split(f_path)
+        return f_path
 
     def _find_exec(self, cmd_to_use):
         """This method is called by find_exec() invokes a command like
@@ -1988,26 +2010,17 @@ class NixAuthentication(object):
     def add_user(self, user, passw, uid, gid, gecos,
                  home, shell):
         """Add a *nix user to a /etc/passwd file"""
-        try:
-            outpasswd = open(self.passwd_file, "ab")
-        except (IOError, OSError):
-            return False
-        else:
-            outpasswd.write("%s:%s:%s:%s:%s:%s:%s\n" %
-                            (user, passw, uid, gid, gecos, home, shell))
-            outpasswd.close()
+        line = "%s:%s:%s:%s:%s:%s:%s\n" % (user, passw, uid, gid, gecos, home, shell)
+        if line in FileUtil(self.passwd_file).getdata():
             return True
+        return FileUtil(self.passwd_file).putdata(line, "ab")
 
     def add_group(self, group, gid):
         """Add a group to a /etc/passwd file"""
-        try:
-            outgroup = open(self.group_file, "ab")
-        except (IOError, OSError):
-            return False
-        else:
-            outgroup.write("%s:x:%s:\n" % (group, gid))
-            outgroup.close()
+        line = "%s:x:%s:\n" % (group, gid)
+        if line in FileUtil(self.group_file).getdata():
             return True
+        return FileUtil(self.group_file).putdata(line, "ab")
 
     def get_user(self, wanted_user):
         """Get host or container user"""
@@ -2098,10 +2111,8 @@ class FileBind(object):
             cont_file = self.container_root + '/' + f_name
             link_path = self.bind_dir + '/' + orig_file
             if not os.path.exists(orig_file_path):
-                if os.path.exists(cont_file):
+                if os.path.isfile(cont_file):
                     os.rename(cont_file, orig_file_path)
-                else:
-                    FileUtil(orig_file_path).putdata("")
                 os.symlink(link_path, cont_file)
             FileUtil(orig_file_path).copyto(self.host_bind_dir)
         return (self.host_bind_dir, self.bind_dir)
@@ -2119,6 +2130,112 @@ class FileBind(object):
         FileUtil(host_file).copyto(replace_file)
 
 
+class MountPoint(object):
+    """Create, store and reset container mountpoints
+    """
+
+    orig_dir = "/.mountpoints"
+
+    def __init__(self, localrepo, container_id):
+        self.localrepo = localrepo               # LocalRepository object
+        self.container_id = container_id         # Container id
+        self.mountpoints = dict()
+        self.container_dir = \
+            os.path.realpath(self.localrepo.cd_container(container_id))
+        self.container_root = self.container_dir + "/ROOT"
+        self.mountpoints_orig_dir = self.container_dir + self.orig_dir
+        self.setup()
+
+    def setup(self):
+        """Prepare container for mountpoints"""
+        if not os.path.isdir(self.mountpoints_orig_dir):
+            if not FileUtil(self.mountpoints_orig_dir).mkdir():
+                Msg().err("Error: creating dir:", self.mountpoints_orig_dir)
+                return False
+        return True
+
+    def add(self, cont_path):
+        """Add a container relative pathname as destination mountpoint"""
+        mountpoint = self.container_root + '/' + cont_path
+        orig_mpath = FileUtil(mountpoint).getvalid_path()
+        if orig_mpath:
+            self.mountpoints[cont_path] = \
+                orig_mpath.replace(self.container_root, "", 1)
+        if not self.mountpoints[cont_path]:
+            self.mountpoints[cont_path] = "/"
+
+    def delete(self, cont_path):
+        """Delete container mountpoint from dict"""
+        if cont_path not in self.mountpoints or not self.container_root:
+            return False
+        mountpoint = self.container_root + '/' + cont_path
+        orig_mpath = self.container_root + '/' + self.mountpoints[cont_path]
+        mountpoint = os.path.realpath(mountpoint)
+        orig_mpath = os.path.realpath(orig_mpath)
+        container_root = os.path.realpath(self.container_root)
+        while mountpoint != orig_mpath:
+            if mountpoint.startswith(container_root):
+                FileUtil(mountpoint).remove()
+                mountpoint = os.path.dirname(mountpoint)
+        del self.mountpoints[cont_path]
+        return True
+
+    def delete_all(self):
+        """Delete all mountpoints"""
+        for cont_path in self.mountpoints:
+            self.delete(cont_path)
+
+    def create(self, host_path, cont_path):
+        """Create mountpoint"""
+        mountpoint = self.container_root + '/' + cont_path
+        if os.path.exists(mountpoint):
+            if (stat.S_IFMT(os.stat(mountpoint).st_mode) ==
+                    stat.S_IFMT(os.stat(host_path).st_mode)):
+                return True
+            Msg().err("Error: host and container volume paths not same type:",
+                      host_path, cont_path)
+            return False
+        self.add(cont_path)
+        if os.path.isfile(host_path):
+            FileUtil(os.path.dirname(mountpoint)).mkdir()
+            FileUtil(mountpoint).putdata("")
+            status = os.path.isfile(mountpoint)
+        elif os.path.isdir(host_path):
+            status = FileUtil(mountpoint).mkdir()
+        if not status:
+            Msg().err("Error: creating container mountpoint:", cont_path)
+            self.delete(cont_path)
+            return False
+        return True
+
+    def save(self, cont_path):
+        """Save one mountpoint"""
+        if cont_path not in self.mountpoints:
+            return True
+        orig_mountpoint = self.mountpoints[cont_path].replace('/', '#')
+        curr_mountpoint = cont_path.replace('/', '#')
+        curr_mountpoint = self.mountpoints_orig_dir + '/' + curr_mountpoint
+        try:
+            if not os.path.exists(curr_mountpoint):
+                os.symlink(orig_mountpoint, curr_mountpoint)
+        except (IOError, OSError):
+            return False
+        return True
+
+    def save_all(self):
+        """Save all mountpoints"""
+        for cont_path in self.mountpoints:
+            self.save(cont_path)
+
+    def load_all(self):
+        """Load all mountpoints"""
+        for f_name in os.listdir(self.mountpoints_orig_dir):
+            orig_mpath = os.readlink(self.mountpoints_orig_dir + '/' + f_name)
+            orig_mpath = orig_mpath.replace('#', '/')
+            cont_path = f_name.replace('#', '/')
+            self.mountpoints[cont_path] = orig_mpath
+
+
 class ExecutionEngineCommon(object):
     """Docker container execution engine parent class
     Provides the container execution methods that are common to
@@ -2132,8 +2249,9 @@ class ExecutionEngineCommon(object):
         self.container_root = ""                 # ROOT of container filesystem
         self.container_names = []                # Container names
         self.imagerepo = None                    # Imagerepo of container image
-        self.hostauth_list = Config.hostauth_list  # passwd and group
+        self.hostauth_list = ()                  # Authentication files to be used
         self.exec_mode = None                    # ExecutionMode instance
+        self.mountp = None                       # MountPoint object
         # Metadata defaults
         self.opt = dict()                        # Run options
         self.opt["nometa"] = False               # Don't load metadata
@@ -2288,39 +2406,30 @@ class ExecutionEngineCommon(object):
 
     def _create_mountpoint(self, host_path, cont_path):
         """Create mountpoint"""
-        mountpoint = self.container_root + cont_path
-        if not os.path.exists(host_path):
-            return False
-        if os.path.exists(mountpoint):
+        if self.mountp.create(host_path, cont_path):
+            self.mountp.save(cont_path)
             return True
-        if os.path.isfile(host_path):
-            return FileUtil(mountpoint).putdata("")
-        elif os.path.isdir(host_path):
-            return FileUtil(mountpoint).mkdir()
         return False
 
     def _check_volumes(self):
         """Check volume paths"""
         for vol in list(self.opt["vol"]):
             (host_path, cont_path) = self._vol_split(vol)
-            if not host_path:
-                Msg().err("Error: invalid volume host directory:", host_path)
+            if not (host_path and host_path.startswith('/')):
+                Msg().err("Error: invalid host volume path:", host_path)
                 return False
-            if cont_path and not cont_path.startswith('/'):
-                Msg().err("Error: invalid volume container directory:", cont_path)
-                return False
-            if host_path and not host_path.startswith('/'):
-                Msg().err("Error: invalid volume host directory:", host_path)
+            if not (cont_path and cont_path != '/' and cont_path.startswith('/')):
+                Msg().err("Error: invalid container volume path:", cont_path)
                 return False
             if not os.path.exists(host_path):
                 if (host_path in Config.dri_list or
-                        host_path in Config.sysdirs_list or
-                        host_path in Config.hostauth_list):
+                        host_path in Config.sysdirs_list):
                     self.opt["vol"].remove(vol)
                 else:
                     Msg().err("Error: invalid host volume path:", host_path)
                     return False
-            self._create_mountpoint(host_path, cont_path)
+            if not self._create_mountpoint(host_path, cont_path):
+                return False
         return True
 
     def _get_bindhome(self):
@@ -2597,59 +2706,6 @@ class ExecutionEngineCommon(object):
         self._create_user(container_auth, host_auth)
         return True
 
-    def _create_user(self, container_auth, host_auth):
-        """If we need to create a new user then we first
-        copy /etc/passwd and /etc/group to new files and them
-        we add the user account into these copied files which
-        later are binding/mapped/passed to the container. So
-        setup this binding as well via hostauth.
-        """
-        FileUtil().umask(0o077)
-        tmp_passwd = FileUtil("passwd").mktmp()
-        tmp_group = FileUtil("group").mktmp()
-        FileUtil(container_auth.passwd_file).copyto(tmp_passwd)
-        FileUtil(container_auth.group_file).copyto(tmp_group)
-        FileUtil().umask()
-        if not self.opt["uid"]:
-            self.opt["uid"] = str(Config.uid)
-        if not self.opt["gid"]:
-            self.opt["gid"] = str(Config.gid)
-        if not self.opt["user"]:
-            self.opt["user"] = "udoc" + self.opt["uid"][0:4]
-        if self.opt["user"] == "root":
-            self.opt["home"] = '/'
-        elif not self.opt["home"]:
-            self.opt["home"] = "/home/" + self.opt["user"]
-        if not self.opt["shell"]:
-            self.opt["shell"] = "/bin/sh"
-        if not self.opt["gecos"]:
-            self.opt["gecos"] = "*UDOCKER*"
-        new_auth = NixAuthentication(tmp_passwd, tmp_group)
-        if (not new_auth.add_user(self.opt["user"], 'x',
-                                  self.opt["uid"], self.opt["gid"],
-                                  self.opt["gecos"], self.opt["home"],
-                                  self.opt["shell"])):
-            return False
-        (group, dummy, dummy) = host_auth.get_group(self.opt["gid"])
-        if not group:
-            group = self.opt["user"]
-        new_auth.add_group(group, self.opt["gid"])
-        for sup_gid in os.getgroups():
-            new_auth.add_group('G' + str(sup_gid), str(sup_gid))
-        self.opt["hostauth"] = True
-        self.hostauth_list = (tmp_passwd + ":/etc/passwd",
-                              tmp_group + ":/etc/group")
-        return True
-
-    def _uid_check_noroot(self):
-        """Set the uid_map string for engines without root support
-        """
-        if ("user" not in self.opt or (not self.opt["user"]) or
-                self.opt["user"] == "root" or self.opt["user"] == '0'):
-            Msg().err("Warning: running as uid 0 is not supported by this engine",
-                      l=Msg.WAR)
-            self.opt["user"] = Config().username()
-
     def _setup_container_user_noroot(self, user):
         """ Setup user for engines without root support.
         Equivalent to _setup_container_user() for engines without root support.
@@ -2700,6 +2756,72 @@ class ExecutionEngineCommon(object):
                           l=Msg.WAR)
         self._create_user(container_auth, host_auth)
         return True
+
+    def _fill_user(self):
+        """Fill in values for user to be used in the account creation.
+        Provide default values in case the required fields are empty.
+        """
+        if not self.opt["uid"]:
+            self.opt["uid"] = str(Config.uid)
+        if not self.opt["gid"]:
+            self.opt["gid"] = str(Config.gid)
+        if not self.opt["user"]:
+            self.opt["user"] = "udoc" + self.opt["uid"][0:4]
+        if self.opt["bindhome"]:
+            self.opt["home"] = NixAuthentication().get_home()
+        if not self.opt["home"]:
+            self.opt["home"] = '/'
+        if not self.opt["shell"]:
+            self.opt["shell"] = "/bin/sh"
+        if not self.opt["gecos"]:
+            self.opt["gecos"] = "*UDOCKER*"
+
+    def _create_user(self, container_auth, host_auth):
+        """If we need to create a new user then we first
+        copy /etc/passwd and /etc/group to new files and them
+        we add the user account into these copied files which
+        later are binding/mapped/passed to the container. So
+        setup this binding as well via hostauth.
+        """
+        if self.opt["containerauth"]:
+            tmp_passwd = container_auth.passwd_file
+            tmp_group = container_auth.group_file
+        else:
+            FileUtil().umask(0o077)
+            tmp_passwd = FileUtil("passwd").mktmp()
+            tmp_group = FileUtil("group").mktmp()
+            FileUtil(container_auth.passwd_file).copyto(tmp_passwd)
+            FileUtil(container_auth.group_file).copyto(tmp_group)
+            FileUtil().umask()
+        if self._is_volume("/etc/passwd"):
+            tmp_passwd = "/etc/passwd"
+        if self._is_volume("/etc/group"):
+            tmp_passwd = "/etc/group"
+        self._fill_user()
+        new_auth = NixAuthentication(tmp_passwd, tmp_group)
+        new_auth.add_user(self.opt["user"], 'x',
+                          self.opt["uid"], self.opt["gid"],
+                          self.opt["gecos"], self.opt["home"],
+                          self.opt["shell"])
+        (group, dummy, dummy) = host_auth.get_group(self.opt["gid"])
+        if not group:
+            new_auth.add_group(self.opt["user"], self.opt["gid"])
+        for sup_gid in os.getgroups():
+            new_auth.add_group('G' + str(sup_gid), str(sup_gid))
+        if not self.opt["containerauth"]:
+            self.opt["hostauth"] = True
+            self.hostauth_list = (tmp_passwd + ":/etc/passwd",
+                                  tmp_group + ":/etc/group")
+        return True
+
+    def _uid_check_noroot(self):
+        """Set the uid_map string for engines without root support
+        """
+        if ("user" not in self.opt or (not self.opt["user"]) or
+                self.opt["user"] == "root" or self.opt["user"] == '0'):
+            Msg().err("Warning: running as uid 0 is not supported by this engine",
+                      l=Msg.WAR)
+            self.opt["user"] = Config().username()
 
     def _run_banner(self, cmd, char='*'):
         """Print a container startup banner"""
@@ -2819,6 +2941,9 @@ class ExecutionEngineCommon(object):
         if not self._setup_container_user(self.opt["user"]):
             return ""
 
+        # setup mountpoints
+        self.mountp = MountPoint(self.localrepo, self.container_id)
+
         if not self._set_volume_bindings():
             return ""
 
@@ -2848,29 +2973,35 @@ class PRootEngine(ExecutionEngineCommon):
     def _select_proot(self):
         """Set proot executable and related variables"""
         conf = Config()
-        arch = conf.arch()
-        if arch == "amd64":
-            if conf.oskernel_isgreater((4, 8, 0)):
-                image_list = ["proot-x86_64-4_8_0", "proot-x86_64", "proot"]
-            else:
-                image_list = ["proot-x86_64", "proot"]
-        elif arch == "i386":
-            if conf.oskernel_isgreater((4, 8, 0)):
-                image_list = ["proot-x86-4_8_0", "proot-x86", "proot"]
-            else:
-                image_list = ["proot-x86", "proot"]
-        elif arch == "arm64":
-            if conf.oskernel_isgreater((4, 8, 0)):
-                image_list = ["proot-arm64-4_8_0", "proot-arm64", "proot"]
-            else:
-                image_list = ["proot-arm64", "proot"]
-        elif arch == "arm":
-            if conf.oskernel_isgreater((4, 8, 0)):
-                image_list = ["proot-arm-4_8_0", "proot-arm", "proot"]
-            else:
-                image_list = ["proot-arm", "proot"]
-        f_util = FileUtil(self.localrepo.bindir)
-        self.proot_exec = f_util.find_file_in_dir(image_list)
+        self.proot_exec = conf.use_proot_executable
+        if self.proot_exec != "UDOCKER" and not self.proot_exec:
+            self.proot_exec = FileUtil("proot").find_exec()
+        if self.proot_exec == "UDOCKER" or not self.proot_exec:
+            self.proot_exec = ""
+            arch = conf.arch()
+            image_list = []
+            if arch == "amd64":
+                if conf.oskernel_isgreater((4, 8, 0)):
+                    image_list = ["proot-x86_64-4_8_0", "proot-x86_64", "proot"]
+                else:
+                    image_list = ["proot-x86_64", "proot"]
+            elif arch == "i386":
+                if conf.oskernel_isgreater((4, 8, 0)):
+                    image_list = ["proot-x86-4_8_0", "proot-x86", "proot"]
+                else:
+                    image_list = ["proot-x86", "proot"]
+            elif arch == "arm64":
+                if conf.oskernel_isgreater((4, 8, 0)):
+                    image_list = ["proot-arm64-4_8_0", "proot-arm64", "proot"]
+                else:
+                    image_list = ["proot-arm64", "proot"]
+            elif arch == "arm":
+                if conf.oskernel_isgreater((4, 8, 0)):
+                    image_list = ["proot-arm-4_8_0", "proot-arm", "proot"]
+                else:
+                    image_list = ["proot-arm", "proot"]
+            f_util = FileUtil(self.localrepo.bindir)
+            self.proot_exec = f_util.find_file_in_dir(image_list)
         if not self.proot_exec:
             Msg().err("Error: proot executable not found")
             sys.exit(1)
@@ -2988,20 +3119,36 @@ class RuncEngine(ExecutionEngineCommon):
     def _select_runc(self):
         """Set runc executable and related variables"""
         conf = Config()
-        arch = conf.arch()
-        if arch == "amd64":
-            image_list = ["runc-x86_64", "runc"]
-        elif arch == "i386":
-            image_list = ["runc-x86", "runc"]
-        elif arch == "arm64":
-            image_list = ["runc-arm64", "runc"]
-        elif arch == "arm":
-            image_list = ["runc-arm", "runc"]
-        f_util = FileUtil(self.localrepo.bindir)
-        self.runc_exec = f_util.find_file_in_dir(image_list)
+        self.runc_exec = conf.use_runc_executable
+        if self.runc_exec != "UDOCKER" and not self.runc_exec:
+            self.runc_exec = FileUtil("runc").find_exec()
+        if self.runc_exec == "UDOCKER" or not self.runc_exec:
+            self.runc_exec = ""
+            arch = conf.arch()
+            image_list = []
+            if arch == "amd64":
+                image_list = ["runc-x86_64", "runc"]
+            elif arch == "i386":
+                image_list = ["runc-x86", "runc"]
+            elif arch == "arm64":
+                image_list = ["runc-arm64", "runc"]
+            elif arch == "arm":
+                image_list = ["runc-arm", "runc"]
+            f_util = FileUtil(self.localrepo.bindir)
+            self.runc_exec = f_util.find_file_in_dir(image_list)
         if not self.runc_exec:
             Msg().err("Error: runc executable not found")
             sys.exit(1)
+
+    def _has_option(self, option, command_str=""):
+        """Check if runc has a given cli option"""
+        command_item = []
+        if command_str:
+            command_item = [command_str]
+        if option in Uprocess().get_output(
+                [self.runc_exec] + command_item + ["--help"]):
+            return True
+        return False
 
     def _load_spec(self, new=False):
         """Generate runc spec file"""
@@ -3072,6 +3219,21 @@ class RuncEngine(ExecutionEngineCommon):
             Msg().err("Warning: this engine only supports execution as root",
                       l=Msg.WAR)
 
+    def _add_capabilities_spec(self):
+        """Set the spec capabilities"""
+        if not Config.runc_capabilities:
+            return
+        self._container_specjson["process"]["capabilities"]["ambient"] = \
+            Config.runc_capabilities
+        self._container_specjson["process"]["capabilities"]["bounding"] = \
+            Config.runc_capabilities
+        self._container_specjson["process"]["capabilities"]["effective"] = \
+            Config.runc_capabilities
+        self._container_specjson["process"]["capabilities"]["inheritable"] = \
+            Config.runc_capabilities
+        self._container_specjson["process"]["capabilities"]["permitted"] = \
+            Config.runc_capabilities
+
     def _add_device_spec(self, dev_path, mode="rwm"):
         """Add device to the configuration"""
         if not (os.path.exists(dev_path) and dev_path.startswith("/dev/")):
@@ -3122,20 +3284,28 @@ class RuncEngine(ExecutionEngineCommon):
 
     def _create_mountpoint(self, host_path, cont_path):
         """Override create mountpoint"""
-        return True
+        if not FileUtil(host_path).isdir():
+            return True
+        if self.mountp.create(host_path, cont_path):
+            self.mountp.save(cont_path)
+            return True
+        return False
 
-    def _add_mount_spec(self, host_source, cont_dest, rwmode=False):
+    def _add_mount_spec(self, host_source, cont_dest, rwmode=False,
+                        fstype="none", options=None):
         """Add one mount point"""
         if rwmode:
             mode = "rw"
         else:
             mode = "ro"
         mount = {"destination": cont_dest,
-                 "type": "none",
+                 "type": fstype,
                  "source": host_source,
                  "options": ["rbind", "nosuid",
                              "noexec", "nodev",
                              mode, ], }
+        if options is not None:
+            mount["options"] = options
         self._container_specjson["mounts"].append(mount)
 
     def _del_mount_spec(self, host_source, cont_dest):
@@ -3153,12 +3323,13 @@ class RuncEngine(ExecutionEngineCommon):
             (host_dir, cont_dir) = self._vol_split(vol)
             if os.path.isdir(host_dir):
                 if host_dir == "/dev":
-                    Msg().err("Warning: this engine does not support -v",
+                    Msg().err("Warning: engine does not support -v",
                               host_dir, l=Msg.WAR)
                     continue
                 self._add_mount_spec(host_dir, cont_dir, rwmode=True)
             elif os.path.isfile(host_dir):
-                if cont_dir not in Config.sysdirs_list:
+                if (host_dir not in Config.sysdirs_list and 
+                        host_dir + ":" + cont_dir not in self.hostauth_list):
                     Msg().err("Error: engine does not support file mounting:",
                               host_dir)
                 else:
@@ -3203,7 +3374,7 @@ class RuncEngine(ExecutionEngineCommon):
 
         Config.sysdirs_list = (
             "/etc/resolv.conf", "/etc/host.conf",
-            "/etc/passwd", "/etc/group",
+            # "/etc/passwd", "/etc/group",
         )
 
         # setup execution
@@ -3237,10 +3408,15 @@ class RuncEngine(ExecutionEngineCommon):
             self._del_mount_spec("mqueue", "/dev/mqueue")
         self._add_volume_bindings()
         self._add_devices()
+        self._add_capabilities_spec()
+        #self._add_mount_spec("cgroup", "/sys/fs/cgroup", False, "cgroup",
+        #                     ["nosuid", "noexec", "nodev", "relatime"])
         self._save_spec()
 
         if Msg.level >= Msg.DBG:
             runc_debug = ["--debug", ]
+            Msg().out(json.dumps(self._container_specjson,
+                                 indent=4, sort_keys=True))
         else:
             runc_debug = []
 
@@ -3300,34 +3476,45 @@ class SingularityEngine(ExecutionEngineCommon):
     def __init__(self, localrepo):
         super(SingularityEngine, self).__init__(localrepo)
         self.singularity_exec = None                   # singularity
-        self._filebind = None
         self.execution_id = None
 
     def _select_singularity(self):
         """Set singularity executable and related variables"""
         conf = Config()
-        arch = conf.arch()
-        if arch == "amd64":
-            image_list = ["singularity-x86_64", "singularity"]
-        elif arch == "i386":
-            image_list = ["singularity-x86", "singularity"]
-        elif arch == "arm64":
-            image_list = ["singularity-arm64", "singularity"]
-        elif arch == "arm":
-            image_list = ["singularity-arm", "singularity"]
-        f_util = FileUtil(self.localrepo.bindir)
-        self.singularity_exec = f_util.find_file_in_dir(image_list)
-        if not self.singularity_exec:
+        self.singularity_exec = conf.use_singularity_executable
+        if self.singularity_exec != "UDOCKER" and not self.singularity_exec:
             self.singularity_exec = FileUtil("singularity").find_exec()
+        if self.singularity_exec == "UDOCKER" or not self.singularity_exec:
+            self.singularity_exec = ""
+            arch = conf.arch()
+            image_list = []
+            if arch == "amd64":
+                image_list = ["singularity-x86_64", "singularity"]
+            elif arch == "i386":
+                image_list = ["singularity-x86", "singularity"]
+            elif arch == "arm64":
+                image_list = ["singularity-arm64", "singularity"]
+            elif arch == "arm":
+                image_list = ["singularity-arm", "singularity"]
+            f_util = FileUtil(self.localrepo.bindir)
+            self.singularity_exec = f_util.find_file_in_dir(image_list)
         if not self.singularity_exec:
             Msg().err("Error: singularity executable not found")
             sys.exit(1)
 
+    def _has_option(self, option, command_str=""):
+        """Check if singularity has a given cli option"""
+        command_item = []
+        if command_str:
+            command_item = [command_str]
+        if option in Uprocess().get_output(
+                [self.singularity_exec] + command_item + ["--help"]):
+            return True
+        return False
+
     def _get_volume_bindings(self):
         """Get the volume bindings string for singularity exec"""
         vol_list = []
-        (tmphost_path, tmpcont_path) = self._filebind.start(Config.sysdirs_list)
-        vol_list.extend(["-B", "%s:%s" % (tmphost_path, tmpcont_path), ])
         home_dir = NixAuthentication().get_home()
         home_is_binded = False
         tmp_is_binded = False
@@ -3341,14 +3528,7 @@ class SingularityEngine(ExecutionEngineCommon):
                     tmp_is_binded = True
                 elif host_path == "/var/tmp" and cont_path in ("", "/var/tmp"):
                     vartmp_is_binded = True
-                else:
-                    vol_list.extend(["-B", "%s:%s" % (host_path, cont_path), ])
-            elif os.path.isfile(host_path):
-                if cont_path not in Config.sysdirs_list:
-                    Msg().err("Error: engine does not support file mounting:",
-                              host_path)
-                else:
-                    self._filebind.add(host_path, cont_path)
+            vol_list.extend(["-B", "%s:%s" % (host_path, cont_path), ])
         if not home_is_binded:
             vol_list.extend(["--home", "%s/root:%s" % (self.container_root, "/root"), ])
         if not tmp_is_binded:
@@ -3389,16 +3569,6 @@ class SingularityEngine(ExecutionEngineCommon):
             Msg().err("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
 
-    def _has_option(self, option, command_str=""):
-        """Check if singularity has a given cli option"""
-        command_item = []
-        if command_str:
-            command_item = [command_str]
-        if option in Uprocess().get_output(
-                ["singularity"] + command_item + ["--help"]):
-            return True
-        return False
-
     def _run_as_root(self):
         """Set configure running as normal user or as root via --fakeroot
         """
@@ -3430,9 +3600,14 @@ class SingularityEngine(ExecutionEngineCommon):
           * options:  many via self.opt see the help
         """
 
+        if os.path.isdir(
+                FileBind(self.localrepo, container_id).container_orig_dir):
+            FileBind(self.localrepo, container_id).restore() # legacy 1.1.3
+
         Config.sysdirs_list = (
             # "/dev", "/proc", "/sys",
-            "/etc/passwd", "/etc/group",
+            # "/etc/passwd", "/etc/group",
+            "/etc/resolv.conf", "/etc/host.conf",
             "/lib/modules",
         )
 
@@ -3444,7 +3619,6 @@ class SingularityEngine(ExecutionEngineCommon):
 
         self._make_container_directories()
 
-        self._filebind = FileBind(self.localrepo, self.container_id)
 
         self._select_singularity()
 
@@ -3493,7 +3667,6 @@ class SingularityEngine(ExecutionEngineCommon):
         self._run_banner(self.opt["cmd"][0], '/')
         status = subprocess.call(cmd_l, shell=False, close_fds=True, \
             env=os.environ.update(self._singularity_env_get()))
-        self._filebind.finish()
         return status
 
 
@@ -3955,7 +4128,7 @@ class ExecutionMode(object):
             return status
         if not (force or xmode != prev_xmode):
             return True
-        if prev_xmode in ('R1', 'S1') and xmode not in ('R1', 'S1'):
+        if prev_xmode in ('R1', 'S1') and xmode != 'R1':
             filebind.restore()
         if xmode.startswith('F'):
             if force or prev_xmode[0] in ('P', 'R', 'S'):
@@ -3968,9 +4141,9 @@ class ExecutionMode(object):
             elif force or prev_xmode in ('F2', 'F3', 'F4'):
                 status = ((elfpatcher.restore_ld() or force) and
                           elfpatcher.restore_binaries())
-            if xmode in ('R1', 'S1'):
+            if xmode == 'R1':
                 filebind.setup()
-        elif xmode in ('F2', ):
+        elif xmode == 'F2':
             if force or prev_xmode in ('F3', 'F4'):
                 status = elfpatcher.restore_binaries()
             if force or prev_xmode in ('P1', 'P2', 'F1', 'R1', 'S1'):
@@ -7235,6 +7408,10 @@ class Udocker(object):
                 "fl": ("--hostauth",), "act": 'R',
                 "p2": "CMD_OPT", "p3": False
             },
+            "containerauth": {
+                "fl": ("--containerauth",), "act": 'R',
+                "p2": "CMD_OPT", "p3": False
+            },
             "nosysdirs": {
                 "fl": ("--nosysdirs",), "act": 'R',
                 "p2": "CMD_OPT", "p3": False
@@ -7307,7 +7484,7 @@ class Udocker(object):
         --novol=/proc              :remove /proc from list of volumes to mount
         --env="MYTAG=xxx"          :set environment variable
         --env-file=<file>          :read environment variables from file
-        --hostauth                 :bind the host /etc/passwd /etc/group ...
+        --hostauth                 :get user account and group from host
         --nosysdirs                :do not bind the host /proc /sys /run /dev
         --nometa                   :ignore container metadata
         --dri                      :bind directories relevant for dri graphics

@@ -1,4 +1,4 @@
-udocker (1.1.4)
+udocker (1.1.3-3)
   * Create processes without shell context
   * Safer parsing of config files
   * Safer removal of directories
@@ -17,6 +17,12 @@ udocker (1.1.4)
   * CLI support for image names in format host/repository:tag
   * Support for fake root in Sn execution modes via --user=root
   * Improve verify of loaded/pulled images
+  * Improve handling of mountpoints
+  * Add --authcontainer to enable direct use of the container passwd and group
+  * Add support for file mount bindings in singularity
+  * Add UDOCKER_USE_PROOT_EXECUTABLE env var to select proot location
+  * Add UDOCKER_USE_RUNC_EXECUTABLE env var to select runc location
+  * Add UDOCKER_USE_SINGULARITY_EXECUTABLE env var to select singularity
   * Fixes to address authentication and redirects in pull
     - closes: #225
   * Added minimal support to load OCI images
