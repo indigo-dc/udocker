@@ -300,8 +300,8 @@ The command displays:
 
 Options:
 
-* `-m` selected execution mode, use the command setup to change
-* `-s` current disk usage (container size in MB), can be slow
+* `-m` show the current execution mode of each container
+* `-s` show current disk usage (container size in MB), can be very slow
 
 Examples:
 ```
@@ -444,7 +444,9 @@ layers and metadata. From version 1.1.4 onwards, udocker can also load
 images in OCI format.
 The optional NAME argument can be used to change the name of the loaded 
 image. This argument is particularly relevant to provide adequate names
-to OCI loaded images as these only provide names for the tags.
+to OCI loaded images as these frequently only provide tag names. If an 
+OCI image does not provide a name and the argument NAME is also not 
+provided in the command line, then udocker will generate a random name.
 
 Examples:
 ```
@@ -510,7 +512,8 @@ newly extracted container. Using this later approach will create multiple
 container directory trees possibly occupying considerable disk space, 
 therefore the recommended approach is to first extract a container using
 "udocker create" and only then execute with "udocker run". The same
-extracted container can then be executed as many times as required.
+extracted container can then be executed as many times as required without
+duplication.
 
 Options:
 
@@ -522,9 +525,11 @@ Options:
 * `--env="VAR=VAL"` set environment variables
 * `--env-file=FILE` load environment variables from file
 * `--hostauth` obtain user account from the host and add it to the container passwd and group
+* `--containerauth` use the container passwd and group directly without binding files
 * `--nosysdirs` prevent udocker from mapping /proc /sys /run and /dev inside the container
 * `--nometa` ignore the container metadata settings
 * `--hostenv` pass the user host environment to the container
+* `--cpuset-cpus=<1,2-3>` CPUs in which to allow execution
 * `--name=NAME` set or change the name of the container useful if running from an image
 * `--bindhome` attempt to make the user home directory appear inside the container
 * `--kernel=KERNELID` use a specific kernel id to emulate useful when the host kernel is too old
@@ -580,6 +585,14 @@ cat motd
 cat lsb-release
 EOF
 
+
+  # Search and pull from another repository than dockerhub
+  # First search for the expression `myrepo` in quay.io 
+  # Second list the tags for a given image in quay.io
+  # Third finally pull a given image:tag from quay.io
+  udocker search quay.io/myrepo
+  udocker search --list-tags quay.io/myrepository/myimage
+  udocker pull quay.io/myrepository/myimage:v2.3.1
 ```
 
 
@@ -667,20 +680,25 @@ Examples:
 
 ### 3.25. setup
 ```
-  udocker setup [--execmode=XY] [--force] [--nvidia] CONTAINER-ID|CONTAINER-NAME
+  udocker setup [--execmode=XY] [--force] [--nvidia] [--purge] CONTAINER-ID|CONTAINER-NAME
 ```
-Choose an execution mode to define how a given container will be executed.
-Enables selection of an execution engine and related execution modes.
-Without --execmode=XY, setup will print the current execution mode for the
-given container. The option --nvidia enables access to GPGPUs by adding the
-necessary host libraries to the container.
+With `--execmode` chooses an execution mode to define how a given container 
+will be executed, namelly enables selection of an execution engine and 
+its related execution modes. Without options, setup will print the current 
+execution mode for the given container. 
+The option `--nvidia` enables access to GPGPUs by adding the necessary host 
+libraries to the container.
+The option `--force` can be used both with `--execmode` and with `--nvidia` to 
+force the corresponding modes and setup of the environment.
 
 Options:
 
 * `--execmode=XY` choose an execution mode
+* `--nvidia`  enable access to GPGPUs
 * `--force` force the selection of the execution mode, can be used to
   force the change of an execution mode when it fails namely if it is
-  transferred to a remote host while in one of the Fn modes.
+  transferred to a remote host while in one of the Fn modes. Can be
+  used with --nvidia.
 
 |Mode| Engine      | Description                               | Changes container
 |----|:------------|:------------------------------------------|:------------------
@@ -691,6 +709,8 @@ Options:
 | F3 | Fakechroot  | fix ELF headers in binaries               | F2 + ELF headers
 | F4 | Fakechroot  | F3 plus enables new executables and libs  | same as F3
 | R1 | runC        | rootless user mode namespaces             | resolv, passwd
+| R2 | runC        | R1 plus P1 for software installation      | resolv, passwd, proot
+| R3 | runC        | R1 plus P2 for software installation      | resolv, passwd, proot
 | S1 | Singularity | uses singularity if available in the host | passwd
 
 The default execution mode is P1.
@@ -698,27 +718,31 @@ The default execution mode is P1.
 The mode P2 uses PRoot and provides the lowest performance but at
 the same time is also more reliable. The mode P1 uses PRoot with 
 SECCOMP syscall filtering which provides higher performance in most 
-operating systems. PRoot is the most universal execution mode but may
-exhibit lower performance on older kernels such as in CentOS 6 hosts.
+operating systems. PRoot provides the most universal execution mode but
+may exhibit lower performance on older kernels such as in CentOS 6 hosts.
+The Pn modes also offer root emulation to facilitate software installation
+and to execute applications that expected to be executed under root.
 
 The Fakechroot, runC and Singularity engines are EXPERIMENTAL. They 
-provide higher performance for most system calls, but only support a 
-reduced set of operating systems. runC with rootless user mode namespaces 
+provide higher performance in most cases, but are less universal thus
+supporting less Linux distributions. runC with rootless user mode namespaces 
 requires a recent Linux kernel and is known to work on Ubuntu and Fedora 
-hosts.
+hosts. 
 Fakechroot requires libraries compiled for each guest operating system,
-udocker provides these libraries for Ubuntu 14, Ubuntu 16, Fedora >= 25,
-CentOS 6 and CentOS 7. Other guests may or may not work with these 
-same libraries. 
+udocker provides these libraries for several distributions including
+Ubuntu 14, Ubuntu 16, Ubuntu 18, CentOS 6 and CentOS 7 and some others. 
+Other guests may or may not work with these same libraries. 
 
-Singularity must be available in the host system for udocker to use it.
+Singularity must be available in the host system for execution mode S1.
 Newer versions of Singularity may run without requiring privileges but
 need a recent kernel in the host system with support for rootless user 
 mode namespaces similar to runC in mode R1. 
-Singularity cannot be compiled statically due to dependencies on NSS
+Singularity cannot be compiled statically due to dependencies on
 dynamic libraries and therefore is not provided with udocker.
 In CentOS 6 and CentOS 7 Singularity must be installed with privileges
-by a system administrator as it requires suid.
+by a system administrator as it requires suid or capabilities.
+The S1 mode also offers root emulation to facilitate software installation
+and to execute applications that expected to be executed under root.
 
 The udocker Fakechroot engine has four modes that offer increasing
 compatibility levels. F1 is the least intrusive mode and only changes 
@@ -732,18 +756,30 @@ fixed and will fail to run. Notice that setup can be rerun with the
 --force option to fix these binaries. F4 performs the ELF header
 changes dynamically (on-the-fly) thus enabling compilation and linking 
 within the container and new executables to be transferred to the 
-container and executed.
+container and executed. Executables and libraries in host volumes are
+not changed and hence cannot be executed from a container in F2, F3 and
+F4 execution modes.
 
 Also notice that changes performed in Fn and Rn modes will prevent the
 containers from running in hosts where the directory path to the container
 is different. In this case convert back to P1 or P2, transfer to the target 
-host, and then convert again from Pn to the intended Fn mode.
+host, and then convert again from Pn to the desired Fn mode.
 
 Mode Rn requires kernels with support for rootless containers, thus
 it will not work on some distributions (e.g. CentOS 6 and CentOS 7).
+The rootless execution modes have inherent limitations related to the
+manipulation of uids and gids that may cause certain operations to fail
+such as software installations. To overcome this limitation of the R1 
+execution mode, udocker provides the R2 and R3 execution modes that 
+combine runc with the proot uid/gid emulation. In these modes the 
+execution chain is 
 
-The option --nvidia enables access to GPGPUs by adding the necessary 
-host libraries to the container.
+`runc -> proot -> executable`
+
+When using the Rn modes, udocker will search for a runc executable in the
+host system, only if it does not find one it will default to use the runc
+provided with the udockertools. This behavior can be change through
+environment variables and configuration settings.
  
 Quick examples:
 
@@ -787,17 +823,20 @@ Examples:
 
 ## 4. Running MPI Jobs
 
-In this section we will use the Lattice QCD simulation software openQCD to demonstrate how to
-run Open MPI applications with udocker (http://luscher.web.cern.ch/luscher/openQCD). Lattice
-QCD simulations are performed on high-performance parallel computers with hundreds and thousands
-of processing units. All the software environment that is needed for openQCD is a compliant C 
-compiler and a local MPI installation such as Open MPI. 
+In this section we will use the Lattice QCD simulation software openQCD to
+demonstrate how to run Open MPI applications with udocker 
+(http://luscher.web.cern.ch/luscher/openQCD). Lattice QCD simulations are
+performed on high-performance parallel computers with hundreds and thousands
+of processing units. All the software environment that is needed for openQCD
+is a compliant C compiler and a local MPI installation such as Open MPI. 
 
-In what follows we describe the steps to execute openQCD using udocker in a HPC system with a batch
-system (e.g. SLURM). An analogous procedure can be followed for other MPI applications.
+In what follows we describe the steps to execute openQCD using udocker in a
+HPC system with a batch system (e.g. SLURM). An analogous procedure can be
+followed for other MPI applications.
 
-A container image of openQCD can be downloaded from the Docker Hub repository. From this image a
-container can be extracted to the filesystem (using udocker create) as described below.
+A container image of openQCD can be downloaded from the Docker Hub repository.
+From this image a container can be extracted to the filesystem (using udocker
+create) as described below.
 
 
 ```
@@ -813,18 +852,19 @@ Next the created container is executed (notice that the variable LD_LIBRARY_PATH
 ./udocker run -e LD_LIBRARY_PATH=/usr/lib openqcd /bin/bash
 ```
 
-In this approach the host mpiexec will submit the N MPI process instances, as containers, in such a
-way that the containers are able to communicate via the low latency interconnect (Infiniband in the 
-case at hand).
+In this approach the host mpiexec will submit the N MPI process instances, as
+containers, in such a way that the containers are able to communicate via the
+low latency interconnect (Infiniband in the case at hand).
 
-For this approach to work, the code in the container needs to be compiled with the same version of
-MPI that is available in the HPC system. This is necessary because the Open MPI versions of mpiexec
-and orted available in the host system need to match with the compiled program. In this example the
-Open MPI version is v2.0.1. Therefore we need to download this version and compile it inside the
+For this approach to work, the code in the container needs to be compiled with
+the same version of MPI that is available in the HPC system. This is necessary 
+because the Open MPI versions of mpiexec and orted available in the host system
+need to match with the compiled program. In this example the Open MPI version 
+is v2.0.1. Therefore we need to download this version and compile it inside the
 container.
 
-Note: first the example Open MPI installation that comes along with the openqcd container are
-removed with: 
+Note: first the example Open MPI installation that comes along with the openqcd
+container are removed with: 
 
 ```
 yum remove openmpi
@@ -934,7 +974,8 @@ a shared filesystem such as in a computing farm or cluster then the content will
 be seen by all the hosts mounting the filesystem and can be used transparently by
 udocker across these hosts. If the home directory is not shared but some other
 location is, then you may point the UDOCKER_DIR environment variable to such a 
-location and use it to store the udocker installation, images and containers.
+location and use it to store the udocker installation, including udockertools,
+images and containers.
 
 ### 6.1. Directory structure
 
@@ -955,10 +996,11 @@ $ udocker inspect -p ubuntu17
 ```
 
 The pathname in the example is the root of the container filesystem tree.
-Below ROOT you will find all the files that comprise the container. udocker
-performs a fake chroot into this directory. You can modify, add, remove files 
-below this location and upon execution these changes will be seen inside the 
-container. This can be used to put or retrieve files to/from the container. 
+Below ROOT you will find all the files that comprise the container. Upon 
+execution udocker performs a chroot like operation into this directory. 
+You can modify, add, remove files below this location and upon execution 
+these changes will be seen inside the container. 
+This can be used to place or retrieve files to/from the container. 
 By accessing this directory from the host you may also perform copies of the 
 container directory tree e.g. for backup or other purposes.
 
@@ -967,7 +1009,7 @@ under a separate directory whose name corresponds to its alphanumeric id.
 This directory contains control files and the ROOT directory for the container 
 filesystem. 
 
-### 6.2. Transfer containers with import
+### 6.2. Transfer containers with import/export or load/save
 
 Across isolated hosts the correct way to transfer containers is to pull them from
 a repository such as Docker Hub. However this may implies slow downloads from remote
@@ -989,21 +1031,24 @@ udocker using:
    This is udocker specific.
 
 Images saved by Docker using `docker save` can be imported by udocker using
-`udocker load`.
+`udocker load`. Images in OCI format can also be loaded by udocker using
+`udocker load`, the format will be automatically detected.
+
+udocker can also save images in a Docker compliant format using `udocker save`.
 
 ### 6.3. Manual transfer
 
-The example below shows a container named MYCONTAINER being manually transferred 
+The example below shows a container named MyContainer being manually transferred 
 to another host and executed. Make sure the udocker executable is in your PATH on 
 both the local and remote hosts.
 
 ```
-$ MYC_ROOT=$(udocker inspect -p MYCONTAINER)
+$ MYC_ROOT=$(udocker inspect -p MyContainer)
 $ MYC_PATH=$(dirname $MYC_ROOT)
 $ MYC_ID=$(basename $MYC_PATH)
 $ MYC_DIR=$(dirname $MYC_PATH)
-$ cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker version ; cd ~/.udocker/containers; tar xf -"
-$ ssh user@ahost "udocker name $MYC_ID MYCONTAINER; udocker run MYCONTAINER"
+$ cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker install ; cd ~/.udocker/containers; tar xf -"
+$ ssh user@ahost "udocker name $MYC_ID MyContainer; udocker run MyContainer"
 ```
 
 ## 7. Issues
@@ -1021,6 +1066,8 @@ the container location is different. In this later case convert back to P1
 When experiencing issues in the default execution mode (P1) you may try
 to setup the container to execute using mode P2 or one of the Fn or 
 Rn modes. See section 3.23 for information on changing execution modes.
+
+Some execution modes require the creation of auxiliary files, directories and mountpoints. These can be purged from a given container using "setup --purge", however this operation must be performed when the container is not being executed. 
 
 ## Acknowledgements
 
