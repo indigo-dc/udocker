@@ -1,4 +1,4 @@
-udocker (1.1.3-3)
+udocker (1.1.3-6) preview for (1.1.4)
   * Create processes without shell context
   * Safer parsing of config files
   * Safer removal of directories
@@ -14,22 +14,24 @@ udocker (1.1.3-3)
   * Added support for sha512 hashes
   * Added support for opaque whiteouts
   * Added search --list-tags to available tags for a given repository
-  * CLI support for image names in format host/repository:tag
+  * Add CLI support for image names in format host/repository:tag
   * Support for fake root in Sn execution modes via --user=root
   * Improve verify of loaded/pulled images
   * Improve handling of mountpoints
-  * Add --authcontainer to enable direct use of the container passwd and group
+  * Add --containerauth to enable direct use of the container passwd and group
   * Add support for file mount bindings in singularity
   * Add UDOCKER_USE_PROOT_EXECUTABLE env var to select proot location
   * Add UDOCKER_USE_RUNC_EXECUTABLE env var to select runc location
   * Add UDOCKER_USE_SINGULARITY_EXECUTABLE env var to select singularity
+  * Add R2 and R3 execution modes for PRoot overlay execution in runc
+  * Improve file and directory binding support for Singularity and runc
   * Fixes to address authentication and redirects in pull
     - closes: #225
   * Added minimal support to load OCI images
     - closes: #111
   * Added Pn support for Fedora30 and ubuntu19
     - closes: #192
-  * Improve robustness of the installation of udockertools
+  * Improve the installation of udockertools
     - closes: #220, #228
   * Read environment variables from file with --env-file=
     - closes: #212
