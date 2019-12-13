@@ -715,34 +715,18 @@ Options:
 
 The default execution mode is P1.
 
-The mode P2 uses PRoot and provides the lowest performance but at
-the same time is also more reliable. The mode P1 uses PRoot with 
+The mode P2 uses PRoot and although has lower performance than P1 
+can be more reliable. The mode P1 uses PRoot with 
 SECCOMP syscall filtering which provides higher performance in most 
-operating systems. PRoot provides the most universal execution mode but
-may exhibit lower performance on older kernels such as in CentOS 6 hosts.
+operating systems. PRoot provides the most universal execution mode
+in udocker but may also exhibit lower performance on older kernels 
+such as in CentOS 6 systems.
 The Pn modes also offer root emulation to facilitate software installation
-and to execute applications that expected to be executed under root.
+and to execute applications that expect to run under root.
 
-The Fakechroot, runC and Singularity engines are EXPERIMENTAL. They 
-provide higher performance in most cases, but are less universal thus
-supporting less Linux distributions. runC with rootless user mode namespaces 
-requires a recent Linux kernel and is known to work on Ubuntu and Fedora 
-hosts. 
-Fakechroot requires libraries compiled for each guest operating system,
-udocker provides these libraries for several distributions including
-Ubuntu 14, Ubuntu 16, Ubuntu 18, CentOS 6 and CentOS 7 and some others. 
-Other guests may or may not work with these same libraries. 
-
-Singularity must be available in the host system for execution mode S1.
-Newer versions of Singularity may run without requiring privileges but
-need a recent kernel in the host system with support for rootless user 
-mode namespaces similar to runC in mode R1. 
-Singularity cannot be compiled statically due to dependencies on
-dynamic libraries and therefore is not provided with udocker.
-In CentOS 6 and CentOS 7 Singularity must be installed with privileges
-by a system administrator as it requires suid or capabilities.
-The S1 mode also offers root emulation to facilitate software installation
-and to execute applications that expected to be executed under root.
+The Fakechroot (Fn), runC (Rn) and Singularity (Sn) engines are EXPERIMENTAL.
+They provide higher performance in most cases, but are less universal thus
+supporting less Linux distributions. 
 
 The udocker Fakechroot engine has four modes that offer increasing
 compatibility levels. F1 is the least intrusive mode and only changes 
@@ -759,11 +743,8 @@ within the container and new executables to be transferred to the
 container and executed. Executables and libraries in host volumes are
 not changed and hence cannot be executed from a container in F2, F3 and
 F4 execution modes.
-
-Also notice that changes performed in Fn and Rn modes will prevent the
-containers from running in hosts where the directory path to the container
-is different. In this case convert back to P1 or P2, transfer to the target 
-host, and then convert again from Pn to the desired Fn mode.
+runC with rootless user namespaces requires a recent Linux kernel and
+is known to work on Ubuntu and Fedora hosts. 
 
 Mode Rn requires kernels with support for rootless containers, thus
 it will not work on some distributions (e.g. CentOS 6 and CentOS 7).
@@ -780,6 +761,26 @@ When using the Rn modes, udocker will search for a runc executable in the
 host system, only if it does not find one it will default to use the runc
 provided with the udockertools. This behavior can be change through
 environment variables and configuration settings.
+Fakechroot requires libraries compiled for each guest operating system,
+udocker provides these libraries for several distributions including
+Ubuntu 14, Ubuntu 16, Ubuntu 18, CentOS 6 and CentOS 7 and some others. 
+Other guests may or may not work with these same libraries. 
+
+Notice that changes performed in Fn and Rn modes will prevent the
+containers from running in hosts where the directory path to the container
+is different. In this case convert back to P1 or P2, transfer to the target 
+host, and then convert again from Pn to the desired Fn mode.
+ 
+Singularity must be available in the host system for execution mode S1.
+Newer versions of Singularity may run without requiring privileges but
+need a recent kernel in the host system with support for rootless user 
+mode namespaces similar to runC in mode R1.
+Singularity cannot be compiled statically due to dependencies on
+dynamic libraries and therefore is not provided with udocker.
+In CentOS 6 and CentOS 7 Singularity must be installed with privileges
+by a system administrator as it requires suid or capabilities.
+The S1 mode also offers root emulation to facilitate software installation
+and to execute applications that expected to run under root.
  
 Quick examples:
 
@@ -821,7 +822,7 @@ Examples:
 ```
 
 
-## 4. Running MPI Jobs
+## 4. RUNNING MPI JOBS
 
 In this section we will use the Lattice QCD simulation software openQCD to
 demonstrate how to run Open MPI applications with udocker 
@@ -942,7 +943,7 @@ this situation other execution modes (such as Fn) may provide significantly high
 performance (see section 3.23).
 
 
-## 5. Accessing GP/GPUs
+## 5. ACCESSING GP/GPUs
 
 The host (either the physical machine or VM) where the container will run has to have
 the NVIDIA driver installed. Moreover, the NVIDIA driver version has to be known apriori,
@@ -966,7 +967,7 @@ In order to build your docker image with a given CUDA or OpenCL application, the
 aforementioned images can be used. When the docker image with your application has 
 been built you can run the udocker with that image has described in the previous sections.
 
-## 6. Accessing and transferring udocker containers
+## 6. ACCESSING AND TRANSFERRING UDOCKER CONTAINERS
 
 In udocker, images and containers are stored in the filesystem
 usually in the user home directory under $HOME/.udocker. If this location is in
@@ -1051,7 +1052,19 @@ $ cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker install ; cd ~/.udock
 $ ssh user@ahost "udocker name $MYC_ID MyContainer; udocker run MyContainer"
 ```
 
-## 7. Issues
+## 7. PERFORMANCE
+
+The experienced performance in the different execution modes will
+depend greatly on the application being executed. In general the
+following considerations may hold:
+
+ * P1 is faster than P2, unless in an old kernel without SECCOMP filtering where both will have the same performance.
+ * In heavily multithreaded or I/O intensive applications the P2 mode may exhibit a large performance penalty.
+ * Fn modes are generally faster than Pn modes and do not have multithreading or I/O limitations.
+ * Singularity and runC should provide similar performances.
+
+
+## 8. ISSUES
 
 To avoid corruption backups for safeguard or transfer should only be performed 
 when the container is not being executed (not locally nor in any other host if 

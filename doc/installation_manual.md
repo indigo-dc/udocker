@@ -11,7 +11,7 @@ require any privileges.
 Python dependencies are described in the file [requirements.txt](../requirements.txt).
 
 Other host libraries and tools required:
- * udocker requires either pycurl or the curl executable command, to download both the udocker tools and/or pull containers from repositories.
+ * udocker requires either pycurl or the curl executable command, to download both the udockertools and pull containers from repositories.
  * tar is needed during `udocker install` to unpackage binaries and libraries.
  * tar is used to unpack the container image layers.
  * openssl or python hashlib are required to calculate hashes. 
@@ -22,7 +22,7 @@ Other host libraries and tools required:
 ### 2.1. INSTALL LATEST VERSIONS DIRECTLY FROM GITHUB
 
 Just download and execute the udocker python script and the remainder of the
-installation including downloading and installation of additional tools will 
+installation including downloading and installing the udockertools will 
 be performed automatically.
 
 Once you download the udocker executable from github you can move it around 
@@ -47,7 +47,7 @@ From the *development* branch for the latest additions and fixes:
 
 ### 2.2. INSTALL FROM REPOSITORIES
 
-udocker is also available as a tarball in certain repositories such as:
+udocker is also available as a tarball from certain repositories such as:
  * `https://download.ncg.ingrid.pt/webdav/udocker/`
  * `http://repo.indigo-datacloud.eu/` 
 
@@ -70,13 +70,13 @@ Example of installing or upgrading udocker to version v1.1.3:
 The udocker installation tarball mentioned in section 2.2 can also be obtained using 
 the following method. First download the udocker python script. Second use udocker 
 itself to display the installation tarball URL by invoking the `version` command. The
-tarball location may contain several URLs pointing to mirrors.
+tarball location may contain several URLs pointing to different mirrors.
 
 ```
   ./udocker version
 ```
 
-Then, pick one URL and download the tarball using tools such as curl or wget.
+Pick one URL and download the tarball using tools such as curl or wget.
 By using a previously downloaded tarball and the UDOCKER_TARBALL environment variable 
 as explained in section 2.2, udocker can be deployed without having to downloaded it 
 everytime from the official repositories. The UDOCKER_TARBALL environment variable
@@ -93,7 +93,7 @@ with the flag `--force`:
 
 ## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
 
-Beware that these packages contain dynamically linked binaries compiled for
+Beware that RPM and DEB packages contain dynamically linked binaries compiled for
 the target OS distributions and therefore cannot be executed successfully in 
 hosts running a different OS distribution. To execute the same udocker across 
 systems use the tarball installation methods described above in section 2. 
@@ -147,8 +147,8 @@ To get the source code from github:
 
 ## 7. BUILD
 
-A distribution tarball can be built using the script `build_tarball.sh` in
-the utils directory. The script fetches the code necessary to build the
+A udockertools distribution tarball can be built using the script `build_tarball.sh`
+in the utils directory. The script fetches the code necessary to build the
 binary executables such as proot and compiles them statically. The following
 example builds the tarball from the master repository.
 
@@ -174,11 +174,11 @@ The location of the udocker directories can be changed via environment variables
  * UDOCKER_DIR : root directory of udocker usually $HOME/.udocker
  * UDOCKER_BIN : location of udocker related executables
  * UDOCKER_LIB : location of udocker related libraries
- * UDOCKER_CONTAINERS : location of container directory trees (not images)
- * UDOCKER_KEYSTORE : location of keystore for repository login/logout
+ * UDOCKER_CONTAINERS : top directory for storing containers (not images)
+ * UDOCKER_KEYSTORE : location of keystore for login/logout credentials
  * UDOCKER_TMP : location of temporary directory
  * UDOCKER_TARBALL : location of installation tarball (file of URL)
- * UDOCKER_NOSYSCONF: do not read system wide config files in /etc
+ * UDOCKER_NOSYSCONF: do not read udocker system wide config files in /etc
 
 The Docker index and registry and be overrided via environment variables.
 
@@ -198,6 +198,18 @@ In Fn modes the translation of symbolic links to the actual links can be control
 the env variable accepts the values: true, false, none
 
  * UDOCKER_FAKECHROOT_EXPAND_SYMLINKS : default is none
+
+The location of some executables used in the execution modes can be enforced with
+the environment variables described below together with the default behavior.
+A value of "UDOCKER" will force the usage of the executables provided by the 
+udocker installation.
+A full pathname can be used to select a specific executable (or library) from the
+host or from the udocker instalaltion.
+
+ * UDOCKER_USE_PROOT_EXECUTABLE : path to proot, default is proot from udocker
+ * UDOCKER_USE_RUNC_EXECUTABLE : path to runc, default is search the host and if not found use runc from udocker
+ * UDOCKER_USE_SINGULARITY_EXECUTABLE : path to singularity, default is search the host
+ * UDOCKER_FAKECHROOT_SO : path to a fakechroot library, default is search in udocker
 
 ## 10. CONFIGURATION
 
