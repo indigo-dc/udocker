@@ -42,7 +42,7 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.3-4"
+__version__ = "1.1.3-6"
 __date__ = "2019"
 
 # Python version major.minor
@@ -120,7 +120,7 @@ class Config(object):
         "https://owncloud.indigo-datacloud.eu/index.php"
         "/s/BjqWC7vyFiVhgna/download"
         " "
-        "curl https://raw.githubusercontent.com"
+        "https://raw.githubusercontent.com"
         "/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.3-3.tar.gz"
     )
 
@@ -194,7 +194,7 @@ class Config(object):
         "/dev/mic/scif", "/dev/scif",
     )
 
-    # Force the use of specific executables 
+    # Force the use of specific executables
     # UDOCKER = use executable from the udocker binary distribution/tarball
     use_proot_executable = "UDOCKER"
     use_runc_executable = ""
@@ -240,8 +240,8 @@ class Config(object):
     # dockerio_registry_url = "http://localhost:5000"
 
     # registries table
-    docker_registries = {"docker.io": ["https://registry-1.docker.io",
-                                       "https://index.docker.io"],
+    docker_registries = {"docker.io": [dockerio_registry_url,
+                                       dockerio_index_url],
                         }
 
     # nvidia files
@@ -454,8 +454,7 @@ class Uprocess(object):
     def get_output(self, cmd, ignore_error=False):
         """Execute a command and get its output"""
         if not cmd[0].startswith("/"):
-            cmd[0] = FileUtil(cmd[0]).find_inpath(Config.root_path + ":" +
-                                                  os.getenv("PATH", ""))
+            cmd[0] = FileUtil(cmd[0]).find_inpath(Config.root_path + ":" + os.getenv("PATH", ""))
         content = ""
         try:
             content = self.check_output(cmd, shell=False, stderr=Msg.chlderr,
@@ -475,13 +474,19 @@ class Uprocess(object):
 
     def pipe(self, cmd1, cmd2, **kwargs):
         """Pipe two shell commands"""
+        if not cmd1[0].startswith("/"):
+            cmd1[0] = FileUtil(cmd1[0]).find_inpath(Config.root_path + ":"
+                                                    + os.getenv("PATH", ""))
+        if not cmd2[0].startswith("/"):
+            cmd2[0] = FileUtil(cmd2[0]).find_inpath(Config.root_path + ":"
+                                                    + os.getenv("PATH", ""))
         try:
-            proc_1 = subprocess.Popen(cmd1, stderr=Msg.chlderr,
+            proc_1 = subprocess.Popen(cmd1, stderr=Msg.chlderr, shell=False,
                                       stdout=subprocess.PIPE, **kwargs)
         except (OSError, ValueError):
             return False
         try:
-            proc_2 = subprocess.Popen(cmd2, stderr=Msg.chlderr,
+            proc_2 = subprocess.Popen(cmd2, stderr=Msg.chlderr, shell=False,
                                       stdin=proc_1.stdout)
         except (OSError, ValueError):
             proc_1.kill()
@@ -986,23 +991,41 @@ class FileUtil(object):
                 return True
         return False
 
-    def chmod(self, mode=None):
+    def _chmod(self, filename, filemode=0o600, dirmode=0o700, mask=0o755):
+        """chmod file or directory"""
+        filestat = os.lstat(filename).st_mode
+        if stat.S_ISREG(filestat) and filemode:
+            mode = (stat.S_IMODE(filestat) & mask) | filemode
+            os.chmod(filename, mode)
+        elif stat.S_ISDIR(filestat) and dirmode:
+            mode = (stat.S_IMODE(filestat) & mask) | dirmode
+            os.chmod(filename, mode)
+        elif stat.S_ISLNK(filestat) and filemode:
+            mode = (stat.S_IMODE(filestat) & mask) | filemode
+            os.chmod(filename, mode)
+        elif filemode:
+            mode = (stat.S_IMODE(filestat) & mask) | filemode
+            os.chmod(filename, mode)
+
+    def chmod(self, filemode=0o600, dirmode=0o700, mask=0o755, recursive=False):
         """chmod directory recursively"""
-        if mode is None:
-            mode = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR
         try:
-            for dir_path, dirs, files in os.walk(self.filename):
-                for f_name in files:
-                    f_path = dir_path + '/' + f_name
-                    if not os.path.islink(f_path):
-                        os.chmod(f_path, mode)
-                for f_name in dirs:
-                    f_path = dir_path + '/' + f_name
-                    os.chmod(f_path, mode)
-            os.chmod(self.filename, mode)
+            if recursive:
+                for dir_path, dirs, files in os.walk(self.filename):
+                    for f_name in files:
+                        self._chmod(dir_path + '/' + f_name,
+                                    filemode, None, mask)
+                    for f_name in dirs:
+                        self._chmod(dir_path + '/' + f_name,
+                                    None, dirmode, mask)
+            self._chmod(self.filename, filemode, dirmode, mask)
         except OSError:
             return False
         return True
+
+    def rchmod(self, filemode=0o600, dirmode=0o700, mask=0o755):
+        """chmod directory recursively"""
+        self.chmod(filemode, dirmode, mask, True)
 
     def _removedir(self):
         """Delete directory recursively"""
@@ -1085,17 +1108,17 @@ class FileUtil(object):
             Msg().err("Error: creating tar file:", tarfile)
         return not status
 
-    def copydir(self, sourcedir, destdir=None):
+    def copydir(self, destdir, sourcedir=None):
         """Copy directories
         """
-        if destdir is None:
-            destdir = self.filename
+        if sourcedir is None:
+            sourcedir = self.filename
         verbose = 'v'
         if Msg.level >= Msg.VER:
             verbose = 'v'
         cmd_tarc = ["tar", "-C", sourcedir, "-c" + verbose,
                     "--one-file-system", "-S", "--xattrs", "-f", "-", "."]
-        cmd_tarx = ["tar", "-C", destdir, "-x", "-f", "-"]
+        cmd_tarx = ["tar", "-C", destdir, "-x" + verbose, "-f", "-"]
         status = Uprocess().pipe(cmd_tarc, cmd_tarx)
         if not status:
             Msg().err("Error: copying:", sourcedir, " to ", destdir, l=Msg.VER)
@@ -1441,17 +1464,21 @@ class UdockerTools(object):
 
         """
         Msg().out(self._instructions.__doc__, l=Msg.ERR)
-        Msg().out("        udocker version:", __version__,
-                  "requires tarball release:", self._tarball_release, l=Msg.ERR)
+        Msg().out("udocker command line interface version:", __version__,
+                  "\nrequires udockertools tarball release :", self._tarball_release, l=Msg.ERR)
 
-    def _version_isequal(self, filename):
+    def _get_version(self, filename):
+        """Get udockertools version from tarball VERSION file"""
+        return FileUtil(filename).getdata().strip()
+
+    def _version_isequal(self, version):
         """Is version inside file equal to the taball release requirement"""
-        version = FileUtil(filename).getdata().strip()
         return version and version == self._tarball_release
 
     def is_available(self):
         """Are the tools already installed"""
-        return self._version_isequal(self.localrepo.libdir + "/VERSION")
+        version = self._get_version(self.localrepo.libdir + "/VERSION")
+        return self._version_isequal(version)
 
     def _download(self, url):
         """Download a file """
@@ -1483,10 +1510,10 @@ class UdockerTools(object):
     def _verify_version(self, tarball_file):
         """verify the tarball version"""
         if not (tarball_file and os.path.isfile(tarball_file)):
-            return False
+            return (False, "")
         tmpdir = FileUtil("VERSION").mktmpdir()
         if not tmpdir:
-            return False
+            return (False, "")
         verbose = ''
         if Msg.level >= Msg.VER:
             verbose = 'v'
@@ -1495,10 +1522,11 @@ class UdockerTools(object):
         status = Uprocess().call(cmd, close_fds=True, stderr=Msg.chlderr,
                                  stdout=Msg.chlderr)
         if status:
-            return False
-        status = self._version_isequal(tmpdir + "/VERSION")
+            return (False, "")
+        version = self._get_version(tmpdir + "/VERSION")
+        status = self._version_isequal(version)
         FileUtil(tmpdir).remove()
-        return status
+        return (status, version)
 
     def purge(self):
         """Remove existing files in bin and lib"""
@@ -1509,32 +1537,31 @@ class UdockerTools(object):
             FileUtil(self.localrepo.libdir + '/' + f_name).register_prefix()
             FileUtil(self.localrepo.libdir + '/' + f_name).remove()
 
-    def _install(self, tarball_file, force=False):
+    def _install(self, tarball_file):
         """Install the tarball"""
         if not (tarball_file and os.path.isfile(tarball_file)):
             return False
-        if force:
-            overwrite = "--overwrite"
-        else:
-            overwrite = ""
+        FileUtil(self.localrepo.topdir).chmod()
+        self.localrepo.create_repo()
         if Msg.level >= Msg.VER:
             extract = "-xvzf"
         else:
             extract = "-xzf"
         cmd = ["tar", "-C", self.localrepo.bindir, "--strip-components=2",
-               overwrite, extract, tarball_file, "udocker_dir/bin"]
-        FileUtil(self.localrepo.bindir).chmod()
+               "--overwrite", extract, tarball_file, "udocker_dir/bin"]
+        FileUtil(self.localrepo.bindir).rchmod()
         status = Uprocess().call(cmd, close_fds=True, stderr=Msg.chlderr,
                                  stdout=Msg.chlderr)
-        FileUtil(self.localrepo.bindir).chmod(stat.S_IRUSR | stat.S_IXUSR)
+        FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR | stat.S_IWUSR |
+                                               stat.S_IXUSR)
         if status:
             return False
         cmd = ["tar", "-C", self.localrepo.libdir, "--strip-components=2",
-               overwrite, extract, tarball_file, "udocker_dir/lib"]
-        FileUtil(self.localrepo.libdir).chmod()
+               "--overwrite", extract, tarball_file, "udocker_dir/lib"]
+        FileUtil(self.localrepo.libdir).rchmod()
         status = Uprocess().call(cmd, close_fds=True, stderr=Msg.chlderr,
                                  stdout=Msg.chlderr)
-        FileUtil(self.localrepo.libdir).chmod(stat.S_IRUSR | stat.S_IXUSR)
+        FileUtil(self.localrepo.libdir).rchmod()
         if status:
             return False
         return True
@@ -1557,22 +1584,26 @@ class UdockerTools(object):
                 with open(infofile, 'r') as filep:
                     self._install_json = json.load(filep)
                 for msg in self._install_json["messages"]:
-                    Msg().err("Info:", msg)
+                    Msg().out("Info:", msg)
             except (KeyError, AttributeError, ValueError,
                     OSError, IOError):
-                Msg().err("Info: fail:", infofile, url, l=Msg.VER)
+                Msg().out("Info: fail:", infofile, url, l=Msg.VER)
             return self._install_json
 
     def _install_logic(self, force=False):
         """Obtain random mirror, download, verify and install"""
         for url in self._get_mirrors(self._tarball):
-            Msg().err("Info: install using:", url, l=Msg.VER)
+            Msg().out("Info: install using:", url, l=Msg.VER)
             tarfile = self._get_file(url)
-            status = False
-            if self._verify_version(tarfile):
-                status = self._install(tarfile, force)
+            (status, version) = self._verify_version(tarfile)
+            if status:
+                Msg().out("Info: installing udockertools", version)
+                status = self._install(tarfile)
+            elif force:
+                Msg().out("Info: forcing install of udockertools", version)
+                status = self._install(tarfile)
             else:
-                Msg().err("Error: verify failed for:", url, l=Msg.VER)
+                Msg().err("Error: version is", version, "for", url, l=Msg.VER)
             if "://" in url:
                 FileUtil(tarfile).remove()
             if status:
@@ -1580,7 +1611,7 @@ class UdockerTools(object):
         return False
 
     def install(self, force=False):
-        """Get the udocker tarball and install the binaries"""
+        """Get the udocker tools tarball and install the binaries"""
         if self.is_available() and not force:
             return True
         elif not self._autoinstall and not force:
@@ -1590,12 +1621,13 @@ class UdockerTools(object):
         elif not self._tarball:
             Msg().err("Error: UDOCKER_TARBALL not defined")
         else:
-            Msg().err("Info: installing", self._tarball_release, l=Msg.INF)
+            Msg().out("Info: udocker command line interface", __version__)
+            Msg().out("Info: searching for udockertools", self._tarball_release, l=Msg.INF)
             retry = Config.installretry
             while  retry:
                 if self._install_logic(force):
                     self.get_installinfo()
-                    Msg().err("Info: installation of udockertools successful")
+                    Msg().out("Info: installation of udockertools successful")
                     return True
                 retry = retry - 1
                 Msg().err("Error: installation failure retrying ...", l=Msg.VER)
@@ -2074,7 +2106,7 @@ class FileBind(object):
                 return False
         return True
 
-    def restore(self):
+    def restore(self, force=False):
         """Restore container files after FileBind"""
         error = False
         if not os.path.isdir(self.container_orig_dir):
@@ -2092,42 +2124,57 @@ class FileBind(object):
             if not FileUtil(orig_file).rename(cont_file):
                 Msg().err("Error: restoring binded file:", cont_file)
                 error = True
-        if not error:
+        if not error or force:
             FileUtil(self.container_orig_dir).remove()
         FileUtil(self.container_bind_dir).remove()
 
-    def start(self, files_list):
+    def start(self, files_list=None):
         """Prepare host files to be made available inside container
         files_list: is the initial list of files to be made available
         returns: the directory that holds the files and that must be
                  binded inside the container
         """
+        self.setup()
         self.host_bind_dir = FileUtil("BIND_FILES").mktmpdir()
-        for f_name in files_list:
-            if not os.path.isfile(f_name):
-                continue
-            orig_file = f_name.replace('/', '#')
-            orig_file_path = self.container_orig_dir + '/' + orig_file
-            cont_file = self.container_root + '/' + f_name
-            link_path = self.bind_dir + '/' + orig_file
-            if not os.path.exists(orig_file_path):
-                if os.path.isfile(cont_file):
-                    os.rename(cont_file, orig_file_path)
-                os.symlink(link_path, cont_file)
-            FileUtil(orig_file_path).copyto(self.host_bind_dir)
+        if files_list:
+            self.set_list(files_list)
         return (self.host_bind_dir, self.bind_dir)
 
-    def finish(self):
-        """Cleanup after run"""
-        pass
-        #return FileUtil(self.host_bind_dir).remove()
+    def set_list(self, files_list):
+        """setup links for a list of files"""
+        for f_name in files_list:
+            self.set_file(f_name, f_name)
 
-    def add(self, host_file, cont_file):
+    def set_file(self, host_file, cont_file):
+        """Prepare individual file mapping"""
+        if not os.path.isfile(host_file):
+            return
+        orig_file = cont_file.replace('/', '#')
+        orig_file_path = self.container_orig_dir + '/' + orig_file
+        cont_file_path = self.container_root + '/' + cont_file
+        link_path = self.bind_dir + '/' + orig_file
+        if not os.path.exists(orig_file_path):
+            if os.path.isfile(cont_file_path):
+                os.rename(cont_file_path, orig_file_path)
+            os.symlink(link_path, cont_file_path)
+        FileUtil(orig_file_path).copyto(self.host_bind_dir)
+
+    def add_file(self, host_file, cont_file):
         """Add file to be made available inside container"""
         replace_file = cont_file.replace('/', '#')
         replace_file = self.host_bind_dir + '/' + replace_file
         FileUtil(replace_file).remove()
         FileUtil(host_file).copyto(replace_file)
+
+    def get_path(self, cont_file):
+        """Get real path of file in container self.host_bind_dir"""
+        replace_file = cont_file.replace('/', '#')
+        return self.host_bind_dir + '/' + replace_file
+
+    def finish(self):
+        """Cleanup after run"""
+        #return FileUtil(self.host_bind_dir).remove()
+        pass
 
 
 class MountPoint(object):
@@ -2168,21 +2215,25 @@ class MountPoint(object):
         """Delete container mountpoint from dict"""
         if cont_path not in self.mountpoints or not self.container_root:
             return False
-        mountpoint = self.container_root + '/' + cont_path
-        orig_mpath = self.container_root + '/' + self.mountpoints[cont_path]
-        mountpoint = os.path.realpath(mountpoint)
-        orig_mpath = os.path.realpath(orig_mpath)
         container_root = os.path.realpath(self.container_root)
+        mountpoint = container_root + '/' + cont_path
+        orig_mpath = container_root + '/' + self.mountpoints[cont_path]
+        mountpoint = os.path.normpath(mountpoint)
+        orig_mpath = os.path.normpath(orig_mpath)
         while mountpoint != orig_mpath:
             if mountpoint.startswith(container_root):
-                FileUtil(mountpoint).remove()
+                if not FileUtil(mountpoint).remove():
+                    Msg().err("Error: while deleting:", cont_path)
+                    return False
+                link_path = self.mountpoints[cont_path].replace('/', '#')
+                FileUtil(self.mountpoints_orig_dir + '/' + link_path).remove()
                 mountpoint = os.path.dirname(mountpoint)
         del self.mountpoints[cont_path]
         return True
 
     def delete_all(self):
         """Delete all mountpoints"""
-        for cont_path in self.mountpoints:
+        for cont_path in dict(self.mountpoints):
             self.delete(cont_path)
 
     def create(self, host_path, cont_path):
@@ -2199,7 +2250,7 @@ class MountPoint(object):
         if os.path.isfile(host_path):
             FileUtil(os.path.dirname(mountpoint)).mkdir()
             FileUtil(mountpoint).putdata("")
-            status = os.path.isfile(mountpoint)
+            status = os.path.isfile(mountpoint) or os.path.islink(mountpoint)
         elif os.path.isdir(host_path):
             status = FileUtil(mountpoint).mkdir()
         if not status:
@@ -2234,6 +2285,13 @@ class MountPoint(object):
             orig_mpath = orig_mpath.replace('#', '/')
             cont_path = f_name.replace('#', '/')
             self.mountpoints[cont_path] = orig_mpath
+
+    def restore(self):
+        """Restore container reverting mountpoints"""
+        self.save_all()
+        self.load_all()
+        self.delete_all()
+        FileUtil(self.mountpoints_orig_dir).remove()
 
 
 class ExecutionEngineCommon(object):
@@ -2404,8 +2462,10 @@ class ExecutionEngineCommon(object):
                     f_path = os.path.dirname(f_path) + '/' + real_path
         return os.path.realpath(f_path)
 
-    def _create_mountpoint(self, host_path, cont_path):
+    def _create_mountpoint(self, host_path, cont_path, dirs_only=False):
         """Create mountpoint"""
+        if dirs_only and not FileUtil(host_path).isdir():
+            return True
         if self.mountp.create(host_path, cont_path):
             self.mountp.save(cont_path)
             return True
@@ -2429,6 +2489,7 @@ class ExecutionEngineCommon(object):
                     Msg().err("Error: invalid host volume path:", host_path)
                     return False
             if not self._create_mountpoint(host_path, cont_path):
+                Msg().err("Error: creating mountpoint:", host_path, cont_path)
                 return False
         return True
 
@@ -2970,7 +3031,7 @@ class PRootEngine(ExecutionEngineCommon):
         self.proot_noseccomp = False             # Noseccomp mode
         self._kernel = conf.oskernel()           # Emulate kernel
 
-    def _select_proot(self):
+    def select_proot(self):
         """Set proot executable and related variables"""
         conf = Config()
         self.proot_exec = conf.use_proot_executable
@@ -3020,7 +3081,7 @@ class PRootEngine(ExecutionEngineCommon):
                 ["-i", self.opt["uid"] + ':' + self.opt["gid"], ]
         return uid_map_list
 
-    def _create_mountpoint(self, host_path, cont_path):
+    def _create_mountpoint(self, host_path, cont_path, dirs_only=False):
         """Override create mountpoint"""
         return True
 
@@ -3052,7 +3113,7 @@ class PRootEngine(ExecutionEngineCommon):
         if not self._run_init(container_id):
             return 2
 
-        self._select_proot()
+        self.select_proot()
 
         # seccomp and ptrace behavior change on 4.8.0 onwards
         if self.proot_noseccomp or os.getenv("PROOT_NO_SECCOMP"):
@@ -3116,7 +3177,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._filebind = None
         self.execution_id = None
 
-    def _select_runc(self):
+    def select_runc(self):
         """Set runc executable and related variables"""
         conf = Config()
         self.runc_exec = conf.use_runc_executable
@@ -3282,15 +3343,6 @@ class RuncEngine(ExecutionEngineCommon):
                     if dev_name not in added_devices:
                         self._add_device_spec(dev_name)
 
-    def _create_mountpoint(self, host_path, cont_path):
-        """Override create mountpoint"""
-        if not FileUtil(host_path).isdir():
-            return True
-        if self.mountp.create(host_path, cont_path):
-            self.mountp.save(cont_path)
-            return True
-        return False
-
     def _add_mount_spec(self, host_source, cont_dest, rwmode=False,
                         fstype="none", options=None):
         """Add one mount point"""
@@ -3301,19 +3353,44 @@ class RuncEngine(ExecutionEngineCommon):
         mount = {"destination": cont_dest,
                  "type": fstype,
                  "source": host_source,
-                 "options": ["rbind", "nosuid",
-                             "noexec", "nodev",
-                             mode, ], }
+                 "options": ["rbind", "nosuid", "nodev", mode, ], }
         if options is not None:
             mount["options"] = options
         self._container_specjson["mounts"].append(mount)
 
     def _del_mount_spec(self, host_source, cont_dest):
         """Remove one mount point"""
+        index = self._sel_mount_spec(host_source, cont_dest)
+        if index:
+            del self._container_specjson["mounts"][index]
+
+    def _sel_mount_spec(self, host_source, cont_dest):
+        """Select mount point"""
         for (index, mount) in enumerate(self._container_specjson["mounts"]):
             if (mount["destination"] == cont_dest and
                     mount["source"] == host_source):
-                del self._container_specjson["mounts"][index]
+                return index
+        return None
+
+    def _mod_mount_spec(self, host_source, cont_dest, new):
+        """Modify mount spec"""
+        index = self._sel_mount_spec(host_source, cont_dest)
+        if not index:
+            return False
+        mount = self._container_specjson["mounts"][index]
+        for new_item in new:
+            if new_item == "options":
+                if "options" not in mount:
+                    mount["options"] = []
+                for (new_index, dummy) in enumerate(new["options"]):
+                    option_prefix = new["options"][new_index].split('=', 1)[0]
+                    for (index, opt) in enumerate(mount["options"]):
+                        if opt.startswith(option_prefix):
+                            del mount["options"][index]
+                    mount["options"] += new["options"]
+            else:
+                mount[new_item] = new[new_item]
+        return True
 
     def _add_volume_bindings(self):
         """Get the volume bindings string for runc"""
@@ -3328,12 +3405,12 @@ class RuncEngine(ExecutionEngineCommon):
                     continue
                 self._add_mount_spec(host_dir, cont_dir, rwmode=True)
             elif os.path.isfile(host_dir):
-                if (host_dir not in Config.sysdirs_list and 
+                if (host_dir not in Config.sysdirs_list and
                         host_dir + ":" + cont_dir not in self.hostauth_list):
                     Msg().err("Error: engine does not support file mounting:",
                               host_dir)
                 else:
-                    self._filebind.add(host_dir, cont_dir)
+                    self._filebind.add_file(host_dir, cont_dir)
 
     def _check_env(self):
         """Sanitize environment variables
@@ -3364,6 +3441,39 @@ class RuncEngine(ExecutionEngineCommon):
             Msg().err("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
 
+    def _create_mountpoint(self, host_path, cont_path, dirs_only=True):
+        """Create mountpoint"""
+        return super(RuncEngine, self)._create_mountpoint(host_path,
+                                                          cont_path, dirs_only)
+
+    def _proot_overlay(self, container_id, proot_mode="P2"):
+        """Execute proot within runc"""
+        xmode = self.exec_mode.get_mode()
+        if xmode not in ("R2", "R3"):
+            return
+        else:
+            preng = PRootEngine(self.localrepo)
+            preng.exec_mode = ExecutionMode(self.localrepo, container_id)
+            preng.exec_mode.force_mode = proot_mode
+            preng.select_proot()
+        if preng.proot_noseccomp or os.getenv("PROOT_NO_SECCOMP"):
+            env_noseccomp = "PROOT_NO_SECCOMP=1"
+        elif xmode == "R2":
+            env_noseccomp = ""
+        elif xmode == "R3":
+            env_noseccomp = "PROOT_NO_SECCOMP=1"
+        if env_noseccomp:
+            self._container_specjson["process"]["env"].append(env_noseccomp)
+        host_proot_exec = preng.proot_exec
+        cont_proot_exec = "/.udocker/bin/" + os.path.basename(host_proot_exec)
+        self._create_mountpoint(host_proot_exec, cont_proot_exec, dirs_only=False)
+        self._filebind.set_file(host_proot_exec, cont_proot_exec)
+        self._filebind.add_file(host_proot_exec, cont_proot_exec)
+        mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+        FileUtil(self._filebind.get_path(cont_proot_exec)).chmod(mode)
+        self._container_specjson["process"]["args"] = \
+                [cont_proot_exec, "-0"] + self.opt["cmd"]
+
     def run(self, container_id):
         """Execute a Docker container using runc. This is the main method
         invoked to run the a container with runc.
@@ -3371,6 +3481,7 @@ class RuncEngine(ExecutionEngineCommon):
           * argument: container_id or name
           * options:  many via self.opt see the help
         """
+
 
         Config.sysdirs_list = (
             "/etc/resolv.conf", "/etc/host.conf",
@@ -3384,9 +3495,9 @@ class RuncEngine(ExecutionEngineCommon):
         self._run_invalid_options()
 
         self._container_specfile = self.container_dir + "/config.json"
-        self._filebind = FileBind(self.localrepo, self.container_id)
+        self._filebind = FileBind(self.localrepo, container_id)
 
-        self._select_runc()
+        self.select_runc()
 
         # create new OCI spec file
         if not self._load_spec(new=True):
@@ -3409,8 +3520,10 @@ class RuncEngine(ExecutionEngineCommon):
         self._add_volume_bindings()
         self._add_devices()
         self._add_capabilities_spec()
+        self._mod_mount_spec("shm", "/dev/shm", {"options": ["size=2g"]})
         #self._add_mount_spec("cgroup", "/sys/fs/cgroup", False, "cgroup",
         #                     ["nosuid", "noexec", "nodev", "relatime"])
+        self._proot_overlay(container_id)
         self._save_spec()
 
         if Msg.level >= Msg.DBG:
@@ -3478,7 +3591,7 @@ class SingularityEngine(ExecutionEngineCommon):
         self.singularity_exec = None                   # singularity
         self.execution_id = None
 
-    def _select_singularity(self):
+    def select_singularity(self):
         """Set singularity executable and related variables"""
         conf = Config()
         self.singularity_exec = conf.use_singularity_executable
@@ -3620,7 +3733,7 @@ class SingularityEngine(ExecutionEngineCommon):
         self._make_container_directories()
 
 
-        self._select_singularity()
+        self.select_singularity()
 
         self._run_as_root()
 
@@ -3683,7 +3796,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         self._elfpatcher = None
         self._recommend_expand_symlinks = False
 
-    def _select_fakechroot_so(self):
+    def select_fakechroot_so(self):
         """Select fakechroot sharable object library"""
         conf = Config()
         if conf.fakechroot_so:
@@ -3773,7 +3886,7 @@ class FakechrootEngine(ExecutionEngineCommon):
     def _fakechroot_env_set(self):
         """fakechroot environment variables to set"""
         (host_volumes, map_volumes) = self._get_volume_bindings()
-        self._fakechroot_so = self._select_fakechroot_so()
+        self._fakechroot_so = self.select_fakechroot_so()
         access_filesok = self._get_access_filesok()
         #
         self.opt["env"].append("PWD=" + self.opt["cwd"])
@@ -3999,7 +4112,7 @@ class NvidiaMode(object):
     def _find_host_dir_ldconfig(self, arch="x86-64"):
         """Find host nvidia libraries via ldconfig"""
         dir_list = set()
-        ld_data = Uprocess().get_output("ldconfig", "-p")
+        ld_data = Uprocess().get_output(["ldconfig", "-p"])
         if ld_data:
             regexp = "[ |\t]%s[^ ]* .*%s.*=> (/.*)"
             for line in ld_data.split('\n'):
@@ -4107,10 +4220,14 @@ class ExecutionMode(object):
         self.container_execmode = self.container_dir + "/execmode"
         self.container_orig_root = self.container_dir + "/root.path"
         self.exec_engine = None
-        self.valid_modes = ("P1", "P2", "F1", "F2", "F3", "F4", "R1", "S1")
+        self.force_mode = None                   # for overlay execution
+        self.valid_modes = ("P1", "P2", "F1", "F2", "F3", "F4", "R1",
+                            "R2", "R3", "S1")
 
     def get_mode(self):
         """Get execution mode"""
+        if self.force_mode:
+            return self.force_mode
         xmode = FileUtil(self.container_execmode).getdata().strip()
         if not xmode:
             xmode = Config.default_execution_mode
@@ -4128,28 +4245,28 @@ class ExecutionMode(object):
             return status
         if not (force or xmode != prev_xmode):
             return True
-        if prev_xmode in ('R1', 'S1') and xmode != 'R1':
+        if prev_xmode[0] in ('R', 'S') and xmode[0] != 'R':
             filebind.restore()
-        if xmode.startswith('F'):
+        if xmode[0] == 'F':
             if force or prev_xmode[0] in ('P', 'R', 'S'):
                 status = (FileUtil(self.container_root).links_conv(force, True,
                                                                    orig_path)
                           and elfpatcher.get_ld_libdirs(force))
-        if xmode in ('P1', 'P2', 'F1', 'R1', 'S1'):
-            if prev_xmode in ('P1', 'P2', 'F1', 'R1', 'S1'):
+        if xmode in ('P1', 'P2', 'F1', 'R1', 'R2', 'R3', 'S1'):
+            if prev_xmode in ('P1', 'P2', 'F1', 'R1', 'R2', 'R3', 'S1'):
                 status = True
             elif force or prev_xmode in ('F2', 'F3', 'F4'):
                 status = ((elfpatcher.restore_ld() or force) and
                           elfpatcher.restore_binaries())
-            if xmode == 'R1':
+            if xmode[0] == 'R':
                 filebind.setup()
         elif xmode == 'F2':
             if force or prev_xmode in ('F3', 'F4'):
                 status = elfpatcher.restore_binaries()
-            if force or prev_xmode in ('P1', 'P2', 'F1', 'R1', 'S1'):
+            if force or prev_xmode in ('P1', 'P2', 'F1', 'R1', 'R2', 'R3', 'S1'):
                 status = elfpatcher.patch_ld()
         elif xmode in ('F3', 'F4'):
-            if force or prev_xmode in ('P1', 'P2', 'F1', 'F2', 'R1', 'S1'):
+            if force or prev_xmode in ('P1', 'P2', 'F1', 'F2', 'R1', 'R2', 'R3', 'S1'):
                 status = (elfpatcher.patch_ld() and
                           elfpatcher.patch_binaries())
             elif prev_xmode in ('F3', 'F4'):
@@ -7249,7 +7366,6 @@ class Udocker(object):
         if clone_id:
             Msg().out(clone_id)
             return True
-        #Msg().err("Error: cloning")
         return False
 
     def do_login(self, cmdp):
@@ -7485,6 +7601,7 @@ class Udocker(object):
         --env="MYTAG=xxx"          :set environment variable
         --env-file=<file>          :read environment variables from file
         --hostauth                 :get user account and group from host
+        --containerauth            :use the container pass and group without binding
         --nosysdirs                :do not bind the host /proc /sys /run /dev
         --nometa                   :ignore container metadata
         --dri                      :bind directories relevant for dri graphics
@@ -7800,10 +7917,11 @@ class Udocker(object):
         """
         setup: change container execution settings
         setup [options] <container-id>
-        --execmode=<mode>          :select execution mode from below
-        --force                    :force setup change
-        --nvidia                   :add NVIDIA libraries and binaries
-                                    (nvidia support is EXPERIMENTAL)
+        --execmode=<mode>       :select execution mode from below
+        --force                 :force setup change
+        --purge                 :clean mountpoints and files created by udocker
+        --nvidia                :add NVIDIA libraries and binaries
+                                 (nvidia support is EXPERIMENTAL)
 
         <mode> is one of the following execution modes:
         P1: proot accelerated mode using seccomp filtering (default)
@@ -7814,6 +7932,10 @@ class Udocker(object):
         F4: like F3 plus support for newly created executables via
             dynamic patching of elf headers in binaries and libs
         R1: runc using rootless namespaces, requires recent kernel
+            with user namespace support enabled
+        R2: proot with root emulation running on top of runc to avoid
+            most of the errors related to change of uid or gid
+        R3: same as R2 but with proot accelerated mode disabled
         S1: singularity, requires a local installation of singularity,
             if singularity is available in the PATH udocker will use
             it to execute the container
@@ -7822,6 +7944,7 @@ class Udocker(object):
         xmode = cmdp.get("--execmode=")
         force = cmdp.get("--force")
         nvidia = cmdp.get("--nvidia")
+        purge = cmdp.get("--purge")
         if cmdp.missing_options():               # syntax error
             return False
         if not self.localrepo.cd_container(container_id):
@@ -7830,13 +7953,18 @@ class Udocker(object):
         elif xmode and self.localrepo.isprotected_container(container_id):
             Msg().err("Error: container is protected")
             return False
+        if purge:
+            FileBind(self.localrepo, container_id).restore(force)
+            MountPoint(self.localrepo, container_id).restore()
+        nvidia_mode = NvidiaMode(self.localrepo, container_id)
         if nvidia:
-            nvidia_mode = NvidiaMode(self.localrepo, container_id)
             nvidia_mode.set_mode(force)
         exec_mode = ExecutionMode(self.localrepo, container_id)
         if xmode:
             return exec_mode.set_mode(xmode.upper(), force)
-        Msg().out("execmode: %s" % (exec_mode.get_mode()))
+        if xmode or not (xmode or force or nvidia or purge):
+            Msg().out("execmode: %s" % (exec_mode.get_mode()))
+            Msg().out("nvidiamode: %s" % (nvidia_mode.get_mode()))
         return True
 
     def do_install(self, cmdp):
@@ -7865,11 +7993,11 @@ class Udocker(object):
           udocker  <command>  [command_options]  <command_args>
 
         Commands:
-          search <repo/image:tag>       :Search dockerhub for container images
+          search <repo/expression>      :Search dockerhub for container images
           pull <repo/image:tag>         :Pull container image from dockerhub
-          images                        :List container images
+          images -l                     :List container images
           create <repo/image:tag>       :Create container from a pulled image
-          ps                            :List created containers
+          ps -m -s                      :List created containers
           rm  <container>               :Delete container
           run <container>               :Execute container
           inspect <container>           :Low level information on container
@@ -7880,20 +8008,21 @@ class Udocker(object):
           rm <container-id>             :Delete container
           import <tar> <repo/image:tag> :Import tar file (exported by docker)
           import - <repo/image:tag>     :Import from stdin (exported by docker)
-          load -i <exported-image>      :Load image from file (saved by docker)
-          load                          :Load image from stdin (saved by docker)
           export -o <tar> <container>   :Export container rootfs to file
           export - <container>          :Export container rootfs to stdin
-          inspect <repo/image:tag>      :Return low level information on image
+          load -i <imagefile>           :Load image from file (saved by docker)
+          load                          :Load image from stdin (saved by docker)
+          inspect -p <repo/image:tag>   :Return low level information on image
           verify <repo/image:tag>       :Verify a pulled image
           clone <container>             :duplicate container
+          save -o <imagefile> <repo/image:tag>  :Save image with layers to file
 
           protect <repo/image:tag>      :Protect repository
           unprotect <repo/image:tag>    :Unprotect repository
           protect <container>           :Protect container
           unprotect <container>         :Unprotect container
 
-          mkrepo <topdir>               :Create repository in another location
+          mkrepo <top-repo-dir>         :Create another repository in location
           setup                         :Change container execution settings
           login                         :Login into docker repository
           logout                        :Logout from docker repository
@@ -7910,16 +8039,28 @@ class Udocker(object):
 
         Examples:
           udocker search fedora
+          udocker search quay.io/fedora
+          udocker search --list-tags centos
           udocker pull fedora
-          udocker create --name=fed  fedora
-          udocker run  fed  cat /etc/redhat-release
-          udocker run --hostauth --hostenv --bindhome  fed
-          udocker run --user=root  fed  yum install firefox
-          udocker run --hostauth --hostenv --bindhome fed   firefox
-          udocker run --hostauth --hostenv --bindhome fed   /bin/bash -i
-          udocker run --user=root  fed  yum install cheese
-          udocker run --hostauth --hostenv --bindhome --dri fed  cheese
-          udocker --repo=/home/x/.udocker  images
+          udocker images
+          udocker create --name=fedx  fedora
+          udocker ps -m -s
+          udocker inspect fedx
+          udocker inspect -p fedx
+          udocker run  fedx  cat /etc/redhat-release
+          udocker run --hostauth --hostenv --bindhome  fedx
+          udocker run --user=root  fedx  yum install firefox
+          udocker run --hostauth --hostenv --bindhome fedx   firefox
+          udocker run --hostauth --hostenv --bindhome fedx   /bin/bash -i
+
+          udocker clone --name=anotherfedx fedx
+          udocker run --user=root  anotherfedx  yum install cheese
+          udocker run --hostauth --hostenv --bindhome --dri anotherfedx  cheese
+          udocker rm anotherfedx
+
+          udocker mkrepo /home/x/myrepo
+          udocker --repo=/home/x/myrepo load -i docker-saved-repo.tar 
+          udocker --repo=/home/x/myrepo images
           udocker -D run --user=1001:5001  fedora
           udocker export -o fedora.tar fedora
           udocker import fedora.tar myfedoraimage
@@ -7932,13 +8073,21 @@ class Udocker(object):
                $HOME/.udocker
           * by default the following host directories are mounted in the
             container:
-               /dev /proc /sys
-               /etc/resolv.conf /etc/host.conf /etc/hostname
+               /dev /proc /sys /etc/resolv.conf /etc/host.conf /etc/hostname
           * to prevent the mount of the above directories use:
                run  --nosysdirs  <container>
           * additional host directories to be mounted are specified with:
                run --volume=/data:/mnt --volume=/etc/hosts  <container>
                run --nosysdirs --volume=/dev --volume=/proc  <container>
+          * udocker provides several execution modes that offer different
+            approaches and technologies to execute containers, they
+            can be selected using the setup command. See the setup help.
+               udocker setup --execmode=F3 fedx
+               udocker setup --execmode=R1 fedx
+               udocker setup --execmode=S1 fedx
+               udocker setup --help
+          * udocker facilitates the usage of nvidia drivers within containers
+               udocker setup --nvidia fedx
 
         See: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
         """
@@ -8173,7 +8322,7 @@ class Main(object):
             Udocker(self.localrepo).do_version(self.cmdp)
             sys.exit(0)
         if not self.localrepo.is_repo():
-            Msg().out("Info: creating repo: " + Config.topdir, l=Msg.INF)
+            Msg().out("Info: setup repo: " + Config.topdir, l=Msg.INF)
             self.localrepo.create_repo()
         self.udocker = Udocker(self.localrepo)
 
