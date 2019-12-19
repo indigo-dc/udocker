@@ -33,6 +33,7 @@ import platform
 import glob
 import select
 import ast
+import ctypes
 
 __author__ = "udocker@lip.pt"
 __copyright__ = "Copyright 2019, LIP"
@@ -42,7 +43,7 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.3-6"
+__version__ = "1.1.3-7"
 __date__ = "2019"
 
 # Python version major.minor
@@ -154,6 +155,9 @@ class Config(object):
         "/usr/lib64/dri", "/lib64/dri",
         "/usr/lib/dri", "/lib/dri",
     )
+
+    # allowed file mountpoints for runC, these files can be copied in
+    mountpoint_prefixes = ( "/etc", )
 
     # container execution mode if not set via setup
     # Change it to P2 if execution problems occur
@@ -288,6 +292,8 @@ class Config(object):
         Config.dockerio_registry_url = os.getenv("UDOCKER_REGISTRY",
                                                  Config.dockerio_registry_url)
         Config.tarball = os.getenv("UDOCKER_TARBALL", Config.tarball)
+        Config.default_execution_mode = os.getenv("UDOCKER_DEFAULT_EXECUTION_MODE",
+                                                  Config.default_execution_mode)
         Config.fakechroot_so = os.getenv("UDOCKER_FAKECHROOT_SO",
                                          Config.fakechroot_so)
         Config.tmpdir = os.getenv("UDOCKER_TMP", Config.tmpdir)
@@ -602,6 +608,75 @@ class GuestInfo(object):
         except (OSError, IOError):
             pass
         return (24, 80)
+
+
+class Unshare(object):
+    """Place a process in a namespace"""
+
+    CLONE_NEWNS = 0x20000
+    CLONE_NEWUTS = 0x4000000
+    CLONE_NEWIPC = 0x8000000
+    CLONE_NEWUSER = 0x10000000
+    CLONE_NEWPID = 0x20000000
+    CLONE_NEWNET = 0x40000000
+
+    def unshare(self, flags):
+        """Python implementation of unshare"""
+        try:
+            _unshare = ctypes.CDLL("libc.so.6").unshare
+        except OSError:
+            Msg().err("Error: in unshare: mapping libc")
+            return False
+
+        _unshare.restype = ctypes.c_int
+        _unshare.argtypes = (ctypes.c_int, )
+
+        if _unshare(flags) == -1:
+            Msg().err("Error: in unshare:", os.strerror())
+            return False
+        return True
+
+    def namespace_exec(self, method, flags=CLONE_NEWUSER):
+        """Execute command in namespace"""
+        (pread1, pwrite1) = os.pipe()
+        (pread2, pwrite2) = os.pipe()
+        cpid = os.fork()
+        if cpid:
+            os.close(pwrite1)
+            os.read(pread1, 1)  # wait
+            user = Config().username()
+
+            newidmap = ["newuidmap", str(cpid), "0", str(Config.uid), "1"]
+            for (subid, subcount) in NixAuthentication().user_in_subuid(user):
+                newidmap.extend(["1", subid, subcount])
+            subprocess.call(newidmap)
+
+            newidmap = ["newgidmap", str(cpid), "0", str(Config.uid), "1"]
+            for (subid, subcount) in NixAuthentication().user_in_subgid(user):
+                newidmap.extend(["1", subid, subcount])
+            subprocess.call(newidmap)
+            os.close(pwrite2)   # notify
+
+            (dummy, status) = os.waitpid(cpid, 0)
+            if status % 256:
+                Msg().err("Error: namespace exec action failed")
+                return False
+            return True
+        else:
+            self.unshare(flags)
+            os.close(pwrite2)
+            os.close(pwrite1)   # notify
+            os.read(pread2, 1)  # wait
+            try:
+                os.setgid(0)
+                os.setuid(0)
+                os.setgroups([0, 0, ])
+            except OSError:
+                Msg().err("Error: setting ids and groups")
+                return False
+            exit(int(method()))
+        return False
+
 
 class KeyStore(object):
     """Basic storage for authentication tokens to be used
@@ -925,7 +1000,7 @@ class FileUtil(object):
                 FileUtil.safe_prefixes.append(os.path.realpath(filename))
 
     def register_prefix(self):
-        """Register self.filename as prefix where remove() is allowed"""
+        """Register directory prefixes where remove() is allowed"""
         self._register_prefix(self.filename)
 
     def umask(self, new_umask=None):
@@ -991,21 +1066,40 @@ class FileUtil(object):
                 return True
         return False
 
+    def chown(self, uid=0, gid=0, recursive=False):
+        """Change ownership of file or directory"""
+        try:
+            if recursive:
+                for dir_path, dirs, files in os.walk(self.filename):
+                    for f_name in dirs + files:
+                        os.lchown(dir_path + '/' + f_name, uid, gid)
+            self._chmod(self.filename, uid, gid)
+        except OSError:
+            return False
+        return True
+
+    def rchown(self, uid=0, gid=0):
+        """Change ownership recursively recursively"""
+        return self.chown(uid, gid, recursive=True)
+
     def _chmod(self, filename, filemode=0o600, dirmode=0o700, mask=0o755):
         """chmod file or directory"""
-        filestat = os.lstat(filename).st_mode
-        if stat.S_ISREG(filestat) and filemode:
-            mode = (stat.S_IMODE(filestat) & mask) | filemode
-            os.chmod(filename, mode)
-        elif stat.S_ISDIR(filestat) and dirmode:
-            mode = (stat.S_IMODE(filestat) & mask) | dirmode
-            os.chmod(filename, mode)
-        elif stat.S_ISLNK(filestat) and filemode:
-            mode = (stat.S_IMODE(filestat) & mask) | filemode
-            os.chmod(filename, mode)
-        elif filemode:
-            mode = (stat.S_IMODE(filestat) & mask) | filemode
-            os.chmod(filename, mode)
+        try:
+            filestat = os.lstat(filename).st_mode
+            if stat.S_ISREG(filestat) and filemode:
+                mode = (stat.S_IMODE(filestat) & mask) | filemode
+                os.chmod(filename, mode)
+            elif stat.S_ISDIR(filestat) and dirmode:
+                mode = (stat.S_IMODE(filestat) & mask) | dirmode
+                os.chmod(filename, mode)
+            elif stat.S_ISLNK(filestat) and filemode:
+                pass
+            elif filemode:
+                mode = (stat.S_IMODE(filestat) & mask) | filemode
+                os.chmod(filename, mode)
+        except OSError:
+            Msg().err("Error: changing permissions of:", filename, l=Msg.VER)
+            raise OSError
 
     def chmod(self, filemode=0o600, dirmode=0o700, mask=0o755, recursive=False):
         """chmod directory recursively"""
@@ -1047,10 +1141,11 @@ class FileUtil(object):
             os.chmod(self.filename, stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR)
             os.rmdir(self.filename)
         except OSError:
+            Msg().err("Error: removing:", self.filename, l=Msg.VER)
             return False
         return True
 
-    def remove(self, force=False):
+    def remove(self, force=False, recursive=False):
         """Delete files or directories"""
         if not os.path.exists(self.filename):
             pass
@@ -1071,7 +1166,11 @@ class FileUtil(object):
                 Msg().err("Error: deleting file: ", self.filename)
                 return False
         elif os.path.isdir(self.filename):
-            if not self._removedir():
+            if recursive:
+                status = self._removedir()
+            else:
+                status = self.rmdir()
+            if not status:
                 Msg().err("Error: deleting directory: ", self.filename)
                 return False
         if self.filename in dict(FileUtil.tmptrash):
@@ -1128,7 +1227,7 @@ class FileUtil(object):
         """Delete all temporary files"""
         tmptrash_copy = dict(FileUtil.tmptrash)
         for filename in tmptrash_copy:
-            FileUtil(filename).remove()
+            FileUtil(filename).remove(recursive=True)
 
     def isdir(self):
         """Is filename a directory"""
@@ -1525,17 +1624,17 @@ class UdockerTools(object):
             return (False, "")
         version = self._get_version(tmpdir + "/VERSION")
         status = self._version_isequal(version)
-        FileUtil(tmpdir).remove()
+        FileUtil(tmpdir).remove(recursive=True)
         return (status, version)
 
     def purge(self):
         """Remove existing files in bin and lib"""
         for f_name in os.listdir(self.localrepo.bindir):
             FileUtil(self.localrepo.bindir + '/' + f_name).register_prefix()
-            FileUtil(self.localrepo.bindir + '/' + f_name).remove()
+            FileUtil(self.localrepo.bindir + '/' + f_name).remove(recursive=True)
         for f_name in os.listdir(self.localrepo.libdir):
             FileUtil(self.localrepo.libdir + '/' + f_name).register_prefix()
-            FileUtil(self.localrepo.libdir + '/' + f_name).remove()
+            FileUtil(self.localrepo.libdir + '/' + f_name).remove(recursive=True)
 
     def _install(self, tarball_file):
         """Install the tarball"""
@@ -1924,6 +2023,7 @@ class NixAuthentication(object):
 
     def _user_in_subid(self, sub_file, wanted_user):
         """get user information from the host /etc/sub*"""
+        subid_list = []
         if self.passwd_file:
             (user, dummy, dummy, dummy, dummy, dummy) = \
                     self._get_user_from_file(wanted_user)
@@ -1933,18 +2033,17 @@ class NixAuthentication(object):
         try:
             insub = open(sub_file)
         except (IOError, OSError):
-            return False
+            return []
         else:
             for line in insub:
                 try:
-                    (subuser, dummy, dummy) = line.strip().split(':')
+                    (subuser, subid, count) = line.strip().split(':')
                 except ValueError:
                     continue
                 if subuser == user:
-                    return True
-                continue
+                    subid_list.extend([(subid, count), ])
             insub.close()
-        return False
+        return subid_list
 
     def user_in_subuid(self, wanted_user):
         """Find if wanted_user is in /etc/subuid"""
@@ -2047,9 +2146,13 @@ class NixAuthentication(object):
             return True
         return FileUtil(self.passwd_file).putdata(line, "ab")
 
-    def add_group(self, group, gid):
+    def add_group(self, group, gid, users=None):
         """Add a group to a /etc/passwd file"""
-        line = "%s:x:%s:\n" % (group, gid)
+        users_str = ""
+        if isinstance(users, list):
+            for username in users:
+                users_str += "%s," % (username)
+        line = "%s:x:%s:%s\n" % (group, gid, users_str)
         if line in FileUtil(self.group_file).getdata():
             return True
         return FileUtil(self.group_file).putdata(line, "ab")
@@ -2125,8 +2228,8 @@ class FileBind(object):
                 Msg().err("Error: restoring binded file:", cont_file)
                 error = True
         if not error or force:
-            FileUtil(self.container_orig_dir).remove()
-        FileUtil(self.container_bind_dir).remove()
+            FileUtil(self.container_orig_dir).remove(recursive=True)
+        FileUtil(self.container_bind_dir).remove(recursive=True)
 
     def start(self, files_list=None):
         """Prepare host files to be made available inside container
@@ -2156,6 +2259,8 @@ class FileBind(object):
         if not os.path.exists(orig_file_path):
             if os.path.isfile(cont_file_path):
                 os.rename(cont_file_path, orig_file_path)
+            else:
+                return
             os.symlink(link_path, cont_file_path)
         FileUtil(orig_file_path).copyto(self.host_bind_dir)
 
@@ -2173,7 +2278,7 @@ class FileBind(object):
 
     def finish(self):
         """Cleanup after run"""
-        #return FileUtil(self.host_bind_dir).remove()
+        #return FileUtil(self.host_bind_dir).remove(recursive=True)
         pass
 
 
@@ -2212,7 +2317,7 @@ class MountPoint(object):
             self.mountpoints[cont_path] = "/"
 
     def delete(self, cont_path):
-        """Delete container mountpoint from dict"""
+        """Delete container mountpoint"""
         if cont_path not in self.mountpoints or not self.container_root:
             return False
         container_root = os.path.realpath(self.container_root)
@@ -2291,7 +2396,7 @@ class MountPoint(object):
         self.save_all()
         self.load_all()
         self.delete_all()
-        FileUtil(self.mountpoints_orig_dir).remove()
+        FileUtil(self.mountpoints_orig_dir).remove(recursive=True)
 
 
 class ExecutionEngineCommon(object):
@@ -2502,10 +2607,18 @@ class ExecutionEngineCommon(object):
     def _is_volume(self, path):
         """Is path a host_path in the volumes list"""
         for vol in list(self.opt["vol"]):
-            (host_path, dummy) = self._vol_split(vol)
+            (host_path, cont_path) = self._vol_split(vol)
             if host_path and host_path == self._cleanpath(path):
-                return True
-        return False
+                return cont_path
+        return ""
+
+    def _is_mountpoint(self, path):
+        """Is path a host_path in the volumes list"""
+        for vol in list(self.opt["vol"]):
+            (host_path, cont_path) = self._vol_split(vol)
+            if cont_path and cont_path == self._cleanpath(path):
+                return host_path
+        return ""
 
     def _set_volume_bindings(self):
         """Set the volume bindings string for container run command"""
@@ -2668,19 +2781,7 @@ class ExecutionEngineCommon(object):
                 if key == search_key:
                     return str(val)
         return None
-
-    def _uid_gid_from_str(self, expression):
-        """Parse strings containing uid:gid"""
-        uid = None
-        gid = None
-        try:
-            match = re.match("^(\\d+):(\\d+)$", expression)
-            uid = match.group(1)
-            gid = match.group(2)
-        except AttributeError:
-            Msg().err("Error: invalid syntax user must be uid:gid or username")
-        return (uid, gid)
-
+  
     def _select_auth_files(self):
         """Select authentication files to use /etc/passwd /etc/group"""
         cont_passwd = self.container_root + "/etc/passwd"
@@ -2696,7 +2797,47 @@ class ExecutionEngineCommon(object):
             group = bind_group
         else:
             group = cont_group
+        if self._is_mountpoint("/etc/passwd"):
+            passwd = self._is_mountpoint("/etc/passwd")
+        if self._is_mountpoint("/etc/group"):
+            group = self._is_mountpoint("/etc/group")
         return (passwd, group)
+
+    def _validate_user_str(self, user):
+        user_id = dict()
+        if not isinstance(user, str):
+            return user_id
+        if re.match("^[a-zA-Z_][a-zA-Z0-9_-]*$", user):
+            user_id["user"] = user
+            return user_id
+        else:
+            match = re.match("^(\\d+)(:(\\d+)){0,1}$", user)
+            if match:
+                user_id["uid"] =  match.group(1)
+                if match.group(3):
+                    user_id["gid"] =  match.group(3)
+        return user_id
+
+    def _user_from_str(self, user, host_auth=None, container_auth=None):
+        """Parse strings containing uid:gid or user and return pw entry
+           Returns (valid_user: bool, user_passwd_fields: dict)
+        """
+        user_id = self._validate_user_str(user)
+        if not user_id:
+            return (False, user_id)
+        if "uid" in user_id:
+            search_field = user_id["uid"]
+        else:
+            search_field = user_id["user"]
+        if self.opt["hostauth"]:
+            (self.opt["user"], self.opt["uid"], self.opt["gid"],
+             self.opt["gecos"], self.opt["home"], self.opt["shell"]) = \
+                host_auth.get_user(search_field)
+        else:
+            (self.opt["user"], self.opt["uid"], self.opt["gid"],
+             self.opt["gecos"], self.opt["home"], self.opt["shell"]) = \
+                container_auth.get_user(search_field)
+        return (True, user_id)
 
     def _setup_container_user(self, user):
         """Once we know which username to use inside the container
@@ -2704,7 +2845,7 @@ class ExecutionEngineCommon(object):
         be used inside the container. Since we can override the
         usage of the container /etc/passwd and /etc/group with
         files passed from the host, then we must check if this
-        username is in the appropriate file so:
+        username is in the appropriate file therefore:
         1. check if the passwd will be the one of the host system
            either because we passwd --hostauth or because we did
            --volume=/etc/passwd:/etc/passwd
@@ -2714,56 +2855,30 @@ class ExecutionEngineCommon(object):
         the intended user. The file is then passwd/mapped into
         the container.
         """
-        self.opt["user"] = "root"
-        self.opt["uid"] = '0'
-        self.opt["gid"] = '0'
-        self.opt["home"] = '/'
-        self.opt["gecos"] = ""
-        self.opt["shell"] = ""
         host_auth = NixAuthentication()
         (passwd, group) = self._select_auth_files()
         container_auth = NixAuthentication(passwd, group)
         if not user:
-            user = self.opt["user"]
-        if ':' in user:
-            (found_uid, found_gid) = self._uid_gid_from_str(user)
-            if found_gid is None:
-                return False
-            if "/etc/passwd" in self.opt["vol"] or self.opt["hostauth"]:
-                (found_user, dummy, dummy, found_gecos, found_home,
-                 found_shell) = host_auth.get_user(found_uid)
-            else:
-                (found_user, dummy, dummy,
-                 found_gecos, found_home, found_shell) = \
-                    container_auth.get_user(found_uid)
+            user = "root"
+        (valid_user, user_id) = self._user_from_str(user,
+                                                    host_auth, container_auth)
+        if not valid_user:
+            Msg().err("Error: invalid syntax for user", user)
+            return False
+        if self._is_mountpoint("/etc/passwd") or self._is_mountpoint("/etc/group"):
+            self.opt["hostauth"] = self.opt["containerauth"] = False
+            return True
+        if self.opt["user"]:
+            if self.opt["user"] != "root":
+                self.opt["uid"] = str(Config.uid)
+                self.opt["gid"] = str(Config.gid)
         else:
-            if "/etc/passwd" in self.opt["vol"] or self.opt["hostauth"]:
-                (found_user, found_uid, found_gid, found_gecos, found_home,
-                 found_shell) = host_auth.get_user(user)
-            else:
-                (found_user, found_uid, found_gid,
-                 found_gecos, found_home, found_shell) = \
-                    container_auth.get_user(user)
-        if found_user:
-            self.opt["user"] = found_user
-            self.opt["uid"] = found_uid
-            self.opt["gid"] = found_gid
-            self.opt["home"] = found_home
-            self.opt["gecos"] = found_gecos
-            self.opt["shell"] = found_shell
-        else:
-            if "/etc/passwd" in self.opt["vol"] or self.opt["hostauth"]:
+            if self.opt["hostauth"] or self.opt["containerauth"]:
                 Msg().err("Error: user not found")
                 return False
-            else:
-                if ':' not in user:
-                    self.opt["user"] = user
-                    self.opt["uid"] = ""
-                    self.opt["gid"] = ""
-                elif self.opt["uid"] > 0:
-                    self.opt["user"] = ""
-                Msg().err("Warning: non-existing user will be created",
-                          l=Msg.WAR)
+            self.opt["user"] = user_id["user"] if "user" in user_id else user
+            self.opt["uid"] = user_id["uid"] if "uid" in user_id else ""
+            self.opt["gid"] = user_id["gid"] if "gid" in user_id else ""
         self._create_user(container_auth, host_auth)
         return True
 
@@ -2771,50 +2886,33 @@ class ExecutionEngineCommon(object):
         """ Setup user for engines without root support.
         Equivalent to _setup_container_user() for engines without root support.
         """
-        self.opt["user"] = Config().username()
-        self.opt["uid"] = str(Config.uid)
-        self.opt["gid"] = str(Config.gid)
-        self.opt["home"] = '/'
-        self.opt["gecos"] = ""
-        self.opt["shell"] = ""
         host_auth = NixAuthentication()
-        container_auth = NixAuthentication(self.container_root + "/etc/passwd",
-                                           self.container_root + "/etc/group")
+        (passwd, group) = self._select_auth_files()
+        container_auth = NixAuthentication(passwd, group)
         if not user:
-            user = self.opt["user"]
-        if ':' in user:
-            (found_uid, found_gid) = self._uid_gid_from_str(user)
-            if found_gid is None:
-                return False
-            if "/etc/passwd" in self.opt["vol"] or self.opt["hostauth"]:
-                (found_user, dummy, dummy, found_gecos, found_home,
-                 found_shell) = host_auth.get_user(found_uid)
-            else:
-                (found_user, dummy, dummy,
-                 found_gecos, found_home, found_shell) = \
-                    container_auth.get_user(found_uid)
+            user = Config().username()
+        (valid_user, user_id) = self._user_from_str(user,
+                                                    host_auth, container_auth)
+        if not valid_user:
+            Msg().err("Error: invalid syntax for user", user)
+            return False
+        if self.opt["user"] == "root":
+            self.opt["user"] = Config().username()
+            self.opt["uid"] = str(Config.uid)
+            self.opt["gid"] = str(Config.gid)
+        if self._is_mountpoint("/etc/passwd") or self._is_mountpoint("/etc/group"):
+            self.opt["hostauth"] = self.opt["containerauth"] = False
+            return True
+        if self.opt["user"]:
+            self.opt["uid"] = str(Config.uid)
+            self.opt["gid"] = str(Config.gid)
         else:
-            if "/etc/passwd" in self.opt["vol"] or self.opt["hostauth"]:
-                (found_user, dummy, dummy, found_gecos, found_home,
-                 found_shell) = host_auth.get_user(user)
-            else:
-                (found_user, dummy, dummy,
-                 found_gecos, found_home, found_shell) = \
-                    container_auth.get_user(user)
-        if found_user:
-            self.opt["user"] = found_user
-            self.opt["home"] = found_home
-            self.opt["gecos"] = found_gecos
-            self.opt["shell"] = found_shell
-        else:
-            if "/etc/passwd" in self.opt["vol"] or self.opt["hostauth"]:
-                Msg().err("Error: user not found")
+            if self.opt["hostauth"] or self.opt["containerauth"]:
+                Msg().err("Error: user not found on host")
                 return False
-            else:
-                if ':' not in user:
-                    self.opt["user"] = user
-                Msg().err("Warning: non-existing user will be created",
-                          l=Msg.WAR)
+            self.opt["user"] = user_id["user"] if "user" in user_id else user
+            self.opt["uid"] = user_id["uid"] if "uid" in user_id else ""
+            self.opt["gid"] = user_id["gid"] if "gid" in user_id else ""
         self._create_user(container_auth, host_auth)
         return True
 
@@ -2838,51 +2936,46 @@ class ExecutionEngineCommon(object):
             self.opt["gecos"] = "*UDOCKER*"
 
     def _create_user(self, container_auth, host_auth):
-        """If we need to create a new user then we first
-        copy /etc/passwd and /etc/group to new files and them
-        we add the user account into these copied files which
-        later are binding/mapped/passed to the container. So
-        setup this binding as well via hostauth.
+        """If we need to create a new user then we first copy /etc/passwd
+        and /etc/group to new files and them we add the user account into
+        these copied files which later are binding/mapped/passed to the
+        container. So setup this binding as well via hostauth.
         """
         if self.opt["containerauth"]:
             tmp_passwd = container_auth.passwd_file
             tmp_group = container_auth.group_file
+            self.opt["hostauth"] = False
         else:
             FileUtil().umask(0o077)
             tmp_passwd = FileUtil("passwd").mktmp()
             tmp_group = FileUtil("group").mktmp()
-            FileUtil(container_auth.passwd_file).copyto(tmp_passwd)
-            FileUtil(container_auth.group_file).copyto(tmp_group)
+            if self.opt["hostauth"]:
+                FileUtil("/etc/passwd").copyto(tmp_passwd)
+                FileUtil("/etc/group").copyto(tmp_group)
+            else:
+                FileUtil(container_auth.passwd_file).copyto(tmp_passwd)
+                FileUtil(container_auth.group_file).copyto(tmp_group)
             FileUtil().umask()
-        if self._is_volume("/etc/passwd"):
-            tmp_passwd = "/etc/passwd"
-        if self._is_volume("/etc/group"):
-            tmp_passwd = "/etc/group"
-        self._fill_user()
-        new_auth = NixAuthentication(tmp_passwd, tmp_group)
-        new_auth.add_user(self.opt["user"], 'x',
-                          self.opt["uid"], self.opt["gid"],
-                          self.opt["gecos"], self.opt["home"],
-                          self.opt["shell"])
-        (group, dummy, dummy) = host_auth.get_group(self.opt["gid"])
-        if not group:
-            new_auth.add_group(self.opt["user"], self.opt["gid"])
-        for sup_gid in os.getgroups():
-            new_auth.add_group('G' + str(sup_gid), str(sup_gid))
+        if not (self.opt["containerauth"] or self.opt["hostauth"]):
+            Msg().err("Warning: non-existing user will be created",
+                      l=Msg.WAR)
+            self._fill_user()
+            new_auth = NixAuthentication(tmp_passwd, tmp_group)
+            new_auth.add_user(self.opt["user"], 'x',
+                              self.opt["uid"], self.opt["gid"],
+                              self.opt["gecos"], self.opt["home"],
+                              self.opt["shell"])
+            (group, dummy, dummy) = host_auth.get_group(self.opt["gid"])
+            if not group:
+                new_auth.add_group(self.opt["user"], self.opt["gid"])
+            for sup_gid in os.getgroups():
+                new_auth.add_group('G' + str(sup_gid), str(sup_gid),
+                                   [self.opt["user"], ])
         if not self.opt["containerauth"]:
             self.opt["hostauth"] = True
             self.hostauth_list = (tmp_passwd + ":/etc/passwd",
                                   tmp_group + ":/etc/group")
         return True
-
-    def _uid_check_noroot(self):
-        """Set the uid_map string for engines without root support
-        """
-        if ("user" not in self.opt or (not self.opt["user"]) or
-                self.opt["user"] == "root" or self.opt["user"] == '0'):
-            Msg().err("Warning: running as uid 0 is not supported by this engine",
-                      l=Msg.WAR)
-            self.opt["user"] = Config().username()
 
     def _run_banner(self, cmd, char='*'):
         """Print a container startup banner"""
@@ -2973,18 +3066,18 @@ class ExecutionEngineCommon(object):
         To be called by the run() method of the actual ExecutionEngine
         """
         try:
-            (container_dir, dummy) = \
-                self._run_load_metadata(container_id)
+            (container_dir, dummy) = self._run_load_metadata(container_id)
         except (ValueError, TypeError):
+            return ""
+        if not container_dir:
             return ""
 
         self._run_env_cmdoptions()
 
-        Config().container(container_dir + "/container.conf")
-
         if Config.location:                   # using specific root tree
             self.container_root = Config.location
         else:
+            Config().container(container_dir + "/container.conf")
             self.container_root = container_dir + "/ROOT"
 
         # container name(s) from container_id
@@ -3214,6 +3307,7 @@ class RuncEngine(ExecutionEngineCommon):
     def _load_spec(self, new=False):
         """Generate runc spec file"""
         if FileUtil(self._container_specfile).size() != -1 and new:
+            FileUtil(self._container_specfile).register_prefix()
             FileUtil(self._container_specfile).remove()
         if FileUtil(self._container_specfile).size() == -1:
             cmd_l = [self.runc_exec, "spec", "--rootless", "--bundle",
@@ -3406,10 +3500,12 @@ class RuncEngine(ExecutionEngineCommon):
                 self._add_mount_spec(host_dir, cont_dir, rwmode=True)
             elif os.path.isfile(host_dir):
                 if (host_dir not in Config.sysdirs_list and
-                        host_dir + ":" + cont_dir not in self.hostauth_list):
+                        host_dir + ":" + cont_dir not in self.hostauth_list and
+                        os.path.dirname(cont_dir) not in Config.mountpoint_prefixes):
                     Msg().err("Error: engine does not support file mounting:",
                               host_dir)
                 else:
+                    self._filebind.set_file(host_dir, cont_dir)
                     self._filebind.add_file(host_dir, cont_dir)
 
     def _check_env(self):
@@ -3477,11 +3573,9 @@ class RuncEngine(ExecutionEngineCommon):
     def run(self, container_id):
         """Execute a Docker container using runc. This is the main method
         invoked to run the a container with runc.
-
           * argument: container_id or name
           * options:  many via self.opt see the help
         """
-
 
         Config.sysdirs_list = (
             "/etc/resolv.conf", "/etc/host.conf",
@@ -3494,8 +3588,12 @@ class RuncEngine(ExecutionEngineCommon):
 
         self._run_invalid_options()
 
-        self._container_specfile = self.container_dir + "/config.json"
+        self._container_specfile = "config.json"
+        if self.container_dir:
+            self._container_specfile = \
+                    self.container_dir + '/' + self._container_specfile
         self._filebind = FileBind(self.localrepo, container_id)
+        self._filebind.setup()
 
         self.select_runc()
 
@@ -3660,9 +3758,9 @@ class SingularityEngine(ExecutionEngineCommon):
             singularityenv['SINGULARITYENV_%s' % key] = val
         return singularityenv
 
-    def _setup_container_user(self, user):
-        """Override of _setup_container_user()"""
-        return self._setup_container_user_noroot(user)
+    #def _setup_container_user(self, user):
+    #    """Override of _setup_container_user()"""
+    #    return self._setup_container_user_noroot(user)
 
     def _make_container_directories(self):
         """Create directories expected by Singularity"""
@@ -3688,20 +3786,16 @@ class SingularityEngine(ExecutionEngineCommon):
         username = Config().username()
         uid = str(Config().uid)
         if "user" in self.opt:
-            if (self.opt["user"] == username or
-                    self.opt["user"] == uid):
+            if (self.opt["user"] == username):
                 return False
-            elif self.opt["user"] != "root" and self.opt["user"] != '0':
+            elif self.opt["user"] != "root" and self.opt["uid"] != '0':
                 Msg().err("Warning: running as another user not supported")
-                self.opt["user"] = username
                 return False
             elif self._has_option("--fakeroot", "exec"):
                 if (NixAuthentication().user_in_subuid(username) and
                         NixAuthentication().user_in_subgid(username)):
                     Config.singularity_options.extend(["--fakeroot", ])
                     return True
-            Msg().err("Warning: running as uid 0 is not supported by this",
-                      "installation", l=Msg.WAR)
         self.opt["user"] = username
         return False
 
@@ -3719,7 +3813,6 @@ class SingularityEngine(ExecutionEngineCommon):
 
         Config.sysdirs_list = (
             # "/dev", "/proc", "/sys",
-            # "/etc/passwd", "/etc/group",
             "/etc/resolv.conf", "/etc/host.conf",
             "/lib/modules",
         )
@@ -3845,6 +3938,13 @@ class FakechrootEngine(ExecutionEngineCommon):
     def _setup_container_user(self, user):
         """Override of _setup_container_user()"""
         return self._setup_container_user_noroot(user)
+
+    def _uid_check(self):
+        """Check the uid_map string for container run command"""
+        if ("user" in self.opt and (self.opt["user"] == '0' or 
+                self.opt["user"] == "root")):
+            Msg().err("Warning: this engine does not support execution as root",
+                      l=Msg.WAR)
 
     def _get_volume_bindings(self):
         """Get the volume bindings string for fakechroot run"""
@@ -3987,13 +4087,12 @@ class FakechrootEngine(ExecutionEngineCommon):
     def run(self, container_id):
         """Execute a Docker container using Fakechroot. This is the main
         method invoked to run the a container with Fakechroot.
-
           * argument: container_id or name
           * options:  many via self.opt see the help
         """
 
-        # this engine does not support root check and fix
-        self._uid_check_noroot()
+        # warning root execution not supported
+        self._uid_check()
 
         # setup execution
         exec_path = self._run_init(container_id)
@@ -4050,8 +4149,6 @@ class NvidiaMode(object):
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = container_id         # Container id
         self.container_dir = self.localrepo.cd_container(container_id)
-        if not self.container_dir:
-            raise ValueError("invalid container id")
         self.container_root = self.container_dir + "/ROOT"
         self._container_nvidia_set = self.container_dir + "/nvidia"
         self._nvidia_main_libs = ("libnvidia-cfg.so", "libcuda.so", )
@@ -4443,12 +4540,12 @@ class ContainerStructure(object):
                     for f_name in os.listdir(destdir + '/' + wh_dirname):
                         rm_filename = destdir + '/' \
                             + wh_dirname + '/' + f_name
-                        FileUtil(rm_filename).remove()
+                        FileUtil(rm_filename).remove(recursive=True)
                 elif wh_basename.startswith(".wh."):
                     rm_filename = destdir + '/' \
                         + wh_dirname + '/' \
                         + wh_basename.replace(".wh.", "", 1)
-                    FileUtil(rm_filename).remove()
+                    FileUtil(rm_filename).remove(recursive=True)
         return
 
     def _untar_layers(self, tarfiles, destdir):
@@ -4658,8 +4755,7 @@ class LocalRepository(object):
                       os.path.exists(self.layersdir),
                       os.path.exists(self.containersdir),
                       os.path.exists(self.bindir),
-                      os.path.exists(self.libdir),
-                      os.path.exists(self.homedir)]
+                      os.path.exists(self.libdir)]
         return all(dirs_exist)
 
     def is_container_id(self, obj):
@@ -4721,8 +4817,8 @@ class LocalRepository(object):
             size, dummy = Uprocess().get_output(["du", "-s", "-m", "-x",
                                                  container_root]).split()
             return int(size)
-        except (ValueError, NameError):
-            return 0
+        except (ValueError, NameError, AttributeError):
+            return -1
 
     def get_containers_list(self, dir_only=True):
         """Get a list of all containers in the local repo
@@ -4753,7 +4849,7 @@ class LocalRepository(object):
                     containers_list.append((fname, reponame, str(names)))
         return containers_list
 
-    def del_container(self, container_id):
+    def del_container(self, container_id, force=False):
         """Delete a container tree, the image layers are untouched"""
         container_dir = self.cd_container(container_id)
         if not container_dir:
@@ -4762,7 +4858,11 @@ class LocalRepository(object):
             if container_dir in self.get_containers_list(True):
                 for name in self.get_container_name(container_id):
                     self.del_container_name(name)  # delete aliases links
-                if FileUtil(container_dir).remove():
+                if force:
+                    FileUtil(container_dir).rchmod(stat.S_IWUSR | stat.S_IRUSR,
+                                                   stat.S_IWUSR | stat.S_IRUSR |
+                                                   stat.S_IXUSR)
+                if FileUtil(container_dir).remove(recursive=True):
                     self.cur_containerdir = ""
                     return True
         return False
@@ -4801,7 +4901,7 @@ class LocalRepository(object):
         if self._name_is_valid(name):
             container_dir = self.cd_container(container_id)
             if container_dir:
-                linkname = self.containersdir + '/' + name
+                linkname = os.path.realpath(self.containersdir + '/' + name)
                 if os.path.exists(linkname):
                     return False
                 return self._symlink(container_dir, linkname)
@@ -4811,7 +4911,7 @@ class LocalRepository(object):
         """Remove a name previously associated to a container"""
         if self._name_is_valid(name):
             linkname = self.containersdir + '/' + name
-            if os.path.exists(linkname):
+            if os.path.islink(linkname):
                 return FileUtil(linkname).remove()
         return False
 
@@ -4929,7 +5029,7 @@ class LocalRepository(object):
         tag_dir = self.cd_imagerepo(imagerepo, tag)
         if (tag_dir and
                 self._remove_layers(tag_dir, force) and
-                FileUtil(tag_dir).remove()):
+                FileUtil(tag_dir).remove(recursive=True)):
             self.cur_repodir = ""
             self.cur_tagdir = ""
             while imagerepo:
@@ -6805,7 +6905,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                 status = False
         else:
             Msg().err("Error: no images specified")
-        FileUtil(tmp_imagedir).remove()
+        FileUtil(tmp_imagedir).remove(recursive=True)
         return status
 
 
@@ -6946,7 +7046,7 @@ class LocalFileAPI(CommonLocalFileApi):
             return False
         if not self._untar_saved_container(imagefile, tmp_imagedir):
             Msg().err("Error: failed to extract container:", imagefile)
-            FileUtil(tmp_imagedir).remove()
+            FileUtil(tmp_imagedir).remove(recursive=True)
             return False
         imagetype = self._get_imagedir_type(tmp_imagedir)
         if imagetype == "Docker":
@@ -6957,7 +7057,7 @@ class LocalFileAPI(CommonLocalFileApi):
                 self.localrepo).load(tmp_imagedir, imagerepo)
         else:
             repositories = []
-        FileUtil(tmp_imagedir).remove()
+        FileUtil(tmp_imagedir).remove(recursive=True)
         return repositories
 
     def save(self, imagetag_list, imagefile):
@@ -7737,7 +7837,9 @@ class Udocker(object):
         """
         rm: delete a container
         rm <container_id>
+        -f                          :force removal
         """
+        force = cmdp.get("-f")
         container_id_list = cmdp.get("P*")
         if cmdp.missing_options():               # syntax error
             return False
@@ -7758,7 +7860,7 @@ class Udocker(object):
                     continue
                 Msg().out("Info: deleting container:",
                           str(container_id), l=Msg.INF)
-                if not self.localrepo.del_container(container_id):
+                if not self.localrepo.del_container(container_id, force):
                     Msg().err("Error: deleting container")
                     status = False
         return status
@@ -7845,6 +7947,31 @@ class Udocker(object):
             return False
         return True
 
+    def do_rename(self, cmdp):
+        """
+        rename: change a name alias
+        name <container-name> <new-container-name>
+        """
+        name = cmdp.get("P1")
+        new_name = cmdp.get("P2")
+        if cmdp.missing_options():               # syntax error
+            return False
+        container_id = self.localrepo.get_container_id(name)
+        if not container_id:
+            Msg().err("Error: container does not exist")
+            return False
+        if self.localrepo.get_container_id(new_name):
+            Msg().err("Error: new name already exists")
+            return False
+        if not self.localrepo.del_container_name(name):
+            Msg().err("Error: name does not exist")
+            return False
+        if not self.localrepo.set_container_name(container_id, new_name):
+            Msg().err("Error: setting new name")
+            self.localrepo.set_container_name(container_id, name)
+            return False
+        return True
+
     def do_rmname(self, cmdp):
         """
         rmname: remove name from container
@@ -7920,6 +8047,7 @@ class Udocker(object):
         --execmode=<mode>       :select execution mode from below
         --force                 :force setup change
         --purge                 :clean mountpoints and files created by udocker
+        --fixperm               :attempt to fix file permissions
         --nvidia                :add NVIDIA libraries and binaries
                                  (nvidia support is EXPERIMENTAL)
 
@@ -7945,9 +8073,11 @@ class Udocker(object):
         force = cmdp.get("--force")
         nvidia = cmdp.get("--nvidia")
         purge = cmdp.get("--purge")
+        fixperm = cmdp.get("--fixperm")
         if cmdp.missing_options():               # syntax error
             return False
-        if not self.localrepo.cd_container(container_id):
+        container_dir = self.localrepo.cd_container(container_id)
+        if not container_dir:
             Msg().err("Error: invalid container id")
             return False
         elif xmode and self.localrepo.isprotected_container(container_id):
@@ -7956,13 +8086,17 @@ class Udocker(object):
         if purge:
             FileBind(self.localrepo, container_id).restore(force)
             MountPoint(self.localrepo, container_id).restore()
+        if fixperm:
+            Unshare().namespace_exec(lambda: FileUtil(container_dir + 
+                                                      "/ROOT").rchown())
+            FileUtil(container_dir + "/ROOT").rchmod()
         nvidia_mode = NvidiaMode(self.localrepo, container_id)
         if nvidia:
             nvidia_mode.set_mode(force)
         exec_mode = ExecutionMode(self.localrepo, container_id)
         if xmode:
             return exec_mode.set_mode(xmode.upper(), force)
-        if xmode or not (xmode or force or nvidia or purge):
+        if xmode or not (xmode or force or nvidia or purge or fixperm):
             Msg().out("execmode: %s" % (exec_mode.get_mode()))
             Msg().out("nvidiamode: %s" % (nvidia_mode.get_mode()))
         return True
@@ -7995,27 +8129,28 @@ class Udocker(object):
         Commands:
           search <repo/expression>      :Search dockerhub for container images
           pull <repo/image:tag>         :Pull container image from dockerhub
-          images -l                     :List container images
           create <repo/image:tag>       :Create container from a pulled image
-          ps -m -s                      :List created containers
-          rm  <container>               :Delete container
           run <container>               :Execute container
-          inspect <container>           :Low level information on container
+
+          images -l                     :List container images
+          ps -m -s                      :List created containers
           name <container_id> <name>    :Give name to container
           rmname <name>                 :Delete name from container
-
-          rmi <repo/image:tag>          :Delete image
+          rename <name> <new_name>      :Change container name
+          clone <container_id>          :Duplicate container
           rm <container-id>             :Delete container
+          rmi <repo/image:tag>          :Delete image
+
           import <tar> <repo/image:tag> :Import tar file (exported by docker)
           import - <repo/image:tag>     :Import from stdin (exported by docker)
-          export -o <tar> <container>   :Export container rootfs to file
-          export - <container>          :Export container rootfs to stdin
+          export -o <tar> <container>   :Export container directory tree
+          export - <container>          :Export container directory tree
           load -i <imagefile>           :Load image from file (saved by docker)
           load                          :Load image from stdin (saved by docker)
+          save -o <imagefile> <repo/image:tag>  :Save image with layers to file
+
           inspect -p <repo/image:tag>   :Return low level information on image
           verify <repo/image:tag>       :Verify a pulled image
-          clone <container>             :duplicate container
-          save -o <imagefile> <repo/image:tag>  :Save image with layers to file
 
           protect <repo/image:tag>      :Protect repository
           unprotect <repo/image:tag>    :Unprotect repository
@@ -8027,46 +8162,47 @@ class Udocker(object):
           login                         :Login into docker repository
           logout                        :Logout from docker repository
 
-          version                       :Shows udocker version and exits
-
           help                          :This help
           run --help                    :Command specific help
+          version                       :Shows udocker version
 
         Options common to all commands must appear before the command:
           -D                            :Debug
           --quiet                       :Less verbosity
           --repo=<directory>            :Use repository at directory
+          --insecure                    :Allow insecure non authenticated https
+          --allow-root                  :Allow execution by root NOT recommended
 
         Examples:
-          udocker search fedora
-          udocker search quay.io/fedora
-          udocker search --list-tags centos
-          udocker pull fedora
+          udocker search expression
+          udocker search quay.io/expression
+          udocker search --list-tags myimage
+          udocker pull myimage:mytag
           udocker images
-          udocker create --name=fedx  fedora
+          udocker create --name=myc  myimage:mytag
           udocker ps -m -s
-          udocker inspect fedx
-          udocker inspect -p fedx
-          udocker run  fedx  cat /etc/redhat-release
-          udocker run --hostauth --hostenv --bindhome  fedx
-          udocker run --user=root  fedx  yum install firefox
-          udocker run --hostauth --hostenv --bindhome fedx   firefox
-          udocker run --hostauth --hostenv --bindhome fedx   /bin/bash -i
+          udocker inspect myc
+          udocker inspect -p myc
 
-          udocker clone --name=anotherfedx fedx
-          udocker run --user=root  anotherfedx  yum install cheese
-          udocker run --hostauth --hostenv --bindhome --dri anotherfedx  cheese
-          udocker rm anotherfedx
+          udocker run  myc  cat /etc/redhat-release
+          udocker run --hostauth --hostenv --bindhome  myc
+          udocker run --user=root  myc  yum install firefox
+          udocker run --hostauth --hostenv --bindhome myc   firefox
+          udocker run --hostauth --hostenv --bindhome myc   /bin/bash -i
 
-          udocker mkrepo /home/x/myrepo
-          udocker --repo=/home/x/myrepo load -i docker-saved-repo.tar 
-          udocker --repo=/home/x/myrepo images
-          udocker -D run --user=1001:5001  fedora
-          udocker export -o fedora.tar fedora
-          udocker import fedora.tar myfedoraimage
-          udocker create --name=myfedoracontainer myfedoraimage
-          udocker export -o fedora_all.tar --clone fedora
-          udocker import --clone fedora_all.tar
+          udocker clone --name=anotherc myc
+          udocker rm anotherc
+
+          udocker mkrepo /data/myrepo
+          udocker --repo=/data/myrepo load -i docker-saved-repo.tar
+          udocker --repo=/data/myrepo images
+          udocker --repo=/data/myrepo run --user=$USER  myimage:mytag
+
+          udocker export -o myimage.tar  myimage:mytag
+          udocker import myimage.tar mynewimage
+          udocker create --name=mynewc mynewimage
+          udocker export -o myc.tar --clone myc
+          udocker import --clone myc.tar
 
         Notes:
           * by default the binaries, images and containers are placed in
@@ -8148,7 +8284,9 @@ class CmdParser(object):
         """
         step = 1
         for arg in argv[1:]:
-            if step == 1:
+            if not arg:
+                continue
+            elif step == 1:
                 if arg[0] in string.ascii_letters:
                     self._argv_split['CMD'] = arg
                     step = 2
@@ -8294,10 +8432,13 @@ class Main(object):
     def __init__(self):
         self.cmdp = CmdParser()
         parseok = self.cmdp.parse(sys.argv)
-        if not parseok and not self.cmdp.get("--version", "GEN_OPT"):
+        if not parseok and not (self.cmdp.get("--version", "GEN_OPT") or
+                                self.cmdp.get("--help", "GEN_OPT") or
+                                self.cmdp.get("-h", "GEN_OPT")):
             Msg().err("Error: parsing command line, use: udocker help")
             sys.exit(1)
-        if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
+        if not ((os.geteuid() and os.getegid()) or
+                self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
             sys.exit(1)
         Config().init(self.cmdp.get("--config=", "GEN_OPT")) # read config
@@ -8332,7 +8473,7 @@ class Main(object):
             "version": self.udocker.do_version,
             "help": self.udocker.do_help, "search": self.udocker.do_search,
             "images": self.udocker.do_images, "pull": self.udocker.do_pull,
-            "create": self.udocker.do_create, "ps": self.udocker.do_ps,
+            "create": self.udocker.do_create, "rename": self.udocker.do_rename,
             "run": self.udocker.do_run, "save": self.udocker.do_save,
             "rmi": self.udocker.do_rmi, "mkrepo": self.udocker.do_mkrepo,
             "import": self.udocker.do_import, "load": self.udocker.do_load,
@@ -8340,7 +8481,7 @@ class Main(object):
             "protect": self.udocker.do_protect, "rm": self.udocker.do_rm,
             "name": self.udocker.do_name, "rmname": self.udocker.do_rmname,
             "verify": self.udocker.do_verify, "logout": self.udocker.do_logout,
-            "unprotect": self.udocker.do_unprotect,
+            "unprotect": self.udocker.do_unprotect, "ps": self.udocker.do_ps,
             "inspect": self.udocker.do_inspect, "login": self.udocker.do_login,
             "setup":self.udocker.do_setup, "install":self.udocker.do_install,
         }
