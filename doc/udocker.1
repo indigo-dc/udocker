@@ -59,8 +59,8 @@ Creates a container for execution from an IMAGE stored in the local repository. 
 .BR ps " " [ " " \-m " " ] " " | " " [ " " \-s " " ]
 List containers in the local repository. These are containers produced with the command "create" and that can be executed with the command "run". The list contains the CONTAINER-ID, the protection flag against deletion, write status, ALIASEs, and the corresponding IMAGE. The command name "ps" has been kept for compatibility with the Docker command line, in udocker the command ps does not show running containers instead shows the created containers extracted to the filesystem that are ready to be executed. The option \-m adds the execution mode. The option \-s adds the size in MB.
 .TP
-.BR rm " " CONTAINER\-ID " " | " " ALIAS " " ...
-Delete containers using the CONTAINER\-ID or ALIAS.
+.BR rm " " [ " " -f " " ] " " CONTAINER\-ID " " | " " ALIAS " " ...
+Delete containers using the CONTAINER\-ID or ALIAS. The flag -f forces the removal by changing the file protections.
 .TP
 .BR inspect " " IMAGE " " | " " [ " " \-p " " ] " " CONTAINER\-ID " " | " " [ " " \-p " " ] " " ALIAS
 Print information about an IMAGE or CONTAINER. The \-p option applies only to CONTAINERS and prints the pathname to the root of the CONTAINER directory tree. Useful for direct access to the CONTAINER files.
@@ -71,15 +71,18 @@ Assign a new ALIAS to a given CONTAINER\-ID. With ALIASEs the containers can be 
 .BR rmname " " ALIAS
 Remove an ALIAS. The CONTAINER itself is not affected and can be used via its CONTAINER-ID.
 .TP
+.BR rename " " ALIAS " " NEWALIAS
+Change a given container ALIAS name.
+.TP
 .BR rmi " " [ " " -f " " ] " " IMAGE
 Delete an IMAGE in the local repository. Any related CONTAINERS previously extracted are NOT affected by the parent IMAGE removal. The option \-f forces the deletion, and can be used when the IMAGE structure is damaged.
 .TP
-.BR import " " TARBALL " " IMAGE " " | " " - " " IMAGE 
+.BR import " " [ " " --mv " " ] " " TARBALL " " IMAGE " " | " " - " " IMAGE 
 .TP
 .BR import " " --tocontainer " " --name=ALIAS " " TARBALL " " | " " --tocontainer " " --name=ALIAS " " - " "
 .TP
 .BR import " " --clone " " --name=ALIAS " " TARBALL " " | " " --clone " " --name=ALIAS " " - " "
-Import a tarball from file or stdin. The tarball can be imported into a new image or container. The first form can be used to import a container exported by docker into a new image. The second form uses --tocontainer to import directly into a container without creating an image. The third form uses --clone to import a udocker container (e.g. exported with udocker export --clone) into a new container without creating an image, preserving the container metadata and execution modes.
+Import a tarball from file or stdin. The tarball can be imported into a new image or container. The first form can be used to import a container exported by docker into a new image. The second form uses --tocontainer to import directly into a container without creating an image. The third form uses --clone to import a udocker container (e.g. exported with udocker export --clone) into a new container without creating an image, preserving the container metadata and execution modes. When importing to an image (default) the option --mv will try to move the tarball file into the repository instead of copying the content. When importing to a container the option --name can be used to provide a name alias to the created container.
 .TP
 .BR load " " - " "
 .TP
@@ -180,9 +183,6 @@ Map container ports to different random ports, only available in Pn modes. (EXPE
 
 .SH ENVIRONMENT
 .TP
-.BR UDOCKER_LOGLEVEL
-A number defining the verbosity of udocker. Zero is the least verbose. 
-.TP
 .BR UDOCKER_DIR
 Override the location of the local repository.
 .TP
@@ -204,13 +204,19 @@ Override location of udocker keystore default is $HOME/.udocker/keystore.
 .BR UDOCKER_TARBALL
 Location of a tarball containing a udocker distribution for installation or upgrade. Example "export UDOCKER_TARBALL=udocker_1.0.1.tgz; tar xzvf $UDOCKER_TARBALL udocker; ./udocker".
 .TP
+.BR UDOCKER_LOGLEVEL
+A number defining the verbosity of udocker. Zero is the least verbose. 
+.TP
 .BR UDOCKER_REGISTRY
 Override the default udocker registry pointing to Docker Hub.
 .TP
 .BR UDOCKER_INDEX
 Override the default udocker index pointing to Docker Hub.
 .TP
-.BR UDOCKER_USE_CURL_EXECUTABLE
+.BR UDOCKER_DEFAULT_EXECUTION_MODE
+Change the default execution mode, not all modes are supported as default execution mode.
+.TP
+UDOCKER_FAKECHROOT_SO.BR UDOCKER_USE_CURL_EXECUTABLE
 Forces the use of a curl executable instead of pycurl and enables selection of a given curl executable pathname.
 .TP
 .BR UDOCKER_USE_PROOT_EXECUTABLE
@@ -238,6 +244,9 @@ Default local repository for IMAGES and CONTAINERS.
 .TP
 .BR $HOME/.udocker/udocker.conf
 udocker user configuration file. Enables to changing the value of the Config class attributes. Example "http_insecure = True" changes the default value of the http_insecure attribute.
+.TP
+.BR $HOME/.udocker/containers/<container-id>/container.conf
+udocker container specific configuration file. Enables to changing the value of the Config class attributes for a specific container. 
 .TP
 .BR /etc/udocker.conf
 udocker host configuration file. Parsed before the user configuration file.

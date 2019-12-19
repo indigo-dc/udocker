@@ -284,7 +284,7 @@ Examples:
 
 ### 3.8. ps
 ```
-  udocker ps
+  udocker ps [options]
 ```
 List extracted containers. These are not processes but containers
 extracted and available to the executed with `udocker run`.
@@ -319,7 +319,7 @@ an option.
 
 Options:
 
-* `-f` force continuation of delete even if errors occur during the delete.
+* `-f` force removal independently from errors
 
 Examples:
 ```
@@ -328,11 +328,15 @@ Examples:
 
 ### 3.10. rm
 ```
-  udocker rm CONTAINER-ID
+  udocker rm [options] CONTAINER-ID
 ```
 Delete a previously created container. Removes the entire directory tree
 extracted from the container image and associated metadata. The data in the
 container tree WILL BE LOST. The container id or name can be used.
+
+Options:
+
+* `-f` force removal by changing file permissions
 
 Examples:
 ```
@@ -384,7 +388,19 @@ Examples:
   udocker rmname BLUE
 ```
 
-### 3.14. verify
+### 3.14. rename
+```
+  udocker rename NAME NEWNAME
+```
+Change a container name previously given to an extracted container with 
+`udocker --name=` or with `udocker name`. Does not change the container id.
+
+Examples:
+```
+  udocker rename BLUE GREEN
+```
+
+### 3.15. verify
 ```
   udocker verify REPO/IMAGE:TAG
 ```
@@ -395,7 +411,7 @@ Examples:
   udocker verify indigodatacloud/powerfit:latest
 ```
 
-### 3.15. import
+### 3.16. import
 ```
   udocker import [OPTIONS] TARBALL|- REPO/IMAGE:TAG
 ```
@@ -418,7 +434,7 @@ Options:
 * `--mv` move the container tarball instead of copy to save space.
 * `--tocontainer` import directly into a container.
 * `--clone` import udocker container format with both metadata and container
-* `--name=ALIAS` with `--tocontainer` or `--clone` to add an alias
+* `--name=ALIAS` with `--tocontainer` or `--clone` to give an alias to the container
 
 Examples:
 ```
@@ -429,7 +445,7 @@ Examples:
   udocker import --clone --name=RED udocker_container.tar 
 ```
 
-### 3.16. load
+### 3.17. load
 ```
   udocker load -i IMAGE-FILE
   udocker load -i IMAGE-FILE NAME
@@ -455,7 +471,7 @@ Examples:
   udocker load -i oci-image.tar test-image
 ```
 
-### 3.17. protect
+### 3.18. protect
 ```
   udocker protect REPO/IMAGE:TAG
   udocker protect CONTAINER-ID
@@ -470,7 +486,7 @@ Examples:
   udocker protect 3d528987-a51e-331a-94a0-d278bacf79d9
 ```
 
-### 3.18. unprotect
+### 3.19. unprotect
 ```
   udocker unprotect REPO/IMAGE:TAG
   udocker unprotect CONTAINER-ID
@@ -483,7 +499,7 @@ Examples:
   udocker unprotect 3d528987-a51e-331a-94a0-d278bacf79d9
 ```
 
-### 3.19. mkrepo
+### 3.20. mkrepo
 ```
   udocker mkrepo DIRECTORY
 ```
@@ -499,7 +515,7 @@ Examples:
   udocker --repo=/tmp/myrepo images
 ```
 
-### 3.20. run
+### 3.21. run
 ```
   udocker run [OPTIONS] CONTAINER-ID|CONTAINER-NAME
   udocker run [OPTIONS] REPO/IMAGE:TAG
@@ -514,6 +530,11 @@ therefore the recommended approach is to first extract a container using
 "udocker create" and only then execute with "udocker run". The same
 extracted container can then be executed as many times as required without
 duplication.
+
+udocker provides several execution modes to support the actual execution
+within a container. Execution modes can be changed using the command
+`udocker setup --execmode=<mode> <container-id>` for more information
+on available modes and their characteristics see section 3.25.
 
 Options:
 
@@ -533,7 +554,7 @@ Options:
 * `--name=NAME` set or change the name of the container useful if running from an image
 * `--bindhome` attempt to make the user home directory appear inside the container
 * `--kernel=KERNELID` use a specific kernel id to emulate useful when the host kernel is too old
-* `--location=DIR` execute a container in a certain directory
+* `--location=DIR` execute a container in a given directory
 
 Options valid only in Pn execution modes:
 
@@ -547,20 +568,24 @@ Options valid only in Rn execution modes:
 Examples:
 ```
   # Pull fedora from Docker Hub
-  udocker pull fedora
+  udocker pull fedora:29
 
   # create the container named myfed from the image named fedora
-  udocker create --name=myfed  fedora
+  udocker create --name=myfed  fedora:29
 
   # execute a cat inside of the container
   udocker run  myfed  cat /etc/redhat-release
 
+  # The above three operations could have done with a single command
+  # However each time udocker is invoked this way a new container
+  # directory tree is created consuming additional space and time
+  udocker run fedora:29 cat /etc/redhat-release
 
   # In this example the host /tmp is mapped to the container /tmp
   udocker run --volume=/tmp  myfed  /bin/bash
 
-  # Same as above bun run something in /tmp
-  udocker run  -v=/tmp  myfed  /bin/bash -c 'cd /tmp; ./myscript.sh'
+  # Same as above but running something in /tmp
+  udocker run  -v=/tmp  myfed  /bin/bash -c "cd /tmp; ./myscript.sh"
 
   # Run binding a host directory inside the container to make it available
   # The host $HOME is mapped to /home/user inside the container
@@ -593,10 +618,16 @@ EOF
   udocker search quay.io/myrepo
   udocker search --list-tags quay.io/myrepository/myimage
   udocker pull quay.io/myrepository/myimage:v2.3.1
+
+  # Run container in a given directory tree using the DEFAULT EXECUTION MODE 
+  # Below ROOT is the complete directory structure of the container operating system
+  # This enables udocker to execute directory trees created by other tools
+  # Much of the udocker functionality is not usable when using --location
+  ./udocker run --location=/tmp/u/containers/07b3226e-6513-3f85-884f-e3cfdd2fbc0e/ROOT
 ```
 
 
-### 3.21. Debug and Verbosity
+### 3.22. Debug and Verbosity
 Further debugging information can be obtaining by running with `-D`.
 
 Examples:
@@ -617,7 +648,7 @@ Examples:
 ```
 
 
-### 3.22. login
+### 3.23. login
 ```
   udocker login [--username=USERNAME] [--password=PASSWORD] [--registry=REGISTRY]
 ```
@@ -641,7 +672,7 @@ Examples:
   password: ****
 ```
 
-### 3.23. logout
+### 3.24. logout
 ```
   udocker logout [-a]
 ```
@@ -661,7 +692,7 @@ Examples:
   udocker logout -a
 ```
 
-### 3.24. clone
+### 3.25. clone
 ```
   udocker clone [--name=NAME] CONTAINER-ID|CONTAINER-NAME
 ```
@@ -678,7 +709,23 @@ Examples:
   udocker clone --name=RED  BLUE
 ```
 
-### 3.25. setup
+### 3.26. save
+```
+  udocker save -o IMAGE-FILE REPO/IMAGE:TAG
+  udocker save -o - REPO/IMAGE:TAG
+```
+Saves an image including all its layers and metadata to a tarball.
+The input is an image not a container, to produce a tarball of a 
+container use export. The saved images can be read by udocker or Docker
+using the command load.
+
+Examples:
+```
+  udocker save -o docker-image.tar centos:centos7
+  udocker save -o - > docker-image.tar ubuntu:16.04 ubuntu:18.04 ubuntu:19.04
+```
+
+### 3.27. setup
 ```
   udocker setup [--execmode=XY] [--force] [--nvidia] [--purge] CONTAINER-ID|CONTAINER-NAME
 ```
@@ -689,7 +736,11 @@ execution mode for the given container.
 The option `--nvidia` enables access to GPGPUs by adding the necessary host 
 libraries to the container.
 The option `--force` can be used both with `--execmode` and with `--nvidia` to 
-force the corresponding modes and setup of the environment.
+force the setup of the container to the specified mode.
+The option `--purge` removes mountpoints, auxiliary files and directories 
+created by udockr inside the container directory tree to support its execution.
+It should only be invoked when there is no execution taking place as it may
+affect processes running in the container tree.
 
 Options:
 
@@ -699,6 +750,8 @@ Options:
   force the change of an execution mode when it fails namely if it is
   transferred to a remote host while in one of the Fn modes. Can be
   used with --nvidia.
+* `--purge` remove mountpoints, auxiliary files and directories created
+  by udocker to support the container execution.
 
 |Mode| Engine      | Description                               | Changes container
 |----|:------------|:------------------------------------------|:------------------
@@ -713,9 +766,10 @@ Options:
 | R3 | runC        | R1 plus P2 for software installation      | resolv, passwd, proot
 | S1 | Singularity | uses singularity if available in the host | passwd
 
-The default execution mode is P1.
+The default execution mode is P1 using PRoot and starting in root
+emulation mode.
 
-The mode P2 uses PRoot and although has lower performance than P1 
+The mode P2 also uses PRoot and although has lower performance than P1 
 can be more reliable. The mode P1 uses PRoot with 
 SECCOMP syscall filtering which provides higher performance in most 
 operating systems. PRoot provides the most universal execution mode
@@ -782,7 +836,7 @@ by a system administrator as it requires suid or capabilities.
 The S1 mode also offers root emulation to facilitate software installation
 and to execute applications that expected to run under root.
  
-Quick examples:
+Examples:
 
 ```
   udocker create --name=mycontainer  fedora:25
@@ -805,22 +859,21 @@ Quick examples:
   udocker run  mycontainer  /bin/ls
 ```
 
-### 3.26. save
-```
-  udocker save -o IMAGE-FILE REPO/IMAGE:TAG
-  udocker save -o - REPO/IMAGE:TAG
-```
-Saves an image including all its layers and metadata to a tarball.
-The input is an image not a container, to produce a tarball of a 
-container use export. The saved images can be read by udocker or Docker
-using the command load.
+The default execution mode of udocker can also be changed. This has however
+several limitations, therefore the recommended method to change the execution
+mode is via the `udocker setup` command. The default execution mode can be 
+changed through the configuration files by changing the attribute 
+**default_execution_mode** or through the environment variable 
+**UDOCKER_DEFAULT_EXECUTION_MODE**. Only the following modes can be used as
+default modes:
+**P1**, **P2**, **F1**, **S1**, and **R1**. Changing the default execution
+mode can be useful in case the default does not work as expected.
 
-Examples:
-```
-  udocker save -o docker-image.tar centos:centos7
-  udocker save -o - > docker-image.tar ubuntu:16.04 ubuntu:18.04 ubuntu:19.04
-```
+Example:
 
+```
+  UDOCKER_DEFAULT_EXECUTION_MODE=P2 ./udocker run mycontainer /bin/ls
+```
 
 ## 4. RUNNING MPI JOBS
 
@@ -913,7 +966,6 @@ is to install only the version for the architecture of the machine in this case 
 
 The Open MPI source is compiled and installed in the container under /usr for convenience:
 
-
 ```
 cd /usr
 tar xvf openmpi-2.0.1.tgz 
@@ -940,7 +992,8 @@ $LUSTRE/udocker-master/udocker run -e LD_LIBRARY_PATH=/usr/lib  \
 Notice that depending on the application and host operating system a variable 
 performance degradation may occur when using the default execution mode (Pn). In 
 this situation other execution modes (such as Fn) may provide significantly higher
-performance (see section 3.23).
+performance. The command `udocker setup --execmode=<mode> <container-id>` can be used to change
+between execution modes (see section 3.25).
 
 
 ## 5. ACCESSING GP/GPUs
@@ -949,7 +1002,13 @@ The host (either the physical machine or VM) where the container will run has to
 the NVIDIA driver installed. Moreover, the NVIDIA driver version has to be known apriori,
 since the docker image has to have the exact same version as the host
 
-Base docker images with several version of the NVIDIA driver can be found in dockerhub:
+The command `udocker setup --nvidia <container-id>` can be used to prepare the 
+container with the drivers necessary to run with nvidia GPGPUs. This will copy
+the required files from the host into the container. 
+
+Another different approach is to have docker images already prepared with the driver
+files but they must match what is being used in the target host. For instance base
+docker images with several version of the NVIDIA driver can be found in dockerhub:
 
 * https://hub.docker.com/r/lipcomputing/nvidia-ubuntu16.04/
 * https://hub.docker.com/r/lipcomputing/nvidia-centos7/
@@ -965,7 +1024,7 @@ Examples of using those NVIDIA base images with a given application are the "dis
 
 In order to build your docker image with a given CUDA or OpenCL application, the 
 aforementioned images can be used. When the docker image with your application has 
-been built you can run the udocker with that image has described in the previous sections.
+been built you can run udocker with that image as described in the previous sections.
 
 ## 6. ACCESSING AND TRANSFERRING UDOCKER CONTAINERS
 
@@ -997,7 +1056,7 @@ $ udocker inspect -p ubuntu17
 ```
 
 The pathname in the example is the root of the container filesystem tree.
-Below ROOT you will find all the files that comprise the container. Upon 
+Below **ROOT** you will find all the files that comprise the container. Upon 
 execution udocker performs a chroot like operation into this directory. 
 You can modify, add, remove files below this location and upon execution 
 these changes will be seen inside the container. 
@@ -1005,9 +1064,9 @@ This can be used to place or retrieve files to/from the container.
 By accessing this directory from the host you may also perform copies of the 
 container directory tree e.g. for backup or other purposes.
 
-All containers are stored under the directory "containers". Each container is
+All containers are stored under the directory "**containers**". Each container is
 under a separate directory whose name corresponds to its alphanumeric id. 
-This directory contains control files and the ROOT directory for the container 
+This directory contains control files and the "**ROOT**" directory for the container 
 filesystem. 
 
 ### 6.2. Transfer containers with import/export or load/save
@@ -1020,11 +1079,12 @@ udocker provides limited support for loading images and importing containers.
 Containers exported to a file by Docker with `docker export` can be imported by
 udocker using:
 
-* `udocker import EXPORTED-CONTAINER-FILE NEWIMAGE:NEWTAG` import the 
+* `udocker import CONTAINER-FILE  NEWIMAGE:NEWTAG` import the 
    container file into a new image (not into a new container).
-* `udocker import --tocontainer EXPORTED-CONTAINER-FILE` import the
-   container file directly into a new container (without creating an image)
-* `udocker import --tocontainer --clone EXPORTED-CONTAINER-FILE` import the
+* `udocker import --tocontainer CONTAINER-FILE` import the
+   container file directly into a new container (without creating an image).
+   This is udocker specific.
+* `udocker import --tocontainer --clone CONTAINER-FILE` import the
    container file directly into a new container (without creating an image).
    This assumes the container was initially exported by udocker with 
    `udocker export --clone` and thus contains not only the ROOT tree of
@@ -1052,19 +1112,130 @@ $ cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker install ; cd ~/.udock
 $ ssh user@ahost "udocker name $MYC_ID MyContainer; udocker run MyContainer"
 ```
 
-## 7. PERFORMANCE
+## 7. RUNNING AS ROOT INSIDE CONTAINERS
 
-The experienced performance in the different execution modes will
-depend greatly on the application being executed. In general the
-following considerations may hold:
+The behavior and capabilities of running as root inside the containers
+depends on the execution mode. In the Pn and Rn modes udocker will run
+as root. In other modes execution as root is achieved by invoking
+run with the `--user=root` option:
 
- * P1 is faster than P2, unless in an old kernel without SECCOMP filtering where both will have the same performance.
- * In heavily multithreaded or I/O intensive applications the P2 mode may exhibit a large performance penalty.
- * Fn modes are generally faster than Pn modes and do not have multithreading or I/O limitations.
+```
+udocker run --user=root <container-id>` 
+```
+
+### 7.1. Running as root in Pn modes
+
+In the default modes Pn, running as root is emulated, meaning that no
+root privileges or root capabilities are involved. The root execution is
+emulated by intercepting system calls and returning id 0 thus emulating
+a root environment.
+
+### 7.2. Running as root in Fn modes
+
+In the Fn modes running as root is not supported. 
+
+### 7.3. Running as root in Rn modes
+
+In the Rn (runc) modes execution defaults to run as root, this is however 
+achieved in a very different manner through *user namespaces*, as implemented
+in runc. These modes only work in recent Linux distributions that support
+*user namespaces*. In these execution modes the user is truly root inside 
+the container, but with several limitations, namely on what regards 
+access to other UIDs and GUIs. Although the user can be root inside the
+container, it will be a normal user outside, thus protecting the host system
+if a container process breaks out.
+The use of *user namespaces* may require the setup of the system configuration
+files */etc/subuid* and */etc/subgid* which require system administrator
+intervention to be configured. They assign a range of UIDs and GIDs for each
+user to be used within the *user namespaces*. To overcome some of the root
+limitations when running inside *user namespaces*, udocker offers an
+overlay execution of proot inside runc through the execution modes R2 and R3.
+In these modes proot is used to overcome some of the UID and GID issues
+while still enabling the benefits of isolation and root execution 
+inside de *user namespaces*. 
+
+### 7.4. Running as root in Sn modes
+
+In the Sn (singularity) execution modes default to the normal unprivileged 
+user. Running as root can be achieved with `udocker run --user=root <container-id>`.
+Execution within singularity requires *namespaces* and can operate in two 
+different manners. In older distributions and kernels singularity must be installed
+by the system administrator with privileges. In more recent distributions and
+kernels singularity can operate similarly to runc and take advantage of the 
+*user namespaces*. In this later case UID/GID entries might also be required in
+*/etc/subuid* and */etc/subgid*.
+Singularity is to package in the udokertools but, udocker can exploit existing 
+singularity installations to execute the udocker containers. 
+
+### 7.5. Summary of running as root 
+
+The following table provides a summary of running as root within udocker:
+
+|Mode| Engine      | Running as root
+|----|:------------|:--------------------------------------------------------------
+| P1 | PRoot       | Defaults to run as root. Run as root via emulation.
+| P2 | PRoot       | Same as P1
+| F1 | Fakechroot  | Running as root not supported.
+| F2 | Fakechroot  | Running as root not supported.
+| F3 | Fakechroot  | Running as root not supported.
+| F4 | Fakechroot  | Running as root not supported.
+| R1 | runC        | Defaults to run as root. Run as root via *user namespaces*
+| R2 | runC        | Same as R1 plus overlay execution with proot in mode P1.
+| R3 | runC        | Same as R1 plus overlay execution with proot in mode P2.
+| S1 | Singularity | Use --user=root. Run as root via *user namespaces*
+
+### 7.6. Running as root for software installation
+
+Most applications and services can be run without running as root.
+However running as root within udocker can be useful to install software packages.
+Depending on the execution mode, running as root may imply additional
+overheads and/or security considerations.
+
+For **software installation** the recommended execution modes are **P2**, **S1**
+and **R3**. The emulation is not perfect and issues can still arise.  Namelly 
+when using APT it can be required to install using:
+
+```
+apt-get -o APT::Sandbox::User=root update
+apt-get -o APT::Sandbox::User=root install <package>
+```
+
+## 8. NESTED EXECUTION
+
+udocker as not been designed for nested executions, meaning execution
+of containers within containers. However there are sucessful examples of using
+udocker in such scenarios such as [SCAR](https://github.com/grycap/scar).
+
+For running inside docker and similiar: udocker offers the **Fn** mode which
+enables execution within docker or other Linux namespaces based applications.
+
+For running within udocker itself the following guidelines apply:
+
+* Fn within Pn: Possible
+* Pn within Rn: Possible only in R1
+* Pn within Sn: Possible
+* Fn within Rn: Possible
+* Fn within Sn: Possible
+* Pn within Pn: Not possible or possible with huge overheads
+* Fn within Fn: 
+* Pn within Fn: 
+
+## 9. PERFORMANCE
+
+The experienced performance in the different execution modes will depend
+greatly on the application being executed. In general the following
+considerations may hold:
+
+ * P1 is faster than P2, unless in older kernels without *SECCOMP 
+   filtering* where both modes will have the same performance.
+ * In heavily multithreaded or I/O intensive applications the P2 
+   mode may exhibit a large performance penalty. This can also
+   apply to P1 in older kernels without **SECCOMP filtering**
+ * Fn modes are generally faster than Pn modes and do not have 
+   multithreading or I/O limitations.
  * Singularity and runC should provide similar performances.
 
-
-## 8. ISSUES
+## 10. ISSUES
 
 To avoid corruption backups for safeguard or transfer should only be performed 
 when the container is not being executed (not locally nor in any other host if 
