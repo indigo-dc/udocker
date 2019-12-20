@@ -112,9 +112,6 @@ class Config(object):
     layersdir = None
     containersdir = None
 
-    uid = os.getuid()
-    gid = os.getgid()
-
     # udocker installation tarball
     tarball_release = "1.1.3-3"
     tarball = (
@@ -157,7 +154,7 @@ class Config(object):
     )
 
     # allowed file mountpoints for runC, these files can be copied in
-    mountpoint_prefixes = ( "/etc", )
+    mountpoint_prefixes = ("/etc", )
 
     # container execution mode if not set via setup
     # Change it to P2 if execution problems occur
@@ -376,65 +373,6 @@ class Config(object):
         self._override_config()
         self._verify_config()
 
-    def username(self):
-        """Get username"""
-        try:
-            return pwd.getpwuid(Config.uid).pw_name
-        except KeyError:
-            return ""
-
-    def arch(self):
-        """Get the host system architecture"""
-        arch = ""
-        try:
-            machine = platform.machine()
-            bits = platform.architecture()[0]
-            if machine == "x86_64":
-                if bits == "32bit":
-                    arch = "i386"
-                else:
-                    arch = "amd64"
-            elif machine in ("i386", "i486", "i586", "i686"):
-                arch = "i386"
-            elif machine.startswith("arm") or machine.startswith("aarch"):
-                if bits == "32bit":
-                    arch = "arm"
-                else:
-                    arch = "arm64"
-        except (NameError, AttributeError):
-            pass
-        return arch
-
-    def osversion(self):
-        """Get operating system"""
-        try:
-            return platform.system().lower()
-        except (NameError, AttributeError):
-            return ""
-
-    def osdistribution(self):
-        """Get operating system distribution"""
-        (distribution, version, dummy) = platform.linux_distribution()
-        return (distribution.split(' ')[0], version.split('.')[0])
-
-    def oskernel(self):
-        """Get operating system"""
-        try:
-            return platform.release()
-        except (NameError, AttributeError):
-            return "3.2.1"
-
-    def oskernel_isgreater(self, ref_version):
-        """Compare kernel version is greater or equal than ref_version"""
-        os_release = self.oskernel().split('-')[0]
-        os_version = [int(x) for x in os_release.split('.')[0:3]]
-        for idx in (0, 1, 2):
-            if os_version[idx] > ref_version[idx]:
-                return True
-            elif os_version[idx] < ref_version[idx]:
-                return False
-        return True
-
 
 class Uprocess(object):
     """Provide alternative implementations for subprocess"""
@@ -501,6 +439,97 @@ class Uprocess(object):
             proc_1.wait()
             proc_2.wait()
         return not (proc_1.returncode or proc_2.returncode)
+
+
+class HostInfo(object):
+    """Get information from the host system"""
+
+    uid = os.getuid()
+    gid = os.getgid()
+
+    def username(self):
+        """Get username"""
+        try:
+            return pwd.getpwuid(self.uid).pw_name
+        except KeyError:
+            return ""
+
+    def arch(self):
+        """Get the host system architecture"""
+        arch = ""
+        try:
+            machine = platform.machine()
+            bits = platform.architecture()[0]
+            if machine == "x86_64":
+                if bits == "32bit":
+                    arch = "i386"
+                else:
+                    arch = "amd64"
+            elif machine in ("i386", "i486", "i586", "i686"):
+                arch = "i386"
+            elif machine.startswith("arm") or machine.startswith("aarch"):
+                if bits == "32bit":
+                    arch = "arm"
+                else:
+                    arch = "arm64"
+        except (NameError, AttributeError):
+            pass
+        return arch
+
+    def osversion(self):
+        """Get operating system"""
+        try:
+            return platform.system().lower()
+        except (NameError, AttributeError):
+            return ""
+
+    def osdistribution(self):
+        """Get operating system distribution"""
+        (distribution, version, dummy) = platform.linux_distribution()
+        return (distribution.split(' ')[0], version.split('.')[0])
+
+    def oskernel(self):
+        """Get operating system"""
+        try:
+            return platform.release()
+        except (NameError, AttributeError):
+            return "3.2.1"
+
+    def oskernel_isgreater(self, ref_version):
+        """Compare kernel version is greater or equal than ref_version"""
+        os_release = self.oskernel().split('-')[0]
+        os_version = [int(x) for x in os_release.split('.')[0:3]]
+        for idx in (0, 1, 2):
+            if os_version[idx] > ref_version[idx]:
+                return True
+            elif os_version[idx] < ref_version[idx]:
+                return False
+        return True
+
+    def cmd_has_option(self, executable, search_option, arg=None):
+        """Check if executable has a given cli option"""
+        if not executable:
+            return False
+        arg_list = []
+        if arg and isinstance(arg, str):
+            arg_list = [arg]
+        elif isinstance(arg, list):
+            arg_list = arg
+        out = Uprocess().get_output([executable] + arg_list + ["--help"])
+        if search_option in re.split(r"[=|\*\[\]\n,; ]*", out):
+            return True
+        return False
+
+    def termsize(self):
+        """Get guest operating system terminal size"""
+        try:
+            with open("/dev/tty") as tty:
+                cmd = ['stty', 'size']
+                lines, cols = Uprocess().check_output(cmd, stdin=tty).split()
+                return (int(lines), int(cols))
+        except (OSError, IOError):
+            pass
+        return (24, 80)
 
 
 class GuestInfo(object):
@@ -598,17 +627,6 @@ class GuestInfo(object):
             return "linux"
         return ""
 
-    def termsize(self):
-        """Get guest operating system terminal size"""
-        try:
-            with open("/dev/tty") as tty:
-                cmd = ['stty', 'size']
-                lines, cols = Uprocess().check_output(cmd, stdin=tty).split()
-                return (int(lines), int(cols))
-        except (OSError, IOError):
-            pass
-        return (24, 80)
-
 
 class Unshare(object):
     """Place a process in a namespace"""
@@ -644,14 +662,14 @@ class Unshare(object):
         if cpid:
             os.close(pwrite1)
             os.read(pread1, 1)  # wait
-            user = Config().username()
+            user = HostInfo().username()
 
-            newidmap = ["newuidmap", str(cpid), "0", str(Config.uid), "1"]
+            newidmap = ["newuidmap", str(cpid), "0", str(HostInfo.uid), "1"]
             for (subid, subcount) in NixAuthentication().user_in_subuid(user):
                 newidmap.extend(["1", subid, subcount])
             subprocess.call(newidmap)
 
-            newidmap = ["newgidmap", str(cpid), "0", str(Config.uid), "1"]
+            newidmap = ["newgidmap", str(cpid), "0", str(HostInfo.uid), "1"]
             for (subid, subcount) in NixAuthentication().user_in_subgid(user):
                 newidmap.extend(["1", subid, subcount])
             subprocess.call(newidmap)
@@ -691,11 +709,11 @@ class KeyStore(object):
     def _verify_keystore(self):
         """Verify the keystore file and directory"""
         keystore_uid = FileUtil(self.keystore_file).uid()
-        if keystore_uid not in (-1, Config.uid):
+        if keystore_uid not in (-1, HostInfo.uid):
             raise IOError("not owner of keystore: %s" %
                           (self.keystore_file))
         keystore_dir = os.path.dirname(self.keystore_file)
-        if FileUtil(keystore_dir).uid() != Config.uid:
+        if FileUtil(keystore_dir).uid() != HostInfo.uid:
             raise IOError("keystore dir not found or not owner: %s" %
                           (keystore_dir))
         if (keystore_uid != -1 and
@@ -1152,7 +1170,7 @@ class FileUtil(object):
         elif self.filename.count('/') < 2:
             Msg().err("Error: delete pathname too short: ", self.filename)
             return False
-        elif self.uid() != Config.uid:
+        elif self.uid() != HostInfo.uid:
             Msg().err("Error: delete not owner: ", self.filename)
             return False
         elif (not force) and (not self._is_safe_prefix(self.filename)):
@@ -1490,7 +1508,7 @@ class FileUtil(object):
                     f_path = dir_path + '/' + f_name
                     if not os.path.islink(f_path):
                         continue
-                    if os.lstat(f_path).st_uid != Config.uid:
+                    if os.lstat(f_path).st_uid != HostInfo.uid:
                         continue
                     if to_container:
                         if self._link_set(f_path, orig_path, root_path, force):
@@ -1759,12 +1777,11 @@ class ElfPatcher(object):
         self._container_patch_time = self._container_dir + "/patch.time"
         self._container_patch_path = self._container_dir + "/patch.path"
         self._shlib = re.compile(r"^lib\S+\.so(\.\d+)*$")
-        self._uid = Config.uid
+        self._uid = HostInfo.uid
 
     def select_patchelf(self):
         """Set patchelf executable"""
-        conf = Config()
-        arch = conf.arch()
+        arch = HostInfo().arch()
         if arch == "amd64":
             image_list = ["patchelf-x86_64", "patchelf"]
         elif arch == "i386":
@@ -2172,7 +2189,7 @@ class NixAuthentication(object):
     def get_home(self):
         """Get host or container home directory"""
         (r_user, dummy, dummy, dummy, r_home,
-         dummy) = self.get_user(Config.uid)
+         dummy) = self.get_user(HostInfo.uid)
         if r_user:
             return r_home
         return ""
@@ -2415,6 +2432,7 @@ class ExecutionEngineCommon(object):
         self.hostauth_list = ()                  # Authentication files to be used
         self.exec_mode = None                    # ExecutionMode instance
         self.mountp = None                       # MountPoint object
+        self.executable = ""                     # Executable proot, runc, etc
         # Metadata defaults
         self.opt = dict()                        # Run options
         self.opt["nometa"] = False               # Don't load metadata
@@ -2423,6 +2441,7 @@ class ExecutionEngineCommon(object):
         self.opt["bindhome"] = False             # Bind user home dir
         self.opt["hostenv"] = False              # Pass host env
         self.opt["hostauth"] = False             # Use hostauth_list
+        self.opt["containerauth"] = False        # Authentication from container
         self.opt["novol"] = []                   # Volume bindings to ignore
         self.opt["env"] = []                     # Environment from container
         self.opt["envfile"] = []                 # File with environment variables
@@ -2438,6 +2457,10 @@ class ExecutionEngineCommon(object):
         self.opt["portsmap"] = []                # Ports mapped in container
         self.opt["portsexp"] = []                # Ports exposed by container
         self.opt["devices"] = []                 # Devices passed to container
+
+    def _has_option(self, search_option, arg=None):
+        """Check if executable has a given cli option"""
+        return HostInfo().cmd_has_option(self.executable, search_option, arg)
 
     def _get_portsmap(self, by_container=True):
         """List of TCP/IP ports mapped indexed by container port"""
@@ -2480,7 +2503,7 @@ class ExecutionEngineCommon(object):
                         if mapped_ports[port_number] >= 1024:
                             continue
                     exposes_priv = True
-        if exposes_priv and Config.uid != 0:
+        if exposes_priv and HostInfo.uid != 0:
             Msg().err("Error: this container exposes privileged TCP/IP ports")
             return False
         if exposes_port:
@@ -2781,7 +2804,7 @@ class ExecutionEngineCommon(object):
                 if key == search_key:
                     return str(val)
         return None
-  
+
     def _select_auth_files(self):
         """Select authentication files to use /etc/passwd /etc/group"""
         cont_passwd = self.container_root + "/etc/passwd"
@@ -2804,6 +2827,7 @@ class ExecutionEngineCommon(object):
         return (passwd, group)
 
     def _validate_user_str(self, user):
+        """Parse string with uid:gid or username"""
         user_id = dict()
         if not isinstance(user, str):
             return user_id
@@ -2813,13 +2837,13 @@ class ExecutionEngineCommon(object):
         else:
             match = re.match("^(\\d+)(:(\\d+)){0,1}$", user)
             if match:
-                user_id["uid"] =  match.group(1)
+                user_id["uid"] = match.group(1)
                 if match.group(3):
-                    user_id["gid"] =  match.group(3)
+                    user_id["gid"] = match.group(3)
         return user_id
 
     def _user_from_str(self, user, host_auth=None, container_auth=None):
-        """Parse strings containing uid:gid or user and return pw entry
+        """user password entry from host or container passwd
            Returns (valid_user: bool, user_passwd_fields: dict)
         """
         user_id = self._validate_user_str(user)
@@ -2870,8 +2894,8 @@ class ExecutionEngineCommon(object):
             return True
         if self.opt["user"]:
             if self.opt["user"] != "root":
-                self.opt["uid"] = str(Config.uid)
-                self.opt["gid"] = str(Config.gid)
+                self.opt["uid"] = str(HostInfo.uid)
+                self.opt["gid"] = str(HostInfo.gid)
         else:
             if self.opt["hostauth"] or self.opt["containerauth"]:
                 Msg().err("Error: user not found")
@@ -2890,22 +2914,22 @@ class ExecutionEngineCommon(object):
         (passwd, group) = self._select_auth_files()
         container_auth = NixAuthentication(passwd, group)
         if not user:
-            user = Config().username()
+            user = HostInfo().username()
         (valid_user, user_id) = self._user_from_str(user,
                                                     host_auth, container_auth)
         if not valid_user:
             Msg().err("Error: invalid syntax for user", user)
             return False
         if self.opt["user"] == "root":
-            self.opt["user"] = Config().username()
-            self.opt["uid"] = str(Config.uid)
-            self.opt["gid"] = str(Config.gid)
+            self.opt["user"] = HostInfo().username()
+            self.opt["uid"] = str(HostInfo.uid)
+            self.opt["gid"] = str(HostInfo.gid)
         if self._is_mountpoint("/etc/passwd") or self._is_mountpoint("/etc/group"):
             self.opt["hostauth"] = self.opt["containerauth"] = False
             return True
         if self.opt["user"]:
-            self.opt["uid"] = str(Config.uid)
-            self.opt["gid"] = str(Config.gid)
+            self.opt["uid"] = str(HostInfo.uid)
+            self.opt["gid"] = str(HostInfo.gid)
         else:
             if self.opt["hostauth"] or self.opt["containerauth"]:
                 Msg().err("Error: user not found on host")
@@ -2921,9 +2945,9 @@ class ExecutionEngineCommon(object):
         Provide default values in case the required fields are empty.
         """
         if not self.opt["uid"]:
-            self.opt["uid"] = str(Config.uid)
+            self.opt["uid"] = str(HostInfo.uid)
         if not self.opt["gid"]:
-            self.opt["gid"] = str(Config.gid)
+            self.opt["gid"] = str(HostInfo.gid)
         if not self.opt["user"]:
             self.opt["user"] = "udoc" + self.opt["uid"][0:4]
         if self.opt["bindhome"]:
@@ -3040,7 +3064,7 @@ class ExecutionEngineCommon(object):
             self.opt["env"].append(r"PS1=%s\$ " % self.container_id[:8])
 
         self.opt["env"].append("SHLVL=0")
-        self.opt["env"].append("container_ruser=" + Config().username())
+        self.opt["env"].append("container_ruser=" + HostInfo().username())
         self.opt["env"].append("container_root=" + self.container_root)
         self.opt["env"].append("container_uuid=" + self.container_id)
         self.opt["env"].append("container_execmode=" + self.exec_mode.get_mode())
@@ -3119,47 +3143,46 @@ class PRootEngine(ExecutionEngineCommon):
 
     def __init__(self, localrepo):
         super(PRootEngine, self).__init__(localrepo)
-        conf = Config()
-        self.proot_exec = None                   # PRoot
+        self.executable = None                   # PRoot
         self.proot_noseccomp = False             # Noseccomp mode
-        self._kernel = conf.oskernel()           # Emulate kernel
+        self._kernel = HostInfo().oskernel()     # Emulate kernel
 
     def select_proot(self):
         """Set proot executable and related variables"""
         conf = Config()
-        self.proot_exec = conf.use_proot_executable
-        if self.proot_exec != "UDOCKER" and not self.proot_exec:
-            self.proot_exec = FileUtil("proot").find_exec()
-        if self.proot_exec == "UDOCKER" or not self.proot_exec:
-            self.proot_exec = ""
-            arch = conf.arch()
+        self.executable = conf.use_proot_executable
+        if self.executable != "UDOCKER" and not self.executable:
+            self.executable = FileUtil("proot").find_exec()
+        if self.executable == "UDOCKER" or not self.executable:
+            self.executable = ""
+            arch = HostInfo().arch()
             image_list = []
             if arch == "amd64":
-                if conf.oskernel_isgreater((4, 8, 0)):
+                if HostInfo().oskernel_isgreater((4, 8, 0)):
                     image_list = ["proot-x86_64-4_8_0", "proot-x86_64", "proot"]
                 else:
                     image_list = ["proot-x86_64", "proot"]
             elif arch == "i386":
-                if conf.oskernel_isgreater((4, 8, 0)):
+                if HostInfo().oskernel_isgreater((4, 8, 0)):
                     image_list = ["proot-x86-4_8_0", "proot-x86", "proot"]
                 else:
                     image_list = ["proot-x86", "proot"]
             elif arch == "arm64":
-                if conf.oskernel_isgreater((4, 8, 0)):
+                if HostInfo().oskernel_isgreater((4, 8, 0)):
                     image_list = ["proot-arm64-4_8_0", "proot-arm64", "proot"]
                 else:
                     image_list = ["proot-arm64", "proot"]
             elif arch == "arm":
-                if conf.oskernel_isgreater((4, 8, 0)):
+                if HostInfo().oskernel_isgreater((4, 8, 0)):
                     image_list = ["proot-arm-4_8_0", "proot-arm", "proot"]
                 else:
                     image_list = ["proot-arm", "proot"]
             f_util = FileUtil(self.localrepo.bindir)
-            self.proot_exec = f_util.find_file_in_dir(image_list)
-        if not self.proot_exec:
+            self.executable = f_util.find_file_in_dir(image_list)
+        if not self.executable:
             Msg().err("Error: proot executable not found")
             sys.exit(1)
-        if conf.oskernel_isgreater((4, 8, 0)):
+        if HostInfo().oskernel_isgreater((4, 8, 0)):
             if conf.proot_noseccomp is not None:
                 self.proot_noseccomp = conf.proot_noseccomp
             if self.exec_mode.get_mode() == "P2":
@@ -3197,7 +3220,6 @@ class PRootEngine(ExecutionEngineCommon):
     def run(self, container_id):
         """Execute a Docker container using PRoot. This is the main method
         invoked to run the a container with PRoot.
-
           * argument: container_id or name
           * options:  many via self.opt see the help
         """
@@ -3225,14 +3247,14 @@ class PRootEngine(ExecutionEngineCommon):
         else:
             proot_verbose = []
 
-        if Config.proot_killonexit:
+        if Config.proot_killonexit and self._has_option("--kill-on-exit"):
             proot_kill_on_exit = ["--kill-on-exit", ]
         else:
             proot_kill_on_exit = []
 
         # build the actual command
         cmd_l = self._set_cpu_affinity()
-        cmd_l.append(self.proot_exec)
+        cmd_l.append(self.executable)
         cmd_l.extend(proot_verbose)
         cmd_l.extend(proot_kill_on_exit)
         cmd_l.extend(self._get_volume_bindings())
@@ -3264,7 +3286,7 @@ class RuncEngine(ExecutionEngineCommon):
 
     def __init__(self, localrepo):
         super(RuncEngine, self).__init__(localrepo)
-        self.runc_exec = None                   # runc
+        self.executable = None                   # runc
         self._container_specjson = None
         self._container_specfile = None
         self._filebind = None
@@ -3273,12 +3295,12 @@ class RuncEngine(ExecutionEngineCommon):
     def select_runc(self):
         """Set runc executable and related variables"""
         conf = Config()
-        self.runc_exec = conf.use_runc_executable
-        if self.runc_exec != "UDOCKER" and not self.runc_exec:
-            self.runc_exec = FileUtil("runc").find_exec()
-        if self.runc_exec == "UDOCKER" or not self.runc_exec:
-            self.runc_exec = ""
-            arch = conf.arch()
+        self.executable = conf.use_runc_executable
+        if self.executable != "UDOCKER" and not self.executable:
+            self.executable = FileUtil("runc").find_exec()
+        if self.executable == "UDOCKER" or not self.executable:
+            self.executable = ""
+            arch = HostInfo().arch()
             image_list = []
             if arch == "amd64":
                 image_list = ["runc-x86_64", "runc"]
@@ -3289,20 +3311,10 @@ class RuncEngine(ExecutionEngineCommon):
             elif arch == "arm":
                 image_list = ["runc-arm", "runc"]
             f_util = FileUtil(self.localrepo.bindir)
-            self.runc_exec = f_util.find_file_in_dir(image_list)
-        if not self.runc_exec:
+            self.executable = f_util.find_file_in_dir(image_list)
+        if not self.executable:
             Msg().err("Error: runc executable not found")
             sys.exit(1)
-
-    def _has_option(self, option, command_str=""):
-        """Check if runc has a given cli option"""
-        command_item = []
-        if command_str:
-            command_item = [command_str]
-        if option in Uprocess().get_output(
-                [self.runc_exec] + command_item + ["--help"]):
-            return True
-        return False
 
     def _load_spec(self, new=False):
         """Generate runc spec file"""
@@ -3310,7 +3322,7 @@ class RuncEngine(ExecutionEngineCommon):
             FileUtil(self._container_specfile).register_prefix()
             FileUtil(self._container_specfile).remove()
         if FileUtil(self._container_specfile).size() == -1:
-            cmd_l = [self.runc_exec, "spec", "--rootless", "--bundle",
+            cmd_l = [self.executable, "spec", "--rootless", "--bundle",
                      os.path.realpath(self.container_dir)]
             status = subprocess.call(cmd_l, shell=False, stderr=Msg.chlderr,
                                      close_fds=True)
@@ -3360,10 +3372,10 @@ class RuncEngine(ExecutionEngineCommon):
                 json_obj["process"]["env"].append("%s=%s" % (env_var, value))
         for idmap in json_obj["linux"]["uidMappings"]:
             if "hostID" in idmap:
-                idmap["hostID"] = Config.uid
+                idmap["hostID"] = HostInfo.uid
         for idmap in json_obj["linux"]["gidMappings"]:
             if "hostID" in idmap:
-                idmap["hostID"] = Config.gid
+                idmap["hostID"] = HostInfo.gid
         json_obj["process"]["args"] = self.opt["cmd"]
         return json_obj
 
@@ -3417,8 +3429,8 @@ class RuncEngine(ExecutionEngineCommon):
             "major": os.major(dev_stat.st_dev),
             "minor": os.minor(dev_stat.st_dev),
             "fileMode": filemode,
-            "uid": Config.uid,
-            "gid": Config.uid,
+            "uid": HostInfo.uid,
+            "gid": HostInfo.uid,
         }
         self._container_specjson["linux"]["devices"].append(device)
         return True
@@ -3560,15 +3572,15 @@ class RuncEngine(ExecutionEngineCommon):
             env_noseccomp = "PROOT_NO_SECCOMP=1"
         if env_noseccomp:
             self._container_specjson["process"]["env"].append(env_noseccomp)
-        host_proot_exec = preng.proot_exec
-        cont_proot_exec = "/.udocker/bin/" + os.path.basename(host_proot_exec)
-        self._create_mountpoint(host_proot_exec, cont_proot_exec, dirs_only=False)
-        self._filebind.set_file(host_proot_exec, cont_proot_exec)
-        self._filebind.add_file(host_proot_exec, cont_proot_exec)
+        host_executable = preng.executable
+        cont_executable = "/.udocker/bin/" + os.path.basename(host_executable)
+        self._create_mountpoint(host_executable, cont_executable, dirs_only=False)
+        self._filebind.set_file(host_executable, cont_executable)
+        self._filebind.add_file(host_executable, cont_executable)
         mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
-        FileUtil(self._filebind.get_path(cont_proot_exec)).chmod(mode)
+        FileUtil(self._filebind.get_path(cont_executable)).chmod(mode)
         self._container_specjson["process"]["args"] = \
-                [cont_proot_exec, "-0"] + self.opt["cmd"]
+                [cont_executable, "-0"] + self.opt["cmd"]
 
     def run(self, container_id):
         """Execute a Docker container using runc. This is the main method
@@ -3613,14 +3625,12 @@ class RuncEngine(ExecutionEngineCommon):
 
         self._set_spec()
         if (Config.runc_nomqueue or (Config.runc_nomqueue is None and not
-                                     Config().oskernel_isgreater("4.8.0"))):
+                                     HostInfo().oskernel_isgreater("4.8.0"))):
             self._del_mount_spec("mqueue", "/dev/mqueue")
         self._add_volume_bindings()
         self._add_devices()
         self._add_capabilities_spec()
         self._mod_mount_spec("shm", "/dev/shm", {"options": ["size=2g"]})
-        #self._add_mount_spec("cgroup", "/sys/fs/cgroup", False, "cgroup",
-        #                     ["nosuid", "noexec", "nodev", "relatime"])
         self._proot_overlay(container_id)
         self._save_spec()
 
@@ -3634,7 +3644,7 @@ class RuncEngine(ExecutionEngineCommon):
         # build the actual command
         self.execution_id = Unique().uuid(self.container_id)
         cmd_l = self._set_cpu_affinity()
-        cmd_l.append(self.runc_exec)
+        cmd_l.append(self.executable)
         cmd_l.extend(runc_debug)
         cmd_l.extend(["--root", self.container_dir, "run"])
         cmd_l.extend(["--bundle", self.container_dir, self.execution_id])
@@ -3686,18 +3696,18 @@ class SingularityEngine(ExecutionEngineCommon):
 
     def __init__(self, localrepo):
         super(SingularityEngine, self).__init__(localrepo)
-        self.singularity_exec = None                   # singularity
+        self.executable = None                   # singularity
         self.execution_id = None
 
     def select_singularity(self):
         """Set singularity executable and related variables"""
         conf = Config()
-        self.singularity_exec = conf.use_singularity_executable
-        if self.singularity_exec != "UDOCKER" and not self.singularity_exec:
-            self.singularity_exec = FileUtil("singularity").find_exec()
-        if self.singularity_exec == "UDOCKER" or not self.singularity_exec:
-            self.singularity_exec = ""
-            arch = conf.arch()
+        self.executable = conf.use_singularity_executable
+        if self.executable != "UDOCKER" and not self.executable:
+            self.executable = FileUtil("singularity").find_exec()
+        if self.executable == "UDOCKER" or not self.executable:
+            self.executable = ""
+            arch = HostInfo().arch()
             image_list = []
             if arch == "amd64":
                 image_list = ["singularity-x86_64", "singularity"]
@@ -3708,20 +3718,10 @@ class SingularityEngine(ExecutionEngineCommon):
             elif arch == "arm":
                 image_list = ["singularity-arm", "singularity"]
             f_util = FileUtil(self.localrepo.bindir)
-            self.singularity_exec = f_util.find_file_in_dir(image_list)
-        if not self.singularity_exec:
+            self.executable = f_util.find_file_in_dir(image_list)
+        if not self.executable:
             Msg().err("Error: singularity executable not found")
             sys.exit(1)
-
-    def _has_option(self, option, command_str=""):
-        """Check if singularity has a given cli option"""
-        command_item = []
-        if command_str:
-            command_item = [command_str]
-        if option in Uprocess().get_output(
-                [self.singularity_exec] + command_item + ["--help"]):
-            return True
-        return False
 
     def _get_volume_bindings(self):
         """Get the volume bindings string for singularity exec"""
@@ -3758,10 +3758,6 @@ class SingularityEngine(ExecutionEngineCommon):
             singularityenv['SINGULARITYENV_%s' % key] = val
         return singularityenv
 
-    #def _setup_container_user(self, user):
-    #    """Override of _setup_container_user()"""
-    #    return self._setup_container_user_noroot(user)
-
     def _make_container_directories(self):
         """Create directories expected by Singularity"""
         FileUtil(self.container_root + "/var/tmp").mkdir()
@@ -3783,10 +3779,9 @@ class SingularityEngine(ExecutionEngineCommon):
     def _run_as_root(self):
         """Set configure running as normal user or as root via --fakeroot
         """
-        username = Config().username()
-        uid = str(Config().uid)
+        username = HostInfo().username()
         if "user" in self.opt:
-            if (self.opt["user"] == username):
+            if self.opt["user"] == username:
                 return False
             elif self.opt["user"] != "root" and self.opt["uid"] != '0':
                 Msg().err("Warning: running as another user not supported")
@@ -3802,7 +3797,6 @@ class SingularityEngine(ExecutionEngineCommon):
     def run(self, container_id):
         """Execute a Docker container using singularity.
         This is the main method invoked to run a container with singularity.
-
           * argument: container_id or name
           * options:  many via self.opt see the help
         """
@@ -3825,7 +3819,6 @@ class SingularityEngine(ExecutionEngineCommon):
 
         self._make_container_directories()
 
-
         self.select_singularity()
 
         self._run_as_root()
@@ -3844,7 +3837,7 @@ class SingularityEngine(ExecutionEngineCommon):
         else:
             singularity_debug = []
 
-        if self.singularity_exec.startswith(self.localrepo.bindir):
+        if self.executable.startswith(self.localrepo.bindir):
             Config.singularity_options.extend(["-u", ])
 
         #if FileUtil("nvidia-smi").find_exec():
@@ -3855,7 +3848,7 @@ class SingularityEngine(ExecutionEngineCommon):
         # build the actual command
         self.execution_id = Unique().uuid(self.container_id)
         cmd_l = self._set_cpu_affinity()
-        cmd_l.append(self.singularity_exec)
+        cmd_l.append(self.executable)
         cmd_l.extend(singularity_debug)
         cmd_l.append("exec")
         cmd_l.extend(Config.singularity_options)
@@ -3941,8 +3934,8 @@ class FakechrootEngine(ExecutionEngineCommon):
 
     def _uid_check(self):
         """Check the uid_map string for container run command"""
-        if ("user" in self.opt and (self.opt["user"] == '0' or 
-                self.opt["user"] == "root")):
+        if ("user" in self.opt and (self.opt["user"] == '0' or
+                                    self.opt["user"] == "root")):
             Msg().err("Warning: this engine does not support execution as root",
                       l=Msg.WAR)
 
@@ -4526,7 +4519,14 @@ class ContainerStructure(object):
         to identify files or directories to be removed.
         The format is .wh.<filename>
         """
-        cmd = ["tar", "tf", tarf, "*/.wh.*"]
+        verbose = ""
+        if Msg.level >= Msg.VER:
+            verbose = 'v'
+            Msg().out("Info: applying whiteouts:", tarf, l=Msg.INF)
+        wildcards = ["--wildcards", ]
+        if not HostInfo().cmd_has_option("tar", wildcards[0]):
+            wildcards = []
+        cmd = ["tar", "t" + verbose] + wildcards + ["-f", tarf, "*/.wh.*"]
         whiteouts = Uprocess().get_output(cmd, True)
         if not whiteouts:
             return
@@ -4556,7 +4556,10 @@ class ContainerStructure(object):
         if not (tarfiles and destdir):
             return False
         status = True
-        gid = str(os.getgid())
+        gid = str(HostInfo.gid)
+        wildcards = ["--wildcards", ]
+        if not HostInfo().cmd_has_option("tar", wildcards[0]):
+            wildcards = []
         for tarf in tarfiles:
             if tarf != '-':
                 self._apply_whiteouts(tarf, destdir)
@@ -4566,7 +4569,7 @@ class ContainerStructure(object):
                 Msg().out("Info: extracting:", tarf, l=Msg.INF)
             cmd = ["tar", "-C", destdir, "-x" + verbose, "--one-file-system",
                    "--exclude=dev/*", "--no-same-owner", "--no-same-permissions",
-                   "--overwrite", "-f", tarf]
+                   "--overwrite", ] + wildcards + ["-f", tarf]
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
                 Msg().err("Error: while extracting image layer")
                 status = False
@@ -6508,8 +6511,8 @@ class CommonLocalFileApi(object):
         container_json["comment"] = comment
         container_json["created"] = \
             time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z")
-        container_json["architecture"] = Config().arch()
-        container_json["os"] = Config().osversion()
+        container_json["architecture"] = HostInfo().arch()
+        container_json["os"] = HostInfo().osversion()
         layer_file = self.localrepo.layersdir + '/' + layer_id + ".layer"
         container_json["size"] = FileUtil(layer_file).size()
         if container_json["size"] == -1:
@@ -7226,7 +7229,7 @@ class Udocker(object):
 
     def _search_repositories(self, expression, pause="", no_trunc=""):
         """Print search header and loop over search results"""
-        term_lines, dummy = GuestInfo("HOST").termsize()
+        term_lines, dummy = HostInfo().termsize()
         term_lines -= 2
         fmt = "%-55.80s %8.8s %-70.70s %5.5s"
         if no_trunc:
@@ -8087,7 +8090,7 @@ class Udocker(object):
             FileBind(self.localrepo, container_id).restore(force)
             MountPoint(self.localrepo, container_id).restore()
         if fixperm:
-            Unshare().namespace_exec(lambda: FileUtil(container_dir + 
+            Unshare().namespace_exec(lambda: FileUtil(container_dir +
                                                       "/ROOT").rchown())
             FileUtil(container_dir + "/ROOT").rchmod()
         nvidia_mode = NvidiaMode(self.localrepo, container_id)
@@ -8430,6 +8433,7 @@ class Main(object):
     """Get options, parse and execute the command line"""
 
     def __init__(self):
+        HostInfo()
         self.cmdp = CmdParser()
         parseok = self.cmdp.parse(sys.argv)
         if not parseok and not (self.cmdp.get("--version", "GEN_OPT") or
@@ -8437,8 +8441,7 @@ class Main(object):
                                 self.cmdp.get("-h", "GEN_OPT")):
             Msg().err("Error: parsing command line, use: udocker help")
             sys.exit(1)
-        if not ((os.geteuid() and os.getegid()) or
-                self.cmdp.get("--allow-root", "GEN_OPT")):
+        if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
             sys.exit(1)
         Config().init(self.cmdp.get("--config=", "GEN_OPT")) # read config
