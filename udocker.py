@@ -157,7 +157,7 @@ class Config(object):
     )
 
     # allowed file mountpoints for runC, these files can be copied in
-    mountpoint_prefixes = ( "/etc", )
+    mountpoint_prefixes = ("/etc", )
 
     # container execution mode if not set via setup
     # Change it to P2 if execution problems occur
@@ -2423,6 +2423,7 @@ class ExecutionEngineCommon(object):
         self.opt["bindhome"] = False             # Bind user home dir
         self.opt["hostenv"] = False              # Pass host env
         self.opt["hostauth"] = False             # Use hostauth_list
+        self.opt["containerauth"] = False        # Use containerauth_list
         self.opt["novol"] = []                   # Volume bindings to ignore
         self.opt["env"] = []                     # Environment from container
         self.opt["envfile"] = []                 # File with environment variables
@@ -2781,7 +2782,7 @@ class ExecutionEngineCommon(object):
                 if key == search_key:
                     return str(val)
         return None
-  
+
     def _select_auth_files(self):
         """Select authentication files to use /etc/passwd /etc/group"""
         cont_passwd = self.container_root + "/etc/passwd"
@@ -2804,6 +2805,7 @@ class ExecutionEngineCommon(object):
         return (passwd, group)
 
     def _validate_user_str(self, user):
+        """Validate username string"""
         user_id = dict()
         if not isinstance(user, str):
             return user_id
@@ -2813,9 +2815,9 @@ class ExecutionEngineCommon(object):
         else:
             match = re.match("^(\\d+)(:(\\d+)){0,1}$", user)
             if match:
-                user_id["uid"] =  match.group(1)
+                user_id["uid"] = match.group(1)
                 if match.group(3):
-                    user_id["gid"] =  match.group(3)
+                    user_id["gid"] = match.group(3)
         return user_id
 
     def _user_from_str(self, user, host_auth=None, container_auth=None):
@@ -3784,9 +3786,8 @@ class SingularityEngine(ExecutionEngineCommon):
         """Set configure running as normal user or as root via --fakeroot
         """
         username = Config().username()
-        uid = str(Config().uid)
         if "user" in self.opt:
-            if (self.opt["user"] == username):
+            if self.opt["user"] == username:
                 return False
             elif self.opt["user"] != "root" and self.opt["uid"] != '0':
                 Msg().err("Warning: running as another user not supported")
@@ -3941,8 +3942,8 @@ class FakechrootEngine(ExecutionEngineCommon):
 
     def _uid_check(self):
         """Check the uid_map string for container run command"""
-        if ("user" in self.opt and (self.opt["user"] == '0' or 
-                self.opt["user"] == "root")):
+        if ("user" in self.opt and (self.opt["user"] == '0' or
+                                    self.opt["user"] == "root")):
             Msg().err("Warning: this engine does not support execution as root",
                       l=Msg.WAR)
 
@@ -8087,7 +8088,7 @@ class Udocker(object):
             FileBind(self.localrepo, container_id).restore(force)
             MountPoint(self.localrepo, container_id).restore()
         if fixperm:
-            Unshare().namespace_exec(lambda: FileUtil(container_dir + 
+            Unshare().namespace_exec(lambda: FileUtil(container_dir +
                                                       "/ROOT").rchown())
             FileUtil(container_dir + "/ROOT").rchmod()
         nvidia_mode = NvidiaMode(self.localrepo, container_id)
