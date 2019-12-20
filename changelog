@@ -26,8 +26,12 @@ udocker (1.1.3-6) preview for (1.1.4)
   * Add R2 and R3 execution modes for PRoot overlay execution in runc
   * Improve file and directory binding support for Singularity and runc
   * Add command rename for renaming of containers
+  * Fix processing of --dri in Sn mode
+    - closes: #241
+  * Improve handling of container and host authentication
+    - partially addresses: #239
   * Fixes to address authentication and redirects in pull
-    - closes: #225
+    - closes: #225, #230
   * Added minimal support to load OCI images
     - closes: #111
   * Added Pn support for Fedora30 and ubuntu19
