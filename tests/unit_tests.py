@@ -23,6 +23,7 @@ import os
 import pwd
 import subprocess
 import sys
+import json
 import unittest
 
 try:
@@ -1801,18 +1802,15 @@ class UdockerToolsTestCase(unittest.TestCase):
         mirrors = "https://download.ncg.ingrid.pt/udocker-1.1.3.tar.gz"
         mock_getmirr.return_value = [mirrors]
         mock_getfile.return_value = "udocker-1.1.3.tar.gz"
-        json_data = {
-            "architecture": "amd64",
-            "messages": {
-                "AttachStderr": False,
-            },
-        }
-        mock_jload.return_value = json_data
+        dictdata = {"architecture": "amd64",
+                     "messages": {"AttachStderr": False}}
+        json_data = json.dumps(dictdata)
+        mock_jload.return_value = dictdata
         with mock.patch(BUILTINS + '.open',
                         mock.mock_open(read_data=json_data)):
             utools = udocker.UdockerTools(mock_localrepo)
             data = utools.get_installinfo()
-            self.assertEqual(data, json_data)
+            self.assertEqual(data, dictdata)
 
     @mock.patch.object(udocker.UdockerTools, '_install')
     @mock.patch.object(udocker.UdockerTools, '_verify_version')
