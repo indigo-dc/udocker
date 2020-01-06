@@ -2367,6 +2367,7 @@ class MountPoint(object):
 
     def create(self, host_path, cont_path):
         """Create mountpoint"""
+        status = True
         mountpoint = self.container_root + '/' + cont_path
         if os.path.exists(mountpoint):
             if (stat.S_IFMT(os.stat(mountpoint).st_mode) ==
