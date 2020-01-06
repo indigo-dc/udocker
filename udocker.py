@@ -43,7 +43,7 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.3-7"
+__version__ = "1.1.3-8"
 __date__ = "2019"
 
 # Python version major.minor
@@ -113,13 +113,13 @@ class Config(object):
     containersdir = None
 
     # udocker installation tarball
-    tarball_release = "1.1.3-3"
+    tarball_release = "1.1.3-4"
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/BjqWC7vyFiVhgna/download"
+        "/s/7st0ev9AbniBB0U/download"
         " "
         "https://raw.githubusercontent.com"
-        "/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.3-3.tar.gz"
+        "/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.3-4.tar.gz"
     )
 
     installinfo = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
@@ -493,7 +493,7 @@ class HostInfo(object):
         try:
             return platform.release()
         except (NameError, AttributeError):
-            return "3.2.1"
+            return "6.1.1"
 
     def oskernel_isgreater(self, ref_version):
         """Compare kernel version is greater or equal than ref_version"""
@@ -516,7 +516,7 @@ class HostInfo(object):
         elif isinstance(arg, list):
             arg_list = arg
         out = Uprocess().get_output([executable] + arg_list + ["--help"])
-        if search_option in re.split(r"[=|\*\[\]\n,; ]*", out):
+        if out and search_option in re.split(r"[=|\*\[\]\n,; ]*", out):
             return True
         return False
 
@@ -1008,6 +1008,7 @@ class FileUtil(object):
 
     def _register_prefix(self, prefix):
         """Register directory prefixes where remove() is allowed"""
+        prefix = os.path.realpath(prefix)
         if prefix not in FileUtil.safe_prefixes:
             filename = prefix
             if os.path.isdir(filename) and not filename.endswith('/'):
@@ -1079,6 +1080,9 @@ class FileUtil(object):
 
     def _is_safe_prefix(self, filename):
         """Check if file prefix falls under valid prefixes"""
+        filename = os.path.realpath(filename)
+        if os.path.isdir(filename):
+            filename += '/'
         for safe_prefix in FileUtil.safe_prefixes:
             if filename.startswith(safe_prefix):
                 return True
@@ -1588,14 +1592,14 @@ class UdockerTools(object):
         """Get udockertools version from tarball VERSION file"""
         return FileUtil(filename).getdata().strip()
 
-    def _version_isequal(self, version):
-        """Is version inside file equal to the taball release requirement"""
-        return version and version == self._tarball_release
+    def _version_isok(self, version):
+        """Is version >= than the minimum required tarball release"""
+        return version and version >= self._tarball_release
 
     def is_available(self):
         """Are the tools already installed"""
         version = self._get_version(self.localrepo.libdir + "/VERSION")
-        return self._version_isequal(version)
+        return self._version_isok(version)
 
     def _download(self, url):
         """Download a file """
@@ -1641,7 +1645,7 @@ class UdockerTools(object):
         if status:
             return (False, "")
         version = self._get_version(tmpdir + "/VERSION")
-        status = self._version_isequal(version)
+        status = self._version_isok(version)
         FileUtil(tmpdir).remove(recursive=True)
         return (status, version)
 
@@ -1736,10 +1740,13 @@ class UdockerTools(object):
                       l=Msg.WAR)
             return None
         elif not self._tarball:
-            Msg().err("Error: UDOCKER_TARBALL not defined")
+            Msg().err("Info: UDOCKER_TARBALL not set, installation skipped",
+                      l=Msg.VER)
+            return True
         else:
             Msg().out("Info: udocker command line interface", __version__)
-            Msg().out("Info: searching for udockertools", self._tarball_release, l=Msg.INF)
+            Msg().out("Info: searching for udockertools",
+                      self._tarball_release, l=Msg.INF)
             retry = Config.installretry
             while  retry:
                 if self._install_logic(force):
@@ -3233,6 +3240,9 @@ class PRootEngine(ExecutionEngineCommon):
         # seccomp and ptrace behavior change on 4.8.0 onwards
         if self.proot_noseccomp or os.getenv("PROOT_NO_SECCOMP"):
             self.opt["env"].append("PROOT_NO_SECCOMP=1")
+
+        if not HostInfo().oskernel_isgreater("3.0.0"):
+            self._kernel = "6.0.0"
 
         if self.opt["kernel"]:
             self._kernel = self.opt["kernel"]
