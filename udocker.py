@@ -4383,7 +4383,7 @@ class ExecutionMode(object):
                 os.path.realpath(self.container_root))
         if (not status) and (not force):
             Msg().err("Error: container setup failed")
-        return status
+        return bool(status)
 
     def get_engine(self):
         """get execution engine instance"""
