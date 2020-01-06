@@ -1,0 +1,7 @@
+include *.md
+include changelog
+include LICENSE
+
+graft doc
+graft tests
+global-exclude *.py[co]
