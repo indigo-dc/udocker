@@ -1234,7 +1234,7 @@ class FileUtil(object):
         """
         if sourcedir is None:
             sourcedir = self.filename
-        verbose = 'v'
+        verbose = ''
         if Msg.level >= Msg.VER:
             verbose = 'v'
         cmd_tarc = ["tar", "-C", sourcedir, "-c" + verbose,
