@@ -6424,11 +6424,10 @@ class DockerIoAPI(object):
         (dummy, buf) = self._get_url(url)
         try:
             repo_list = json.loads(buf.getvalue())
-            if (not repo_list or (not repo_list["count"]) or
-                    repo_list["count"] == self.search_page):
+            if repo_list["count"] == self.search_page:
                 self.search_ended = True
             return repo_list
-        except (IOError, OSError, AttributeError,
+        except (IOError, OSError, AttributeError, KeyError,
                 ValueError, TypeError):
             self.search_ended = True
             return []
