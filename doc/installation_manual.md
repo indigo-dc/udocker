@@ -1,8 +1,8 @@
 # udocker INSTALLATION MANUAL
 
-In most circumstances the end user can download and execute the tool without
-system administrator intervention. udocker itself is written in Python, but 
-also uses external binaries and libraries to provide a chroot like
+In most cases the end user itself can download and execute udocker without the
+system administrator's intervention. udocker is written in Python, but 
+also uses external binaries and sharable libraries to provide a chroot like
 environment where containers are executed in user space. These tools do not
 require any privileges.
 
@@ -11,8 +11,10 @@ require any privileges.
 Python dependencies are described in the file [requirements.txt](../requirements.txt).
 
 Other host libraries and tools required:
- * udocker requires either pycurl or the curl executable command, to download both the udockertools and pull containers from repositories.
+ * udocker requires either pycurl or the curl executable command, to download both the 
+   udockertools and pull containers from repositories.
  * tar is needed during `udocker install` to unpackage binaries and libraries.
+ * find is used for some operations that perform filesystem transversal.
  * tar is used to unpack the container image layers.
  * openssl or python hashlib are required to calculate hashes. 
  * ldconfig is used in Fn execution modes to obtain the host sharable libraries.

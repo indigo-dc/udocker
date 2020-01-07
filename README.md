@@ -283,7 +283,7 @@ use of rootless namespaces and enable a normal user to execute as root with
 certain limitations.
 
 ## Other limitations
-Notice that when using execution modes such as F2, F3 and F4 the created
+When using execution modes such as F2, F3 and F4 the created
 containers cannot be moved across hosts. In this case convert back to a Pn
 mode before transfer.
 This is not needed if the hosts are part of an homogeneous cluster where
@@ -299,8 +299,8 @@ mode P2 or any of the other execution modes.
 ./udocker setup  --execmode=P2  my-container-id
 ```
 
-The Fn modes require shared libraries compiled with the libc within
-the container. udocker provides these libraries for a set of distributions
+The Fn modes require shared libraries compiled against the libc within
+the containers. udocker provides these libraries for several distributions
 and versions, they are installed under:
 
 ```
@@ -315,7 +315,6 @@ system.
 ## Documentation
 The full documentation is available at:
 
-* GitBook: https://indigo-dc.gitbooks.io/udocker/content/
 * master: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
 * devel: https://github.com/indigo-dc/udocker/blob/devel/SUMMARY.md
 
@@ -339,3 +338,5 @@ When citing udocker please use the following:
 * INDIGO DataCloud https://www.indigo-datacloud.eu
 * EOSC-hub https://eosc-hub.eu
 * DEEP-Hybrid-DataCloud https://deep-hybrid-datacloud.eu
+* LIP https://www.lip.pt
+* INCD https://www.incd.pt
