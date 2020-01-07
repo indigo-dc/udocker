@@ -47,6 +47,14 @@ From the *development* branch for the latest additions and fixes:
   ./udocker install
 ```
 
+To get a specific released version of udocker such as *v1.1.4*:
+
+```
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.4/udocker.py > udocker
+  chmod u+rx ./udocker
+  ./udocker install
+```
+
 ### 2.2. INSTALL FROM REPOSITORIES
 
 This installation method uses the udocker tarball that contains statically compiled 
@@ -92,16 +100,26 @@ with the flag `--force`:
 
 ## 2.5. INSTALLATION WITH PIP
 
-Optionally installation can be performed directly with pip:
+For installation with pip it is advisable to setup a Python2 virtual environment
+before proceeding, see instructions [HERE](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/)
+The actual installation of udocker can be performed directly from github with pip.
+
+From the master branch for *production*:
 
 ```
   pip install git+https://github.com/indigo-dc/udocker
 ```
-
-or for the latest development version:
+ 
+From the *development* branch for the latest additions and fixes:
 
 ```
   pip install git+https://github.com/indigo-dc/udocker@devel
+```
+
+To get a specific release version of udocker such as *v1.1.4*:
+
+```
+  pip install git+https://github.com/indigo-dc/udocker@v1.1.4
 ```
 
 ## 3. SOURCE CODE AND BUILD
