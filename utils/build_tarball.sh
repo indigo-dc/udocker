@@ -2934,6 +2934,7 @@ create_package_tarball()
 	ln -s libfakechroot-Ubuntu-18-x86_64.so libfakechroot-LinuxMint-18-x86_64.so ; \
 	ln -s libfakechroot-Ubuntu-16-x86_64.so libfakechroot-LinuxMint-16-x86_64.so ; \
 	ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-LinuxMint-14-x86_64.so ; \
+        ln -s libfakechroot-Alpine-3.11-x86_64.so libfakechroot-Alpine-3.12-x86_64.so ; \
         ln -s libfakechroot-Alpine-3.6-x86_64.so libfakechroot-Alpine-x86_64.so)
 
     find "${PACKAGE_DIR}" -type d -exec /bin/chmod u=rwx,og=rx  {} \;
