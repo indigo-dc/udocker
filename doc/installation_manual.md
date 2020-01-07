@@ -27,7 +27,7 @@ be performed automatically.
 
 Once you download the udocker executable from github you can move it around 
 between systems. Once you start it in a new system it will install the
-required tools. The installation requires outbound network connectivity.
+required udockertools. The installation requires outbound network connectivity.
 
 From the master branch for *production*:
 
@@ -47,20 +47,17 @@ From the *development* branch for the latest additions and fixes:
 
 ### 2.2. INSTALL FROM REPOSITORIES
 
-udocker is also available as a tarball from certain repositories such as:
- * `https://download.ncg.ingrid.pt/webdav/udocker/`
- * `http://repo.indigo-datacloud.eu/` 
-
 This installation method uses the udocker tarball that contains statically compiled 
 binaries and is built to be used across different hosts and OS distributions. Please 
 check the repositories for the latest release.
 
-Example of installing or upgrading udocker to version v1.1.3:
+Example of installing or upgrading udocker to version v1.1.4:
 
 ```
-  curl https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.3.tar.gz > udocker-tarball.tgz
+  curl https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.4.tar.gz > udocker-tarball.tgz
   export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
   tar xzvf $UDOCKER_TARBALL udocker
+  chmod u+rx udocker
   ./udocker install
   mv ./udocker $HOME/bin/   # move the executable to your preferred location for binaries
 ```
@@ -76,60 +73,22 @@ tarball location may contain several URLs pointing to different mirrors.
   ./udocker version
 ```
 
-Pick one URL and download the tarball using tools such as curl or wget.
+Pick one URL and download the tarball using curl or wget.
 By using a previously downloaded tarball and the UDOCKER_TARBALL environment variable 
 as explained in section 2.2, udocker can be deployed without having to downloaded it 
 everytime from the official repositories. The UDOCKER_TARBALL environment variable
 can also be pointed to an http or https URL of your choice.
 
-### 2.4. FORCE REINSTALLATION
+### 2.4. FORCE REINSTALLATION of UDOCKERTOOLS
 
-To force download and reinstallation of the udocker tools. Invoke udocker install 
+To force download and reinstallation of the udockertools. Invoke udocker install 
 with the flag `--force`:
 
 ```
   ./udocker install --force
 ```
 
-## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
-
-Beware that RPM and DEB packages contain dynamically linked binaries compiled for
-the target OS distributions and therefore cannot be executed successfully in 
-hosts running a different OS distribution. To execute the same udocker across 
-systems use the tarball installation methods described above in section 2. 
-
-RPMs are provided at http://repo.indigo-datacloud.eu
-
-```
-  rpm -i udocker-1.X.X-1.noarch.rpm \
-         udocker-preng-1.X.X-1.x86_64.rpm \
-         udocker-freng-1.X.X-1.x86_64.rpm
-```
-
-DEBs are provided at http://repo.indigo-datacloud.eu
-
-```
-  dpkg -i udocker_1.X.X-1_all.deb \
-          udocker-preng_1.X.X-1_amd64.deb \
-          udocker-freng_1.X.X-1_amd64.deb \
-          udocker-rceng_1.X.X-1_amd64.deb
-```
-Check the INDIGO-DataCloud repository for the latest versions and supported distributions.
-Replace `X` in the examples with the latest version.
-Notice that the rc engine (udocker-rceng) package is only available for Ubuntu 16 and 18.
-
-## 4. SYSTEM INSTALLATION WITH ANSIBLE AND PYTHON
-
-For system administrators wishing to provide udocker an ansible playbook is provided in
-the file ansible_install.yaml:
-
-```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/master/ansible_install.yaml > ansible_install.yaml
-
-  ansible-playbook ansible_install.yaml
-```
-
-## 5. INSTALLATION WITH PIP
+## 2.5. INSTALLATION WITH PIP
 
 Optionally installation can be performed directly with pip:
 
@@ -137,15 +96,13 @@ Optionally installation can be performed directly with pip:
   pip install git+https://github.com/indigo-dc/udocker
 ```
 
-## 6. SOURCE CODE
-
-To get the source code from github:
+or for the latest development version:
 
 ```
-  git clone https://github.com/indigo-dc/udocker
+  pip install git+https://github.com/indigo-dc/udocker@devel
 ```
 
-## 7. BUILD
+## 3. SOURCE CODE AND BUILD
 
 A udockertools distribution tarball can be built using the script `build_tarball.sh`
 in the utils directory. The script fetches the code necessary to build the
@@ -157,8 +114,15 @@ example builds the tarball from the master repository.
   cd udocker/utils
   ./build_tarball.sh
 ```
+
+You can also get a tarball for a given release of the source code from github and compile it. 
+The released source code is available at: 
+
+```
+  https://github.com/indigo-dc/udocker/releases
+```
  
-## 8. DIRECTORIES
+## 4. DIRECTORIES
 
 The binary executables and containers are usually kept in the user home directory
 under `$HOME/.udocker` this directory will contain:
@@ -167,7 +131,7 @@ under `$HOME/.udocker` this directory will contain:
  * Data from pulled container images (layers and metadata).
  * Directory trees for the containers extracted from the layers.
 
-## 9. ENVIRONMENT
+## 5. ENVIRONMENT
 
 The location of the udocker directories can be changed via environment variables.
 
@@ -210,8 +174,9 @@ host or from the udocker instalaltion.
  * UDOCKER_USE_RUNC_EXECUTABLE : path to runc, default is search the host and if not found use runc from udocker
  * UDOCKER_USE_SINGULARITY_EXECUTABLE : path to singularity, default is search the host
  * UDOCKER_FAKECHROOT_SO : path to a fakechroot library, default is search in udocker
+ * UDOCKER_DEFAULT_EXECUTION_MODE : default execution mode can be P1, P2, F1, S1, R1, R2 or R3
 
-## 10. CONFIGURATION
+## 6. CONFIGURATION
 
 udocker loads the following configuration files:
 
@@ -223,14 +188,12 @@ The configuration files allow modification of the udocker `class Config` attribu
 Examples of the udocker.conf syntax:
 
 ```
-  # Select the default registry
-  dockerio_registry_url = "https://myregistry.mydomain:5000"
   # Allow transfers that fail SSL authentication
   http_insecure = True
   # Increase verbosity
   verbose_level = 5
   # Require this version the `tarball` attribute must point to the correct tarball
-  tarball_release = "1.1.3"
+  tarball_release = "1.1.4"
   # Specific the installation tarball location
   tarball = "https://hostname/somepath"
   # Disable autoinstall

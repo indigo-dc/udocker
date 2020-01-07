@@ -18,8 +18,8 @@
 #
 # ##################################################################
 
-UDOCKER_VERSION_OVERRIDE="1.1.3-4"
-TARBALL_VERSION_OVERRIDE="1.1.3-4"
+UDOCKER_VERSION_OVERRIDE="1.1.4"
+TARBALL_VERSION_OVERRIDE="1.1.4"
 
 sanity_check() 
 {
@@ -272,7 +272,8 @@ fedora25_setup()
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python gzip zlib diffutils file
+            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
+	    gzip zlib diffutils file dnf
 
     if [ "$OS_ARCH" = "x86_64" ]; then
         $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
@@ -516,13 +517,19 @@ fedora29_setup()
     fedora29_create_dnf "${OS_ROOTDIR}/etc/dnf/dnf.conf" "$OS_ARCH"
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python gzip zlib diffutils file
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
+	    python2 gzip zlib diffutils file dnf
 
     if [ "$OS_ARCH" = "x86_64" ]; then
         $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
                 autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
+    fi
+    if [ "$OS_ARCH" = "aarch64" ]; then
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin -q qemu-aarch64"
+        export PROOT_NO_SECCOMP=1
+	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf "dnf -y reinstall $(rpm -qa)"
     fi
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
@@ -760,7 +767,8 @@ fedora30_setup()
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python gzip zlib diffutils file
+            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
+	    python2 gzip zlib diffutils file dnf
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
@@ -942,6 +950,7 @@ fedora31_create_dnf()
     cat > "$FILENAME" <<EOF_fedora31_dnf
 [main]
 gpgcheck=0
+sslverify=0
 installonly_limit=3
 clean_requirements_on_remove=True
 reposdir=NONE
@@ -1005,19 +1014,30 @@ fedora31_setup()
     /bin/mkdir -p "${OS_ROOTDIR}/proot-static-packages"
     /bin/mkdir -p "${OS_ROOTDIR}/etc/dnf"
     fedora31_create_dnf "${OS_ROOTDIR}/etc/dnf/dnf.conf" "$OS_ARCH"
+    echo "INSTALL AT $OS_ROOTDIR"
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python gzip zlib diffutils file
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
+	    python2 gzip zlib diffutils file glibc-headers dnf
 
     #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-    #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+    #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
     #        coreutils-8.31-1.fc31.x86_64 coreutils-common-8.31-1.fc31.x86_64
 
     if [ "$OS_ARCH" = "x86_64" ]; then
         $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
                 autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
+    fi
+
+    if [ "$OS_ARCH" = "aarch64" ]; then
+        $SUDO chown -R $(id -u):$(id -g) "$OS_ROOTDIR"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin -q qemu-aarch64"
+        export PROOT_NO_SECCOMP=1
+	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash << 'EOF_fedora31_reinstall'
+dnf -y reinstall $(rpm -qa)
+EOF_fedora31_reinstall
     fi
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
@@ -1026,7 +1046,6 @@ fedora31_setup()
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
 }
-
 
 fedora31_build_proot()
 {
@@ -1045,6 +1064,9 @@ fedora31_build_proot()
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
         PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1058,6 +1080,9 @@ fedora31_build_proot()
         # compile proot
         $PROOT -r "$OS_ROOTDIR" -b "${PROOT_SOURCE_DIR}:/proot" -w / -b /dev \
                            -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora31_proot_1'
+cd /usr/bin
+rm python
+ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-31.bin src/proot src/libtalloc.a src/talloc.h
 # BUILD TALLOC
@@ -2740,8 +2765,12 @@ create_package_tarball()
         echo "ERROR: failed to compile : ${BUILD_DIR}/proot-source-x86_64/proot-Fedora-30.bin"
         return
     fi
-    if [ ! -f "${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-30" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-30"
+    if [ ! -f "${BUILD_DIR}/proot-source-aarch64/proot-Fedora-31.bin" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/proot-source-aarch64/proot-Fedora-31.bin"
+        return
+    fi
+    if [ ! -f "${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-25" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-25"
         return
     fi
     if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-25.so" ] ; then
@@ -2820,6 +2849,8 @@ create_package_tarball()
                "${PACKAGE_DIR}/udocker_dir/bin/proot-x86-4_8_0"
     /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-30.bin" \
                "${PACKAGE_DIR}/udocker_dir/bin/proot-x86_64-4_8_0"
+    /bin/cp -f "${BUILD_DIR}/proot-source-aarch64/proot-Fedora-31.bin" \
+               "${PACKAGE_DIR}/udocker_dir/bin/proot-arm64-4_8_0"
     /bin/cp -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-25.bin" \
                "${PACKAGE_DIR}/udocker_dir/bin/proot-x86"
     /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25.bin" \
@@ -2880,8 +2911,29 @@ create_package_tarball()
         ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-x86_64.so ; \
         ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-Ubuntu-x86_64.so ; \
         ln -s libfakechroot-Fedora-25-x86_64.so libfakechroot-Fedora-x86_64.so ; \
+        ln -s libfakechroot-Fedora-31-x86_64.so libfakechroot-Fedora-32-x86_64.so ; \
+        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-CentOS-5-x86_64.so ; \
+        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-Red-5-x86_64.so ; \
+        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-Red-6-x86_64.so ; \
+        ln -s libfakechroot-CentOS-7-x86_64.so  libfakechroot-Red-7-x86_64.so ; \
+        ln -s libfakechroot-CentOS-8-x86_64.so  libfakechroot-Red-8-x86_64.so ; \
+        ln -s libfakechroot-CentOS-8-x86_64.so  libfakechroot-Red-9-x86_64.so ; \
+        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-Scientific-5-x86_64.so ; \
+        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-Scientific-6-x86_64.so ; \
+        ln -s libfakechroot-CentOS-7-x86_64.so  libfakechroot-Scientific-7-x86_64.so ; \
+        ln -s libfakechroot-CentOS-8-x86_64.so  libfakechroot-Scientific-8-x86_64.so ; \
+        ln -s libfakechroot-CentOS-8-x86_64.so  libfakechroot-Scientific-9-x86_64.so ; \
+        ln -s libfakechroot-CentOS-8-x86_64.so  libfakechroot-CentOS-9-x86_64.so ; \
         ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-Debian-7-x86_64.so ; \
+        ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-Debian-8-x86_64.so ; \
+        ln -s libfakechroot-Ubuntu-16-x86_64.so libfakechroot-Debian-9-x86_64.so ; \
+        ln -s libfakechroot-Ubuntu-19-x86_64.so libfakechroot-Debian-10-x86_64.so ; \
+        ln -s libfakechroot-Ubuntu-19-x86_64.so libfakechroot-Debian-11-x86_64.so ; \
         ln -s libfakechroot-Ubuntu-16-x86_64.so libfakechroot-CentOS-x86_64.so ; \
+	ln -s libfakechroot-Ubuntu-19-x86_64.so libfakechroot-LinuxMint-19-x86_64.so ; \
+	ln -s libfakechroot-Ubuntu-18-x86_64.so libfakechroot-LinuxMint-18-x86_64.so ; \
+	ln -s libfakechroot-Ubuntu-16-x86_64.so libfakechroot-LinuxMint-16-x86_64.so ; \
+	ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-LinuxMint-14-x86_64.so ; \
         ln -s libfakechroot-Alpine-3.6-x86_64.so libfakechroot-Alpine-x86_64.so)
 
     find "${PACKAGE_DIR}" -type d -exec /bin/chmod u=rwx,og=rx  {} \;
@@ -3014,7 +3066,20 @@ ubuntu19_setup "amd64"
 ubuntu19_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ubuntu19_build_runc "amd64" "${BUILD_DIR}/runc-source-x86_64"
 #ostree_delete "amd64" "ubuntu" "19"
+
+# #######
+# aarch64
+# #######
+prepare_proot_source "${BUILD_DIR}/proot-source-aarch64"
 #
+fedora31_setup "aarch64"
+fedora31_build_proot "aarch64" "${BUILD_DIR}/proot-source-aarch64"
+#ostree_delete "aarch64" "fedora" "31"
+
+
+# #######
+# package
+# #######
 addto_package_simplejson
 addto_package_udocker
 addto_package_other

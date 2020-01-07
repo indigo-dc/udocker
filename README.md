@@ -55,7 +55,7 @@ using tools and libraries such as:
 * Includes the required tools already statically compiled to work across systems
 * Tested with GPGPU and MPI applications
 * Runs both on new and older Linux distributions including:
-  CentOS 6, CentOS 7, Ubuntu 14, Ubuntu 16, Ubunto 18, Fedora, etc
+  CentOS 6, CentOS 7, CentOS 8, Ubuntu 14, Ubuntu 16, Ubuntu 18, Fedora, etc
 
 ## Installation
 See the **[Installation manual](doc/installation_manual.md)**
@@ -292,14 +292,22 @@ applies to the absolute realpath to the container directory.
 
 
 The default accelerated mode of PRoot (mode P1) may exhibit failures in Linux 
-kernels above 4.0 with some applications due to kernel changes and upstream 
-issues, in this case use mode P2 or any of the other modes.
+kernels above 4.0 due to kernel changes and upstream issues, in this case use
+mode P2 or any of the other execution modes.
 
 ```
 ./udocker setup  --execmode=P2  my-container-id
 ```
+
+The Fn modes require shared libraries compiled with the libc within
+the container. udocker provides these libraries for a set of distributions
+and versions, they are installed under:
+
+```
+$HOME/.udocker/lib/libfakechroot-*
+```
  
-The runC mode require a recent kernel with user namespaces enabled.
+The runC mode requires a recent kernel with user namespaces enabled.
 
 The singularity mode requires the availability of Singularity in the host
 system.

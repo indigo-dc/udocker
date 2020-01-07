@@ -1,7 +1,4 @@
-udocker (1.1.3-6) preview for (1.1.4)
-  * Create processes without shell context
-  * Safer parsing of config files
-  * Safer removal of directories
+udocker (1.1.4)
   * Use hub.docker.com as default registry
   * Search using v1 and v2 APIs
   * Implement API /v2/search/repositories
@@ -9,8 +6,8 @@ udocker (1.1.3-6) preview for (1.1.4)
   * List container size with ps -s
   * List container execution modes with ps -m
   * Added support for nameat() and statx() in Pn and Fn modes
-  * Added Fn libraries for Ubuntu18, Fedora29, Fedora30, CentOS8
-  * Added Fn libraries for Alpine 3.8, 3.9, 3.10
+  * Added Fn libraries for Ubuntu18, Ubuntu19, Fedora29, Fedora30, Fedora31, CentOS8
+  * Added Fn libraries for Alpine 3.8, 3.9, 3.10, 3.11
   * Added support for sha512 hashes
   * Added support for opaque whiteouts
   * Added search --list-tags to available tags for a given repository
@@ -18,14 +15,23 @@ udocker (1.1.3-6) preview for (1.1.4)
   * Support for fake root in Sn execution modes via --user=root
   * Improve verify of loaded/pulled images
   * Improve handling of mountpoints
-  * Add --containerauth to enable direct use of the container passwd and group
-  * Add support for file mount bindings in singularity
-  * Add UDOCKER_USE_PROOT_EXECUTABLE env var to select proot location
-  * Add UDOCKER_USE_RUNC_EXECUTABLE env var to select runc location
-  * Add UDOCKER_USE_SINGULARITY_EXECUTABLE env var to select singularity
-  * Add R2 and R3 execution modes for PRoot overlay execution in runc
+  * Added --containerauth to enable direct use of the container passwd and group
+  * Added support for file mount bindings in singularity
+  * Added UDOCKER_USE_PROOT_EXECUTABLE env var to select proot location
+  * Added UDOCKER_USE_RUNC_EXECUTABLE env var to select runc location
+  * Added UDOCKER_USE_SINGULARITY_EXECUTABLE env var to select singularity
+  * Added UDOCKER_DEFAULT_EXECUTION_MODE env var to select default execution mode
+  * Added R2 and R3 execution modes for PRoot overlay execution in runc
+  * Added setup --purge for cleanup of mountpoints and files 
+  * Added setup --fixperms to fix container file permissions
+  * Added run --env-file= to load file with environment variables
   * Improve file and directory binding support for Singularity and runc
   * Add command rename for renaming of containers
+  * Create processes without shell context
+  * Safer parsing of config files
+  * Safer removal of directories
+  * Improve installation
+  * Improved fix of SECCOMP accelerated mode for P1 mode
   * Fix processing of --dri in Sn mode
     - closes: #241
   * Improve handling of container and host authentication
@@ -34,7 +40,7 @@ udocker (1.1.3-6) preview for (1.1.4)
     - closes: #225, #230
   * Added minimal support to load OCI images
     - closes: #111
-  * Added Pn support for Fedora30 and ubuntu19
+  * Added Pn support for newer distributions
     - closes: #192
   * Improve the installation of udockertools
     - closes: #220, #228
@@ -56,6 +62,8 @@ udocker (1.1.3-6) preview for (1.1.4)
     - closes: #160
   * Implement save images in docker format
     - closes: #74
+  * useradd and groupadd not working in containers
+    - closes: #141
 
 udocker (1.1.3)
   * Support for nvidia drivers on ubuntu

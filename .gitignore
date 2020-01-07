@@ -12,6 +12,8 @@ utils/fakechroot_source_glibc.patch.v1.1.3_v2.18
 utils/fakechroot_source_musl.patch.v1.1.3_v2.18
 utils/distribute-install
 utils/BACKUP/*
+utils/OLDBUILD/*
+utils/OLDPATCHES/*
 BACKUP/*
 TAR/*
 .coverage

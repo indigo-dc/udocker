@@ -43,7 +43,7 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.3-8"
+__version__ = "1.1.4"
 __date__ = "2019"
 
 # Python version major.minor
@@ -113,16 +113,21 @@ class Config(object):
     containersdir = None
 
     # udocker installation tarball
-    tarball_release = "1.1.3-4"
+    tarball_release = "1.1.4"
     tarball = (
         "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/7st0ev9AbniBB0U/download"
+        "/s/QF09QQGUzG0P1pK/download"
         " "
         "https://raw.githubusercontent.com"
-        "/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.3-4.tar.gz"
+        "/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.4.tar.gz"
+        " "
+        "https://cernbox.cern.ch/index.php/s/g1qv4aycRoBFsDO/download"
+        " "
+        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.4.tar.gz"
     )
 
-    installinfo = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
+    installinfo = [
+        "https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
 
     installretry = 3
 
@@ -609,11 +614,11 @@ class GuestInfo(object):
             distribution = ""
             version = ""
             osinfo = FileUtil(f_path).getdata()
-            match = re.search(r"NAME=\"?(.+)\"?(\n|$)",
+            match = re.search(r"NAME=\"?([^ \n\"\.]+).*\"?(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
                 distribution = match.group(1).split(' ')[0]
-            match = re.search(r"VERSION_ID=\"?(.+)\"?(\n|$)",
+            match = re.search(r"VERSION_ID=\"?([^ \n\"\.]+).*\"?(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
                 version = match.group(1).split('.')[0]
@@ -1708,7 +1713,7 @@ class UdockerTools(object):
                     Msg().out("Info:", msg)
             except (KeyError, AttributeError, ValueError,
                     OSError, IOError):
-                Msg().out("Info: fail:", infofile, url, l=Msg.VER)
+                Msg().out("Info: no messages:", infofile, url, l=Msg.VER)
             return self._install_json
 
     def _install_logic(self, force=False):
