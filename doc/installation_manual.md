@@ -1,35 +1,37 @@
 # udocker INSTALLATION MANUAL
 
-In most circumstances the end user can download and execute the tool without
-system administrator intervention. udocker itself is written in Python, but 
-also uses external binaries and libraries to provide a chroot like
+In most cases the end user itself can download and execute udocker without the
+system administrator's intervention. udocker is written in Python, but 
+also uses external binaries and sharable libraries to provide a chroot like
 environment where containers are executed in user space. These tools do not
 require any privileges.
 
 ## 1. DEPENDENCIES
 
-Python dependencies are described in the file requirements.txt.
+Python dependencies are described in the file [requirements.txt](../requirements.txt).
 
-udocker requires either pycurl or the curl executable command,
-to download both the binaries and/or pull containers from repositories.
-
-tar is needed when using `udocker install` to unpackage binaries and libraries.
+Other host libraries and tools required:
+ * udocker requires either pycurl or the curl executable command, to download both the 
+   udockertools and pull containers from repositories.
+ * tar is needed during `udocker install` to unpackage binaries and libraries.
+ * find is used for some operations that perform filesystem transversal.
+ * tar is used to unpack the container image layers.
+ * openssl or python hashlib are required to calculate hashes. 
+ * ldconfig is used in Fn execution modes to obtain the host sharable libraries.
 
 ## 2. USER INSTALLATION
 
 ### 2.1. INSTALL LATEST VERSIONS DIRECTLY FROM GITHUB
 
-Just download and execute the udocker and the installation will be performed
-automatically.
-
-This installation method contains statically compiled binaries and is built 
-to be used across different hosts and OS distributions.
+Just download and execute the udocker python script and the remainder of the
+installation including downloading and installing the udockertools will 
+be performed automatically.
 
 Once you download the udocker executable from github you can move it around 
 between systems. Once you start it in a new system it will install the
-required tools. The installation requires outbound network connectivity.
+required udockertools. The installation requires outbound network connectivity.
 
-From the master branch:
+From the master branch for *production*:
 
 ```
   curl https://raw.githubusercontent.com/indigo-dc/udocker/master/udocker.py > udocker
@@ -37,7 +39,7 @@ From the master branch:
   ./udocker install
 ```
 
-From the development branch:
+From the *development* branch for the latest additions and fixes:
 
 ```
   curl https://raw.githubusercontent.com/indigo-dc/udocker/devel/udocker.py > udocker
@@ -46,109 +48,49 @@ From the development branch:
 ```
 
 ### 2.2. INSTALL FROM REPOSITORIES
-<!--
--->
-udocker is also available as a tarball in certain repositories such as:
- * `https://download.ncg.ingrid.pt/webdav/udocker/`
- * `http://repo.indigo-datacloud.eu/` 
 
-This installation method contains statically compiled binaries and is built
-to be used across different hosts and OS distributions. Please check the
-repositories for the latest release.
+This installation method uses the udocker tarball that contains statically compiled 
+binaries and is built to be used across different hosts and OS distributions. Please 
+check the repositories for the latest release.
 
-Install or upgrade of udocker v1.1.2:
+Example of installing or upgrading udocker to version v1.1.4:
 
 ```
-  curl https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.2.tar.gz > udocker-tarball.tgz
+  curl https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.4.tar.gz > udocker-tarball.tgz
   export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
   tar xzvf $UDOCKER_TARBALL udocker
+  chmod u+rx udocker
   ./udocker install
   mv ./udocker $HOME/bin/   # move the executable to your preferred location for binaries
 ```
 
-When using the setup.py provided in the release after downloading use:
-
-```
-  python setup.py install --home $HOME/bin/
-```
-
-
 ### 2.3. OBTAINING THE URL OF THE TARBALL
 
-The udocker installation tarball mentioned in section 2.2 can be obtained using the 
-following method. First download udocker. Second use udocker itself to display the
-installation tarball URL by invoking the `version` command. The tarball location may 
-contain several URLs pointing to mirrors.
+The udocker installation tarball mentioned in section 2.2 can also be obtained using 
+the following method. First download the udocker python script. Second use udocker 
+itself to display the installation tarball URL by invoking the `version` command. The
+tarball location may contain several URLs pointing to different mirrors.
 
 ```
   ./udocker version
 ```
 
-Then, pick one URL and download the tarball using tools such as curl or wget.
+Pick one URL and download the tarball using curl or wget.
 By using a previously downloaded tarball and the UDOCKER_TARBALL environment variable 
 as explained in section 2.2, udocker can be deployed without having to downloaded it 
 everytime from the official repositories. The UDOCKER_TARBALL environment variable
-can also be pointed to an http or https URL.
+can also be pointed to an http or https URL of your choice.
 
-### 2.4. FORCE REINSTALLATION
+### 2.4. FORCE REINSTALLATION of UDOCKERTOOLS
 
-To force download and reinstallation of the udocker tools. Invoke udocker install 
+To force download and reinstallation of the udockertools. Invoke udocker install 
 with the flag `--force`:
 
 ```
   ./udocker install --force
 ```
 
-## 3. SYSTEM INSTALLATION WITH RPMs and DEBs
-
-Beware that these packages contain dynamically linked binaries compiled for
-the target OS distributions and therefore cannot be execute successfully in 
-hosts running a different OS distribution. To execute the same udocker across 
-systems use the tarball installation methods described above in section 2. 
-
-RPMs are provided at http://repo.indigo-datacloud.eu
-
-```
-  rpm -i udocker-1.1.X-1.noarch.rpm \
-         udocker-preng-1.1.X-1.x86_64.rpm \
-         udocker-freng-1.1.X-1.x86_64.rpm
-```
-
-DEBs are provided at http://repo.indigo-datacloud.eu
-
-```
-  dpkg -i udocker_1.1.X-1_all.deb \
-          udocker-preng_1.1.X-1_amd64.deb \
-          udocker-freng_1.1.X-1_amd64.deb \
-          udocker-rceng_1.1.X-1_amd64.deb
-```
-Check the INDIGO-DataCloud repository for the latest versions and supported distributions.
-Replace `X` in the examples with the latest version.
-Notice that the rc engine (udocker-rceng) package is only available for Ubuntu 16 and 18.
-
-## 4. SYSTEM INSTALLATION WITH ANSIBLE AND PYTHON
-
-For system administrators wishing to provider udocker and its dependencies, 
-an ansible playbook is provided in the file ansible_install.yaml:
-
-```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/master/ansible_install.yaml > ansible_install.yaml
-
-  ansible-playbook ansible_install.yaml
-```
-
-Under debian based systems ansible can be installed with:
-
-```
-  apt install ansible
-```
-
-Under RH based systems ansible can be installed with:
-
-```
-  yum install epel-release 
-  yum install ansible
-```
+## 2.5. INSTALLATION WITH PIP
 
 Optionally installation can be performed directly with pip:
 
@@ -156,38 +98,16 @@ Optionally installation can be performed directly with pip:
   pip install git+https://github.com/indigo-dc/udocker
 ```
 
-## 5. SOURCE CODE
-To get the master branch:
+or for the latest development version:
 
 ```
-  git clone https://github.com/indigo-dc/udocker
+  pip install git+https://github.com/indigo-dc/udocker@devel
 ```
 
-To get the latest udocker script from the github devel branch without
-cloning the entire repository. This downloads udocker.py only.
-```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/devel/udocker.py
-```
+## 3. SOURCE CODE AND BUILD
 
-To get the udocker source code repository from the github master branch, clone the 
-repository, or use a web browser to access github at `https://github.com/indigo-dc/udocker`.
-
-```
-  git clone https://github.com/indigo-dc/udocker
-```
-
-To get the udocker source code repository from the devel branch.
-
-```
-  git clone https://github.com/indigo-dc/udocker
-  cd udocker
-  checkout devel
-```
-
-## 6. BUILD
-
-A distribution tarball can be built using the script build_tarball.sh in
-the utils directory. The script fetches the code necessary to build the
+A udockertools distribution tarball can be built using the script `build_tarball.sh`
+in the utils directory. The script fetches the code necessary to build the
 binary executables such as proot and compiles them statically. The following
 example builds the tarball from the master repository.
 
@@ -196,29 +116,35 @@ example builds the tarball from the master repository.
   cd udocker/utils
   ./build_tarball.sh
 ```
+
+You can also get a tarball for a given release of the source code from github and compile it. 
+The released source code is available at: 
+
+```
+  https://github.com/indigo-dc/udocker/releases
+```
  
-## 7. DIRECTORIES
+## 4. DIRECTORIES
 
 The binary executables and containers are usually kept in the user home directory
-under $HOME/.udocker this directory will contain:
+under `$HOME/.udocker` this directory will contain:
 
- * Additional tools and modules for udocker such as proot.
+ * Additional tools and modules for udocker such as proot, etc.
  * Data from pulled container images (layers and metadata).
  * Directory trees for the containers extracted from the layers.
 
-
-## 8. ENVIRONMENT
+## 5. ENVIRONMENT
 
 The location of the udocker directories can be changed via environment variables.
 
  * UDOCKER_DIR : root directory of udocker usually $HOME/.udocker
  * UDOCKER_BIN : location of udocker related executables
  * UDOCKER_LIB : location of udocker related libraries
- * UDOCKER_CONTAINERS : location of container directory trees (not images)
- * UDOCKER_KEYSTORE : location of keystore for repository login/logout
+ * UDOCKER_CONTAINERS : top directory for storing containers (not images)
+ * UDOCKER_KEYSTORE : location of keystore for login/logout credentials
  * UDOCKER_TMP : location of temporary directory
  * UDOCKER_TARBALL : location of installation tarball (file of URL)
- * UDOCKER_NOSYSCONF: do not read system wide config files in /etc
+ * UDOCKER_NOSYSCONF: do not read udocker system wide config files in /etc
 
 The Docker index and registry and be overrided via environment variables.
 
@@ -230,12 +156,29 @@ can be achieved by executing with UDOCKER_LOGLEVEL=2
 
  * UDOCKER_LOGLEVEL : set verbosity level from 0 to 5 (MIN to MAX verbosity)
 
-Forces the use of a curl executable instead of pycurl and enables selection of a given 
-curl executable pathname:
+Forcing the use of a given curl executable instead of pycurl can be specified with:
 
  * UDOCKER_USE_CURL_EXECUTABLE : pathname to the location of curl executable
 
-## 9. CONFIGURATION
+In Fn modes the translation of symbolic links to the actual links can be controlled
+the env variable accepts the values: true, false, none
+
+ * UDOCKER_FAKECHROOT_EXPAND_SYMLINKS : default is none
+
+The location of some executables used in the execution modes can be enforced with
+the environment variables described below together with the default behavior.
+A value of "UDOCKER" will force the usage of the executables provided by the 
+udocker installation.
+A full pathname can be used to select a specific executable (or library) from the
+host or from the udocker instalaltion.
+
+ * UDOCKER_USE_PROOT_EXECUTABLE : path to proot, default is proot from udocker
+ * UDOCKER_USE_RUNC_EXECUTABLE : path to runc, default is search the host and if not found use runc from udocker
+ * UDOCKER_USE_SINGULARITY_EXECUTABLE : path to singularity, default is search the host
+ * UDOCKER_FAKECHROOT_SO : path to a fakechroot library, default is search in udocker
+ * UDOCKER_DEFAULT_EXECUTION_MODE : default execution mode can be P1, P2, F1, S1, R1, R2 or R3
+
+## 6. CONFIGURATION
 
 udocker loads the following configuration files:
 
@@ -243,12 +186,23 @@ udocker loads the following configuration files:
  * $UDOCKER_DIR/udocker.conf
  * $HOME/.udocker/udocker.conf (if different from the above)
 
-The configuration files allow modification of the udocker Config class attributes.
-Example of the udocker.conf syntax:
+The configuration files allow modification of the udocker `class Config` attributes.
+Examples of the udocker.conf syntax:
 
 ```
-  dockerio_registry_url = "https://myregistry.mydomain:5000"
+  # Allow transfers that fail SSL authentication
   http_insecure = True
+  # Increase verbosity
   verbose_level = 5
+  # Require this version the `tarball` attribute must point to the correct tarball
+  tarball_release = "1.1.4"
+  # Specific the installation tarball location
+  tarball = "https://hostname/somepath"
+  # Disable autoinstall
+  autoinstall = False
+  # Specify config location
+  config = "/someplace/udocker.conf"
+  # Specify tmp directory location
+  tmpdir = "/someplace"
 ```
 

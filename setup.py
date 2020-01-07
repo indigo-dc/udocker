@@ -40,7 +40,7 @@ requirements = []
 setup(
     author="Jorge Gomes",
     author_email='udocker@lip.pt',
-    version="1.1.3",
+    version="1.1.4",
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
@@ -59,6 +59,7 @@ setup(
     install_requires=requirements,
     license="Apache Software License 2.0",
     long_description=readme + '\n\n' + history,
+    long_description_content_type="text/markdown",
     include_package_data=True,
     keywords='udocker',
     name='udocker',
