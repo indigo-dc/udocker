@@ -59,7 +59,7 @@ using tools and libraries such as:
 
 ## Installation and Users manuals
 See the **[Installation manual](doc/installation_manual.md)**
-See the **[Users manual](doc/user_manual.md)**
+and the **[Users manual](doc/user_manual.md)**.
 
 ## Syntax
 ```
