@@ -1191,6 +1191,14 @@ However running as root within udocker can be useful to install software package
 Depending on the execution mode, running as root may imply additional
 overheads and/or security considerations.
 
+If the software installation will need to create/change users and groups then
+udocker needs to run with direct access to the container passwd and group files
+as follows:
+
+```
+udocker run --user=root --containerauth <CONTAINER-ID>
+```
+
 For **software installation** the recommended execution modes are **P2**, **S1**
 and **R3**. The emulation is not perfect and issues can still arise.  Namelly 
 when using APT it can be required to install using:
@@ -1198,6 +1206,13 @@ when using APT it can be required to install using:
 ```
 apt-get -o APT::Sandbox::User=root update
 apt-get -o APT::Sandbox::User=root install <package>
+```
+
+Upon APT errors such as `cannot get security labeling handle: No such file or directory` 
+try to run ias above in P2 mode but start udocker as:
+
+```
+udocker.py run --user=root --nosysdirs -v /etc/resolv.conf -v /dev --containerauth <CONTAINER-ID>
 ```
 
 ## 8. NESTED EXECUTION
@@ -1217,8 +1232,8 @@ For running within udocker itself the following guidelines apply:
 * Fn within Rn: Possible
 * Fn within Sn: Possible
 * Pn within Pn: Not possible or possible with huge overheads
-* Fn within Fn: 
-* Pn within Fn: 
+* Fn within Fn: Not possible
+* Pn within Fn: Not possible
 
 ## 9. PERFORMANCE
 
