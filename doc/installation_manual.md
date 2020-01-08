@@ -47,7 +47,7 @@ From the *development* branch for the latest additions and fixes:
   ./udocker install
 ```
 
-To get a specific released version of udocker such as *v1.1.4*:
+To get a specific released version of udocker such as v1.1.4:
 
 ```
   curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.4/udocker.py > udocker
@@ -55,39 +55,45 @@ To get a specific released version of udocker such as *v1.1.4*:
   ./udocker install
 ```
 
-### 2.2. INSTALL FROM REPOSITORIES
+### 2.2. INSTALL FROM UDOCKERTOOLS TARBALL
 
-This installation method uses the udocker tarball that contains statically compiled 
+This installation method uses the udockertools tarball that contains statically compiled 
 binaries and is built to be used across different hosts and OS distributions. Please 
 check the repositories for the latest release.
 
 Example of installing or upgrading udocker to version v1.1.4:
 
 ```
-  curl https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.4.tar.gz > udocker-tarball.tgz
-  export UDOCKER_TARBALL=$(pwd)/udocker-tarball.tgz
+  curl https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.4.tar.gz > udocker-1.1.4.tar.gz
+  export UDOCKER_TARBALL=$(pwd)/udocker-1.1.4.tar.gz
   tar xzvf $UDOCKER_TARBALL udocker
   chmod u+rx udocker
   ./udocker install
   mv ./udocker $HOME/bin/   # move the executable to your preferred location for binaries
 ```
 
-### 2.3. OBTAINING THE URL OF THE TARBALL
+### 2.3. OBTAINING UDOCKERTOOLS TARBALL FROM OTHER LOCATIONS
 
-The udocker installation tarball mentioned in section 2.2 can also be obtained using 
+The udockertools installation tarball mentioned in section 2.2 can also be obtained using 
 the following method. First download the udocker python script. Second use udocker 
-itself to display the installation tarball URL by invoking the `version` command. The
-tarball location may contain several URLs pointing to different mirrors.
+itself to display the udockertools tarball URLs by invoking the `version` command. The
+tarball location contains several URLs pointing to different mirrors.
 
 ```
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.4/udocker.py > udocker  
+  chmod u+rx ./udocker
   ./udocker version
 ```
 
-Pick one URL and download the tarball using curl or wget.
+Pick one URL and download the udockertools tarball using curl or wget.
 By using a previously downloaded tarball and the UDOCKER_TARBALL environment variable 
 as explained in section 2.2, udocker can be deployed without having to downloaded it 
 everytime from the official repositories. The UDOCKER_TARBALL environment variable
 can also be pointed to an http or https URL of your choice.
+
+```
+  curl $(./udocker version | grep '^tarball:' | cut -d' ' -f3) > udocker-1.1.4.tar.gz
+```
 
 ### 2.4. FORCE REINSTALLATION of UDOCKERTOOLS
 
