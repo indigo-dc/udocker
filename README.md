@@ -57,8 +57,9 @@ using tools and libraries such as:
 * Runs both on new and older Linux distributions including:
   CentOS 6, CentOS 7, CentOS 8, Ubuntu 14, Ubuntu 16, Ubuntu 18, Fedora, etc
 
-## Installation
+## Installation and Users manuals
 See the **[Installation manual](doc/installation_manual.md)**
+and the **[Users manual](doc/user_manual.md)**.
 
 ## Syntax
 ```
