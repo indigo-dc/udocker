@@ -3106,7 +3106,7 @@ class ExecutionEngineCommon(object):
             (container_dir, dummy) = self._run_load_metadata(container_id)
         except (ValueError, TypeError):
             return ""
-        if not container_dir:
+        if not (container_dir or Config.location):
             return ""
 
         self._run_env_cmdoptions()
