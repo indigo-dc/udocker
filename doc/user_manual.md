@@ -894,16 +894,16 @@ create) as described below.
 
 
 ```
-./udocker pull iscampos/openqcd
-./udocker create --name=openqcd iscampos/openqcd
-fbeb130b-9f14-3a9d-9962-089b4acf3ea8
+  ./udocker pull iscampos/openqcd
+  ./udocker create --name=openqcd iscampos/openqcd
+  fbeb130b-9f14-3a9d-9962-089b4acf3ea8
 ```
 
 Next the created container is executed (notice that the variable LD_LIBRARY_PATH is explicitly set):
 
 
 ```
-./udocker run -e LD_LIBRARY_PATH=/usr/lib openqcd /bin/bash
+  ./udocker run -e LD_LIBRARY_PATH=/usr/lib openqcd /bin/bash
 ```
 
 In this approach the host mpiexec will submit the N MPI process instances, as
@@ -921,7 +921,7 @@ Note: first the example Open MPI installation that comes along with the openqcd
 container are removed with: 
 
 ```
-yum remove openmpi
+  yum remove openmpi
 ```
 
 We download Open MPI v.2.0.1 from https://www.open-mpi.org/software/ompi/v2.0 and compile it. 
@@ -933,30 +933,30 @@ TCP/IP is enough.
 To install the Infiniband drivers one needs to install the epel repository.
 
 ```
-yum install -y epel-release
+  yum install -y epel-release
 ```
 
 The list of packages to be installed is:
 
 ```
-openib
-libibverbs, libibverbs-utils, libibverbs-devel
-librdmacm, librdmacm-utils, ibacm
-libnes
-libibumad
-libfabric, libfabric-devel
-opensm-libs
-swig
-ibutils-libs, ibutils
-opensm
-libibmad
-infiniband-diags
+  openib
+  libibverbs, libibverbs-utils, libibverbs-devel
+  librdmacm, librdmacm-utils, ibacm
+  libnes
+  libibumad
+  libfabric, libfabric-devel
+  opensm-libs
+  swig
+  ibutils-libs, ibutils
+  opensm
+  libibmad
+  infiniband-diags
 ```
 
 The driver needs to be installed as well, in our examples the Mellanox driver.
 
 ```
-yum install mlx4*x86_64
+  yum install mlx4*x86_64
 ```
 
 The installation of both, i686 and x86_64 versions might be conflictive, and lead to an 
@@ -967,12 +967,12 @@ is to install only the version for the architecture of the machine in this case 
 The Open MPI source is compiled and installed in the container under /usr for convenience:
 
 ```
-cd /usr
-tar xvf openmpi-2.0.1.tgz 
-cd /usr/openmpi-2.0.1
-./configure --with-verbs --prefix=/usr
-make
-make install
+  cd /usr
+  tar xvf openmpi-2.0.1.tgz 
+  cd /usr/openmpi-2.0.1
+  ./configure --with-verbs --prefix=/usr
+  make
+  make install
 ```
 
 
@@ -981,11 +981,11 @@ The MPI job submission to the HPC cluster succeeds by including this line in
 the batch script:
 
 ```
-/opt/cesga/openmpi/2.0.1/gcc/6.3.0/bin/mpiexec -np 128 \
-$LUSTRE/udocker-master/udocker run -e LD_LIBRARY_PATH=/usr/lib  \
---hostenv --hostauth --user=cscdiica -v /tmp \
---workdir=/op/projects/openQCD-1.6/main openqcd \
-/opt/projects/openQCD-1.6/main/ym1 -i ym1.in -noloc 
+  /opt/cesga/openmpi/2.0.1/gcc/6.3.0/bin/mpiexec -np 128 \
+  $LUSTRE/udocker-master/udocker run -e LD_LIBRARY_PATH=/usr/lib  \
+  --hostenv --hostauth --user=cscdiica -v /tmp \
+  --workdir=/op/projects/openQCD-1.6/main openqcd \
+  /opt/projects/openQCD-1.6/main/ym1 -i ym1.in -noloc 
 ```
 (where $LUSTRE points to the appropriate user filesystem directory in the HPC system)
 
@@ -1051,8 +1051,8 @@ For a given container its directory pathname in the filesystem can be obtained
 as follows:
 
 ```
-$ udocker inspect -p ubuntu17
-/home/user01/.udocker/containers/feb0041d-e1b6-3eee-89d8-2d0617feb13a/ROOT
+  udocker inspect -p ubuntu17
+  /home/user01/.udocker/containers/feb0041d-e1b6-3eee-89d8-2d0617feb13a/ROOT
 ```
 
 The pathname in the example is the root of the container filesystem tree.
@@ -1104,12 +1104,12 @@ to another host and executed. Make sure the udocker executable is in your PATH o
 both the local and remote hosts.
 
 ```
-$ MYC_ROOT=$(udocker inspect -p MyContainer)
-$ MYC_PATH=$(dirname $MYC_ROOT)
-$ MYC_ID=$(basename $MYC_PATH)
-$ MYC_DIR=$(dirname $MYC_PATH)
-$ cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker install ; cd ~/.udocker/containers; tar xf -"
-$ ssh user@ahost "udocker name $MYC_ID MyContainer; udocker run MyContainer"
+  MYC_ROOT=$(udocker inspect -p MyContainer)
+  MYC_PATH=$(dirname $MYC_ROOT)
+  MYC_ID=$(basename $MYC_PATH)
+  MYC_DIR=$(dirname $MYC_PATH)
+  cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker install ; cd ~/.udocker/containers; tar xf -"
+  ssh user@ahost "udocker name $MYC_ID MyContainer; udocker run MyContainer"
 ```
 
 ## 7. RUNNING AS ROOT INSIDE CONTAINERS
@@ -1120,7 +1120,7 @@ as root. In other modes execution as root is achieved by invoking
 run with the `--user=root` option:
 
 ```
-udocker run --user=root <container-id>` 
+  udocker run --user=root <container-id>` 
 ```
 
 ### 7.1. Running as root in Pn modes
@@ -1196,7 +1196,7 @@ udocker needs to run with direct access to the container passwd and group files
 as follows:
 
 ```
-udocker run --user=root --containerauth <CONTAINER-ID>
+  udocker run --user=root --containerauth <CONTAINER-ID>
 ```
 
 For **software installation** the recommended execution modes are **P2**, **S1**
@@ -1204,15 +1204,16 @@ and **R3**. The emulation is not perfect and issues can still arise.  Namelly
 when using APT it can be required to install using:
 
 ```
-apt-get -o APT::Sandbox::User=root update
-apt-get -o APT::Sandbox::User=root install <package>
+  apt-get -o APT::Sandbox::User=root update
+  apt-get -o APT::Sandbox::User=root install <package>
 ```
 
 Upon APT errors such as `cannot get security labeling handle: No such file or directory` 
-try to run ias above in P2 mode but start udocker as:
+try to run as mentioned above using **P2** mode, but not mounting /sys from the host by
+ starting udocker as:
 
 ```
-udocker.py run --user=root --nosysdirs -v /etc/resolv.conf -v /dev --containerauth <CONTAINER-ID>
+  udocker.py run --user=root --nosysdirs -v /etc/resolv.conf -v /dev --containerauth <CONTAINER-ID>
 ```
 
 ## 8. NESTED EXECUTION
@@ -1224,7 +1225,7 @@ udocker in such scenarios such as [SCAR](https://github.com/grycap/scar).
 For running inside docker and similiar: udocker offers the **Fn** mode which
 enables execution within docker or other Linux namespaces based applications.
 
-For running within udocker itself the following guidelines apply:
+For running udocker within udocker itself the following guidelines apply:
 
 * Fn within Pn: Possible
 * Pn within Rn: Possible only in R1
@@ -1278,6 +1279,6 @@ Some execution modes require the creation of auxiliary files, directories and mo
 * INDIGO DataCloud https://www.indigo-datacloud.eu
 * EOSC-hub https://eosc-hub.eu
 * DEEP-Hybrid-DataCloud https://deep-hybrid-datacloud.eu
-* Open MPI https://www.open-mpi.org
+* OpenMPI https://www.open-mpi.org
 * openQCD http://luscher.web.cern.ch/luscher/openQCD
 
