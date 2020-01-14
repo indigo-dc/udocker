@@ -11,7 +11,9 @@ from udocker import __version__
 from udocker.config import Config
 from udocker.msg import Msg
 from udocker.docker import DockerIoAPI
+from udocker.localfile import LocalFileAPI
 from udocker.docker import DockerLocalFileAPI
+from udocker.oci import OciLocalFileAPI
 from udocker.helper.keystore import KeyStore
 from udocker.container.structure import ContainerStructure
 from udocker.engine.execmode import ExecutionMode
@@ -45,7 +47,7 @@ class UdockerCLI(object):
     def __init__(self, localrepo):
         self.localrepo = localrepo
         self.dockerioapi = DockerIoAPI(self.localrepo)
-        self.dockerlocalfileapi = DockerLocalFileAPI(self.localrepo)
+        self.localfileapi = LocalFileAPI(self.localrepo)
         if Config.conf['keystore'].startswith("/"):
             self.keystore = KeyStore(Config.conf['keystore'])
         else:
@@ -290,7 +292,7 @@ class UdockerCLI(object):
             return self.STATUS_ERROR
         if imagerepo and not self._check_imagerepo(imagerepo):
             return self.STATUS_ERROR
-        repos = self.dockerlocalfileapi.load(imagefile, imagerepo)
+        repos = self.localfileapi.load(imagefile, imagerepo)
         if not repos:
             Msg().err("Error: load failed")
             return self.STATUS_ERROR
@@ -331,7 +333,7 @@ class UdockerCLI(object):
         if not imagefile:
             Msg().err("Error: must specify filename of image file for output")
             return self.STATUS_ERROR
-        if not self.dockerlocalfileapi.save(imagetag_list, imagefile):
+        if not self.localfileapi.save(imagetag_list, imagefile):
             return self.STATUS_ERROR
         return self.STATUS_OK
 
@@ -364,12 +366,12 @@ class UdockerCLI(object):
             return self.STATUS_ERROR
         if to_container or clone:
             if clone:
-                container_id = self.dockerlocalfileapi.import_clone(
+                container_id = self.localfileapi.import_clone(
                     tarfile, name)
             else:
                 (imagerepo, tag) = self._check_imagespec(imagespec,
                                                          "IMPORTED:unknown")
-                container_id = self.dockerlocalfileapi.import_tocontainer(
+                container_id = self.localfileapi.import_tocontainer(
                     tarfile, imagerepo, tag, name)
             if container_id:
                 Msg().out(container_id)
@@ -378,8 +380,8 @@ class UdockerCLI(object):
             (imagerepo, tag) = self._check_imagespec(imagespec)
             if not imagerepo:
                 return self.STATUS_ERROR
-            if self.dockerlocalfileapi.import_toimage(tarfile, imagerepo, tag,
-                                                      move_tarball):
+            if self.localfileapi.import_toimage(tarfile, imagerepo, tag,
+                                                move_tarball):
                 return self.STATUS_OK
         Msg().err("Error: importing")
         return self.STATUS_ERROR
@@ -438,7 +440,7 @@ class UdockerCLI(object):
         if not container_id:
             Msg().err("Error: invalid container id", container_id)
             return self.STATUS_ERROR
-        clone_id = self.dockerlocalfileapi.clone_container(container_id, name)
+        clone_id = self.localfileapi.clone_container(container_id, name)
         if clone_id:
             Msg().out(clone_id)
             return self.STATUS_OK
@@ -534,7 +536,7 @@ class UdockerCLI(object):
         (imagerepo, tag) = self._check_imagespec(imagespec)
         if imagerepo:
             return ContainerStructure(self.localrepo).create_fromimage(
-                    imagerepo, tag)
+                imagerepo, tag)
         return False
 
     def do_create(self, cmdp):
