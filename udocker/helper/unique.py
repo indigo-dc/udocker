@@ -29,24 +29,28 @@ class Unique(object):
         try:
             return str(uuid.uuid3(uuid.uuid4(), str(name) + str(time.time())))
         except (NameError, AttributeError):
-            return(("%s-%s-%s-%s-%s") %
-                   (self._rnd(8), self._rnd(4), self._rnd(4),
-                    self._rnd(4), self._rnd(12)))
+            return (("%s-%s-%s-%s-%s") %
+                    (self._rnd(8), self._rnd(4), self._rnd(4),
+                     self._rnd(4), self._rnd(12)))
 
     def imagename(self):
         """Get a container image name"""
         return self._rnd(16)
 
+    def imagetag(self):
+        """Get a container image tag"""
+        return self._rnd(10)
+
     def layer_v1(self):
-        """Get a container layer name"""
+        """Get a random container layer name"""
         return self._rnd(64)
 
     def filename(self, filename):
         """Get a filename"""
-        prefix = self.def_name + "-" + str(os.getpid()) + "-"
+        prefix = self.def_name + '-' + str(os.getpid()) + '-'
         try:
-            return(prefix +
-                   str(uuid.uuid3(uuid.uuid4(), str(time.time()))) +
-                   "-" + str(filename))
+            return (prefix +
+                    str(uuid.uuid3(uuid.uuid4(), str(time.time()))) +
+                    '-' + str(filename))
         except (NameError, AttributeError):
-            return prefix + self.uuid(filename) + "-" + str(filename)
+            return prefix + self.uuid(filename) + '-' + str(filename)
