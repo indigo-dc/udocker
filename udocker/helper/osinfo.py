@@ -11,35 +11,37 @@ from udocker.utils.fileutil import FileUtil
 class OSInfo(object):
     """Get os information from a directory tree"""
 
-    def __init__(self, conf, root_dir):
-        self.conf = conf
-        self.root_dir = root_dir
-        self.binarylist = ["/lib64/ld-linux-x86-64.so",
-                           "/lib64/ld-linux-x86-64.so.2",
-                           "/lib64/ld-linux-x86-64.so.3",
-                           "/lib/ld-linux.so.2", "/lib/ld-linux.so",
-                           "/bin/sh", "/bin/bash", "/bin/zsh", "/bin/csh",
-                           "/bin/tcsh", "/bin/ls", "/bin/busybox",
-                           "/system/bin/sh", "/system/bin/ls"]
+    _binarylist = ["/lib64/ld-linux-x86-64.so",
+                   "/lib64/ld-linux-x86-64.so.2",
+                   "/lib64/ld-linux-x86-64.so.3",
+                   "/bin/bash", "/bin/sh", "/bin/zsh",
+                   "/bin/csh", "/bin/tcsh", "/bin/ash",
+                   "/bin/ls", "/bin/busybox",
+                   "/system/bin/sh", "/system/bin/ls",
+                   "/lib/ld-linux.so",
+                   "/lib/ld-linux.so.2",
+                  ]
+
+    def __init__(self, root_dir):
+        self._root_dir = root_dir
 
     def get_filetype(self, filename):
         """Get the file architecture"""
-        if not filename.startswith(self.root_dir):
-            filename = self.root_dir + "/" + filename
+        if not filename.startswith(self._root_dir):
+            filename = self._root_dir + '/' + filename
         if os.path.islink(filename):
             f_path = os.readlink(filename)
-            if not f_path.startswith("/"):
-                f_path = os.path.dirname(filename) + "/" + f_path
+            if not f_path.startswith('/'):
+                f_path = os.path.dirname(filename) + '/' + f_path
             return self.get_filetype(f_path)
         if os.path.isfile(filename):
-            cmd = "file %s" % (filename)
-            return Uprocess().get_output(cmd)
+            return Uprocess().get_output(["file", filename])
         return ""
 
     def arch(self):
         """Get guest system architecture"""
-        for filename in self.binarylist:
-            f_path = self.root_dir + filename
+        for filename in OSInfo._binarylist:
+            f_path = self._root_dir + filename
             filetype = self.get_filetype(f_path)
             if not filetype:
                 continue
@@ -56,51 +58,43 @@ class OSInfo(object):
 
     def osdistribution(self):
         """Get guest operating system distribution"""
-        futil_rel = FileUtil(self.conf, self.root_dir + "/etc/.+-release")
-        for f_path in futil_rel.match():
+        for f_path in FileUtil(self._root_dir + "/etc/.+-release").match():
             if os.path.exists(f_path):
-                osinfo = FileUtil(self.conf, f_path).getdata("r")
+                osinfo = FileUtil(f_path).getdata()
                 match = re.match(r"([^=]+) release (\d+)", osinfo)
                 if match and match.group(1):
-                    return (match.group(1).split(" ")[0],
-                            match.group(2).split(".")[0])
-
-        f_path = self.root_dir + "/etc/lsb-release"
+                    return (match.group(1).split(' ')[0],
+                            match.group(2).split('.')[0])
+        f_path = self._root_dir + "/etc/lsb-release"
         if os.path.exists(f_path):
             distribution = ""
             version = ""
-            osinfo = FileUtil(self.conf, f_path).getdata("r")
+            osinfo = FileUtil(f_path).getdata()
             match = re.search(r"DISTRIB_ID=(.+)(\n|$)",
                               osinfo, re.MULTILINE)
-
             if match:
-                distribution = match.group(1).split(" ")[0]
-
+                distribution = match.group(1).split(' ')[0]
             match = re.search(r"DISTRIB_RELEASE=(.+)(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
-                version = match.group(1).split("=")[0]
+                version = match.group(1).split('.')[0]
             if distribution and version:
                 return (distribution, version)
-
-        f_path = self.root_dir + "/etc/os-release"
+        f_path = self._root_dir + "/etc/os-release"
         if os.path.exists(f_path):
             distribution = ""
             version = ""
-            osinfo = FileUtil(self.conf, f_path).getdata("r")
-            match = re.search(r"NAME=\"?(.+)\"?(\n|$)",
+            osinfo = FileUtil(f_path).getdata()
+            match = re.search(r"NAME=\"?([^ \n\"\.]+).*\"?(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
-                distribution = match.group(1).split(" ")[0]
-
-            match = re.search(r"VERSION_ID=\"?(.+)\"?(\n|$)",
+                distribution = match.group(1).split(' ')[0]
+            match = re.search(r"VERSION_ID=\"?([^ \n\"\.]+).*\"?(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
-                version = match.group(1).split(".")[0]
-
+                version = match.group(1).split('.')[0]
             if distribution and version:
                 return (distribution, version)
-
         return ("", "")
 
     def osversion(self):

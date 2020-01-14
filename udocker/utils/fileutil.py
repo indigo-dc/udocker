@@ -5,12 +5,12 @@ import os
 import sys
 import stat
 import re
-import subprocess
 
 from udocker.msg import Msg
+from udocker.config import Config
 from udocker.helper.unique import Unique
+#from udocker.helper.hostinfo import HostInfo
 from udocker.utils.uprocess import Uprocess
-
 
 class FileUtil(object):
     """Some utilities to manipulate files"""
@@ -35,17 +35,18 @@ class FileUtil(object):
 
     def _register_prefix(self, prefix):
         """Register directory prefixes where remove() is allowed"""
+        prefix = os.path.realpath(prefix)
         if prefix not in FileUtil.safe_prefixes:
             filename = prefix
-            if os.path.isdir(filename) and not filename.endswith("/"):
-                FileUtil.safe_prefixes.append(filename + "/")
-                FileUtil.safe_prefixes.append(os.path.realpath(filename) + "/")
+            if os.path.isdir(filename) and not filename.endswith('/'):
+                FileUtil.safe_prefixes.append(filename + '/')
+                FileUtil.safe_prefixes.append(os.path.realpath(filename) + '/')
             else:
                 FileUtil.safe_prefixes.append(filename)
                 FileUtil.safe_prefixes.append(os.path.realpath(filename))
 
     def register_prefix(self):
-        """Register self.filename as prefix where remove() is allowed"""
+        """Register directory prefixes where remove() is allowed"""
         self._register_prefix(self.filename)
 
     def umask(self, new_umask=None):
@@ -67,7 +68,8 @@ class FileUtil(object):
     def mktmp(self):
         """Generate a temporary filename"""
         while True:
-            tmp_file = self._tmpdir + "/" + Unique().filename(self.basename)
+            tmp_file = self._tmpdir + '/' + \
+                Unique().filename(self.basename)
             if not os.path.exists(tmp_file):
                 FileUtil.tmptrash[tmp_file] = True
                 self.filename = tmp_file
@@ -77,6 +79,14 @@ class FileUtil(object):
         """Create directory"""
         try:
             os.makedirs(self.filename)
+        except (OSError, IOError, AttributeError):
+            return False
+        return True
+
+    def rmdir(self):
+        """Remove an empty directory"""
+        try:
+            os.rmdir(self.filename)
         except (OSError, IOError, AttributeError):
             return False
         return True
@@ -97,19 +107,101 @@ class FileUtil(object):
 
     def _is_safe_prefix(self, filename):
         """Check if file prefix falls under valid prefixes"""
+        filename = os.path.realpath(filename)
+        if os.path.isdir(filename):
+            filename += '/'
         for safe_prefix in FileUtil.safe_prefixes:
             if filename.startswith(safe_prefix):
                 return True
         return False
 
-    def remove(self, force=False):
+    def chown(self, uid=0, gid=0, recursive=False):
+        """Change ownership of file or directory"""
+        try:
+            if recursive:
+                for dir_path, dirs, files in os.walk(self.filename):
+                    for f_name in dirs + files:
+                        os.lchown(dir_path + '/' + f_name, uid, gid)
+            self._chmod(self.filename, uid, gid)
+        except OSError:
+            return False
+        return True
+
+    def rchown(self, uid=0, gid=0):
+        """Change ownership recursively recursively"""
+        return self.chown(uid, gid, recursive=True)
+
+    def _chmod(self, filename, filemode=0o600, dirmode=0o700, mask=0o755):
+        """chmod file or directory"""
+        try:
+            filestat = os.lstat(filename).st_mode
+            if stat.S_ISREG(filestat) and filemode:
+                mode = (stat.S_IMODE(filestat) & mask) | filemode
+                os.chmod(filename, mode)
+            elif stat.S_ISDIR(filestat) and dirmode:
+                mode = (stat.S_IMODE(filestat) & mask) | dirmode
+                os.chmod(filename, mode)
+            elif stat.S_ISLNK(filestat) and filemode:
+                pass
+            elif filemode:
+                mode = (stat.S_IMODE(filestat) & mask) | filemode
+                os.chmod(filename, mode)
+        except OSError:
+            Msg().err("Error: changing permissions of:", filename, l=Msg.VER)
+            raise OSError
+
+    def chmod(self, filemode=0o600, dirmode=0o700, mask=0o755, recursive=False):
+        """chmod directory recursively"""
+        try:
+            if recursive:
+                for dir_path, dirs, files in os.walk(self.filename):
+                    for f_name in files:
+                        self._chmod(dir_path + '/' + f_name,
+                                    filemode, None, mask)
+                    for f_name in dirs:
+                        self._chmod(dir_path + '/' + f_name,
+                                    None, dirmode, mask)
+            self._chmod(self.filename, filemode, dirmode, mask)
+        except OSError:
+            return False
+        return True
+
+    def rchmod(self, filemode=0o600, dirmode=0o700, mask=0o755):
+        """chmod directory recursively"""
+        self.chmod(filemode, dirmode, mask, True)
+
+    def _removedir(self):
+        """Delete directory recursively"""
+        try:
+            for dir_path, dirs, files in os.walk(self.filename, topdown=False,
+                                                 followlinks=False):
+                for f_name in files:
+                    f_path = dir_path + '/' + f_name
+                    if not os.path.islink(f_path):
+                        os.chmod(f_path, stat.S_IWUSR | stat.S_IRUSR)
+                    os.unlink(f_path)
+                for f_name in dirs:
+                    f_path = dir_path + '/' + f_name
+                    if os.path.islink(f_path):
+                        os.unlink(f_path)
+                        continue
+                    os.chmod(f_path, stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR)
+                    os.rmdir(f_path)
+            os.chmod(self.filename, stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR)
+            os.rmdir(self.filename)
+        except OSError:
+            Msg().err("Error: removing:", self.filename, l=Msg.VER)
+            return False
+        return True
+
+    def remove(self, force=False, recursive=False):
         """Delete files or directories"""
         if not os.path.exists(self.filename):
             pass
         elif self.filename.count("/") < 2:
             Msg().err("Error: delete pathname too short: ", self.filename)
             return False
-        elif self.uid() != Config.conf['uid']:
+        elif self.uid() != HostInfo.uid:
             Msg().err("Error: delete not owner: ", self.filename)
             return False
         elif (not force) and (not self._is_safe_prefix(self.filename)):
@@ -123,10 +215,11 @@ class FileUtil(object):
                 Msg().err("Error: deleting file: ", self.filename)
                 return False
         elif os.path.isdir(self.filename):
-            cmd = "/bin/rm -Rf %s || /bin/chmod -R u+w %s && /bin/rm -Rf %s" % \
-                  (self.filename, self.filename, self.filename)
-            if subprocess.call(cmd, stderr=Msg.chlderr, shell=True,
-                               close_fds=True, env=None):
+            if recursive:
+                status = self._removedir()
+            else:
+                status = self.rmdir()
+            if not status:
                 Msg().err("Error: deleting directory: ", self.filename)
                 return False
         if self.filename in dict(FileUtil.tmptrash):
@@ -137,21 +230,59 @@ class FileUtil(object):
         """Verify a tar file: tar tvf file.tar"""
         if not os.path.isfile(self.filename):
             return False
-        else:
-            cmd = "tar t"
-            if Msg.level >= Msg.VER:
-                cmd += "v"
-            cmd += "f " + self.filename
-            if subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
-                               stdout=Msg.chldnul, close_fds=True):
-                return False
-            return True
+        verbose = ''
+        if Msg.level >= Msg.VER:
+            verbose = 'v'
+        cmd = ["tar", "t" + verbose + "f", self.filename]
+        if Uprocess().call(cmd, stderr=Msg.chlderr, stdout=Msg.chlderr,
+                           close_fds=True):
+            return False
+        return True
+
+    def tar(self, tarfile, sourcedir=None):
+        """Create a tar file for a given sourcedir"""
+        #cmd += r" --xform 's:^\./::' "
+        if sourcedir is None:
+            sourcedir = self.filename
+        verbose = ''
+        if Msg.level >= Msg.VER:
+            verbose = 'v'
+        cmd = ["tar", "-C", sourcedir, "-c" + verbose, "--one-file-system",
+               "-S", "--xattrs", "-f", tarfile, "."]
+        status = Uprocess().call(cmd, stderr=Msg.chlderr, close_fds=True)
+        if status:
+            Msg().err("Error: creating tar file:", tarfile)
+        return not status
+
+    def copydir(self, destdir, sourcedir=None):
+        """Copy directories"""
+        if sourcedir is None:
+            sourcedir = self.filename
+        verbose = ''
+        if Msg.level >= Msg.VER:
+            verbose = 'v'
+        cmd_tarc = ["tar", "-C", sourcedir, "-c" + verbose,
+                    "--one-file-system", "-S", "--xattrs", "-f", "-", "."]
+        cmd_tarx = ["tar", "-C", destdir, "-x" + verbose, "-f", "-"]
+        status = Uprocess().pipe(cmd_tarc, cmd_tarx)
+        if not status:
+            Msg().err("Error: copying:", sourcedir, " to ", destdir, l=Msg.VER)
+        return status
 
     def cleanup(self):
         """Delete all temporary files"""
         tmptrash_copy = dict(FileUtil.tmptrash)
         for filename in tmptrash_copy:
-            FileUtil(filename).remove()
+            FileUtil(filename).remove(recursive=True)
+
+    def isdir(self):
+        """Is filename a directory"""
+        try:
+            if os.path.isdir(self.filename):
+                return True
+        except (IOError, OSError, TypeError):
+            pass
+        return False
 
     def size(self):
         """File size in bytes"""
@@ -191,6 +322,15 @@ class FileUtil(object):
         except (IOError, OSError, TypeError):
             return ""
 
+    def getvalid_path(self):
+        """Get the portion of a pathname that exists"""
+        f_path = self.filename
+        while f_path:
+            if os.path.exists(f_path):
+                return f_path
+            (f_path, dummy) = os.path.split(f_path)
+        return f_path
+
     def _find_exec(self, cmd_to_use):
         """This method is called by find_exec() invokes a command like
         /bin/which or type to obtain the full pathname of an executable
@@ -198,10 +338,8 @@ class FileUtil(object):
         exec_pathname = Uprocess().get_output(cmd_to_use)
         Msg().err("Search exec_pathname:", exec_pathname, l=Msg.DBG)
         if exec_pathname is None:
-            Msg().err("exec_pathname is None")
             return ""
         if "not found" in exec_pathname:
-            Msg().err("exec_pathname not found")
             return ""
         if exec_pathname and exec_pathname.startswith("/"):
             return exec_pathname.strip()
@@ -242,6 +380,14 @@ class FileUtil(object):
             for directory in path:
                 full_path_list.append(rootdir + directory + "/" + self.basename)
         return full_path_list
+
+    def rename(self, dest_filename):
+        """Rename/move file"""
+        try:
+            os.rename(self.filename, dest_filename)
+        except (IOError, OSError):
+            return False
+        return True
 
     def _stream2file(self, dest_filename, mode="w"):
         """Copy from stdin to another file. We avoid shutil to have
@@ -345,9 +491,8 @@ class FileUtil(object):
             match = recomp.match(l_path)
             if match:
                 orig_path = match.group(1)
-        if   (orig_path and
-              l_path.startswith(orig_path) and
-              orig_path != root_path):
+        if (orig_path and l_path.startswith(orig_path) and
+                orig_path != root_path):
             new_l_path = l_path.replace(orig_path, root_path, 1)
         elif not l_path.startswith(root_path):
             new_l_path = root_path + l_path
@@ -378,8 +523,7 @@ class FileUtil(object):
         return False
 
     def links_conv(self, force=False, to_container=True, orig_path=""):
-        """ Convert absolute symbolic links to relative symbolic links
-        """
+        """ Convert absolute symbolic links to relative symbolic links"""
         root_path = os.path.realpath(self.filename)
         links = []
         if not self._is_safe_prefix(root_path):
@@ -392,7 +536,7 @@ class FileUtil(object):
                     f_path = dir_path + "/" + f_name
                     if not os.path.islink(f_path):
                         continue
-                    if os.lstat(f_path).st_uid != Config.conf['uid']:
+                    if os.lstat(f_path).st_uid != HostInfo.uid:
                         continue
                     if to_container:
                         if self._link_set(f_path, orig_path, root_path, force):

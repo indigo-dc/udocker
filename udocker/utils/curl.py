@@ -3,11 +3,12 @@
 
 import os
 import sys
-import subprocess
 import json
 
+from udocker.config import Config
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
+from udocker.utils.uprocess import Uprocess
 
 try:
     import pycurl
@@ -102,17 +103,6 @@ class GetURL(object):
             Msg().err("Error: need curl or pycurl to perform downloads")
             raise NameError('need curl or pycurl')
 
-    def _get_status_code(self, status_line):
-        """
-        get http status code from http status line.
-        Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
-        """
-        parts = status_line.split(" ")
-        try:
-            return int(parts[1])
-        except ValueError:
-            return 400
-
     def get_content_length(self, hdr):
         """Get content length from the http header"""
         try:
@@ -145,6 +135,18 @@ class GetURL(object):
             raise TypeError('wrong number of arguments')
         kwargs["post"] = args[1]
         return self._geturl.get(args[0], **kwargs)
+
+    def get_status_code(self, status_line):
+        """
+        Get http status code from http status line.
+        Status-Line = HTTP-Version Status-Code Reason-Phrase CRLF
+        """
+        try:
+            return int(status_line.split(' ')[1])
+        except ValueError:
+            return 400
+        except IndexError:
+            return 404
 
 
 class GetURLpyCurl(GetURL):
@@ -221,8 +223,7 @@ class GetURLpyCurl(GetURL):
             pyc.setopt(pyc.TIMEOUT, self.download_timeout)
             openflags = "wb"
             if "resume" in kwargs and kwargs["resume"]:
-                futil = FileUtil(output_file)
-                pyc.setopt(pyc.RESUME_FROM, futil.size())
+                pyc.setopt(pyc.RESUME_FROM, FileUtil(output_file).size())
                 openflags = "ab"
             try:
                 filep = open(output_file, openflags)
@@ -239,43 +240,34 @@ class GetURLpyCurl(GetURL):
 
     def get(self, *args, **kwargs):
         """http get implementation using the PyCurl"""
-        cont_redirs = 0
-        max_redirs = 10
-        status_code = 302
-        hdr = ""
-        while (status_code >= 300 and
-               status_code <= 308 and
-               cont_redirs < max_redirs):
-            cont_redirs += 1
-            hdr = CurlHeader()
-            buf = strio()
-            pyc = pycurl.Curl()
-            self._set_defaults(pyc, hdr)
-            try:
-                (out_file, filep) = \
+        hdr = CurlHeader()
+        buf = strio()
+        pyc = pycurl.Curl()
+        self._set_defaults(pyc, hdr)
+        try:
+            (output_file, filep) = \
                     self._mkpycurl(pyc, hdr, buf, *args, **kwargs)
-                Msg().err("curl url: ", self._url, l=Msg.DBG)
-                Msg().err("curl arg: ", kwargs, l=Msg.DBG)
-                pyc.perform()     # call pyculr
-            except(IOError, OSError):
-                return(None, None)
-            except pycurl.error as error:
-                (errno, errstr) = error
-                hdr.data["X-ND-CURLSTATUS"] = errno
-                if not hdr.data["X-ND-HTTPSTATUS"]:
-                    hdr.data["X-ND-HTTPSTATUS"] = errstr
-            status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])
-            if status_code >= 300 and status_code <= 308:
-                args = (hdr.data['location'],)
-                kwargs["redirect"] = True
-
+            Msg().err("curl url: ", self._url, l=Msg.DBG)
+            Msg().err("curl arg: ", kwargs, l=Msg.DBG)
+            pyc.perform()     # call pyculr
+        except(IOError, OSError):
+            return (None, None)
+        except pycurl.error as error:
+            # pylint: disable=unbalanced-tuple-unpacking
+            errno, errstr = error.args
+            hdr.data["X-ND-CURLSTATUS"] = errno
+            if not hdr.data["X-ND-HTTPSTATUS"]:
+                hdr.data["X-ND-HTTPSTATUS"] = errstr
+        status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
-        if "ofile" in kwargs:
+        if status_code == 401: # needs authentication
+            pass
+        elif 300 <= status_code <= 308: # redirect
+            pass
+        elif "ofile" in kwargs:
             filep.close()
-            if status_code == 401:  # needs authentication
-                pass
-            elif status_code == 206 and "resume" in kwargs:
+            if status_code == 206 and "resume" in kwargs:
                 pass
             elif status_code == 416 and "resume" in kwargs:
                 kwargs["resume"] = False
@@ -283,8 +275,8 @@ class GetURLpyCurl(GetURL):
             elif status_code != 200:
                 Msg().err("Error: in download: " + str(
                     hdr.data["X-ND-HTTPSTATUS"]))
-                FileUtil(out_file).remove()
-        return(hdr, buf)
+                FileUtil(output_file).remove()
+        return (hdr, buf)
 
 
 class GetURLexeCurl(GetURL):
@@ -306,20 +298,20 @@ class GetURLexeCurl(GetURL):
     def _set_defaults(self):
         """Set defaults for curl command line options"""
         self._opts = {
-            "insecure": "",
-            "header": "",
-            "verbose": "",
-            "nobody": "",
-            "proxy": "",
-            "resume": "",
-            "ctimeout": "--connect-timeout " + str(self.ctimeout),
-            "timeout": "-m " + str(self.timeout),
-            "other": "-s -q -S"
+            "insecure": [],
+            "header": [],
+            "verbose": [],
+            "nobody": [],
+            "proxy": [],
+            "resume": [],
+            "ctimeout": ["--connect-timeout", str(self.ctimeout)],
+            "timeout": ["-m", str(self.timeout)],
+            "other": ["-s", "-q", "-S"]
         }
         if self.insecure:
-            self._opts["insecure"] = "-k"
-        if Msg.level >= Msg.VER:
-            self._opts["verbose"] = "-v"
+            self._opts["insecure"] = ["-k"]
+        if Msg().level > Msg.DBG:
+            self._opts["verbose"] = ["-v"]
         self._files = {
             "url":  "",
             "error_file": FileUtil("execurl_err").mktmp(),
@@ -331,17 +323,18 @@ class GetURLexeCurl(GetURL):
         """Prepare curl command line according to invocation options"""
         self._files["url"] = str(args[0])
         if "post" in kwargs:
-            self._opts["post"] = "-X POST -H Content-Type: application/json' "
-            self._opts["post"] += "-d '%s'" % (json.dumps(kwargs["post"]))
+            self._opts["post"] = ["-X", "POST", "-H",
+                                  "Content-Type: application/json"]
+            self._opts["post"] += ["-d", json.dumps(kwargs["post"])]
         if "ctimeout" in kwargs:
-            self._opts["ctimeout"] = "--connect-timeout %s" \
-                % (str(kwargs["ctimeout"]))
+            self._opts["ctimeout"] = ["--connect-timeout",
+                                      str(kwargs["ctimeout"])]
         if "timeout" in kwargs:
-            self._opts["timeout"] = "-m %s" % (str(kwargs["timeout"]))
+            self._opts["timeout"] = ["-m", str(kwargs["timeout"])]
         if "proxy" in kwargs and kwargs["proxy"]:
-            self._opts["proxy"] = "--proxy '%s'" % (str(kwargs["proxy"]))
+            self._opts["proxy"] = ["--proxy", str(kwargs["proxy"])]
         elif self.http_proxy:
-            self._opts["proxy"] = "--proxy '%s'" % (self.http_proxy)
+            self._opts["proxy"] = ["--proxy", self.http_proxy]
         if "header" in kwargs:
             for header_item in kwargs["header"]:
                 if str(header_item).startswith("Authorization: Bearer"):
@@ -349,74 +342,68 @@ class GetURLexeCurl(GetURL):
                         continue
                     if "redirect" in kwargs:
                         continue
-                    self._opts["header"] += "-H '%s'" % (str(header_item))
-        if "v" in kwargs and kwargs["v"]:
-            self._opts["verbose"] = "-v"
+                self._opts["header"] += ["-H", str(header_item)]
+        if 'v' in kwargs and kwargs['v']:
+            self._opts["verbose"] = ["-v"]
         if "nobody" in kwargs and kwargs["nobody"]:
-            self._opts["nobody"] = "--head"
+            self._opts["nobody"] = ["--head"]
         if "ofile" in kwargs:
             FileUtil(self._files["output_file"]).remove()
             self._files["output_file"] = kwargs["ofile"] + ".tmp"
-            self._opts["timeout"] = "-m %s" % (str(self.download_timeout))
+            self._opts["timeout"] = ["-m", str(self.download_timeout)]
             if "resume" in kwargs and kwargs["resume"]:
-                self._opts["resume"] = "-C -"
-        curl_exec = "curl"
+                self._opts["resume"] = ["-C", "-"]
+        cmd = ["curl"]
         if self._curl_exec and isinstance(self._curl_exec, str):
-            curl_exec = self._curl_exec
-        return(curl_exec + " " + " ".join(list(self._opts.values())) +
-               " -D %s -o %s --stderr %s '%s'" %
-               (self._files["header_file"], self._files["output_file"],
-                self._files["error_file"], self._files["url"]))
+            cmd = [self._curl_exec]
+        for opt in self._opts.values():
+            cmd += opt
+        cmd.extend(["-D", self._files["header_file"], "-o",
+                    self._files["output_file"], "--stderr",
+                    self._files["error_file"], self._files["url"]])
+        return cmd
 
     def get(self, *args, **kwargs):
         """http get implementation using the curl cli executable"""
-        cont_redirs = 0
-        max_redirs = 10
-        status_code = 302
-        while (status_code >= 300 and
-               status_code <= 308 and
-               cont_redirs < max_redirs):
-            cont_redirs += 1
-            hdr = CurlHeader()
-            buf = strio()
-            self._set_defaults()
-            cmd = self._mkcurlcmd(*args, **kwargs)
-            status = subprocess.call(cmd, shell=True, close_fds=True)
-            hdr.setvalue_from_file(self._files["header_file"])
-            hdr.data["X-ND-CURLSTATUS"] = status
-            if status:
-                futil = FileUtil(self._files["error_file"])
-                Msg().err("Error: in download: %s" % futil.getdata("r"))
-                FileUtil(self._files["output_file"]).remove()
-                return(hdr, buf)
-            status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])
-            if status_code >= 300 and status_code <= 308:
-                args = (hdr.data['location'],)
-                kwargs["redirect"] = True
-
+        hdr = CurlHeader()
+        buf = strio()
+        self._set_defaults()
+        cmd = self._mkcurlcmd(*args, **kwargs)
+        status = Uprocess().call(cmd, close_fds=True, stderr=Msg.chlderr,
+                                 stdout=Msg.chlderr) # call curl
+        hdr.setvalue_from_file(self._files["header_file"])
+        hdr.data["X-ND-CURLSTATUS"] = status
+        if status:
+            Msg().err("Error: in download: %s"
+                      % str(FileUtil(self._files["error_file"]).getdata()))
+            FileUtil(self._files["output_file"]).remove()
+            return (hdr, buf)
+        status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
-        if "ofile" in kwargs:
-            if " 401" in hdr.data["X-ND-HTTPSTATUS"]:  # needs authentication
-                pass
-            elif " 206" in hdr.data["X-ND-HTTPSTATUS"] and "resume" in kwargs:
+        if status_code == 401: # needs authentication
+            pass
+        elif 300 <= status_code <= 308: # redirect
+            pass
+        elif "ofile" in kwargs:
+            if status_code == 206 and "resume" in kwargs:
                 os.rename(self._files["output_file"], kwargs["ofile"])
-            elif " 416" in hdr.data["X-ND-HTTPSTATUS"]:
+            elif status_code == 416:
                 if "resume" in kwargs:
                     kwargs["resume"] = False
                 (hdr, buf) = self.get(self._files["url"], **kwargs)
-            elif " 200" not in hdr.data["X-ND-HTTPSTATUS"]:
+            elif status_code != 200:
                 Msg().err("Error: in download: ", str(
                     hdr.data["X-ND-HTTPSTATUS"]), ": ", str(status))
                 FileUtil(self._files["output_file"]).remove()
             else:  # OK downloaded
                 os.rename(self._files["output_file"], kwargs["ofile"])
-        else:
+        if "ofile" not in kwargs:
             try:
-                buf = strio(open(self._files["output_file"], "r").read())
+                buf = strio(open(self._files["output_file"], 'r').read())
             except(IOError, OSError):
                 Msg().err("Error: reading curl output file to buffer")
             FileUtil(self._files["output_file"]).remove()
         FileUtil(self._files["error_file"]).remove()
         FileUtil(self._files["header_file"]).remove()
-        return(hdr, buf)
+        return (hdr, buf)

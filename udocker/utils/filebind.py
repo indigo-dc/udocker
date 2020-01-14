@@ -38,68 +38,74 @@ class FileBind(object):
                 return False
         return True
 
-    def restore(self):
+    def restore(self, force=False):
         """Restore container files after FileBind"""
         error = False
         if not os.path.isdir(self.container_orig_dir):
             return
         for f_name in os.listdir(self.container_orig_dir):
-            orig_file = self.container_orig_dir + "/" + f_name
+            orig_file = self.container_orig_dir + '/' + f_name
             if not os.path.isfile(orig_file):
                 continue
             cont_file = os.path.basename(f_name).replace('#', '/')
-            cont_file = self.container_root + "/" + cont_file
-
+            cont_file = self.container_root + '/' + cont_file
             if os.path.islink(cont_file):
                 FileUtil(cont_file).remove()
             elif os.path.exists(cont_file):
                 continue
-
-            try:
-                os.rename(orig_file, cont_file)
-                bool_rename = True
-            except (IOError, OSError):
-                bool_rename = False
-            if not bool_rename:
+            if not FileUtil(orig_file).rename(cont_file):
                 Msg().err("Error: restoring binded file:", cont_file)
                 error = True
+        if not error or force:
+            FileUtil(self.container_orig_dir).remove(recursive=True)
+        FileUtil(self.container_bind_dir).remove(recursive=True)
 
-        if not error:
-            FileUtil(self.container_orig_dir).remove()
-
-        FileUtil(self.container_bind_dir).remove()
-
-    def start(self, files_list):
+    def start(self, files_list=None):
         """Prepare host files to be made available inside container
         files_list: is the initial list of files to be made available
         returns: the directory that holds the files and that must be
                  binded inside the container
         """
+        self.setup()
         self.host_bind_dir = FileUtil("BIND_FILES").mktmpdir()
-        for f_name in files_list:
-            if not os.path.isfile(f_name):
-                continue
-            orig_file = f_name.replace('/', '#')
-            orig_file_path = self.container_orig_dir + "/" + orig_file
-            cont_file = self.container_root + "/" + f_name
-            link_path = self.bind_dir + "/" + orig_file
-            if not os.path.exists(orig_file_path):
-                if os.path.exists(cont_file):
-                    os.rename(cont_file, orig_file_path)
-                else:
-                    FileUtil(orig_file_path).putdata("", "w")
-                os.symlink(link_path, cont_file)
-            FileUtil(orig_file_path).copyto(self.host_bind_dir)
+        if files_list:
+            self.set_list(files_list)
         return (self.host_bind_dir, self.bind_dir)
+
+    def set_list(self, files_list):
+        """setup links for a list of files"""
+        for f_name in files_list:
+            self.set_file(f_name, f_name)
+
+    def set_file(self, host_file, cont_file):
+        """Prepare individual file mapping"""
+        if not os.path.isfile(host_file):
+            return
+        orig_file = cont_file.replace('/', '#')
+        orig_file_path = self.container_orig_dir + '/' + orig_file
+        cont_file_path = self.container_root + '/' + cont_file
+        link_path = self.bind_dir + '/' + orig_file
+        if not os.path.exists(orig_file_path):
+            if os.path.isfile(cont_file_path):
+                os.rename(cont_file_path, orig_file_path)
+            else:
+                return
+            os.symlink(link_path, cont_file_path)
+        FileUtil(orig_file_path).copyto(self.host_bind_dir)
+
+    def add_file(self, host_file, cont_file):
+        """Add file to be made available inside container"""
+        replace_file = cont_file.replace('/', '#')
+        replace_file = self.host_bind_dir + '/' + replace_file
+        FileUtil(replace_file).remove()
+        FileUtil(host_file).copyto(replace_file)
+
+    def get_path(self, cont_file):
+        """Get real path of file in container self.host_bind_dir"""
+        replace_file = cont_file.replace('/', '#')
+        return self.host_bind_dir + '/' + replace_file
 
     def finish(self):
         """Cleanup after run"""
+        #return FileUtil(self.host_bind_dir).remove(recursive=True)
         pass
-        #return FileUtil(self.host_bind_dir).remove()
-
-    def add(self, host_file, cont_file):
-        """Add file to be made available inside container"""
-        replace_file = cont_file.replace('/', '#')
-        replace_file = self.host_bind_dir + "/" + replace_file
-        FileUtil(replace_file).remove()
-        FileUtil(host_file).copyto(replace_file)
