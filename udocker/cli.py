@@ -1137,10 +1137,11 @@ class UdockerCLI(object):
             return self.STATUS_OK
         return self.STATUS_ERROR
 
-    def do_listconf(self, cmdp):
+    def do_showconf(self, cmdp):
         """
-        listconf: Print all configuration options
+        showconf: Print all configuration options
         """
+        cmdp.get("showconf", "CMD")
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
         Msg().out(80*"-")
@@ -1166,10 +1167,11 @@ class UdockerCLI(object):
 
         return self.STATUS_OK
 
-    def do_help(self):
+    def do_help(self, cmdp):
         """
         Print help information
         """
+        cmdp.get("help", "CMD")
         Msg().out(
             """
 Syntax:
@@ -1184,13 +1186,11 @@ General options common to all commands must appear before the command:
   --insecure                    :Allow insecure non authenticated https
   --repo=<directory>            :Use repository at directory
   --allow-root                  :Allow execution by root NOT recommended
-
-  -c <conf_file>
   --config=<conf_file>          :Use configuration <conf_file>
 
 Commands:
-  help [command]                :Command specific help
-  listconf                      :Print all configuration options
+  --help [command]              :Command specific help
+  showconf                      :Print all configuration options
 
   search <repo/expression>      :Search dockerhub for container images
   pull <repo/image:tag>         :Pull container image from dockerhub
