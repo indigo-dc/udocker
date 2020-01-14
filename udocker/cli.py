@@ -8,6 +8,7 @@ import json
 from getpass import getpass
 
 from udocker import __version__
+from udocker.config import Config
 from udocker.msg import Msg
 from udocker.docker import DockerIoAPI
 from udocker.docker import DockerLocalFileAPI
@@ -41,16 +42,15 @@ class UdockerCLI(object):
     STATUS_OK = 0
     STATUS_ERROR = 1
 
-    def __init__(self, localrepo, conf):
-        self.conf = conf
+    def __init__(self, localrepo):
         self.localrepo = localrepo
-        self.dockerioapi = DockerIoAPI(self.localrepo, self.conf)
-        self.dockerlocalfileapi = DockerLocalFileAPI(self.localrepo, self.conf)
-        if self.conf['keystore'].startswith("/"):
-            self.keystore = KeyStore(self.conf, self.conf['keystore'])
+        self.dockerioapi = DockerIoAPI(self.localrepo)
+        self.dockerlocalfileapi = DockerLocalFileAPI(self.localrepo)
+        if Config.conf['keystore'].startswith("/"):
+            self.keystore = KeyStore(Config.conf['keystore'])
         else:
-            homedir = self.localrepo.homedir + "/" + self.conf['keystore']
-            self.keystore = KeyStore(self.conf, homedir)
+            self.keystore = KeyStore(self.localrepo.homedir + "/" +
+                                     Config.conf['keystore'])
 
     def _cdrepo(self, cmdp):
         """Select the top directory of a local repository"""
@@ -412,7 +412,7 @@ class UdockerCLI(object):
         if to_file:
             Msg().out("Info: exporting to file", tarfile)
 
-        cstruct = ContainerStructure(self.localrepo, self.conf, container_id)
+        cstruct = ContainerStructure(self.localrepo, container_id)
         if clone:
             if cstruct.clone_tofile(tarfile):
                 return self.STATUS_OK
@@ -533,9 +533,8 @@ class UdockerCLI(object):
             return False
         (imagerepo, tag) = self._check_imagespec(imagespec)
         if imagerepo:
-            return ContainerStructure(self.localrepo,
-                                      self.conf).create_fromimage(imagerepo,
-                                                                  tag)
+            return ContainerStructure(self.localrepo).create_fromimage(
+                    imagerepo, tag)
         return False
 
     def do_create(self, cmdp):
@@ -712,14 +711,14 @@ class UdockerCLI(object):
         """
         self._get_run_options(cmdp)
         container_or_image = cmdp.get("P1")
-        self.conf['location'] = cmdp.get("--location=")
+        Config.conf['location'] = cmdp.get("--location=")
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
         #
         if cmdp.missing_options(): # syntax error
             return self.STATUS_ERROR
 
-        if self.conf['location']:
+        if Config.conf['location']:
             container_id = ""
         elif not container_or_image:
             Msg().err("Error: must specify container_id or image:tag")
@@ -743,7 +742,7 @@ class UdockerCLI(object):
                     Msg().err("Error: invalid container name format")
                     return self.STATUS_ERROR
 
-        exec_mode = ExecutionMode(self.conf, self.localrepo, container_id)
+        exec_mode = ExecutionMode(self.localrepo, container_id)
         exec_engine = exec_mode.get_engine()
         if not exec_engine:
             Msg().err("Error: no execution engine for this execmode")
@@ -812,7 +811,7 @@ class UdockerCLI(object):
         containers_list = self.localrepo.get_containers_list(False)
         for (line[0], line[6], line[5]) in containers_list:
             container_id = line[0]
-            exec_mode = ExecutionMode(self.conf, self.localrepo, container_id)
+            exec_mode = ExecutionMode(self.localrepo, container_id)
             line[3] = exec_mode.get_mode() if print_mode else ""
             line[1] = ('.', 'P')[
                 self.localrepo.isprotected_container(container_id)]
@@ -1005,7 +1004,7 @@ class UdockerCLI(object):
 
         if container_id:
             (container_dir, container_json) = ContainerStructure(
-                self.localrepo, self.conf, container_id).get_container_attr()
+                self.localrepo, container_id).get_container_attr()
         else:
             (imagerepo, tag) = self._check_imagespec(container_or_image)
             if self.localrepo.cd_imagerepo(imagerepo, tag):
@@ -1099,10 +1098,10 @@ class UdockerCLI(object):
             Unshare().namespace_exec(lambda: FileUtil(container_dir +
                                                       "/ROOT").rchown())
             FileUtil(container_dir + "/ROOT").rchmod()
-        nvidia_mode = NvidiaMode(self.conf, self.localrepo, container_id)
+        nvidia_mode = NvidiaMode(self.localrepo, container_id)
         if nvidia:
             nvidia_mode.set_mode(force)
-        exec_mode = ExecutionMode(self.conf, self.localrepo, container_id)
+        exec_mode = ExecutionMode(self.localrepo, container_id)
         if xmode:
             if exec_mode.set_mode(xmode.upper(), force):
                 return self.STATUS_OK
@@ -1128,7 +1127,7 @@ class UdockerCLI(object):
             force = False
             purge = False
 
-        utools = UdockerTools(self.localrepo, self.conf)
+        utools = UdockerTools(self.localrepo)
         if purge:
             utools.purge()
 
@@ -1144,8 +1143,8 @@ class UdockerCLI(object):
             return self.STATUS_ERROR
         Msg().out(80*"-")
         Msg().out("\t\tConfiguration options")
-        for varopt in self.conf:
-            Msg().out(varopt + ' =', self.conf[varopt])
+        for varopt in Config.conf:
+            Msg().out(varopt, '=', Config.conf[varopt])
         Msg().out(80*"-")
         return self.STATUS_OK
 
@@ -1157,9 +1156,9 @@ class UdockerCLI(object):
             return self.STATUS_ERROR
         try:
             Msg().out("%s %s" % ("version:", __version__))
-            Msg().out("%s %s" % ("tarball:", self.conf['tarball']))
+            Msg().out("%s %s" % ("tarball:", Config.conf['tarball']))
             Msg().out("%s %s" % \
-                ("tarball_release:", self.conf['tarball_release']))
+                ("tarball_release:", Config.conf['tarball_release']))
         except NameError:
             return self.STATUS_ERROR
 
