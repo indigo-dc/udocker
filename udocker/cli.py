@@ -120,9 +120,9 @@ class UdockerCLI(object):
             if "." in hostname:
                 try:
                     self.dockerioapi.set_registry( \
-                            Config.docker_registries[hostname][0])
+                            Config.conf['docker_registries'][hostname][0])
                     self.dockerioapi.set_index( \
-                            Config.docker_registries[hostname][1])
+                            Config.conf['docker_registries'][hostname][1])
                 except (KeyError, NameError, TypeError):
                     self.dockerioapi.set_registry(transport + "//" + hostname)
                     self.dockerioapi.set_index(transport + "//" + hostname)
