@@ -34,7 +34,7 @@ class Msg(object):
             Msg.level = new_level
         try:
             if Msg.nullfp is None:
-                Msg.nullfp = open("/dev/null", "w")
+                Msg.nullfp = open('/dev/null', 'w')
         except (IOError, OSError):
             Msg.chlderr = sys.stderr
             Msg.chldout = sys.stdout
@@ -61,10 +61,16 @@ class Msg(object):
 
     def out(self, *args, **kwargs):
         """Write text to stdout respecting verbose level"""
-        if kwargs.get("l", Msg.MSG) <= Msg.level:
-            sys.stdout.write(" ".join([str(x) for x in args]) + '\n')
+        level = Msg.MSG
+        if 'l' in kwargs:
+            level = kwargs['l']
+        if level <= Msg.level:
+            sys.stdout.write(' '.join([str(x) for x in args]) + '\n')
 
     def err(self, *args, **kwargs):
         """Write text to stderr respecting verbose level"""
-        if kwargs.get("l", Msg.ERR) <= Msg.level:
-            sys.stderr.write(" ".join([str(x) for x in args]) + '\n')
+        level = Msg.ERR
+        if 'l' in kwargs:
+            level = kwargs['l']
+        if level <= Msg.level:
+            sys.stderr.write(' '.join([str(x) for x in args]) + '\n')

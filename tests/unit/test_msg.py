@@ -46,13 +46,13 @@ class MsgTestCase(TestCase):
         self.assertTrue(is_writable_file(msg.chldnul))
 
     def test_01_init(self):
-        """Test Msg() constructor."""
+        """Test01 Msg() constructor."""
         msg = Msg(0)
         self._verify_descriptors(msg)
         self.assertEqual(msg.level, 0)
 
     def test_02_setlevel(self):
-        """Test Msg.setlevel() change of log level."""
+        """Test02 Msg.setlevel() change of log level."""
         msg = Msg(5)
         self._verify_descriptors(msg)
         self.assertEqual(msg.level, 5)
@@ -64,7 +64,7 @@ class MsgTestCase(TestCase):
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_03_out(self, mock_stdout):
-        """Test Msg.out() screen messages."""
+        """Test03 Msg.out() screen messages."""
         msg = Msg(Msg.MSG)
         msg.out("111", "222", "333", 444, ('555'))
         self.assertEqual("111 222 333 444 555\n", mock_stdout.getvalue())
@@ -73,7 +73,7 @@ class MsgTestCase(TestCase):
 
     @patch('sys.stderr', new_callable=StringIO)
     def test_04_err(self, mock_stderr):
-        """Test Msg.err() screen messages."""
+        """Test04 Msg.err() screen messages."""
         msg = Msg(Msg.ERR)
         msg.err("111", "222", "333", 444, ('555'))
         self.assertEqual("111 222 333 444 555\n", mock_stderr.getvalue())
