@@ -29,7 +29,7 @@ def main():
 
     exit_status = 0
     try:
-        exit_status = UMain().execute()
+        exit_status = UMain(sys.argv).execute()
     except (KeyboardInterrupt, SystemExit):
         Msg().out("Info: keyboard interrupt", l=Msg.INF)
         FileUtil().cleanup()
