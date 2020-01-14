@@ -80,8 +80,8 @@ class UMain(object):
             "protect": self.cli.do_protect, "rm": self.cli.do_rm,
             "name": self.cli.do_name, "rmname": self.cli.do_rmname,
             "verify": self.cli.do_verify, "logout": self.cli.do_logout,
-            "unprotect": self.cli.do_unprotect,
-            "showconf": self.cli.do_showconf,
+            "unprotect": self.cli.do_unprotect, "rename": self.cli.do_rename,
+            "showconf": self.cli.do_showconf, "save": self.cli.do_save,
             "inspect": self.cli.do_inspect, "login": self.cli.do_login,
             "setup": self.cli.do_setup, "install": self.cli.do_install,
         }
