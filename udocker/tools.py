@@ -19,26 +19,25 @@ class UdockerTools(object):
     end-user.
     """
 
-    def __init__(self, localrepo, conf):
-        self.conf = conf
+    def __init__(self, localrepo):
         self.localrepo = localrepo        # LocalRepository object
-        self._autoinstall = self.conf['autoinstall']  # True / False
-        self._tarball = self.conf['tarball']  # URL or file
-        self._installinfo = self.conf['installinfo']  # URL or file
-        self._tarball_release = self.conf['tarball_release']
+        self._autoinstall = Config.conf['autoinstall']  # True / False
+        self._tarball = Config.conf['tarball']  # URL or file
+        self._installinfo = Config.conf['installinfo']  # URL or file
+        self._tarball_release = Config.conf['tarball_release']
         self._install_json = dict()
-        self.curl = GetURL(self.conf)
+        self.curl = GetURL()
 
     def purge(self):
         """Remove existing files in bin and lib"""
         for f_name in os.listdir(self.localrepo.bindir):
             full_path = self.localrepo.bindir + "/" + f_name
-            FileUtil(self.conf, full_path).register_prefix()
-            FileUtil(self.conf, full_path).remove()
+            FileUtil(full_path).register_prefix()
+            FileUtil(full_path).remove()
         for f_name in os.listdir(self.localrepo.libdir):
             full_path = self.localrepo.libdir + "/" + f_name
-            FileUtil(self.conf, full_path).register_prefix()
-            FileUtil(self.conf, full_path).remove()
+            FileUtil(full_path).register_prefix()
+            FileUtil(full_path).remove()
 
     def install(self, force=False):
         """Get the udocker tarball and install the binaries"""
@@ -61,7 +60,7 @@ class UdockerTools(object):
                 else:
                     status = self._install(tfile)
                 if "://" in url:
-                    FileUtil(self.conf, tfile).remove()
+                    FileUtil(tfile).remove()
                     if status:
                         self._get_installinfo()
                 if status:
@@ -73,12 +72,12 @@ class UdockerTools(object):
     def _is_available(self):
         """Are the tools already installed"""
         fname = self.localrepo.libdir + "/VERSION"
-        version = FileUtil(self.conf, fname).getdata("r").strip()
+        version = FileUtil(fname).getdata("r").strip()
         return version and version == self._tarball_release
 
     def _download(self, url):
         """Download a file """
-        download_file = FileUtil(self.conf, "udockertools").mktmp()
+        download_file = FileUtil("udockertools").mktmp()
         if Msg.level <= Msg.DEF:
             Msg().setlevel(Msg.NIL)
         (hdr, dummy) = self.curl.get(url, ofile=download_file)
@@ -89,7 +88,7 @@ class UdockerTools(object):
                 return download_file
         except (KeyError, TypeError, AttributeError):
             pass
-        FileUtil(self.conf, download_file).remove()
+        FileUtil(download_file).remove()
         return ""
 
     def _get_file(self, locations):
