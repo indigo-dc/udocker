@@ -19,26 +19,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import os
-from udocker import __version__
 from setuptools import setup, find_packages
+from udocker import __version__
 
 with open('README.md') as readme_file:
-    readme = readme_file.read()
+    README = readme_file.read()
 
 with open('CHANGELOG.md') as history_file:
-    history = history_file.read()
+    HISTORY = history_file.read()
 
-CONF_DIR = '/etc'
-
-if os.getenv('VIRTUAL_ENV'):
-    CONF_DIR = os.getenv('VIRTUAL_ENV') + '/etc'
-
-requirements = []
-
-setup_requirements = ['pytest-runner', ]
-
-test_requirements = ['pytest', ]
+CONF_DIR = '/udocker/etc'
+REQUIREMENTS = []
+SETUP_REQUIREMENTS = ['pytest-runner', ]
+TEST_REQUIREMENTS = ['pytest', ]
 
 setup(
     author="Jorge Gomes",
@@ -61,19 +54,19 @@ setup(
     description="A basic user tool to execute simple docker \
         containers in batch or interactive systems without root privileges",
     entry_points={
-        'console_scripts': ['udocker=udocker.__main__:main'],
+        'console_scripts': ['udocker=udocker.maincmd:main'],
     },
-    install_requires=requirements,
+    install_requires=REQUIREMENTS,
     license="Apache Software License 2.0",
-    long_description=readme + '\n\n' + history,
+    long_description=README + '\n\n' + HISTORY,
     include_package_data=True,
     keywords='udocker',
     name='udocker',
     packages=find_packages(),
     data_files=[(CONF_DIR, ['etc/udocker.conf'])],
-    setup_requires=setup_requirements,
+    setup_requires=SETUP_REQUIREMENTS,
     test_suite='tests',
-    tests_require=test_requirements,
+    tests_require=TEST_REQUIREMENTS,
     url='https://github.com/indigo-dc/udocker',
     use_2to3=True,
     zip_safe=False,
