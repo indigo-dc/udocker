@@ -5,7 +5,9 @@ import os
 import tarfile
 import random
 import json
+import stat
 
+from udocker.config import Config
 from udocker.utils.curl import GetURL
 from udocker.utils.fileutil import FileUtil
 from udocker.msg import Msg
@@ -25,127 +27,9 @@ class UdockerTools(object):
         self._tarball = Config.conf['tarball']  # URL or file
         self._installinfo = Config.conf['installinfo']  # URL or file
         self._tarball_release = Config.conf['tarball_release']
+        self._installretry = Config.conf['installretry']
         self._install_json = dict()
         self.curl = GetURL()
-
-    def purge(self):
-        """Remove existing files in bin and lib"""
-        for f_name in os.listdir(self.localrepo.bindir):
-            full_path = self.localrepo.bindir + "/" + f_name
-            FileUtil(full_path).register_prefix()
-            FileUtil(full_path).remove()
-        for f_name in os.listdir(self.localrepo.libdir):
-            full_path = self.localrepo.libdir + "/" + f_name
-            FileUtil(full_path).register_prefix()
-            FileUtil(full_path).remove()
-
-    def install(self, force=False):
-        """Get the udocker tarball and install the binaries"""
-        if self._is_available() and not force:
-            return True
-        elif not self._autoinstall and not force:
-            Msg().err("Warning: no engine available and autoinstall disabled",
-                      l=Msg.WAR)
-            return False
-        elif not self._tarball:
-            Msg().err("Error: UDOCKER_TARBALL not defined")
-        else:
-            Msg().err("Info: installing", self._tarball_release, l=Msg.INF)
-            (tfile, url) = self._get_file(self._get_mirrors(self._tarball))
-            if tfile:
-                Msg().err("Info: installing from:", url, l=Msg.VER)
-                status = False
-                if not self._verify_version(tfile):
-                    Msg().err("Error: wrong tarball version:", url)
-                else:
-                    status = self._install(tfile)
-                if "://" in url:
-                    FileUtil(tfile).remove()
-                    if status:
-                        self._get_installinfo()
-                if status:
-                    return True
-            Msg().err("Error: installing tarball:", self._tarball)
-        self._instructions()
-        return False
-
-    def _is_available(self):
-        """Are the tools already installed"""
-        fname = self.localrepo.libdir + "/VERSION"
-        version = FileUtil(fname).getdata("r").strip()
-        return version and version == self._tarball_release
-
-    def _download(self, url):
-        """Download a file """
-        download_file = FileUtil("udockertools").mktmp()
-        if Msg.level <= Msg.DEF:
-            Msg().setlevel(Msg.NIL)
-        (hdr, dummy) = self.curl.get(url, ofile=download_file)
-        if Msg.level == Msg.NIL:
-            Msg().setlevel()
-        try:
-            if "200" in hdr.data["X-ND-HTTPSTATUS"]:
-                return download_file
-        except (KeyError, TypeError, AttributeError):
-            pass
-        FileUtil(download_file).remove()
-        return ""
-
-    def _get_file(self, locations):
-        """Get file from list of possible locations file or internet"""
-        for url in locations:
-            Msg().err("Info: getting file:", url, l=Msg.VER)
-            filename = ""
-            if "://" in url:
-                filename = self._download(url)
-            elif os.path.exists(url):
-                filename = os.path.realpath(url)
-            if filename and os.path.isfile(filename):
-                return (filename, url)
-        return ("", "")
-
-    def _verify_version(self, tarball_file):
-        """verify the tarball version"""
-        status = False
-        if not (tarball_file and os.path.isfile(tarball_file)):
-            return status
-
-        tfile = tarfile.open(tarball_file, "r:gz")
-        for tar_in in tfile.getmembers():
-            if tar_in.name.startswith("udocker_dir/lib/VERSION"):
-                tar_in.name = os.path.basename(tar_in.name)
-                tfile.extract(tar_in)
-        tfile.close()
-
-        with open("VERSION") as filep:
-            tar_version = filep.readline().strip()
-
-        Msg().err("Engine mode tarbal version", tar_version, l=Msg.DBG)
-        Msg().err("tarball_release", self._tarball_release, l=Msg.DBG)
-        status = (tar_version == self._tarball_release)
-        os.remove("VERSION")
-        Msg().err("Verify version status", status, l=Msg.DBG)
-        return status
-
-    def _install(self, tarball_file):
-        """Install the tarball"""
-        if not (tarball_file and os.path.isfile(tarball_file)):
-            return False
-
-        tfile = tarfile.open(tarball_file, "r:gz")
-        for tar_in in tfile.getmembers():
-            if tar_in.name.startswith("udocker_dir/bin/"):
-                tar_in.name = os.path.basename(tar_in.name)
-                Msg().err("Extrating", tar_in.name, l=Msg.DBG)
-                tfile.extract(tar_in, self.localrepo.bindir)
-        for tar_in in tfile.getmembers():
-            if tar_in.name.startswith("udocker_dir/lib/"):
-                tar_in.name = os.path.basename(tar_in.name)
-                Msg().err("Extrating", tar_in.name, l=Msg.DBG)
-                tfile.extract(tar_in, self.localrepo.libdir)
-
-        tfile.close()
-        return True
 
     def _instructions(self):
         """
@@ -157,7 +41,7 @@ class UdockerTools(object):
         Udocker requires additional tools to run. These are available
         in the udocker tarball. The tarballs are available at several
         locations. By default udocker will install from the locations
-        defined in self.conf['tarball'].
+        defined in Config.tarball.
 
         To install from files or other URLs use these instructions:
 
@@ -179,30 +63,179 @@ class UdockerTools(object):
 
         """
         Msg().out(self._instructions.__doc__, l=Msg.ERR)
-        Msg().out("        udocker version:", __version__,
-                  "requires tarball release:",
+        Msg().out("udocker command line interface version:", __version__,
+                  "\nrequires udockertools tarball release :",
                   self._tarball_release, l=Msg.ERR)
+
+    def _version_isok(self, version):
+        """Is version >= than the minimum required tarball release"""
+        return version and version >= self._tarball_release
+
+    def is_available(self):
+        """Are the tools already installed"""
+        version = FileUtil(self.localrepo.libdir + "/VERSION").getdata().strip()
+        return self._version_isok(version)
+
+    def purge(self):
+        """Remove existing files in bin and lib"""
+        for f_name in os.listdir(self.localrepo.bindir):
+            f_path = self.localrepo.bindir + '/' + f_name
+            FileUtil(f_path).register_prefix()
+            FileUtil(f_path).remove(recursive=True)
+        for f_name in os.listdir(self.localrepo.libdir):
+            f_path = self.localrepo.libdir + '/' + f_name
+            FileUtil(f_path).register_prefix()
+            FileUtil(f_path).remove(recursive=True)
+
+    def _download(self, url):
+        """Download a file """
+        download_file = FileUtil("udockertools").mktmp()
+        if Msg.level <= Msg.DEF:
+            Msg().setlevel(Msg.NIL)
+        (hdr, dummy) = self.curl.get(url, ofile=download_file)
+        if Msg.level == Msg.NIL:
+            Msg().setlevel()
+        try:
+            if "200" in hdr.data["X-ND-HTTPSTATUS"]:
+                return download_file
+        except (KeyError, TypeError, AttributeError):
+            pass
+        FileUtil(download_file).remove()
+        return ""
+
+    def _get_file(self, url):
+        """Get file from list of possible locations file or internet"""
+        filename = ""
+        if "://" in url:
+            filename = self._download(url)
+        elif os.path.exists(url):
+            filename = os.path.realpath(url)
+        if filename and os.path.isfile(filename):
+            return filename
+        return ""
+
+    def _verify_version(self, tarball_file):
+        """verify the tarball version"""
+        if not (tarball_file and os.path.isfile(tarball_file)):
+            return (False, "")
+
+        tmpdir = FileUtil("VERSION").mktmpdir()
+        if not tmpdir:
+            return (False, "")
+
+        try:
+            tfile = tarfile.open(tarball_file, "r:gz")
+            for tar_in in tfile.getmembers():
+                if tar_in.name.startswith("udocker_dir/lib/VERSION"):
+                    tar_in.name = os.path.basename(tar_in.name)
+                    tfile.extract(tar_in, path=tmpdir)
+            tfile.close()
+        except tarfile.TarError:
+            FileUtil(tmpdir).remove(recursive=True)
+            return (False, "")
+        tarball_version = FileUtil(tmpdir + "/VERSION").getdata().strip()
+        status = self._version_isok(tarball_version)
+        FileUtil(tmpdir).remove(recursive=True)
+        return (status, tarball_version)
+
+    def _install(self, tarball_file):
+        """Install the tarball"""
+        if not (tarball_file and os.path.isfile(tarball_file)):
+            return False
+        FileUtil(self.localrepo.topdir).chmod()
+        self.localrepo.create_repo()
+
+        try:
+            tfile = tarfile.open(tarball_file, "r:gz")
+            FileUtil(self.localrepo.bindir).rchmod()
+            for tar_in in tfile.getmembers():
+                if tar_in.name.startswith("udocker_dir/bin/"):
+                    tar_in.name = os.path.basename(tar_in.name)
+                    Msg().err("Extrating", tar_in.name, l=Msg.DBG)
+                    tfile.extract(tar_in, self.localrepo.bindir)
+            FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR |
+                                                   stat.S_IWUSR | stat.S_IXUSR)
+            FileUtil(self.localrepo.libdir).rchmod()
+            for tar_in in tfile.getmembers():
+                if tar_in.name.startswith("udocker_dir/lib/"):
+                    tar_in.name = os.path.basename(tar_in.name)
+                    Msg().err("Extrating", tar_in.name, l=Msg.DBG)
+                    tfile.extract(tar_in, self.localrepo.libdir)
+            FileUtil(self.localrepo.libdir).rchmod()
+            tfile.close()
+        except tarfile.TarError:
+            return False
+        return True
 
     def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
         if isinstance(mirrors, str):
-            mirrors = mirrors.split(" ")
+            mirrors = mirrors.split(' ')
         try:
             random.shuffle(mirrors)
         except NameError:
             pass
         return mirrors
 
-    def _get_installinfo(self):
+    def get_installinfo(self):
         """Get json containing installation info"""
-        mirrors = self._get_mirrors(self._installinfo)
-        (infofile, dummy) = self._get_file(mirrors)
-        try:
-            with open(infofile, "r") as filep:
-                self._install_json = json.load(filep)
-            for msg in self._install_json["messages"]:
-                Msg().err("Info:", msg)
-        except (KeyError, AttributeError, ValueError,
-                OSError, IOError):
-            Msg().err("Info: no messages available", l=Msg.VER)
-        return self._install_json
+        for url in self._get_mirrors(self._installinfo):
+            infofile = self._get_file(url)
+            try:
+                with open(infofile, 'r') as filep:
+                    self._install_json = json.load(filep)
+                for msg in self._install_json["messages"]:
+                    Msg().out("Info:", msg)
+            except (KeyError, AttributeError, ValueError,
+                    OSError, IOError):
+                Msg().out("Info: no messages:", infofile, url, l=Msg.VER)
+            return self._install_json
+
+    def _install_logic(self, force=False):
+        """Obtain random mirror, download, verify and install"""
+        for url in self._get_mirrors(self._tarball):
+            Msg().out("Info: install using:", url, l=Msg.VER)
+            tarballfile = self._get_file(url)
+            (status, version) = self._verify_version(tarballfile)
+            if status:
+                Msg().out("Info: installing udockertools", version)
+                status = self._install(tarballfile)
+            elif force:
+                Msg().out("Info: forcing install of udockertools", version)
+                status = self._install(tarballfile)
+            else:
+                Msg().err("Error: version is", version, "for", url, l=Msg.VER)
+            if "://" in url:
+                FileUtil(tarballfile).remove()
+            if status:
+                return True
+        return False
+
+    def install(self, force=False):
+        """Get the udocker tools tarball and install the binaries"""
+        if self.is_available() and not force:
+            return True
+        elif not self._autoinstall and not force:
+            Msg().err("Warning: installation missing and autoinstall disabled",
+                      l=Msg.WAR)
+            return None
+        elif not self._tarball:
+            Msg().err("Info: UDOCKER_TARBALL not set, installation skipped",
+                      l=Msg.VER)
+            return True
+        else:
+            Msg().out("Info: udocker command line interface", __version__)
+            Msg().out("Info: searching for udockertools",
+                      self._tarball_release, l=Msg.INF)
+            retry = self._installretry
+            while  retry:
+                if self._install_logic(force):
+                    self.get_installinfo()
+                    Msg().out("Info: installation of udockertools successful")
+                    return True
+                retry = retry - 1
+                Msg().err("Error: installation failure retrying ...", l=Msg.VER)
+        self._instructions()
+        self.get_installinfo()
+        Msg().err("Error: installation of udockertools failed")
+        return False
