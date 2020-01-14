@@ -61,16 +61,10 @@ class Msg(object):
 
     def out(self, *args, **kwargs):
         """Write text to stdout respecting verbose level"""
-        level = Msg.MSG
-        if "l" in kwargs:
-            level = kwargs["l"]
-        if level <= Msg.level:
+        if kwargs.get("l", Msg.MSG) <= Msg.level:
             sys.stdout.write(" ".join([str(x) for x in args]) + '\n')
 
     def err(self, *args, **kwargs):
         """Write text to stderr respecting verbose level"""
-        level = Msg.ERR
-        if "l" in kwargs:
-            level = kwargs["l"]
-        if level <= Msg.level:
+        if kwargs.get("l", Msg.ERR) <= Msg.level:
             sys.stderr.write(" ".join([str(x) for x in args]) + '\n')
