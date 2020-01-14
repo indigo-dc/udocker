@@ -16,6 +16,9 @@ class UMain(object):
     be invoked via the command line interface.
     """
 
+    STATUS_OK = 0
+    STATUS_ERROR = 1
+
     def __init__(self, argv):
         """Initialize variables of the class"""
         self.argv = argv
@@ -29,7 +32,7 @@ class UMain(object):
         self.cmdp.parse(self.argv)
         if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
             Msg().err("Error: do not run as root !")
-            sys.exit(1)
+            sys.exit(self.STATUS_ERROR)
 
         if self.cmdp.get("--config=", "GEN_OPT"):
             conf_file = self.cmdp.get("--config=", "GEN_OPT")
@@ -43,32 +46,28 @@ class UMain(object):
         elif (self.cmdp.get("--quiet", "GEN_OPT") or
               self.cmdp.get("-q", "GEN_OPT")):
             Config.conf['verbose_level'] = Msg.MSG
-
         Msg().setlevel(Config.conf['verbose_level'])
+
         if self.cmdp.get("--insecure", "GEN_OPT"):
             Config.conf['http_insecure'] = True
 
-        self.local = "localrepo"   # Temporary hack
-
-        if self.cmdp.get("--repo=", "GEN_OPT"):  # override repo root tree
-            Config.conf['topdir'] = self.cmdp.get("--repo=", "GEN_OPT")
-            self.local = LocalRepository()
-            if not self.local.is_repo():
-                Msg().err("Error: invalid udocker repository:",
-                          Config.conf['topdir'])
-                sys.exit(1)
-
+        topdir = self.cmdp.get("--repo=", "GEN_OPT")
+        if topdir:  # override repo root tree
+            Config.conf['topdir'] = topdir
         self.local = LocalRepository()
         if not self.local.is_repo():
-            Msg().out("Info: creating repo: " + Config.conf['topdir'],
-                      l=Msg.INF)
-            self.local.create_repo()
+            if topdir:
+                Msg().err("Error: invalid udocker repository:", topdir)
+                sys.exit(self.STATUS_ERROR)
+            else:
+                Msg().out("Info: creating repo: " + Config.conf['topdir'],
+                          l=Msg.INF)
+                self.local.create_repo()
 
         self.cli = UdockerCLI(self.local)
 
     def execute(self):
         """Command parsing and selection"""
-        exit_status = 0
         self._prepare_exec()
         cmds = {
             "search": self.cli.do_search, "help": self.cli.do_help,
@@ -89,28 +88,24 @@ class UMain(object):
 
         if ((len(self.argv) == 1) or self.cmdp.get("-h", "GEN_OPT") or
                 self.cmdp.get("--help", "GEN_OPT")):
-            exit_status = self.cli.do_help(self.cmdp)
-            return exit_status
+            return self.cli.do_help(self.cmdp)
 
         command = self.cmdp.get("", "CMD")
         if command in cmds:
             if self.cmdp.get("--help", "CMD_OPT"):
                 Msg().out(cmds[command].__doc__)
-                return exit_status
+                return self.STATUS_OK
             if command in ["version", "showconf"]:
-                exit_status = cmds[command](self.cmdp)
-                return exit_status
+                return cmds[command](self.cmdp)
             if command != "install":
                 self.cli.do_install(None)
             exit_status = cmds[command](self.cmdp)  # executes command
             if self.cmdp.missing_options():
                 Msg().err("Error: syntax error at: %s" %
                           " ".join(self.cmdp.missing_options()))
-                exit_status = 1
-                return exit_status
-            return exit_status
-        else:
-            Msg().err("Error: invalid command:", command, "\n")
-            exit_status = 1
+                return self.STATUS_ERROR
 
-        return exit_status
+            return exit_status
+
+        Msg().err("Error: invalid command:", command, "\n")
+        return self.STATUS_ERROR
