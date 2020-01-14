@@ -789,11 +789,10 @@ class DockerLocalFileAPI(CommonLocalFileApi):
         if (not container_json) or \
            (not self.localrepo.save_json(json_file, container_json)):
             return False
-        config_layer_id = str(ChkSUM().sha256(json_file))
-        FileUtil(json_file).rename(tmp_imagedir + '/' +
-                                   config_layer_id + ".json")
+        config_layer_file = str(ChkSUM().sha256(json_file)) + ".json"
+        FileUtil(json_file).rename(tmp_imagedir + '/' + config_layer_file)
         manifest_item = dict()
-        manifest_item["Config"] = config_layer_id + ".json"
+        manifest_item["Config"] = config_layer_file
         manifest_item["RepoTags"] = [imagerepo + ':' + tag, ]
         manifest_item["Layers"] = []
         if imagerepo not in structure["repositories"]:
@@ -821,8 +820,8 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             if not self.localrepo.save_json(tmp_imagedir + "/"
                                             + layer_id + "/json", json_string):
                 return False
-            version_f_path = tmp_imagedir + "/" + layer_id + "/VERSION"
-            if not FileUtil(version_f_path).putdata("1.0"):
+            if not FileUtil(tmp_imagedir + "/" +
+                            layer_id + "/VERSION").putdata("1.0"):
                 return False
         structure["manifest"].append(manifest_item)
         return True
