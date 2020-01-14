@@ -4,6 +4,7 @@
 import os
 import subprocess
 
+from udocker.config import Config
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.unique import Unique
@@ -16,8 +17,7 @@ class ContainerStructure(object):
     Access to container metadata.
     """
 
-    def __init__(self, localrepo, conf, container_id=None):
-        self.conf = conf
+    def __init__(self, localrepo, container_id=None):
         self.localrepo = localrepo
         self.container_id = container_id
         self.tag = ""
@@ -25,7 +25,7 @@ class ContainerStructure(object):
 
     def get_container_attr(self):
         """Get container directory and JSON metadata by id or name"""
-        if self.conf['location']:
+        if Config.conf['location']:
             container_dir = ""
             container_json = []
         else:
@@ -246,7 +246,7 @@ class ContainerStructure(object):
                     rm_filename = destdir + "/" \
                         + os.path.dirname(wh_filename) + "/" \
                         + wh_basename.replace(".wh.", "", 1)
-                    FileUtil(self.conf, rm_filename).remove()
+                    FileUtil(rm_filename).remove()
             else:
                 try:
                     proc.stdout.close()

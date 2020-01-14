@@ -6,8 +6,9 @@ import re
 import json
 import hashlib
 
-from udocker.utils.fileutil import FileUtil
+from udocker.config import Config
 from udocker.msg import Msg
+from udocker.utils.fileutil import FileUtil
 
 
 class LocalRepository(object):
@@ -26,15 +27,14 @@ class LocalRepository(object):
     5. lib:        contains python libraries
     """
 
-    def __init__(self, conf):
-        self.conf = conf
-        self.topdir = self.conf['topdir']
-        self.bindir = self.conf['bindir']
-        self.libdir = self.conf['libdir']
-        self.reposdir = self.conf['reposdir']
-        self.layersdir = self.conf['layersdir']
-        self.containersdir = self.conf['containersdir']
-        self.homedir = self.conf['homedir']
+    def __init__(self, topdir=None):
+        self.topdir = topdir if topdir else Config.conf['topdir']
+        self.bindir = Config.conf['bindir']
+        self.libdir = Config.conf['libdir']
+        self.reposdir = Config.conf['reposdir']
+        self.layersdir = Config.conf['layersdir']
+        self.containersdir = Config.conf['containersdir']
+        self.homedir = Config.conf['homedir']
 
         if not self.bindir:
             self.bindir = self.topdir + "/bin"
@@ -51,14 +51,13 @@ class LocalRepository(object):
         self.cur_tagdir = ""
         self.cur_containerdir = ""
 
-        FileUtil(self.conf, self.reposdir).register_prefix()
-        FileUtil(self.conf, self.layersdir).register_prefix()
-        FileUtil(self.conf, self.containersdir).register_prefix()
+        FileUtil(self.reposdir).register_prefix()
+        FileUtil(self.layersdir).register_prefix()
+        FileUtil(self.containersdir).register_prefix()
 
     def setup(self, topdir=None):
         """change to a different localrepo"""
-        self.conf['topdir'] = topdir
-        self.__init__(self.conf)
+        self.__init__(topdir)
 
     def sha256(self, filename):
         """sha256 calculation using hashlib"""
@@ -88,7 +87,7 @@ class LocalRepository(object):
                 os.makedirs(self.bindir)
             if not os.path.exists(self.libdir):
                 os.makedirs(self.libdir)
-            if not (self.conf['keystore'].startswith("/") or \
+            if not (Config.conf['keystore'].startswith("/") or \
                     os.path.exists(self.homedir)):
                 os.makedirs(self.homedir)
         except(IOError, OSError):
@@ -167,7 +166,7 @@ class LocalRepository(object):
             if container_dir in self.get_containers_list(True):
                 for name in self.get_container_name(container_id):
                     self.del_container_name(name)  # delete aliases links
-                if FileUtil(self.conf, container_dir).remove():
+                if FileUtil(container_dir).remove():
                     self.cur_containerdir = ""
                     return True
         return False
@@ -198,7 +197,7 @@ class LocalRepository(object):
         if self._name_is_valid(name):
             linkname = self.containersdir + "/" + name
             if os.path.exists(linkname):
-                return FileUtil(self.conf, linkname).remove()
+                return FileUtil(linkname).remove()
         return False
 
     def get_container_id(self, container_name):
@@ -275,7 +274,7 @@ class LocalRepository(object):
             for fname in os.listdir(tag_dir):
                 filename = tag_dir + "/" + fname
                 if os.path.islink(filename):
-                    size = FileUtil(self.conf, filename).size()
+                    size = FileUtil(filename).size()
                     layers_list.append((filename, size))
         return layers_list
 
@@ -291,7 +290,7 @@ class LocalRepository(object):
             return False
         linkname = self.cur_tagdir + "/" + os.path.basename(filename)
         if os.path.islink(linkname):
-            FileUtil(self.conf, linkname).remove()
+            FileUtil(linkname).remove()
         self._symlink(filename, linkname)
         return True
 
@@ -344,8 +343,8 @@ class LocalRepository(object):
                 os.path.exists(directory + "/v2") and version != "v2"):
             if len(os.listdir(directory)) == 1:
                 try:
-                    FileUtil(self.conf, directory + "/v1").remove()
-                    FileUtil(self.conf, directory + "/v2").remove()
+                    FileUtil(directory + "/v1").remove()
+                    FileUtil(directory + "/v2").remove()
                 except (IOError, OSError):
                     pass
                 if os.listdir(directory):
@@ -452,7 +451,7 @@ class LocalRepository(object):
         """Delete an image repository and its layers"""
         tag_dir = self.cd_imagerepo(imagerepo, tag)
         if (tag_dir and self._remove_layers(tag_dir, force) and
-                FileUtil(self.conf, tag_dir).remove()):
+                FileUtil(tag_dir).remove()):
             self.cur_repodir = ""
             self.cur_tagdir = ""
             return True
@@ -552,7 +551,7 @@ class LocalRepository(object):
 
     def _unprotect(self, directory):
         """Remove protection mark from container or image tag"""
-        return FileUtil(self.conf, directory + "/PROTECT").remove()
+        return FileUtil(directory + "/PROTECT").remove()
 
     def _isprotected(self, directory):
         """See if container or image tag are protected"""
@@ -615,11 +614,11 @@ class LocalRepository(object):
             f_path = tag_dir + "/" + fname  # link to layer
             if os.path.islink(f_path):
                 f_layer = tag_dir + "/" + os.readlink(f_path)
-                if not FileUtil(self.conf, f_path).remove() and not force:
+                if not FileUtil(f_path).remove() and not force:
                     return False
                 if not self._inrepository(fname):
                     # removing actual layers not reference by other repos
-                    if not FileUtil(self.conf, f_layer).remove() and not force:
+                    if not FileUtil(f_layer).remove() and not force:
                         return False
         return True
 
@@ -683,7 +682,7 @@ class LocalRepository(object):
                               os.readlink(layer_f)):
             Msg().err("Error: layer data file not found")
             return False
-        if not FileUtil(self.conf, layer_f).verify_tar():
+        if not FileUtil(layer_f).verify_tar():
             Msg().err("Error: layer file not ok:", layer_f)
             return False
         match = re.search("/sha256:(\\S+)$", layer_f)
