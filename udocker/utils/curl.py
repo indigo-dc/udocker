@@ -78,27 +78,26 @@ class CurlHeader(object):
 class GetURL(object):
     """File downloader using PyCurl or a curl cli executable"""
 
-    def __init__(self, conf):
+    def __init__(self):
         """Load configuration common to the implementations"""
-        self.conf = conf
-        self.timeout = self.conf['timeout']
-        self.ctimeout = self.conf['ctimeout']
-        self.download_timeout = self.conf['download_timeout']
-        self.agent = self.conf['http_agent']
-        self.http_proxy = self.conf['http_proxy']
+        self.timeout = Config.conf['timeout']
+        self.ctimeout = Config.conf['ctimeout']
+        self.download_timeout = Config.conf['download_timeout']
+        self.agent = Config.conf['http_agent']
+        self.http_proxy = Config.conf['http_proxy']
         self.cache_support = False
-        self.insecure = self.conf['http_insecure']
-        self._curl_exec = self.conf['use_curl_exec']
+        self.insecure = Config.conf['http_insecure']
+        self._curl_exec = Config.conf['use_curl_exec']
         self._select_implementation()
 
     # pylint: disable=locally-disabled
     def _select_implementation(self):
         """Select which implementation to use"""
-        if GetURLpyCurl(self.conf).is_available() and not self._curl_exec:
-            self._geturl = GetURLpyCurl(self.conf)
+        if GetURLpyCurl().is_available() and not self._curl_exec:
+            self._geturl = GetURLpyCurl()
             self.cache_support = True
-        elif GetURLexeCurl(self.conf).is_available():
-            self._geturl = GetURLexeCurl(self.conf)
+        elif GetURLexeCurl().is_available():
+            self._geturl = GetURLexeCurl()
         else:
             Msg().err("Error: need curl or pycurl to perform downloads")
             raise NameError('need curl or pycurl')
@@ -151,9 +150,8 @@ class GetURL(object):
 class GetURLpyCurl(GetURL):
     """Downloader implementation using PyCurl"""
 
-    def __init__(self, conf):
-        self.conf = conf
-        GetURL.__init__(self, self.conf)
+    def __init__(self):
+        GetURL.__init__(self)
         self._url = None
 
     def is_available(self):
@@ -223,7 +221,7 @@ class GetURLpyCurl(GetURL):
             pyc.setopt(pyc.TIMEOUT, self.download_timeout)
             openflags = "wb"
             if "resume" in kwargs and kwargs["resume"]:
-                futil = FileUtil(self.conf, output_file)
+                futil = FileUtil(output_file)
                 pyc.setopt(pyc.RESUME_FROM, futil.size())
                 openflags = "ab"
             try:
@@ -285,21 +283,21 @@ class GetURLpyCurl(GetURL):
             elif status_code != 200:
                 Msg().err("Error: in download: " + str(
                     hdr.data["X-ND-HTTPSTATUS"]))
-                FileUtil(self.conf, out_file).remove()
+                FileUtil(out_file).remove()
         return(hdr, buf)
 
 
 class GetURLexeCurl(GetURL):
     """Downloader implementation using curl cli executable"""
 
-    def __init__(self, conf):
-        GetURL.__init__(self, conf)
+    def __init__(self):
+        GetURL.__init__(self)
         self._opts = None
         self._files = None
 
     def is_available(self):
         """Can we use this approach for download"""
-        return bool(FileUtil(self.conf, "curl").find_exec())
+        return bool(FileUtil("curl").find_exec())
 
     def _select_implementation(self):
         """Override the parent class method"""
@@ -324,9 +322,9 @@ class GetURLexeCurl(GetURL):
             self._opts["verbose"] = "-v"
         self._files = {
             "url":  "",
-            "error_file": FileUtil(self.conf, "execurl_err").mktmp(),
-            "output_file": FileUtil(self.conf, "execurl_out").mktmp(),
-            "header_file": FileUtil(self.conf, "execurl_hdr").mktmp()
+            "error_file": FileUtil("execurl_err").mktmp(),
+            "output_file": FileUtil("execurl_out").mktmp(),
+            "header_file": FileUtil("execurl_hdr").mktmp()
         }
 
     def _mkcurlcmd(self, *args, **kwargs):
@@ -357,7 +355,7 @@ class GetURLexeCurl(GetURL):
         if "nobody" in kwargs and kwargs["nobody"]:
             self._opts["nobody"] = "--head"
         if "ofile" in kwargs:
-            FileUtil(self.conf, self._files["output_file"]).remove()
+            FileUtil(self._files["output_file"]).remove()
             self._files["output_file"] = kwargs["ofile"] + ".tmp"
             self._opts["timeout"] = "-m %s" % (str(self.download_timeout))
             if "resume" in kwargs and kwargs["resume"]:
@@ -387,9 +385,9 @@ class GetURLexeCurl(GetURL):
             hdr.setvalue_from_file(self._files["header_file"])
             hdr.data["X-ND-CURLSTATUS"] = status
             if status:
-                futil = FileUtil(self.conf, self._files["error_file"])
+                futil = FileUtil(self._files["error_file"])
                 Msg().err("Error: in download: %s" % futil.getdata("r"))
-                FileUtil(self.conf, self._files["output_file"]).remove()
+                FileUtil(self._files["output_file"]).remove()
                 return(hdr, buf)
             status_code = self._get_status_code(hdr.data["X-ND-HTTPSTATUS"])
             if status_code >= 300 and status_code <= 308:
@@ -410,7 +408,7 @@ class GetURLexeCurl(GetURL):
             elif " 200" not in hdr.data["X-ND-HTTPSTATUS"]:
                 Msg().err("Error: in download: ", str(
                     hdr.data["X-ND-HTTPSTATUS"]), ": ", str(status))
-                FileUtil(self.conf, self._files["output_file"]).remove()
+                FileUtil(self._files["output_file"]).remove()
             else:  # OK downloaded
                 os.rename(self._files["output_file"], kwargs["ofile"])
         else:
@@ -418,7 +416,7 @@ class GetURLexeCurl(GetURL):
                 buf = strio(open(self._files["output_file"], "r").read())
             except(IOError, OSError):
                 Msg().err("Error: reading curl output file to buffer")
-            FileUtil(self.conf, self._files["output_file"]).remove()
-        FileUtil(self.conf, self._files["error_file"]).remove()
-        FileUtil(self.conf, self._files["header_file"]).remove()
+            FileUtil(self._files["output_file"]).remove()
+        FileUtil(self._files["error_file"]).remove()
+        FileUtil(self._files["header_file"]).remove()
         return(hdr, buf)

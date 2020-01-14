@@ -20,8 +20,8 @@ class DockerIoAPI(object):
     """
 
     def __init__(self, localrepo):
-        self.index_url = Config.dockerio_index_url
-        self.registry_url = Config.dockerio_registry_url
+        self.index_url = Config.conf['dockerio_index_url']
+        self.registry_url = Config.conf['dockerio_registry_url']
         self.v1_auth_header = ""
         self.v2_auth_header = ""
         self.v2_auth_token = ""
@@ -281,7 +281,8 @@ class DockerIoAPI(object):
                 header = []
                 if self.v2_auth_token:
                     header = ["Authorization: Basic %s" % (self.v2_auth_token)]
-                (dummy, auth_buf) = self._get_url(auth_url, header=header, RETRY=retry)
+                (dummy, auth_buf) = self._get_url(auth_url, header=header,
+                                                  RETRY=retry)
                 token_buf = auth_buf.getvalue()
                 if token_buf and "token" in token_buf:
                     try:
@@ -589,10 +590,12 @@ class DockerIoAPI(object):
                     "/v2/search/repositories?query=%s" % (expression)
         elif expression and official is True:
             url = url + \
-                    "/v2/search/repositories?query=%s&is_official=%s" % (expression, "true")
+                    "/v2/search/repositories?query=%s&is_official=%s" \
+                    % (expression, "true")
         elif expression and official is False:
             url = url + \
-                    "/v2/search/repositories?query=%s&is_official=%s" % (expression, "false")
+                    "/v2/search/repositories?query=%s&is_official=%s" \
+                    % (expression, "false")
         else:
             return []
         url += "&page_size=%d" % (lines)
@@ -699,7 +702,8 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             if "parent" not in structure["repolayers"][next_layer]["json"]:
                 break
             else:
-                next_layer = structure["repolayers"][next_layer]["json"]["parent"]
+                next_layer = \
+                        structure["repolayers"][next_layer]["json"]["parent"]
                 if not next_layer:
                     break
         return sorted_layers
