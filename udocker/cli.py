@@ -12,8 +12,6 @@ from udocker.config import Config
 from udocker.msg import Msg
 from udocker.docker import DockerIoAPI
 from udocker.localfile import LocalFileAPI
-from udocker.docker import DockerLocalFileAPI
-from udocker.oci import OciLocalFileAPI
 from udocker.helper.keystore import KeyStore
 from udocker.container.structure import ContainerStructure
 from udocker.engine.execmode import ExecutionMode

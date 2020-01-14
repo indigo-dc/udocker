@@ -8,7 +8,7 @@ import json
 
 from udocker.config import Config
 from udocker.msg import Msg
-from udocker.localfile import CommonLocalFileApi
+from udocker.commonlocalfile import CommonLocalFileApi
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.curl import GetURL
 from udocker.helper.unique import Unique
@@ -519,8 +519,8 @@ class DockerIoAPI(object):
                 imagerepo = '/'.join(components)
         if registry:
             try:
-                registry_url = Config.docker_registries[registry][0]
-                index_url = Config.docker_registries[registry][1]
+                registry_url = Config.conf['docker_registries'][registry][0]
+                index_url = Config.conf['docker_registries'][registry][1]
             except (KeyError, NameError, TypeError):
                 registry_url = registry
                 if "://" not in registry:
