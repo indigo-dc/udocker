@@ -33,7 +33,9 @@ class CmdParser(object):
         """
         step = 1
         for arg in argv[1:]:
-            if step == 1:
+            if not arg:
+                continue
+            elif step == 1:
                 if arg[0] in string.ascii_letters:
                     self._argv_split['CMD'] = arg
                     step = 2
@@ -42,25 +44,6 @@ class CmdParser(object):
             elif step == 2:
                 self._argv_split['CMD_OPT'].append(arg)
         return step == 2
-
-    def get(self, opt_name, opt_where="CMD_OPT", opt_multiple=False):
-        """Get the value of a command line option --xyz=
-        multiple=true  multiple occurrences of option can be present
-        """
-        if opt_where == "CMD":
-            return self._argv_split["CMD"]
-        elif opt_where in ("CMD_OPT", "GEN_OPT"):
-            if opt_name.startswith("P"):
-                return(self._get_param(opt_name,
-                                       self._argv_split[opt_where],
-                                       self._argv_consumed_options[opt_where],
-                                       self._argv_consumed_params[opt_where]))
-            elif opt_name.startswith("-"):
-                return(self._get_option(opt_name,
-                                        self._argv_split[opt_where],
-                                        self._argv_consumed_options[opt_where],
-                                        opt_multiple))
-        return None
 
     def missing_options(self):
         """Get command line options not used/fetched by Cmdp.get()
@@ -76,6 +59,25 @@ class CmdParser(object):
                 all_opt.append(self._argv_split['CMD_OPT'][pos])
         return all_opt
 
+    def get(self, opt_name, opt_where="CMD_OPT", opt_multiple=False):
+        """Get the value of a command line option --xyz=
+        multiple=true  multiple occurences of option can be present
+        """
+        if opt_where == "CMD":
+            return self._argv_split["CMD"]
+        elif opt_where in ("CMD_OPT", "GEN_OPT"):
+            if opt_name.startswith('P'):
+                return (self._get_param(opt_name,
+                                        self._argv_split[opt_where],
+                                        self._argv_consumed_options[opt_where],
+                                        self._argv_consumed_params[opt_where]))
+            elif opt_name.startswith('-'):
+                return (self._get_option(opt_name,
+                                         self._argv_split[opt_where],
+                                         self._argv_consumed_options[opt_where],
+                                         opt_multiple))
+        return None
+
     def declare_options(self, opts_string, opt_where="CMD_OPT"):
         """Declare in advance options that are part of the command line
         """
@@ -83,7 +85,7 @@ class CmdParser(object):
         opt_list = self._argv_split[opt_where]
         while pos < len(opt_list):
             for opt_name in opts_string.strip().split():
-                if opt_name.endswith("="):
+                if opt_name.endswith('='):
                     if opt_list[pos].startswith(opt_name):
                         self._argv_consumed_options[opt_where].append(pos)
                     elif opt_list[pos] == opt_name[:-1]:
@@ -91,7 +93,7 @@ class CmdParser(object):
                         if pos + 1 == len(opt_list):
                             break   # error -x without argument at end of line
                         if (pos < len(opt_list) and
-                                not opt_list[pos+1].startswith("-")):
+                                not opt_list[pos+1].startswith('-')):
                             self._argv_consumed_options[opt_where].\
                                 append(pos + 1)
                 elif opt_list[pos] == opt_name:
@@ -108,18 +110,18 @@ class CmdParser(object):
         list_len = len(opt_list)
         while pos < list_len:
             opt_arg = None
-            if ((not opt_list[pos].startswith("-")) and
+            if ((not opt_list[pos].startswith('-')) and
                     (pos < 1 or (pos not in consumed and not
-                                 opt_list[pos-1].endswith("=")))):
+                                 opt_list[pos-1].endswith('=')))):
                 break        # end of options and start of arguments
-            elif opt_name.endswith("="):
+            elif opt_name.endswith('='):
                 if opt_list[pos].startswith(opt_name):
-                    opt_arg = opt_list[pos].split("=", 1)[1].strip()
+                    opt_arg = opt_list[pos].split('=', 1)[1].strip()
                 elif (opt_list[pos] == opt_name[:-1] and
                       pos + 1 == list_len):
                     break    # error --arg at end of line
                 elif (opt_list[pos] == opt_name[:-1] and
-                      not opt_list[pos + 1].startswith("-")):
+                      not opt_list[pos + 1].startswith('-')):
                     consumed.append(pos)
                     pos += 1
                     opt_arg = opt_list[pos]
@@ -137,7 +139,7 @@ class CmdParser(object):
                     return opt_arg
         if opt_multiple:
             return all_args
-        return None
+        return False
 
     def _get_param(self, opt_name, opt_list, consumed, consumed_params):
         """Get command line parameters
@@ -150,8 +152,10 @@ class CmdParser(object):
         param_num = 0
         skip_opts = True
         while pos < len(opt_list):
+            if opt_list[pos] == "-":
+                skip_opts = False
             if not (skip_opts and
-                    (opt_list[pos].startswith("-") or pos in consumed)):
+                    (opt_list[pos].startswith('-') or pos in consumed)):
                 skip_opts = False
                 param_num += 1
                 if opt_name[1:] == str(param_num):
