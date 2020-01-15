@@ -17,10 +17,10 @@ except ImportError:
 
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
-if PY_VER < "3":
+if PY_VER >= "3":
     from io import BytesIO as strio
 else:
-    from io import StringIO as strio
+    from StringIO import StringIO as strio
 
 
 class CurlHeader(object):
@@ -40,7 +40,8 @@ class CurlHeader(object):
 
     def write(self, buff):
         """Write is called by Curl()"""
-        buff = str(buff)
+        if PY_VER >= "3":
+            buff = buff.decode()
         pair = buff.split(":", 1)
         if len(pair) == 2:
             key = pair[0].strip().lower()
@@ -60,7 +61,7 @@ class CurlHeader(object):
         version.
         """
         try:
-            infile = open(in_filename)
+            infile = open(in_filename, 'r')
         except (IOError, OSError):
             return False
         for line in infile:
@@ -254,18 +255,14 @@ class GetURLpyCurl(GetURL):
             Msg().out("curl arg: ", kwargs, l=Msg.DBG)
             pyc.perform()     # call pyculr
         except(IOError, OSError):
-            print ("HERE1")
-            raise
             return (None, None)
         except pycurl.error as error:
-            print ("HERE2")
             # pylint: disable=unbalanced-tuple-unpacking
             errno, errstr = error.args
             hdr.data["X-ND-CURLSTATUS"] = errno
             if not hdr.data["X-ND-HTTPSTATUS"]:
                 hdr.data["X-ND-HTTPSTATUS"] = errstr
         status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
-        print ("STATUS CODE: " + str(status_code))
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
         if status_code == 401: # needs authentication
@@ -407,7 +404,7 @@ class GetURLexeCurl(GetURL):
                 os.rename(self._files["output_file"], kwargs["ofile"])
         if "ofile" not in kwargs:
             try:
-                buf = strio(open(self._files["output_file"], 'r').read())
+                buf = strio(open(self._files["output_file"], 'rb').read())
             except(IOError, OSError):
                 Msg().err("Error: reading curl output file to buffer")
             FileUtil(self._files["output_file"]).remove()

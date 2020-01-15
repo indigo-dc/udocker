@@ -2,6 +2,7 @@
 """Docker API integration"""
 
 import os
+import sys
 import re
 import base64
 import json
@@ -13,6 +14,9 @@ from udocker.utils.fileutil import FileUtil
 from udocker.utils.curl import GetURL
 from udocker.utils.chksum import ChkSUM
 from udocker.helper.unique import Unique
+
+# Python version major.minor
+PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
 
 
 class DockerIoAPI(object):
@@ -284,7 +288,10 @@ class DockerIoAPI(object):
                     header = ["Authorization: Basic %s" % (self.v2_auth_token)]
                 (dummy, auth_buf) = self._get_url(auth_url, header=header,
                                                   RETRY=retry)
-                token_buf = auth_buf.getvalue()
+                if PY_VER >= "3":
+                    token_buf = auth_buf.getvalue().decode()
+                else:
+                    token_buf = auth_buf.getvalue()
                 if token_buf and "token" in token_buf:
                     try:
                         auth_token = json.loads(token_buf)
