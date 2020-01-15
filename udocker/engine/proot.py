@@ -5,9 +5,11 @@ import sys
 import os
 import subprocess
 
+from udocker.msg import Msg
+from udocker.config import Config
 from udocker.engine.base import ExecutionEngineCommon
 from udocker.utils.fileutil import FileUtil
-from udocker.msg import Msg
+from udocker.helper.hostinfo import HostInfo
 
 
 class PRootEngine(ExecutionEngineCommon):
@@ -18,46 +20,50 @@ class PRootEngine(ExecutionEngineCommon):
     Inherits from ContainerEngine class
     """
 
-    def __init__(self, conf, localrepo, xmode):
-        super(PRootEngine, self).__init__(conf, localrepo, xmode)
-        self.proot_exec = None                   # PRoot
+    def __init__(self, localrepo):
+        super(PRootEngine, self).__init__(localrepo)
+        self.executable = None                   # PRoot
         self.proot_noseccomp = False             # Noseccomp mode
-        self._kernel = self.conf['oskernel']   # Emulate kernel
-        self.exec_mode = xmode
+        self._kernel = HostInfo().oskernel()     # Emulate kernel
 
-    def _select_proot(self):
+    def select_proot(self):
         """Set proot executable and related variables"""
-        arch = self.conf['arch']
-        image_list = []
-        if arch == "amd64":
-            if self._oskernel_isgreater((4, 8, 0)):
-                image_list = ["proot-x86_64-4_8_0", "proot-x86_64", "proot"]
-            else:
-                image_list = ["proot-x86_64", "proot"]
-        elif arch == "i386":
-            if self._oskernel_isgreater((4, 8, 0)):
-                image_list = ["proot-x86-4_8_0", "proot-x86", "proot"]
-            else:
-                image_list = ["proot-x86", "proot"]
-        elif arch == "arm64":
-            if self._oskernel_isgreater((4, 8, 0)):
-                image_list = ["proot-arm64-4_8_0", "proot-arm64", "proot"]
-            else:
-                image_list = ["proot-arm64", "proot"]
-        elif arch == "arm":
-            if self._oskernel_isgreater((4, 8, 0)):
-                image_list = ["proot-arm-4_8_0", "proot-arm", "proot"]
-            else:
-                image_list = ["proot-arm", "proot"]
-        f_util = FileUtil(self.conf, self.localrepo.bindir)
-        self.proot_exec = f_util.find_file_in_dir(image_list)
-        if not self.proot_exec:
+        self.executable = Config.conf['use_proot_executable']
+        if self.executable != "UDOCKER" and not self.executable:
+            self.executable = FileUtil("proot").find_exec()
+        if self.executable == "UDOCKER" or not self.executable:
+            self.executable = ""
+            arch = HostInfo().arch()
+            image_list = []
+            if arch == "amd64":
+                if HostInfo().oskernel_isgreater((4, 8, 0)):
+                    image_list = ["proot-x86_64-4_8_0", "proot-x86_64", "proot"]
+                else:
+                    image_list = ["proot-x86_64", "proot"]
+            elif arch == "i386":
+                if HostInfo().oskernel_isgreater((4, 8, 0)):
+                    image_list = ["proot-x86-4_8_0", "proot-x86", "proot"]
+                else:
+                    image_list = ["proot-x86", "proot"]
+            elif arch == "arm64":
+                if HostInfo().oskernel_isgreater((4, 8, 0)):
+                    image_list = ["proot-arm64-4_8_0", "proot-arm64", "proot"]
+                else:
+                    image_list = ["proot-arm64", "proot"]
+            elif arch == "arm":
+                if HostInfo().oskernel_isgreater((4, 8, 0)):
+                    image_list = ["proot-arm-4_8_0", "proot-arm", "proot"]
+                else:
+                    image_list = ["proot-arm", "proot"]
+            f_util = FileUtil(self.localrepo.bindir)
+            self.executable = f_util.find_file_in_dir(image_list)
+        if not self.executable:
             Msg().err("Error: proot executable not found")
             sys.exit(1)
-        if self._oskernel_isgreater((4, 8, 0)):
-            if self.conf['proot_noseccomp'] is not None:
-                self.proot_noseccomp = self.conf['proot_noseccomp']
-            if self.exec_mode == "P2":
+        if HostInfo().oskernel_isgreater((4, 8, 0)):
+            if Config.conf['proot_noseccomp'] is not None:
+                self.proot_noseccomp = Config.conf['proot_noseccomp']
+            if self.exec_mode.get_mode() == "P2":
                 self.proot_noseccomp = True
 
     def _set_uid_map(self):
@@ -92,7 +98,6 @@ class PRootEngine(ExecutionEngineCommon):
     def run(self, container_id):
         """Execute a Docker container using PRoot. This is the main method
         invoked to run the a container with PRoot.
-
           * argument: container_id or name
           * options:  many via self.opt see the help
         """
@@ -101,7 +106,7 @@ class PRootEngine(ExecutionEngineCommon):
         if not self._run_init(container_id):
             return 2
 
-        self._select_proot()
+        self.select_proot()
 
         # seccomp and ptrace behavior change on 4.8.0 onwards
         if self.proot_noseccomp or os.getenv("PROOT_NO_SECCOMP"):
@@ -120,14 +125,15 @@ class PRootEngine(ExecutionEngineCommon):
         else:
             proot_verbose = []
 
-        if self.conf['proot_killonexit']:
+        if (Config.conf['proot_killonexit'] and
+                self._has_option("--kill-on-exit")):
             proot_kill_on_exit = ["--kill-on-exit", ]
         else:
             proot_kill_on_exit = []
 
         # build the actual command
         cmd_l = self._set_cpu_affinity()
-        cmd_l.append(self.proot_exec)
+        cmd_l.append(self.executable)
         cmd_l.extend(proot_verbose)
         cmd_l.extend(proot_kill_on_exit)
         cmd_l.extend(self._get_volume_bindings())

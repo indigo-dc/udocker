@@ -7,7 +7,9 @@ import subprocess
 from udocker.config import Config
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
+from udocker.utils.uprocess import Uprocess
 from udocker.helper.unique import Unique
+from udocker.helper.hostinfo import HostInfo
 
 
 class ContainerStructure(object):
@@ -41,6 +43,23 @@ class ContainerStructure(object):
                 return(False, False)
 
         return(container_dir, container_json)
+
+    def _chk_container_root(self, container_id=None):
+        """Check container ROOT sanity"""
+        if container_id:
+            container_dir = self.localrepo.cd_container(container_id)
+        else:
+            container_dir = self.localrepo.cd_container(self.container_id)
+        if not container_dir:
+            return 0
+        container_root = container_dir + "/ROOT"
+        check_list = ["/lib", "/bin", "/etc", "/tmp", "/var", "/usr", "/sys",
+                      "/dev", "/data", "/home", "/system", "/root", "/proc", ]
+        found = 0
+        for f_path in check_list:
+            if os.path.exists(container_root + f_path):
+                found += 1
+        return found
 
     def create_fromimage(self, imagerepo, tag):
         """Create a container from an image in the repository.
@@ -133,6 +152,81 @@ class ContainerStructure(object):
 
         return self.container_id
 
+    def _apply_whiteouts(self, tarf, destdir):
+        """The layered filesystem of docker uses whiteout files
+        to identify files or directories to be removed.
+        The format is .wh.<filename>
+        """
+        verbose = ""
+        if Msg.level >= Msg.VER:
+            verbose = 'v'
+            Msg().out("Info: applying whiteouts:", tarf, l=Msg.INF)
+        wildcards = ["--wildcards", ]
+        if not HostInfo().cmd_has_option("tar", wildcards[0]):
+            wildcards = []
+        cmd = ["tar", "t" + verbose] + wildcards + ["-f", tarf, "*/.wh.*"]
+        whiteouts = Uprocess().get_output(cmd, True)
+        if not whiteouts:
+            return
+        for wh_filename in whiteouts.split('\n'):
+            if wh_filename:
+                wh_basename = os.path.basename(wh_filename.strip())
+                wh_dirname = os.path.dirname(wh_filename)
+                if wh_basename == ".wh..wh..opq":
+                    if not os.path.isdir(destdir + '/' + wh_dirname):
+                        continue
+                    for f_name in os.listdir(destdir + '/' + wh_dirname):
+                        rm_filename = destdir + '/' \
+                            + wh_dirname + '/' + f_name
+                        FileUtil(rm_filename).remove(recursive=True)
+                elif wh_basename.startswith(".wh."):
+                    rm_filename = destdir + '/' \
+                        + wh_dirname + '/' \
+                        + wh_basename.replace(".wh.", "", 1)
+                    FileUtil(rm_filename).remove(recursive=True)
+        return
+
+    def _untar_layers(self, tarfiles, destdir):
+        """Untar all container layers. Each layer is extracted
+        and permissions are changed to avoid file permission
+        issues when extracting the next layer.
+        """
+        if not (tarfiles and destdir):
+            return False
+        status = True
+        gid = str(HostInfo.gid)
+        wildcards = ["--wildcards", ]
+        if not HostInfo().cmd_has_option("tar", wildcards[0]):
+            wildcards = []
+        for tarf in tarfiles:
+            if tarf != '-':
+                self._apply_whiteouts(tarf, destdir)
+            verbose = ''
+            if Msg.level >= Msg.VER:
+                verbose = 'v'
+                Msg().out("Info: extracting:", tarf, l=Msg.INF)
+            cmd = ["tar", "-C", destdir, "-x" + verbose, "--one-file-system",
+                   "--exclude=dev/*", "--no-same-owner", "--overwrite",
+                   "--no-same-permissions", ] + wildcards + ["-f", tarf]
+            if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
+                Msg().err("Error: while extracting image layer")
+                status = False
+            cmd = ["find", destdir,
+                   "(", "-type", "d", "!", "-perm", "-u=x", "-exec",
+                   "/bin/chmod", "u+x", "{}", ";", ")", ",",
+                   "(", "!", "-perm", "-u=w", "-exec", "/bin/chmod",
+                   "u+w", "{}", ";", ")", ",",
+                   "(", "!", "-perm", "-u=r", "-exec", "/bin/chmod",
+                   "u+r", "{}", ";", ")", ",",
+                   "(", "!", "-gid", gid, "-exec", "/bin/chgrp", gid,
+                   "{}", ";", ")", ",",
+                   "(", "-name", ".wh.*", "-exec", "/bin/rm", "-f",
+                   "--preserve-root", "{}", ";", ")"]
+            if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
+                status = False
+                Msg().err("Error: while modifying attributes of image layer")
+        return status
+
     def get_container_meta(self, param, default, container_json):
         """Get the container metadata from the container"""
         confidx = ""
@@ -159,6 +253,21 @@ class ContainerStructure(object):
                 return container_json[confidx][param]
         return default
 
+    def _dict_to_str(self, in_dict):
+        """Convert dict to str"""
+        out_str = ""
+        for (key, val) in in_dict.iteritems():
+            out_str += "%s:%s " % (str(key), str(val))
+        return out_str
+
+    def _dict_to_list(self, in_dict):
+        """Convert dict to list"""
+        out_list = []
+        for (key, val) in in_dict.iteritems():
+            out_list.append("%s:%s" % (str(key), str(val)))
+        return out_list
+
+
     def export_tofile(self, clone_file):
         """Export a container creating a tar file of the rootfs
         """
@@ -167,10 +276,10 @@ class ContainerStructure(object):
             Msg().err("Error: container not found:", self.container_id)
             return False
 
-        status = self._tar(clone_file, cont_dir + "/ROOT")
+        status = FileUtil(cont_dir + "/ROOT").tar(clone_file)
         if not status:
-            Msg().err("Error: exporting container file system:", \
-                self.container_id)
+            Msg().err("Error: exporting container file system:",
+                      self.container_id)
 
         return self.container_id
 
@@ -183,7 +292,7 @@ class ContainerStructure(object):
             Msg().err("Error: container not found:", self.container_id)
             return False
 
-        status = self._tar(clone_file, container_dir)
+        status = FileUtil(container_dir).tar(clone_file)
         if not status:
             Msg().err("Error: export container as clone:", self.container_id)
 
@@ -204,126 +313,12 @@ class ContainerStructure(object):
             Msg().err("Error: create destination container: setting up")
             return False
 
-        status = self._copy(source_container_dir, dest_container_dir)
+        status = FileUtil(source_container_dir).copydir(dest_container_dir)
         if not status:
             Msg().err("Error: creating container:", dest_container_id)
+            return False
         elif not self._chk_container_root(dest_container_id):
             Msg().err("Warning: check container content:", dest_container_id,
                       l=Msg.WAR)
 
         return dest_container_id
-
-    def _chk_container_root(self, container_id=None):
-        """Check container ROOT sanity"""
-        if container_id:
-            container_dir = self.localrepo.cd_container(container_id)
-        else:
-            container_dir = self.localrepo.cd_container(self.container_id)
-        if not container_dir:
-            return 0
-        container_root = container_dir + "/ROOT"
-        check_list = ["/lib", "/bin", "/etc", "/tmp", "/var", "/usr", "/sys",
-                      "/dev", "/data", "/home", "/system", "/root", "/proc", ]
-        found = 0
-        for f_path in check_list:
-            if os.path.exists(container_root + f_path):
-                found += 1
-        return found
-
-    def _apply_whiteouts(self, tarf, destdir):
-        """The layered filesystem of docker uses whiteout files
-        to identify files or directories to be removed.
-        The format is .wh.<filename>
-        """
-        cmd = r"tar tf %s '*\/\.wh\.*'" % (tarf)
-        proc = subprocess.Popen(cmd, shell=True, stderr=Msg.chlderr,
-                                stdout=subprocess.PIPE, close_fds=True)
-        while True:
-            wh_filename = proc.stdout.readline().strip()
-            if wh_filename:
-                wh_basename = os.path.basename(wh_filename)
-                if wh_basename.startswith(".wh."):
-                    rm_filename = destdir + "/" \
-                        + os.path.dirname(wh_filename) + "/" \
-                        + wh_basename.replace(".wh.", "", 1)
-                    FileUtil(rm_filename).remove()
-            else:
-                try:
-                    proc.stdout.close()
-                    proc.terminate()
-                except(NameError, AttributeError):
-                    pass
-                break
-        return True
-
-    def _untar_layers(self, tarfiles, destdir):
-        """Untar all container layers. Each layer is extracted
-        and permissions are changed to avoid file permission
-        issues when extracting the next layer.
-        """
-        status = True
-        gid = str(os.getgid())
-        for tarf in tarfiles:
-            if tarf != "-":
-                self._apply_whiteouts(tarf, destdir)
-            cmd = "umask 022 ; tar -C %s -x " % destdir
-            if Msg.level >= Msg.VER:
-                cmd += " -v "
-            cmd += r" --one-file-system --no-same-owner "
-            cmd += r"--no-same-permissions --overwrite -f " + tarf
-            cmd += r"; find " + destdir
-            cmd += r" \( -type d ! -perm -u=x -exec /bin/chmod u+x {} \; \) , "
-            cmd += r" \( ! -perm -u=w -exec /bin/chmod u+w {} \; \) , "
-            cmd += r" \( ! -gid " + gid + r" -exec /bin/chgrp " + gid
-            cmd += r" {} \; \) , "
-            cmd += r" \( -name '.wh.*' -exec "
-            cmd += r" /bin/rm -f --preserve-root {} \; \)"
-            status = subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
-                                     close_fds=True)
-            if status:
-                Msg().err("Error: while extracting image layer")
-        return not status
-
-    def _tar(self, tarfile, sourcedir):
-        """Create a tar file for a given sourcedir
-        """
-        cmd = "tar -C %s -c " % sourcedir
-        if Msg.level >= Msg.VER:
-            cmd += " -v "
-        cmd += r" --one-file-system "
-        #cmd += r" --xform 's:^\./::' "
-        cmd += r" -S --xattrs -f " + tarfile + " . "
-        status = subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
-                                 close_fds=True)
-        if status:
-            Msg().err("Error: creating tar file:", tarfile)
-        return not status
-
-    def _copy(self, sourcedir, destdir):
-        """Copy directories
-        """
-        cmd = "tar -C %s -c " % sourcedir
-        if Msg.level >= Msg.VER:
-            cmd += " -v "
-        cmd += r" --one-file-system -S --xattrs -f - . "
-        cmd += r"|tar -C %s -x " % destdir
-        cmd += r" -f - "
-        status = subprocess.call(cmd, shell=True, stderr=Msg.chlderr,
-                                 close_fds=True)
-        if status:
-            Msg().err("Error: copying:", sourcedir, " to ", destdir)
-        return not status
-
-    def _dict_to_str(self, in_dict):
-        """Convert dict to str"""
-        out_str = ""
-        for (key, val) in list(in_dict.items()):
-            out_str += "%s:%s " % (str(key), str(val))
-        return out_str
-
-    def _dict_to_list(self, in_dict):
-        """Convert dict to list"""
-        out_list = []
-        for (key, val) in list(in_dict.items()):
-            out_list.append("%s:%s" % (str(key), str(val)))
-        return out_list

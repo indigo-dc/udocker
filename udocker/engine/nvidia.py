@@ -7,6 +7,7 @@ import glob
 import re
 
 from udocker.msg import Msg
+from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uprocess import Uprocess
 
@@ -18,62 +19,13 @@ class NvidiaMode(object):
     to change libraries may work properly.
     """
 
-    def __init__(self, conf, localrepo, container_id):
-        self.conf = conf
+    def __init__(self, localrepo, container_id):
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = container_id         # Container id
         self.container_dir = self.localrepo.cd_container(container_id)
-        if not self.container_dir:
-            raise ValueError("invalid container id")
         self.container_root = self.container_dir + "/ROOT"
         self._container_nvidia_set = self.container_dir + "/nvidia"
-
-    def set_nvidia(self, force=False):
-        """Set nvidia mode"""
-        if not self.container_dir:
-            Msg().err("Error: nvidia set mode container dir not found")
-            return
-
-        nvi_host_dir_list = self._find_host_dir()
-        nvi_cont_dir = self._find_cont_dir()
-        if not nvi_host_dir_list:
-            Msg().err("Error: host nvidia libraries not found")
-            return
-
-        if not nvi_cont_dir:
-            Msg().err("Error: destination directory for nvidia libs not found")
-            return
-
-        if   (not force and
-              self._installation_exists(nvi_host_dir_list, nvi_cont_dir)):
-            Msg().err("Error: nvidia installation already exists"
-                      ", use --force to overwrite")
-            return
-
-        for nvi_host_dir in nvi_host_dir_list:
-            lib_list = self._get_nvidia_libs(nvi_host_dir)
-            self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
-
-        self._copy_files('/etc', '/etc', self.conf['nvi_etc_list'], force)
-        self._copy_files('/usr/bin', '/usr/bin',
-                         self.conf['nvi_bin_list'], force)
-        try:
-            os.mknod(self._container_nvidia_set)
-            Msg().err("Created:", self._container_nvidia_set, l=Msg.DBG)
-        except (IOError, OSError, TypeError):
-            Msg().err("Error creating:", self._container_nvidia_set)
-
-    def get_nvidia(self):
-        """Get nvidia mode"""
-        return os.path.exists(self._container_nvidia_set)
-
-    def get_devices(self):
-        """Get list of nvidia devices related to cuda"""
-        dev_list = list()
-        for dev in self.conf['nvi_dev_list']:
-            for expanded_devs in glob.glob(dev + '*'):
-                dev_list.append(expanded_devs)
-        return dev_list
+        self._nvidia_main_libs = ("libnvidia-cfg.so", "libcuda.so", )
 
     def _files_exist(self, cont_dst_dir, files_list):
         """Verify if files already exists"""
@@ -107,7 +59,7 @@ class NvidiaMode(object):
                                  stat.S_IRWXU)
                     except OSError:
                         Msg().err("Error: creating nvidia dir", dstdir)
-                if not FileUtil(self.conf, srcname).copyto(dstname):
+                if not FileUtil(srcname).copyto(dstname):
                     Msg().err("Error: copying file", srcname, "to", dstname)
                     return
                 try:
@@ -123,41 +75,49 @@ class NvidiaMode(object):
     def _get_nvidia_libs(self, host_dir):
         """Expand the library files to include the versions"""
         lib_list = []
-        for lib in self.conf['nvi_lib_list']:
+        for lib in Config.conf['nvi_lib_list']:
             for expanded_libs in glob.glob(host_dir + '/' + lib + '*'):
                 lib_list.append(expanded_libs.replace(host_dir, ''))
         return lib_list
 
+    def _find_host_dir_ldconfig(self, arch="x86-64"):
+        """Find host nvidia libraries via ldconfig"""
+        dir_list = set()
+        ld_data = Uprocess().get_output(["ldconfig", "-p"])
+        if ld_data:
+            regexp = "[ |\t]%s[^ ]* .*%s.*=> (/.*)"
+            for line in ld_data.split('\n'):
+                for lib in self._nvidia_main_libs:
+                    match = re.search(regexp % (lib, arch), line)
+                    if match:
+                        dir_list.add(os.path.realpath(
+                            os.path.dirname(match.group(1))) + '/')
+        return dir_list
+
+    def _find_host_dir_ldpath(self, library_path):
+        """Find host nvidia libraries via path"""
+        dir_list = set()
+        if library_path:
+            for libdir in library_path.split(':'):
+                for lib in self._nvidia_main_libs:
+                    if glob.glob(libdir + "/%s*" % lib):
+                        dir_list.add(os.path.realpath(libdir) + '/')
+        return dir_list
+
     def _find_host_dir(self):
         """Find the location of the host nvidia libraries"""
         dir_list = set()
-        ld_library_path = os.getenv("LD_LIBRARY_PATH")
-        if ld_library_path:
-            for libdir in ld_library_path.split(':'):
-                if glob.glob(libdir + '/libnvidia-cfg.so*'):
-                    dir_list.add(libdir + '/')
-                if glob.glob(libdir + '/libcuda.so*'):
-                    dir_list.add(libdir + '/')
-        ld_data = Uprocess().get_output("ldconfig -p")
-        if not ld_data:
-            return ""
-        for line in ld_data.split("\n"):
-            str_re = "[ |\t]libnvidia-cfg.so[^ ]* .*x86-64.*=> (/.*)"
-            match = re.search(str_re, line)
-            if match:
-                dir_list.add(os.path.dirname(match.group(1)) + '/')
-
-            str_re = "[ |\t]libcuda.so[^ ]* .*x86-64.*=> (/.*)"
-            match = re.search(str_re, line)
-            if match:
-                dir_list.add(os.path.dirname(match.group(1)) + '/')
-
+        library_path = ':'.join(Config.conf['lib_dirs_list_x86_64'])
+        dir_list.update(self._find_host_dir_ldpath(library_path))
+        dir_list.update(self._find_host_dir_ldconfig())
+        library_path = os.getenv("LD_LIBRARY_PATH", "")
+        dir_list.update(self._find_host_dir_ldpath(library_path))
         return dir_list
 
     def _find_cont_dir(self):
         """Find the location of the host target directory for libraries"""
-        for dst_dir in ('/usr/lib/x86_64-linux-gnu', '/usr/lib64'):
-            if os.path.isdir(self.container_root + "/" + dst_dir):
+        for dst_dir in ("/usr/lib/x86_64-linux-gnu", "/usr/lib64"):
+            if os.path.isdir(self.container_root + '/' + dst_dir):
                 return dst_dir
         return ""
 
@@ -167,8 +127,46 @@ class NvidiaMode(object):
             for nvi_host_dir in nvi_host_dir_list:
                 lib_list = self._get_nvidia_libs(nvi_host_dir)
                 self._files_exist(nvi_cont_dir, lib_list)
-            self._files_exist('/etc', self.conf['nvi_etc_list'])
-            self._files_exist('/usr/bin', self.conf['nvi_bin_list'])
+            self._files_exist("/etc", Config.conf['nvi_etc_list'])
+            self._files_exist("/usr/bin", Config.conf['nvi_bin_list'])
         except OSError:
             return True
         return False
+
+    def set_mode(self, force=False):
+        """Set nvidia mode"""
+        if not self.container_dir:
+            Msg().err("Error: nvidia set mode container dir not found")
+            return
+        nvi_host_dir_list = self._find_host_dir()
+        nvi_cont_dir = self._find_cont_dir()
+        if not nvi_host_dir_list:
+            Msg().err("Error: host nvidia libraries not found")
+            return
+        if not nvi_cont_dir:
+            Msg().err("Error: destination directory for nvidia libs not found")
+            return
+        if (not force) and self._installation_exists(nvi_host_dir_list,
+                                                     nvi_cont_dir):
+            Msg().err("Error: nvidia installation already exists"
+                      ", use --force to overwrite")
+            return
+        for nvi_host_dir in nvi_host_dir_list:
+            lib_list = self._get_nvidia_libs(nvi_host_dir)
+            self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
+        self._copy_files('/etc', '/etc', Config.conf['nvi_etc_list'], force)
+        self._copy_files('/usr/bin', '/usr/bin', Config.conf['nvi_bin_list'],
+                         force)
+        FileUtil(self._container_nvidia_set).putdata("")
+
+    def get_mode(self):
+        """Get nvidia mode"""
+        return os.path.exists(self._container_nvidia_set)
+
+    def get_devices(self):
+        """Get list of nvidia devices related to cuda"""
+        dev_list = []
+        for dev in Config.conf['nvi_dev_list']:
+            for expanded_devs in glob.glob(dev + '*'):
+                dev_list.append(expanded_devs)
+        return dev_list
