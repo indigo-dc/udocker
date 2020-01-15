@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
 """Unique IDentifiers"""
 
-import string
-import uuid
-import random
-import time
 import os
+import time
+import string
+
+try:
+    import random
+except ImportError:
+    pass
+
+try:
+    import uuid
+except ImportError:
+    pass
 
 
 class Unique(object):

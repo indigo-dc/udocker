@@ -6,7 +6,9 @@ import time
 
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
+from udocker.utils.uprocess import Uprocess
 from udocker.helper.unique import Unique
+from udocker.helper.hostinfo import HostInfo
 from udocker.container.structure import ContainerStructure
 from udocker.engine.execmode import ExecutionMode
 

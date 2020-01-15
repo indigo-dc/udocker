@@ -53,7 +53,8 @@ class Config(object):
                             "/etc/resolv.conf", "/etc/host.conf",
                             "/lib/modules", )
 
-    # POSSIBLE DEPRECATED directories to be mapped in containers with: run --hostauth
+    # POSSIBLE DEPRECATED
+    # directories to be mapped in containers with: run --hostauth
     # conf['hostauth_list'] = ("/etc/passwd", "/etc/group",
     #                               "/etc/shadow", "/etc/gshadow", )
 

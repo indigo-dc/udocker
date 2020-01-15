@@ -13,11 +13,15 @@ from udocker.msg import Msg
 from udocker.docker import DockerIoAPI
 from udocker.localfile import LocalFileAPI
 from udocker.helper.keystore import KeyStore
+from udocker.helper.hostinfo import HostInfo
+from udocker.helper.unshare import Unshare
 from udocker.container.structure import ContainerStructure
 from udocker.engine.execmode import ExecutionMode
 from udocker.engine.nvidia import NvidiaMode
 from udocker.tools import UdockerTools
 from udocker.utils.fileutil import FileUtil
+from udocker.utils.filebind import FileBind
+from udocker.utils.mountpoint import MountPoint
 
 if sys.version_info[0] >= 3:
     BUILTIN = "builtins"

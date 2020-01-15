@@ -9,7 +9,7 @@ import re
 from udocker.msg import Msg
 from udocker.config import Config
 from udocker.helper.unique import Unique
-#from udocker.helper.hostinfo import HostInfo
+from udocker.helper.hostinfo import HostInfo
 from udocker.utils.uprocess import Uprocess
 
 class FileUtil(object):

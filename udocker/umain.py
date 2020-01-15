@@ -8,7 +8,6 @@ from udocker.cmdparser import CmdParser
 from udocker.config import Config
 from udocker.container.localrepo import LocalRepository
 from udocker.cli import UdockerCLI
-# from udocker.helper.hostinfo import HostInfo
 
 
 class UMain(object):

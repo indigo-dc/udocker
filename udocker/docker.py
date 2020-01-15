@@ -11,6 +11,7 @@ from udocker.msg import Msg
 from udocker.commonlocalfile import CommonLocalFileApi
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.curl import GetURL
+from udocker.utils.chksum import ChkSUM
 from udocker.helper.unique import Unique
 
 

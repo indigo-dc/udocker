@@ -5,7 +5,7 @@ import os
 import json
 
 from udocker.utils.fileutil import FileUtil
-#from udocker.helper.hostinfo import HostInfo
+from udocker.helper.hostinfo import HostInfo
 
 
 class KeyStore(object):
