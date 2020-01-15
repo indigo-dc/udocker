@@ -187,7 +187,7 @@ class Config(object):
         """
         cfpath = '/etc/' + Config.conf['config']
         if os.path.exists(cfpath):
-            Msg().out('Using config file: %s', cfpath)
+            Msg().out('Info: using config file: %s', cfpath)
             cfnparser = ConfigParser()
             cfnparser.read(cfpath)
             for (key, val) in cfnparser.items('DEFAULT'):
@@ -198,7 +198,7 @@ class Config(object):
 
         cfpath = Config.conf['homedir'] + Config.conf['config']
         if os.path.exists(cfpath):
-            Msg().out('Using config file: %s', cfpath)
+            Msg().out('Info: using config file: %s', cfpath)
             cfnparser = ConfigParser()
             cfnparser.read(cfpath)
             for (key, val) in cfnparser.items('DEFAULT'):
@@ -209,7 +209,7 @@ class Config(object):
 
         cfpath = user_cfile
         if os.path.exists(cfpath):
-            Msg().out('Using config file: %s', cfpath)
+            Msg().out('Info: using config file: %s', cfpath)
             cfnparser = ConfigParser()
             cfnparser.read(cfpath)
             for (key, val) in cfnparser.items('DEFAULT'):

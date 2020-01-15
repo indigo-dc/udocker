@@ -97,8 +97,10 @@ class GetURL(object):
         if GetURLpyCurl().is_available() and not self._curl_exec:
             self._geturl = GetURLpyCurl()
             self.cache_support = True
+            Msg().out("Info: using pycurl", l=Msg.DBG)
         elif GetURLexeCurl().is_available():
             self._geturl = GetURLexeCurl()
+            Msg().out("Info: using curl executable", self._geturl._curl_exec)
         else:
             Msg().err("Error: need curl or pycurl to perform downloads")
             raise NameError('need curl or pycurl')
@@ -247,8 +249,8 @@ class GetURLpyCurl(GetURL):
         try:
             (output_file, filep) = \
                     self._mkpycurl(pyc, hdr, buf, *args, **kwargs)
-            Msg().err("curl url: ", self._url, l=Msg.DBG)
-            Msg().err("curl arg: ", kwargs, l=Msg.DBG)
+            Msg().out("curl url: ", self._url, l=Msg.DBG)
+            Msg().out("curl arg: ", kwargs, l=Msg.DBG)
             pyc.perform()     # call pyculr
         except(IOError, OSError):
             return (None, None)

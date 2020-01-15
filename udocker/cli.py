@@ -64,7 +64,7 @@ class UdockerCLI(object):
         if cmdp.missing_options():               # syntax error
             return False
         if not FileUtil(topdir).isdir():
-            Msg().err("Warning: localrepo directory is invalid: ", topdir,
+            Msg().out("Warning: localrepo directory is invalid: ", topdir,
                       l=Msg.WAR)
             return False
         self.localrepo.setup(topdir)
@@ -442,7 +442,7 @@ class UdockerCLI(object):
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
         container_id = self.localrepo.get_container_id(container_id)
-        Msg().err("Info: cloning container id:", container_id, l=Msg.DBG)
+        Msg().out("Info: cloning container id:", container_id, l=Msg.DBG)
         if not container_id:
             Msg().err("Error: invalid container id", container_id)
             return self.STATUS_ERROR
@@ -472,7 +472,7 @@ class UdockerCLI(object):
         if not password:
             password = getpass("password: ")
         if password and password == password.upper():
-            Msg().err("Warning: password in uppercase",
+            Msg().out("Warning: password in uppercase",
                       "Caps Lock ?", l=Msg.WAR)
 
         v2_auth_token = self.dockerioapi.get_v2_login_token(username, password)

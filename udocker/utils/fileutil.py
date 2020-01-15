@@ -297,7 +297,7 @@ class FileUtil(object):
         try:
             with open(self.filename, mode) as filep:
                 buf = filep.read()
-            Msg().err("Read buf:", buf, l=Msg.DBG)
+            Msg().out("Info: read buf", buf, l=Msg.DBG)
             return buf
         except (IOError, OSError, TypeError):
             return ""
@@ -336,7 +336,7 @@ class FileUtil(object):
         /bin/which or type to obtain the full pathname of an executable
         """
         exec_pathname = Uprocess().get_output(cmd_to_use)
-        Msg().err("Search exec_pathname:", exec_pathname, l=Msg.DBG)
+        Msg().out("Info: search got executable:", exec_pathname, l=Msg.DBG)
         if exec_pathname is None:
             return ""
         if "not found" in exec_pathname:

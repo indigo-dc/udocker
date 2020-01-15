@@ -63,8 +63,8 @@ class DockerIoAPI(object):
             kwargs["FOLLOW"] = 3
         kwargs["RETRY"] -= 1
         (hdr, buf) = self.curl.get(*args, **kwargs)
-        Msg().err("header: %s" % (hdr.data), l=Msg.DBG)
-        Msg().err("buffer: %s" % (buf.getvalue()), l=Msg.DBG)
+        Msg().out("Info: header: %s" % (hdr.data), l=Msg.DBG)
+        Msg().out("Info: buffer: %s" % (buf.getvalue()), l=Msg.DBG)
         status_code = self.curl.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if status_code == 200:
             return (hdr, buf)
@@ -174,7 +174,7 @@ class DockerIoAPI(object):
     def get_v1_repo(self, imagerepo):
         """Get list of images in a repo from Docker Hub"""
         url = self.index_url + "/v1/repositories/" + imagerepo + "/images"
-        Msg().err("repo url:", url, l=Msg.DBG)
+        Msg().out("Info: repo url", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url, header=["X-Docker-Token: true"])
         try:
             self.v1_auth_header = "Authorization: Token " + \
@@ -199,7 +199,7 @@ class DockerIoAPI(object):
         except KeyError:
             endpoint = self.index_url
         url = endpoint + "/v1/repositories/" + imagerepo + "/tags"
-        Msg().err("tags url:", url, l=Msg.DBG)
+        Msg().out("Info: tags url", url, l=Msg.DBG)
         (dummy, buf) = self._get_url(url)
         tags = []
         try:
@@ -215,7 +215,7 @@ class DockerIoAPI(object):
     def get_v1_image_tag(self, endpoint, imagerepo, tag):
         """Get list of tags in a repo from Docker Hub"""
         url = endpoint + "/v1/repositories/" + imagerepo + "/tags/" + tag
-        Msg().err("tags url:", url, l=Msg.DBG)
+        Msg().out("Info: tags url", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
             return (hdr.data, json.loads(buf.getvalue()))
@@ -225,7 +225,7 @@ class DockerIoAPI(object):
     def get_v1_image_ancestry(self, endpoint, image_id):
         """Get the ancestry which is an ordered list of layers"""
         url = endpoint + "/v1/images/" + image_id + "/ancestry"
-        Msg().err("ancestry url:", url, l=Msg.DBG)
+        Msg().out("Info: ancestry url", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
             return (hdr.data, json.loads(buf.getvalue()))
@@ -235,7 +235,7 @@ class DockerIoAPI(object):
     def get_v1_image_json(self, endpoint, layer_id):
         """Get the JSON metadata for a specific layer"""
         url = endpoint + "/v1/images/" + layer_id + "/json"
-        Msg().err("json url:", url, l=Msg.DBG)
+        Msg().out("Info: json url", url, l=Msg.DBG)
         filename = self.localrepo.layersdir + '/' + layer_id + ".json"
         if self._get_file(url, filename, 0):
             self.localrepo.add_image_layer(filename)
@@ -245,7 +245,7 @@ class DockerIoAPI(object):
     def get_v1_image_layer(self, endpoint, layer_id):
         """Get a specific layer data file (layer files are tarballs)"""
         url = endpoint + "/v1/images/" + layer_id + "/layer"
-        Msg().err("layer url:", url, l=Msg.DBG)
+        Msg().out("Info: layer url", url, l=Msg.DBG)
         filename = self.localrepo.layersdir + '/' + layer_id + ".layer"
         if self._get_file(url, filename, 3):
             self.localrepo.add_image_layer(filename)
@@ -257,7 +257,7 @@ class DockerIoAPI(object):
         files = []
         if layer_list:
             for layer_id in reversed(layer_list):
-                Msg().err("Downloading layer:", layer_id, l=Msg.INF)
+                Msg().out("Info: downloading layer", layer_id, l=Msg.INF)
                 filesize = self.get_v1_image_json(endpoint, layer_id)
                 if not filesize:
                     return []
@@ -344,7 +344,7 @@ class DockerIoAPI(object):
         if '/' not in imagerepo:
             imagerepo = "library/" + imagerepo
         url = self.registry_url + "/v2/" + imagerepo + "/tags/list"
-        Msg().err("tags url:", url, l=Msg.DBG)
+        Msg().out("Info: tags url", url, l=Msg.DBG)
         (dummy, buf) = self._get_url(url)
         tags = []
         try:
@@ -367,7 +367,7 @@ class DockerIoAPI(object):
         else:
             url = self.registry_url + "/v2/" + imagerepo + \
                 "/manifests/" + tag
-        Msg().err("manifest url:", url, l=Msg.DBG)
+        Msg().out("Info: manifest url", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
             return (hdr.data, json.loads(buf.getvalue()))
@@ -382,7 +382,7 @@ class DockerIoAPI(object):
         else:
             url = self.registry_url + "/v2/" + imagerepo + \
                 "/blobs/" + layer_id
-        Msg().err("layer url:", url, l=Msg.DBG)
+        Msg().out("Info: layer url", url, l=Msg.DBG)
         filename = self.localrepo.layersdir + '/' + layer_id
         if self._get_file(url, filename, 3):
             self.localrepo.add_image_layer(filename)
@@ -398,7 +398,7 @@ class DockerIoAPI(object):
                     blob = layer["blobSum"]
                 elif "digest" in layer:
                     blob = layer["digest"]
-                Msg().err("Downloading layer:", blob, l=Msg.INF)
+                Msg().out("Info: downloading layer", blob, l=Msg.INF)
                 if not self.get_v2_image_layer(imagerepo, blob):
                     return []
                 files.append(blob)
@@ -421,7 +421,7 @@ class DockerIoAPI(object):
                 Msg().err("Error: setting localrepo v2 tag and version")
                 return []
             self.localrepo.save_json("manifest", manifest)
-            Msg().err("v2 layers: %s" % (imagerepo), l=Msg.DBG)
+            Msg().out("Info: v2 layers: %s" % (imagerepo), l=Msg.DBG)
             if "fsLayers" in manifest:
                 files = self.get_v2_layers_all(imagerepo,
                                                manifest["fsLayers"])
@@ -464,7 +464,7 @@ class DockerIoAPI(object):
 
     def get_v1(self, imagerepo, tag):
         """Pull container with v1 API"""
-        Msg().err("v1 image id: %s" % (imagerepo), l=Msg.DBG)
+        Msg().out("Info: v1 image id: %s" % (imagerepo), l=Msg.DBG)
         (hdr_data, images_array) = self.get_v1_repo(imagerepo)
         status = self.curl.get_status_code(hdr_data["X-ND-HTTPSTATUS"])
         if status == 401 or not images_array:
@@ -488,13 +488,13 @@ class DockerIoAPI(object):
                 self.localrepo.set_version("v1")):
             Msg().err("Error: setting localrepo v1 tag and version")
             return []
-        Msg().err("v1 ancestry: %s" % image_id, l=Msg.DBG)
+        Msg().out("Info: v1 ancestry", image_id, l=Msg.DBG)
         (dummy, ancestry) = self.get_v1_image_ancestry(endpoint, image_id)
         if not ancestry:
             Msg().err("Error: ancestry not found")
             return []
         self.localrepo.save_json("ancestry", ancestry)
-        Msg().err("v1 layers: %s" % image_id, l=Msg.DBG)
+        Msg().out("Info: v1 layers",  image_id, l=Msg.DBG)
         files = self.get_v1_layers_all(endpoint, ancestry)
         return files
 
@@ -535,7 +535,7 @@ class DockerIoAPI(object):
 
     def get(self, imagerepo, tag):
         """Pull a docker image from a v2 registry or v1 index"""
-        Msg().err("get imagerepo: %s tag: %s" % (imagerepo, tag), l=Msg.DBG)
+        Msg().out("Info: get imagerepo: %s tag: %s" % (imagerepo, tag), l=Msg.DBG)
         (imagerepo, remoterepo) = self._parse_imagerepo(imagerepo)
         if self.localrepo.cd_imagerepo(imagerepo, tag):
             new_repo = False
@@ -552,7 +552,7 @@ class DockerIoAPI(object):
 
     def get_tags(self, imagerepo):
         """List tags from a v2 or v1 repositories"""
-        Msg().err("get tags: %s " % (imagerepo), l=Msg.DBG)
+        Msg().out("Info: get tags", imagerepo, l=Msg.DBG)
         if self.is_v2():
             return self.get_v2_image_tags(imagerepo, True)  # try v2
         else:
@@ -671,7 +671,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                         structure["repolayers"][layer_id]["layer_f"] = \
                                 layer_f_path
                     else:
-                        Msg().err("Warning: unkwnon file in layer:",
+                        Msg().out("Info: warning: unkwnon file in layer:",
                                   f_path, l=Msg.WAR)
         return structure
 
