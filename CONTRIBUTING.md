@@ -22,11 +22,12 @@ This version will support Python 2 and Python 3 and is modular.
 
 Repositories
 ============
-For udocker: https://github.com/indigo-dc/udocker
-For PRoot: https://github.com/jorge-lip/proot-udocker
-For libfakechroot-glibc: https://github.com/jorge-lip/libfakechroot-glibc-udocker
-For libfakechroot-musl: https://github.com/jorge-lip/libfakechroot-musl-udocker
-For patchelf: https://github.com/jorge-lip/patchelf-udocker
+
+* For udocker: https://github.com/indigo-dc/udocker
+* For PRoot: https://github.com/jorge-lip/proot-udocker
+* For libfakechroot-glibc: https://github.com/jorge-lip/libfakechroot-glibc-udocker
+* For libfakechroot-musl: https://github.com/jorge-lip/libfakechroot-musl-udocker
+* For patchelf: https://github.com/jorge-lip/patchelf-udocker
 
 How to report a bug
 ===================
