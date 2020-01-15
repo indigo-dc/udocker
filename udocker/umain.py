@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Implements most of the command line interface."""
 
-import sys
 import os
+import sys
 from udocker.msg import Msg
 from udocker.cmdparser import CmdParser
 from udocker.config import Config

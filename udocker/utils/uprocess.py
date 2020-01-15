@@ -17,6 +17,8 @@ class Uprocess(object):
 
     def find_inpath(self, filename, path, rootdir=""):
         """Find file in a path set such as PATH=/usr/bin:/bin"""
+        if not (filename and path):
+            return ""
         basename = os.path.basename(filename)
         if isinstance(path, str):
             if "=" in path:

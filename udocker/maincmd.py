@@ -21,11 +21,10 @@ limitations under the License.
 import os
 import sys
 
-#sys.path.append(os.path.dirname(os.path.abspath("/home/jorge/mysoft/indigo/udocker/udocker-devel3/udocker/")))
 sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 
-from udocker.umain import UMain
 from udocker.msg import Msg
+from udocker.umain import UMain
 from udocker.utils.fileutil import FileUtil
 
 
@@ -35,10 +34,16 @@ def main():
     exit_status = 0
     try:
         exit_status = UMain(sys.argv).execute()
-    except (KeyboardInterrupt, SystemExit):
+    except KeyboardInterrupt:
         Msg().out("Info: keyboard interrupt", l=Msg.INF)
         FileUtil().cleanup()
         exit_status = 1
+    except SystemExit as error:
+        FileUtil().cleanup()
+        try:
+            exit_status = int(error.args[0]) 
+        except (ValueError, TypeError):
+            exit_status = 1
     except:
         FileUtil().cleanup()
         exit_status = 1

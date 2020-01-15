@@ -73,5 +73,5 @@ class Unshare(object):
             except OSError:
                 Msg().err("Error: setting ids and groups")
                 return False
-            exit(int(method()))
+            os._exit(int(method()))
         return False

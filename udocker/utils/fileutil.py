@@ -347,10 +347,10 @@ class FileUtil(object):
 
     def find_exec(self):
         """Find an executable pathname by using which or type -p"""
-        cmd = self._find_exec("which " + self.basename)
+        cmd = self._find_exec(["which", self.basename, ])
         if cmd:
             return cmd
-        cmd = self._find_exec("type -p " + self.basename)
+        cmd = self._find_exec(["type", "-p", self.basename, ])
         if cmd:
             return cmd
         return ""

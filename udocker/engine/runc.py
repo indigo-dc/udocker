@@ -292,9 +292,10 @@ class RuncEngine(ExecutionEngineCommon):
             Msg().err("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
 
-    def _create_mountpoint(self, host_path, cont_path, dirs_only=True):
-        """Create mountpoint"""
-        return self._create_mountpoint(host_path, cont_path, dirs_only)
+    #def _create_mountpoint(self, host_path, cont_path, dirs_only=True):
+    #    """Create mountpoint"""
+    #    return super(RuncEngine, self)._create_mountpoint(host_path,
+    #                                                      cont_path, dirs_only)
 
     def _proot_overlay(self, container_id, proot_mode="P2"):
         """Execute proot within runc"""
@@ -302,8 +303,7 @@ class RuncEngine(ExecutionEngineCommon):
         if xmode not in ("R2", "R3"):
             return
         else:
-            preng = PRootEngine(self.localrepo)
-            preng.exec_mode = self.exec_mode.get_engine()
+            preng = PRootEngine(self.localrepo, self.exec_mode)
             preng.exec_mode.force_mode = proot_mode
             preng.select_proot()
         if preng.proot_noseccomp or os.getenv("PROOT_NO_SECCOMP"):
