@@ -145,7 +145,7 @@ class PRootEngine(ExecutionEngineCommon):
         if self.opt["cwd"]:  # set current working directory
             cmd_l.extend(["-w", self.opt["cwd"], ])
         cmd_l.extend(self.opt["cmd"])
-        Msg().err("CMD =", cmd_l, l=Msg.VER)
+        Msg().out("CMD =", cmd_l, l=Msg.VER)
 
         # cleanup the environment
         self._run_env_cleanup_dict()

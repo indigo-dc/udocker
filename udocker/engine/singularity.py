@@ -98,10 +98,10 @@ class SingularityEngine(ExecutionEngineCommon):
     def _run_invalid_options(self):
         """check -p --publish -P --publish-all --net-coop"""
         if self.opt["portsmap"]:
-            Msg().err("Warning: this execution mode does not support "
+            Msg().out("Warning: this execution mode does not support "
                       "-p --publish", l=Msg.WAR)
         if self.opt["netcoop"]:
-            Msg().err("Warning: this execution mode does not support "
+            Msg().out("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
 
     def _run_as_root(self):
@@ -112,7 +112,7 @@ class SingularityEngine(ExecutionEngineCommon):
             if self.opt["user"] == username:
                 return False
             elif self.opt["user"] != "root" and self.opt["uid"] != '0':
-                Msg().err("Warning: running as another user not supported")
+                Msg().out("Warning: running as another user not supported")
                 return False
             elif self._has_option("--fakeroot", "exec"):
                 if (NixAuthentication().user_in_subuid(username) and
@@ -185,7 +185,7 @@ class SingularityEngine(ExecutionEngineCommon):
         cmd_l.extend(singularity_vol_list)
         cmd_l.append(self.container_root)
         cmd_l.extend(self.opt["cmd"])
-        Msg().err("CMD =", cmd_l, l=Msg.VER)
+        Msg().out("CMD =", cmd_l, l=Msg.VER)
 
         # if not --hostenv clean the environment
         self._run_env_cleanup_dict()

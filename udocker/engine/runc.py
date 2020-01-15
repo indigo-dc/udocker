@@ -125,7 +125,7 @@ class RuncEngine(ExecutionEngineCommon):
         """Check the uid_map string for container run command"""
         if ("user" in self.opt and self.opt["user"] != "0" and
                 self.opt["user"] != "root"):
-            Msg().err("Warning: this engine only supports execution as root",
+            Msg().out("Warning: this engine only supports execution as root",
                       l=Msg.WAR)
 
     def _add_capabilities_spec(self):
@@ -248,7 +248,7 @@ class RuncEngine(ExecutionEngineCommon):
             (host_dir, cont_dir) = self._vol_split(vol)
             if os.path.isdir(host_dir):
                 if host_dir == "/dev":
-                    Msg().err("Warning: engine does not support -v",
+                    Msg().out("Warning: engine does not support -v",
                               host_dir, l=Msg.WAR)
                     continue
                 self._add_mount_spec(host_dir, cont_dir, rwmode=True)
@@ -286,10 +286,10 @@ class RuncEngine(ExecutionEngineCommon):
     def _run_invalid_options(self):
         """check -p --publish -P --publish-all --net-coop"""
         if self.opt["portsmap"]:
-            Msg().err("Warning: this execution mode does not support "
+            Msg().out("Warning: this execution mode does not support "
                       "-p --publish", l=Msg.WAR)
         if self.opt["netcoop"]:
-            Msg().err("Warning: this execution mode does not support "
+            Msg().out("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
 
     #def _create_mountpoint(self, host_path, cont_path, dirs_only=True):

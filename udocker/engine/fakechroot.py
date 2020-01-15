@@ -70,7 +70,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         if not fakechroot_so:
             Msg().err("Error: no libfakechroot found", image_list)
             sys.exit(1)
-        Msg().err("fakechroot_so:", fakechroot_so, l=Msg.DBG)
+        Msg().out("Info: fakechroot_so:", fakechroot_so, l=Msg.DBG)
         return fakechroot_so
 
     def _setup_container_user(self, user):
@@ -81,7 +81,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         """Check the uid_map string for container run command"""
         if ("user" in self.opt and (self.opt["user"] == '0' or
                                     self.opt["user"] == "root")):
-            Msg().err("Warning: this engine does not support execution as root",
+            Msg().out("Warning: this engine does not support execution as root",
                       l=Msg.WAR)
 
     def _get_volume_bindings(self):
@@ -188,10 +188,10 @@ class FakechrootEngine(ExecutionEngineCommon):
     def _run_invalid_options(self):
         """check -p --publish -P --publish-all --net-coop"""
         if self.opt["portsmap"]:
-            Msg().err("Warning: this execution mode does not support "
+            Msg().out("Warning: this execution mode does not support "
                       "-p --publish", l=Msg.WAR)
         if self.opt["netcoop"]:
-            Msg().err("Warning: this execution mode does not support "
+            Msg().out("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
 
     def _run_add_script_support(self, exec_path):
@@ -247,7 +247,7 @@ class FakechrootEngine(ExecutionEngineCommon):
 
         # verify if container pathnames are correct for this mode
         if not self._elfpatcher.check_container_path():
-            Msg().err("Warning: container path mismatch, use setup to convert",
+            Msg().out("Warning: container path mismatch, use setup to convert",
                       l=Msg.WAR)
 
         # set basic environment variables
@@ -269,7 +269,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                 cmd_l.append(container_loader)
         cmd_l.extend(self._run_add_script_support(exec_path))
         cmd_l.extend(self.opt["cmd"])
-        Msg().err("CMD =", cmd_l, l=Msg.VER)
+        Msg().out("CMD =", cmd_l, l=Msg.VER)
 
         # execute
         self._run_banner(self.opt["cmd"][0], '#')

@@ -110,7 +110,7 @@ class ExecutionEngineCommon(object):
             Msg().err("Error: this container exposes privileged TCP/IP ports")
             return False
         if exposes_port:
-            Msg().err("Warning: this container exposes TCP/IP ports", l=Msg.WAR)
+            Msg().out("Warning: this container exposes TCP/IP ports", l=Msg.WAR)
         return True
 
     def _set_cpu_affinity(self):
@@ -303,7 +303,7 @@ class ExecutionEngineCommon(object):
                 self.opt["cmd"] = self.opt["entryp"]
         if not self.opt["cmd"]:
             self.opt["cmd"] = Config.conf['cmd']
-            Msg().err("Warning: no command assuming:", self.opt["cmd"],
+            Msg().out("Warning: no command assuming:", self.opt["cmd"],
                       l=Msg.WAR)
         exec_name = self.opt["cmd"][0]            # exec pathname without args
         if exec_name.startswith("/"):
@@ -587,7 +587,7 @@ class ExecutionEngineCommon(object):
                 FileUtil(container_auth.group_file).copyto(tmp_group)
             FileUtil().umask()
         if not (self.opt["containerauth"] or self.opt["hostauth"]):
-            Msg().err("Warning: non-existing user will be created",
+            Msg().out("Warning: non-existing user will be created",
                       l=Msg.WAR)
             self._fill_user()
             new_auth = NixAuthentication(tmp_passwd, tmp_group)
@@ -609,7 +609,7 @@ class ExecutionEngineCommon(object):
 
     def _run_banner(self, cmd, char="*"):
         """Print a container startup banner"""
-        Msg().err("",
+        Msg().out("",
                   "\n", char * 78,
                   "\n", char, " " * 74, char,
                   "\n", char,
