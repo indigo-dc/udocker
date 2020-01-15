@@ -19,7 +19,7 @@
 # ##################################################################
 
 cd ..
-VER=`grep version udocker/__init__.py|cut -d'"' -f 2`
+VER=`grep "__version__" udocker/__init__.py|cut -d'"' -f 2`
 echo "==========================================================="
 echo "* This script produces udocker-${VER}.tar.gz, for release *"
 echo "=========================================================="
