@@ -18,7 +18,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import os
 import sys
+
+sys.path.append(os.path.dirname(os.path.abspath("/home/jorge/mysoft/indigo/udocker/udocker-devel3/")))
+sys.path.append(os.path.dirname(os.path.abspath("/home/jorge/mysoft/indigo/udocker/udocker-devel3/udocker/")))
+sys.path.append(os.path.dirname(os.path.abspath("/home/jorge/mysoft/indigo/udocker/udocker-devel3/udocker/utils")))
+
 from udocker.umain import UMain
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
@@ -42,3 +48,9 @@ def main():
         FileUtil().cleanup()
 
     sys.exit(exit_status)
+
+if __name__ == "__main__":
+    #sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + "/../")
+    print sys.path
+    main(sys.argv)
+

@@ -118,14 +118,14 @@ class ExecutionMode(object):
         xmode = self.get_mode()
         if xmode.startswith("P"):
             self.exec_engine = \
-                PRootEngine(self.localrepo, xmode)
+                PRootEngine(self.localrepo)
         elif xmode.startswith("F"):
             self.exec_engine = \
-                FakechrootEngine(self.localrepo, xmode)
+                FakechrootEngine(self.localrepo)
         elif xmode.startswith("R"):
             self.exec_engine = \
-                RuncEngine(self.localrepo, xmode)
+                RuncEngine(self.localrepo)
         elif xmode.startswith("S"):
             self.exec_engine = \
-                SingularityEngine(self.localrepo, xmode)
+                SingularityEngine(self.localrepo)
         return self.exec_engine

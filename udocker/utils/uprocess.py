@@ -4,9 +4,10 @@
 import os
 import sys
 import subprocess
+
 from udocker.msg import Msg
 from udocker.config import Config
-from udocker.utils.fileutil import FileUtil
+#from udocker.utils.fileutil import FileUtil
 
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])

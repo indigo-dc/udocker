@@ -75,7 +75,7 @@ class PRootEngine(ExecutionEngineCommon):
                 ["-i", self.opt["uid"] + ":" + self.opt["gid"], ]
         return uid_map_list
 
-    def _create_mountpoint(self, host_path, cont_path):
+    def _create_mountpoint(self, host_path, cont_path, dirs_only=False):
         """Override create mountpoint"""
         return True
 
