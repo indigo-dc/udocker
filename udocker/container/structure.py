@@ -96,7 +96,7 @@ class ContainerStructure(object):
         if not status:
             Msg().err("Error: creating container:", self.container_id)
         elif not self._chk_container_root():
-            Msg().err("Warning: check container content:", self.container_id,
+            Msg().out("Warning: check container content:", self.container_id,
                       l=Msg.WAR)
 
         return self.container_id
@@ -125,7 +125,7 @@ class ContainerStructure(object):
         if not status:
             Msg().err("Error: creating container:", self.container_id)
         elif not self._chk_container_root():
-            Msg().err("Warning: check container content:", self.container_id,
+            Msg().out("Warning: check container content:", self.container_id,
                       l=Msg.WAR)
 
         return self.container_id
@@ -147,7 +147,7 @@ class ContainerStructure(object):
         if not status:
             Msg().err("Error: creating container clone:", self.container_id)
         elif not self._chk_container_root():
-            Msg().err("Warning: check container content:", self.container_id,
+            Msg().out("Warning: check container content:", self.container_id,
                       l=Msg.WAR)
 
         return self.container_id
@@ -318,7 +318,7 @@ class ContainerStructure(object):
             Msg().err("Error: creating container:", dest_container_id)
             return False
         elif not self._chk_container_root(dest_container_id):
-            Msg().err("Warning: check container content:", dest_container_id,
+            Msg().out("Warning: check container content:", dest_container_id,
                       l=Msg.WAR)
 
         return dest_container_id

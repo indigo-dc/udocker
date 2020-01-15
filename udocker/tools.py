@@ -151,7 +151,7 @@ class UdockerTools(object):
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/bin/"):
                     tar_in.name = os.path.basename(tar_in.name)
-                    Msg().err("Extrating", tar_in.name, l=Msg.DBG)
+                    Msg().out("Info: extrating", tar_in.name, l=Msg.DBG)
                     tfile.extract(tar_in, self.localrepo.bindir)
             FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR |
                                                    stat.S_IWUSR | stat.S_IXUSR)
@@ -159,7 +159,7 @@ class UdockerTools(object):
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/lib/"):
                     tar_in.name = os.path.basename(tar_in.name)
-                    Msg().err("Extrating", tar_in.name, l=Msg.DBG)
+                    Msg().out("Info: extrating", tar_in.name, l=Msg.DBG)
                     tfile.extract(tar_in, self.localrepo.libdir)
             FileUtil(self.localrepo.libdir).rchmod()
             tfile.close()
@@ -216,11 +216,11 @@ class UdockerTools(object):
         if self.is_available() and not force:
             return True
         elif not self._autoinstall and not force:
-            Msg().err("Warning: installation missing and autoinstall disabled",
+            Msg().out("Warning: installation missing and autoinstall disabled",
                       l=Msg.WAR)
             return None
         elif not self._tarball:
-            Msg().err("Info: UDOCKER_TARBALL not set, installation skipped",
+            Msg().out("Info: UDOCKER_TARBALL not set, installation skipped",
                       l=Msg.VER)
             return True
         else:

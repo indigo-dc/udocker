@@ -628,12 +628,12 @@ class LocalRepository(object):
                     elif ':' in fname:
                         structure["repolayers"][layer_id]["layer_f"] = f_path
                     else:
-                        Msg().err("Warning: unkwnon file in layer:", f_path,
+                        Msg().out("Warning: unkwnon file in layer:", f_path,
                                   l=Msg.WAR)
                 elif fname in ("TAG", "v1", "v2", "PROTECT", "container.json"):
                     pass
                 else:
-                    Msg().err("Warning: unkwnon file in image:", f_path,
+                    Msg().out("Warning: unkwnon file in image:", f_path,
                               l=Msg.WAR)
         return structure
 
