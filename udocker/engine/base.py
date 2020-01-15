@@ -455,7 +455,7 @@ class ExecutionEngineCommon(object):
         user_id = self._validate_user_str(user)
         if not user_id:
             return (False, user_id)
-        search_field = user_id.get("uid", user_id["user"])
+        search_field = user_id.get("uid", user_id.get("user", ""))
         if self.opt["hostauth"]:
             (self.opt["user"], self.opt["uid"], self.opt["gid"],
              self.opt["gecos"], self.opt["home"], self.opt["shell"]) = \

@@ -157,7 +157,7 @@ class NvidiaMode(object):
         self._copy_files('/etc', '/etc', Config.conf['nvi_etc_list'], force)
         self._copy_files('/usr/bin', '/usr/bin', Config.conf['nvi_bin_list'],
                          force)
-        FileUtil(self._container_nvidia_set).putdata("")
+        FileUtil(self._container_nvidia_set).putdata("", 'w')
 
     def get_mode(self):
         """Get nvidia mode"""

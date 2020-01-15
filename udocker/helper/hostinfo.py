@@ -62,10 +62,16 @@ class HostInfo(object):
         except (NameError, AttributeError):
             return "6.1.1"
 
-    def oskernel_isgreater(self, ref_version):
+    def oskernel_isgreater(self, version):
         """Compare kernel version is greater or equal than ref_version"""
         os_release = self.oskernel().split('-')[0]
         os_version = [int(x) for x in os_release.split('.')[0:3]]
+        if isinstance(version, str):
+            ref_version = [int(x) for x in version.split('.')[0:3]]
+        elif isinstance(version, list):
+            ref_version = version
+        else:
+            return False
         for idx in (0, 1, 2):
             if os_version[idx] > ref_version[idx]:
                 return True
@@ -83,7 +89,7 @@ class HostInfo(object):
         elif isinstance(arg, list):
             arg_list = arg
         out = Uprocess().get_output([executable] + arg_list + ["--help"])
-        if out and search_option in re.split(r"[=|\*\[\]\n,; ]*", out):
+        if out and search_option in re.split(r"[=|\*\[\]\n,; ]+", out):
             return True
         return False
 

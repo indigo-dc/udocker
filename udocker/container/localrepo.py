@@ -529,7 +529,7 @@ class LocalRepository(object):
             files.append(layer_file)
         try:
             json_file = directory + '/' + manifest["config"]["digest"]
-            container_json = json.loads(FileUtil(json_file).getdata())
+            container_json = json.loads(FileUtil(json_file).getdata('r'))
         except (IOError, OSError, AttributeError, ValueError, TypeError,
                 IndexError, KeyError):
             return (None, files)
@@ -595,7 +595,7 @@ class LocalRepository(object):
         json_obj = None
         infile = None
         try:
-            infile = open(in_filename)
+            infile = open(in_filename, 'r')
             json_obj = json.load(infile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             pass

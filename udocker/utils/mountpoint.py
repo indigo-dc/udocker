@@ -80,7 +80,7 @@ class MountPoint(object):
         self.add(cont_path)
         if os.path.isfile(host_path):
             FileUtil(os.path.dirname(mountpoint)).mkdir()
-            FileUtil(mountpoint).putdata("")
+            FileUtil(mountpoint).putdata("", "w")
             status = os.path.isfile(mountpoint) or os.path.islink(mountpoint)
         elif os.path.isdir(host_path):
             status = FileUtil(mountpoint).mkdir()

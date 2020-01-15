@@ -73,7 +73,7 @@ class RuncEngine(ExecutionEngineCommon):
         json_obj = None
         infile = None
         try:
-            infile = open(self._container_specfile)
+            infile = open(self._container_specfile, 'r')
             json_obj = json.load(infile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             json_obj = None

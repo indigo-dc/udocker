@@ -150,9 +150,9 @@ class NixAuthentication(object):
         """Add a *nix user to a /etc/passwd file"""
         line = "%s:%s:%s:%s:%s:%s:%s\n" % \
                 (user, passw, uid, gid, gecos, home, shell)
-        if line in FileUtil(self.passwd_file).getdata():
+        if line in FileUtil(self.passwd_file).getdata('r'):
             return True
-        return FileUtil(self.passwd_file).putdata(line, "ab")
+        return FileUtil(self.passwd_file).putdata(line, 'a')
 
     def add_group(self, group, gid, users=None):
         """Add a group to a /etc/passwd file"""
@@ -161,9 +161,9 @@ class NixAuthentication(object):
             for username in users:
                 users_str += "%s," % (username)
         line = "%s:x:%s:%s\n" % (group, gid, users_str)
-        if line in FileUtil(self.group_file).getdata():
+        if line in FileUtil(self.group_file).getdata('r'):
             return True
-        return FileUtil(self.group_file).putdata(line, "ab")
+        return FileUtil(self.group_file).putdata(line, 'a')
 
     def get_user(self, wanted_user):
         """Get host or container user"""

@@ -2,6 +2,7 @@
 """Tools for udocker"""
 
 import os
+import sys
 import tarfile
 import random
 import json
@@ -12,6 +13,17 @@ from udocker.utils.curl import GetURL
 from udocker.utils.fileutil import FileUtil
 from udocker.msg import Msg
 from udocker import __version__
+
+PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
+
+def _str(data):
+    """Safe str"""
+    if PY_VER >= "3":
+        try:
+            return data.decode()
+        except (UnicodeDecodeError, AttributeError):
+            pass
+    return data
 
 
 class UdockerTools(object):
@@ -67,13 +79,29 @@ class UdockerTools(object):
                   "\nrequires udockertools tarball release :",
                   self._tarball_release, l=Msg.ERR)
 
+    def _version2int(self, version):
+        """Convert version string to integer"""
+        version_int = 0
+        factor = 1000 * 1000
+        for vitem in _str(version).strip().split('.'):
+            try:
+                version_int = version_int + (int(vitem) * factor)
+            except (TypeError, ValueError):
+                pass
+            factor = factor / 1000
+        return int(version_int)    
+
     def _version_isok(self, version):
         """Is version >= than the minimum required tarball release"""
-        return version and version >= self._tarball_release
+        if not (version and self._tarball_release):
+            return False
+        tarball_version_int = self._version2int(version)
+        required_version_int = self._version2int(self._tarball_release)
+        return tarball_version_int >= required_version_int
 
     def is_available(self):
         """Are the tools already installed"""
-        version = FileUtil(self.localrepo.libdir + "/VERSION").getdata().strip()
+        version = FileUtil(self.localrepo.libdir + "/VERSION").getdata('r').strip()
         return self._version_isok(version)
 
     def purge(self):
@@ -133,7 +161,7 @@ class UdockerTools(object):
         except tarfile.TarError:
             FileUtil(tmpdir).remove(recursive=True)
             return (False, "")
-        tarball_version = FileUtil(tmpdir + "/VERSION").getdata().strip()
+        tarball_version = FileUtil(tmpdir + "/VERSION").getdata('r').strip()
         status = self._version_isok(tarball_version)
         FileUtil(tmpdir).remove(recursive=True)
         return (status, tarball_version)

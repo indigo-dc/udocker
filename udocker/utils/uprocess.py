@@ -52,8 +52,8 @@ class Uprocess(object):
         elif PY_VER == "2.7":
             chk_out = subprocess.check_output(*popenargs, **kwargs)
         elif PY_VER >= "3":
-            command = subprocess.check_output(*popenargs, **kwargs)
-            chk_out = command.decode()
+            output = subprocess.check_output(*popenargs, **kwargs)
+            chk_out = output.decode()
 
         return chk_out
 

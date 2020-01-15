@@ -113,10 +113,10 @@ class ElfPatcher(object):
     def get_original_loader(self):
         """Get the pathname of the original ld.so"""
         if os.path.exists(self._container_ld_so_path):
-            return FileUtil(self._container_ld_so_path).getdata().strip()
+            return FileUtil(self._container_ld_so_path).getdata('r').strip()
         elf_loader = self.guess_elf_loader()
         if elf_loader:
-            FileUtil(self._container_ld_so_path).putdata(elf_loader)
+            FileUtil(self._container_ld_so_path).putdata(elf_loader, 'w')
         return elf_loader
 
     def get_container_loader(self):
@@ -129,7 +129,7 @@ class ElfPatcher(object):
 
     def get_patch_last_path(self):
         """get last host pathname to the patched container"""
-        last_path = FileUtil(self._container_patch_path).getdata()
+        last_path = FileUtil(self._container_patch_path).getdata('r')
         if last_path and isinstance(last_path, str):
             return last_path.strip()
         return ""
@@ -143,7 +143,7 @@ class ElfPatcher(object):
 
     def get_patch_last_time(self):
         """get time in seconds of last full patch of container"""
-        last_time = FileUtil(self._container_patch_time).getdata().strip()
+        last_time = FileUtil(self._container_patch_time).getdata('r').strip()
         try:
             return str(int(last_time))
         except ValueError:
@@ -166,8 +166,8 @@ class ElfPatcher(object):
                 pass
             futil_time = FileUtil(self._container_patch_time)
             futil_path = FileUtil(self._container_patch_path)
-            return (futil_time.putdata(last_time) and
-                    futil_path.putdata(self._container_dir))
+            return (futil_time.putdata(last_time, 'w') and
+                    futil_path.putdata(self._container_dir, 'w'))
         return False
 
     def restore_binaries(self):
@@ -196,9 +196,9 @@ class ElfPatcher(object):
             if not status:
                 return False
 
-        ld_data = FileUtil(self._container_ld_so_orig).getdata()
+        ld_data = FileUtil(self._container_ld_so_orig).getdata('rb')
         if not ld_data:
-            ld_data = FileUtil(elf_loader).getdata()
+            ld_data = FileUtil(elf_loader).getdata('rb')
             if not ld_data:
                 return False
 
@@ -214,9 +214,9 @@ class ElfPatcher(object):
         ld_library_path_new = "\x00LD_LIBRARY_REAL\x00".encode()
         ld_data = ld_data.replace(ld_library_path_orig, ld_library_path_new)
         if output_elf is None:
-            return bool(FileUtil(elf_loader).putdata(ld_data))
+            return bool(FileUtil(elf_loader).putdata(ld_data, 'wb'))
 
-        return bool(FileUtil(output_elf).putdata(ld_data))
+        return bool(FileUtil(output_elf).putdata(ld_data, 'wb'))
 
     def restore_ld(self):
         """Restore ld.so"""
@@ -245,7 +245,7 @@ class ElfPatcher(object):
             if match:
                 ld_dict[self._container_root + \
                         os.path.dirname(match.group(2))] = True
-        return ld_dict.keys()
+        return list(ld_dict.keys())
 
     # pylint: disable=too-many-nested-blocks
     def _find_ld_libdirs(self, root_path=None):
@@ -272,9 +272,9 @@ class ElfPatcher(object):
         if force or not os.path.exists(self._container_ld_libdirs):
             ld_list = self._find_ld_libdirs()
             ld_str = ':'.join(ld_list)
-            FileUtil(self._container_ld_libdirs).putdata(ld_str)
+            FileUtil(self._container_ld_libdirs).putdata(ld_str, 'w')
             return ld_list
-        ld_str = FileUtil(self._container_ld_libdirs).getdata()
+        ld_str = FileUtil(self._container_ld_libdirs).getdata('r')
         return ld_str.split(':')
 
     def get_ld_library_path(self):

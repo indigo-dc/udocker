@@ -44,7 +44,7 @@ class ExecutionMode(object):
         if self.force_mode:
             return self.force_mode
         futil_xm = FileUtil(self.container_execmode)
-        xmode = futil_xm.getdata().strip()
+        xmode = futil_xm.getdata('r').strip()
         if not xmode:
             xmode = Config.conf['default_execution_mode']
         return xmode
@@ -56,7 +56,7 @@ class ExecutionMode(object):
         elfpatcher = ElfPatcher(self.localrepo, self.container_id)
         filebind = FileBind(self.localrepo, self.container_id)
         futil_croot = FileUtil(self.container_orig_root)
-        orig_path = futil_croot.getdata().strip()
+        orig_path = futil_croot.getdata('r').strip()
         if xmode not in self.valid_modes:
             Msg().err("Error: invalid execmode:", xmode)
             return status

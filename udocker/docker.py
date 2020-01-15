@@ -822,7 +822,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                                             + layer_id + "/json", json_string):
                 return False
             if not FileUtil(tmp_imagedir + "/" +
-                            layer_id + "/VERSION").putdata("1.0"):
+                            layer_id + "/VERSION").putdata("1.0", 'w'):
                 return False
         structure["manifest"].append(manifest_item)
         return True

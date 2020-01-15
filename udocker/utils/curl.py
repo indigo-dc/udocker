@@ -40,6 +40,7 @@ class CurlHeader(object):
 
     def write(self, buff):
         """Write is called by Curl()"""
+        buff = str(buff)
         pair = buff.split(":", 1)
         if len(pair) == 2:
             key = pair[0].strip().lower()
@@ -253,14 +254,18 @@ class GetURLpyCurl(GetURL):
             Msg().out("curl arg: ", kwargs, l=Msg.DBG)
             pyc.perform()     # call pyculr
         except(IOError, OSError):
+            print ("HERE1")
+            raise
             return (None, None)
         except pycurl.error as error:
+            print ("HERE2")
             # pylint: disable=unbalanced-tuple-unpacking
             errno, errstr = error.args
             hdr.data["X-ND-CURLSTATUS"] = errno
             if not hdr.data["X-ND-HTTPSTATUS"]:
                 hdr.data["X-ND-HTTPSTATUS"] = errstr
         status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
+        print ("STATUS CODE: " + str(status_code))
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
         if status_code == 401: # needs authentication
@@ -377,7 +382,7 @@ class GetURLexeCurl(GetURL):
         hdr.data["X-ND-CURLSTATUS"] = status
         if status:
             Msg().err("Error: in download: %s"
-                      % str(FileUtil(self._files["error_file"]).getdata()))
+                      % str(FileUtil(self._files["error_file"]).getdata('r')))
             FileUtil(self._files["output_file"]).remove()
             return (hdr, buf)
         status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
