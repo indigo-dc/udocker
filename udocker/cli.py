@@ -995,7 +995,7 @@ class UdockerCLI(object):
             Msg().err("Error: removing container name")
             return self.STATUS_ERROR
 
-        Msg().out("Container name: %s removed." % name)
+        Msg().out("Info: container name: %s removed." % name)
         return self.STATUS_OK
 
     def do_inspect(self, cmdp):
