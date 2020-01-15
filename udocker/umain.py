@@ -85,9 +85,13 @@ class UMain(object):
             "setup": self.cli.do_setup, "install": self.cli.do_install,
         }
 
-        if ((len(self.argv) == 1) or self.cmdp.get("-h", "GEN_OPT") or
+        if (len(self.argv) == 1):
+            if (self.cmdp.get("-h", "GEN_OPT") or
                 self.cmdp.get("--help", "GEN_OPT")):
-            return self.cli.do_help(self.cmdp)
+                return self.cli.do_help(self.cmdp)
+            if (self.cmdp.get("-V", "GEN_OPT") or
+                self.cmdp.get("--version", "GEN_OPT")):
+                return self.cli.do_version(self.cmdp)
 
         command = self.cmdp.get("", "CMD")
         if command in cmds:
