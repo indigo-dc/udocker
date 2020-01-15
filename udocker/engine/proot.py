@@ -20,8 +20,8 @@ class PRootEngine(ExecutionEngineCommon):
     Inherits from ContainerEngine class
     """
 
-    def __init__(self, localrepo):
-        super(PRootEngine, self).__init__(localrepo)
+    def __init__(self, localrepo, exec_mode):
+        super(PRootEngine, self).__init__(localrepo, exec_mode)
         self.executable = None                   # PRoot
         self.proot_noseccomp = False             # Noseccomp mode
         self._kernel = HostInfo().oskernel()     # Emulate kernel

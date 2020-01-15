@@ -10,6 +10,7 @@ from udocker.config import Config
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.chksum import ChkSUM
+from udocker.utils.uprocess import Uprocess
 from udocker.helper.osinfo import OSInfo
 
 

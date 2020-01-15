@@ -134,6 +134,8 @@ class UdockerCLI(object):
 
     def _split_imagespec(self, imagerepo):
         """Split image repo into hostname, repo, tag"""
+        if not imagerepo:
+            return ("", "", "", "")
         transport = ""
         hostname = ""
         image = imagerepo

@@ -7,7 +7,6 @@ import subprocess
 
 from udocker.msg import Msg
 from udocker.config import Config
-#from udocker.utils.fileutil import FileUtil
 
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
@@ -15,6 +14,21 @@ PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
 
 class Uprocess(object):
     """Provide alternative implementations for subprocess"""
+
+    def find_inpath(self, filename, path, rootdir=""):
+        """Find file in a path set such as PATH=/usr/bin:/bin"""
+        basename = os.path.basename(filename)
+        if isinstance(path, str):
+            if "=" in path:
+                path = "".join(path.split("=", 1)[1:])
+            path = path.split(":")
+        if isinstance(path, (list, tuple)):
+            for directory in path:
+                full_path = rootdir + directory + "/" + basename
+                if os.path.lexists(full_path):
+                    return directory + "/" + basename
+            return ""
+        return ""
 
     def _check_output(self, *popenargs, **kwargs):
         """Alternative to subprocess.check_output"""
@@ -45,7 +59,7 @@ class Uprocess(object):
         """Execute a shell command and get its output"""
         if not cmd[0].startswith("/"):
             path = Config.conf["root_path"] + ":" + os.getenv("PATH", "")
-            cmd[0] = FileUtil(cmd[0]).find_inpath(path)
+            cmd[0] = self.find_inpath(cmd[0], path)
         content = ""
         try:
             content = self.check_output(cmd, shell=False, stderr=Msg.chlderr,
@@ -59,7 +73,7 @@ class Uprocess(object):
         """Execute one shell command"""
         if not cmd[0].startswith("/"):
             path = Config.conf["root_path"] + ":" + os.getenv("PATH", "")
-            cmd[0] = FileUtil(cmd[0]).find_inpath(path)
+            cmd[0] = self.find_inpath(cmd[0], path)
         kwargs["shell"] = False
         return subprocess.call(cmd, **kwargs)
 
@@ -67,9 +81,9 @@ class Uprocess(object):
         """Pipe two shell commands"""
         path = Config.conf["root_path"] + ":" + os.getenv("PATH", "")
         if not cmd1[0].startswith("/"):
-            cmd1[0] = FileUtil(cmd1[0]).find_inpath(path)
+            cmd1[0] = self.find_inpath(cmd1[0], path)
         if not cmd2[0].startswith("/"):
-            cmd2[0] = FileUtil(cmd2[0]).find_inpath(path)
+            cmd2[0] = self.find_inpath(cmd2[0], path)
         try:
             proc_1 = subprocess.Popen(cmd1, stderr=Msg.chlderr, shell=False,
                                       stdout=subprocess.PIPE, **kwargs)

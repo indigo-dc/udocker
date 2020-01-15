@@ -21,8 +21,8 @@ class FakechrootEngine(ExecutionEngineCommon):
     Inherits from ContainerEngine class
     """
 
-    def __init__(self, localrepo):
-        super(FakechrootEngine, self).__init__(localrepo)
+    def __init__(self, localrepo, exec_mode):
+        super(FakechrootEngine, self).__init__(localrepo, exec_mode)
         self._fakechroot_so = ""
         self._elfpatcher = None
         self._recommend_expand_symlinks = False

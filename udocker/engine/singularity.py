@@ -20,8 +20,8 @@ class SingularityEngine(ExecutionEngineCommon):
     Inherits from ContainerEngine class
     """
 
-    def __init__(self, localrepo):
-        super(SingularityEngine, self).__init__(localrepo)
+    def __init__(self, localrepo, execmode):
+        super(SingularityEngine, self).__init__(localrepo, exec_mode)
         self.executable = None                   # singularity
         self.execution_id = None
 

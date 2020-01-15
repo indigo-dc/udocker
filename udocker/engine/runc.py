@@ -11,7 +11,6 @@ import select
 import json
 
 from udocker.engine.base import ExecutionEngineCommon
-from udocker.engine.execmode import ExecutionMode
 from udocker.engine.proot import PRootEngine
 from udocker.msg import Msg
 from udocker.config import Config
@@ -28,8 +27,8 @@ class RuncEngine(ExecutionEngineCommon):
     Inherits from ContainerEngine class
     """
 
-    def __init__(self, localrepo):
-        super(RuncEngine, self).__init__(localrepo)
+    def __init__(self, localrepo, exec_mode):
+        super(RuncEngine, self).__init__(localrepo, exec_mode)
         self.executable = None                   # runc
         self._container_specjson = None
         self._container_specfile = None
@@ -304,7 +303,7 @@ class RuncEngine(ExecutionEngineCommon):
             return
         else:
             preng = PRootEngine(self.localrepo)
-            preng.exec_mode = ExecutionMode(self.localrepo, container_id)
+            preng.exec_mode = self.exec_mode.get_engine()
             preng.exec_mode.force_mode = proot_mode
             preng.select_proot()
         if preng.proot_noseccomp or os.getenv("PROOT_NO_SECCOMP"):

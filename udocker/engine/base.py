@@ -12,7 +12,6 @@ from udocker.utils.fileutil import FileUtil
 from udocker.helper.nixauth import NixAuthentication
 from udocker.helper.hostinfo import HostInfo
 from udocker.container.structure import ContainerStructure
-from udocker.engine.execmode import ExecutionMode
 from udocker.utils.filebind import FileBind
 from udocker.utils.mountpoint import MountPoint
 
@@ -26,7 +25,7 @@ class ExecutionEngineCommon(object):
     the execution drivers.
     """
 
-    def __init__(self, localrepo):
+    def __init__(self, localrepo, exec_mode):
         self.localrepo = localrepo            # LocalRepository instance
         self.container_id = ""                # Container id
         self.container_dir = ""               # Container directory
@@ -34,7 +33,7 @@ class ExecutionEngineCommon(object):
         self.container_names = []             # Container names
         self.imagerepo = None                 # Imagerepo of container image
         self.hostauth_list = ()               # Authentication files to be used
-        self.exec_mode = None                 # ExecutionMode instance
+        self.exec_mode = exec_mode            # ExecutionMode instance
         self.mountp = None                    # MountPoint object
         self.executable = ""                  # Executable proot, runc, etc
         # Metadata defaults
@@ -48,6 +47,7 @@ class ExecutionEngineCommon(object):
         self.opt["containerauth"] = False     # Authentication from container
         self.opt["novol"] = []                # Volume bindings to ignore
         self.opt["env"] = []                  # Environment from container
+        self.opt["envfile"] = []              # File with environment variables
         self.opt["vol"] = []                  # Volumes to mount
         self.opt["cpuset"] = ""               # Container CPU affinity
         self.opt["user"] = ""                 # User to run in the container
@@ -724,7 +724,7 @@ class ExecutionEngineCommon(object):
         self.container_dir = container_dir
 
         # execution mode
-        self.exec_mode = ExecutionMode(self.localrepo, self.container_id)
+        #self.exec_mode = ExecutionMode(self.localrepo, self.container_id)
 
         # check if exposing privileged ports
         self._check_exposed_ports()
