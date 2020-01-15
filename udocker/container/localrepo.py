@@ -241,7 +241,8 @@ class LocalRepository(object):
                 linkname = os.path.realpath(self.containersdir + '/' + name)
                 if os.path.exists(linkname):
                     return False
-                return self._symlink(container_dir, linkname)
+                real_container_dir = os.path.realpath(container_dir)
+                return self._symlink(real_container_dir, linkname)
         return False
 
     def del_container_name(self, name):

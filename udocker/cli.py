@@ -226,7 +226,7 @@ class UdockerCLI(object):
                 lines -= print_lines
                 self._search_print_lines(repo_list, print_lines, fmt)
             if pause and not self.dockerioapi.search_ended:
-                if raw_input("[return or q to quit]") in ('q', 'Q', 'e', 'E'):
+                if GET_INPUT("[return or q to quit]") in ('q', 'Q', 'e', 'E'):
                     return self.STATUS_OK
 
     def _list_tags(self, expression):
@@ -1244,18 +1244,18 @@ Examples:
   udocker search --list-tags myimage
   udocker pull myimage:mytag
   udocker images
-  udocker create --name=myc  myimage:mytag
+  udocker create --name=mycontainer  myimage:mytag
   udocker ps -m -s
-  udocker inspect myc
-  udocker inspect -p myc
+  udocker inspect mycontainer
+  udocker inspect -p mycontainer
 
-  udocker run  myc  cat /etc/redhat-release
-  udocker run --hostauth --hostenv --bindhome  myc
-  udocker run --user=root  myc  yum install firefox
-  udocker run --hostauth --hostenv --bindhome myc   firefox
-  udocker run --hostauth --hostenv --bindhome myc   /bin/bash -i
+  udocker run  mycontainer  cat /etc/redhat-release
+  udocker run --hostauth --hostenv --bindhome  mycontainer
+  udocker run --user=root  mycontainer  yum install firefox
+  udocker run --hostauth --hostenv --bindhome mycontainer  firefox
+  udocker run --hostauth --hostenv --bindhome mycontainer  /bin/bash -i
 
-  udocker clone --name=anotherc myc
+  udocker clone --name=anotherc mycontainer
   udocker rm anotherc
 
   udocker mkrepo /data/myrepo
@@ -1263,11 +1263,11 @@ Examples:
   udocker --repo=/data/myrepo images
   udocker --repo=/data/myrepo run --user=$USER  myimage:mytag
 
-  udocker export -o myimage.tar  myimage:mytag
+  udocker export -o myimage.tar mycontainer
   udocker import myimage.tar mynewimage
   udocker create --name=mynewc mynewimage
-  udocker export -o myc.tar --clone myc
-  udocker import --clone myc.tar
+  udocker export --clone -o mycontainer.tar mycontainer
+  udocker import --clone mycontainer.tar
 
 Notes:
  * by default the binaries, images and containers are placed in
