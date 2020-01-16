@@ -40,7 +40,7 @@ class CurlHeader(object):
 
     def write(self, buff):
         """Write is called by Curl()"""
-        if PY_VER >= "3":
+        if not isinstance(buff, str):
             buff = buff.decode()
         pair = buff.split(":", 1)
         if len(pair) == 2:
@@ -90,7 +90,7 @@ class GetURL(object):
         self.http_proxy = Config.conf['http_proxy']
         self.cache_support = False
         self.insecure = Config.conf['http_insecure']
-        self._curl_exec = Config.conf['use_curl_exec']
+        self._curl_exec = Config.conf['use_curl_executable']
         self._select_implementation()
 
     # pylint: disable=locally-disabled
@@ -102,7 +102,8 @@ class GetURL(object):
             Msg().out("Info: using pycurl", l=Msg.DBG)
         elif GetURLexeCurl().is_available():
             self._geturl = GetURLexeCurl()
-            Msg().out("Info: using curl executable", self._geturl._curl_exec)
+            Msg().out("Info: using curl executable", self._geturl._curl_exec,
+                      l=Msg.DBG)
         else:
             Msg().err("Error: need curl or pycurl to perform downloads")
             raise NameError('need curl or pycurl')
