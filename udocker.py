@@ -1330,10 +1330,10 @@ class FileUtil(object):
 
     def find_exec(self):
         """Find an executable pathname by using which or type -p"""
-        cmd = self._find_exec(["which", self.basename])
+        cmd = self._find_exec(["which", self.basename, ])
         if cmd:
             return cmd
-        cmd = self._find_exec(["type", "-p", self.basename])
+        cmd = self._find_exec(["type", "-p", self.basename, ])
         if cmd:
             return cmd
         return ""
@@ -4923,7 +4923,8 @@ class LocalRepository(object):
                 linkname = os.path.realpath(self.containersdir + '/' + name)
                 if os.path.exists(linkname):
                     return False
-                return self._symlink(container_dir, linkname)
+                real_container_dir = os.path.realpath(container_dir)
+                return self._symlink(real_container_dir, linkname)
         return False
 
     def del_container_name(self, name):
@@ -7176,6 +7177,8 @@ class Udocker(object):
 
     def _split_imagespec(self, imagerepo):
         """Split image repo into hostname, repo, tag"""
+        if not imagerepo:
+            return ("", "", "", "")
         transport = ""
         hostname = ""
         image = imagerepo
@@ -8142,7 +8145,7 @@ class Udocker(object):
     def do_help(self, cmdp, cmds=None):
         """
         Syntax:
-          udocker  <command>  [command_options]  <command_args>
+          udocker [general_options] <command>  [command_options]  <command_args>
 
         Commands:
           search <repo/expression>      :Search dockerhub for container images
@@ -8197,18 +8200,18 @@ class Udocker(object):
           udocker search --list-tags myimage
           udocker pull myimage:mytag
           udocker images
-          udocker create --name=myc  myimage:mytag
+          udocker create --name=mycontainer  myimage:mytag
           udocker ps -m -s
-          udocker inspect myc
-          udocker inspect -p myc
+          udocker inspect mycontainer
+          udocker inspect -p mycontainer
 
-          udocker run  myc  cat /etc/redhat-release
-          udocker run --hostauth --hostenv --bindhome  myc
-          udocker run --user=root  myc  yum install firefox
-          udocker run --hostauth --hostenv --bindhome myc   firefox
-          udocker run --hostauth --hostenv --bindhome myc   /bin/bash -i
+          udocker run  mycontainer  cat /etc/redhat-release
+          udocker run --hostauth --hostenv --bindhome  mycontainer
+          udocker run --user=root  mycontainer  yum install firefox
+          udocker run --hostauth --hostenv --bindhome mycontainer  firefox
+          udocker run --hostauth --hostenv --bindhome mycontainer  /bin/bash -i
 
-          udocker clone --name=anotherc myc
+          udocker clone --name=anotherc mycontainer
           udocker rm anotherc
 
           udocker mkrepo /data/myrepo
@@ -8216,11 +8219,11 @@ class Udocker(object):
           udocker --repo=/data/myrepo images
           udocker --repo=/data/myrepo run --user=$USER  myimage:mytag
 
-          udocker export -o myimage.tar  myimage:mytag
+          udocker export -o myimage.tar  mycontainer
           udocker import myimage.tar mynewimage
           udocker create --name=mynewc mynewimage
-          udocker export -o myc.tar --clone myc
-          udocker import --clone myc.tar
+          udocker export --clone -o mycontainer.tar mycontainer
+          udocker import --clone mycontainer.tar
 
         Notes:
           * by default the binaries, images and containers are placed in
