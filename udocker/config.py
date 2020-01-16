@@ -144,7 +144,7 @@ class Config(object):
     conf['ctimeout'] = 6       # default TCP connect timeout (secs)
     conf['http_agent'] = ""
     conf['http_insecure'] = False
-    conf['use_curl_exec'] = ""  # force use of executable
+    conf['use_curl_executable'] = ""  # force use of executable
 
     # docker hub index
     conf['dockerio_index_url'] = "https://hub.docker.com"
@@ -245,8 +245,8 @@ class Config(object):
         Config.conf['tmpdir'] = os.getenv("UDOCKER_TMP", Config.conf['tmpdir'])
         Config.conf['keystore'] = \
             os.getenv("UDOCKER_KEYSTORE", Config.conf['keystore'])
-        Config.conf['use_curl_exec'] = \
-            os.getenv("UDOCKER_USE_CURL_EXEC", Config.conf['use_curl_exec'])
+        Config.conf['use_curl_executable'] = \
+            os.getenv("UDOCKER_USE_CURL_EXECUTABLE", Config.conf['use_curl_executable'])
         Config.conf['use_proot_executable'] = \
             os.getenv("UDOCKER_USE_PROOT_EXECUTABLE",
                       Config.conf['use_proot_executable'])
