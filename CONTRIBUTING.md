@@ -17,8 +17,8 @@ The current Python 2 version of udocker is meant to be very easily moved
 between hosts, and submitted to batch systems, that's why we have everything 
 in a single Python script.
 
-We are working on a Python 3 version that is under development in branch devel3
-This version will support Python 2 and Python 3 and is modular.
+Development work on a Python 3 version is ongoing in branch devel3
+This version supports Python 2 and Python 3 and is modular.
 
 Repositories
 ============
@@ -40,7 +40,7 @@ https://github.com/indigo-dc/udocker/issues
 Code contributions
 ==================
 
-* Perform pull requests against the devel branch for the current python 2 based version.
-* Perform pull requests against the devel3 branch for the ongoing python 3 based version.
+* Perform pull requests against the devel branch for the stable python 2 based version https://github.com/indigo-dc/udocker/tree/devel
+* Perform pull requests against the devel3 branch for the upcoming python 3 based version: https://github.com/indigo-dc/udocker/tree/devel3
 * Please check you Python code with pylint.
 * For new features please also provide unit tests.
