@@ -686,7 +686,11 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             return ""
         else:
             if not my_layer_id:
-                my_layer_id = structure["repolayers"].keys()[0]
+                # if Python 3 TypeError: 'dict_keys' object is not subscriptable
+                if sys.version_info[0] >= 3:
+                    my_layer_id = list(structure["repolayers"].keys())[0]
+                else:
+                    my_layer_id = structure["repolayers"].keys()[0]
             found = ""
             for layer_id in structure["repolayers"]:
                 if "parent" not in structure["repolayers"][layer_id]["json"]:
