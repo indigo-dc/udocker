@@ -73,5 +73,6 @@ class Unshare(object):
             except OSError:
                 Msg().err("Error: setting ids and groups")
                 return False
+            # pylint: disable=protected-access
             os._exit(int(method()))
         return False

@@ -20,7 +20,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import sys
 
 __author__ = "udocker@lip.pt"
 __copyright__ = "Copyright 2017, LIP"
@@ -32,4 +31,3 @@ __credits__ = ["PRoot http://proot.me",
 __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "1.2.4"
 __date__ = "2017"
-PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])

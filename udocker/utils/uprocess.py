@@ -8,9 +8,6 @@ import subprocess
 from udocker.msg import Msg
 from udocker.config import Config
 
-# Python version major.minor
-PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
-
 
 class Uprocess(object):
     """Provide alternative implementations for subprocess"""
@@ -46,14 +43,15 @@ class Uprocess(object):
 
     def check_output(self, *popenargs, **kwargs):
         """Select check_output implementation"""
-        chk_out = ""
-        if PY_VER == "2.6":
-            chk_out = self._check_output(*popenargs, **kwargs)
-        elif PY_VER == "2.7":
+        # if Python 2.7
+        if sys.version_info[0] == 2 and sys.version_info[1] == 7:
             chk_out = subprocess.check_output(*popenargs, **kwargs)
-        elif PY_VER >= "3":
+        # if Python 3
+        elif sys.version_info[0] >= 3:
             output = subprocess.check_output(*popenargs, **kwargs)
             chk_out = output.decode()
+        else:
+            chk_out = self._check_output(*popenargs, **kwargs)
 
         return chk_out
 

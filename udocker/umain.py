@@ -65,6 +65,7 @@ class UMain(object):
 
         self.cli = UdockerCLI(self.local)
 
+    # pylint: disable=too-many-return-statements
     def execute(self):
         """Command parsing and selection"""
         self._prepare_exec()
@@ -86,12 +87,12 @@ class UMain(object):
         }
 
         if ((len(self.argv) == 1) or
-            self.cmdp.get("-h", "GEN_OPT") or
-            self.cmdp.get("--help", "GEN_OPT")):
-                return self.cli.do_help(self.cmdp)
+                self.cmdp.get("-h", "GEN_OPT") or
+                self.cmdp.get("--help", "GEN_OPT")):
+            return self.cli.do_help(self.cmdp)
 
         if (self.cmdp.get("-V", "GEN_OPT") or
-            self.cmdp.get("--version", "GEN_OPT")):
+                self.cmdp.get("--version", "GEN_OPT")):
             return self.cli.do_version(self.cmdp)
 
         command = self.cmdp.get("", "CMD")

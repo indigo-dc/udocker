@@ -23,19 +23,13 @@ from udocker.utils.fileutil import FileUtil
 from udocker.utils.filebind import FileBind
 from udocker.utils.mountpoint import MountPoint
 
-#if sys.version_info[0] >= 3:
-#    BUILTIN = "builtins"
-#else:
-#    BUILTIN = "__builtin__"
-
-# Python version major.minor
-PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
-
-if PY_VER >= "3":
+# if Python 3
+if sys.version_info[0] >= 3:
     BUILTIN = "builtins"
     GET_INPUT = input
 else:
     BUILTIN = "__builtin__"
+    # pylint: disable=undefined-variable
     GET_INPUT = raw_input
 
 

@@ -70,7 +70,8 @@ class NvidiaMode(object):
                     os.chmod(dstname, mask)
                 except (IOError, OSError) as error:
                     Msg().err("Error: change mask of nvidia file", error)
-                Msg().out("Info: nvidia copied", srcname, "to", dstname, l=Msg.DBG)
+                Msg().out("Info: nvidia copied", srcname, "to", dstname,
+                          l=Msg.DBG)
 
     def _get_nvidia_libs(self, host_dir):
         """Expand the library files to include the versions"""

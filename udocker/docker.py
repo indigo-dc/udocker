@@ -15,9 +15,6 @@ from udocker.utils.curl import GetURL
 from udocker.utils.chksum import ChkSUM
 from udocker.helper.unique import Unique
 
-# Python version major.minor
-PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
-
 
 class DockerIoAPI(object):
     """Class to encapsulate the access to the Docker Hub service
@@ -288,7 +285,7 @@ class DockerIoAPI(object):
                     header = ["Authorization: Basic %s" % (self.v2_auth_token)]
                 (dummy, auth_buf) = self._get_url(auth_url, header=header,
                                                   RETRY=retry)
-                if PY_VER >= "3":
+                if sys.version_info[0] >= 3:
                     token_buf = auth_buf.getvalue().decode()
                 else:
                     token_buf = auth_buf.getvalue()
@@ -501,7 +498,7 @@ class DockerIoAPI(object):
             Msg().err("Error: ancestry not found")
             return []
         self.localrepo.save_json("ancestry", ancestry)
-        Msg().out("Info: v1 layers",  image_id, l=Msg.DBG)
+        Msg().out("Info: v1 layers", image_id, l=Msg.DBG)
         files = self.get_v1_layers_all(endpoint, ancestry)
         return files
 
@@ -542,7 +539,8 @@ class DockerIoAPI(object):
 
     def get(self, imagerepo, tag):
         """Pull a docker image from a v2 registry or v1 index"""
-        Msg().out("Info: get imagerepo: %s tag: %s" % (imagerepo, tag), l=Msg.DBG)
+        Msg().out("Info: get imagerepo: %s tag: %s" % (imagerepo, tag),
+                  l=Msg.DBG)
         (imagerepo, remoterepo) = self._parse_imagerepo(imagerepo)
         if self.localrepo.cd_imagerepo(imagerepo, tag):
             new_repo = False

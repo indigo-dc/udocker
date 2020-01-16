@@ -15,9 +15,6 @@ from udocker.container.structure import ContainerStructure
 from udocker.utils.filebind import FileBind
 from udocker.utils.mountpoint import MountPoint
 
-# Python version major.minor
-PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
-
 
 class ExecutionEngineCommon(object):
     """Docker container execution engine parent class
@@ -677,7 +674,8 @@ class ExecutionEngineCommon(object):
         self.opt["env"].append("container_execmode=" +
                                self.exec_mode.get_mode())
         cont_name = self.container_names
-        if PY_VER >= "3":
+        # if Python 3
+        if sys.version_info[0] >= 3:
             names = str(cont_name).translate(str.maketrans('', '', " '\"[]"))
         else:
             names = str(cont_name).translate(None, " '\"[]")

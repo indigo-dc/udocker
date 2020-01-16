@@ -297,7 +297,7 @@ class RuncEngine(ExecutionEngineCommon):
     #    return super(RuncEngine, self)._create_mountpoint(host_path,
     #                                                      cont_path, dirs_only)
 
-    def _proot_overlay(self, container_id, proot_mode="P2"):
+    def _proot_overlay(self, proot_mode="P2"):
         """Execute proot within runc"""
         xmode = self.exec_mode.get_mode()
         if xmode not in ("R2", "R3"):
@@ -375,7 +375,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._add_devices()
         self._add_capabilities_spec()
         self._mod_mount_spec("shm", "/dev/shm", {"options": ["size=2g"]})
-        self._proot_overlay(container_id)
+        self._proot_overlay()
         self._save_spec()
 
         if Msg.level >= Msg.DBG:

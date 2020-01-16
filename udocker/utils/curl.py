@@ -15,9 +15,9 @@ try:
 except ImportError:
     pass
 
-# Python version major.minor
-PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
-if PY_VER >= "3":
+# if Python 3
+# pylint: disable=import-error
+if sys.version_info[0] >= 3:
     from io import BytesIO as strio
 else:
     from StringIO import StringIO as strio
@@ -94,6 +94,7 @@ class GetURL(object):
         self._select_implementation()
 
     # pylint: disable=locally-disabled
+    # pylint: disable=protected-access
     def _select_implementation(self):
         """Select which implementation to use"""
         if GetURLpyCurl().is_available() and not self._curl_exec:

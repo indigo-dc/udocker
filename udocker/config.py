@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 """Configurations options and treatment/overrinding"""
 import os
-from udocker import PY_VER
+import sys
 from udocker.msg import Msg
-# import platform
-# import pwd
-# from udocker.helper.osinfo import OSInfo
 
-if PY_VER >= "3":
+# if Python 3
+if sys.version_info[0] >= 3:
     from configparser import ConfigParser
 else:
     from ConfigParser import ConfigParser
@@ -246,7 +244,8 @@ class Config(object):
         Config.conf['keystore'] = \
             os.getenv("UDOCKER_KEYSTORE", Config.conf['keystore'])
         Config.conf['use_curl_executable'] = \
-            os.getenv("UDOCKER_USE_CURL_EXECUTABLE", Config.conf['use_curl_executable'])
+            os.getenv("UDOCKER_USE_CURL_EXECUTABLE",
+                      Config.conf['use_curl_executable'])
         Config.conf['use_proot_executable'] = \
             os.getenv("UDOCKER_USE_PROOT_EXECUTABLE",
                       Config.conf['use_proot_executable'])

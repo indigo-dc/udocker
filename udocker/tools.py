@@ -14,11 +14,9 @@ from udocker.utils.fileutil import FileUtil
 from udocker.msg import Msg
 from udocker import __version__
 
-PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
-
 def _str(data):
-    """Safe str"""
-    if PY_VER >= "3":
+    """Safe str for Python 3 and Python 2"""
+    if sys.version_info[0] >= 3:
         try:
             return data.decode()
         except (UnicodeDecodeError, AttributeError):
@@ -89,7 +87,7 @@ class UdockerTools(object):
             except (TypeError, ValueError):
                 pass
             factor = factor / 1000
-        return int(version_int)    
+        return int(version_int)
 
     def _version_isok(self, version):
         """Is version >= than the minimum required tarball release"""
@@ -101,7 +99,8 @@ class UdockerTools(object):
 
     def is_available(self):
         """Are the tools already installed"""
-        version = FileUtil(self.localrepo.libdir + "/VERSION").getdata('r').strip()
+        version = \
+            FileUtil(self.localrepo.libdir + "/VERSION").getdata('r').strip()
         return self._version_isok(version)
 
     def purge(self):

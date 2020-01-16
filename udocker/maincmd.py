@@ -23,6 +23,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 
+# pylint: disable=wrong-import-position
 from udocker.msg import Msg
 from udocker.umain import UMain
 from udocker.utils.fileutil import FileUtil
@@ -41,7 +42,7 @@ def main():
     except SystemExit as error:
         FileUtil().cleanup()
         try:
-            exit_status = int(error.args[0]) 
+            exit_status = int(error.args[0])
         except (ValueError, TypeError):
             exit_status = 1
     except:
@@ -55,4 +56,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

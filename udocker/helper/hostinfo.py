@@ -50,11 +50,6 @@ class HostInfo(object):
         except (NameError, AttributeError):
             return ""
 
-    def osdistribution(self):
-        """Get operating system distribution"""
-        (distribution, version, dummy) = platform.linux_distribution()
-        return (distribution.split(' ')[0], version.split('.')[0])
-
     def oskernel(self):
         """Get operating system"""
         try:
