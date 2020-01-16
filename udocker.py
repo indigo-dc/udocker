@@ -4044,7 +4044,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_PATH=" + ld_library_real)
-            self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
+            #self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
             patchelf_exec = self._elfpatcher.select_patchelf()
             if patchelf_exec:
                 self.opt["env"].append("FAKECHROOT_PATCH_PATCHELF=" +
