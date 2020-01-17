@@ -83,7 +83,7 @@ udocker setup c7; return=$?
 result
 
 STRING="T009: udocker run c7 env|sort"
-udocker run c7 env|sort; return=$?
+udocker run c7 env; return=$?
 result
 
 STRING="T010: udocker setup ub18"
@@ -91,7 +91,7 @@ udocker setup ub18; return=$?
 result
 
 STRING="T011: udocker run ub18 env|sort"
-udocker run ub18 env|sort; return=$?
+udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = P2"
@@ -100,7 +100,7 @@ udocker setup --execmode=P2 c7; return=$?
 result
 
 STRING="T013: udocker run c7 env|sort"
-udocker run c7 env|sort; return=$?
+udocker run c7 env; return=$?
 result
 
 STRING="T014: udocker setup --execmode=P2 ub18"
@@ -108,7 +108,7 @@ udocker setup --execmode=P2 ub18; return=$?
 result
 
 STRING="T015: udocker run ub18 env|sort"
-udocker run ub18 env|sort; return=$?
+udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = F1"
@@ -117,7 +117,7 @@ udocker setup --execmode=F1 c7; return=$?
 result
 
 STRING="T017: udocker run c7 env|sort"
-udocker run c7 env|sort; return=$?
+udocker run c7 env; return=$?
 result
 
 STRING="T018: udocker setup --execmode=F1 ub18"
@@ -125,7 +125,7 @@ udocker setup --execmode=F1 ub18; return=$?
 result
 
 STRING="T019: udocker run ub18 env|sort"
-udocker run ub18 env|sort; return=$?
+udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = F2"
@@ -134,7 +134,7 @@ udocker setup --execmode=F2 c7; return=$?
 result
 
 STRING="T017: udocker run c7 env|sort"
-udocker run c7 env|sort; return=$?
+udocker run c7 env; return=$?
 result
 
 STRING="T018: udocker setup --execmode=F2 ub18"
@@ -142,7 +142,7 @@ udocker setup --execmode=F2 ub18; return=$?
 result
 
 STRING="T019: udocker run ub18 env|sort"
-udocker run ub18 env|sort; return=$?
+udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = F3"
@@ -151,7 +151,7 @@ udocker setup --execmode=F3 c7; return=$?
 result
 
 STRING="T017: udocker run c7 env|sort"
-udocker run c7 env|sort; return=$?
+udocker run c7 env; return=$?
 result
 
 STRING="T018: udocker setup --execmode=F3 ub18"
@@ -159,7 +159,7 @@ udocker setup --execmode=F3 ub18; return=$?
 result
 
 STRING="T019: udocker run ub18 env|sort"
-udocker run ub18 env|sort; return=$?
+udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = F4"
@@ -168,7 +168,7 @@ udocker setup --execmode=F4 c7; return=$?
 result
 
 STRING="T017: udocker run c7 env|sort"
-udocker run c7 env|sort; return=$?
+udocker run c7 env; return=$?
 result
 
 STRING="T018: udocker setup --execmode=F4 ub18"
@@ -176,7 +176,7 @@ udocker setup --execmode=F4 ub18; return=$?
 result
 
 STRING="T019: udocker run ub18 env|sort"
-udocker run ub18 env|sort; return=$?
+udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = R1"
@@ -185,7 +185,7 @@ udocker setup --execmode=R1 c7; return=$?
 result
 
 STRING="T021: udocker run c7 env|sort"
-udocker run c7 env|sort; return=$?
+udocker run c7 env; return=$?
 result
 
 STRING="T022: udocker setup --execmode=R1 ub18"
@@ -193,7 +193,7 @@ udocker setup --execmode=R1 ub18; return=$?
 result
 
 STRING="T023: udocker run ub18 env|sort"
-udocker run ub18 env|sort; return=$?
+udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = R2"
@@ -202,7 +202,7 @@ udocker setup --execmode=R2 c7; return=$?
 result
 
 STRING="T025: udocker run c7 env|sort"
-udocker run c7 env|sort; return=$?
+udocker run c7 env; return=$?
 result
 
 STRING="T026: udocker setup --execmode=R2 ub18"
@@ -210,7 +210,7 @@ udocker setup --execmode=R2 ub18; return=$?
 result
 
 STRING="T027: udocker run ub18 env|sort"
-udocker run ub18 env|sort; return=$?
+udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = R3"
@@ -219,7 +219,7 @@ udocker setup --execmode=R3 c7; return=$?
 result
 
 STRING="T029: udocker run c7 env|sort"
-udocker run c7 env|sort; return=$?
+udocker run c7 env; return=$?
 result
 
 STRING="T030: udocker setup --execmode=R3 ub18"
@@ -227,5 +227,5 @@ udocker setup --execmode=R3 ub18; return=$?
 result
 
 STRING="T031: udocker run ub18 env|sort"
-udocker run ub18 env|sort; return=$?
+udocker run ub18 env; return=$?
 result
