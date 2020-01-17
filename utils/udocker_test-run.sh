@@ -66,35 +66,12 @@ echo "============================================="
 echo "* This script tests udocker run and options *"
 echo "* and volume mount options                  *"
 echo "============================================="
-
-STRING="T001: udocker install"
-clean
-udocker install && ls ${DEFAULT_UDIR}/bin/proot-x86_64; return=$?
-result
-
-STRING="T002: udocker pull centos:7"
 udocker pull centos:7; return=$?
-result
-
-STRING="T003: udocker pull ubuntu:18.04"
 udocker pull ubuntu:18.04; return=$?
-result
-
-STRING="T004: udocker images"
 udocker images; return=$?
-result
-
-STRING="T005: udocker create --name=c7 centos:7"
 udocker create --name=c7 centos:7; return=$?
-result
-
-STRING="T006: udocker create --name=ub18 ubuntu:18.04"
 udocker create --name=ub18 ubuntu:18.04; return=$?
-result
-
-STRING="T007: udocker ps"
 udocker ps; return=$?
-result
 
 echo "===================="
 echo "* Test udocker run *"
