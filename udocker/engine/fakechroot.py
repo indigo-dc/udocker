@@ -11,6 +11,7 @@ from udocker.helper.osinfo import OSInfo
 from udocker.msg import Msg
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
+from udocker.utils.uvolume import Uvolume
 from udocker.helper.elfpatcher import ElfPatcher
 
 
@@ -90,7 +91,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         map_volumes_list = []
         map_volumes_dict = dict()
         for vol in self.opt["vol"]:
-            (host_path, cont_path) = self._vol_split(vol)
+            (host_path, cont_path) = Uvolume(vol).split()
             if not (host_path and cont_path):
                 continue
             real_host_path = os.path.realpath(host_path)
@@ -117,7 +118,8 @@ class FakechrootEngine(ExecutionEngineCommon):
         """
         file_list = []
         for c_path in Config.conf['access_files']:
-            h_file = self._cont2host(c_path)
+            h_file = FileUtil(self.container_root).cont2host(c_path,
+                                                             self.opt["vol"])
             if h_file and os.path.exists(h_file):
                 file_list.append(c_path)
         return ":".join(file_list)
@@ -201,11 +203,13 @@ class FakechrootEngine(ExecutionEngineCommon):
                                   "dynamic" in filetype):
             self.opt["cmd"][0] = exec_path
             return []
-        env_exec = FileUtil("env").find_inpath("/bin:/usr/bin",
-                                               self.container_root)
+        env_exec = FileUtil("env").find_exec("/bin:/usr/bin",
+                                             self.container_root)
         if  env_exec:
             return [self.container_root + '/' + env_exec, ]
-        real_path = self._cont2host(exec_path.split(self.container_root, 1)[-1])
+        relc_path = exec_path.split(self.container_root, 1)[-1]
+        real_path = FileUtil(self.container_root).cont2host(relc_path,
+                                                            self.opt["vol"])
         hashbang = FileUtil(real_path).get1stline()
         match = re.match("#! *([^ ]+)(.*)", hashbang)
         if match and not match.group(1).startswith('/'):
@@ -217,8 +221,8 @@ class FakechrootEngine(ExecutionEngineCommon):
                 interpreter.extend(match.group(2).strip().split(' '))
             self.opt["cmd"][0] = exec_path.split(self.container_root, 1)[-1]
             return interpreter
-        sh_exec = FileUtil("sh").find_inpath(self._getenv("PATH"),
-                                             self.container_root)
+        sh_exec = FileUtil("sh").find_exec(self.opt["env"].getenv("PATH"),
+                                           self.container_root)
         if sh_exec:
             return [self.container_root + '/' + sh_exec, ]
         Msg().err("Error: sh not found")
@@ -253,8 +257,6 @@ class FakechrootEngine(ExecutionEngineCommon):
         # set basic environment variables
         self._run_env_set()
         self._fakechroot_env_set()
-        if not self._check_env():
-            return 4
 
         # if not --hostenv clean the environment
         self._run_env_cleanup_list()
@@ -262,7 +264,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         # build the actual command
         cmd_l = self._set_cpu_affinity()
         cmd_l.extend(["env", "-i", ])
-        cmd_l.extend(self.opt["env"])
+        cmd_l.extend(self.opt["env"].list())
         if xmode in ("F1", "F2"):
             container_loader = self._elfpatcher.get_container_loader()
             if container_loader:
@@ -273,6 +275,7 @@ class FakechrootEngine(ExecutionEngineCommon):
 
         # execute
         self._run_banner(self.opt["cmd"][0], '#')
-        cwd = self._cont2host(self.opt["cwd"])
+        cwd = FileUtil(self.container_root).cont2host(self.opt["cwd"],
+                                                      self.opt["vol"])
         status = subprocess.call(cmd_l, shell=False, close_fds=True, cwd=cwd)
         return status

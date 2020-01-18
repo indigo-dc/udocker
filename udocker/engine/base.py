@@ -3,12 +3,13 @@
 
 import os
 import sys
-import string
 import re
 
 from udocker.msg import Msg
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
+from udocker.utils.uenv import Uenv
+from udocker.utils.uvolume import Uvolume
 from udocker.helper.nixauth import NixAuthentication
 from udocker.helper.hostinfo import HostInfo
 from udocker.container.structure import ContainerStructure
@@ -43,7 +44,7 @@ class ExecutionEngineCommon(object):
         self.opt["hostauth"] = False          # Use hostauth_list
         self.opt["containerauth"] = False     # Authentication from container
         self.opt["novol"] = []                # Volume bindings to ignore
-        self.opt["env"] = []                  # Environment from container
+        self.opt["env"] = Uenv()              # Environment from container
         self.opt["envfile"] = []              # File with environment variables
         self.opt["vol"] = []                  # Volumes to mount
         self.opt["cpuset"] = ""               # Container CPU affinity
@@ -128,68 +129,6 @@ class ExecutionEngineCommon(object):
         self.opt["cpuset"] = ""
         return []
 
-    def _cleanpath(self, pathname):
-        """Remove duplicate and trailing slashes"""
-        clean_path = ""
-        p_char = ''
-        for char in str(pathname):
-            if not clean_path:
-                clean_path = char
-            else:
-                if not (char == p_char and char == '/'):
-                    clean_path += char
-            p_char = char
-        if clean_path == "/":
-            return clean_path
-        else:
-            return clean_path.rstrip('/')
-
-    def _vol_split(self, vol):
-        """Split volume string host_path:container_path into list"""
-        try:
-            (host_dir, cont_dir) = vol.split(":", 1)
-            if not cont_dir:
-                cont_dir = host_dir
-        except ValueError:
-            host_dir = vol
-            cont_dir = vol
-        return (self._cleanpath(host_dir), self._cleanpath(cont_dir))
-
-    def _cont2host(self, pathname):
-        """Translate container path to host path"""
-        if not (pathname and pathname.startswith("/")):
-            return ""
-        path = ""
-        real_container_root = os.path.realpath(self.container_root)
-        pathname = re.sub("/+", "/", os.path.normpath(pathname))
-        for vol in self.opt["vol"]:
-            (host_path, cont_path) = self._vol_split(vol)
-            if cont_path != host_path:
-                if pathname.startswith(cont_path):
-                    path = host_path + pathname[len(cont_path):]
-                    break
-            elif pathname.startswith(host_path):
-                path = pathname
-                break
-        if not path:
-            path = real_container_root + "/" + pathname
-        f_path = ""
-        for d_comp in path.split("/")[1:]:
-            f_path = f_path + "/" + d_comp
-            while os.path.islink(f_path):
-                real_path = os.readlink(f_path)
-                if real_path.startswith("/"):
-                    if f_path.startswith(real_container_root): # in container
-                        if real_path.startswith(real_container_root):
-                            f_path = real_path
-                        else:
-                            f_path = real_container_root + real_path
-                    else:
-                        f_path = real_path
-                else:
-                    f_path = os.path.dirname(f_path) + "/" + real_path
-        return os.path.realpath(f_path)
-
     def _create_mountpoint(self, host_path, cont_path, dirs_only=False):
         """Create mountpoint"""
         if dirs_only and not FileUtil(host_path).isdir():
@@ -199,11 +138,10 @@ class ExecutionEngineCommon(object):
             return True
         return False
 
-
     def _check_volumes(self):
         """Check volume paths"""
         for vol in list(self.opt["vol"]):
-            (host_path, cont_path) = self._vol_split(vol)
+            (host_path, cont_path) = Uvolume(vol).split()
             if not (host_path and host_path.startswith('/')):
                 Msg().err("Error: invalid host volume path:", host_path)
                 return False
@@ -232,16 +170,16 @@ class ExecutionEngineCommon(object):
     def _is_volume(self, path):
         """Is path a host_path in the volumes list"""
         for vol in list(self.opt["vol"]):
-            (host_path, cont_path) = self._vol_split(vol)
-            if host_path and host_path == self._cleanpath(path):
+            (host_path, cont_path) = Uvolume(vol).split()
+            if host_path and host_path == Uvolume().cleanpath(path):
                 return cont_path
         return ""
 
     def _is_mountpoint(self, path):
         """Is path a host_path in the volumes list"""
         for vol in list(self.opt["vol"]):
-            (host_path, cont_path) = self._vol_split(vol)
-            if cont_path and cont_path == self._cleanpath(path):
+            (host_path, cont_path) = Uvolume(vol).split()
+            if cont_path and cont_path == Uvolume().cleanpath(path):
                 return host_path
         return ""
 
@@ -271,7 +209,7 @@ class ExecutionEngineCommon(object):
 
     def _check_paths(self):
         """Make sure we have a reasonable default PATH and CWD"""
-        if not self._getenv("PATH"):
+        if not self.opt["env"].getenv("PATH"):
             if self.opt["uid"] == "0":
                 path = Config.conf['root_path']
             else:
@@ -280,17 +218,17 @@ class ExecutionEngineCommon(object):
         # verify if the working directory is valid and fix it
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
-        if os.path.isdir(self._cont2host(self.opt["cwd"])):
+        cwd_path = FileUtil(self.container_root).cont2host(self.opt["cwd"],
+                                                           self.opt["vol"])
+        if os.path.isdir(cwd_path):
             return True
         Msg().err("Error: invalid working directory: ", self.opt["cwd"])
         return False
 
     def _check_executable(self):
         """Check if executable exists and has execute permissions"""
-        exec_path_list = []
-        path = self._getenv("PATH")
         if self.opt["entryp"] and isinstance(self.opt["entryp"], str):
-            self.opt["cmd"] = self.opt["entryp"].strip().split(" ")
+            self.opt["cmd"] = self.opt["entryp"].strip().split(' ')
         elif self.opt["entryp"] and isinstance(self.opt["entryp"], list):
             if self.opt["cmd"]:                                     # and cmd
                 cmd_args = self.opt["cmd"]
@@ -300,21 +238,19 @@ class ExecutionEngineCommon(object):
                 self.opt["cmd"] = self.opt["entryp"]
         if not self.opt["cmd"]:
             self.opt["cmd"] = Config.conf['cmd']
-            Msg().out("Warning: no command assuming:", self.opt["cmd"],
+            Msg().err("Warning: no command assuming:", self.opt["cmd"],
                       l=Msg.WAR)
         exec_name = self.opt["cmd"][0]            # exec pathname without args
-        if exec_name.startswith("/"):
-            exec_path_list.append(exec_name)
-        elif exec_name.startswith("./") or exec_name.startswith("../"):
-            exec_path_list.append(self.opt["cwd"] + "/" + exec_name)
-        else:
-            exec_path_list = \
-                FileUtil(exec_name).list_inpath(path, "/")
-        for exec_path in exec_path_list:
-            host_exec_path = self._cont2host(exec_path)
-            if (os.path.isfile(host_exec_path) and
-                    os.access(host_exec_path, os.X_OK)):
-                return self.container_root + "/" + exec_path
+        if exec_name.startswith("./") or exec_name.startswith("../"):
+            exec_name = self.opt["cwd"] + '/' + exec_name
+
+        path = self.opt["env"].getenv("PATH")
+        # DEBUG
+        exec_name = FileUtil(exec_name).find_exec(path, self.container_root,
+                                                  self.opt["vol"],
+                                                  self.opt["cwd"])
+        if exec_name:
+            return self.container_root + '/' + exec_name
         Msg().err("Error: command not found or has no execute bit set: ",
                   self.opt["cmd"])
         return ""
@@ -365,48 +301,10 @@ class ExecutionEngineCommon(object):
                 self.opt["portsexp"].extend(
                     container_structure.get_container_meta(
                         "ExposedPorts", [], container_json))
-                meta_env = \
+                self.opt["env"].extendif(
                     container_structure.get_container_meta(
-                        "Env", [], container_json)
-                if meta_env:
-                    meta_env.extend(self.opt["env"])
-                    self.opt["env"] = meta_env
+                        "Env", [], container_json))
         return(container_dir, container_json)
-
-    def _check_env(self):
-        """Sanitize the environment variables"""
-        for pair in list(self.opt["env"]):
-            if not pair:
-                self.opt["env"].remove(pair)
-                continue
-            if "=" not in pair:
-                self.opt["env"].remove(pair)
-                val = os.getenv(pair, "")
-                if val:
-                    self.opt["env"].append('%s=%s' % (pair, val))
-                continue
-            (key, val) = pair.split("=", 1)
-            if " " in key or key[0] in string.digits:
-                Msg().err("Error: in environment:", pair)
-                return False
-            # check: Why this conditional is not for runc
-            if " " in pair and "'" not in pair and '"' not in pair:
-                self.opt["env"].remove(pair)
-                self.opt["env"].append('%s=%s' % (key, val))
-        return True
-
-    def _getenv(self, search_key):
-        """A getenv() for the container environment metadata."""
-        for pair in self.opt["env"]:
-            if pair:
-                if "=" in pair:
-                    (key, val) = pair.split("=", 1)
-                else:
-                    key = pair
-                    val = ""
-                if key == search_key:
-                    return str(val)
-        return None
 
     def _select_auth_files(self):
         """Select authentication files to use /etc/passwd /etc/group"""
@@ -630,11 +528,7 @@ class ExecutionEngineCommon(object):
         """ Allow only to pass essential environment variables.
             Overriding parent ExecutionEngineCommon() class.
         """
-        container_env = []
-        for env_str in self.opt["env"]:
-            (env_var, dummy) = env_str.split("=", 1)
-            if env_var:
-                container_env.append(env_var)
+        container_env = self.opt["env"].keys()
         for (env_var, value) in list(os.environ.items()):
             if not env_var:
                 continue
@@ -646,18 +540,9 @@ class ExecutionEngineCommon(object):
                 continue
             self.opt["env"].append("%s=%s" % (env_var, value))
 
-    def _run_env_get(self):
-        """Get environment list"""
-        env_dict = dict()
-        for env_pair in self.opt["env"]:
-            (key, val) = env_pair.split("=", 1)
-            env_dict[key] = val
-        return env_dict
-
     def _run_env_set(self):
         """Environment variables to set"""
-        if not any(entry.startswith("HOME=") for entry in self.opt["env"]):
-            self.opt["env"].append("HOME=" + self.opt["home"])
+        self.opt["env"].appendif("HOME=" + self.opt["home"])
         self.opt["env"].append("USER=" + self.opt["user"])
         self.opt["env"].append("LOGNAME=" + self.opt["user"])
         self.opt["env"].append("USERNAME=" + self.opt["user"])
@@ -685,16 +570,9 @@ class ExecutionEngineCommon(object):
     def _run_env_cmdoptions(self):
         """Load environment from file --env-file="""
         for envfile in self.opt["envfile"]:
-            envdata = FileUtil(envfile).getdata()
+            envdata = FileUtil(envfile).getdata('r')
             for line in envdata.split("\n"):
-                try:
-                    (key, val) = line.split("=", 2)
-                except (ValueError, NameError, AttributeError):
-                    continue
-                for quote in ("'", '"'):
-                    if quote == val[0]:
-                        val = val.strip(quote)
-                self.opt["env"].append(key + "=" + val)
+                self.opt["env"].appendif(line)
 
     def _run_init(self, container_id):
         """Prepare execution of the container

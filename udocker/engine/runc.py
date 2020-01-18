@@ -6,7 +6,6 @@ import os
 import subprocess
 import platform
 import stat
-import string
 import select
 import json
 
@@ -15,6 +14,7 @@ from udocker.engine.proot import PRootEngine
 from udocker.msg import Msg
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
+from udocker.utils.uvolume import Uvolume
 from udocker.engine.nvidia import NvidiaMode
 from udocker.utils.filebind import FileBind
 from udocker.helper.unique import Unique
@@ -108,10 +108,8 @@ class RuncEngine(ExecutionEngineCommon):
             json_obj["process"]["cwd"] = self.opt["cwd"]
         json_obj["process"]["terminal"] = sys.stdout.isatty()
         json_obj["process"]["env"] = []
-        for env_str in self.opt["env"]:
-            (env_var, value) = env_str.split('=', 1)
-            if env_var:
-                json_obj["process"]["env"].append("%s=%s" % (env_var, value))
+        for (env_key, env_val) in self.opt["env"]:
+            json_obj["process"]["env"].append("%s=%s" % (env_key, env_val))
         for idmap in json_obj["linux"]["uidMappings"]:
             if "hostID" in idmap:
                 idmap["hostID"] = HostInfo.uid
@@ -245,7 +243,7 @@ class RuncEngine(ExecutionEngineCommon):
         (host_dir, cont_dir) = self._filebind.start(Config.conf['sysdirs_list'])
         self._add_mount_spec(host_dir, cont_dir, rwmode=True)
         for vol in self.opt["vol"]:
-            (host_dir, cont_dir) = self._vol_split(vol)
+            (host_dir, cont_dir) = Uvolume(vol).split()
             if os.path.isdir(host_dir):
                 if host_dir == "/dev":
                     Msg().out("Warning: engine does not support -v",
@@ -263,26 +261,6 @@ class RuncEngine(ExecutionEngineCommon):
                     self._filebind.set_file(host_dir, cont_dir)
                     self._filebind.add_file(host_dir, cont_dir)
 
-    def _check_env(self):
-        """Sanitize environment variables
-           Overriding parent ExecutionEngineCommon() class.
-        """
-        for pair in list(self.opt["env"]):
-            if not pair:
-                self.opt["env"].remove(pair)
-                continue
-            if '=' not in pair:
-                self.opt["env"].remove(pair)
-                val = os.getenv(pair, "")
-                if val:
-                    self.opt["env"].append('%s=%s' % (pair, val))
-                continue
-            (key, val) = pair.split('=', 1)
-            if ' ' in key or key[0] in string.digits:
-                Msg().err("Error: in environment:", pair)
-                return False
-        return True
-
     def _run_invalid_options(self):
         """check -p --publish -P --publish-all --net-coop"""
         if self.opt["portsmap"]:
@@ -291,11 +269,6 @@ class RuncEngine(ExecutionEngineCommon):
         if self.opt["netcoop"]:
             Msg().out("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
-
-    #def _create_mountpoint(self, host_path, cont_path, dirs_only=True):
-    #    """Create mountpoint"""
-    #    return super(RuncEngine, self)._create_mountpoint(host_path,
-    #                                                      cont_path, dirs_only)
 
     def _proot_overlay(self, proot_mode="P2"):
         """Execute proot within runc"""
@@ -363,8 +336,6 @@ class RuncEngine(ExecutionEngineCommon):
 
         # set environment variables
         self._run_env_set()
-        if not self._check_env():
-            return 5
 
         self._set_spec()
         if (Config.conf['runc_nomqueue'] or
@@ -421,7 +392,10 @@ class RuncEngine(ExecutionEngineCommon):
                 break
             if readable:
                 try:
-                    sys.stdout.write(os.read(pmaster, 1))
+                    if sys.version_info[0] >= 3:
+                        sys.stdout.write(os.read(pmaster, 1).decode())
+                    else:
+                        sys.stdout.write(os.read(pmaster, 1))
                 except OSError:
                     break
         try:

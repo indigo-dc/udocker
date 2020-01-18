@@ -3,6 +3,7 @@
 
 import os
 import re
+import sys
 import stat
 import json
 
@@ -646,7 +647,10 @@ class LocalRepository(object):
             return ""
         else:
             if not my_layer_id:
-                my_layer_id = structure["repolayers"].keys()[0]
+                if sys.version_info[0] >= 3:
+                    my_layer_id = list(structure["repolayers"].keys())[0]
+                else:
+                    my_layer_id = structure["repolayers"].keys()[0]
             found = ""
             for layer_id in structure["repolayers"]:
                 if "json" not in structure["repolayers"][layer_id]:   # v2
@@ -720,7 +724,10 @@ class LocalRepository(object):
         layer = iter(layers_list)
         status = True
         for ancestry_layer in structure["ancestry"]:
-            verify_layer = layer.next()
+            if sys.version_info[0] >= 3:
+                verify_layer = next(layer)
+            else:
+                verify_layer = layer.next()
             if ancestry_layer != verify_layer:
                 Msg().err("Error: ancestry and layers do not match",
                           ancestry_layer, verify_layer)

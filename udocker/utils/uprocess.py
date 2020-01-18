@@ -43,15 +43,19 @@ class Uprocess(object):
 
     def check_output(self, *popenargs, **kwargs):
         """Select check_output implementation"""
-        # if Python 2.7
-        if sys.version_info[0] == 2 and sys.version_info[1] == 7:
-            chk_out = subprocess.check_output(*popenargs, **kwargs)
-        # if Python 3
-        elif sys.version_info[0] >= 3:
-            output = subprocess.check_output(*popenargs, **kwargs)
-            chk_out = output.decode()
-        else:
-            chk_out = self._check_output(*popenargs, **kwargs)
+        try:
+            # if Python 3
+            if sys.version_info[0] >= 3:
+                output = subprocess.check_output(*popenargs, **kwargs)
+                chk_out = output.decode()
+            # if Python >= 2.7
+            elif sys.version_info[0] >= 2 and sys.version_info[1] >= 7:
+                chk_out = subprocess.check_output(*popenargs, **kwargs)
+            # if Python < 2.7
+            else:
+                chk_out = self._check_output(*popenargs, **kwargs)
+        except OSError:
+            return ""
 
         return chk_out
 
@@ -59,7 +63,9 @@ class Uprocess(object):
         """Execute a shell command and get its output"""
         if not cmd[0].startswith("/"):
             path = Config.conf["root_path"] + ":" + os.getenv("PATH", "")
-            cmd[0] = self.find_inpath(cmd[0], path)
+            cmd_path = self.find_inpath(cmd[0], path)
+            if cmd_path:
+                cmd[0] = cmd_path
         content = ""
         try:
             content = self.check_output(cmd, shell=False, stderr=Msg.chlderr,

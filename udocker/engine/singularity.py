@@ -9,6 +9,7 @@ from udocker.engine.base import ExecutionEngineCommon
 from udocker.msg import Msg
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
+from udocker.utils.uvolume import Uvolume
 from udocker.helper.nixauth import NixAuthentication
 from udocker.utils.filebind import FileBind
 from udocker.helper.unique import Unique
@@ -56,7 +57,7 @@ class SingularityEngine(ExecutionEngineCommon):
         tmp_is_binded = False
         vartmp_is_binded = False
         for vol in self.opt["vol"]:
-            (host_path, cont_path) = self._vol_split(vol)
+            (host_path, cont_path) = Uvolume(vol).split()
             if os.path.isdir(host_path):
                 if host_path == home_dir and cont_path in ("", host_path):
                     home_is_binded = True
@@ -81,8 +82,7 @@ class SingularityEngine(ExecutionEngineCommon):
         the form SINGULARITYENV_var=value
         """
         singularityenv = dict()
-        for pair in list(self.opt["env"]):
-            (key, val) = pair.split("=", 1)
+        for (key, val) in self.opt["env"]:
             singularityenv['SINGULARITYENV_%s' % key] = val
         return singularityenv
 
@@ -140,8 +140,10 @@ class SingularityEngine(ExecutionEngineCommon):
         )
 
         # setup execution
-        if not self._run_init(container_id):
+        exec_path = self._run_init(container_id)
+        if not exec_path:
             return 2
+        self.opt["cmd"][0] = exec_path.replace(self.container_root + "/", "")
 
         self._run_invalid_options()
 
@@ -153,8 +155,6 @@ class SingularityEngine(ExecutionEngineCommon):
 
         # set environment variables
         self._run_env_set()
-        if not self._check_env():
-            return 5
 
         if Msg.level >= Msg.DBG:
             singularity_debug = ["--debug", "-v", ]

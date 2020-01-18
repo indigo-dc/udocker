@@ -11,6 +11,8 @@ from udocker.config import Config
 from udocker.helper.unique import Unique
 from udocker.helper.hostinfo import HostInfo
 from udocker.utils.uprocess import Uprocess
+from udocker.utils.uvolume import Uvolume
+
 
 class FileUtil(object):
     """Some utilities to manipulate files"""
@@ -21,6 +23,7 @@ class FileUtil(object):
 
     def __init__(self, filename=None):
         self._tmpdir = Config.conf['tmpdir']
+        self.orig_filename = filename
         if filename == "-":
             self.filename = "-"
             self.basename = "-"
@@ -331,55 +334,83 @@ class FileUtil(object):
             (f_path, dummy) = os.path.split(f_path)
         return f_path
 
-    def _find_exec(self, cmd_to_use):
-        """This method is called by find_exec() invokes a command like
-        /bin/which or type to obtain the full pathname of an executable
-        """
-        exec_pathname = Uprocess().get_output(cmd_to_use)
-        Msg().out("Info: search got executable:", exec_pathname, l=Msg.DBG)
-        if exec_pathname is None:
+    def _cont2host(self, pathname, container_root, volumes=""):
+        """Auxiliary translate container path to host path"""
+        if not (pathname and pathname.startswith('/')):
             return ""
-        if "not found" in exec_pathname:
-            return ""
-        if exec_pathname and exec_pathname.startswith("/"):
-            return exec_pathname.strip()
-        return ""
+        if not volumes:
+            volumes = []
+        path = ""
+        real_container_root = os.path.realpath(container_root)
+        pathname = re.sub("/+", '/', os.path.normpath(pathname))
+        for vol in volumes:
+            (host_path, cont_path) = Uvolume(vol).split()
+            if cont_path != host_path:
+                if pathname.startswith(cont_path):
+                    path = host_path + pathname[len(cont_path):]
+                    break
+            elif pathname.startswith(host_path):
+                path = pathname
+                break
+        if not path:
+            path = real_container_root + '/' + pathname
+        f_path = ""
+        for d_comp in path.split('/')[1:]:
+            f_path = f_path + '/' + d_comp
+            while os.path.islink(f_path):
+                real_path = os.readlink(f_path)
+                if real_path.startswith('/'):
+                    if f_path.startswith(real_container_root): # in container
+                        if real_path.startswith(real_container_root):
+                            f_path = real_path
+                        else:
+                            f_path = real_container_root + real_path
+                    else:
+                        f_path = real_path
+                else:
+                    f_path = os.path.dirname(f_path) + '/' + real_path
+        return os.path.realpath(f_path)
 
-    def find_exec(self):
-        """Find an executable pathname by using which or type -p"""
-        cmd = self._find_exec(["which", self.basename, ])
-        if cmd:
-            return cmd
-        cmd = self._find_exec(["type", "-p", self.basename, ])
-        if cmd:
-            return cmd
-        return ""
+    def cont2host(self, container_path, volumes=""):
+        """Translate container relative path to host path"""
+        return self._cont2host(container_path, self.orig_filename, volumes)
 
-    def find_inpath(self, path, rootdir=""):
+    def _find_exec(self, path, rootdir="", volumes="", workdir="",
+                   cont2host=False):
         """Find file in a path set such as PATH=/usr/bin:/bin"""
-        if isinstance(path, str):
-            if "=" in path:
-                path = "".join(path.split("=", 1)[1:])
-            path = path.split(":")
-        if isinstance(path, (list, tuple)):
-            for directory in path:
-                full_path = rootdir + directory + "/" + self.basename
-                if os.path.lexists(full_path):
-                    return directory + "/" + self.basename
-            return ""
+        # DEBUG
+        for directory in path:
+            if not directory:
+                continue
+            if directory == "." and workdir:
+                directory = workdir
+            elif directory == ".." and workdir:
+                directory = workdir + "/.."
+            if self.orig_filename.startswith("/"):
+                exec_path = self.orig_filename
+            else:
+                exec_path = directory + "/" + self.orig_filename
+            host_path = exec_path
+            if rootdir:
+                host_path = self._cont2host(exec_path, rootdir, volumes)
+            if os.path.isfile(host_path) and os.access(host_path, os.X_OK):
+                return host_path if cont2host else exec_path
         return ""
 
-    def list_inpath(self, path, rootdir=""):
-        """List files with path PATH=/usr/bin:/bin prepended"""
-        full_path_list = []
+    def find_exec(self, path="", rootdir="", volumes="", workdir="",
+                  cont2host=False):
+        """Find an executable pathname"""
+        if not path:
+            path = os.getenv("PATH") + ":" + Config.conf['root_path']
+        if rootdir:
+            rootdir += "/"
         if isinstance(path, str):
             if "=" in path:
                 path = "".join(path.split("=", 1)[1:])
             path = path.split(":")
-        if isinstance(path, (list, tuple)):
-            for directory in path:
-                full_path_list.append(rootdir + directory + "/" + self.basename)
-        return full_path_list
+        if not isinstance(path, (list, tuple)):
+            return ""
+        return self._find_exec(path, rootdir, volumes, workdir, cont2host)
 
     def rename(self, dest_filename):
         """Rename/move file"""

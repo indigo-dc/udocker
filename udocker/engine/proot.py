@@ -9,6 +9,7 @@ from udocker.msg import Msg
 from udocker.config import Config
 from udocker.engine.base import ExecutionEngineCommon
 from udocker.utils.fileutil import FileUtil
+from udocker.utils.uvolume import Uvolume
 from udocker.helper.hostinfo import HostInfo
 
 
@@ -83,7 +84,7 @@ class PRootEngine(ExecutionEngineCommon):
         """Get the volume bindings string for container run command"""
         proot_vol_list = []
         for vol in self.opt["vol"]:
-            proot_vol_list.extend(["-b", "%s:%s" % self._vol_split(vol)])
+            proot_vol_list.extend(["-b", "%s:%s" % Uvolume(vol).split()])
         return proot_vol_list
 
     def _get_network_map(self):
@@ -112,13 +113,14 @@ class PRootEngine(ExecutionEngineCommon):
         if self.proot_noseccomp or os.getenv("PROOT_NO_SECCOMP"):
             self.opt["env"].append("PROOT_NO_SECCOMP=1")
 
+        if not HostInfo().oskernel_isgreater("3.0.0"):
+            self._kernel = "6.0.0"
+
         if self.opt["kernel"]:
             self._kernel = self.opt["kernel"]
 
         # set environment variables
         self._run_env_set()
-        if not self._check_env():
-            return 4
 
         if Msg.level >= Msg.DBG:
             proot_verbose = ["-v", "9", ]
@@ -153,5 +155,5 @@ class PRootEngine(ExecutionEngineCommon):
         # execute
         self._run_banner(self.opt["cmd"][0])
         status = subprocess.call(cmd_l, shell=False, close_fds=True,
-                                 env=os.environ.update(self._run_env_get()))
+                                 env=os.environ.update(self.opt["env"].dict()))
         return status

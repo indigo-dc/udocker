@@ -253,17 +253,18 @@ class ContainerStructure(object):
                 return container_json[confidx][param]
         return default
 
+    # DEBUG
     def _dict_to_str(self, in_dict):
         """Convert dict to str"""
         out_str = ""
-        for (key, val) in in_dict.iteritems():
+        for (key, val) in in_dict.items():
             out_str += "%s:%s " % (str(key), str(val))
         return out_str
 
     def _dict_to_list(self, in_dict):
         """Convert dict to list"""
         out_list = []
-        for (key, val) in in_dict.iteritems():
+        for (key, val) in in_dict.items():
             out_list.append("%s:%s" % (str(key), str(val)))
         return out_list
 
