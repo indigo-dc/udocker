@@ -5,6 +5,7 @@ import os
 import stat
 import glob
 import re
+import shutil
 
 from udocker.msg import Msg
 from udocker.config import Config
@@ -36,6 +37,8 @@ class NvidiaMode(object):
 
     def _copy_files(self, host_src_dir, cont_dst_dir, files_list, force=False):
         """copy or link file to destination creating directories as needed"""
+        Msg().out("Source (host) dir ", host_src_dir, l=Msg.DBG)
+        Msg().out("Destination (container) dir ", cont_dst_dir, l=Msg.DBG)
         for fname in files_list:
             srcname = host_src_dir + '/' + fname
             dstname = self.container_root + '/' + cont_dst_dir + '/' + fname
@@ -49,29 +52,35 @@ class NvidiaMode(object):
                     Msg().err("Error: nvidia file already exists", dstname,
                               ", use --force to overwrite")
                     return
-            if os.path.isfile(srcname):
-                srcdir = os.path.dirname(srcname)
-                dstdir = os.path.dirname(dstname)
-                if not os.path.isdir(dstdir):
-                    try:
-                        os.makedirs(dstdir)
-                        os.chmod(dstdir, stat.S_IMODE(os.stat(srcdir).st_mode) |
-                                 stat.S_IRWXU)
-                    except OSError:
-                        Msg().err("Error: creating nvidia dir", dstdir)
-                if not FileUtil(srcname).copyto(dstname):
-                    Msg().err("Error: copying file", srcname, "to", dstname)
-                    return
+
+            srcdir = os.path.dirname(srcname)
+            dstdir = os.path.dirname(dstname)
+            if not os.path.isdir(dstdir):
                 try:
-                    mask = stat.S_IMODE(os.stat(srcname).st_mode) | \
-                                        stat.S_IWUSR | stat.S_IRUSR
-                    if os.access(srcname, os.X_OK):
-                        mask = mask | stat.S_IXUSR
-                    os.chmod(dstname, mask)
-                except (IOError, OSError) as error:
-                    Msg().err("Error: change mask of nvidia file", error)
-                Msg().out("Info: nvidia copied", srcname, "to", dstname,
-                          l=Msg.DBG)
+                    os.makedirs(dstdir)
+                    os.chmod(dstdir, stat.S_IMODE(os.stat(srcdir).st_mode) |
+                             stat.S_IRWXU)
+                except OSError:
+                    Msg().err("Error: creating nvidia dir", dstdir)
+
+            if os.path.islink(srcname):
+                linkto = os.readlink(srcname)
+                os.symlink(linkto, dstname)
+                Msg().out("Info: is link", srcname, "to", dstname, l=Msg.DBG)
+            else:
+                shutil.copy2(srcname, dstname)
+                Msg().out("Info: is file", srcname, "to", dstname, l=Msg.DBG)
+
+            try:
+                mask = stat.S_IMODE(os.stat(srcname).st_mode) | \
+                                    stat.S_IWUSR | stat.S_IRUSR
+                if os.access(srcname, os.X_OK):
+                    mask = mask | stat.S_IXUSR
+                os.chmod(dstname, mask)
+            except (IOError, OSError) as error:
+                Msg().err("Error: change mask of nvidia file", error)
+
+            Msg().out("Info: nvidia copied", srcname, "to", dstname, l=Msg.DBG)
 
     def _get_nvidia_libs(self, host_dir):
         """Expand the library files to include the versions"""
@@ -79,6 +88,7 @@ class NvidiaMode(object):
         for lib in Config.conf['nvi_lib_list']:
             for expanded_libs in glob.glob(host_dir + '/' + lib + '*'):
                 lib_list.append(expanded_libs.replace(host_dir, ''))
+        Msg().out("Info: List nvidia libs", lib_list, l=Msg.DBG)
         return lib_list
 
     def _find_host_dir_ldconfig(self, arch="x86-64"):
@@ -113,12 +123,14 @@ class NvidiaMode(object):
         dir_list.update(self._find_host_dir_ldconfig())
         library_path = os.getenv("LD_LIBRARY_PATH", "")
         dir_list.update(self._find_host_dir_ldpath(library_path))
+        Msg().out("Info: Host location nvidia", dir_list, l=Msg.DBG)
         return dir_list
 
     def _find_cont_dir(self):
         """Find the location of the host target directory for libraries"""
         for dst_dir in ("/usr/lib/x86_64-linux-gnu", "/usr/lib64"):
             if os.path.isdir(self.container_root + '/' + dst_dir):
+                Msg().out("Info: Cont. location nvidia", dst_dir, l=Msg.DBG)
                 return dst_dir
         return ""
 
@@ -145,7 +157,7 @@ class NvidiaMode(object):
             Msg().err("Error: host nvidia libraries not found")
             return
         if not nvi_cont_dir:
-            Msg().err("Error: destination directory for nvidia libs not found")
+            Msg().err("Error: destination dir for nvidia libs not found")
             return
         if (not force) and self._installation_exists(nvi_host_dir_list,
                                                      nvi_cont_dir):
