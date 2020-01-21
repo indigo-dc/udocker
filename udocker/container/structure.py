@@ -44,6 +44,47 @@ class ContainerStructure(object):
 
         return(container_dir, container_json)
 
+    def get_container_meta(self, param, default, container_json):
+        """Get the container metadata from the container"""
+        confidx = ""
+        if "config" in container_json:
+            confidx = "config"
+        elif "container_config" in container_json:
+            confidx = "container_config"
+        if container_json[confidx]  and param in container_json[confidx]:
+            if container_json[confidx][param] is None:
+                pass
+            elif (isinstance(container_json[confidx][param], str) and (
+                    isinstance(default, (list, tuple)))):
+                return container_json[confidx][param].strip().split()
+            elif (isinstance(default, str) and (
+                    isinstance(container_json[confidx][param], (list, tuple)))):
+                return " ".join(container_json[confidx][param])
+            elif (isinstance(default, str) and (
+                    isinstance(container_json[confidx][param], dict))):
+                return self._dict_to_str(container_json[confidx][param])
+            elif (isinstance(default, list) and (
+                    isinstance(container_json[confidx][param], dict))):
+                return self._dict_to_list(container_json[confidx][param])
+            else:
+                return container_json[confidx][param]
+        return default
+
+    # DEBUG
+    def _dict_to_str(self, in_dict):
+        """Convert dict to str"""
+        out_str = ""
+        for (key, val) in in_dict.items():
+            out_str += "%s:%s " % (str(key), str(val))
+        return out_str
+
+    def _dict_to_list(self, in_dict):
+        """Convert dict to list"""
+        out_list = []
+        for (key, val) in in_dict.items():
+            out_list.append("%s:%s" % (str(key), str(val)))
+        return out_list
+
     def _chk_container_root(self, container_id=None):
         """Check container ROOT sanity"""
         if container_id:
@@ -226,48 +267,6 @@ class ContainerStructure(object):
                 status = False
                 Msg().err("Error: while modifying attributes of image layer")
         return status
-
-    def get_container_meta(self, param, default, container_json):
-        """Get the container metadata from the container"""
-        confidx = ""
-        if "config" in container_json:
-            confidx = "config"
-        elif "container_config" in container_json:
-            confidx = "container_config"
-        if container_json[confidx]  and param in container_json[confidx]:
-            if container_json[confidx][param] is None:
-                pass
-            elif (isinstance(container_json[confidx][param], str) and (
-                    isinstance(default, (list, tuple)))):
-                return container_json[confidx][param].strip().split()
-            elif (isinstance(default, str) and (
-                    isinstance(container_json[confidx][param], (list, tuple)))):
-                return " ".join(container_json[confidx][param])
-            elif (isinstance(default, str) and (
-                    isinstance(container_json[confidx][param], dict))):
-                return self._dict_to_str(container_json[confidx][param])
-            elif (isinstance(default, list) and (
-                    isinstance(container_json[confidx][param], dict))):
-                return self._dict_to_list(container_json[confidx][param])
-            else:
-                return container_json[confidx][param]
-        return default
-
-    # DEBUG
-    def _dict_to_str(self, in_dict):
-        """Convert dict to str"""
-        out_str = ""
-        for (key, val) in in_dict.items():
-            out_str += "%s:%s " % (str(key), str(val))
-        return out_str
-
-    def _dict_to_list(self, in_dict):
-        """Convert dict to list"""
-        out_list = []
-        for (key, val) in in_dict.items():
-            out_list.append("%s:%s" % (str(key), str(val)))
-        return out_list
-
 
     def export_tofile(self, clone_file):
         """Export a container creating a tar file of the rootfs

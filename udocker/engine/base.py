@@ -23,6 +23,31 @@ class ExecutionEngineCommon(object):
     the execution drivers.
     """
 
+    # Metadata defaults
+    opt = dict()                     # Run options
+    opt["nometa"] = False            # Don't load metadata
+    opt["nosysdirs"] = False         # Bind host dirs
+    opt["dri"] = False               # Directories needed for DRI
+    opt["bindhome"] = False          # Bind user home dir
+    opt["hostenv"] = False           # Pass host env
+    opt["hostauth"] = False          # Use hostauth_list
+    opt["containerauth"] = False     # Authentication from container
+    opt["novol"] = []                # Volume bindings to ignore
+    opt["env"] = Uenv()              # Environment from container
+    opt["envfile"] = []              # File with environment variables
+    opt["vol"] = []                  # Volumes to mount
+    opt["cpuset"] = ""               # Container CPU affinity
+    opt["user"] = ""                 # User to run in the container
+    opt["cwd"] = ""                  # Default dir in the container
+    opt["entryp"] = ""               # Container entrypoint
+    opt["cmd"] = Config.conf['cmd']  # Comand to execute
+    opt["hostname"] = ""             # Hostname TBD
+    opt["domain"] = ""               # Host domainname TBD
+    opt["volfrom"] = []              # Mount vol from container TBD
+    opt["portsmap"] = []             # Ports mapped in container
+    opt["portsexp"] = []             # Ports exposed by container
+    opt["devices"] = []              # Devices passed to container
+
     def __init__(self, localrepo, exec_mode):
         self.localrepo = localrepo            # LocalRepository instance
         self.container_id = ""                # Container id
@@ -34,30 +59,6 @@ class ExecutionEngineCommon(object):
         self.exec_mode = exec_mode            # ExecutionMode instance
         self.mountp = None                    # MountPoint object
         self.executable = ""                  # Executable proot, runc, etc
-        # Metadata defaults
-        self.opt = dict()                     # Run options
-        self.opt["nometa"] = False            # Don't load metadata
-        self.opt["nosysdirs"] = False         # Bind host dirs
-        self.opt["dri"] = False               # Directories needed for DRI
-        self.opt["bindhome"] = False          # Bind user home dir
-        self.opt["hostenv"] = False           # Pass host env
-        self.opt["hostauth"] = False          # Use hostauth_list
-        self.opt["containerauth"] = False     # Authentication from container
-        self.opt["novol"] = []                # Volume bindings to ignore
-        self.opt["env"] = Uenv()              # Environment from container
-        self.opt["envfile"] = []              # File with environment variables
-        self.opt["vol"] = []                  # Volumes to mount
-        self.opt["cpuset"] = ""               # Container CPU affinity
-        self.opt["user"] = ""                 # User to run in the container
-        self.opt["cwd"] = ""                  # Default dir in the container
-        self.opt["entryp"] = ""               # Container entrypoint
-        self.opt["cmd"] = Config.conf['cmd']  # Comand to execute
-        self.opt["hostname"] = ""             # Hostname TBD
-        self.opt["domain"] = ""               # Host domainname TBD
-        self.opt["volfrom"] = []              # Mount vol from container TBD
-        self.opt["portsmap"] = []             # Ports mapped in container
-        self.opt["portsexp"] = []             # Ports exposed by container
-        self.opt["devices"] = []              # Devices passed to container
 
     def _has_option(self, search_option, arg=None):
         """Check if executable has a given cli option"""
