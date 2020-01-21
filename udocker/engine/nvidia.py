@@ -70,15 +70,14 @@ class NvidiaMode(object):
             else:
                 shutil.copy2(srcname, dstname)
                 Msg().out("Info: is file", srcname, "to", dstname, l=Msg.DBG)
-
-            try:
-                mask = stat.S_IMODE(os.stat(srcname).st_mode) | \
-                                    stat.S_IWUSR | stat.S_IRUSR
-                if os.access(srcname, os.X_OK):
-                    mask = mask | stat.S_IXUSR
-                os.chmod(dstname, mask)
-            except (IOError, OSError) as error:
-                Msg().err("Error: change mask of nvidia file", error)
+                try:
+                    mask = stat.S_IMODE(os.stat(srcname).st_mode) | \
+                                        stat.S_IWUSR | stat.S_IRUSR
+                    if os.access(srcname, os.X_OK):
+                        mask = mask | stat.S_IXUSR
+                    os.chmod(dstname, mask)
+                except (IOError, OSError) as error:
+                    Msg().err("Error: change mask of nvidia file", error)
 
             Msg().out("Info: nvidia copied", srcname, "to", dstname, l=Msg.DBG)
 
