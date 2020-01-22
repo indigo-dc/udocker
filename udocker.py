@@ -396,14 +396,20 @@ class Uprocess(object):
 
     def check_output(self, *popenargs, **kwargs):
         """Select check_output implementation"""
-        if PY_VER >= "2.7":
-            return subprocess.check_output(*popenargs, **kwargs)
-        return self._check_output(*popenargs, **kwargs)
+        try:
+            if PY_VER >= "2.7":
+                return subprocess.check_output(*popenargs, **kwargs)
+            return self._check_output(*popenargs, **kwargs)
+        except OSError:
+            return ""
 
     def get_output(self, cmd, ignore_error=False):
         """Execute a command and get its output"""
         if not cmd[0].startswith("/"):
-            cmd[0] = FileUtil(cmd[0]).find_inpath(Config.root_path + ":" + os.getenv("PATH", ""))
+            cmd_path = FileUtil(cmd[0]).find_inpath(Config.root_path + ":" +
+                                                    os.getenv("PATH", ""))
+            if cmd_path:
+                cmd[0] = cmd_path
         content = ""
         try:
             content = self.check_output(cmd, shell=False, stderr=Msg.chlderr,
@@ -697,7 +703,8 @@ class Unshare(object):
             except OSError:
                 Msg().err("Error: setting ids and groups")
                 return False
-            exit(int(method()))
+            # pylint: disable=protected-access
+            os._exit(int(method()))
         return False
 
 

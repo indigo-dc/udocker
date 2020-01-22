@@ -1,6 +1,11 @@
 udocker (1.1.4-1)
   * Fix run --location
+  * Fix udocker integrated help
+  * Fix naming of containers
+  * Improve parsing of image names
   * Documentation improvements
+  * os._exit from Unshare.unshare()
+  * Disable FAKECHROOT_DISALLOW_ENV_CHANGES in F4 mode
 
 udocker (1.1.4)
   * Use hub.docker.com as default registry
