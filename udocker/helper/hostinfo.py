@@ -61,7 +61,7 @@ class HostInfo(object):
         """Compare kernel version is greater or equal than ref_version"""
         os_release = self.oskernel().split('-')[0]
         os_version = [int(x) for x in os_release.split('.')[0:3]]
-        if isinstance(version, str):
+        if isinstance(version, (str, unicode)):
             ref_version = [int(x) for x in version.split('.')[0:3]]
         elif isinstance(version, list):
             ref_version = version
@@ -79,7 +79,7 @@ class HostInfo(object):
         if not executable:
             return False
         arg_list = []
-        if arg and isinstance(arg, str):
+        if arg and isinstance(arg, (str, unicode)):
             arg_list = [arg]
         elif isinstance(arg, list):
             arg_list = arg

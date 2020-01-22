@@ -404,7 +404,7 @@ class FileUtil(object):
             path = os.getenv("PATH") + ":" + Config.conf['root_path']
         if rootdir:
             rootdir += "/"
-        if isinstance(path, str):
+        if isinstance(path, (str, unicode)):
             if "=" in path:
                 path = "".join(path.split("=", 1)[1:])
             path = path.split(":")

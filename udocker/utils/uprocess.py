@@ -17,7 +17,7 @@ class Uprocess(object):
         if not (filename and path):
             return ""
         basename = os.path.basename(filename)
-        if isinstance(path, str):
+        if isinstance(path, (str, unicode)):
             if "=" in path:
                 path = "".join(path.split("=", 1)[1:])
             path = path.split(":")

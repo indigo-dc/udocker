@@ -130,7 +130,7 @@ class ElfPatcher(object):
     def get_patch_last_path(self):
         """get last host pathname to the patched container"""
         last_path = FileUtil(self._container_patch_path).getdata('r')
-        if last_path and isinstance(last_path, str):
+        if last_path and isinstance(last_path, (str, unicode)):
             return last_path.strip()
         return ""
 

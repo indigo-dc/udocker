@@ -34,7 +34,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         if Config.conf['fakechroot_so']:
             if isinstance(Config.conf['fakechroot_so'], list):
                 image_list = Config.conf['fakechroot_so']
-            elif isinstance(Config.conf['fakechroot_so'], str):
+            elif isinstance(Config.conf['fakechroot_so'], (str, unicode)):
                 image_list = [Config.conf['fakechroot_so'], ]
             if "/" in Config.conf['fakechroot_so']:
                 if os.path.exists(Config.conf['fakechroot_so']):

@@ -196,7 +196,7 @@ class UdockerTools(object):
 
     def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
-        if isinstance(mirrors, str):
+        if isinstance(mirrors, (str, unicode)):
             mirrors = mirrors.split(' ')
         try:
             random.shuffle(mirrors)

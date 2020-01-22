@@ -7,12 +7,8 @@ import string
 
 def get_pair(envstr):
     """Split env=var into key and val"""
-    if sys.version_info[0] >= 3:
-        if not (isinstance(envstr, (str)) and envstr):
-           return ("", "")
-    else:
-        if not (isinstance(envstr, (str, unicode)) and envstr):
-           return ("", "")
+    if not (isinstance(envstr, (str, unicode)) and envstr):
+        return ("", "")
     if '=' in envstr:
         try:
             (key, val) = envstr.split('=', 1)

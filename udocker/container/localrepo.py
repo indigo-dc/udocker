@@ -100,7 +100,7 @@ class LocalRepository(object):
         """Verify if the provided object matches the format of a
         local container id.
         """
-        if not isinstance(obj, str):
+        if not isinstance(obj, (str, unicode)):
             return False
         match = re.match(
             "^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$", obj)

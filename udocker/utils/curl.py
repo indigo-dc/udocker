@@ -360,7 +360,7 @@ class GetURLexeCurl(GetURL):
             if "resume" in kwargs and kwargs["resume"]:
                 self._opts["resume"] = ["-C", "-"]
         cmd = ["curl"]
-        if self._curl_exec and isinstance(self._curl_exec, str):
+        if self._curl_exec and isinstance(self._curl_exec, (str, unicode)):
             cmd = [self._curl_exec]
         for opt in self._opts.values():
             cmd += opt
