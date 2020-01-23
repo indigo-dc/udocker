@@ -49,8 +49,8 @@ class NvidiaMode(object):
                     except OSError:
                         Msg().err("Error: deleting nvidia file", dstname)
                 else:
-                    Msg().err("Error: nvidia file already exists", dstname,
-                              ", use --force to overwrite")
+                    Msg().out("Info: nvidia file already exists", dstname,
+                              ", use --force to overwrite", l=Msg.INF)
                     return
 
             srcdir = os.path.dirname(srcname)
@@ -67,7 +67,7 @@ class NvidiaMode(object):
                 linkto = os.readlink(srcname)
                 os.symlink(linkto, dstname)
                 Msg().out("Info: is link", srcname, "to", dstname, l=Msg.DBG)
-            else:
+            elif os.path.isfile(srcname):
                 shutil.copy2(srcname, dstname)
                 Msg().out("Info: is file", srcname, "to", dstname, l=Msg.DBG)
                 try:
@@ -78,8 +78,10 @@ class NvidiaMode(object):
                     os.chmod(dstname, mask)
                 except (IOError, OSError) as error:
                     Msg().err("Error: change mask of nvidia file", error)
+            else:
+                Msg().err("Warn: nvidia file in config not found", srcname)
 
-            Msg().out("Info: nvidia copied", srcname, "to", dstname, l=Msg.DBG)
+        Msg().out("Info: nvidia copied", srcname, "to", dstname, l=Msg.DBG)
 
     def _get_nvidia_libs(self, host_dir):
         """Expand the library files to include the versions"""
