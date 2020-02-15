@@ -7,6 +7,7 @@ import sys
 import stat
 import json
 
+from udocker import is_genstr
 from udocker.config import Config
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
@@ -100,7 +101,7 @@ class LocalRepository(object):
         """Verify if the provided object matches the format of a
         local container id.
         """
-        if not isinstance(obj, (str, unicode)):
+        if not is_genstr(obj):
             return False
         match = re.match(
             "^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$", obj)

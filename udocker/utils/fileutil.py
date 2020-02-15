@@ -6,6 +6,7 @@ import sys
 import stat
 import re
 
+from udocker import is_genstr
 from udocker.msg import Msg
 from udocker.config import Config
 from udocker.helper.unique import Unique
@@ -404,7 +405,7 @@ class FileUtil(object):
             path = os.getenv("PATH") + ":" + Config.conf['root_path']
         if rootdir:
             rootdir += "/"
-        if isinstance(path, (str, unicode)):
+        if is_genstr(path):
             if "=" in path:
                 path = "".join(path.split("=", 1)[1:])
             path = path.split(":")

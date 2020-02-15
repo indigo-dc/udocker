@@ -6,6 +6,7 @@ import os
 import sys
 import time
 
+from udocker import is_genstr
 from udocker.msg import Msg
 from udocker.config import Config
 from udocker.utils.uprocess import Uprocess
@@ -130,7 +131,7 @@ class ElfPatcher(object):
     def get_patch_last_path(self):
         """get last host pathname to the patched container"""
         last_path = FileUtil(self._container_patch_path).getdata('r')
-        if last_path and isinstance(last_path, (str, unicode)):
+        if last_path and is_genstr(last_path):
             return last_path.strip()
         return ""
 

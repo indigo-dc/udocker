@@ -6,6 +6,7 @@ import re
 import pwd
 import platform
 
+from udocker import is_genstr
 from udocker.utils.uprocess import Uprocess
 
 class HostInfo(object):
@@ -61,7 +62,7 @@ class HostInfo(object):
         """Compare kernel version is greater or equal than ref_version"""
         os_release = self.oskernel().split('-')[0]
         os_version = [int(x) for x in os_release.split('.')[0:3]]
-        if isinstance(version, (str, unicode)):
+        if is_genstr(version):
             ref_version = [int(x) for x in version.split('.')[0:3]]
         elif isinstance(version, list):
             ref_version = version
@@ -79,7 +80,7 @@ class HostInfo(object):
         if not executable:
             return False
         arg_list = []
-        if arg and isinstance(arg, (str, unicode)):
+        if arg and is_genstr(arg):
             arg_list = [arg]
         elif isinstance(arg, list):
             arg_list = arg

@@ -5,6 +5,7 @@ import os
 import sys
 import json
 
+from udocker import is_genstr
 from udocker.config import Config
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
@@ -360,7 +361,7 @@ class GetURLexeCurl(GetURL):
             if "resume" in kwargs and kwargs["resume"]:
                 self._opts["resume"] = ["-C", "-"]
         cmd = ["curl"]
-        if self._curl_exec and isinstance(self._curl_exec, (str, unicode)):
+        if self._curl_exec and is_genstr(self._curl_exec):
             cmd = [self._curl_exec]
         for opt in self._opts.values():
             cmd += opt

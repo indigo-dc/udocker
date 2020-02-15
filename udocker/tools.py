@@ -8,6 +8,7 @@ import random
 import json
 import stat
 
+from udocker import is_genstr
 from udocker.config import Config
 from udocker.utils.curl import GetURL
 from udocker.utils.fileutil import FileUtil
@@ -196,7 +197,7 @@ class UdockerTools(object):
 
     def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
-        if isinstance(mirrors, (str, unicode)):
+        if is_genstr(mirrors):
             mirrors = mirrors.split(' ')
         try:
             random.shuffle(mirrors)

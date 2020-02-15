@@ -5,6 +5,7 @@ import os
 import sys
 import subprocess
 
+from udocker import is_genstr
 from udocker.msg import Msg
 from udocker.config import Config
 
@@ -17,7 +18,7 @@ class Uprocess(object):
         if not (filename and path):
             return ""
         basename = os.path.basename(filename)
-        if isinstance(path, (str, unicode)):
+        if is_genstr(path):
             if "=" in path:
                 path = "".join(path.split("=", 1)[1:])
             path = path.split(":")

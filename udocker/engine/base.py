@@ -5,6 +5,7 @@ import os
 import sys
 import re
 
+from udocker import is_genstr
 from udocker.msg import Msg
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
@@ -228,7 +229,7 @@ class ExecutionEngineCommon(object):
 
     def _check_executable(self):
         """Check if executable exists and has execute permissions"""
-        if self.opt["entryp"] and isinstance(self.opt["entryp"], (str, unicode)):
+        if self.opt["entryp"] and is_genstr(self.opt["entryp"]):
             self.opt["cmd"] = self.opt["entryp"].strip().split(' ')
         elif self.opt["entryp"] and isinstance(self.opt["entryp"], list):
             if self.opt["cmd"]:                                     # and cmd
@@ -331,7 +332,7 @@ class ExecutionEngineCommon(object):
     def _validate_user_str(self, user):
         """Parse string with uid:gid or username"""
         user_id = dict()
-        if not isinstance(user, (str, unicode)):
+        if not is_genstr(user):
             return user_id
         if re.match("^[a-zA-Z_][a-zA-Z0-9_-]*$", user):
             user_id["user"] = user

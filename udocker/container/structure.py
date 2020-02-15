@@ -4,6 +4,7 @@
 import os
 import subprocess
 
+from udocker import is_genstr
 from udocker.config import Config
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
@@ -54,13 +55,13 @@ class ContainerStructure(object):
         if container_json[confidx]  and param in container_json[confidx]:
             if container_json[confidx][param] is None:
                 pass
-            elif (isinstance(container_json[confidx][param], (str, unicode))
+            elif (is_genstr(container_json[confidx][param])
                     and (isinstance(default, (list, tuple)))):
                 return container_json[confidx][param].strip().split()
-            elif (isinstance(default, (str, unicode)) and (
+            elif (is_genstr(default) and (
                     isinstance(container_json[confidx][param], (list, tuple)))):
                 return " ".join(container_json[confidx][param])
-            elif (isinstance(default, (str, unicode)) and (
+            elif (is_genstr(default) and (
                     isinstance(container_json[confidx][param], dict))):
                 return self._dict_to_str(container_json[confidx][param])
             elif (isinstance(default, list) and (

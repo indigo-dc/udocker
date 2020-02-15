@@ -5,9 +5,11 @@ import os
 import sys
 import string
 
+from udocker import is_genstr
+
 def get_pair(envstr):
     """Split env=var into key and val"""
-    if not (isinstance(envstr, (str, unicode)) and envstr):
+    if not (is_genstr(envstr) and envstr):
         return ("", "")
     if '=' in envstr:
         try:
