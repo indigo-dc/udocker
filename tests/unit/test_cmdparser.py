@@ -29,9 +29,9 @@ class CmdParserTestCase(TestCase):
     def test_02_parse(self):
         """Test02 CmdParser().parse()."""
         cmdp = CmdParser()
-        argv = ("udocker run --bindhome --hostauth --hostenv -v /sys "
-                "-v /proc -v /var/run -v /dev --user=jorge "
-                "--dri myfed firefox")
+        argv = ["udocker", "run", "--bindhome", "--hostauth", "--hostenv",
+                "-v", "/sys", "-v", "/proc", "-v", "/var/run", "-v", "/dev",
+                "--user=jorge", "--dri", "myfed", "firefox"]
         status = cmdp.parse(argv)
         self.assertTrue(status)
 
@@ -42,41 +42,39 @@ class CmdParserTestCase(TestCase):
     def test_03_missing_options(self):
         """Test03 CmdParser().missing_options()."""
         cmdp = CmdParser()
-        argv = ("udocker run --bindhome --hostauth --hostenv -v /sys"
-                " -v /proc -v /var/run -v /dev --user=jorge "
-                "--dri myfed firefox")
+        argv = ["udocker", "run", "--bindhome", "--hostauth", "--hostenv",
+                "-v", "/sys", "-v", "/proc", "-v", "/var/run", "-v", "/dev",
+                "--user=jorge", "--dri", "myfed", "firefox"]
         cmdp.parse(argv)
         out = cmdp.missing_options()
         self.assertIsInstance(out, list)
 
     def test_04_get(self):
         """Test04 CmdParser().get()."""
-        argv = ("udocker --debug run --bindhome --hostauth --hostenv -v /sys"
-                " -v /proc -v /var/run -v /dev --user=jorge "
-                "--dri myfed firefox")
+        argv = ["udocker", "--debug", "run", "--bindhome", "--hostauth", "--hostenv",
+                "-v", "/sys", "-v", "/proc", "-v", "/var/run", "-v", "/dev",
+                "--user=jorge", "--dri", "myfed", "firefox"]
         cmdp = CmdParser()
         cmdp.parse(argv)
         out = cmdp.get("xyz")
         self.assertIsNone(out)
 
-        argv = ("udocker --debug run --bindhome --hostauth --hostenv -v /sys"
-                " -v /proc -v /var/run -v /dev --user=jorge "
-                "--dri myfed firefox")
+        argv = ["udocker", "--debug", "run", "--bindhome",
+                "-v", "/sys", "--user=jorge", "--dri", "myfed", "firefox"]
         cmdp = CmdParser()
         cmdp.parse(argv)
-        # out = cmdp.get("--dri", "CMD_OPT", True)
-        # self.assertTrue(out)
-        # out = cmdp.get("--user=", "CMD_OPT", True)
-        # self.assertEqual(out, "jorge")
-
-        out = cmdp.get("run", "CMD")
+        out = cmdp.get("--debug", "GEN_OPT", True)
         self.assertTrue(out)
+        out = cmdp.get("run", "CMD", True)
+        self.assertTrue(out)
+        out = cmdp.get("--bindhome", "CMD_OPT", True)
+        self.assertEqual(out, [True])
 
     # def test_05_declare_options(self):
     #     """Test05 CmdParser().declare_options()."""
-    #     argv = ("udocker --debug run --bindhome --hostauth --hostenv -v /sys"
-    #             " -v /proc -v /var/run -v /dev --user=jorge "
-    #             "--dri myfed firefox")
+    #     argv = ["udocker", "run", "--bindhome", "--hostauth", "--hostenv",
+    #             "-v", "/sys", "-v", "/proc", "-v", "/var/run", "-v", "/dev",
+    #             "--user=jorge", "--dri", "myfed", "firefox"]
     #     cmdp = CmdParser()
     #     cmdp.declare_options("-v= -e= -w= -u= -i -t -a")
 
