@@ -27,7 +27,7 @@ class Config(object):
     conf['containersdir'] = None
 
     # udocker installation tarball
-    conf['tarball_release'] = "1.1.4"
+    conf['tarball_release'] = "1.2.4"
     # conf['tarball'] = (
     #     "https://owncloud.indigo-datacloud.eu/index.php"
     #     "/s/QF09QQGUzG0P1pK/download"
