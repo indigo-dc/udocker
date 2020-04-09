@@ -5,28 +5,28 @@ udocker unit tests: Uprocess
 import subprocess
 import sys
 from unittest import TestCase, main
+from udocker.utils.uprocess import Uprocess
 try:
     from unittest.mock import Mock, patch
 except ImportError:
     from mock import Mock, patch
 
-sys.path.append('.')
-
-from udocker.utils.uprocess import Uprocess
-
 
 class UprocessTestCase(TestCase):
     """Test case for the Uprocess class."""
 
+    # def test_01_find_inpath(self, mock_popen):
+    #     """Test01 Uprocess().find_inpath()."""
+
     @patch('udocker.utils.uprocess.subprocess.Popen')
-    def test_01__check_output(self, mock_popen):
-        """Test _check_output()."""
+    def test_02__check_output(self, mock_popen):
+        """Test02 Uprocess()._check_output()."""
         mock_popen.return_value.communicate.return_value = ("OUTPUT", None)
         mock_popen.return_value.poll.return_value = 0
         uproc = Uprocess()
         status = uproc._check_output("CMD")
         self.assertEqual(status, "OUTPUT")
-        #
+
         mock_popen.return_value.communicate.return_value = ("OUTPUT", None)
         mock_popen.return_value.poll.return_value = 1
         uproc = Uprocess()
@@ -34,24 +34,28 @@ class UprocessTestCase(TestCase):
                           uproc._check_output, "CMD")
 
     @patch('udocker.utils.uprocess.subprocess.check_output')
-    def test_02_check_output(self, mock_subp_chkout):
-        """Test check_output()."""
+    def test_03_check_output(self, mock_subp_chkout):
+        """Test03 Uprocess().check_output()."""
         uproc = Uprocess()
         uproc.check_output("CMD")
         self.assertTrue(mock_subp_chkout.called)
 
     @patch('udocker.utils.uprocess.Uprocess.check_output')
-    def test_03_get_output(self, mock_uproc_chkout):
-        """Test get_output()."""
+    def test_04_get_output(self, mock_uproc_chkout):
+        """Test04 Uprocess().get_output()."""
         mock_uproc_chkout.return_value = "OUTPUT"
         uproc = Uprocess()
         self.assertEqual("OUTPUT", uproc.get_output("CMD"))
 
-    def test_04_get_output(self):
-        """Test get_output()."""
-        uproc = Uprocess()
-        self.assertRaises(subprocess.CalledProcessError,
-                          uproc.get_output("/bin/false"))
+        # uproc = Uprocess()
+        # self.assertRaises(subprocess.CalledProcessError,
+        #                   uproc.get_output("/bin/false"))
+
+    # def test_05_call(self, mock_popen):
+    #     """Test05 Uprocess().call()."""
+
+    # def test_06_pipe(self, mock_popen):
+    #     """Test06 Uprocess().pipe()."""
 
 
 if __name__ == '__main__':

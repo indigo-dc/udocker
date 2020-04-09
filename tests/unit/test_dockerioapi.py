@@ -25,8 +25,8 @@ class DockerIoAPITestCase(TestCase):
     """
 
     def setUp(self):
-        self.conf = Config().getconf()
-        self.local = LocalRepository(self.conf)
+        Config().getconf()
+        self.local = LocalRepository()
 
     def tearDown(self):
         pass

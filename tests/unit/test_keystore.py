@@ -21,53 +21,61 @@ class KeyStoreTestCase(TestCase):
     """Test KeyStore() local basic credentials storage."""
 
     def setUp(self):
-        self.conf = Config().getconf()
+        Config().getconf()
 
     def tearDown(self):
         pass
 
     def test_01_init(self):
-        """Test KeyStore() constructor."""
-        kstore = KeyStore(self.conf, "filename")
+        """Test01 KeyStore() constructor."""
+        kstore = KeyStore("filename")
         status = kstore.keystore_file
         self.assertEqual(status, "filename")
 
-    def test_02__verify_keystore(self):
-        """Test KeyStore()._verify_keystore()."""
-        pass
+    # @patch('udocker.helper.keystore.os.path.dirname')
+    # @patch('udocker.helper.keystore.HostInfo')
+    # @patch('udocker.helper.keystore.FileUtil')
+    # def test_02__verify_keystore(self, mock_futil, mock_hinfo, mock_pdir):
+    #     """Test02 KeyStore()._verify_keystore()."""
+    #     mock_futil.return_value.uid.return_value = 1000
+    #     mock_hinfo.return_value.uid.return_value = 1000
+    #     mock_pdir.return_value = "somedir/filename"
+    #     kstore = KeyStore("filename")
+    #     kstore._verify_keystore()
+    #     self.assertTrue(mock_futil.uid.called)
 
     @patch('udocker.helper.keystore.json.load')
     def test_03__read_all(self, mock_jload):
-        """Test KeyStore()._read_all() read credentials."""
+        """Test03 KeyStore()._read_all()."""
         url = u'https://xxx'
         email = u'user@domain'
         auth = u'xxx'
         credentials = {url: {u'email': email, u'auth': auth}}
         mock_jload.return_value = credentials
         with patch(BUILTINS + '.open', mock_open()):
-            kstore = KeyStore(self.conf, "filename")
+            kstore = KeyStore("filename")
             status = kstore._read_all()
             self.assertEqual(status, credentials)
 
     @patch.object(KeyStore, '_verify_keystore')
     @patch('udocker.helper.keystore.FileUtil.size')
     def test_04__shred(self, mock_size, mock_verks):
-        """Test KeyStore()._shred() erase file content."""
+        """Test04 KeyStore()._shred()."""
         with patch(BUILTINS + '.open', mock_open()):
-            kstore = KeyStore(self.conf, "filename")
+            kstore = KeyStore("filename")
             status = kstore._shred()
             self.assertEqual(status, 0)
 
         mock_size.return_value = 123
         with patch(BUILTINS + '.open', mock_open()):
-            kstore = KeyStore(self.conf, "filename")
+            kstore = KeyStore("filename")
             status = kstore._shred()
             self.assertEqual(status, 0)
 
     @patch('udocker.helper.keystore.json.dump')
     @patch('udocker.helper.keystore.os.umask')
     def test_05__write_all(self, mock_umask, mock_jdump):
-        """Test KeyStore()._write_all() write all credentials to file."""
+        """Test05 KeyStore()._write_all()."""
         url = u'https://xxx'
         email = u'user@domain'
         auth = u'xxx'
@@ -75,35 +83,35 @@ class KeyStoreTestCase(TestCase):
         mock_umask.return_value = 0o77
         mock_jdump.side_effect = IOError('json dump')
         with patch(BUILTINS + '.open', mock_open()):
-            kstore = KeyStore(self.conf, "filename")
+            kstore = KeyStore("filename")
             status = kstore._write_all(credentials)
             self.assertEqual(status, 1)
 
     @patch.object(KeyStore, '_read_all')
     def test_06_get(self, mock_readall):
-        """Test KeyStore().get() get credential for url from file."""
+        """Test06 KeyStore().get()."""
         url = u'https://xxx'
         email = u'user@domain'
         auth = u'xxx'
         credentials = {url: {u'email': email, u'auth': auth}}
         mock_readall.return_value = credentials
-        kstore = KeyStore(self.conf, "filename")
+        kstore = KeyStore("filename")
         self.assertTrue(kstore.get(url))
         self.assertFalse(kstore.get("NOT EXISTING ENTRY"))
 
     @patch.object(KeyStore, '_write_all')
     @patch.object(KeyStore, '_read_all')
     def test_07_put(self, mock_readall, mock_writeall):
-        """Test KeyStore().put() put credential for url to file."""
+        """Test07 KeyStore().put()."""
         url = u'https://xxx'
         email = u'user@domain'
         auth = u'xxx'
         credentials = {url: {u'email': email, u'auth': auth}}
-        kstore = KeyStore(self.conf, "filename")
+        kstore = KeyStore("filename")
         self.assertFalse(kstore.put("", "", ""))
 
         mock_readall.return_value = dict()
-        kstore = KeyStore(self.conf, "filename")
+        kstore = KeyStore("filename")
         kstore.put(url, auth, email)
         mock_writeall.assert_called_once_with(credentials)
 
@@ -113,14 +121,14 @@ class KeyStoreTestCase(TestCase):
     @patch.object(KeyStore, '_read_all')
     def test_08_delete(self, mock_readall, mock_writeall, mock_shred,
                        mock_verks):
-        """Test KeyStore().delete() delete credential for url from file."""
+        """Test08 KeyStore().delete()."""
         url = u'https://xxx'
         email = u'user@domain'
         auth = u'xxx'
         credentials = {url: {u'email': email, u'auth': auth}}
         mock_readall.return_value = credentials
         mock_writeall.return_value = 0
-        kstore = KeyStore(self.conf, "filename")
+        kstore = KeyStore("filename")
         status = kstore.delete(url)
         mock_writeall.assert_called_once_with({})
         self.assertEqual(status, 0)
@@ -129,13 +137,13 @@ class KeyStoreTestCase(TestCase):
     @patch.object(KeyStore, '_verify_keystore')
     @patch.object(KeyStore, '_shred')
     def test_09_erase(self, mock_shred, mock_verks, mock_unlink):
-        """Test KeyStore().erase() erase credentials file."""
-        kstore = KeyStore(self.conf, "filename")
+        """Test09 KeyStore().erase()."""
+        kstore = KeyStore("filename")
         self.assertEqual(kstore.erase(), 0)
         mock_unlink.assert_called_once_with("filename")
 
         mock_unlink.side_effect = IOError
-        kstore = KeyStore(self.conf, "filename")
+        kstore = KeyStore("filename")
         self.assertEqual(kstore.erase(), 1)
 
 

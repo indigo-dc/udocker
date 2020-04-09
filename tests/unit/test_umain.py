@@ -6,9 +6,9 @@ udocker unit tests: UMain
 from unittest import TestCase, main
 from udocker.umain import UMain
 try:
-    from unittest.mock import patch
+    from unittest.mock import patch, Mock
 except ImportError:
-    from mock import patch
+    from mock import patch, Mock
 
 
 class UMainTestCase(TestCase):
@@ -20,115 +20,67 @@ class UMainTestCase(TestCase):
     def tearDown(self):
         pass
 
-    @patch('udocker.umain.sys.exit')
-    @patch('udocker.umain.os')
+    def test_01_init(self):
+        """Test01 UMain(argv) constructor."""
+
     @patch('udocker.umain.UdockerCLI')
     @patch('udocker.umain.LocalRepository')
     @patch('udocker.umain.Config')
+    @patch('udocker.umain.os.geteuid')
     @patch('udocker.umain.CmdParser')
     @patch('udocker.umain.Msg')
-    def test_01_init(self, mock_msg, mock_cmdp, mock_conf,
-                     mock_local, mock_cli, mock_os, mock_exit):
-        """Test UMain(argv) constructor."""
-
-        # mock_cmdp.return_value.get.side_effect call order
-        # --allow-root --config --debug    -D
-        # --quiet      -q       --insecure --repo
+    def test_02__prepare_exec(self, mock_msg, mock_cmdp, mock_getuid,
+                              mock_conf, mock_local, mock_ucli):
+        """Test02 UMain()._prepare_exec()."""
         argv = ['udocker']
-        conf = mock_conf.getconf()
-        conf['verbose_level'] = 3
-        mock_cmdp.return_value.parse.return_value = True
+        mock_cmdp.return_value.parse.return_value = None
+        mock_cmdp.return_value.get.return_value = False
+        mock_getuid.return_value = False
+        with patch('sys.exit') as mock_exit:
+            um = UMain(argv)
+            status = um._prepare_exec()
+            self.assertTrue(mock_exit.called)
+            self.assertTrue(mock_msg.return_value.err.called)
 
-        # Test with no cmd options
-        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
-                                                  False, False, False, False]
-        UMain(argv)
-        self.assertTrue(mock_cmdp.called)
-        self.assertTrue(mock_conf.called)
-        self.assertTrue(mock_conf.getconf.called)
-        self.assertTrue(mock_msg.setlevel.called_with(conf['verbose_level']))
-        self.assertTrue(mock_local.called)
-        self.assertTrue(mock_cli.called)
-
-        # Test root with no --allow-root
-        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
-                                                  False, False, False, False]
-        mock_os.geteuid.return_value = 0
-        UMain(argv)
-        self.assertTrue(mock_exit.called)
-        mock_exit.reset_mock()
-
-        # Test root with --allow-root
-        mock_cmdp.return_value.get.side_effect = [True, False, False, False,
-                                                  False, False, False, False]
-        mock_os.geteuid.return_value = 0
-        UMain(argv)
-        self.assertFalse(mock_exit.called)
-        mock_exit.reset_mock()
-        mock_conf.reset_mock()
-
-        # Test --debug
-        mock_cmdp.return_value.get.side_effect = [False, False, True, False,
-                                                  False, False, False, False]
-        UMain(argv)
-        #self.assertEqual(confget['verbose_level'], 5)
-
-    # @patch('udocker.umain.sys.exit')
-    # @patch('udocker.umain.os')
-    # @patch('udocker.umain.UdockerCLI.do_version')
-    # @patch('udocker.umain.UdockerCLI.do_listconf')
-    # @patch('udocker.umain.UdockerCLI.do_help')
-    # @patch('udocker.umain.LocalRepository')
-    # @patch('udocker.umain.Config')
-    # @patch('udocker.umain.CmdParser')
-    # @patch('udocker.umain.Msg')
-    # def test_02__execute(self, mock_msg, mock_cmdp, mock_conf,
-    #                      mock_local, mock_help, mock_lconf, mock_ver,
-    #                      mock_os, mock_exit):
-    #     """Test UMain()._execute()."""
-    #     argv = ['udocker']
-    #     mock_help.return_value = 0
-    #     um = UMain(argv)
-    #     status = um._execute()
-    #     self.assertEqual(status, 0)
-    #     self.assertTrue(mock_help.called)
-
-    #     argv = ['udocker', 'listconf']
-    #     mock_lconf.return_value = 0
-    #     um = UMain(argv)
-    #     status = um._execute()
-    #     self.assertEqual(status, 0)
-    #     self.assertTrue(mock_lconf.called)
-
-    #     argv = ['udocker', 'version']
-    #     mock_ver.return_value = 0
-    #     um = UMain(argv)
-    #     status = um._execute()
-    #     self.assertEqual(status, 0)
-    #     self.assertTrue(mock_ver.called)
-
-    @patch('udocker.umain.FileUtil.cleanup')
-    @patch.object(UMain, '_execute')
-    @patch('udocker.umain.sys.exit')
-    def test_03_start(self, mock_exit, mock_exec, mock_clean):
-        """Test UMain().start()."""
         argv = ['udocker']
-        mock_exec.return_value = 0
-        mock_clean.return_value = None
+        mock_cmdp.return_value.parse.return_value = None
+        mock_getuid.return_value = True
+        mock_local.return_value.is_repo.return_value = True
+        mock_local.return_value.create_repo.return_value = None
+        mock_ucli.return_value = None
+        mock_cmdp.return_value.get.side_effect = [True, False, False,
+                                                  False, False, False,
+                                                  False, 'topdir']
         um = UMain(argv)
-        status = um.start()
-        #self.assertEqual(status, mock_exit)
-        self.assertTrue(mock_exec.called)
-        mock_exit.reset_mock()
+        status = um._prepare_exec()
+        self.assertTrue(mock_msg.return_value.err.called)
+        self.assertTrue(mock_getuid.called)
+        self.assertTrue(mock_local.return_value.is_repo.called)
+        self.assertTrue(mock_ucli.called)
 
-        # TODO: test the try except clause
-        # mock_exec.return_value = 1
-        # um = UMain(argv)
-        # mock_exec.side_effect = SystemExit()
-        # status = um.start()
-        # with self.assertRaises(SystemExit):
-        #     # self.assertEqual(status, 1)
-        #     self.assertTrue(mock_exit.called)
+    # @patch('udocker.umain.Msg')
+    # @patch('udocker.umain.UdockerCLI')
+    # @patch.object(UMain, '_prepare_exec')
+    # def test_03_execute(self, mock_prep, mock_ucli, mock_msg):
+    #     """Test03 UMain().execute()."""
+    #     argv = ['udocker']
+    #     mock_prep.return_value = None
+    #     mock_ucli.return_value.do_help.return_value = 0
+    #     um = UMain(argv)
+    #     um.cli = mock_ucli
+    #     status = um.execute()
+    #     self.assertTrue(mock_prep.called)
+    #     self.assertTrue(mock_ucli.do_help.called)
+    #     # self.assertEqual(status, 0)
+
+    #     argv = ['udocker', '--version']
+    #     mock_prep.return_value = None
+    #     mock_ucli.return_value.do_help.return_value = 0
+    #     mock_ucli.return_value.do_version.return_value = 0
+    #     um = UMain(argv)
+    #     um.cli = mock_ucli
+    #     status = um.execute()
+    #     self.assertTrue(mock_ucli.do_version.called)
 
 
 if __name__ == '__main__':

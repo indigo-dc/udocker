@@ -37,7 +37,7 @@ class CurlHeaderTestCase(TestCase):
         pass
 
     def test_01_init(self):
-        """Test CurlHeader() constructor."""
+        """Test01 CurlHeader() constructor."""
         curl_header = CurlHeader()
         self.assertFalse(curl_header.sizeonly)
         self.assertIsInstance(curl_header.data, dict)
@@ -45,7 +45,7 @@ class CurlHeaderTestCase(TestCase):
         self.assertEqual("", curl_header.data["X-ND-CURLSTATUS"])
 
     def test_02_write(self):
-        """Test CurlHeader().write()."""
+        """Test02 CurlHeader().write()."""
         buff = ["HTTP/1.1 200 OK",
                 "Content-Type: application/octet-stream",
                 "Content-Length: 32", ]
@@ -70,7 +70,7 @@ class CurlHeaderTestCase(TestCase):
 
     @patch.object(CurlHeader, 'write')
     def test_03_setvalue_from_file(self, mock_write):
-        """Test CurlHeader().setvalue_from_file()."""
+        """Test03 CurlHeader().setvalue_from_file()."""
         fakedata = StringIO('XXXX')
         with patch(BUILTINS + '.open') as mopen:
             mopen.return_value.__iter__ = (
@@ -80,7 +80,7 @@ class CurlHeaderTestCase(TestCase):
             self.assertTrue(mock_write.called_with('XXXX'))
 
     def test_04_getvalue(self):
-        """Test CurlHeader().getvalue()."""
+        """Test04 CurlHeader().getvalue()."""
         curl_header = CurlHeader()
         curl_header.data = "XXXX"
         status = curl_header.getvalue()
@@ -91,14 +91,14 @@ class GetURLTestCase(TestCase):
     """Test GetURL() perform http operations portably."""
 
     def setUp(self):
-        self.conf = Config().getconf()
-        self.conf['timeout'] = 1
-        self.conf['ctimeout'] = 1
-        self.conf['download_timeout'] = 1
-        self.conf['http_agent'] = ""
-        self.conf['http_proxy'] = ""
-        self.conf['http_insecure'] = 0
-        self.conf['use_curl_exec'] = ""
+        Config().getconf()
+        Config().conf['timeout'] = 1
+        Config().conf['ctimeout'] = 1
+        Config().conf['download_timeout'] = 1
+        Config().conf['http_agent'] = ""
+        Config().conf['http_proxy'] = ""
+        Config().conf['http_insecure'] = 0
+        Config().conf['use_curl_exec'] = ""
 
     def tearDown(self):
         pass
@@ -113,102 +113,105 @@ class GetURLTestCase(TestCase):
     @patch('udocker.utils.curl.Msg')
     def test_01_init(self, mock_msg, mock_gupycurl,
                      mock_guexecurl, mock_select):
-        """Test GetURL() constructor."""
+        """Test01 GetURL() constructor."""
         mock_msg.level = 0
         mock_gupycurl.return_value = False
         mock_guexecurl.return_value = True
-        geturl = GetURL(self.conf)
+        geturl = GetURL()
         mock_select.assert_called()
-        self.assertEqual(geturl.ctimeout, self.conf['ctimeout'])
-        self.assertEqual(geturl.insecure, self.conf['http_insecure'])
+        self.assertEqual(geturl.ctimeout, Config().conf['ctimeout'])
+        self.assertEqual(geturl.insecure, Config().conf['http_insecure'])
         self.assertFalse(geturl.cache_support)
 
     @patch('udocker.utils.curl.Msg')
     @patch.object(GetURLexeCurl, 'is_available')
     @patch.object(GetURLpyCurl, 'is_available')
     def test_02__select_implementation(self, mock_gupycurl, mock_guexecurl, mock_msg):
-        """Test GetURL()._select_implementation()."""
+        """Test02 GetURL()._select_implementation()."""
         mock_msg.level = 0
         mock_gupycurl.return_value = True
-        geturl = GetURL(self.conf)
+        geturl = GetURL()
         geturl._select_implementation()
         self.assertTrue(geturl.cache_support)
 
         mock_gupycurl.return_value = False
-        geturl = GetURL(self.conf)
+        geturl = GetURL()
         geturl._select_implementation()
         self.assertFalse(geturl.cache_support)
 
         mock_guexecurl.return_value = False
         with self.assertRaises(NameError):
-            GetURL(self.conf)
+            GetURL()
 
     def test_03_get_content_length(self):
-        """Test GetURL().get_content_length()."""
+        """Test03 GetURL().get_content_length()."""
         hdr = type('test', (object,), {})()
         hdr.data = {"content-length": 10, }
-        geturl = GetURL(self.conf)
+        geturl = GetURL()
         self.assertEqual(geturl.get_content_length(hdr), 10)
 
         hdr = type('test', (object,), {})()
         hdr.data = {"content-length": dict(), }
-        geturl = GetURL(self.conf)
+        geturl = GetURL()
         self.assertEqual(geturl.get_content_length(hdr), -1)
 
     @patch.object(GetURLpyCurl, 'is_available')
     def test_04_set_insecure(self, mock_gupycurl):
-        """Test GetURL().set_insecure()."""
+        """Test04 GetURL().set_insecure()."""
         mock_gupycurl.return_value = True
-        geturl = GetURL(self.conf)
+        geturl = GetURL()
         geturl.set_insecure()
         self.assertEqual(geturl.insecure, True)
 
-        geturl = GetURL(self.conf)
+        geturl = GetURL()
         geturl.set_insecure(False)
         self.assertEqual(geturl.insecure, False)
 
     @patch.object(GetURLpyCurl, 'is_available')
     def test_05_set_proxy(self, mock_gupycurl):
-        """Test GetURL().set_proxy()."""
+        """Test05 GetURL().set_proxy()."""
         mock_gupycurl.return_value = True
-        geturl = GetURL(self.conf)
+        geturl = GetURL()
         geturl.set_proxy("http://host")
         self.assertEqual(geturl.http_proxy, "http://host")
 
     def test_06_get(self):
-        """Test GetURL().get() generic get."""
-        geturl = GetURL(self.conf)
+        """Test06 GetURL().get()."""
+        geturl = GetURL()
         self.assertRaises(TypeError, geturl.get)
 
-        geturl = GetURL(self.conf)
+        geturl = GetURL()
         geturl._geturl = type('test', (object,), {})()
         geturl._geturl.get = self._get
         self.assertEqual(geturl.get("http://host"), "http://host")
 
     def test_07_post(self):
-        """Test GetURL().post() generic post."""
-        geturl = GetURL(self.conf)
+        """Test07 GetURL().post()."""
+        geturl = GetURL()
         self.assertRaises(TypeError, geturl.post)
         self.assertRaises(TypeError, geturl.post, "http://host")
 
-        geturl = GetURL(self.conf)
+        geturl = GetURL()
         geturl._geturl = type('test', (object,), {})()
         geturl._geturl.get = self._get
         status = geturl.post("http://host", {"DATA": 1, })
         self.assertEqual(status, "http://host")
+
+    # def test_08_get_status_code(self):
+    #     """Test08 GetURL().get_status_code()."""
 
 
 class GetURLpyCurlTestCase(TestCase):
     """GetURLpyCurl TestCase."""
 
     def setUp(self):
-        self.conf = Config().getconf()
-        self.conf['timeout'] = 1
-        self.conf['ctimeout'] = 1
-        self.conf['download_timeout'] = 1
-        self.conf['http_agent'] = ""
-        self.conf['http_proxy'] = ""
-        self.conf['http_insecure'] = 0
+        Config().getconf()
+        Config().conf['timeout'] = 1
+        Config().conf['ctimeout'] = 1
+        Config().conf['download_timeout'] = 1
+        Config().conf['http_agent'] = ""
+        Config().conf['http_proxy'] = ""
+        Config().conf['http_insecure'] = 0
 
     def tearDown(self):
         pass
@@ -217,42 +220,44 @@ class GetURLpyCurlTestCase(TestCase):
         """Mock for pycurl.get."""
         return args[0]
 
+    # def test_01_init(self):
+    #     """Test01 GetURLpyCurl() constructor."""
+
     @patch('udocker.utils.curl.Msg')
     @patch.object(GetURLpyCurl, 'is_available')
-    def test_01_is_available(self, mock_gupycurl, mock_msg):
-        """Test GetURLpyCurl()._is_available()."""
+    def test_02_is_available(self, mock_gupycurl, mock_msg):
+        """Test02 GetURLpyCurl()._is_available()."""
         mock_msg.level = 0
         mock_gupycurl.return_value = True
-        geturl = GetURLpyCurl(self.conf)
+        geturl = GetURLpyCurl()
         geturl.is_available()
         self.assertTrue(geturl.is_available())
 
         mock_gupycurl.return_value = False
-        geturl = GetURLpyCurl(self.conf)
+        geturl = GetURLpyCurl()
         self.assertFalse(geturl.is_available())
 
-    def test_02__select_implementation(self):
-        """Test GetURLpyCurl()._select_implementation()."""
-        pass
+    # def test_03__select_implementation(self):
+    #     """Test03 GetURLpyCurl()._select_implementation()."""
 
     @patch.object(GetURLpyCurl, 'is_available')
     @patch('udocker.utils.curl.Msg')
     @patch('udocker.utils.curl.pycurl')
     @patch('udocker.utils.curl.CurlHeader')
-    def test_03__set_defaults(self, mock_hdr, mock_pyc,
+    def test_04__set_defaults(self, mock_hdr, mock_pyc,
                               mock_msg, mock_selinsec):
-        """Test GetURLpyCurl()._set_defaults()."""
+        """Test04 GetURLpyCurl()._set_defaults()."""
         mock_selinsec.return_value = True
         mock_msg.level = 0
         mock_msg.VER = 4
-        geturl = GetURLpyCurl(self.conf)
+        geturl = GetURLpyCurl()
         geturl._set_defaults(mock_pyc, mock_hdr)
         self.assertTrue(mock_pyc.setopt.called)
 
         # when Msg.level >= Msg.VER = 4: AND insecure
         mock_msg.level = 5
         mock_msg.VER = 4
-        geturl = GetURLpyCurl(self.conf)
+        geturl = GetURLpyCurl()
         geturl._set_defaults(mock_pyc, mock_hdr)
         self.assertEqual(mock_pyc.setopt.call_count, 18)
 
@@ -260,7 +265,7 @@ class GetURLpyCurlTestCase(TestCase):
         # when Msg.level < Msg.VER = 4: AND secure
         mock_msg.level = 2
         mock_msg.VER = 4
-        geturl = GetURLpyCurl(self.conf)
+        geturl = GetURLpyCurl()
         geturl._set_defaults(mock_pyc, mock_hdr)
         self.assertEqual(mock_pyc.setopt.call_count, 27)
 
@@ -269,17 +274,17 @@ class GetURLpyCurlTestCase(TestCase):
     # @patch('udocker.utils.curl.Msg')
     # @patch('udocker.utils.curl.pycurl')
     # @patch('udocker.utils.curl.CurlHeader')
-    # def test_04__mkpycurl(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
-    #     """Test GetURL()._mkpycurl()."""
+    # def test_05__mkpycurl(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
+    #     """Test05 GetURLpyCurl()._mkpycurl()."""
     #     mock_sel.return_value = True
-    #     geturl = GetURLpyCurl(self.conf)
+    #     geturl = GetURLpyCurl()
     #     geturl._mkpycurl(mock_pyc, mock_hdr)
     #     self.assertTrue(mock_pyc.setopt.called)
 
     @patch.object(GetURLpyCurl, 'is_available')
-    def test_05_get(self, mock_sel):
-        """Test GetURLpyCurl().get() generic get."""
-        geturl = GetURLpyCurl(self.conf)
+    def test_06_get(self, mock_sel):
+        """Test06 GetURLpyCurl().get() generic get."""
+        geturl = GetURLpyCurl()
         geturl._geturl = type('test', (object,), {})()
         geturl.get = self._get
         status = geturl.get("http://host")
@@ -290,13 +295,13 @@ class GetURLexeCurlTestCase(TestCase):
     """GetURLexeCurl TestCase."""
 
     def setUp(self):
-        self.conf = Config().getconf()
-        self.conf['timeout'] = 1
-        self.conf['ctimeout'] = 1
-        self.conf['download_timeout'] = 1
-        self.conf['http_agent'] = ""
-        self.conf['http_proxy'] = ""
-        self.conf['http_insecure'] = 0
+        Config().getconf()
+        Config().conf['timeout'] = 1
+        Config().conf['ctimeout'] = 1
+        Config().conf['download_timeout'] = 1
+        Config().conf['http_agent'] = ""
+        Config().conf['http_proxy'] = ""
+        Config().conf['http_insecure'] = 0
 
     def tearDown(self):
         pass
@@ -308,60 +313,58 @@ class GetURLexeCurlTestCase(TestCase):
     @patch('udocker.utils.curl.Msg')
     @patch('udocker.utils.curl.GetURL')
     def test_01_init(self, mock_gcurl, mock_msg):
-        """Test GetURLexeCurl() constructor."""
-        geturl = GetURLexeCurl(self.conf)
+        """Test01 GetURLexeCurl() constructor."""
+        geturl = GetURLexeCurl()
         self.assertIsNone(geturl._opts)
 
-        geturl = GetURLexeCurl(self.conf)
+        geturl = GetURLexeCurl()
         self.assertIsNone(geturl._files)
 
     @patch('udocker.utils.curl.Msg')
     @patch('udocker.utils.curl.FileUtil.find_exec')
     def test_02_is_available(self, mock_findexec, mock_msg):
-        """Test GetURLexeCurl()._is_available()."""
+        """Test02 GetURLexeCurl()._is_available()."""
         mock_msg.level = 0
         mock_findexec.return_value = "/tmp"
-        geturl = GetURLexeCurl(self.conf)
+        geturl = GetURLexeCurl()
         self.assertTrue(geturl.is_available())
 
         mock_findexec.return_value = ""
-        geturl = GetURLexeCurl(self.conf)
+        geturl = GetURLexeCurl()
         self.assertFalse(geturl.is_available())
 
-    def test_03__select_implementation(self):
-        """Test GetURLexeCurl()._select_implementation()."""
-        pass
+    # def test_03__select_implementation(self):
+    #     """Test03 GetURLexeCurl()._select_implementation()."""
 
-    @patch('udocker.utils.curl.Msg')
-    def test_04__set_defaults(self, mock_msg):
-        """Set defaults for curl command line options"""
-        mock_msg.level = 0
-        mock_msg.VER = 4
-        geturl = GetURLexeCurl(self.conf)
-        geturl._set_defaults()
-        self.assertEqual(geturl._opts["insecure"], "")
+    # @patch('udocker.utils.curl.Msg')
+    # def test_04__set_defaults(self, mock_msg):
+    #     """Test04 GetURLexeCurl()._set_defaults()"""
+    #     mock_msg.return_value.level = 0
+    #     mock_msg.VER = 4
+    #     geturl = GetURLexeCurl()
+    #     geturl._set_defaults()
+    #     self.assertEqual(geturl._opts["insecure"], "")
 
-        mock_msg.level = 0
-        mock_msg.VER = 4
-        geturl = GetURLexeCurl(self.conf)
-        geturl.insecure = True
-        geturl._set_defaults()
-        self.assertEqual(geturl._opts["insecure"], "-k")
+    #     mock_msg.return_value.level = 0
+    #     mock_msg.VER = 4
+    #     geturl = GetURLexeCurl()
+    #     geturl.insecure = True
+    #     geturl._set_defaults()
+    #     self.assertEqual(geturl._opts["insecure"], "-k")
 
-        mock_msg.level = 5
-        mock_msg.VER = 4
-        geturl = GetURLexeCurl(self.conf)
-        geturl._set_defaults()
-        self.assertEqual(geturl._opts["verbose"], "-v")
-        self.assertEqual(geturl._files["url"], "")
+    #     mock_msg.return_value.level = 5
+    #     mock_msg.VER = 4
+    #     geturl = GetURLexeCurl()
+    #     geturl._set_defaults()
+    #     self.assertEqual(geturl._opts["verbose"], "-v")
+    #     self.assertEqual(geturl._files["url"], "")
 
-    def test_05__mkcurlcmd(self):
-        """Test GetURLexeCurl()._mkcurlcmd()."""
-        pass
+    # def test_05__mkcurlcmd(self):
+    #     """Test05 GetURLexeCurl()._mkcurlcmd()."""
 
     def test_06_get(self):
-        """Test GetURLexeCurl().get() generic get."""
-        geturl = GetURLexeCurl(self.conf)
+        """Test06 GetURLexeCurl().get()."""
+        geturl = GetURLexeCurl()
         geturl._geturl = type('test', (object,), {})()
         geturl.get = self._get
         self.assertEqual(geturl.get("http://host"), "http://host")
