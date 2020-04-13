@@ -37,6 +37,7 @@ class MountPointTestCase(TestCase):
         """Test01 MountPoint() constructor"""
         container_id = "CONTAINERID"
         mock_realpath.return_value = "/tmp"
+        mock_setup.return_value = True
         mpoint = MountPoint(self.local, container_id)
         self.assertEqual(mpoint.localrepo, self.local)
         self.assertEqual(mpoint.container_id, container_id)
@@ -78,23 +79,50 @@ class MountPointTestCase(TestCase):
     def test_03_add(self, mock_realpath, mock_setup, mock_valid):
         """Test03 MountPoint().add()."""
         container_id = "CONTAINERID"
-        mock_realpath.return_value = "/tmp"
         cpath = 'cont_path'
+        mock_realpath.return_value = "/tmp"
         mock_setup.return_value = True
         mock_valid.return_value = "/ROOT/dir1"
         mpoint = MountPoint(self.local, container_id)
         mpoint.add(cpath)
         self.assertEqual(mpoint.mountpoints[cpath], "/ROOT/dir1")
 
-    # @patch.object(MountPoint, 'setup')
-    # @patch('udocker.utils.mountpoint.os.path.realpath')
-    # # def test_04_delete(self, mock_realpath, mock_setup):
-    # #     """Test04 MountPoint().delete()."""
+    @patch('udocker.utils.mountpoint.os.path.normpath')
+    @patch.object(MountPoint, 'setup')
+    @patch('udocker.utils.mountpoint.os.path.realpath')
+    def test_04_delete(self, mock_realpath, mock_setup, mock_norm):
+        """Test04 MountPoint().delete()."""
+        container_id = "CONTAINERID"
+        cpath = 'cont_path'
+        mock_realpath.return_value = "/tmp"
+        mock_setup.return_value = True
+        mpoint = MountPoint(self.local, container_id)
+        mpoint.mountpoints = {'some_path': '/cont/bin'}
+        status = mpoint.delete(cpath)
+        self.assertFalse(status)
 
-    # @patch.object(MountPoint, 'setup')
-    # @patch('udocker.utils.mountpoint.os.path.realpath')
-    # # def test_05_delete_all(self, mock_realpath, mock_setup):
-    # #     """Test05 MountPoint().delete_all()."""
+        mock_realpath.return_value = "/tmp"
+        mock_setup.return_value = True
+        mock_norm.side_effect = ['/controot/cont_path', '/controot/cont_path']
+        mpoint = MountPoint(self.local, container_id)
+        mpoint.mountpoints = {'cont_path': '/cont/bin'}
+        status = mpoint.delete(cpath)
+        self.assertEqual(mpoint.mountpoints, {})
+        self.assertTrue(status)
+
+    @patch('udocker.utils.mountpoint.os.path.normpath')
+    @patch.object(MountPoint, 'setup')
+    @patch('udocker.utils.mountpoint.os.path.realpath')
+    def test_05_delete_all(self, mock_realpath, mock_setup, mock_norm):
+        """Test05 MountPoint().delete_all()."""
+        container_id = "CONTAINERID"
+        mock_realpath.return_value = "/tmp"
+        mock_setup.return_value = True
+        mock_norm.side_effect = ['/controot/cont_path', '/controot/cont_path']
+        mpoint = MountPoint(self.local, container_id)
+        mpoint.mountpoints = {'cont_path': '/cont/bin'}
+        mpoint.delete_all()
+        self.assertEqual(mpoint.mountpoints, {})
 
     @patch.object(MountPoint, 'delete')
     @patch.object(MountPoint, 'add')
@@ -107,8 +135,9 @@ class MountPointTestCase(TestCase):
     @patch('udocker.utils.mountpoint.os.path.exists')
     @patch.object(MountPoint, 'setup')
     @patch('udocker.utils.mountpoint.os.path.realpath')
-    def test_06_create(self, mock_realpath, mock_setup, mock_exists, mock_isfile,
-                       mock_mkdir, mock_putdata, mock_islink, mock_isdir, mock_msg,
+    def test_06_create(self, mock_realpath, mock_setup, mock_exists,
+                       mock_isfile, mock_mkdir, mock_putdata,
+                       mock_islink, mock_isdir, mock_msg,
                        mock_add, mock_del):
         """Test06 MountPoint().create()."""
         container_id = "CONTAINERID"
@@ -162,25 +191,86 @@ class MountPointTestCase(TestCase):
         self.assertTrue(mock_del.called)
         self.assertFalse(status)
 
-    # @patch.object(MountPoint, 'setup')
-    # @patch('udocker.utils.mountpoint.os.path.realpath')
-    # # def test_07_save(self, mock_realpath, mock_setup):
-    # #     """Test07 MountPoint().save()."""
+    @patch('udocker.utils.mountpoint.os.symlink')
+    @patch('udocker.utils.mountpoint.os.path.exists')
+    @patch.object(MountPoint, 'setup')
+    @patch('udocker.utils.mountpoint.os.path.realpath')
+    def test_07_save(self, mock_realpath, mock_setup, mock_exists,
+                     mock_syml):
+        """Test07 MountPoint().save()."""
+        container_id = "CONTAINERID"
+        cpath = 'cont_path'
+        mock_realpath.return_value = "/tmp"
+        mock_setup.return_value = True
+        mpoint = MountPoint(self.local, container_id)
+        mpoint.mountpoints = {'some_path': '/cont/bin'}
+        status = mpoint.save(cpath)
+        self.assertTrue(status)
 
-    # @patch.object(MountPoint, 'setup')
-    # @patch('udocker.utils.mountpoint.os.path.realpath')
-    # # def test_08_save_all(self, mock_realpath, mock_setup):
-    # #     """Test08 MountPoint().save_all()."""
+        mock_realpath.return_value = "/tmp"
+        mock_setup.return_value = True
+        mock_exists.return_value = False
+        mock_syml.return_value = None
+        mpoint = MountPoint(self.local, container_id)
+        mpoint.mountpoints = {'cont_path': '/cont/bin'}
+        status = mpoint.save(cpath)
+        self.assertTrue(status)
+        self.assertTrue(mock_exists.called)
+        self.assertTrue(mock_syml.called)
 
-    # @patch.object(MountPoint, 'setup')
-    # @patch('udocker.utils.mountpoint.os.path.realpath')
-    # # def test_09_load_all(self, mock_realpath, mock_setup):
-    # #     """Test09 MountPoint().load_all()."""
+    @patch.object(MountPoint, 'save')
+    @patch.object(MountPoint, 'setup')
+    @patch('udocker.utils.mountpoint.os.path.realpath')
+    def test_08_save_all(self, mock_realpath, mock_setup, mock_save):
+        """Test08 MountPoint().save_all()."""
+        container_id = "CONTAINERID"
+        mock_realpath.return_value = "/tmp"
+        mock_setup.return_value = True
+        mock_save.return_value = None
+        mpoint = MountPoint(self.local, container_id)
+        mpoint.mountpoints = {'cont_path': '/cont/bin'}
+        mpoint.save_all()
+        self.assertTrue(mock_save.called)
 
-    # @patch.object(MountPoint, 'setup')
-    # @patch('udocker.utils.mountpoint.os.path.realpath')
-    # # def test_10_restore(self, mock_realpath, mock_setup):
-    # #     """Test10 MountPoint().restore()."""
+    @patch('udocker.utils.mountpoint.os.readlink')
+    @patch('udocker.utils.mountpoint.os.listdir')
+    @patch.object(MountPoint, 'setup')
+    @patch('udocker.utils.mountpoint.os.path.realpath')
+    def test_09_load_all(self, mock_realpath, mock_setup,
+                         mock_ldir, mock_readl):
+        """Test09 MountPoint().load_all()."""
+        container_id = "CONTAINERID"
+        result = {'/dir1': '/dir1', '/dir2': '/dir2'}
+        mock_realpath.return_value = "/tmp"
+        mock_setup.return_value = True
+        mock_ldir.return_value = ['/dir1', '/dir2']
+        mock_readl.side_effect = ['/dir1', '/dir2']
+        mpoint = MountPoint(self.local, container_id)
+        mpoint.load_all()
+        self.assertEqual(mpoint.mountpoints, result)
+
+    @patch('udocker.utils.mountpoint.FileUtil.remove')
+    @patch.object(MountPoint, 'delete_all')
+    @patch.object(MountPoint, 'load_all')
+    @patch.object(MountPoint, 'save_all')
+    @patch.object(MountPoint, 'setup')
+    @patch('udocker.utils.mountpoint.os.path.realpath')
+    def test_10_restore(self, mock_realpath, mock_setup, mock_save,
+                        mock_load, mock_del, mock_remove):
+        """Test10 MountPoint().restore()."""
+        container_id = "CONTAINERID"
+        mock_realpath.return_value = "/tmp"
+        mock_setup.return_value = True
+        mock_save.return_value = None
+        mock_load.return_value = None
+        mock_del.return_value = None
+        mock_remove.return_value = None
+        mpoint = MountPoint(self.local, container_id)
+        mpoint.restore()
+        self.assertTrue(mock_save.called)
+        self.assertTrue(mock_load.called)
+        self.assertTrue(mock_del.called)
+        self.assertTrue(mock_remove.called)
 
 
 if __name__ == '__main__':
