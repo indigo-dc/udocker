@@ -4590,7 +4590,8 @@ class ContainerStructure(object):
             if Msg.level >= Msg.VER:
                 verbose = 'v'
                 Msg().out("Info: extracting:", tarf, l=Msg.INF)
-            cmd = ["tar", "-C", destdir, "-x" + verbose, "--one-file-system",
+            cmd = ["tar", "-C", destdir, "-x" + verbose,
+                   "--delay-directory-restore", "--one-file-system",
                    "--exclude=dev/*", "--no-same-owner", "--no-same-permissions",
                    "--overwrite", ] + wildcards + ["-f", tarf]
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
