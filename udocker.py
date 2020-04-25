@@ -4599,14 +4599,14 @@ class ContainerStructure(object):
                 status = False
             cmd = ["find", destdir,
                    "(", "-type", "d", "!", "-perm", "-u=x", "-exec",
-                   "/bin/chmod", "u+x", "{}", ";", ")", ",",
-                   "(", "!", "-perm", "-u=w", "-exec", "/bin/chmod",
+                   "chmod", "u+x", "{}", ";", ")", ",",
+                   "(", "!", "-perm", "-u=w", "-exec", "chmod",
                    "u+w", "{}", ";", ")", ",",
-                   "(", "!", "-perm", "-u=r", "-exec", "/bin/chmod",
+                   "(", "!", "-perm", "-u=r", "-exec", "chmod",
                    "u+r", "{}", ";", ")", ",",
-                   "(", "!", "-gid", gid, "-exec", "/bin/chgrp", gid,
+                   "(", "!", "-gid", gid, "-exec", "chgrp", gid,
                    "{}", ";", ")", ",",
-                   "(", "-name", ".wh.*", "-exec", "/bin/rm", "-f",
+                   "(", "-name", ".wh.*", "-exec", "rm", "-f",
                    "--preserve-root", "{}", ";", ")"]
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
                 status = False
