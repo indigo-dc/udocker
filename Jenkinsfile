@@ -13,7 +13,7 @@ pipeline {
 [testenv:pylint]
 commands = pylint --rcfile=pylintrc --disable=R,C udocker
 [testenv:cobertura]
-commands = nosetests -v tests/unit_tests.py --with-xcoverage --cover-package=udocker
+commands = nosetests -v tests/unit/test_*.py --with-xcoverage --cover-package=udocker
 [testenv:bandit]
 commands = bandit udocker -f html -o bandit.html"""
     }

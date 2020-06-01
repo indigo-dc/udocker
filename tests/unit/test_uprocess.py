@@ -6,17 +6,41 @@ import subprocess
 import sys
 from unittest import TestCase, main
 from udocker.utils.uprocess import Uprocess
+from udocker.config import Config
 try:
     from unittest.mock import Mock, patch
 except ImportError:
     from mock import Mock, patch
 
+sys.path.append('.')
+
 
 class UprocessTestCase(TestCase):
     """Test case for the Uprocess class."""
 
-    # def test_01_find_inpath(self, mock_popen):
-    #     """Test01 Uprocess().find_inpath()."""
+    def setUp(self):
+        Config().getconf()
+
+    def tearDown(self):
+        pass
+
+    @patch('udocker.utils.uprocess.os.path.lexists')
+    @patch('udocker.utils.uprocess.os.path.basename')
+    def test_01_find_inpath(self, mock_base, mock_lexists):
+        """Test01 Uprocess().find_inpath()."""
+        fname = ''
+        path = ''
+        uproc = Uprocess()
+        status = uproc.find_inpath(fname, path)
+        self.assertEqual(status, '')
+
+        fname = 'ls'
+        path = '/bin'
+        mock_base.return_value = 'ls'
+        mock_lexists.return_value = True
+        uproc = Uprocess()
+        status = uproc.find_inpath(fname, path)
+        self.assertEqual(status, '/bin/ls')
 
     @patch('udocker.utils.uprocess.subprocess.Popen')
     def test_02__check_output(self, mock_popen):

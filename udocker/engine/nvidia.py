@@ -51,7 +51,7 @@ class NvidiaMode(object):
                 else:
                     Msg().out("Info: nvidia file already exists", dstname,
                               ", use --force to overwrite", l=Msg.INF)
-                    return
+                    return False
 
             srcdir = os.path.dirname(srcname)
             dstdir = os.path.dirname(dstname)
@@ -82,6 +82,7 @@ class NvidiaMode(object):
                 Msg().err("Warn: nvidia file in config not found", srcname)
 
         Msg().out("Info: nvidia copied", srcname, "to", dstname, l=Msg.DBG)
+        return True
 
     def _get_nvidia_libs(self, host_dir):
         """Expand the library files to include the versions"""
@@ -104,6 +105,7 @@ class NvidiaMode(object):
                     if match:
                         dir_list.add(os.path.realpath(
                             os.path.dirname(match.group(1))) + '/')
+        Msg().out("Info: List nvidia libs via ldconfig", dir_list, l=Msg.DBG)
         return dir_list
 
     def _find_host_dir_ldpath(self, library_path):
@@ -114,6 +116,7 @@ class NvidiaMode(object):
                 for lib in self._nvidia_main_libs:
                     if glob.glob(libdir + "/%s*" % lib):
                         dir_list.add(os.path.realpath(libdir) + '/')
+        Msg().out("Info: List nvidia libs via path", dir_list, l=Msg.DBG)
         return dir_list
 
     def _find_host_dir(self):
@@ -143,6 +146,7 @@ class NvidiaMode(object):
                 self._files_exist(nvi_cont_dir, lib_list)
             self._files_exist("/etc", Config.conf['nvi_etc_list'])
             self._files_exist("/usr/bin", Config.conf['nvi_bin_list'])
+            Msg().out("Info: Cont, has files from previous nvidia install")
         except OSError:
             return True
         return False
@@ -151,20 +155,20 @@ class NvidiaMode(object):
         """Set nvidia mode"""
         if not self.container_dir:
             Msg().err("Error: nvidia set mode container dir not found")
-            return
+            return False
         nvi_host_dir_list = self._find_host_dir()
         nvi_cont_dir = self._find_cont_dir()
         if not nvi_host_dir_list:
             Msg().err("Error: host nvidia libraries not found")
-            return
+            return False
         if not nvi_cont_dir:
             Msg().err("Error: destination dir for nvidia libs not found")
-            return
+            return False
         if (not force) and self._installation_exists(nvi_host_dir_list,
                                                      nvi_cont_dir):
             Msg().err("Error: nvidia installation already exists"
                       ", use --force to overwrite")
-            return
+            return False
         for nvi_host_dir in nvi_host_dir_list:
             lib_list = self._get_nvidia_libs(nvi_host_dir)
             self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
@@ -172,6 +176,8 @@ class NvidiaMode(object):
         self._copy_files('/usr/bin', '/usr/bin', Config.conf['nvi_bin_list'],
                          force)
         FileUtil(self._container_nvidia_set).putdata("", 'w')
+        Msg().out("Info: nvidia mode set")
+        return True
 
     def get_mode(self):
         """Get nvidia mode"""
@@ -183,4 +189,5 @@ class NvidiaMode(object):
         for dev in Config.conf['nvi_dev_list']:
             for expanded_devs in glob.glob(dev + '*'):
                 dev_list.append(expanded_devs)
+        Msg().out("Info: nvidia device list", dev_list, l=Msg.DBG)
         return dev_list
