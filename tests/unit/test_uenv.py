@@ -151,10 +151,10 @@ class UenvTestCase(TestCase):
     def test_12_list(self):
         """Test12 Uenv().list"""
         envt = 'HOME=/home/user'
-        result = ['HOME=/home/user', 'LANG=en_US.UTF-8']
+        result = ['LANG=en_US.UTF-8', envt]
         uenv = Uenv(envt)
         uenv.setenv('LANG', 'en_US.UTF-8')
-        self.assertEqual(uenv.list(), result)
+        self.assertEqual(uenv.list().sort(), result.sort())
 
     def test_13_dict(self):
         """Test13 Uenv().dict"""
