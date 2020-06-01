@@ -57,12 +57,17 @@ class FileBindTestCase(TestCase):
         mock_msg.level = 0
         container_id = "CONTAINERID"
         mock_realpath.return_value = "/tmp"
-        mock_isdir.return_value = True
+        mock_isdir.side_effect = [True, True]
         status = FileBind(self.local, container_id).setup()
         self.assertTrue(mock_isdir.called)
         self.assertTrue(status)
 
-        mock_isdir.return_value = False
+        mock_isdir.side_effect = [False, True]
+        mock_futil.return_value.mkdir.return_value = False
+        status = FileBind(self.local, container_id).setup()
+        self.assertFalse(status)
+
+        mock_isdir.side_effect = [True, False]
         mock_futil.return_value.mkdir.return_value = False
         status = FileBind(self.local, container_id).setup()
         self.assertFalse(status)
@@ -84,19 +89,19 @@ class FileBindTestCase(TestCase):
 
         mock_isdir.return_value = False
         fbind = FileBind(self.local, container_id)
-        status = fbind.restore()
+        fbind.restore()
         self.assertFalse(mock_listdir.called)
 
         mock_isdir.return_value = True
         fbind = FileBind(self.local, container_id)
-        status = fbind.restore()
+        fbind.restore()
         self.assertTrue(mock_listdir.called)
 
         mock_listdir.return_value = ["is_file1", "is_dir", "is_file2"]
         mock_isfile.side_effect = [True, False, True]
         mock_islink.side_effect = [True, False, False]
         fbind = FileBind(self.local, container_id)
-        status = fbind.restore()
+        fbind.restore()
         self.assertTrue(mock_isfile.called)
         self.assertTrue(mock_islink.called)
 
@@ -150,9 +155,18 @@ class FileBindTestCase(TestCase):
         container_id = "CONTAINERID"
         mock_realpath.return_value = "/tmp"
         mock_isfile.return_value = False
+        mock_exists.return_value = False
         fbind = FileBind(self.local, container_id)
         fbind.set_file(hfile, cfile)
         self.assertFalse(mock_futilcopy.called)
+
+        mock_realpath.return_value = "/tmp"
+        mock_isfile.return_value = True
+        mock_exists.return_value = False
+        fbind = FileBind(self.local, container_id)
+        fbind.set_file(hfile, cfile)
+        self.assertTrue(mock_rename.called)
+        self.assertTrue(mock_sym.called)
 
         mock_realpath.return_value = "/tmp"
         mock_isfile.return_value = True
