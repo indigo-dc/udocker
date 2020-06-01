@@ -114,3 +114,6 @@ ENV/
 # Eclipse
 .project
 .pydevproject
+
+rm-udtmp.sh
+
