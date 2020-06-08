@@ -170,7 +170,7 @@ class RuncEngine(ExecutionEngineCommon):
             "minor": os.minor(dev_stat.st_dev),
             "fileMode": filemode,
             "uid": HostInfo.uid,
-            "gid": HostInfo.uid,
+            "gid": HostInfo.gid,
         }
         self._container_specjson["linux"]["devices"].append(device)
         return True
@@ -221,7 +221,7 @@ class RuncEngine(ExecutionEngineCommon):
     def _mod_mount_spec(self, host_source, cont_dest, new):
         """Modify mount spec"""
         index = self._sel_mount_spec(host_source, cont_dest)
-        if not index:
+        if index is None:
             return False
         mount = self._container_specjson["mounts"][index]
         for new_item in new:
@@ -274,7 +274,7 @@ class RuncEngine(ExecutionEngineCommon):
         """Execute proot within runc"""
         xmode = self.exec_mode.get_mode()
         if xmode not in ("R2", "R3"):
-            return
+            return False
         else:
             preng = PRootEngine(self.localrepo, self.exec_mode)
             preng.exec_mode.force_mode = proot_mode
@@ -297,6 +297,7 @@ class RuncEngine(ExecutionEngineCommon):
         FileUtil(self._filebind.get_path(cont_executable)).chmod(mode)
         self._container_specjson["process"]["args"] = \
                 [cont_executable, "-0"] + self.opt["cmd"]
+        return True
 
     def run(self, container_id):
         """Execute a Docker container using runc. This is the main method

@@ -5,9 +5,7 @@ udocker unit tests: PRootEngine
 
 import sys
 from unittest import TestCase, main
-from udocker.engine.execmode import ExecutionMode
 from udocker.config import Config
-from udocker.container.localrepo import LocalRepository
 from udocker.engine.proot import PRootEngine
 try:
     from unittest.mock import Mock, patch, MagicMock, mock_open
@@ -31,11 +29,22 @@ class PRootEngineTestCase(TestCase):
         Config().conf['userhome'] = "/"
         Config().conf['oskernel'] = "4.8.13"
         Config().conf['location'] = ""
-        self.local = LocalRepository()
-        self.xmode = ExecutionMode(self.local, "12345")
+
+        str_local = 'udocker.container.localrepo.LocalRepository'
+        self.lrepo = patch(str_local)
+        self.local = self.lrepo.start()
+        self.mock_lrepo = Mock()
+        self.local.return_value = self.mock_lrepo
+
+        str_exmode = 'udocker.engine.execmode.ExecutionMode'
+        self.execmode = patch(str_exmode)
+        self.xmode = self.execmode.start()
+        self.mock_execmode = Mock()
+        self.xmode.return_value = self.mock_execmode
 
     def tearDown(self):
-        pass
+        self.lrepo.stop()
+        self.execmode.stop()
 
     @patch('udocker.engine.proot.HostInfo.oskernel')
     def test_01_init(self, mock_kernel):
@@ -144,6 +153,10 @@ class PRootEngineTestCase(TestCase):
         status = prex._get_network_map()
         self.assertEqual(status, ['-p', '80:8080', '-p', '443:8443', '-n'])
 
+    @patch('udocker.engine.proot.os.environ.update')
+    @patch.object(PRootEngine, '_get_network_map')
+    @patch('udocker.engine.nvidia.Msg')
+    @patch('udocker.engine.proot.HostInfo.oskernel_isgreater')
     @patch.object(PRootEngine, '_run_banner')
     @patch.object(PRootEngine, '_run_env_cleanup_dict')
     @patch.object(PRootEngine, '_set_uid_map')
@@ -157,45 +170,36 @@ class PRootEngineTestCase(TestCase):
     def test_07_run(self, mock_run_init, mock_call, mock_getenv, mock_sel_proot,
                     mock_run_env_set,
                     mock_set_cpu_aff, mock_get_vol_bind, mock_set_uid_map,
-                    mock_env_cleanup_dict, mock_run_banner):
+                    mock_env_cleanup_dict, mock_run_banner, mock_isgreater,
+                    mock_msg, mock_netmap, mock_envupd):
         """Test07 PRootEngine().run()."""
         mock_run_init.return_value = False
         prex = PRootEngine(self.local, self.xmode)
         status = prex.run("CONTAINERID")
         self.assertEqual(status, 2)
 
+        Config().conf['proot_killonexit'] = False
         mock_run_init.return_value = True
-        prex = PRootEngine(self.local, self.xmode)
-        prex.proot_noseccomp = False
-        prex.opt = dict()
-        prex.opt["env"] = []
-        prex.opt["kernel"] = ""
-        prex.opt["netcoop"] = False
-        prex.opt["portsmap"] = []
-        prex.opt["cwd"] = ""
-        # status = prex.run("CONTAINERID")
-        # self.assertEqual(status, 4)
-
-        mock_run_init.return_value = True
+        mock_sel_proot.return_value = None
+        mock_isgreater.return_value = "2.9.0"
+        mock_run_env_set.return_value = None
+        mock_msg.level = 5
         mock_set_cpu_aff.return_value = []
-        mock_get_vol_bind.return_value = ""
-        mock_set_uid_map.return_value = ""
+        mock_get_vol_bind.return_value = ['-b', '/tmp:/tmp']
+        mock_set_uid_map.return_value = ['-i', '1000:1001']
+        mock_netmap.return_value = ['-p', '80:8080', '-n']
+        mock_env_cleanup_dict.return_value = None
+        mock_run_banner.return_value = None
         mock_call.return_value = 5
+        mock_getenv.return_value = False
+        mock_envupd.return_value = None
         prex = PRootEngine(self.local, self.xmode)
-        prex.proot_exec = "/.udocker/bin/proot"
-        prex.proot_noseccomp = False
-        prex.opt = dict()
-        prex.opt["env"] = []
-        prex.opt["kernel"] = ""
-        prex.opt["netcoop"] = False
-        prex.opt["portsmap"] = []
-        prex.opt["hostenv"] = ""
-        prex.opt["cwd"] = "/"
-        prex.opt["cmd"] = "/bin/bash"
-        prex._kernel = ""
-        prex.container_root = ""
-        # status = prex.run("CONTAINERID")
-        # self.assertEqual(status, 5)
+        prex.opt["kernel"] = "5.4.0"
+        status = prex.run("CONTAINERID")
+        self.assertEqual(status, 5)
+        self.assertTrue(mock_run_init.called)
+        self.assertTrue(mock_call.called)
+        self.assertTrue(mock_envupd.called)
 
 
 if __name__ == '__main__':
