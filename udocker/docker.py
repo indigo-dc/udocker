@@ -448,7 +448,7 @@ class DockerIoAPI(object):
                 return tags_obj[tag]
             except KeyError:
                 pass
-        elif isinstance(tags_obj, []):
+        elif isinstance(tags_obj, list):
             try:
                 for tag_dict in tags_obj:
                     if tag_dict["name"] == tag:

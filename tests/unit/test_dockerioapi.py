@@ -530,37 +530,76 @@ class DockerIoAPITestCase(TestCase):
         mock_msg.level = 0
         mock_v2il.return_value = True
         imagerepo = "REPO"
-        fslayers = {"fsLayers": ({"blobSum": "foolayername"},),
-                    "history": ({"v1Compatibility": '["foojsonstring"]'},)
-                   }
+        fslayers = [{"blobSum": "foolayername"}]
         doia = DockerIoAPI(self.local)
         out = doia.get_v2_layers_all(imagerepo, fslayers)
         self.assertEqual(out, ['foolayername'])
 
-    @patch('udocker.docker.Msg')
-    @patch('udocker.utils.curl.CurlHeader')
+    @patch('udocker.docker.GetURL.get_status_code')
+    @patch.object(DockerIoAPI, 'get_v2_image_manifest')
     @patch.object(DockerIoAPI, 'get_v2_layers_all')
     @patch.object(DockerIoAPI, '_get_url')
-    def test_28_get_v2(self, mock_dgu, mock_dgv2, mock_hdr, mock_msg):
+    def test_28_get_v2(self, mock_dgu, mock_dgv2, mock_manif,
+                       mock_getstatus):
         """Test28 DockerIoAPI().get_v2"""
-        mock_msg.level = 0
+        imgrepo = "img1"
+        hdr = type('test', (object,), {})()
+        hdr_data = {"content-length": 10,
+                    "X-ND-HTTPSTATUS": "HTTP-Version 200 Reason-Phrase",
+                    "X-ND-CURLSTATUS": 0}
+        hdr.data = hdr_data
+        buff = strio()
+        manifest = list()
+        mock_dgu.return_value = (hdr, buff)
+        mock_manif.return_value = (hdr_data, manifest)
         mock_dgv2.return_value = []
-        mock_dgu.return_value = (mock_hdr, [])
-        imagerepo = "REPO"
+        mock_getstatus.return_value = 400
         tag = "TAG"
         doia = DockerIoAPI(self.local)
         doia.registry_url = "https://registry-1.docker.io"
-        out = doia.get_v2(imagerepo, tag)
+        out = doia.get_v2(imgrepo, tag)
         self.assertEqual(out, [])
 
-        mock_dgv2.return_value = ["a", "b"]
+        mock_dgu.return_value = (hdr, buff)
+        mock_manif.return_value = (hdr_data, manifest)
+        mock_dgv2.return_value = []
+        mock_getstatus.return_value = 200
+        self.local.setup_tag.return_value = False
+        self.local.setup_tag.return_value = True
         doia = DockerIoAPI(self.local)
-        out = doia.get_v2(imagerepo, tag)
+        doia.registry_url = "https://registry-1.docker.io"
+        out = doia.get_v2(imgrepo, tag)
         self.assertEqual(out, [])
 
-    # def test_29__get_v1_id_from_tags(self):
-    #     """Test29 DockerIoAPI()._get_v1_id_from_tags"""
-    #     doia = DockerIoAPI(self.local)
+        manifest = {
+            "fsLayers": ({"blobSum": "foolayername"},),
+            "history": ({"v1Compatibility": '["foojsonstring"]'},)
+        }
+        mock_dgu.return_value = (hdr, buff)
+        mock_manif.return_value = (hdr_data, manifest)
+        mock_dgv2.return_value = ["foolayername"]
+        mock_getstatus.return_value = 200
+        self.local.setup_tag.return_value = True
+        self.local.setup_tag.return_value = True
+        self.local.save_json.return_value = None
+        doia = DockerIoAPI(self.local)
+        doia.registry_url = "https://registry-1.docker.io"
+        out = doia.get_v2(imgrepo, tag)
+        self.assertEqual(out, ["foolayername"])
+
+    def test_29__get_v1_id_from_tags(self):
+        """Test29 DockerIoAPI()._get_v1_id_from_tags"""
+        tobj = {"tag1": "t1"}
+        tag = "tag1"
+        doia = DockerIoAPI(self.local)
+        out = doia._get_v1_id_from_tags(tobj, tag)
+        self.assertEqual(out, "t1")
+
+        tobj = [{"tag1": "t1"}]
+        tag = "tag1"
+        doia = DockerIoAPI(self.local)
+        out = doia._get_v1_id_from_tags(tobj, tag)
+        self.assertEqual(out, "t1")
 
     # def test_30__get_v1_id_from_images(self):
     #     """Test30 DockerIoAPI()._get_v1_id_from_images"""
