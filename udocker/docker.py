@@ -396,6 +396,7 @@ class DockerIoAPI(object):
     def get_v2_layers_all(self, imagerepo, fslayers):
         """Get all layer data files belonging to a image tag"""
         files = []
+        blob = ""
         if fslayers:
             for layer in reversed(fslayers):
                 if "blobSum" in layer:
