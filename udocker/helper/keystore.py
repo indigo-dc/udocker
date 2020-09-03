@@ -84,7 +84,7 @@ class KeyStore(object):
     def put(self, url, credential, email):
         """Put credential in keystore for given url"""
         if not credential:
-            return False
+            return 1
         auths = self._read_all()
         auths[url] = {"auth": credential, "email": email, }
         self._shred()
