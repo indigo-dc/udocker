@@ -169,6 +169,10 @@ class Config(object):
     # proot_noseccomp = True
     proot_noseccomp = None
 
+    # PRoot override tmp directory
+    # proot_tmp_dir = /path/to/tmp
+    proot_tmp_dir = None
+
     # PRoot kill-on-exit
     proot_killonexit = True
 
@@ -3158,6 +3162,7 @@ class PRootEngine(ExecutionEngineCommon):
         super(PRootEngine, self).__init__(localrepo)
         self.executable = None                   # PRoot
         self.proot_noseccomp = False             # Noseccomp mode
+        self.proot_tmp_dir = None                # proot tmp directory
         self._kernel = HostInfo().oskernel()     # Emulate kernel
 
     def select_proot(self):
@@ -3200,6 +3205,10 @@ class PRootEngine(ExecutionEngineCommon):
                 self.proot_noseccomp = conf.proot_noseccomp
             if self.exec_mode.get_mode() == "P2":
                 self.proot_noseccomp = True
+
+        self.proot_tmp_dir = conf.proot_tmp_dir
+        if os.getenv("PROOT_TMP_DIR") is not None:
+            self.proot_tmp_dir = os.getenv("PROOT_TMP_DIR")
 
     def _set_uid_map(self):
         """Set the uid_map string for container run command"""
@@ -3246,6 +3255,9 @@ class PRootEngine(ExecutionEngineCommon):
         # seccomp and ptrace behavior change on 4.8.0 onwards
         if self.proot_noseccomp or os.getenv("PROOT_NO_SECCOMP"):
             self.opt["env"].append("PROOT_NO_SECCOMP=1")
+
+        if self.proot_tmp_dir is not None:
+            self.opt["env"].append("PROOT_TMP_DIR=" + self.proot_tmp_dir)
 
         if not HostInfo().oskernel_isgreater("3.0.0"):
             self._kernel = "6.0.0"
