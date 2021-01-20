@@ -4,3 +4,7 @@ services:
   myrepo-testing:
     image: "indigodatacloud/ci-images:python3.6"
     container_name: "udocker-testing"
+  volume:
+    - type: bind
+      source: ./udocker
+      target: /udocker-testing
