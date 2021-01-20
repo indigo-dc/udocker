@@ -18,7 +18,7 @@
 #
 # ##################################################################
 
-VER="1.2.4"
+VER="1.2.5"
 echo "=========================================================="
 echo "* This script gets the udocker-${VER}.tar.gz, unpacks it *"
 echo "* makes a link for the udocker executable and puts it in *"
