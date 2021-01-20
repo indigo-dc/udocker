@@ -1,0 +1,13 @@
+config:
+  project_repos:
+    myrepo:
+      repo: 'https://github.com/MartaCastro/udocker.git'
+
+ sqa_criteria:
+   qc_style:
+     repos:
+       myrepo:
+         container: udocker-testing
+         tox:
+           tox_file: /udocker/tox.ini
+           testenv: stylecheck
