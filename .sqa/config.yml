@@ -11,3 +11,11 @@ sqa_criteria:
          tox:
            tox_file: /udocker/tox.ini
            testenv: stylecheck
+
+environment:
+  JPL_WORKSPACEDEBUG: "true"
+  JPL_WORKSPACEDEBUGTIMEOUT: 45
+           
+           
+           
+           
