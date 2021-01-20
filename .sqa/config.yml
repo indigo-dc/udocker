@@ -3,7 +3,7 @@ config:
     myrepo:
       repo: 'https://github.com/MartaCastro/udocker.git'
 
- sqa_criteria:
+sqa_criteria:
    qc_style:
      repos:
        myrepo:
