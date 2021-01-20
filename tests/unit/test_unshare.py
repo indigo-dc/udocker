@@ -56,7 +56,7 @@ class UnshareTestCase(TestCase):
         mock_close.side_effect = [None, None]
         mock_read.return_value = None
         mock_hinfo.return_value.username.return_value = 'user'
-        mock_hinfo.return_value.uid = 1000
+        mock_hinfo.uid = 1000
         mock_usubuid.return_value = [(1000, 1000)]
         mock_usubgid.return_value = [(1000, 1000)]
         mock_call.side_effect = [None, None]
