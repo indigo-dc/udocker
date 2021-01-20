@@ -7,4 +7,4 @@ services:
   volume:
     - type: bind
       source: ./udocker
-      target: /udocker-testing
+      target: /udocker
