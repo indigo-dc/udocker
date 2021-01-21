@@ -10,7 +10,8 @@ sqa_criteria:
          container: udocker-testing
          tox:
            tox_file: /udocker/tox.ini
-           testenv: stylecheck
+           testenv: 
+             - stylecheck
 
 environment:
   JPL_WORKSPACEDEBUG: "true"
