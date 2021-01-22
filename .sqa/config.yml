@@ -18,8 +18,6 @@ sqa_criteria:
            testenv: 
              - stylecheck
    
-   
-
            
            
            
