@@ -1,7 +1,7 @@
 version: "3.6"
 
 services:
-  myrepo-testing:
+  udocker-testing:
     image: "indigodatacloud/ci-images:python3.6"
     container_name: "udocker-testing"
     volumes:
