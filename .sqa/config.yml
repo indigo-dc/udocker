@@ -1,21 +1,25 @@
 config:
   project_repos:
-    myrepo:
-      repo: 'https://github.com/MartaCastro/udocker.git'
-
-sqa_criteria:
-   qc_style:
-     repos:
-       myrepo:
-         container: udocker-testing
-         tox:
-           tox_file: /udocker/tox.ini
-           testenv: 
-             - stylecheck
+    udocker:
+      repo: 'https://github.com/MartaCastro/udocker.git'      
+      branch: setup_jenkins-pipeline-library 
 
 environment:
   JPL_WORKSPACEDEBUG: "true"
   JPL_WORKSPACEDEBUGTIMEOUT: 45
+
+sqa_criteria:
+   qc_style:
+     repos:
+       udocker:
+         container: udocker-testing
+         tox:
+           tox_file: /udocker-testing/tox.ini
+           testenv: 
+             - stylecheck
+   
+   
+
            
            
            
