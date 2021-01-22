@@ -14,7 +14,7 @@ sqa_criteria:
        udocker:
          container: udocker-testing
          tox:
-           tox_file: /udocker-testing/tox.ini
+           tox_file: /udocker/tox.ini
            testenv: 
              - stylecheck
    
