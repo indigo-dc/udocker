@@ -4,10 +4,6 @@ config:
       repo: 'https://github.com/MartaCastro/udocker.git'      
       branch: setup_jenkins-pipeline-library 
 
-environment:
-  JPL_WORKSPACEDEBUG: "true"
-  JPL_WORKSPACEDEBUGTIMEOUT: 45
-
 sqa_criteria:
    qc_style:
      repos:
