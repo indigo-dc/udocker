@@ -1,3 +1,22 @@
+udocker (1.1.7)
+  * Fix P1 when Linux 4.8.0 SECCOMP is backported, affects newer CentOS 7 
+    - closes: #282
+  * Check for file ownership on remove wrongly follows symlinks 
+    - closes: #266, #267
+  * udocker unexpectedly uses P1 exec mode instead of P2
+    - closes: #274
+  * allow passsing of PROOT_TMP_DIR environment variable
+    - closes: #284
+
+udocker (1.1.6)
+  * Complete fix for of ELF paths in modes Fn for $ORIGIN:$ORIGIN
+    - closes: #255
+
+udocker (1.1.5)
+  * Preliminary fix for of ELF paths in modes Fn for $ORIGIN:$ORIGIN
+  * Add Fn libraries for Ubuntu20, Fedora32, Fedora33
+  * Add Fn libraries for Alpine 3.12, 3.13
+
 udocker (1.1.4-1)
   * Fix run --location
   * Fix udocker integrated help
