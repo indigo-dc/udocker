@@ -190,7 +190,7 @@ class UdockerToolsTestCase(TestCase):
         mock_isfile.return_value = True
         mock_fumktmp.return_value = "/home/tmp"
         mock_osbase.return_value = "VERSION"
-        mock_fugetdata.return_value = "1.2.6"
+        mock_fugetdata.return_value = "1.2.7"
         mock_furm.return_value = None
         mock_versionok.return_value = True
         with patch.object(tarfile, 'open', autospec=True) as open_mock:
@@ -198,7 +198,7 @@ class UdockerToolsTestCase(TestCase):
             open_mock.return_value.extract.return_value = None
             utools = UdockerTools(self.local)
             status = utools._verify_version(tball)
-            self.assertEqual(status, (True, "1.2.6"))
+            self.assertEqual(status, (True, "1.2.7"))
             self.assertTrue(mock_furm.called)
 
     @patch('udocker.tools.os.path.basename')
@@ -233,7 +233,7 @@ class UdockerToolsTestCase(TestCase):
 
     def test_11__get_mirrors(self):
         """Test11 UdockerTools()._get_mirrors()."""
-        mirrors = "https://download.ncg.ingrid.pt/udocker-1.2.6.tar.gz"
+        mirrors = "https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz"
         utools = UdockerTools(self.local)
         status = utools._get_mirrors(mirrors)
         self.assertEqual(status, [mirrors])
@@ -244,11 +244,11 @@ class UdockerToolsTestCase(TestCase):
     def test_12_get_installinfo(self, mock_jload, mock_mirr, mock_getf):
         """Test12 UdockerTools().get_installinfo()."""
         Config.conf['installinfo'] = "/home/info.json"
-        res = {"tarversion": "1.2.6"}
-        mock_jload.return_value = {"tarversion": "1.2.6"}
+        res = {"tarversion": "1.2.7"}
+        mock_jload.return_value = {"tarversion": "1.2.7"}
         mock_mirr.return_value = ["/home/info.json"]
         mock_getf.return_value = "info.json"
-        subuid_line = StringIO('{"tarversion": "1.2.6"}')
+        subuid_line = StringIO('{"tarversion": "1.2.7"}')
         with patch(BOPEN) as mopen:
             mopen.return_value.__iter__ = (
                 lambda self: iter(subuid_line.readline, ''))
@@ -265,9 +265,9 @@ class UdockerToolsTestCase(TestCase):
                                mock_verversion, mock_install):
         """Test13 UdockerTools()._install_logic()."""
         mock_furm.return_value = None
-        mock_getmirr.return_value = "https://down.pt/udocker-1.2.6.tar.gz"
-        mock_getfile.return_value = "udocker-1.2.6.tar.gz"
-        mock_verversion.return_value = (True, "1.2.6")
+        mock_getmirr.return_value = "https://down.pt/udocker-1.2.7.tar.gz"
+        mock_getfile.return_value = "udocker-1.2.7.tar.gz"
+        mock_verversion.return_value = (True, "1.2.7")
         mock_install.return_value = True
         utools = UdockerTools(self.local)
         status = utools._install_logic(False)
@@ -278,8 +278,8 @@ class UdockerToolsTestCase(TestCase):
         self.assertTrue(mock_install.called)
 
         mock_furm.return_value = None
-        mock_getmirr.return_value = "https://down.pt/udocker-1.2.6.tar.gz"
-        mock_getfile.return_value = "udocker-1.2.6.tar.gz"
+        mock_getmirr.return_value = "https://down.pt/udocker-1.2.7.tar.gz"
+        mock_getfile.return_value = "udocker-1.2.7.tar.gz"
         mock_verversion.return_value = (False, "")
         mock_install.return_value = True
         utools = UdockerTools(self.local)
@@ -287,8 +287,8 @@ class UdockerToolsTestCase(TestCase):
         self.assertTrue(status)
 
         mock_furm.return_value = None
-        mock_getmirr.return_value = "https://down.pt/udocker-1.2.6.tar.gz"
-        mock_getfile.return_value = "udocker-1.2.6.tar.gz"
+        mock_getmirr.return_value = "https://down.pt/udocker-1.2.7.tar.gz"
+        mock_getfile.return_value = "udocker-1.2.7.tar.gz"
         mock_verversion.return_value = (False, "")
         mock_install.return_value = True
         utools = UdockerTools(self.local)
@@ -303,8 +303,8 @@ class UdockerToolsTestCase(TestCase):
                         mock_instruct):
         """Test14 UdockerTools().install()."""
         Config.conf['autoinstall'] = True
-        Config.conf['tarball'] = "udocker-1.2.6.tar.gz"
-        Config.conf['tarball_release'] = "1.2.6"
+        Config.conf['tarball'] = "udocker-1.2.7.tar.gz"
+        Config.conf['tarball_release'] = "1.2.7"
         Config.conf['installretry'] = 2
         mock_isavail.return_value = True
         utools = UdockerTools(self.local)
@@ -313,8 +313,8 @@ class UdockerToolsTestCase(TestCase):
         self.assertTrue(mock_isavail.called)
 
         Config.conf['autoinstall'] = False
-        Config.conf['tarball'] = "udocker-1.2.6.tar.gz"
-        Config.conf['tarball_release'] = "1.2.6"
+        Config.conf['tarball'] = "udocker-1.2.7.tar.gz"
+        Config.conf['tarball_release'] = "1.2.7"
         Config.conf['installretry'] = 2
         mock_isavail.return_value = False
         utools = UdockerTools(self.local)
@@ -324,7 +324,7 @@ class UdockerToolsTestCase(TestCase):
 
         Config.conf['autoinstall'] = False
         Config.conf['tarball'] = ""
-        Config.conf['tarball_release'] = "1.2.6"
+        Config.conf['tarball_release'] = "1.2.7"
         Config.conf['installretry'] = 2
         mock_isavail.return_value = True
         utools = UdockerTools(self.local)
@@ -333,8 +333,8 @@ class UdockerToolsTestCase(TestCase):
         self.assertEqual(utools._tarball, "")
 
         Config.conf['autoinstall'] = True
-        Config.conf['tarball'] = "udocker-1.2.6.tar.gz"
-        Config.conf['tarball_release'] = "1.2.6"
+        Config.conf['tarball'] = "udocker-1.2.7.tar.gz"
+        Config.conf['tarball_release'] = "1.2.7"
         Config.conf['installretry'] = 2
         mock_isavail.return_value = False
         mock_instlog.side_effect = [False, True]
@@ -346,8 +346,8 @@ class UdockerToolsTestCase(TestCase):
         self.assertTrue(mock_getinfo.call_count, 2)
 
         Config.conf['autoinstall'] = True
-        Config.conf['tarball'] = "udocker-1.2.6.tar.gz"
-        Config.conf['tarball_release'] = "1.2.6"
+        Config.conf['tarball'] = "udocker-1.2.7.tar.gz"
+        Config.conf['tarball_release'] = "1.2.7"
         Config.conf['installretry'] = 2
         mock_isavail.return_value = False
         mock_instlog.side_effect = [False, False]
