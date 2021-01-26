@@ -44,7 +44,7 @@ __credits__ = ["PRoot http://proot.me",
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "1.1.7"
-__date__ = "2019"
+__date__ = "2020"
 
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
