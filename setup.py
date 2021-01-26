@@ -23,10 +23,10 @@ limitations under the License.
 from setuptools import setup, find_packages
 from udocker import __version__
 
-with open('README.md') as readme_file:
+with open('README.md', 'r', encoding='utf8') as readme_file:
     README = readme_file.read()
 
-with open('CHANGELOG.md') as history_file:
+with open('CHANGELOG.md', 'r', encoding='utf8') as history_file:
     HISTORY = history_file.read()
 
 CONF_DIR = '/udocker/etc'
