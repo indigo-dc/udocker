@@ -1,8 +1,8 @@
 config:
   project_repos:
     udocker:
-      repo: 'https://github.com/MartaCastro/udocker.git'      
-      branch: setup_jenkins-pipeline-library 
+      repo: 'https://github.com/indigo-dc/udocker.git'      
+      branch: devel3
 
 environment:
   JPL_WORKSPACEDEBUG: "true"
@@ -33,7 +33,3 @@ sqa_criteria:
            tox_file: /udocker/tox.ini
            testenv:
               - cover
-
-           
-           
-           
