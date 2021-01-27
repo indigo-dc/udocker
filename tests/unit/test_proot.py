@@ -54,14 +54,17 @@ class PRootEngineTestCase(TestCase):
         self.assertFalse(prex.proot_noseccomp)
         self.assertEqual(prex._kernel, "4.8.13")
 
+    @patch.object(PRootEngine, '_is_seccomp_patched')
     @patch('udocker.engine.proot.HostInfo.oskernel_isgreater')
     @patch('udocker.engine.proot.FileUtil.find_file_in_dir')
-    def test_02_select_proot(self, mock_fimage, mock_isgreater):
+    def test_02_select_proot(self, mock_fimage,
+                             mock_isgreater, mock_issecomp):
         """Test02 PRootEngine().select_proot()."""
         Config().conf['arch'] = "amd64"
         Config().conf['proot_noseccomp'] = None
         mock_isgreater.return_value = False
         mock_fimage.return_value = "proot-4_8_0"
+        mock_issecomp.return_value = False
         prex = PRootEngine(self.local, self.xmode)
         prex.select_proot()
         self.assertFalse(prex.proot_noseccomp)
@@ -69,6 +72,7 @@ class PRootEngineTestCase(TestCase):
         Config().conf['proot_noseccomp'] = True
         mock_isgreater.return_value = True
         mock_fimage.return_value = "proot"
+        mock_issecomp.return_value = False
         prex = PRootEngine(self.local, self.xmode)
         prex.select_proot()
         self.assertTrue(prex.proot_noseccomp)
@@ -76,6 +80,7 @@ class PRootEngineTestCase(TestCase):
         Config().conf['proot_noseccomp'] = False
         mock_isgreater.return_value = True
         mock_fimage.return_value = "proot"
+        mock_issecomp.return_value = False
         prex = PRootEngine(self.local, self.xmode)
         prex.select_proot()
         self.assertFalse(prex.proot_noseccomp)
@@ -83,6 +88,7 @@ class PRootEngineTestCase(TestCase):
         Config().conf['proot_noseccomp'] = None
         mock_isgreater.return_value = True
         mock_fimage.return_value = "proot-x86_64-4_8_0"
+        mock_issecomp.return_value = False
         prex = PRootEngine(self.local, self.xmode)
         prex.select_proot()
         self.assertFalse(prex.proot_noseccomp)
@@ -90,6 +96,7 @@ class PRootEngineTestCase(TestCase):
         Config().conf['proot_noseccomp'] = False
         mock_isgreater.return_value = True
         mock_fimage.return_value = "proot-x86_64-4_8_0"
+        mock_issecomp.return_value = False
         prex = PRootEngine(self.local, self.xmode)
         prex.select_proot()
         self.assertFalse(prex.proot_noseccomp)
@@ -97,6 +104,7 @@ class PRootEngineTestCase(TestCase):
         Config().conf['proot_noseccomp'] = True
         mock_isgreater.return_value = True
         mock_fimage.return_value = "proot-x86_64-4_8_0"
+        mock_issecomp.return_value = False
         prex = PRootEngine(self.local, self.xmode)
         prex.select_proot()
         self.assertTrue(prex.proot_noseccomp)
