@@ -848,16 +848,17 @@ class UdockerCLI(object):
                 Msg().err("Error: invalid container id", container_id)
                 exit_status = self.STATUS_ERROR
                 continue
-            else:
-                if self.localrepo.isprotected_container(container_id):
-                    Msg().err("Error: container is protected")
-                    exit_status = self.STATUS_ERROR
-                    continue
-                Msg().out("Info: deleting container:",
-                          str(container_id), l=Msg.INF)
-                if not self.localrepo.del_container(container_id, force):
-                    Msg().err("Error: deleting container")
-                    exit_status = self.STATUS_ERROR
+
+            if self.localrepo.isprotected_container(container_id):
+                Msg().err("Error: container is protected")
+                exit_status = self.STATUS_ERROR
+                continue
+
+            Msg().out("Info: deleting container:",
+                      str(container_id), l=Msg.INF)
+            if not self.localrepo.del_container(container_id, force):
+                Msg().err("Error: deleting container")
+                exit_status = self.STATUS_ERROR
 
         return exit_status
 

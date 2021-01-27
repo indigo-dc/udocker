@@ -35,7 +35,8 @@ class CmdParser(object):
         for arg in argv[1:]:
             if not arg:
                 continue
-            elif step == 1:
+
+            if step == 1:
                 if arg[0] in string.ascii_letters:
                     self._argv_split['CMD'] = arg
                     step = 2
@@ -43,6 +44,7 @@ class CmdParser(object):
                     self._argv_split['GEN_OPT'].append(arg)
             elif step == 2:
                 self._argv_split['CMD_OPT'].append(arg)
+
         return step == 2
 
     def missing_options(self):
@@ -114,7 +116,8 @@ class CmdParser(object):
                     (pos < 1 or (pos not in consumed and not
                                  opt_list[pos-1].endswith('=')))):
                 break        # end of options and start of arguments
-            elif opt_name.endswith('='):
+
+            if opt_name.endswith('='):
                 if opt_list[pos].startswith(opt_name):
                     opt_arg = opt_list[pos].split('=', 1)[1].strip()
                 elif (opt_list[pos] == opt_name[:-1] and
@@ -128,17 +131,20 @@ class CmdParser(object):
             elif opt_list[pos] == opt_name:
                 consumed.append(pos)
                 opt_arg = True
+
             pos += 1
             if opt_arg is None:
                 continue
+
+            consumed.append(pos-1)
+            if opt_multiple:
+                all_args.append(opt_arg)
             else:
-                consumed.append(pos-1)
-                if opt_multiple:
-                    all_args.append(opt_arg)
-                else:
-                    return opt_arg
+                return opt_arg
+
         if opt_multiple:
             return all_args
+
         return False
 
     def _get_param(self, opt_name, opt_list, consumed, consumed_params):
