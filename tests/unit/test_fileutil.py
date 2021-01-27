@@ -186,7 +186,7 @@ class FileUtilTestCase(TestCase):
         status = FileUtil("somedir").mktmpdir()
         self.assertEqual(status, None)
 
-    @patch('udocker.utils.fileutil.os.stat')
+    @patch('udocker.utils.fileutil.os.lstat')
     @patch('udocker.utils.fileutil.os.path.abspath')
     @patch('udocker.utils.fileutil.os.path.basename')
     @patch.object(FileUtil, '_register_prefix')

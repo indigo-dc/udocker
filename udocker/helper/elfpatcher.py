@@ -260,7 +260,7 @@ class ElfPatcher(object):
                     f_path = dir_path + '/' + f_name
                     if not os.access(f_path, os.R_OK):
                         continue
-                    elif os.path.isfile(f_path):
+                    if os.path.isfile(f_path):
                         if self._shlib.match(f_name):
                             if dir_path not in ld_list:
                                 ld_list.append(dir_path)

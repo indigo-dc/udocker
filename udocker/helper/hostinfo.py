@@ -5,6 +5,7 @@ import os
 import re
 import pwd
 import platform
+import json
 
 from udocker import is_genstr
 from udocker.utils.uprocess import Uprocess
@@ -59,19 +60,15 @@ class HostInfo(object):
             return "6.1.1"
 
     def oskernel_isgreater(self, version):
-        """Compare kernel version is greater or equal than ref_version"""
+        """Compare kernel version is greater or equal than ref_version
+        version: list [int, int, int]
+        """
         os_release = self.oskernel().split('-')[0]
         os_version = [int(x) for x in os_release.split('.')[0:3]]
-        if is_genstr(version):
-            ref_version = [int(x) for x in version.split('.')[0:3]]
-        elif isinstance(version, list):
-            ref_version = version
-        else:
-            return False
         for idx in (0, 1, 2):
-            if os_version[idx] > ref_version[idx]:
+            if os_version[idx] > version[idx]:
                 return True
-            elif os_version[idx] < ref_version[idx]:
+            elif os_version[idx] < version[idx]:
                 return False
         return True
 
@@ -99,3 +96,33 @@ class HostInfo(object):
         except (OSError, IOError):
             pass
         return (24, 80)
+
+    def is_same_osenv(self, filename):
+        """Check if the host has changed"""
+        try:
+            saved = json.loads(FileUtil(filename).getdata())
+            if (saved["osversion"] == self.osversion() and
+                    saved["oskernel"] == self.oskernel() and
+                    saved["arch"] == self.arch() and
+                    saved["osdistribution"] == str(self.osdistribution())):
+                return saved
+        except (IOError, OSError, AttributeError, ValueError, TypeError,
+                IndexError, KeyError):
+            pass
+        return dict()
+
+    def save_osenv(self, filename, save=None):
+        """Save host info for is_same_host()"""
+        if save is None:
+            save = dict()
+        try:
+            save["osversion"] = self.osversion()
+            save["oskernel"] = self.oskernel()
+            save["arch"] = self.arch()
+            save["osdistribution"] = str(self.osdistribution())
+            if FileUtil(filename).putdata(json.dumps(save)):
+                return True
+        except (AttributeError, ValueError, TypeError,
+                IndexError, KeyError):
+            pass
+        return False

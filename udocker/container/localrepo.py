@@ -656,10 +656,10 @@ class LocalRepository(object):
             for layer_id in structure["repolayers"]:
                 if "json" not in structure["repolayers"][layer_id]:   # v2
                     continue
-                elif "parent" not in structure["repolayers"][layer_id]["json"]:
+                if "parent" not in structure["repolayers"][layer_id]["json"]:
                     continue
-                elif (my_layer_id ==
-                      structure["repolayers"][layer_id]["json"]["parent"]):
+                if (my_layer_id ==
+                        structure["repolayers"][layer_id]["json"]["parent"]):
                     found = self._find_top_layer_id(structure, layer_id)
                     break
             if not found:
@@ -674,13 +674,14 @@ class LocalRepository(object):
             sorted_layers.append(next_layer)
             if "json" not in structure["repolayers"][next_layer]:   # v2
                 break
+
             if "parent" not in structure["repolayers"][next_layer]["json"]:
                 break
-            else:
-                next_layer = \
-                        structure["repolayers"][next_layer]["json"]["parent"]
-                if not next_layer:
-                    break
+
+            next_layer = structure["repolayers"][next_layer]["json"]["parent"]
+            if not next_layer:
+                break
+
         return sorted_layers
 
     def _split_layer_id(self, layer_id):

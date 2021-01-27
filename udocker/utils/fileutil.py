@@ -105,7 +105,7 @@ class FileUtil(object):
     def uid(self):
         """Get the file owner user id"""
         try:
-            return os.stat(self.filename).st_uid
+            return os.lstat(self.filename).st_uid
         except (IOError, OSError):
             return -1
 

@@ -130,7 +130,6 @@ class FakechrootEngine(ExecutionEngineCommon):
         (host_volumes, map_volumes) = self._get_volume_bindings()
         self._fakechroot_so = self.select_fakechroot_so()
         access_filesok = self._get_access_filesok()
-        #
         self.opt["env"].append("PWD=" + self.opt["cwd"])
         self.opt["env"].append("FAKECHROOT_BASE=" +
                                os.path.realpath(self.container_root))
@@ -141,20 +140,25 @@ class FakechrootEngine(ExecutionEngineCommon):
         else:
             self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" + \
                     str(Config.conf['fakechroot_expand_symlinks']).lower())
-        #
+
         if not self._is_volume("/tmp"):
             self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" +
                                    Config.conf['tmpdir'])
+
         if host_volumes:
             self.opt["env"].append("FAKECHROOT_EXCLUDE_PATH=" + host_volumes)
+
         if map_volumes:
             self.opt["env"].append("FAKECHROOT_DIR_MAP=" + map_volumes)
+
         if Msg.level >= Msg.DBG:
             self.opt["env"].append("FAKECHROOT_DEBUG=true")
             self.opt["env"].append("LD_DEBUG=libs:files")
+
         if access_filesok:
             self.opt["env"].append("FAKECHROOT_ACCESS_FILESOK=" +
                                    access_filesok)
+
         # execution mode
         ld_library_real = self._elfpatcher.get_ld_library_path()
         xmode = self.exec_mode.get_mode()
@@ -168,17 +172,14 @@ class FakechrootEngine(ExecutionEngineCommon):
             self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_PATH=" + ld_library_real)
-            #self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
         elif xmode == "F3":
             self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_PATH=" + ld_library_real)
-            #self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
         elif xmode == "F4":
             self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_PATH=" + ld_library_real)
-            #self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
             patchelf_exec = self._elfpatcher.select_patchelf()
             if patchelf_exec:
                 self.opt["env"].append("FAKECHROOT_PATCH_PATCHELF=" +

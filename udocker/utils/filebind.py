@@ -107,5 +107,4 @@ class FileBind(object):
 
     def finish(self):
         """Cleanup after run"""
-        #return FileUtil(self.host_bind_dir).remove(recursive=True)
-        pass
+        return

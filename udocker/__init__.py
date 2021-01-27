@@ -22,7 +22,7 @@ limitations under the License.
 """
 import sys
 __author__ = "udocker@lip.pt"
-__copyright__ = "Copyright 2017, LIP"
+__copyright__ = "Copyright 2021, LIP"
 __credits__ = ["PRoot http://proot.me",
                "runC https://runc.io",
                "Fakechroot https://github.com/dex4er/fakechroot",
@@ -30,7 +30,7 @@ __credits__ = ["PRoot http://proot.me",
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "1.2.7"
-__date__ = "2017"
+__date__ = "2021"
 
 def is_genstr(objstr):
     """test if objstr is string or unicode both in py2 nd py3

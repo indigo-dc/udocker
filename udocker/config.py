@@ -116,8 +116,11 @@ class Config(object):
         "CAP_SYS_CHROOT", "CAP_MKNOD", "CAP_AUDIT_WRITE", "CAP_SETFCAP",
     ]
 
-    conf['singularity_options'] = ["-w", ]  # singul. opts -u --nv -w
-    conf['valid_host_env'] = ("TERM", "PATH", )  # Pass host env vars
+    # singul. opts -u --nv -w
+    conf['singularity_options'] = ["-w", ]
+
+    # Pass host env vars
+    conf['valid_host_env'] = ("TERM", "PATH", "PROOT_TMP_DIR", )
     conf['invalid_host_env'] = ("VTE_VERSION", )
 
     # CPU affinity executables to use with: run --cpuset-cpus="1,2,3-4"
