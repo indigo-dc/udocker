@@ -93,9 +93,9 @@ class HostInfoTestCase(TestCase):
     @patch('udocker.helper.hostinfo.Uprocess.check_output')
     def test_07_termsize(self, mock_chkout):
         """Test07 HostInfo().termsize."""
-        mock_chkout.return_value = "20 40"
+        mock_chkout.return_value = "24 80"
         status = HostInfo().termsize()
-        self.assertEqual(status, (20, 40))
+        self.assertEqual(status, (24, 80))
 
 
 if __name__ == '__main__':
