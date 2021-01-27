@@ -6,7 +6,7 @@ config:
 
 environment:
   JPL_WORKSPACEDEBUG: "true"
-  JPL_WORKSPACEDEBUGTIMEOUT: 45
+  JPL_WORKSPACEDEBUGTIMEOUT: 90
   
 sqa_criteria:
    qc_style:
