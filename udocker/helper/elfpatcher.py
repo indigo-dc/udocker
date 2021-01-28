@@ -53,7 +53,7 @@ class ElfPatcher(object):
             image_list = ["patchelf-arm", "patchelf"]
         f_util = FileUtil(self.localrepo.bindir)
         patchelf_exec = f_util.find_file_in_dir(image_list)
-        if not patchelf_exec:
+        if not os.path.exists(patchelf_exec):
             Msg().err("Error: patchelf executable not found")
             sys.exit(1)
         return patchelf_exec

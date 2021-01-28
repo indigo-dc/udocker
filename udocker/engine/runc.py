@@ -34,42 +34,59 @@ class RuncEngine(ExecutionEngineCommon):
         self._container_specfile = None
         self._filebind = None
         self.execution_id = None
+        self.engine_type = ""
 
     def select_runc(self):
         """Set runc executable and related variables"""
         self.executable = Config.conf['use_runc_executable']
         if self.executable != "UDOCKER" and not self.executable:
             self.executable = FileUtil("runc").find_exec()
+
+        if self.executable != "UDOCKER" and not self.executable:
+            self.executable = FileUtil("crun").find_exec()
+
         if self.executable == "UDOCKER" or not self.executable:
             self.executable = ""
             arch = HostInfo().arch()
             image_list = []
+            eng = ["runc", "crun"]
+            if "cgroup2" in FileUtil("/proc/filesystems").getdata():
+                eng = ["crun", "runc"]
+
             if arch == "amd64":
-                image_list = ["runc-x86_64", "runc"]
+                image_list = [eng[0]+"-x86_64", eng[0], eng[1]+"-x86_64", eng[1]]
             elif arch == "i386":
-                image_list = ["runc-x86", "runc"]
+                image_list = [eng[0]+"-x86", eng[0], eng[1]+"-x86", eng[1]]
             elif arch == "arm64":
-                image_list = ["runc-arm64", "runc"]
+                image_list = [eng[0]+"-arm64", eng[0], eng[1]+"-arm64", eng[1]]
             elif arch == "arm":
-                image_list = ["runc-arm", "runc"]
+                image_list = [eng[0]+"-arm", eng[0], eng[1]+"-arm", eng[1]]
+
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
-        if not self.executable:
-            Msg().err("Error: runc executable not found")
+
+        if not os.path.exists(self.executable):
+            Msg().err("Error: runc/crun executable not found")
             sys.exit(1)
+        if "crun" in os.path.basename(self.executable):
+            self.engine_type = "crun"
+        elif "runc" in os.path.basename(self.executable):
+            self.engine_type = "runc"
 
     def _load_spec(self, new=False):
         """Generate runc spec file"""
         if FileUtil(self._container_specfile).size() != -1 and new:
             FileUtil(self._container_specfile).register_prefix()
             FileUtil(self._container_specfile).remove()
+
         if FileUtil(self._container_specfile).size() == -1:
-            cmd_l = [self.executable, "spec", "--rootless", "--bundle",
-                     os.path.realpath(self.container_dir)]
+            cmd_l = [self.executable, "spec", "--rootless", ]
             status = subprocess.call(cmd_l, shell=False, stderr=Msg.chlderr,
-                                     close_fds=True)
+                                     close_fds=True,
+                                     cwd=os.path.realpath(self.container_dir))
             if status:
                 return False
+
         json_obj = None
         infile = None
         try:
@@ -77,8 +94,10 @@ class RuncEngine(ExecutionEngineCommon):
             json_obj = json.load(infile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             json_obj = None
+
         if infile:
             infile.close()
+
         self._container_specjson = json_obj
         return json_obj
 
@@ -104,20 +123,46 @@ class RuncEngine(ExecutionEngineCommon):
             json_obj["hostname"] = self.opt["hostname"]
         else:
             json_obj["hostname"] = platform.node()
+
         if self.opt["cwd"]:
             json_obj["process"]["cwd"] = self.opt["cwd"]
+
         json_obj["process"]["terminal"] = sys.stdout.isatty()
+        if self.engine_type == "crun":
+            json_obj["process"]["terminal"] = False
+
         json_obj["process"]["env"] = []
         for (env_key, env_val) in self.opt["env"]:
             json_obj["process"]["env"].append("%s=%s" % (env_key, env_val))
-        for idmap in json_obj["linux"]["uidMappings"]:
-            if "hostID" in idmap:
-                idmap["hostID"] = HostInfo.uid
-        for idmap in json_obj["linux"]["gidMappings"]:
-            if "hostID" in idmap:
-                idmap["hostID"] = HostInfo.gid
+
         json_obj["process"]["args"] = self.opt["cmd"]
         return json_obj
+
+    def _set_id_mappings(self):
+        """set uid and gid mappings"""
+        json_obj = self._container_specjson
+        if "uidMappings" in json_obj["linux"]:
+            for idmap in json_obj["linux"]["uidMappings"]:
+                if "hostID" in idmap:
+                    idmap["hostID"] = HostInfo.uid
+        else:
+            json_obj["linux"]["uidMappings"] = [ \
+                    {"containerID": 0, "hostID": HostInfo.uid, "size":1, }, ]
+        if "gidMappings" in json_obj["linux"]:
+            for idmap in json_obj["linux"]["gidMappings"]:
+                if "hostID" in idmap:
+                    idmap["hostID"] = HostInfo.gid
+        else:
+            json_obj["linux"]["gidMappings"] = [ \
+                    {"containerID": 0, "hostID": HostInfo.gid, "size":1, }, ]
+
+    def _del_namespace_spec(self, namespace):
+        """Remove a namespace"""
+        try:
+            json_obj = self._container_specjson
+            json_obj["linux"]["namespaces"].remove({"type": namespace})
+        except ValueError:
+            pass
 
     def _uid_check(self):
         """Check the uid_map string for container run command"""
@@ -321,9 +366,9 @@ class RuncEngine(ExecutionEngineCommon):
         if self.container_dir:
             self._container_specfile = \
                     self.container_dir + '/' + self._container_specfile
+
         self._filebind = FileBind(self.localrepo, container_id)
         self._filebind.setup()
-
         self.select_runc()
 
         # create new OCI spec file
@@ -337,19 +382,21 @@ class RuncEngine(ExecutionEngineCommon):
 
         # set environment variables
         self._run_env_set()
-
         self._set_spec()
         if (Config.conf['runc_nomqueue'] or
                 (Config.conf['runc_nomqueue'] is None and not
                  HostInfo().oskernel_isgreater([4, 8, 0]))):
             self._del_mount_spec("mqueue", "/dev/mqueue")
+
+        self._del_mount_spec("cgroup", "/sys/fs/cgroup")
+        self._del_namespace_spec("network")
+        self._set_id_mappings()
         self._add_volume_bindings()
         self._add_devices()
         self._add_capabilities_spec()
         self._mod_mount_spec("shm", "/dev/shm", {"options": ["size=2g"]})
         self._proot_overlay()
         self._save_spec()
-
         if Msg.level >= Msg.DBG:
             runc_debug = ["--debug", ]
             Msg().out(json.dumps(self._container_specjson,
@@ -365,10 +412,10 @@ class RuncEngine(ExecutionEngineCommon):
         cmd_l.extend(["--root", self.container_dir, "run"])
         cmd_l.extend(["--bundle", self.container_dir, self.execution_id])
         Msg().err("CMD =", cmd_l, l=Msg.VER)
-
         self._run_banner(self.opt["cmd"][0], '%')
         if sys.stdout.isatty():
             return self.run_pty(cmd_l)
+
         return self.run_nopty(cmd_l)
 
     def run_pty(self, cmd_l):

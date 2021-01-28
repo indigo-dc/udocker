@@ -37,6 +37,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                 image_list = Config.conf['fakechroot_so']
             elif is_genstr(Config.conf['fakechroot_so']):
                 image_list = [Config.conf['fakechroot_so'], ]
+
             if "/" in Config.conf['fakechroot_so']:
                 if os.path.exists(Config.conf['fakechroot_so']):
                     return os.path.realpath(Config.conf['fakechroot_so'])
@@ -51,6 +52,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             (distro, version) = guest.osdistribution()
             if "Alpine" not in distro:
                 version = version.split(".")[0]
+
             if arch == "amd64":
                 image_list = ["%s-%s-%s-x86_64.so" % (lib, distro, version),
                               "%s-%s-x86_64.so" % (lib, distro),
@@ -67,11 +69,13 @@ class FakechrootEngine(ExecutionEngineCommon):
                 image_list = ["%s-%s-%s-arm.so" % (lib, distro, version),
                               "%s-%s-arm.so" % (lib, distro),
                               "%s-arm.so" % (lib), deflib]
+
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
-        if not fakechroot_so:
+        if not os.path.exists(fakechroot_so):
             Msg().err("Error: no libfakechroot found", image_list)
             sys.exit(1)
+
         Msg().out("Info: fakechroot_so:", fakechroot_so, l=Msg.DBG)
         return fakechroot_so
 
