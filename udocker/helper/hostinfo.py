@@ -9,6 +9,7 @@ import json
 
 from udocker import is_genstr
 from udocker.utils.uprocess import Uprocess
+from udocker.utils.fileutil import FileUtil
 
 class HostInfo(object):
     """Get information from the host system"""
