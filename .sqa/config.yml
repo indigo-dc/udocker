@@ -3,6 +3,11 @@ config:
     udocker:
       repo: 'https://github.com/indigo-dc/udocker.git'      
       branch: devel3
+      
+environment:
+  JPL_WORKSPACEDEBUG: "true"
+  JPL_WORKSPACEDEBUGTIMEOUT: 90      
+      
 sqa_criteria:
    qc_style:
      repos:
