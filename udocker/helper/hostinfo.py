@@ -5,11 +5,9 @@ import os
 import re
 import pwd
 import platform
-import json
 
 from udocker import is_genstr
 from udocker.utils.uprocess import Uprocess
-from udocker.utils.fileutil import FileUtil
 
 class HostInfo(object):
     """Get information from the host system"""
@@ -97,33 +95,3 @@ class HostInfo(object):
         except (OSError, IOError):
             pass
         return (24, 80)
-
-    def is_same_osenv(self, filename):
-        """Check if the host has changed"""
-        try:
-            saved = json.loads(FileUtil(filename).getdata())
-            if (saved["osversion"] == self.osversion() and
-                    saved["oskernel"] == self.oskernel() and
-                    saved["arch"] == self.arch() and
-                    saved["osdistribution"] == str(self.osdistribution())):
-                return saved
-        except (IOError, OSError, AttributeError, ValueError, TypeError,
-                IndexError, KeyError):
-            pass
-        return dict()
-
-    def save_osenv(self, filename, save=None):
-        """Save host info for is_same_host()"""
-        if save is None:
-            save = dict()
-        try:
-            save["osversion"] = self.osversion()
-            save["oskernel"] = self.oskernel()
-            save["arch"] = self.arch()
-            save["osdistribution"] = str(self.osdistribution())
-            if FileUtil(filename).putdata(json.dumps(save)):
-                return True
-        except (AttributeError, ValueError, TypeError,
-                IndexError, KeyError):
-            pass
-        return False

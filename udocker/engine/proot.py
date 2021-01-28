@@ -85,7 +85,7 @@ class PRootEngine(ExecutionEngineCommon):
                 HostInfo().oskernel_isgreater([4, 8, 0])):
             return False
         host_file = self.container_dir + "/osenv.json"
-        host_info = HostInfo().is_same_osenv(host_file)
+        host_info = self._is_same_osenv(host_file)
         if host_info:
             if "PROOT_NEW_SECCOMP" in host_info:
                 return True
@@ -98,10 +98,10 @@ class PRootEngine(ExecutionEngineCommon):
                                          executable, "--help"])
             del os.environ["PROOT_NEW_SECCOMP"]
             if out:
-                HostInfo().save_osenv(host_file,
+                self._save_osenv(host_file,
                                       dict([("PROOT_NEW_SECCOMP", 1), ]))
                 return True
-        HostInfo().save_osenv(host_file)
+        self._save_osenv(host_file)
         return False
 
     def _set_uid_map(self):
