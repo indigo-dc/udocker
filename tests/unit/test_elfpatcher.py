@@ -42,14 +42,17 @@ class ElfPatcherTestCase(TestCase):
         self.assertTrue(mock_path.callled)
         self.assertEqual(elfp._uid, "1000")
 
+    @patch('udocker.helper.elfpatcher.os.path.exists')
     @patch('udocker.helper.elfpatcher.HostInfo.arch')
     @patch('udocker.helper.elfpatcher.FileUtil.find_file_in_dir')
     @patch('udocker.helper.elfpatcher.os.path.realpath')
-    def test_02_select_patchelf(self, mock_path, mock_find, mock_arch):
+    def test_02_select_patchelf(self, mock_path, mock_find,
+                                mock_arch, mock_exists):
         """Test02 ElfPatcher().select_patchelf()."""
         mock_path.return_value = "/some_contdir"
         mock_arch.return_value = "arm"
         mock_find.return_value = "runc-arm"
+        mock_exists.return_value = True
         elfp = ElfPatcher(self.local, self.contid)
         output = elfp.select_patchelf()
         self.assertEqual(output, "runc-arm")
@@ -57,6 +60,7 @@ class ElfPatcherTestCase(TestCase):
         mock_path.return_value = "/some_contdir"
         mock_arch.return_value = "arm"
         mock_find.return_value = ""
+        mock_exists.return_value = False
         with self.assertRaises(SystemExit) as epexpt:
             elfp = ElfPatcher(self.local, self.contid)
             elfp.select_patchelf()
