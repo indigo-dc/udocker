@@ -36,15 +36,15 @@ import ast
 import ctypes
 
 __author__ = "udocker@lip.pt"
-__copyright__ = "Copyright 2019, LIP"
+__copyright__ = "Copyright 2020, LIP"
 __credits__ = ["PRoot http://proot.me",
                "runC https://runc.io",
                "Fakechroot https://github.com/dex4er/fakechroot",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.4"
-__date__ = "2019"
+__version__ = "1.1.7"
+__date__ = "2020"
 
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
@@ -113,17 +113,14 @@ class Config(object):
     containersdir = None
 
     # udocker installation tarball
-    tarball_release = "1.1.4"
+    tarball_release = "1.1.7"
     tarball = (
-        "https://owncloud.indigo-datacloud.eu/index.php"
-        "/s/QF09QQGUzG0P1pK/download"
-        " "
         "https://raw.githubusercontent.com"
-        "/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.4.tar.gz"
+        "/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.7.tar.gz"
         " "
-        "https://cernbox.cern.ch/index.php/s/g1qv4aycRoBFsDO/download"
+        "https://cernbox.cern.ch/index.php/s/fuO6cXiiiUckNPA/download"
         " "
-        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.4.tar.gz"
+        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.7.tar.gz"
     )
 
     installinfo = [
@@ -219,7 +216,7 @@ class Config(object):
     singularity_options = ["-w", ]
 
     # Pass host env variables
-    valid_host_env = ("TERM", "PATH", )
+    valid_host_env = ("TERM", "PATH", "PROOT_TMP_DIR", )
     invalid_host_env = ("VTE_VERSION", )
 
     # CPU affinity executables to use with: run --cpuset-cpus="1,2,3-4"
@@ -396,14 +393,20 @@ class Uprocess(object):
 
     def check_output(self, *popenargs, **kwargs):
         """Select check_output implementation"""
-        if PY_VER >= "2.7":
-            return subprocess.check_output(*popenargs, **kwargs)
-        return self._check_output(*popenargs, **kwargs)
+        try:
+            if PY_VER >= "2.7":
+                return subprocess.check_output(*popenargs, **kwargs)
+            return self._check_output(*popenargs, **kwargs)
+        except OSError:
+            return ""
 
     def get_output(self, cmd, ignore_error=False):
         """Execute a command and get its output"""
         if not cmd[0].startswith("/"):
-            cmd[0] = FileUtil(cmd[0]).find_inpath(Config.root_path + ":" + os.getenv("PATH", ""))
+            cmd_path = FileUtil(cmd[0]).find_inpath(Config.root_path + ":" +
+                                                    os.getenv("PATH", ""))
+            if cmd_path:
+                cmd[0] = cmd_path
         content = ""
         try:
             content = self.check_output(cmd, shell=False, stderr=Msg.chlderr,
@@ -535,6 +538,36 @@ class HostInfo(object):
         except (OSError, IOError):
             pass
         return (24, 80)
+
+    def is_same_osenv(self, filename):
+        """Check if the host has changed"""
+        try:
+            saved = json.loads(FileUtil(filename).getdata())
+            if (saved["osversion"] == self.osversion() and
+                    saved["oskernel"] == self.oskernel() and
+                    saved["arch"] == self.arch() and
+                    saved["osdistribution"] == str(self.osdistribution())):
+                return saved
+        except (IOError, OSError, AttributeError, ValueError, TypeError,
+                IndexError, KeyError):
+            pass
+        return dict()
+
+    def save_osenv(self, filename, save=None):
+        """Save host info for is_same_host()"""
+        if save is None:
+            save = dict()
+        try:
+            save["osversion"] = self.osversion()
+            save["oskernel"] = self.oskernel()
+            save["arch"] = self.arch()
+            save["osdistribution"] = str(self.osdistribution())
+            if FileUtil(filename).putdata(json.dumps(save)):
+                return True
+        except (AttributeError, ValueError, TypeError,
+                IndexError, KeyError):
+            pass
+        return False
 
 
 class GuestInfo(object):
@@ -697,7 +730,8 @@ class Unshare(object):
             except OSError:
                 Msg().err("Error: setting ids and groups")
                 return False
-            exit(int(method()))
+            # pylint: disable=protected-access
+            os._exit(int(method()))
         return False
 
 
@@ -859,17 +893,13 @@ class Msg(object):
 
     def out(self, *args, **kwargs):
         """Write text to stdout respecting verbose level"""
-        level = Msg.MSG
-        if 'l' in kwargs:
-            level = kwargs['l']
+        level = kwargs.get('l', Msg.MSG)
         if level <= Msg.level:
             sys.stdout.write(' '.join([str(x) for x in args]) + '\n')
 
     def err(self, *args, **kwargs):
         """Write text to stderr respecting verbose level"""
-        level = Msg.ERR
-        if 'l' in kwargs:
-            level = kwargs['l']
+        level = kwargs.get('l', Msg.ERR)
         if level <= Msg.level:
             sys.stderr.write(' '.join([str(x) for x in args]) + '\n')
 
@@ -1079,7 +1109,7 @@ class FileUtil(object):
     def uid(self):
         """Get the file owner user id"""
         try:
-            return os.stat(self.filename).st_uid
+            return os.lstat(self.filename).st_uid
         except (IOError, OSError):
             return -1
 
@@ -1330,10 +1360,10 @@ class FileUtil(object):
 
     def find_exec(self):
         """Find an executable pathname by using which or type -p"""
-        cmd = self._find_exec(["which", self.basename])
+        cmd = self._find_exec(["which", self.basename, ])
         if cmd:
             return cmd
-        cmd = self._find_exec(["type", "-p", self.basename])
+        cmd = self._find_exec(["type", "-p", self.basename, ])
         if cmd:
             return cmd
         return ""
@@ -2001,7 +2031,7 @@ class ElfPatcher(object):
                     f_path = dir_path + '/' + f_name
                     if not os.access(f_path, os.R_OK):
                         continue
-                    elif os.path.isfile(f_path):
+                    if os.path.isfile(f_path):
                         if self._shlib.match(f_name):
                             if dir_path not in ld_list:
                                 ld_list.append(dir_path)
@@ -2308,7 +2338,7 @@ class FileBind(object):
     def finish(self):
         """Cleanup after run"""
         #return FileUtil(self.host_bind_dir).remove(recursive=True)
-        pass
+        return
 
 
 class MountPoint(object):
@@ -2672,7 +2702,7 @@ class ExecutionEngineCommon(object):
         for novolume in list(self.opt["novol"]):
             found = False
             for vol in list(self.opt["vol"]):
-                if novolume == vol or novolume == vol.split(':')[0]:
+                if novolume in (vol, vol.split(':')[0]):
                     self.opt["vol"].remove(vol)
                     found = True
             if not found:
@@ -3157,7 +3187,8 @@ class PRootEngine(ExecutionEngineCommon):
     def __init__(self, localrepo):
         super(PRootEngine, self).__init__(localrepo)
         self.executable = None                   # PRoot
-        self.proot_noseccomp = False             # Noseccomp mode
+        self.proot_noseccomp = False             # No seccomp mode
+        self.proot_newseccomp = False            # New seccomp mode
         self._kernel = HostInfo().oskernel()     # Emulate kernel
 
     def select_proot(self):
@@ -3195,11 +3226,43 @@ class PRootEngine(ExecutionEngineCommon):
         if not self.executable:
             Msg().err("Error: proot executable not found")
             sys.exit(1)
-        if HostInfo().oskernel_isgreater((4, 8, 0)):
-            if conf.proot_noseccomp is not None:
-                self.proot_noseccomp = conf.proot_noseccomp
-            if self.exec_mode.get_mode() == "P2":
-                self.proot_noseccomp = True
+        if conf.proot_noseccomp is not None:
+            self.proot_noseccomp = conf.proot_noseccomp
+        if self.exec_mode.get_mode() == "P2":
+            self.proot_noseccomp = True
+        if self._is_seccomp_patched(self.executable):
+            self.proot_newseccomp = True
+
+    def _is_seccomp_patched(self, executable):
+        """Check if kernel has ptrace/seccomp fixes added
+           on 4.8.0.
+           Only required for kernels below 4.8.0 to check
+           if the patch has been backported e.g CentOS 7
+        """
+        if "PROOT_NEW_SECCOMP" in os.environ:
+            return True
+        if ("PROOT_NO_SECCOMP" in os.environ or (self.proot_noseccomp) or
+                HostInfo().oskernel_isgreater((4, 8, 0))):
+            return False
+        host_file = self.container_dir + "/osenv.json"
+        host_info = HostInfo().is_same_osenv(host_file)
+        if host_info:
+            if "PROOT_NEW_SECCOMP" in host_info:
+                return True
+            return False
+        out = Uprocess().get_output([executable, "-r", "/",
+                                     executable, "--help"])
+        if not out:
+            os.environ["PROOT_NEW_SECCOMP"] = "1"
+            out = Uprocess().get_output([executable, "-r", "/",
+                                         executable, "--help"])
+            del os.environ["PROOT_NEW_SECCOMP"]
+            if out:
+                HostInfo().save_osenv(host_file,
+                                      dict([("PROOT_NEW_SECCOMP", 1), ]))
+                return True
+        HostInfo().save_osenv(host_file)
+        return False
 
     def _set_uid_map(self):
         """Set the uid_map string for container run command"""
@@ -3246,6 +3309,8 @@ class PRootEngine(ExecutionEngineCommon):
         # seccomp and ptrace behavior change on 4.8.0 onwards
         if self.proot_noseccomp or os.getenv("PROOT_NO_SECCOMP"):
             self.opt["env"].append("PROOT_NO_SECCOMP=1")
+        if self.proot_newseccomp or os.getenv("PROOT_NEW_SECCOMP"):
+            self.opt["env"].append("PROOT_NEW_SECCOMP=1")
 
         if not HostInfo().oskernel_isgreater("3.0.0"):
             self._kernel = "6.0.0"
@@ -4044,7 +4109,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_PATH=" + ld_library_real)
-            self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
+            #self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
             patchelf_exec = self._elfpatcher.select_patchelf()
             if patchelf_exec:
                 self.opt["env"].append("FAKECHROOT_PATCH_PATCHELF=" +
@@ -4923,7 +4988,8 @@ class LocalRepository(object):
                 linkname = os.path.realpath(self.containersdir + '/' + name)
                 if os.path.exists(linkname):
                     return False
-                return self._symlink(container_dir, linkname)
+                real_container_dir = os.path.realpath(container_dir)
+                return self._symlink(real_container_dir, linkname)
         return False
 
     def del_container_name(self, name):
@@ -5332,10 +5398,10 @@ class LocalRepository(object):
             for layer_id in structure["repolayers"]:
                 if "json" not in structure["repolayers"][layer_id]:   # v2
                     continue
-                elif "parent" not in structure["repolayers"][layer_id]["json"]:
+                if "parent" not in structure["repolayers"][layer_id]["json"]:
                     continue
-                elif (my_layer_id ==
-                      structure["repolayers"][layer_id]["json"]["parent"]):
+                if (my_layer_id ==
+                        structure["repolayers"][layer_id]["json"]["parent"]):
                     found = self._find_top_layer_id(structure, layer_id)
                     break
             if not found:
@@ -5352,10 +5418,9 @@ class LocalRepository(object):
                 break
             if "parent" not in structure["repolayers"][next_layer]["json"]:
                 break
-            else:
-                next_layer = structure["repolayers"][next_layer]["json"]["parent"]
-                if not next_layer:
-                    break
+            next_layer = structure["repolayers"][next_layer]["json"]["parent"]
+            if not next_layer:
+                break
         return sorted_layers
 
     def _split_layer_id(self, layer_id):
@@ -5603,7 +5668,7 @@ class GetURLpyCurl(GetURL):
 
     def _select_implementation(self):
         """Override the parent class method"""
-        pass
+        return
 
     def _set_defaults(self, pyc, hdr):
         """Set options for pycurl"""
@@ -5697,7 +5762,7 @@ class GetURLpyCurl(GetURL):
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
         if status_code == 401: # needs authentication
             pass
-        elif status_code >= 300 and status_code <= 308: # redirect
+        elif 300 <= status_code <= 308: # redirect
             pass
         elif "ofile" in kwargs:
             filep.close()
@@ -5727,7 +5792,7 @@ class GetURLexeCurl(GetURL):
 
     def _select_implementation(self):
         """Override the parent class method"""
-        pass
+        return
 
     def _set_defaults(self):
         """Set defaults for curl command line options"""
@@ -5815,7 +5880,7 @@ class GetURLexeCurl(GetURL):
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
         if status_code == 401: # needs authentication
             pass
-        elif status_code >= 300 and status_code <= 308: # redirect
+        elif 300 <= status_code <= 308: # redirect
             pass
         elif "ofile" in kwargs:
             if status_code == 206 and "resume" in kwargs:
@@ -6755,8 +6820,8 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             for layer_id in structure["repolayers"]:
                 if "parent" not in structure["repolayers"][layer_id]["json"]:
                     continue
-                elif (my_layer_id ==
-                      structure["repolayers"][layer_id]["json"]["parent"]):
+                if (my_layer_id ==
+                        structure["repolayers"][layer_id]["json"]["parent"]):
                     found = self._find_top_layer_id(structure, layer_id)
                     break
             if not found:
@@ -6771,10 +6836,9 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             sorted_layers.append(next_layer)
             if "parent" not in structure["repolayers"][next_layer]["json"]:
                 break
-            else:
-                next_layer = structure["repolayers"][next_layer]["json"]["parent"]
-                if not next_layer:
-                    break
+            next_layer = structure["repolayers"][next_layer]["json"]["parent"]
+            if not next_layer:
+                break
         return sorted_layers
 
     def _get_from_manifest(self, structure, imagetag):
@@ -7176,6 +7240,8 @@ class Udocker(object):
 
     def _split_imagespec(self, imagerepo):
         """Split image repo into hostname, repo, tag"""
+        if not imagerepo:
+            return ("", "", "", "")
         transport = ""
         hostname = ""
         image = imagerepo
@@ -7871,16 +7937,15 @@ class Udocker(object):
                 Msg().err("Error: invalid container id", container_id)
                 status = False
                 continue
-            else:
-                if self.localrepo.isprotected_container(container_id):
-                    Msg().err("Error: container is protected")
-                    status = False
-                    continue
-                Msg().out("Info: deleting container:",
-                          str(container_id), l=Msg.INF)
-                if not self.localrepo.del_container(container_id, force):
-                    Msg().err("Error: deleting container")
-                    status = False
+            if self.localrepo.isprotected_container(container_id):
+                Msg().err("Error: container is protected")
+                status = False
+                continue
+            Msg().out("Info: deleting container:",
+                      str(container_id), l=Msg.INF)
+            if not self.localrepo.del_container(container_id, force):
+                Msg().err("Error: deleting container")
+                status = False
         return status
 
     def do_rmi(self, cmdp):
@@ -8142,7 +8207,7 @@ class Udocker(object):
     def do_help(self, cmdp, cmds=None):
         """
         Syntax:
-          udocker  <command>  [command_options]  <command_args>
+          udocker [general_options] <command>  [command_options]  <command_args>
 
         Commands:
           search <repo/expression>      :Search dockerhub for container images
@@ -8197,18 +8262,18 @@ class Udocker(object):
           udocker search --list-tags myimage
           udocker pull myimage:mytag
           udocker images
-          udocker create --name=myc  myimage:mytag
+          udocker create --name=mycontainer  myimage:mytag
           udocker ps -m -s
-          udocker inspect myc
-          udocker inspect -p myc
+          udocker inspect mycontainer
+          udocker inspect -p mycontainer
 
-          udocker run  myc  cat /etc/redhat-release
-          udocker run --hostauth --hostenv --bindhome  myc
-          udocker run --user=root  myc  yum install firefox
-          udocker run --hostauth --hostenv --bindhome myc   firefox
-          udocker run --hostauth --hostenv --bindhome myc   /bin/bash -i
+          udocker run  mycontainer  cat /etc/redhat-release
+          udocker run --hostauth --hostenv --bindhome  mycontainer
+          udocker run --user=root  mycontainer  yum install firefox
+          udocker run --hostauth --hostenv --bindhome mycontainer  firefox
+          udocker run --hostauth --hostenv --bindhome mycontainer  /bin/bash -i
 
-          udocker clone --name=anotherc myc
+          udocker clone --name=anotherc mycontainer
           udocker rm anotherc
 
           udocker mkrepo /data/myrepo
@@ -8216,11 +8281,11 @@ class Udocker(object):
           udocker --repo=/data/myrepo images
           udocker --repo=/data/myrepo run --user=$USER  myimage:mytag
 
-          udocker export -o myimage.tar  myimage:mytag
+          udocker export -o myimage.tar  mycontainer
           udocker import myimage.tar mynewimage
           udocker create --name=mynewc mynewimage
-          udocker export -o myc.tar --clone myc
-          udocker import --clone myc.tar
+          udocker export --clone -o mycontainer.tar mycontainer
+          udocker import --clone mycontainer.tar
 
         Notes:
           * by default the binaries, images and containers are placed in
@@ -8304,7 +8369,7 @@ class CmdParser(object):
         for arg in argv[1:]:
             if not arg:
                 continue
-            elif step == 1:
+            if step == 1:
                 if arg[0] in string.ascii_letters:
                     self._argv_split['CMD'] = arg
                     step = 2
@@ -8383,7 +8448,7 @@ class CmdParser(object):
                     (pos < 1 or (pos not in consumed and not
                                  opt_list[pos-1].endswith('=')))):
                 break        # end of options and start of arguments
-            elif opt_name.endswith('='):
+            if opt_name.endswith('='):
                 if opt_list[pos].startswith(opt_name):
                     opt_arg = opt_list[pos].split('=', 1)[1].strip()
                 elif (opt_list[pos] == opt_name[:-1] and
@@ -8400,12 +8465,11 @@ class CmdParser(object):
             pos += 1
             if opt_arg is None:
                 continue
+            consumed.append(pos-1)
+            if opt_multiple:
+                all_args.append(opt_arg)
             else:
-                consumed.append(pos-1)
-                if opt_multiple:
-                    all_args.append(opt_arg)
-                else:
-                    return opt_arg
+                return opt_arg
         if opt_multiple:
             return all_args
         return False
