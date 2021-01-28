@@ -61,7 +61,7 @@ class PRootEngine(ExecutionEngineCommon):
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
 
-        if not self.executable:
+        if not os.path.exists(self.executable):
             Msg().err("Error: proot executable not found")
             sys.exit(1)
 
@@ -85,7 +85,7 @@ class PRootEngine(ExecutionEngineCommon):
                 HostInfo().oskernel_isgreater([4, 8, 0])):
             return False
         host_file = self.container_dir + "/osenv.json"
-        host_info = HostInfo().is_same_osenv(host_file)
+        host_info = self._is_same_osenv(host_file)
         if host_info:
             if "PROOT_NEW_SECCOMP" in host_info:
                 return True
@@ -98,10 +98,10 @@ class PRootEngine(ExecutionEngineCommon):
                                          executable, "--help"])
             del os.environ["PROOT_NEW_SECCOMP"]
             if out:
-                HostInfo().save_osenv(host_file,
+                self._save_osenv(host_file,
                                       dict([("PROOT_NEW_SECCOMP", 1), ]))
                 return True
-        HostInfo().save_osenv(host_file)
+        self._save_osenv(host_file)
         return False
 
     def _set_uid_map(self):
