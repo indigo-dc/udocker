@@ -11,6 +11,7 @@ from udocker.engine.base import ExecutionEngineCommon
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uvolume import Uvolume
 from udocker.helper.hostinfo import HostInfo
+from udocker.utils.uprocess import Uprocess
 
 
 class PRootEngine(ExecutionEngineCommon):
