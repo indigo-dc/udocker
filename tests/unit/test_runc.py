@@ -65,13 +65,16 @@ class RuncEngineTestCase(TestCase):
         self.assertEqual(rcex.executable, None)
         self.assertEqual(rcex.execution_id, None)
 
+    @patch('udocker.helper.elfpatcher.os.path.exists')
     @patch('udocker.engine.runc.HostInfo.arch')
     @patch('udocker.engine.runc.FileUtil.find_file_in_dir')
     @patch('udocker.engine.runc.FileUtil.find_exec')
-    def test_02_select_runc(self, mock_findexe, mock_find, mock_arch):
+    def test_02_select_runc(self, mock_findexe, mock_find,
+                            mock_arch, mock_exists):
         """Test02 RuncEngine().select_runc()."""
         Config.conf['use_runc_executable'] = ""
         mock_findexe.return_value = "/bin/runc-arm"
+        mock_exists.return_value = True
         rcex = RuncEngine(self.local, self.xmode)
         rcex.select_runc()
         self.assertTrue(mock_findexe.called)
@@ -79,6 +82,7 @@ class RuncEngineTestCase(TestCase):
         Config.conf['use_runc_executable'] = "UDOCKER"
         mock_arch.return_value = "amd64"
         mock_find.return_value = "runc-x86_64"
+        mock_exists.return_value = True
         rcex = RuncEngine(self.local, self.xmode)
         rcex.select_runc()
         self.assertTrue(mock_arch.called)
@@ -87,6 +91,7 @@ class RuncEngineTestCase(TestCase):
         Config.conf['use_runc_executable'] = "UDOCKER"
         mock_arch.return_value = "i386"
         mock_find.return_value = "runc-x86"
+        mock_exists.return_value = True
         rcex = RuncEngine(self.local, self.xmode)
         rcex.select_runc()
         self.assertTrue(mock_arch.called)
@@ -575,6 +580,9 @@ class RuncEngineTestCase(TestCase):
 
     @patch('udocker.engine.runc.FileBind')
     @patch('udocker.engine.runc.Unique')
+    @patch.object(RuncEngine, '_set_id_mappings')
+    @patch.object(RuncEngine, '_del_namespace_spec')
+    @patch.object(RuncEngine, '_del_mount_spec')
     @patch.object(RuncEngine, 'run_nopty')
     @patch.object(RuncEngine, 'run_pty')
     @patch.object(RuncEngine, '_run_invalid_options')
@@ -599,10 +607,14 @@ class RuncEngineTestCase(TestCase):
                     mock_env_set, mock_prooto, mock_savespec,
                     mock_set_spec, mock_add_bindings, mock_add_dev,
                     mock_run_banner, mock_del_mount_spec, mock_inv_opt,
-                    mock_pty, mock_nopty,
+                    mock_pty, mock_nopty, mock_delmnt, mock_delns,
+                    mock_setid,
                     mock_unique, mock_fbind):
         """Test17 RuncEngine().run()."""
         mock_run_init.return_value = False
+        mock_delmnt.return_value = None
+        mock_delns.return_value = None
+        mock_setid.return_value = None
         rcex = RuncEngine(self.local, self.xmode)
         status = rcex.run("CONTAINERID")
         self.assertEqual(status, 2)
@@ -612,6 +624,9 @@ class RuncEngineTestCase(TestCase):
         mock_load_spec.return_value = False
         mock_sel_runc.return_value = None
         mock_load_spec.return_value = False
+        mock_delmnt.return_value = None
+        mock_delns.return_value = None
+        mock_setid.return_value = None
         rcex = RuncEngine(self.local, self.xmode)
         rcex.container_dir = "/container/ROOT"
         rcex._filebind = mock_fbind
@@ -644,6 +659,9 @@ class RuncEngineTestCase(TestCase):
         mock_run_banner.return_value = None
         mock_pty.return_value = 0
         mock_nopty.return_value = 0
+        mock_delmnt.return_value = None
+        mock_delns.return_value = None
+        mock_setid.return_value = None
         rcex = RuncEngine(self.local, self.xmode)
         rcex.container_dir = "/container/ROOT"
         rcex._filebind = mock_fbind
