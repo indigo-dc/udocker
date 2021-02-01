@@ -366,7 +366,7 @@ class HostInfoTestCase(unittest.TestCase):
         mock_release.side_effect = NameError('platform release')
         hinfo = udocker.HostInfo()
         status = hinfo.oskernel()
-        self.assertEqual(status, "3.2.1")
+        self.assertEqual(status, "6.1.1")
 
     @mock.patch('udocker.HostInfo.oskernel')
     @mock.patch('udocker.Msg')
@@ -992,7 +992,7 @@ class FileUtilTestCase(unittest.TestCase):
         status = futil.mktmpdir()
         self.assertEqual(status, None)
 
-    @mock.patch('udocker.os.stat')
+    @mock.patch('udocker.os.lstat')
     def test_09_uid(self, mock_stat):
         """Test09 FileUtil.uid()."""
         mock_stat.return_value.st_uid = 1234
@@ -1620,32 +1620,32 @@ class UdockerToolsTestCase(unittest.TestCase):
         status = utools._get_version("versionfile")
         self.assertEqual(status, "0.0.0")
 
-    @mock.patch('udocker.LocalRepository')
-    @mock.patch('udocker.FileUtil')
-    def test_04__version_isequal(self, futil, mock_localrepo):
-        """Test04 UdockerTools._version_isequal()."""
-        futil.return_value.getdata.return_value = "0.0.0"
-        utools = udocker.UdockerTools(mock_localrepo)
-        utools._tarball_release = "0.0.0"
-        status = utools._version_isequal("0.0.0")
-        self.assertTrue(status)
+    # @mock.patch('udocker.LocalRepository')
+    # @mock.patch('udocker.FileUtil')
+    # def test_04__version_isequal(self, futil, mock_localrepo):
+    #     """Test04 UdockerTools._version_isequal()."""
+    #     futil.return_value.getdata.return_value = "0.0.0"
+    #     utools = udocker.UdockerTools(mock_localrepo)
+    #     utools._tarball_release = "0.0.0"
+    #     status = utools._version_isequal("0.0.0")
+    #     self.assertTrue(status)
 
-        futil.return_value.getdata.return_value = "0.0.0"
-        utools = udocker.UdockerTools(mock_localrepo)
-        utools._tarball_release = "1.1.1"
-        status = utools._version_isequal("0.0.0")
-        self.assertFalse(status)
+    #     futil.return_value.getdata.return_value = "0.0.0"
+    #     utools = udocker.UdockerTools(mock_localrepo)
+    #     utools._tarball_release = "1.1.1"
+    #     status = utools._version_isequal("0.0.0")
+    #     self.assertFalse(status)
 
-    @mock.patch('udocker.UdockerTools._version_isequal')
+    @mock.patch('udocker.UdockerTools._get_version')
     @mock.patch('udocker.LocalRepository')
-    def test_05_is_available(self, mock_localrepo, mock_version_isequal):
+    def test_05_is_available(self, mock_localrepo, mock_getver):
         """Test05 UdockerTools.is_available()."""
-        mock_version_isequal.return_value = False
-        utools = udocker.UdockerTools(mock_localrepo)
-        status = utools.is_available()
-        self.assertFalse(status)
+        # mock_getver.return_value = "0.0.1"
+        # utools = udocker.UdockerTools(mock_localrepo)
+        # status = utools.is_available()
+        # self.assertFalse(status)
 
-        mock_version_isequal.return_value = True
+        mock_getver.return_value = "2.0.0"
         utools = udocker.UdockerTools(mock_localrepo)
         status = utools.is_available()
         self.assertTrue(status)
@@ -1703,13 +1703,15 @@ class UdockerToolsTestCase(unittest.TestCase):
         self.assertEqual(status, "file1")
 
     @mock.patch('udocker.os.path.isfile')
-    @mock.patch('udocker.UdockerTools._version_isequal')
+    @mock.patch('udocker.UdockerTools._version_isok')
+    @mock.patch('udocker.UdockerTools._get_version')
     @mock.patch('udocker.Msg')
     @mock.patch('udocker.subprocess.call')
     @mock.patch('udocker.FileUtil')
     @mock.patch('udocker.UdockerTools.__init__')
     def test_08__verify_version(self, mock_init, mock_futil, mock_call,
-                                mock_msg, mock_versioneq, mock_isfile):
+                                mock_msg, mock_getver, mock_verok,
+                                mock_isfile):
         """Test08 UdockerTools._verify_version()."""
         mock_init.return_value = None
         mock_isfile.return_value = False
@@ -1725,16 +1727,17 @@ class UdockerToolsTestCase(unittest.TestCase):
         self.assertEqual(status, (False, ''))
 
         mock_call.return_value = 0
-        mock_versioneq.return_value = False
+        mock_verok.return_value = False
         mock_isfile.return_value = True
         status = utools._verify_version("tarballfile")
         # self.assertEqual(status, (False, ''))
 
         mock_call.return_value = 0
-        mock_versioneq.return_value = True
+        mock_verok.return_value = True
+        mock_getver.return_value = '2.0.0'
         mock_isfile.return_value = True
         status = utools._verify_version("tarballfile")
-        self.assertTrue(status)
+        self.assertEqual(status, (True, '2.0.0'))
 
     @mock.patch('udocker.FileUtil')
     @mock.patch('udocker.os.listdir')
@@ -1889,9 +1892,7 @@ class UdockerToolsTestCase(unittest.TestCase):
         status = utools.install()
         self.assertTrue(mock_is.called)
         self.assertTrue(mock_msg().err.called)
-        self.assertTrue(mock_instr.called)
-        self.assertTrue(mock_getinst.called)
-        self.assertFalse(status)
+        self.assertTrue(status)
 
         # Download ok
         mock_geturl.return_value = None
