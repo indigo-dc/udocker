@@ -1834,7 +1834,7 @@ class ElfPatcher(object):
             image_list = ["patchelf-arm", "patchelf"]
         f_util = FileUtil(self._localrepo.bindir)
         patchelf_exec = f_util.find_file_in_dir(image_list)
-        if not patchelf_exec:
+        if not os.path.exists(patchelf_exec):
             Msg().err("Error: patchelf executable not found")
             sys.exit(1)
         return patchelf_exec
@@ -3223,7 +3223,7 @@ class PRootEngine(ExecutionEngineCommon):
                     image_list = ["proot-arm", "proot"]
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
-        if not self.executable:
+        if not os.path.exists(self.executable):
             Msg().err("Error: proot executable not found")
             sys.exit(1)
         if conf.proot_noseccomp is not None:
@@ -3312,7 +3312,7 @@ class PRootEngine(ExecutionEngineCommon):
         if self.proot_newseccomp or os.getenv("PROOT_NEW_SECCOMP"):
             self.opt["env"].append("PROOT_NEW_SECCOMP=1")
 
-        if not HostInfo().oskernel_isgreater("3.0.0"):
+        if not HostInfo().oskernel_isgreater((3, 0, 0)):
             self._kernel = "6.0.0"
 
         if self.opt["kernel"]:
@@ -3372,6 +3372,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._container_specfile = None
         self._filebind = None
         self.execution_id = None
+        self.engine_type = ""
 
     def select_runc(self):
         """Set runc executable and related variables"""
@@ -3379,23 +3380,32 @@ class RuncEngine(ExecutionEngineCommon):
         self.executable = conf.use_runc_executable
         if self.executable != "UDOCKER" and not self.executable:
             self.executable = FileUtil("runc").find_exec()
+        if self.executable != "UDOCKER" and not self.executable:
+            self.executable = FileUtil("crun").find_exec()
         if self.executable == "UDOCKER" or not self.executable:
             self.executable = ""
             arch = HostInfo().arch()
             image_list = []
+            eng = ["runc", "crun"]
+            if "cgroup2" in FileUtil("/proc/filesystems").getdata():
+                eng = ["crun", "runc"]
             if arch == "amd64":
-                image_list = ["runc-x86_64", "runc"]
+                image_list = [eng[0]+"-x86_64", eng[0], eng[1]+"-x86_64", eng[1]]
             elif arch == "i386":
-                image_list = ["runc-x86", "runc"]
+                image_list = [eng[0]+"-x86", eng[0], eng[1]+"-x86", eng[1]]
             elif arch == "arm64":
-                image_list = ["runc-arm64", "runc"]
+                image_list = [eng[0]+"-arm64", eng[0], eng[1]+"-arm64", eng[1]]
             elif arch == "arm":
-                image_list = ["runc-arm", "runc"]
+                image_list = [eng[0]+"-arm", eng[0], eng[1]+"-arm", eng[1]]
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
-        if not self.executable:
-            Msg().err("Error: runc executable not found")
+        if not os.path.exists(self.executable):
+            Msg().err("Error: runc/crun executable not found")
             sys.exit(1)
+        if "crun" in os.path.basename(self.executable):
+            self.engine_type = "crun"
+        elif "runc" in os.path.basename(self.executable):
+            self.engine_type = "runc"
 
     def _load_spec(self, new=False):
         """Generate runc spec file"""
@@ -3403,10 +3413,10 @@ class RuncEngine(ExecutionEngineCommon):
             FileUtil(self._container_specfile).register_prefix()
             FileUtil(self._container_specfile).remove()
         if FileUtil(self._container_specfile).size() == -1:
-            cmd_l = [self.executable, "spec", "--rootless", "--bundle",
-                     os.path.realpath(self.container_dir)]
+            cmd_l = [self.executable, "spec", "--rootless", ]
             status = subprocess.call(cmd_l, shell=False, stderr=Msg.chlderr,
-                                     close_fds=True)
+                                     close_fds=True,
+                                     cwd=os.path.realpath(self.container_dir))
             if status:
                 return False
         json_obj = None
@@ -3446,19 +3456,41 @@ class RuncEngine(ExecutionEngineCommon):
         if self.opt["cwd"]:
             json_obj["process"]["cwd"] = self.opt["cwd"]
         json_obj["process"]["terminal"] = sys.stdout.isatty()
+        if self.engine_type == "crun":
+            json_obj["process"]["terminal"] = False
         json_obj["process"]["env"] = []
         for env_str in self.opt["env"]:
             (env_var, value) = env_str.split('=', 1)
             if env_var:
                 json_obj["process"]["env"].append("%s=%s" % (env_var, value))
-        for idmap in json_obj["linux"]["uidMappings"]:
-            if "hostID" in idmap:
-                idmap["hostID"] = HostInfo.uid
-        for idmap in json_obj["linux"]["gidMappings"]:
-            if "hostID" in idmap:
-                idmap["hostID"] = HostInfo.gid
         json_obj["process"]["args"] = self.opt["cmd"]
         return json_obj
+
+    def _set_id_mappings(self):
+        """set uid and gid mappings"""
+        json_obj = self._container_specjson
+        if "uidMappings" in json_obj["linux"]:
+            for idmap in json_obj["linux"]["uidMappings"]:
+                if "hostID" in idmap:
+                    idmap["hostID"] = HostInfo.uid
+        else:
+            json_obj["linux"]["uidMappings"] = [ \
+                    {"containerID": 0, "hostID": HostInfo.uid, "size":1, }, ]
+        if "gidMappings" in json_obj["linux"]:
+            for idmap in json_obj["linux"]["gidMappings"]:
+                if "hostID" in idmap:
+                    idmap["hostID"] = HostInfo.gid
+        else:
+            json_obj["linux"]["gidMappings"] = [ \
+                    {"containerID": 0, "hostID": HostInfo.gid, "size":1, }, ]
+
+    def _del_namespace_spec(self, namespace):
+        """Remove a namespace"""
+        try:
+            json_obj = self._container_specjson
+            json_obj["linux"]["namespaces"].remove({"type": namespace})
+        except ValueError:
+            pass
 
     def _uid_check(self):
         """Check the uid_map string for container run command"""
@@ -3705,9 +3737,14 @@ class RuncEngine(ExecutionEngineCommon):
             return 5
 
         self._set_spec()
+
         if (Config.runc_nomqueue or (Config.runc_nomqueue is None and not
-                                     HostInfo().oskernel_isgreater("4.8.0"))):
+                                     HostInfo().oskernel_isgreater((4, 8, 0)))):
             self._del_mount_spec("mqueue", "/dev/mqueue")
+
+        self._del_mount_spec("cgroup", "/sys/fs/cgroup")
+        self._del_namespace_spec("network")
+        self._set_id_mappings()
         self._add_volume_bindings()
         self._add_devices()
         self._add_capabilities_spec()
@@ -3800,7 +3837,7 @@ class SingularityEngine(ExecutionEngineCommon):
                 image_list = ["singularity-arm", "singularity"]
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
-        if not self.executable:
+        if not os.path.exists(self.executable):
             Msg().err("Error: singularity executable not found")
             sys.exit(1)
 
@@ -4003,7 +4040,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                               "%s-arm.so" % (lib), deflib]
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
-        if not fakechroot_so:
+        if not os.path.exists(fakechroot_so):
             Msg().err("Error: no libfakechroot found", image_list)
             sys.exit(1)
         Msg().err("fakechroot_so:", fakechroot_so, l=Msg.DBG)

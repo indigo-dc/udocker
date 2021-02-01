@@ -169,6 +169,33 @@ prepare_runc_source()
     /bin/mv runc "$RUNC_SOURCE_DIR"
 }
 
+prepare_crun_source()
+{
+    echo "prepare_crun_source : $1"
+    local CRUN_SOURCE_DIR="$1"
+    cd "$BUILD_DIR"
+
+    if [ -d "$CRUN_SOURCE_DIR" ] ; then
+        echo "crun source already exists: $CRUN_SOURCE_DIR"
+        return
+    fi	
+
+    git clone https://github.com/containers/crun
+    git clone https://github.com/containers/libocispec.git
+    git clone https://github.com/opencontainers/image-spec.git
+    git clone https://github.com/opencontainers/runtime-spec.git
+    (cd "crun"; git checkout ac41e19)
+    (cd "libocispec"; git checkout df96ab4041)
+    /bin/rmdir "crun/libocispec"
+    /bin/rmdir "libocispec/image-spec"
+    /bin/rmdir "libocispec/runtime-spec"
+
+    mv crun "$CRUN_SOURCE_DIR"
+    mv libocispec "$CRUN_SOURCE_DIR/"
+    mv image-spec "$CRUN_SOURCE_DIR/libocispec/"
+    mv runtime-spec "$CRUN_SOURCE_DIR/libocispec/"
+}
+
 prepare_package()
 {
     echo "prepare_package"
@@ -2377,6 +2404,87 @@ EOF_centos8_fakechroot
 }
 
 
+# #############################################################################
+# Ubuntu 12.04
+# #############################################################################
+
+ubuntu12_setup()
+{
+    echo "ubuntu12_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="ubuntu"
+    local OS_RELVER="12"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/usr/lib/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    $SUDO debootstrap --no-check-gpg --arch=$OS_ARCH --variant=buildd \
+	    precise $OS_ROOTDIR http://archive.ubuntu.com/ubuntu/
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+ubuntu12_build_fakechroot()
+{
+    echo "ubuntu12_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="ubuntu"
+    local OS_RELVER="12"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "amd64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-Ubuntu-12.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-Ubuntu-12.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -0 -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            -b /etc/resolv.conf:/etc/resolv.conf /bin/bash <<'EOF_ubuntu12_packages'
+apt-get -y update
+apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano 
+apt-get -y update
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+EOF_ubuntu12_packages
+
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_ubuntu12_fakechroot'
+# BUILD FAKECHROOT
+export SHELL=/bin/bash
+export CONFIG_SHELL=/bin/bash
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib
+cd /fakechroot
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-Ubuntu-12.so
+make clean
+EOF_ubuntu12_fakechroot
+    set +xv
+}
+
 
 # #############################################################################
 # Ubuntu 14.04
@@ -3685,6 +3793,263 @@ EOF_alpine313_fakechroot
 }
 
 
+# #############################################################################
+# Nix using proot
+# #############################################################################
+
+nix_setup_p()
+{
+    echo "nix_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="fedora"
+    local OS_RELVER="31"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-25.bin"
+	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin -q qemu-aarch64"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+    else
+        echo "nix_setup unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    if [ -x "${OS_ROOTDIR}/nix" ] ; then
+        echo "nix already setup : ${OS_ROOTDIR}/nix"
+        return
+    fi
+
+    /bin/mkdir -p "${OS_ROOTDIR}/nix"
+
+    curl -L https://nixos.org/nix/install > $OS_ROOTDIR/nix_installer.sh
+
+    env -i $PROOT -r "$OS_ROOTDIR" -w / -b /dev -b /etc/resolv.conf -0 \
+	    /usr/bin/dnf install -y xz
+
+    env -i $PROOT -r "$OS_ROOTDIR" -w / -b /dev -b /proc -b /etc/resolv.conf \
+            /bin/bash <<'EOF_nix_setup_1'
+export HOME=/home/user
+export USER=user
+export LOGNAME=user
+echo "user:x:$(id -u):$(id -g)::/home/user:/bin/bash" >> /etc/passwd
+mkdir -p /home/user/.config/nix
+echo "sandbox = false" > /home/user/.config/nix/nix.conf
+echo "filter-syscalls = false" >> /home/user/.config/nix/nix.conf
+sh nix_installer.sh --no-daemon
+EOF_nix_setup_1
+}
+
+nix_build_crun_p()
+{
+    echo "nix_build_crun : $1"
+    local OS_ARCH="$1"
+    local CRUN_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="31"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-25.bin"
+	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin -q qemu-aarch64"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+    else
+        echo "nix_build_crun unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    if [ -x "${CRUN_SOURCE_DIR}/crun-nix-latest" ] ; then
+        echo "crun binary already compiled : ${CRUN_SOURCE_DIR}/crun-nix-latest"
+        return
+    fi
+
+    $PROOT -r "$OS_ROOTDIR" -b "${CRUN_SOURCE_DIR}:/crun" \
+	    -w / -b /dev -b /proc -b /etc/resolv.conf \
+            /bin/bash <<'EOF_nix_crun_1'
+export HOME=/home/user
+export USER=user
+export LOGNAME=user
+. /home/user/.nix-profile/etc/profile.d/nix.sh
+cd /crun
+#nix-build --cores 2 --max-jobs 4 nix
+nix-build --cores 1 --max-jobs 1 nix
+cp result/bin/crun crun-nix-latest
+nix-collect-garbage -d
+EOF_nix_crun_1
+}
+
+
+
+# #############################################################################
+# Nix using chroot
+# #############################################################################
+
+nix_setup()
+{
+    echo "nix_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="fedora"
+    local OS_RELVER="31"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/nix" ] ; then
+        echo "nix already setup : ${OS_ROOTDIR}/nix"
+        return
+    fi
+
+    SUDO=/bin/sudo
+
+    #$SUDO /usr/bin/dnf install -y xz
+
+    /bin/mkdir -p "${OS_ROOTDIR}/nix"
+    /bin/mkdir -p "${OS_ROOTDIR}/crun"
+
+    curl -L https://nixos.org/nix/install > $OS_ROOTDIR/nix_installer.sh
+
+    /bin/cp -f /etc/resolv.conf "$OS_ROOTDIR/etc"	    
+    $SUDO mount --bind /dev "${OS_ROOTDIR}/dev"	    
+    $SUDO mount --bind /proc "${OS_ROOTDIR}/proc"	    
+    $SUDO mount --bind /sys "${OS_ROOTDIR}/sys"	    
+    $SUDO mount -t devpts none "${OS_ROOTDIR}/dev/pts" -o ptmxmode=0666,newinstance
+    $SUDO /usr/sbin/chroot --userspec=$USER ${OS_ROOTDIR} /bin/bash <<'EOF_nix_setup_1'
+export HOME=/home/user
+export USER=user
+export LOGNAME=user
+echo "user:x:$(id -u):$(id -g)::/home/user:/bin/bash" >> /etc/passwd
+mkdir -p /home/user/.config/nix
+echo "sandbox = false" > /home/user/.config/nix/nix.conf
+echo "filter-syscalls = false" >> /home/user/.config/nix/nix.conf
+sh nix_installer.sh --no-daemon
+EOF_nix_setup_1
+     $SUDO umount "${OS_ROOTDIR}/dev/pts"
+     $SUDO umount "${OS_ROOTDIR}/dev"
+     $SUDO umount "${OS_ROOTDIR}/proc"
+}
+
+nix_build_crun()
+{
+    echo "nix_build_crun : $1"
+    local OS_ARCH="$1"
+    local CRUN_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="31"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${CRUN_SOURCE_DIR}/crun-nix-latest" ] ; then
+        echo "crun binary already compiled : ${CRUN_SOURCE_DIR}/crun-nix-latest"
+        return
+    fi
+
+    SUDO=/bin/sudo
+
+    /bin/cp -f /etc/resolv.conf "$OS_ROOTDIR/etc"	    
+    $SUDO mount --bind /dev "${OS_ROOTDIR}/dev"	    
+    $SUDO mount --bind /proc "${OS_ROOTDIR}/proc"	    
+    $SUDO mount --bind /sys "${OS_ROOTDIR}/sys"	    
+    $SUDO mount -t devpts none "${OS_ROOTDIR}/dev/pts" -o ptmxmode=0666,newinstance
+    $SUDO mount --bind "${CRUN_SOURCE_DIR}" "${OS_ROOTDIR}/crun"
+    $SUDO /usr/sbin/chroot --userspec=$USER ${OS_ROOTDIR} /bin/bash <<'EOF_nix_crun_1'
+export HOME=/home/user
+export USER=user
+export LOGNAME=user
+. /home/user/.nix-profile/etc/profile.d/nix.sh
+cd /crun
+#nix-build --cores 2 --max-jobs 4 nix
+nix-build --cores 1 --max-jobs 1 nix
+cp result/bin/crun crun-nix-latest
+nix-collect-garbage -d
+EOF_nix_crun_1
+     $SUDO umount "${OS_ROOTDIR}/dev/pts"
+     $SUDO umount "${OS_ROOTDIR}/dev"
+     $SUDO umount "${OS_ROOTDIR}/proc"
+     $SUDO umount "${OS_ROOTDIR}/crun"
+}
+
+# #############################################################################
+# Nix using native
+# #############################################################################
+
+nix_setup_n()
+{
+    echo "nix_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="nix"
+    local OS_RELVER="latest"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ "$(uname -m)" != "$OS_ARCH" ]; then
+        echo "nix setup invalid architecture : $OS_ARCH"
+    fi
+
+    if [ -x "${OS_ROOTDIR}/nix" ] ; then
+        echo "nix already setup : ${OS_ROOTDIR}/nix"
+        return
+    fi
+
+    SUDO=/bin/sudo
+
+    $SUDO /usr/bin/dnf install -y xz
+
+    /bin/mkdir -p "${OS_ROOTDIR}/nix"
+
+    curl -L https://nixos.org/nix/install > $OS_ROOTDIR/nix_installer.sh
+
+    /bin/bash <<'EOF_nix_setup_1'
+export NIX_INSTALLER_NO_MODIFY_PROFILE=true
+sh nix_installer.sh --no-daemon
+EOF_nix_setup_1
+}
+
+nix_build_crun_n()
+{
+    echo "nix_build_crun : $1"
+    local OS_ARCH="$1"
+    local CRUN_SOURCE_DIR="$2"
+    local OS_NAME="nix"
+    local OS_RELVER="latest"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ "$(uname -m)" != "$OS_ARCH" ]; then
+        echo "nix setup invalid architecture : $OS_ARCH"
+    fi
+
+    if [ -x "${CRUN_SOURCE_DIR}/crun-nix-latest" ] ; then
+        echo "crun binary already compiled : ${CRUN_SOURCE_DIR}/crun-nix-latest"
+        return
+    fi
+
+    /bin/bash <<EOF_nix_crun_1
+. $HOME/.nix-profile/etc/profile.d/nix.sh
+cd $CRUN_SOURCE_DIR
+nix-build --cores 2 --max-jobs 4 nix
+cp result/bin/crun crun-nix-latest
+#nix-collect-garbage -d
+EOF_nix_crun_1
+}
+
 
 # #############################################################################
 # TOOLS
@@ -3760,6 +4125,10 @@ create_package_tarball()
         echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-8.so"
         return
     fi
+    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-12.so" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-12.so"
+        return
+    fi
     if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-14.so" ] ; then
         echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-14.so"
         return
@@ -3812,6 +4181,10 @@ create_package_tarball()
         echo "ERROR: failed to compile : ${BUILD_DIR}/runc-source-x86_64/runc"
         return
     fi
+    if [ ! -f "${BUILD_DIR}/crun-source-x86_64/crun-nix-latest" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/crun-source-x86_64/crun-nix-latest"
+        return
+    fi
 
     echo $(tarball_version)
     echo $(tarball_version) > "${PACKAGE_DIR}/udocker_dir/lib/VERSION"
@@ -3852,6 +4225,8 @@ create_package_tarball()
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-CentOS-7-x86_64.so"
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-8.so" \
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-CentOS-8-x86_64.so"
+    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-12.so" \
+               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-12-x86_64.so"
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-14.so" \
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-14-x86_64.so"
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-16.so" \
@@ -3883,6 +4258,10 @@ create_package_tarball()
                "${PACKAGE_DIR}/udocker_dir/bin/runc-x86_64"
     /bin/cp -f "${BUILD_DIR}/runc-source-x86_64/LICENSE" \
                "${PACKAGE_DIR}/udocker_dir/doc/LICENSE.runc"
+    /bin/cp -f "${BUILD_DIR}/crun-source-x86_64/crun-nix-latest" \
+               "${PACKAGE_DIR}/udocker_dir/bin/crun-x86_64"
+    /bin/cp -f "${BUILD_DIR}/crun-source-x86_64/LICENSE" \
+               "${PACKAGE_DIR}/udocker_dir/doc/COPYING.crun"
 
     (cd "${PACKAGE_DIR}/udocker_dir/lib"; \
         ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-x86_64.so ; \
@@ -3941,10 +4320,18 @@ S_PROOT_PACKAGES_DIR="${BUILD_DIR}/proot-static-build/packages"
 PACKAGE_DIR="${BUILD_DIR}/package"
 TARBALL_FILE="${BUILD_DIR}/udocker-$(tarball_version).tar.gz"
 
-
 [ ! -e "$BUILD_DIR" ] && /bin/mkdir -p "$BUILD_DIR"
 
+# #######
+# Prepare
+# #######
+
 get_proot_static 
+
+nix_setup "x86_64"
+prepare_crun_source "${BUILD_DIR}/crun-source-x86_64"
+#nix_build_crun "x86_64" "${BUILD_DIR}/crun-source-x86_64"
+
 prepare_package
 
 # #######
@@ -3968,6 +4355,7 @@ prepare_patchelf_source "${BUILD_DIR}/patchelf-source-x86_64"
 prepare_fakechroot_glibc_source "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 prepare_fakechroot_musl_source "${BUILD_DIR}/fakechroot-source-musl-x86_64"
 prepare_runc_source "${BUILD_DIR}/runc-source-x86_64"
+prepare_crun_source "${BUILD_DIR}/crun-source-x86_64"
 #
 fedora25_setup "x86_64"
 fedora25_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
@@ -3985,6 +4373,7 @@ fedora31_setup "x86_64"
 #fedora31_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
 #fedora31_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
 fedora31_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
+nix_build_crun "x86_64" "${BUILD_DIR}/crun-source-x86_64" # Nix build uses Fedora 31
 #ostree_delete "x86_64" "fedora" "31"
 #
 fedora32_setup "x86_64"
@@ -4047,6 +4436,10 @@ centos8_setup "x86_64"
 centos8_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "x86_64" "centos" "8"
 #
+ubuntu12_setup "amd64"
+ubuntu12_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
+#ostree_delete "amd64" "ubuntu" "12"
+#
 ubuntu14_setup "amd64"
 ubuntu14_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "amd64" "ubuntu" "14"
@@ -4070,6 +4463,8 @@ ubuntu20_setup "amd64"
 ubuntu20_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ubuntu20_build_runc "amd64" "${BUILD_DIR}/runc-source-x86_64"
 #ostree_delete "amd64" "ubuntu" "20"
+#
+#
 
 # #######
 # aarch64
