@@ -8190,15 +8190,15 @@ class MainTestCase(unittest.TestCase):
     #     udocker.Main()
     #     self.assertTrue(udocker.Config.http_insecure)
 
-        # --repo=
-        mock_localrepo.return_value.is_repo.return_value = True
-        mock_cmdp.return_value.parse.return_value = True
-        mock_cmdp.return_value.get.side_effect = [False, False, False, False,
-                                                  False, False, False, True,
-                                                  "/TOPDIR"]
-        with self.assertRaises(SystemExit) as mainexpt:
-            udocker.Main()
-        self.assertEqual(mainexpt.exception.code, 0)
+        # # --repo=
+        # mock_localrepo.return_value.is_repo.return_value = True
+        # mock_cmdp.return_value.parse.return_value = True
+        # mock_cmdp.return_value.get.side_effect = [False, False, False, False,
+        #                                           False, False, False, True,
+        #                                           "/TOPDIR"]
+        # with self.assertRaises(SystemExit) as mainexpt:
+        #     udocker.Main()
+        # self.assertEqual(mainexpt.exception.code, 0)
 
     @mock.patch('udocker.Main.__init__')
     @mock.patch('udocker.LocalRepository')
