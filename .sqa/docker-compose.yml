@@ -1,0 +1,11 @@
+version: "2.7"
+
+services:
+  udocker-testing:
+    image: "indigodatacloud/ci-images:python"
+    container_name: "udocker-testing"
+    volumes:
+      - type: bind
+        source: ./udocker
+        target: /udocker
+    
