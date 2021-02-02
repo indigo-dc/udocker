@@ -12,12 +12,7 @@ pipeline {
                     projectConfig = pipelineConfig()
                     buildStages(projectConfig)
                 }
-            }
-            post {
-                cleanup {
-                    cleanWs()
-                }
-            }
+             }
         }
-    }
+   }
 }
