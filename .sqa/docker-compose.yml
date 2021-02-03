@@ -6,6 +6,6 @@ services:
     container_name: "udocker-testing"
     volumes:
       - type: bind
-        source: ./udocker
+        source: ./
         target: /udocker
-    
+
