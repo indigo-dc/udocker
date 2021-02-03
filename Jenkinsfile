@@ -13,6 +13,11 @@ pipeline {
                     buildStages(projectConfig)
                 }
              }
+             post {
+                cleanup {
+                      cleanWs()
+                }
+              }
         }
    }
 }
