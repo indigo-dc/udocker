@@ -19,7 +19,7 @@ sqa_criteria:
            tox_file: /udocker/tox.ini
            testenv:
               - cover
-  qc_security:
+   qc_security:
      repos:
        udocker:
          container: udocker-testing
