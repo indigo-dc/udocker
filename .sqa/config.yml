@@ -11,14 +11,6 @@ sqa_criteria:
            tox_file: /udocker/tox.ini
            testenv:
               - pylint
-   qc_security:
-     repos:
-       udocker:
-         container: udocker-testing
-         tox:
-           tox_file: /udocker/tox.ini
-           testenv:
-              - bandit
    qc_coverage:
      repos:
        udocker:
@@ -27,4 +19,11 @@ sqa_criteria:
            tox_file: /udocker/tox.ini
            testenv:
               - cover
-
+  qc_security:
+     repos:
+       udocker:
+         container: udocker-testing
+         tox:
+           tox_file: /udocker/tox.ini
+           testenv:
+              - bandit
