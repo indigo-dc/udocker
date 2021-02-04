@@ -1,13 +1,7 @@
-config:
-  project_repos:
-    udocker:
-      repo: 'https://github.com/MartaCastro/udocker.git'
-      branch: devel-jpl 
-
 environment:
   JPL_WORKSPACEDEBUG: "true"
   JPL_WORKSPACEDEBUGTIMEOUT: 90
-  
+
 sqa_criteria:
    qc_style:
      repos:
@@ -16,7 +10,7 @@ sqa_criteria:
          tox:
            tox_file: /udocker/tox.ini
            testenv:
-              - pylint            
+              - pylint
    qc_security:
      repos:
        udocker:
@@ -24,7 +18,7 @@ sqa_criteria:
          tox:
            tox_file: /udocker/tox.ini
            testenv:
-              - bandit         
+              - bandit
    qc_coverage:
      repos:
        udocker:
