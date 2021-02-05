@@ -3,14 +3,6 @@ environment:
   JPL_WORKSPACEDEBUGTIMEOUT: 90
 
 sqa_criteria:
-   qc_style:
-     repos:
-       udocker:
-         container: udocker-testing
-         tox:
-           tox_file: /udocker/tox.ini
-           testenv:
-              - pylint
    qc_coverage:
      repos:
        udocker:
@@ -19,6 +11,14 @@ sqa_criteria:
            tox_file: /udocker/tox.ini
            testenv:
               - cover
+   qc_style:
+     repos:
+       udocker:
+         container: udocker-testing
+         tox:
+           tox_file: /udocker/tox.ini
+           testenv:
+              - pylint
    qc_security:
      repos:
        udocker:
