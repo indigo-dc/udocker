@@ -729,27 +729,26 @@ Examples:
 ```
   udocker setup [--execmode=XY] [--force] [--nvidia] [--purge] CONTAINER-ID|CONTAINER-NAME
 ```
-With `--execmode` chooses an execution mode to define how a given container 
-will be executed, namelly enables selection of an execution engine and 
+With `--execmode` chooses an execution mode defining how a given container 
+will be executed, enabling the selection of a given execution engine and 
 its related execution modes. Without options, setup will print the current 
-execution mode for the given container. 
+execution mode for the specified container. 
 The option `--nvidia` enables access to GPGPUs by adding the necessary host 
 libraries to the container.
 The option `--force` can be used both with `--execmode` and with `--nvidia` to 
-force the setup of the container to the specified mode.
+force the setup of the container to the specified mode ignoring errors.
 The option `--purge` removes mountpoints, auxiliary files and directories 
-created by udockr inside the container directory tree to support its execution.
-It should only be invoked when there is no execution taking place as it may
-affect processes running in the container tree.
+created by udocker inside the container directory tree.  This should only be 
+invoked when the container is not being executed as this may affect processes 
+running from the container tree.
 
 Options:
 
 * `--execmode=XY` choose an execution mode
 * `--nvidia`  enable access to GPGPUs
-* `--force` force the selection of the execution mode, can be used to
-  force the change of an execution mode when it fails namely if it is
-  transferred to a remote host while in one of the Fn modes. Can be
-  used with --nvidia.
+* `--force` force the selection of the execution mode, this is particularly 
+  useful if the container is transferred to a remote host while in one of 
+  the Fn modes. Can also be used with --nvidia.
 * `--purge` remove mountpoints, auxiliary files and directories created
   by udocker to support the container execution.
 
@@ -761,31 +760,26 @@ Options:
 | F2 | Fakechroot  | F1 plus modified loader                   | F1 + ld.so
 | F3 | Fakechroot  | fix ELF headers in binaries               | F2 + ELF headers
 | F4 | Fakechroot  | F3 plus enables new executables and libs  | same as F3
-| R1 | runC        | rootless user mode namespaces             | resolv, passwd
-| R2 | runC        | R1 plus P1 for software installation      | resolv, passwd, proot
-| R3 | runC        | R1 plus P2 for software installation      | resolv, passwd, proot
+| R1 | runC / crun | rootless user mode namespaces             | resolv, passwd
+| R2 | runC / crun | R1 plus P1 for software installation      | resolv, passwd
+| R3 | runC / crun | R1 plus P2 for software installation      | resolv, passwd
 | S1 | Singularity | uses singularity if available in the host | passwd
 
-The default execution mode is P1 using PRoot and starting in root
-emulation mode.
-
-The mode P2 also uses PRoot and although has lower performance than P1 
-can be more reliable. The mode P1 uses PRoot with 
-SECCOMP syscall filtering which provides higher performance in most 
-operating systems. PRoot provides the most universal execution mode
-in udocker but may also exhibit lower performance on older kernels 
-such as in CentOS 6 systems.
+The default execution mode is P1 which uses PRoot starting in root
+emulation mode. The mode P1 uses PRoot with SECCOMP syscall filtering 
+which provides higher performance in most operating systems. 
+The mode P2 also uses PRoot without SECCOMP yielding lower performance 
+than P1, although with performance may provide higher reliability. 
+PRoot provides the most universal execution mode in udocker but may also
+exhibit lower performance on older kernels such as in CentOS 6 due to
+the lack of SECCOMP support.
 The Pn modes also offer root emulation to facilitate software installation
 and to execute applications that expect to run under root.
 
-The Fakechroot (Fn), runC (Rn) and Singularity (Sn) engines are EXPERIMENTAL.
-They provide higher performance in most cases, but are less universal thus
-supporting less Linux distributions. 
-
-The udocker Fakechroot engine has four modes that offer increasing
-compatibility levels. F1 is the least intrusive mode and only changes 
-absolute symbolic links so that they point to locations inside the 
-container.  F2 adds changes to the loader to prevent loading of host 
+The Fn modes use the Fakechroot engine. There are four modes that offer 
+increasing compatibility levels. F1 is the least intrusive mode and only 
+changes absolute symbolic links so that they point to locations inside 
+the container.  F2 adds changes to the loader to prevent loading of host 
 shareable libraries. F3 adds changes to all binaries (ELF headers of 
 executables and libraries) to remove absolute references pointing to 
 the host shareable libraries. These changes are performed once during 
@@ -795,13 +789,22 @@ fixed and will fail to run. Notice that setup can be rerun with the
 changes dynamically (on-the-fly) thus enabling compilation and linking 
 within the container and new executables to be transferred to the 
 container and executed. Executables and libraries in host volumes are
-not changed and hence cannot be executed from a container in F2, F3 and
-F4 execution modes.
-runC with rootless user namespaces requires a recent Linux kernel and
+not modified by setup and hence cannot be executed from a container in 
+F2, F3 and F4 execution modes. The whole set of required binaries both
+libraries and executables must thefore exist inside of the container,
+and not be mounted from external locations.
+
+Fakechroot requires libraries compiled for each container operating system,
+udocker provides these libraries for several distributions including
+Ubuntu 14, Ubuntu 16, Ubuntu 18, CentOS 6 and CentOS 7 and some others. 
+Other container OSes may or may not work with these same libraries. 
+
+The Rn modes use either runC or crun taking advantage of the Linux rootless 
+execution with user namespaces. This requires a recent Linux kernel and
 is known to work on Ubuntu and Fedora hosts. 
 
-Mode Rn requires kernels with support for rootless containers, thus
-it will not work on some distributions (e.g. CentOS 6 and CentOS 7).
+The Rn modes require kernels with support for user namespaces, thus
+they will not work on older distributions (e.g. CentOS 6 and CentOS 7).
 The rootless execution modes have inherent limitations related to the
 manipulation of uids and gids that may cause certain operations to fail
 such as software installations. To overcome this limitation of the R1 
@@ -811,14 +814,10 @@ execution chain is
 
 `runc -> proot -> executable`
 
-When using the Rn modes, udocker will search for a runc executable in the
-host system, only if it does not find one it will default to use the runc
-provided with the udockertools. This behavior can be change through
+When using the Rn modes, udocker will search for a runc or crun executable 
+in the host system, only if it does not find one it will default to use the 
+runc provided with the udockertools. This behavior can be change through
 environment variables and configuration settings.
-Fakechroot requires libraries compiled for each guest operating system,
-udocker provides these libraries for several distributions including
-Ubuntu 14, Ubuntu 16, Ubuntu 18, CentOS 6 and CentOS 7 and some others. 
-Other guests may or may not work with these same libraries. 
 
 Notice that changes performed in Fn and Rn modes will prevent the
 containers from running in hosts where the directory path to the container
@@ -867,7 +866,7 @@ changed through the configuration files by changing the attribute
 **UDOCKER_DEFAULT_EXECUTION_MODE**. Only the following modes can be used as
 default modes:
 **P1**, **P2**, **F1**, **S1**, and **R1**. Changing the default execution
-mode can be useful in case the default does not work as expected.
+mode can be useful in case the default mode does not work as expected.
 
 Example:
 
@@ -894,16 +893,16 @@ create) as described below.
 
 
 ```
-./udocker pull iscampos/openqcd
-./udocker create --name=openqcd iscampos/openqcd
-fbeb130b-9f14-3a9d-9962-089b4acf3ea8
+  ./udocker pull iscampos/openqcd
+  ./udocker create --name=openqcd iscampos/openqcd
+  fbeb130b-9f14-3a9d-9962-089b4acf3ea8
 ```
 
 Next the created container is executed (notice that the variable LD_LIBRARY_PATH is explicitly set):
 
 
 ```
-./udocker run -e LD_LIBRARY_PATH=/usr/lib openqcd /bin/bash
+  ./udocker run -e LD_LIBRARY_PATH=/usr/lib openqcd /bin/bash
 ```
 
 In this approach the host mpiexec will submit the N MPI process instances, as
@@ -921,7 +920,7 @@ Note: first the example Open MPI installation that comes along with the openqcd
 container are removed with: 
 
 ```
-yum remove openmpi
+  yum remove openmpi
 ```
 
 We download Open MPI v.2.0.1 from https://www.open-mpi.org/software/ompi/v2.0 and compile it. 
@@ -933,30 +932,30 @@ TCP/IP is enough.
 To install the Infiniband drivers one needs to install the epel repository.
 
 ```
-yum install -y epel-release
+  yum install -y epel-release
 ```
 
 The list of packages to be installed is:
 
 ```
-openib
-libibverbs, libibverbs-utils, libibverbs-devel
-librdmacm, librdmacm-utils, ibacm
-libnes
-libibumad
-libfabric, libfabric-devel
-opensm-libs
-swig
-ibutils-libs, ibutils
-opensm
-libibmad
-infiniband-diags
+  openib
+  libibverbs, libibverbs-utils, libibverbs-devel
+  librdmacm, librdmacm-utils, ibacm
+  libnes
+  libibumad
+  libfabric, libfabric-devel
+  opensm-libs
+  swig
+  ibutils-libs, ibutils
+  opensm
+  libibmad
+  infiniband-diags
 ```
 
 The driver needs to be installed as well, in our examples the Mellanox driver.
 
 ```
-yum install mlx4*x86_64
+  yum install mlx4*x86_64
 ```
 
 The installation of both, i686 and x86_64 versions might be conflictive, and lead to an 
@@ -967,12 +966,12 @@ is to install only the version for the architecture of the machine in this case 
 The Open MPI source is compiled and installed in the container under /usr for convenience:
 
 ```
-cd /usr
-tar xvf openmpi-2.0.1.tgz 
-cd /usr/openmpi-2.0.1
-./configure --with-verbs --prefix=/usr
-make
-make install
+  cd /usr
+  tar xvf openmpi-2.0.1.tgz 
+  cd /usr/openmpi-2.0.1
+  ./configure --with-verbs --prefix=/usr
+  make
+  make install
 ```
 
 
@@ -981,11 +980,11 @@ The MPI job submission to the HPC cluster succeeds by including this line in
 the batch script:
 
 ```
-/opt/cesga/openmpi/2.0.1/gcc/6.3.0/bin/mpiexec -np 128 \
-$LUSTRE/udocker-master/udocker run -e LD_LIBRARY_PATH=/usr/lib  \
---hostenv --hostauth --user=cscdiica -v /tmp \
---workdir=/op/projects/openQCD-1.6/main openqcd \
-/opt/projects/openQCD-1.6/main/ym1 -i ym1.in -noloc 
+  /opt/cesga/openmpi/2.0.1/gcc/6.3.0/bin/mpiexec -np 128 \
+  $LUSTRE/udocker-master/udocker run -e LD_LIBRARY_PATH=/usr/lib  \
+  --hostenv --hostauth --user=cscdiica -v /tmp \
+  --workdir=/op/projects/openQCD-1.6/main openqcd \
+  /opt/projects/openQCD-1.6/main/ym1 -i ym1.in -noloc 
 ```
 (where $LUSTRE points to the appropriate user filesystem directory in the HPC system)
 
@@ -1051,8 +1050,8 @@ For a given container its directory pathname in the filesystem can be obtained
 as follows:
 
 ```
-$ udocker inspect -p ubuntu17
-/home/user01/.udocker/containers/feb0041d-e1b6-3eee-89d8-2d0617feb13a/ROOT
+  udocker inspect -p ubuntu17
+  /home/user01/.udocker/containers/feb0041d-e1b6-3eee-89d8-2d0617feb13a/ROOT
 ```
 
 The pathname in the example is the root of the container filesystem tree.
@@ -1104,12 +1103,12 @@ to another host and executed. Make sure the udocker executable is in your PATH o
 both the local and remote hosts.
 
 ```
-$ MYC_ROOT=$(udocker inspect -p MyContainer)
-$ MYC_PATH=$(dirname $MYC_ROOT)
-$ MYC_ID=$(basename $MYC_PATH)
-$ MYC_DIR=$(dirname $MYC_PATH)
-$ cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker install ; cd ~/.udocker/containers; tar xf -"
-$ ssh user@ahost "udocker name $MYC_ID MyContainer; udocker run MyContainer"
+  MYC_ROOT=$(udocker inspect -p MyContainer)
+  MYC_PATH=$(dirname $MYC_ROOT)
+  MYC_ID=$(basename $MYC_PATH)
+  MYC_DIR=$(dirname $MYC_PATH)
+  cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker install ; cd ~/.udocker/containers; tar xf -"
+  ssh user@ahost "udocker name $MYC_ID MyContainer; udocker run MyContainer"
 ```
 
 ## 7. RUNNING AS ROOT INSIDE CONTAINERS
@@ -1120,7 +1119,7 @@ as root. In other modes execution as root is achieved by invoking
 run with the `--user=root` option:
 
 ```
-udocker run --user=root <container-id>` 
+  udocker run --user=root <container-id>` 
 ```
 
 ### 7.1. Running as root in Pn modes
@@ -1196,7 +1195,7 @@ udocker needs to run with direct access to the container passwd and group files
 as follows:
 
 ```
-udocker run --user=root --containerauth <CONTAINER-ID>
+  udocker run --user=root --containerauth <CONTAINER-ID>
 ```
 
 For **software installation** the recommended execution modes are **P2**, **S1**
@@ -1204,15 +1203,16 @@ and **R3**. The emulation is not perfect and issues can still arise.  Namelly
 when using APT it can be required to install using:
 
 ```
-apt-get -o APT::Sandbox::User=root update
-apt-get -o APT::Sandbox::User=root install <package>
+  apt-get -o APT::Sandbox::User=root update
+  apt-get -o APT::Sandbox::User=root install <package>
 ```
 
 Upon APT errors such as `cannot get security labeling handle: No such file or directory` 
-try to run ias above in P2 mode but start udocker as:
+try to run as mentioned above using **P2** mode, but not mounting /sys from the host by
+ starting udocker as:
 
 ```
-udocker.py run --user=root --nosysdirs -v /etc/resolv.conf -v /dev --containerauth <CONTAINER-ID>
+  udocker.py run --user=root --nosysdirs -v /etc/resolv.conf -v /dev --containerauth <CONTAINER-ID>
 ```
 
 ## 8. NESTED EXECUTION
@@ -1224,7 +1224,7 @@ udocker in such scenarios such as [SCAR](https://github.com/grycap/scar).
 For running inside docker and similiar: udocker offers the **Fn** mode which
 enables execution within docker or other Linux namespaces based applications.
 
-For running within udocker itself the following guidelines apply:
+For running udocker within udocker itself the following guidelines apply:
 
 * Fn within Pn: Possible
 * Pn within Rn: Possible only in R1
@@ -1278,6 +1278,6 @@ Some execution modes require the creation of auxiliary files, directories and mo
 * INDIGO DataCloud https://www.indigo-datacloud.eu
 * EOSC-hub https://eosc-hub.eu
 * DEEP-Hybrid-DataCloud https://deep-hybrid-datacloud.eu
-* Open MPI https://www.open-mpi.org
+* OpenMPI https://www.open-mpi.org
 * openQCD http://luscher.web.cern.ch/luscher/openQCD
 

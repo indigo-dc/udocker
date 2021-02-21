@@ -18,3 +18,4 @@ BACKUP/*
 TAR/*
 .coverage
 coverage.xml
+bandit.html

@@ -1,3 +1,21 @@
 simplejson>=2.0.9
 pycurl>=7.15.5
 
+pip>=9.0.1
+wheel>=0.30.0
+watchdog<1.0.0
+tox>=2.9.1
+tox-travis
+coverage>=4.5.1
+twine>=1.10.0
+
+pytest>=3.4.2
+pytest-runner>=2.11.1
+pylint==1.9.3
+
+pydocstyle
+nose
+nosexcover
+mock
+pep8
+bandit==1.5.1

@@ -39,6 +39,7 @@ using tools and libraries such as:
 * PRoot
 * Fakechroot
 * runC
+* crun
 * Singularity
 
 ## Advantages
@@ -55,7 +56,7 @@ using tools and libraries such as:
 * Includes the required tools already statically compiled to work across systems
 * Tested with GPGPU and MPI applications
 * Runs both on new and older Linux distributions including:
-  CentOS 6, CentOS 7, CentOS 8, Ubuntu 14, Ubuntu 16, Ubuntu 18, Fedora, etc
+  CentOS 6, CentOS 7, CentOS 8, Ubuntu 14, Ubuntu 16, Ubuntu 18, Ubuntu 20, Fedora, etc
 
 ## Installation and Users manuals
 See the **[Installation manual](doc/installation_manual.md)**
