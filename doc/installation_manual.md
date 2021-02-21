@@ -47,10 +47,10 @@ From the *development* branch for the latest additions and fixes:
   ./udocker install
 ```
 
-To get a specific released version of udocker such as v1.1.4:
+To get a specific released version of udocker such as v1.1.7:
 
 ```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.4/udocker.py > udocker
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.7/udocker.py > udocker
   chmod u+rx ./udocker
   ./udocker install
 ```
@@ -61,11 +61,11 @@ This installation method uses the udockertools tarball that contains statically 
 binaries and is built to be used across different hosts and OS distributions. Please 
 check the repositories for the latest release.
 
-Example of installing or upgrading udocker to version v1.1.4:
+Example of installing or upgrading udocker to version v1.1.7:
 
 ```
-  curl https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.4.tar.gz > udocker-1.1.4.tar.gz
-  export UDOCKER_TARBALL=$(pwd)/udocker-1.1.4.tar.gz
+  curl https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.7.tar.gz > udocker-1.1.7.tar.gz
+  export UDOCKER_TARBALL=$(pwd)/udocker-1.1.7.tar.gz
   tar xzvf $UDOCKER_TARBALL udocker
   chmod u+rx udocker
   ./udocker install
@@ -80,7 +80,7 @@ itself to display the udockertools tarball URLs by invoking the `version` comman
 tarball location contains several URLs pointing to different mirrors.
 
 ```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.4/udocker.py > udocker  
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.7/udocker.py > udocker  
   chmod u+rx ./udocker
   ./udocker version
 ```
@@ -92,7 +92,7 @@ everytime from the official repositories. The UDOCKER_TARBALL environment variab
 can also be pointed to an http or https URL of your choice.
 
 ```
-  curl $(./udocker version | grep '^tarball:' | cut -d' ' -f3) > udocker-1.1.4.tar.gz
+  curl $(./udocker version | grep '^tarball:' | cut -d' ' -f3) > udocker-1.1.7.tar.gz
 ```
 
 ### 2.4. FORCE REINSTALLATION of UDOCKERTOOLS
@@ -122,10 +122,10 @@ From the *development* branch for the latest additions and fixes:
   pip install git+https://github.com/indigo-dc/udocker@devel
 ```
 
-To get a specific release version of udocker such as *v1.1.4*:
+To get a specific release version of udocker such as *v1.1.7*:
 
 ```
-  pip install git+https://github.com/indigo-dc/udocker@v1.1.4
+  pip install git+https://github.com/indigo-dc/udocker@v1.1.7
 ```
 
 ## 3. SOURCE CODE AND BUILD
@@ -219,7 +219,7 @@ Examples of the udocker.conf syntax:
   # Increase verbosity
   verbose_level = 5
   # Require this version the `tarball` attribute must point to the correct tarball
-  tarball_release = "1.1.4"
+  tarball_release = "1.1.7"
   # Specific the installation tarball location
   tarball = "https://hostname/somepath"
   # Disable autoinstall
