@@ -39,6 +39,7 @@ __author__ = "udocker@lip.pt"
 __copyright__ = "Copyright 2020, LIP"
 __credits__ = ["PRoot http://proot.me",
                "runC https://runc.io",
+               "crun https://github.com/containers/crun",
                "Fakechroot https://github.com/dex4er/fakechroot",
                "Singularity http://singularity.lbl.gov"
               ]
