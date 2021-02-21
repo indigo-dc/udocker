@@ -3929,11 +3929,12 @@ nix_setup()
 
     curl -L https://nixos.org/nix/install > $OS_ROOTDIR/nix_installer.sh
 
-    /bin/cp -f /etc/resolv.conf "$OS_ROOTDIR/etc"	    
+    /bin/cp -f /etc/resolv.conf "${OS_ROOTDIR}/etc"	    
     $SUDO mount --bind /dev "${OS_ROOTDIR}/dev"	    
     $SUDO mount --bind /proc "${OS_ROOTDIR}/proc"	    
     $SUDO mount --bind /sys "${OS_ROOTDIR}/sys"	    
-    $SUDO mount -t devpts none "${OS_ROOTDIR}/dev/pts" -o ptmxmode=0666,newinstance
+    $SUDO mount --bind /dev/pts "${OS_ROOTDIR}/dev/pts"
+    #$SUDO mount -t devpts none "${OS_ROOTDIR}/dev/pts" -o ptmxmode=0666,newinstance
     $SUDO /usr/sbin/chroot --userspec=$USER ${OS_ROOTDIR} /bin/bash <<'EOF_nix_setup_1'
 export HOME=/home/user
 export USER=user
@@ -3946,6 +3947,7 @@ sh nix_installer.sh --no-daemon
 EOF_nix_setup_1
      $SUDO umount "${OS_ROOTDIR}/dev/pts"
      $SUDO umount "${OS_ROOTDIR}/dev"
+     $SUDO umount "${OS_ROOTDIR}/sys"
      $SUDO umount "${OS_ROOTDIR}/proc"
 }
 
@@ -3965,89 +3967,28 @@ nix_build_crun()
 
     SUDO=/bin/sudo
 
-    /bin/cp -f /etc/resolv.conf "$OS_ROOTDIR/etc"	    
+    /bin/cp -f /etc/resolv.conf "${OS_ROOTDIR}/etc"	    
+    $SUDO mount --bind "${CRUN_SOURCE_DIR}" "${OS_ROOTDIR}/crun"
     $SUDO mount --bind /dev "${OS_ROOTDIR}/dev"	    
     $SUDO mount --bind /proc "${OS_ROOTDIR}/proc"	    
     $SUDO mount --bind /sys "${OS_ROOTDIR}/sys"	    
-    $SUDO mount -t devpts none "${OS_ROOTDIR}/dev/pts" -o ptmxmode=0666,newinstance
-    $SUDO mount --bind "${CRUN_SOURCE_DIR}" "${OS_ROOTDIR}/crun"
+    $SUDO mount --bind /dev/pts "${OS_ROOTDIR}/dev/pts"
+    #$SUDO mount -t devpts none "${OS_ROOTDIR}/dev/pts" -o ptmxmode=0666,newinstance
     $SUDO /usr/sbin/chroot --userspec=$USER ${OS_ROOTDIR} /bin/bash <<'EOF_nix_crun_1'
 export HOME=/home/user
 export USER=user
 export LOGNAME=user
 . /home/user/.nix-profile/etc/profile.d/nix.sh
 cd /crun
-#nix-build --cores 2 --max-jobs 4 nix
-nix-build --cores 1 --max-jobs 1 nix
+nix-build --cores 2 --max-jobs 4 nix
 cp result/bin/crun crun-nix-latest
 nix-collect-garbage -d
 EOF_nix_crun_1
      $SUDO umount "${OS_ROOTDIR}/dev/pts"
      $SUDO umount "${OS_ROOTDIR}/dev"
+     $SUDO umount "${OS_ROOTDIR}/sys"
      $SUDO umount "${OS_ROOTDIR}/proc"
      $SUDO umount "${OS_ROOTDIR}/crun"
-}
-
-# #############################################################################
-# Nix using native
-# #############################################################################
-
-nix_setup_n()
-{
-    echo "nix_setup : $1"
-    local OS_ARCH="$1"
-    local OS_NAME="nix"
-    local OS_RELVER="latest"
-    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
-
-    if [ "$(uname -m)" != "$OS_ARCH" ]; then
-        echo "nix setup invalid architecture : $OS_ARCH"
-    fi
-
-    if [ -x "${OS_ROOTDIR}/nix" ] ; then
-        echo "nix already setup : ${OS_ROOTDIR}/nix"
-        return
-    fi
-
-    SUDO=/bin/sudo
-
-    $SUDO /usr/bin/dnf install -y xz
-
-    /bin/mkdir -p "${OS_ROOTDIR}/nix"
-
-    curl -L https://nixos.org/nix/install > $OS_ROOTDIR/nix_installer.sh
-
-    /bin/bash <<'EOF_nix_setup_1'
-export NIX_INSTALLER_NO_MODIFY_PROFILE=true
-sh nix_installer.sh --no-daemon
-EOF_nix_setup_1
-}
-
-nix_build_crun_n()
-{
-    echo "nix_build_crun : $1"
-    local OS_ARCH="$1"
-    local CRUN_SOURCE_DIR="$2"
-    local OS_NAME="nix"
-    local OS_RELVER="latest"
-    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
-
-    if [ "$(uname -m)" != "$OS_ARCH" ]; then
-        echo "nix setup invalid architecture : $OS_ARCH"
-    fi
-
-    if [ -x "${CRUN_SOURCE_DIR}/crun-nix-latest" ] ; then
-        echo "crun binary already compiled : ${CRUN_SOURCE_DIR}/crun-nix-latest"
-        return
-    fi
-
-    /bin/bash <<EOF_nix_crun_1
-. $HOME/.nix-profile/etc/profile.d/nix.sh
-cd $CRUN_SOURCE_DIR
-nix-build --cores 2 --max-jobs 4 nix
-cp result/bin/crun crun-nix-latest
-#nix-collect-garbage -d
-EOF_nix_crun_1
 }
 
 
