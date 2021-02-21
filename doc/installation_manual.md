@@ -55,7 +55,20 @@ To get a specific released version of udocker such as v1.1.7:
   ./udocker install
 ```
 
-### 2.2. INSTALL FROM UDOCKERTOOLS TARBALL
+### 2.2. INSTALL PRE-RELEASE: SUPPORT PYTHON3
+
+This pre-release is based on udocker 1.1.7, with additional bug fixes and compatibility to run in python3. Follow this steps to install and run udocker:
+
+    wget https://github.com/indigo-dc/udocker/releases/download/devel3_1.2.7/udocker-1.2.7.tar.gz
+    tar zxvf udocker-1.2.7.tar.gz
+    export PATH=`pwd`/udocker:$PATH
+
+Test with:
+
+    udocker --help
+    udocker install
+
+### 2.3. INSTALL FROM UDOCKERTOOLS TARBALL
 
 This installation method uses the udockertools tarball that contains statically compiled 
 binaries and is built to be used across different hosts and OS distributions. Please 
@@ -72,9 +85,9 @@ Example of installing or upgrading udocker to version v1.1.7:
   mv ./udocker $HOME/bin/   # move the executable to your preferred location for binaries
 ```
 
-### 2.3. OBTAINING UDOCKERTOOLS TARBALL FROM OTHER LOCATIONS
+### 2.4. OBTAINING UDOCKERTOOLS TARBALL FROM OTHER LOCATIONS
 
-The udockertools installation tarball mentioned in section 2.2 can also be obtained using 
+The udockertools installation tarball mentioned in section 2.3 can also be obtained using 
 the following method. First download the udocker python script. Second use udocker 
 itself to display the udockertools tarball URLs by invoking the `version` command. The
 tarball location contains several URLs pointing to different mirrors.
@@ -87,7 +100,7 @@ tarball location contains several URLs pointing to different mirrors.
 
 Pick one URL and download the udockertools tarball using curl or wget.
 By using a previously downloaded tarball and the UDOCKER_TARBALL environment variable 
-as explained in section 2.2, udocker can be deployed without having to downloaded it 
+as explained in section 2.3, udocker can be deployed without having to downloaded it 
 everytime from the official repositories. The UDOCKER_TARBALL environment variable
 can also be pointed to an http or https URL of your choice.
 
@@ -95,7 +108,7 @@ can also be pointed to an http or https URL of your choice.
   curl $(./udocker version | grep '^tarball:' | cut -d' ' -f3) > udocker-1.1.7.tar.gz
 ```
 
-### 2.4. FORCE REINSTALLATION of UDOCKERTOOLS
+### 2.5. FORCE REINSTALLATION of UDOCKERTOOLS
 
 To force download and reinstallation of the udockertools. Invoke udocker install 
 with the flag `--force`:
@@ -104,7 +117,7 @@ with the flag `--force`:
   ./udocker install --force
 ```
 
-## 2.5. INSTALLATION WITH PIP
+### 2.6. INSTALLATION WITH PIP
 
 For installation with pip it is advisable to setup a Python2 virtual environment
 before proceeding, see instructions [HERE](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/)
