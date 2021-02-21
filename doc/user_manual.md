@@ -729,27 +729,26 @@ Examples:
 ```
   udocker setup [--execmode=XY] [--force] [--nvidia] [--purge] CONTAINER-ID|CONTAINER-NAME
 ```
-With `--execmode` chooses an execution mode to define how a given container 
-will be executed, namelly enables selection of an execution engine and 
+With `--execmode` chooses an execution mode defining how a given container 
+will be executed, enabling the selection of a given execution engine and 
 its related execution modes. Without options, setup will print the current 
-execution mode for the given container. 
+execution mode for the specified container. 
 The option `--nvidia` enables access to GPGPUs by adding the necessary host 
 libraries to the container.
 The option `--force` can be used both with `--execmode` and with `--nvidia` to 
-force the setup of the container to the specified mode.
+force the setup of the container to the specified mode ignoring errors.
 The option `--purge` removes mountpoints, auxiliary files and directories 
-created by udockr inside the container directory tree to support its execution.
-It should only be invoked when there is no execution taking place as it may
-affect processes running in the container tree.
+created by udocker inside the container directory tree.  This should only be 
+invoked when the container is not being executed as this may affect processes 
+running from the container tree.
 
 Options:
 
 * `--execmode=XY` choose an execution mode
 * `--nvidia`  enable access to GPGPUs
-* `--force` force the selection of the execution mode, can be used to
-  force the change of an execution mode when it fails namely if it is
-  transferred to a remote host while in one of the Fn modes. Can be
-  used with --nvidia.
+* `--force` force the selection of the execution mode, this is particularly 
+  useful if the container is transferred to a remote host while in one of 
+  the Fn modes. Can also be used with --nvidia.
 * `--purge` remove mountpoints, auxiliary files and directories created
   by udocker to support the container execution.
 
@@ -761,31 +760,26 @@ Options:
 | F2 | Fakechroot  | F1 plus modified loader                   | F1 + ld.so
 | F3 | Fakechroot  | fix ELF headers in binaries               | F2 + ELF headers
 | F4 | Fakechroot  | F3 plus enables new executables and libs  | same as F3
-| R1 | runC        | rootless user mode namespaces             | resolv, passwd
-| R2 | runC        | R1 plus P1 for software installation      | resolv, passwd, proot
-| R3 | runC        | R1 plus P2 for software installation      | resolv, passwd, proot
+| R1 | runC / crun | rootless user mode namespaces             | resolv, passwd
+| R2 | runC / crun | R1 plus P1 for software installation      | resolv, passwd
+| R3 | runC / crun | R1 plus P2 for software installation      | resolv, passwd
 | S1 | Singularity | uses singularity if available in the host | passwd
 
-The default execution mode is P1 using PRoot and starting in root
-emulation mode.
-
-The mode P2 also uses PRoot and although has lower performance than P1 
-can be more reliable. The mode P1 uses PRoot with 
-SECCOMP syscall filtering which provides higher performance in most 
-operating systems. PRoot provides the most universal execution mode
-in udocker but may also exhibit lower performance on older kernels 
-such as in CentOS 6 systems.
+The default execution mode is P1 which uses PRoot starting in root
+emulation mode. The mode P1 uses PRoot with SECCOMP syscall filtering 
+which provides higher performance in most operating systems. 
+The mode P2 also uses PRoot without SECCOMP yielding lower performance 
+than P1, although with performance may provide higher reliability. 
+PRoot provides the most universal execution mode in udocker but may also
+exhibit lower performance on older kernels such as in CentOS 6 due to
+the lack of SECCOMP support.
 The Pn modes also offer root emulation to facilitate software installation
 and to execute applications that expect to run under root.
 
-The Fakechroot (Fn), runC (Rn) and Singularity (Sn) engines are EXPERIMENTAL.
-They provide higher performance in most cases, but are less universal thus
-supporting less Linux distributions. 
-
-The udocker Fakechroot engine has four modes that offer increasing
-compatibility levels. F1 is the least intrusive mode and only changes 
-absolute symbolic links so that they point to locations inside the 
-container.  F2 adds changes to the loader to prevent loading of host 
+The Fn modes use the Fakechroot engine. There are four modes that offer 
+increasing compatibility levels. F1 is the least intrusive mode and only 
+changes absolute symbolic links so that they point to locations inside 
+the container.  F2 adds changes to the loader to prevent loading of host 
 shareable libraries. F3 adds changes to all binaries (ELF headers of 
 executables and libraries) to remove absolute references pointing to 
 the host shareable libraries. These changes are performed once during 
@@ -795,13 +789,22 @@ fixed and will fail to run. Notice that setup can be rerun with the
 changes dynamically (on-the-fly) thus enabling compilation and linking 
 within the container and new executables to be transferred to the 
 container and executed. Executables and libraries in host volumes are
-not changed and hence cannot be executed from a container in F2, F3 and
-F4 execution modes.
-runC with rootless user namespaces requires a recent Linux kernel and
+not modified by setup and hence cannot be executed from a container in 
+F2, F3 and F4 execution modes. The whole set of required binaries both
+libraries and executables must thefore exist inside of the container,
+and not be mounted from external locations.
+
+Fakechroot requires libraries compiled for each container operating system,
+udocker provides these libraries for several distributions including
+Ubuntu 14, Ubuntu 16, Ubuntu 18, CentOS 6 and CentOS 7 and some others. 
+Other container OSes may or may not work with these same libraries. 
+
+The Rn modes use either runC or crun taking advantage of the Linux rootless 
+execution with user namespaces. This requires a recent Linux kernel and
 is known to work on Ubuntu and Fedora hosts. 
 
-Mode Rn requires kernels with support for rootless containers, thus
-it will not work on some distributions (e.g. CentOS 6 and CentOS 7).
+The Rn modes require kernels with support for user namespaces, thus
+they will not work on older distributions (e.g. CentOS 6 and CentOS 7).
 The rootless execution modes have inherent limitations related to the
 manipulation of uids and gids that may cause certain operations to fail
 such as software installations. To overcome this limitation of the R1 
@@ -811,14 +814,10 @@ execution chain is
 
 `runc -> proot -> executable`
 
-When using the Rn modes, udocker will search for a runc executable in the
-host system, only if it does not find one it will default to use the runc
-provided with the udockertools. This behavior can be change through
+When using the Rn modes, udocker will search for a runc or crun executable 
+in the host system, only if it does not find one it will default to use the 
+runc provided with the udockertools. This behavior can be change through
 environment variables and configuration settings.
-Fakechroot requires libraries compiled for each guest operating system,
-udocker provides these libraries for several distributions including
-Ubuntu 14, Ubuntu 16, Ubuntu 18, CentOS 6 and CentOS 7 and some others. 
-Other guests may or may not work with these same libraries. 
 
 Notice that changes performed in Fn and Rn modes will prevent the
 containers from running in hosts where the directory path to the container
@@ -867,7 +866,7 @@ changed through the configuration files by changing the attribute
 **UDOCKER_DEFAULT_EXECUTION_MODE**. Only the following modes can be used as
 default modes:
 **P1**, **P2**, **F1**, **S1**, and **R1**. Changing the default execution
-mode can be useful in case the default does not work as expected.
+mode can be useful in case the default mode does not work as expected.
 
 Example:
 

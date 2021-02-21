@@ -21,7 +21,7 @@ Other host libraries and tools required:
 
 ## 2. USER INSTALLATION
 
-### 2.1. INSTALL LATEST VERSIONS DIRECTLY FROM GITHUB
+### 2.1. PYTHON2: INSTALL DIRECTLY FROM GITHUB
 
 Just download and execute the udocker python script and the remainder of the
 installation including downloading and installing the udockertools will 
@@ -47,15 +47,15 @@ From the *development* branch for the latest additions and fixes:
   ./udocker install
 ```
 
-To get a specific released version of udocker such as v1.1.7:
+To get a specific released version of udocker such as the old v1.1.4:
 
 ```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.7/udocker.py > udocker
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.4/udocker.py > udocker
   chmod u+rx ./udocker
   ./udocker install
 ```
 
-### 2.2. INSTALL PRE-RELEASE: SUPPORT PYTHON3
+### 2.2. PYTHON3: INSTALL PRE-RELEASE
 
 This pre-release is based on udocker 1.1.7, with additional bug fixes and compatibility to run in python3. Follow this steps to install and run udocker:
 
@@ -105,7 +105,7 @@ everytime from the official repositories. The UDOCKER_TARBALL environment variab
 can also be pointed to an http or https URL of your choice.
 
 ```
-  curl $(./udocker version | grep '^tarball:' | cut -d' ' -f3) > udocker-1.1.7.tar.gz
+  curl $(./udocker version | grep '^tarball:' | cut -d' ' -f2- ) > udocker-1.1.7.tar.gz
 ```
 
 ### 2.5. FORCE REINSTALLATION of UDOCKERTOOLS
