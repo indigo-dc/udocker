@@ -63,7 +63,8 @@ invoking it.
 
 Most udocker execution modes do not provide process isolation features
 such as docker. Due to the lack of isolation udocker must not be run 
-by privileged users.
+by privileged users, and please make sure that you really trust the 
+containers that you execute using udocker.
 
 ## Troubleshooting
 
