@@ -16,6 +16,8 @@ utils/OLDBUILD/*
 utils/OLDPATCHES/*
 BACKUP/*
 TAR/*
+build
+dist
 .coverage
 coverage.xml
 bandit.html
