@@ -372,6 +372,8 @@ prefix is `/sw/udocker/containers` then the directory cannot be mounted
 elsewhere under a different prefix.
 
 ##### 7.3.1.3. Modes R2 and R3 restrictions
+Central installation from readonly location using any of the R modes 
+requires udocker above 1.1.7 available from the devel branch.
 These modes require the creation of a mountpoint inside the container
 that is transparently created when the container is first executed,
 therefore (as also recommended in all the other modes) the container
