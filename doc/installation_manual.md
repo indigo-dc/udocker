@@ -27,8 +27,8 @@ Just download and execute the udocker python script and the remainder of the
 installation including downloading and installing the udockertools will 
 be performed automatically.
 
-Once you download the udocker executable from github you can move it around 
-between systems. Once you start it in a new system it will install the
+Once the udocker executable is downloaded from github it can be moved around 
+between systems. Once executed in a new system it will install the
 required udockertools. The installation requires outbound network connectivity.
 
 From the master branch for *production*:
@@ -82,7 +82,7 @@ Example of installing or upgrading udocker to version v1.1.7:
   tar xzvf $UDOCKER_TARBALL udocker
   chmod u+rx udocker
   ./udocker install
-  mv ./udocker $HOME/bin/   # move the executable to your preferred location for binaries
+  mv ./udocker $HOME/bin/   # move the executable to the preferred location for binaries
 ```
 
 ### 2.4. OBTAINING UDOCKERTOOLS TARBALL FROM OTHER LOCATIONS
@@ -279,7 +279,7 @@ The repository of pulled images can also be placed in a different location
 than the user home directory `$HOME/.udocker`. Notice that if the target
 location is not writable then the users will be unable to pull new images, 
 which may be fine if these images are managed centrally by someone else.
-Make sure that the file protections are adequate to your purpose.
+Make sure that the file protections are adequate to the intended purpose.
 
 From the images in the common location the users can then create containers 
 whose content will be placed in the user home directory under `$HOME/.udocker`. 
@@ -337,7 +337,7 @@ and their implications:
 | F2 | Fakechroot  | OK
 | F3 | Fakechroot  | OK see restrictions in section 7.3.1.2.
 | F4 | Fakechroot  | NOT SUPPORTED
-| R1 | runC / crun | OK requires a udocker version above 1.1.7
+| R1 | runC / crun | OK requires a udocker version above v1.1.7
 | R2 | runC / crun | OK see restrictions in section 7.3.1.3. 
 | R3 | runC / crun | OK see restrictions in section 7.3.1.3.
 | S1 | Singularity | OK
@@ -352,31 +352,33 @@ command where `<MODE>` is one of the supported modes in column one.
 Notice the `--allow-root` should only be used when running
 from the root user.
 
-If you need to provide the same container with two different execution
-modes then you need to create two containers and configure each one
-with a different mode.
+If the same container is to be provided for execution using more
+than one execution mode (e.g. to be executed with P1 and F3), then
+make copies of the initial container and setup each one of them with 
+the intended mode. The command `udocker clone` can be used to create
+copies of existing containers.
 
 ##### 7.3.1.1. Mode F4 is not supported
 The mode F4 is not suitable for readonly containers as it is meant to
 support the dynamic creation of new executables and libraries inside of
-the container, which cannot happen if the container is readonly. Is
-mode F3 instead.
+the container, which cannot happen if the container is readonly. Use the
+mode F3 instead of F4.
 
 ##### 7.3.1.2. Mode F3 restrictions
 The F3 mode (and also F4) perform changes to the container executables 
 and libraries, in particular they change the pathnames in ELF headers
 making them pointing at the container location. This means that the
 pathname to the container must be always the same across all the
-hosts that may share the common location. Therefore in the location
-prefix is `/sw/udocker/containers` then the directory cannot be mounted 
-elsewhere under a different prefix.
+hosts that may share the common location. Therefore if the original 
+location pathname is `/sw/udocker/containers` then all hosts must 
+also mount it at the same exact path `/sw/udocker/containers`.
 
 ##### 7.3.1.3. Modes R2 and R3 restrictions
 Central installation from readonly location using any of the R modes 
-requires udocker above 1.1.7 available from the devel branch.
+requires udocker above v1.1.7 available from the udocker `devel` branch.
 These modes require the creation of a mountpoint inside the container
 that is transparently created when the container is first executed,
-therefore (as also recommended in all the other modes) the container
+therefore (as recommended for all other modes) the container
 must be executed once by someone with write access prior to making it 
 available to the users. Furthermore these execution modes are nested 
 they use P1 or P2 inside the R engine, the Pn modes require a tmp 
@@ -431,16 +433,16 @@ is defined at run time.
 #### 7.3.3. PROTECTION OF CONTAINER FILES AND DIRECTORIES
 
 For the container to be executed by other users the files and
-directories within the container must be readable. When 
-installed in the user home directory all files belong to
-the user and are therefore readable. If a common location
+directories within the container must be readable. When udocker 
+is installed in the user home directory all files belong to
+the user and are therefore readable by him. If a common location
 is shared by several users the file protections will likelly
-need to be adjusted. Consider carefully your security 
-requirements when changing the file protections.
+need to be adjusted. Consider carefully your security policies 
+and requirements when changing the file protections.
 
 The following example assumes making all files readable to
 anyone and making all files (and directories) that have the
-executable bit to be also executable by anyone.
+executable bit to be also *executable* by anyone.
 
 ```
  mycdir=$(udocker --allow-root inspect -p myContainerId)
