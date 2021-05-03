@@ -6,7 +6,7 @@ udocker
 Wrapper to execute basic docker containers without using docker.
 This tool is a last resort for the execution of docker containers
 where docker is unavailable. It only provides a limited set of
-functionalities. 
+functionalities.
 
 This version of udocker is for Python 2 only. For Python 3 see:
 https://github.com/indigo-dc/udocker/blob/master/doc/installation_manual.md
@@ -47,7 +47,7 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.8b1"
+__version__ = "1.1.8b2"
 __date__ = "2020"
 
 # Python version major.minor
@@ -6280,8 +6280,8 @@ class DockerIoAPI(object):
 
     def get_v2_image_tags(self, imagerepo, tags_only=False):
         """Get list of tags in a repo from Docker Hub"""
-        if '/' not in imagerepo:
-            imagerepo = "library/" + imagerepo
+        #if '/' not in imagerepo:
+        #    imagerepo = "library/" + imagerepo
         url = self.registry_url + "/v2/" + imagerepo + "/tags/list"
         Msg().err("tags url:", url, l=Msg.DBG)
         (dummy, buf) = self._get_url(url)
@@ -6301,7 +6301,7 @@ class DockerIoAPI(object):
         that is common to all layers in this image tag
         """
         if '/' not in imagerepo:
-            url = self.registry_url + "/v2/library/" + \
+            url = self.registry_url + "/v2/" + \
                 imagerepo + "/manifests/" + tag
         else:
             url = self.registry_url + "/v2/" + imagerepo + \
@@ -6316,7 +6316,7 @@ class DockerIoAPI(object):
     def get_v2_image_layer(self, imagerepo, layer_id):
         """Get one image layer data file (tarball)"""
         if '/' not in imagerepo:
-            url = self.registry_url + "/v2/library/" + \
+            url = self.registry_url + "/v2/" + \
                 imagerepo + "/blobs/" + layer_id
         else:
             url = self.registry_url + "/v2/" + imagerepo + \
@@ -6446,17 +6446,13 @@ class DockerIoAPI(object):
         components = imagerepo.split('/')
         if '.' in components[0] and len(components) >= 2:
             registry = components[0]
-            if components[1] == "library":
-                remoterepo = '/'.join(components[2:])
-                del components[1]
-                imagerepo = '/'.join(components)
-            else:
-                remoterepo = '/'.join(components[1:])
+            remoterepo = '/'.join(components[1:])
+        elif ('.' not in components[0] and
+              components[0] != "library" and len(components) == 1):
+            components.insert(0, "library")
+            remoterepo = '/'.join(components)
         else:
-            if components[0] == "library" and len(components) >= 1:
-                del components[0]
-                remoterepo = '/'.join(components)
-                imagerepo = '/'.join(components)
+            remoterepo = '/'.join(components)
         if registry:
             try:
                 registry_url = Config.docker_registries[registry][0]
