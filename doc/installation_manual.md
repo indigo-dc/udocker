@@ -256,13 +256,13 @@ The executables and libraries can be installed with any of the methods described
 in section 2 of this manual. The directory tree should contain the following
 subdirectories: `bin`,  `containers`,  `layers`,  `lib`,  `repos`. For the
 binaries and libraries the only directories required are `bin` and `lib`.
-The actual udocker command can be placed under the `bin` directory.
+The actual udocker command can be placed in the `bin` directory.
 
-Directing users point to the central udocker installation can be done using the 
+Directing users to the central udocker installation can be done using the 
 environment variables described in section 5, or through the configuration files 
-described in section 6. The recommended approach is for the user to set environment 
-variables as in the example where the assumed central location will be under
-`/sw/udocker`:
+described in section 6. The recommended approach is to set environment 
+variables at the user level as in the example where the assumed central location 
+will be under `/sw/udocker`:
 
 ```
  export UDOCKER_BIN=/sw/udocker/bin
@@ -359,7 +359,8 @@ with a different mode.
 ##### 7.3.1.1. Mode F4 is not supported
 The mode F4 is not suitable for readonly containers as it is meant to
 support the dynamic creation of new executables and libraries inside of
-the container, which cannot happen if the container is readonly.
+the container, which cannot happen if the container is readonly. Is
+mode F3 instead.
 
 ##### 7.3.1.2. Mode F3 restrictions
 The F3 mode (and also F4) perform changes to the container executables 
@@ -370,14 +371,15 @@ hosts that may share the common location. Therefore in the location
 prefix is `/sw/udocker/containers` then the directory cannot be mounted 
 elsewhere under a different prefix.
 
-##### 7.3.1.2. Modes R2 and R3 restrictions
+##### 7.3.1.3. Modes R2 and R3 restrictions
 These modes require the creation of a mountpoint inside the container
 that is transparently created when the container is first executed,
 therefore (as also recommended in all the other modes) the container
-must be executed once by someone with write access. Furthermore these
-execution modes are nested they use P1 or P2 inside the R engine, the
-Pn modes require a tmp directory that is writable. Therefore it is
-recommended to mount the host /tmp in the container /tmp like this:
+must be executed once by someone with write access prior to making it 
+available to the users. Furthermore these execution modes are nested 
+they use P1 or P2 inside the R engine, the Pn modes require a tmp 
+directory that is writable. Therefore it is recommended to mount the 
+host /tmp in the container /tmp like this:
 
 ```
  udocker --allow-root run  -v /tmp myContainerId
@@ -419,10 +421,10 @@ named `/data`.
 Notice the `--allow-root` should only be used when running 
 from the root user.
 
-Notice that once `/data` is setup the end users can mount any 
-directory in `/data` in runtime, users are not restricted to 
-mount only the `/home` directory as the mapping is defined at
-run time.
+Notice that once `/data` is setup the end users can mount other
+directories in `/data` at runtime, meaning that users are not 
+restricted to mount only the `/home` directory as the mapping 
+is defined at run time.
 
 #### 7.3.3. PROTECTION OF CONTAINER FILES AND DIRECTORIES
 
