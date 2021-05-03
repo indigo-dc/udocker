@@ -343,7 +343,7 @@ and their implications:
 | S1 | Singularity | OK
 
 Changing the execution mode can be accomplished with the following udocker
-command where <MODE> is one of the supported modes in column one.
+command where `<MODE>` is one of the supported modes in column one.
 
 ```
  udocker --allow-root setup --execmode=<MODE>   myContainerId
