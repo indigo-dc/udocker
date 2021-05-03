@@ -177,6 +177,8 @@ The location of the udocker directories can be changed via environment variables
  * UDOCKER_DIR : root directory of udocker usually $HOME/.udocker
  * UDOCKER_BIN : location of udocker related executables
  * UDOCKER_LIB : location of udocker related libraries
+ * UDOCKER_REPOS: images metadata and links to layers
+ * UDOCKER_LAYERS: the common location for image layers data
  * UDOCKER_CONTAINERS : top directory for storing containers (not images)
  * UDOCKER_KEYSTORE : location of keystore for login/logout credentials
  * UDOCKER_TMP : location of temporary directory
@@ -243,3 +245,216 @@ Examples of the udocker.conf syntax:
   tmpdir = "/someplace"
 ```
 
+## 7. CENTRAL INSTALLATION
+
+udocker can be installed and made available system wide from a central location
+such as a shared read-only directory tree or file-system. 
+
+### 7.1. EXECUTABLES AND LIBRARIES
+
+The executables and libraries can be installed with any of the methods described
+in section 2 of this manual. The directory tree should contain the following
+subdirectories: `bin`,  `containers`,  `layers`,  `lib`,  `repos`. For the
+binaries and libraries the only directories required are `bin` and `lib`.
+The actual udocker command can be placed under the `bin` directory.
+
+Directing users point to the central udocker installation can be done using the 
+environment variables described in section 5, or through the configuration files 
+described in section 6. The recommended approach is for the user to set environment 
+variables as in the example where the assumed central location will be under
+`/sw/udocker`:
+
+```
+ export UDOCKER_BIN=/sw/udocker/bin
+ export UDOCKER_LIB=/sw/udocker/lib
+ export PATH=$PATH:/sw/udocker/bin
+```
+
+Make sure that the file protections are adequate namelly that the files are
+not modifiable by others.
+
+### 7.2. IMAGES AND LAYERS IN A COMMON LOCATION
+
+The repository of pulled images can also be placed in a different location 
+than the user home directory `$HOME/.udocker`. Notice that if the target
+location is not writable then the users will be unable to pull new images, 
+which may be fine if these images are managed centrally by someone else.
+Make sure that the file protections are adequate to your purpose.
+
+From the images in the common location the users can then create containers 
+whose content will be placed in the user home directory under `$HOME/.udocker`. 
+This can be accomplished by redirecting the directories `layers` and  `lib` 
+to a common location. The users will need to set the following environment 
+variables. Therefore assuming that the common location will be `/sw/udocker`:
+
+```
+ export UDOCKER_REPOS=/sw/udocker/repos
+ export UDOCKER_LAYERS=/sw/udocker/layers
+```
+
+### 7.3. CONTAINERS IN THE COMMON LOCATION
+
+If a container is extracted to  the common location, it is possible to
+point udocker to execute the container from that location. Making
+udocker pointing at different `containers` directory such as for example
+`/sw/udocker/containers` can be performed with:
+
+```
+ export UDOCKER_CONTAINERS=/sw/udocker/containers
+```
+
+Assuming that the container is to be created under `/sw/udocker/containers`
+it can be extracted with:
+
+```
+ export UDOCKER_CONTAINERS=/sw/udocker/containers
+ udocker --allow-root pull  centos:centos7
+ udocker --allow-root create  --name=myContainerId  centos:centos7
+ udocker --allow-root run  -v /tmp myContainerId
+```
+
+Notice the `--allow-root` should only be used when running
+from the root user.
+
+However depending on the execution mode and several other factors the 
+limitations described in the next sections apply.
+
+
+#### 7.3.1. SELECTION OF EXECUTION MODE
+
+The selection of the execution mode requires writing in the `containers`
+directory, therefore if the container is in a read-only location the
+execution mode cannot be changed. If a container is to be executed in a mode
+other than the default then this must be set in advance. This must be done
+by a someone with write access. A table summarizing the execution modes 
+and their implications:
+
+|Mode| Engine      | Execution from readonly location
+|----|:------------|:------------------------------------------
+| P1 | PRoot       | OK
+| P2 | PRoot       | OK
+| F1 | Fakechroot  | OK
+| F2 | Fakechroot  | OK
+| F3 | Fakechroot  | OK see restrictions in section 7.3.1.2.
+| F4 | Fakechroot  | NOT SUPPORTED
+| R1 | runC / crun | OK requires a udocker version above 1.1.7
+| R2 | runC / crun | OK see restrictions in section 7.3.1.3. 
+| R3 | runC / crun | OK see restrictions in section 7.3.1.3.
+| S1 | Singularity | OK
+
+Changing the execution mode can be accomplished with the following udocker
+command where <MODE> is one of the supported modes in column one.
+
+```
+ udocker --allow-root setup --execmode=<MODE>   myContainerId
+```
+
+Notice the `--allow-root` should only be used when running
+from the root user.
+
+If you need to provide the same container with two different execution
+modes then you need to create two containers and configure each one
+with a different mode.
+
+##### 7.3.1.1. Mode F4 is not supported
+The mode F4 is not suitable for readonly containers as it is meant to
+support the dynamic creation of new executables and libraries inside of
+the container, which cannot happen if the container is readonly.
+
+##### 7.3.1.2. Mode F3 restrictions
+The F3 mode (and also F4) perform changes to the container executables 
+and libraries, in particular they change the pathnames in ELF headers
+making them pointing at the container location. This means that the
+pathname to the container must be always the same across all the
+hosts that may share the common location. Therefore in the location
+prefix is `/sw/udocker/containers` then the directory cannot be mounted 
+elsewhere under a different prefix.
+
+##### 7.3.1.2. Modes R2 and R3 restrictions
+These modes require the creation of a mountpoint inside the container
+that is transparently created when the container is first executed,
+therefore (as also recommended in all the other modes) the container
+must be executed once by someone with write access. Furthermore these
+execution modes are nested they use P1 or P2 inside the R engine, the
+Pn modes require a tmp directory that is writable. Therefore it is
+recommended to mount the host /tmp in the container /tmp like this:
+
+```
+ udocker --allow-root run  -v /tmp myContainerId
+```
+
+or alternatively:
+
+```
+ export PROOT_TMP_DIR=/<path-to-host-writable-directory>
+ udocker --allow-root run  -v /<path-to-host-writable-directory>  myContainerId
+```
+
+Notice the `--allow-root` should only be used when running
+from the root user.
+
+
+#### 7.3.2. MOUNT OF DIRECTORIES AND FILES
+
+Making host files and directories visible inside the container requires
+creating the corresponding mount points. The creation of mount-points 
+requires write access to the container. Therefore if a container is in 
+a read-only location these files and directories must be created in 
+advance.
+
+Notice that some default mount points are required and automatically
+created by udocker itself, therefore the container should be executed
+by the administrator to ensure that the required files and directories
+are created. Furthermore if additional mountpoints are required to
+access data or other user files from the host, such mountpoints
+must be also created by the administrator by executing the container
+with the adequate volume pathnames. The example shows how to setup
+the default mountpoints and in addition create a new mountpoint 
+named `/data`. 
+
+```
+ udocker --allow-root run -v /home:/data  myContainerId
+```
+
+Notice the `--allow-root` should only be used when running 
+from the root user.
+
+Notice that once `/data` is setup the end users can mount any 
+directory in `/data` in runtime, users are not restricted to 
+mount only the `/home` directory as the mapping is defined at
+run time.
+
+#### 7.3.3. PROTECTION OF CONTAINER FILES AND DIRECTORIES
+
+For the container to be executed by other users the files and
+directories within the container must be readable. When 
+installed in the user home directory all files belong to
+the user and are therefore readable. If a common location
+is shared by several users the file protections will likelly
+need to be adjusted. Consider carefully your security 
+requirements when changing the file protections.
+
+The following example assumes making all files readable to
+anyone and making all files (and directories) that have the
+executable bit to be also executable by anyone.
+
+```
+ mycdir=$(udocker --allow-root inspect -p myContainerId)
+ chmod -R uog+r $mycdir
+ find $mycdir -executable -exec chmod oug+x {} \;
+```
+
+Notice the `--allow-root` should only be used when running
+from the root user.
+
+
+### 7.4. USING A COMMON DIRECTORY FOR BOTH EXECUTABLES AND CONTAINERS
+
+If the common directory is used both for executables and containers
+then the following environment variables can be used:
+
+```
+ export UDOCKER_DIR=/sw/udocker
+ export PATH=$PATH:/sw/udocker/bin
+```
+ 
