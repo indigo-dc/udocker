@@ -39,7 +39,7 @@ import ast
 import ctypes
 
 __author__ = "udocker@lip.pt"
-__copyright__ = "Copyright 2020, LIP"
+__copyright__ = "Copyright 2016 - 2021, LIP"
 __credits__ = ["PRoot http://proot.me",
                "runC https://runc.io",
                "crun https://github.com/containers/crun",
@@ -48,7 +48,7 @@ __credits__ = ["PRoot http://proot.me",
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "1.1.8b2"
-__date__ = "2020"
+__date__ = "2021"
 
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
