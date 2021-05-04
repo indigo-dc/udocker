@@ -474,7 +474,7 @@ class UdockerCLI(object):
                       "Caps Lock ?", l=Msg.WAR)
 
         v2_auth_token = self.dockerioapi.get_v2_login_token(username, password)
-        if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, ""):
+        if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, "") == 0:
             return self.STATUS_OK
 
         Msg().err("Error: invalid credentials")
