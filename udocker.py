@@ -8,6 +8,9 @@ This tool is a last resort for the execution of docker containers
 where docker is unavailable. It only provides a limited set of
 functionalities.
 
+This version of udocker is for Python 2 only. For Python 3 see:
+https://github.com/indigo-dc/udocker/blob/master/doc/installation_manual.md
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -36,7 +39,7 @@ import ast
 import ctypes
 
 __author__ = "udocker@lip.pt"
-__copyright__ = "Copyright 2020, LIP"
+__copyright__ = "Copyright 2016 - 2021, LIP"
 __credits__ = ["PRoot http://proot.me",
                "runC https://runc.io",
                "crun https://github.com/containers/crun",
@@ -44,8 +47,8 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.7"
-__date__ = "2020"
+__version__ = "1.1.8b2"
+__date__ = "2021"
 
 # Python version major.minor
 PY_VER = "%d.%d" % (sys.version_info[0], sys.version_info[1])
@@ -506,12 +509,17 @@ class HostInfo(object):
 
     def oskernel_isgreater(self, ref_version):
         """Compare kernel version is greater or equal than ref_version"""
-        os_release = self.oskernel().split('-')[0]
-        os_version = [int(x) for x in os_release.split('.')[0:3]]
-        for idx in (0, 1, 2):
-            if os_version[idx] > ref_version[idx]:
+        match = re.search(r"([0-9.]+)", self.oskernel())
+        if match:
+            os_release = match.group(1)
+        else:
+            return True
+        for (idx, os_version) in enumerate(os_release.split('.')):
+            if idx >= len(ref_version):
+                break;
+            if int(os_version) > int(ref_version[idx]):
                 return True
-            elif os_version[idx] < ref_version[idx]:
+            elif int(os_version) < int(ref_version[idx]):
                 return False
         return True
 
@@ -590,6 +598,7 @@ class GuestInfo(object):
 
     def get_filetype(self, filename):
         """Get the file architecture"""
+        filetype = ""
         if not filename.startswith(self._root_dir):
             filename = self._root_dir + '/' + filename
         if os.path.islink(filename):
@@ -598,8 +607,10 @@ class GuestInfo(object):
                 f_path = os.path.dirname(filename) + '/' + f_path
             return self.get_filetype(f_path)
         if os.path.isfile(filename):
-            return Uprocess().get_output(["file", filename])
-        return ""
+            filetype = Uprocess().get_output(["file", filename])
+            if not filetype:
+               filetype = Uprocess().get_output(["readelf", "-h", filename])
+        return filetype
 
     def arch(self):
         """Get guest system architecture"""
@@ -608,15 +619,14 @@ class GuestInfo(object):
             filetype = self.get_filetype(f_path)
             if not filetype:
                 continue
-            if "x86-64," in filetype:
+            if "x86-64" in filetype.lower():
                 return "amd64"
-            if "80386," in filetype:
+            if "Intel 80386" in filetype:
                 return "i386"
-            if "ARM," in filetype:
-                if "64-bit" in filetype:
-                    return "arm64"
-                else:
-                    return "arm"
+            if "aarch64" in filetype.lower():
+                return "arm64"
+            if " ARM" in filetype:
+                return "arm"
         return ""
 
     def osdistribution(self):
@@ -3371,6 +3381,7 @@ class RuncEngine(ExecutionEngineCommon):
         self.executable = None                   # runc
         self._container_specjson = None
         self._container_specfile = None
+        self._container_specdir = self.container_dir
         self._filebind = None
         self.execution_id = None
         self.engine_type = ""
@@ -3417,7 +3428,8 @@ class RuncEngine(ExecutionEngineCommon):
             cmd_l = [self.executable, "spec", "--rootless", ]
             status = subprocess.call(cmd_l, shell=False, stderr=Msg.chlderr,
                                      close_fds=True,
-                                     cwd=os.path.realpath(self.container_dir))
+                                     cwd=os.path.realpath(\
+                                         self._container_specdir))
             if status:
                 return False
         json_obj = None
@@ -3716,8 +3728,13 @@ class RuncEngine(ExecutionEngineCommon):
 
         self._container_specfile = "config.json"
         if self.container_dir:
+            if self.localrepo.iswriteable_container(container_id):
+                self._container_specdir = self.container_dir
+            else:
+                self._container_specdir = FileUtil("SPECDIR").mktmpdir()
+                FileUtil(self._container_specdir).register_prefix()
             self._container_specfile = \
-                    self.container_dir + '/' + self._container_specfile
+                    self._container_specdir + '/' + self._container_specfile
         self._filebind = FileBind(self.localrepo, container_id)
         self._filebind.setup()
 
@@ -3765,8 +3782,8 @@ class RuncEngine(ExecutionEngineCommon):
         cmd_l = self._set_cpu_affinity()
         cmd_l.append(self.executable)
         cmd_l.extend(runc_debug)
-        cmd_l.extend(["--root", self.container_dir, "run"])
-        cmd_l.extend(["--bundle", self.container_dir, self.execution_id])
+        cmd_l.extend(["--root", self._container_specdir, "run"])
+        cmd_l.extend(["--bundle", self._container_specdir, self.execution_id])
         Msg().err("CMD =", cmd_l, l=Msg.VER)
 
         self._run_banner(self.opt["cmd"][0], '%')
@@ -6270,8 +6287,8 @@ class DockerIoAPI(object):
 
     def get_v2_image_tags(self, imagerepo, tags_only=False):
         """Get list of tags in a repo from Docker Hub"""
-        if '/' not in imagerepo:
-            imagerepo = "library/" + imagerepo
+        #if '/' not in imagerepo:
+        #    imagerepo = "library/" + imagerepo
         url = self.registry_url + "/v2/" + imagerepo + "/tags/list"
         Msg().err("tags url:", url, l=Msg.DBG)
         (dummy, buf) = self._get_url(url)
@@ -6290,12 +6307,8 @@ class DockerIoAPI(object):
         """Get the image manifest which contains JSON metadata
         that is common to all layers in this image tag
         """
-        if '/' not in imagerepo:
-            url = self.registry_url + "/v2/library/" + \
-                imagerepo + "/manifests/" + tag
-        else:
-            url = self.registry_url + "/v2/" + imagerepo + \
-                "/manifests/" + tag
+        url = self.registry_url + "/v2/" + imagerepo + \
+            "/manifests/" + tag
         Msg().err("manifest url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
@@ -6305,12 +6318,8 @@ class DockerIoAPI(object):
 
     def get_v2_image_layer(self, imagerepo, layer_id):
         """Get one image layer data file (tarball)"""
-        if '/' not in imagerepo:
-            url = self.registry_url + "/v2/library/" + \
-                imagerepo + "/blobs/" + layer_id
-        else:
-            url = self.registry_url + "/v2/" + imagerepo + \
-                "/blobs/" + layer_id
+        url = self.registry_url + "/v2/" + imagerepo + \
+            "/blobs/" + layer_id
         Msg().err("layer url:", url, l=Msg.DBG)
         filename = self.localrepo.layersdir + '/' + layer_id
         if self._get_file(url, filename, 3):
@@ -6436,17 +6445,11 @@ class DockerIoAPI(object):
         components = imagerepo.split('/')
         if '.' in components[0] and len(components) >= 2:
             registry = components[0]
-            if components[1] == "library":
-                remoterepo = '/'.join(components[2:])
-                del components[1]
-                imagerepo = '/'.join(components)
-            else:
-                remoterepo = '/'.join(components[1:])
-        else:
-            if components[0] == "library" and len(components) >= 1:
-                del components[0]
-                remoterepo = '/'.join(components)
-                imagerepo = '/'.join(components)
+            del components[0]
+        elif ('.' not in components[0] and
+              components[0] != "library" and len(components) == 1):
+            components.insert(0, "library")
+        remoterepo = '/'.join(components)
         if registry:
             try:
                 registry_url = Config.docker_registries[registry][0]
@@ -7394,6 +7397,10 @@ class Udocker(object):
         --httpproxy=socks5://user:pass@host:port        :use http proxy
         --httpproxy=socks4://host:port                  :use http proxy
         --httpproxy=socks5://host:port                  :use http proxy
+        --httpproxy=socks4a://user:pass@host:port       :use http proxy
+        --httpproxy=socks5h://user:pass@host:port       :use http proxy
+        --httpproxy=socks4a://host:port                 :use http proxy
+        --httpproxy=socks5h://host:port                 :use http proxy
         """
         pause = not cmdp.get("-a")
         index_url = cmdp.get("--index=")
@@ -7644,6 +7651,10 @@ class Udocker(object):
         --httpproxy=socks5://user:pass@host:port        :use http proxy
         --httpproxy=socks4://host:port                  :use http proxy
         --httpproxy=socks5://host:port                  :use http proxy
+        --httpproxy=socks4a://user:pass@host:port       :use http proxy
+        --httpproxy=socks5h://user:pass@host:port       :use http proxy
+        --httpproxy=socks4a://host:port                 :use http proxy
+        --httpproxy=socks5h://host:port                 :use http proxy
         --index=https://index.docker.io                 :docker index
         --registry=https://registry-1.docker.io         :docker registry
 

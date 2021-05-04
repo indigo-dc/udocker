@@ -210,6 +210,10 @@ Options:
 
 * `-a` display pages continuously without pause.
 * `--list-tags` list the tags for a given repository
+* `--no-trunc` do not trunc lines
+* `--index=url` specify an index other than index.docker.io
+* `--registry=url` specify a registry other than registry-1.docker.io
+* `--httpproxy=proxy` specify a socks proxy for downloading
 
 Examples:
 ```
@@ -243,6 +247,10 @@ Examples:
   udocker pull --httpproxy=socks5://host:port busybox
   udocker pull --httpproxy=socks4://user:pass@host:port busybox
   udocker pull --httpproxy=socks5://user:pass@host:port busybox
+  udocker pull --httpproxy=socks4a://host:port busybox
+  udocker pull --httpproxy=socks5h://host:port busybox
+  udocker pull --httpproxy=socks4a://user:pass@host:port busybox
+  udocker pull --httpproxy=socks5h://user:pass@host:port busybox
 ```
 
 ### 3.6. images
