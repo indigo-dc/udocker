@@ -42,7 +42,7 @@ Prints a usage summary. Further help for specific udocker commands can be obtain
 Search for IMAGES in a Docker repository. The IMAGE name must match the given STRING. The \-a option displays all matching entries without pausing.
 .TP
 .BR pull " " [ " " \--httpproxy=PROXY " " | " " \--index=INDEX " " | " " \--registry=REGISTRY " " ] " " IMAGE
-Pull an IMAGE from Docker Hub or from a private repository. The option INDEX defaults to https://index.docker.io. The option REGISTRY defaults to https://registry-1.docker.io. A socks4 or socks5 proxy can be specified with \--httpproxy the syntax of PROXY is socks[4|5]://user:pass@host:port.
+Pull an IMAGE from Docker Hub or from a private repository. The option INDEX defaults to https://index.docker.io. The option REGISTRY defaults to https://registry-1.docker.io. A socks4 or socks5 proxy can be specified with \--httpproxy the syntax of PROXY is socks[4|5|4a|5h]://user:pass@host:port.
 .TP
 .BR images " " [ " " \-l " " ]
 Lists IMAGES available in the local udocker repository. The \-l option provides additional details.
