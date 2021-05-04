@@ -363,7 +363,7 @@ class DockerIoAPI(object):
         """Get the image manifest which contains JSON metadata
         that is common to all layers in this image tag
         """
-        url = self.registry_url + "/v2/" + imagerepo +
+        url = self.registry_url + "/v2/" + imagerepo + \
             "/manifests/" + tag
         Msg().out("Info: manifest url", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
