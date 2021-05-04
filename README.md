@@ -63,7 +63,8 @@ using tools and libraries such as:
 ## Installation and Users manuals
 
 See the **[Installation manual](doc/installation_manual.md)**
-and the **[Users manual](doc/user_manual.md)**.
+See the **[Users manual](doc/user_manual.md)**.
+See the **[All documentation](SUMMARY.md)**
 
 ## Syntax
 
@@ -340,6 +341,8 @@ system.
 
 The full documentation is available at:
 
+* devel3: https://github.com/indigo-dc/udocker/blob/devel3/SUMMARY.md
+
 * master: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
 * devel: https://github.com/indigo-dc/udocker/blob/devel/SUMMARY.md
 
@@ -363,6 +366,7 @@ ISSN 0010-4655, https://doi.org/10.1016/j.cpc.2018.05.021
 * PRoot https://proot-me.github.io/
 * Fakechroot https://github.com/dex4er/fakechroot/wiki
 * runC https://runc.io/
+* crun https://github.com/containers/crun
 * Singularity https://www.sylabs.io/
 * Open Container Initiative https://www.opencontainers.org/
 * INDIGO DataCloud https://www.indigo-datacloud.eu
@@ -370,6 +374,7 @@ ISSN 0010-4655, https://doi.org/10.1016/j.cpc.2018.05.021
 * LIP https://www.lip.pt
 * INCD https://www.incd.pt
 * EOSC-hub https://eosc-hub.eu
+
 
 This work is co-funded by the EOSC-hub project (Horizon 2020)
 under Grant number 777536
