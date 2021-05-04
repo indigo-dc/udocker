@@ -60,7 +60,7 @@ using tools and libraries such as:
 
 ## Installation and Users manuals
 See the **[Installation manual](doc/installation_manual.md)**
-and the **[Users manual](doc/user_manual.md)**.
+See the **[Users manual](doc/user_manual.md)**
 
 ## Syntax
 ```
@@ -317,8 +317,12 @@ system.
 ## Documentation
 The full documentation is available at:
 
+For Python 2:
 * master: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
 * devel: https://github.com/indigo-dc/udocker/blob/devel/SUMMARY.md
+
+For Python 3:
+* devel3: https://github.com/indigo-dc/udocker/blob/devel3/SUMMARY.md
 
 ## Contributing
 
