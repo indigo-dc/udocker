@@ -18,8 +18,8 @@ class Config(object):
     """
     conf = dict()
     conf['verbose_level'] = 3
-    conf['homedir'] = os.path.expanduser("~")
-    conf['topdir'] = conf['homedir'] + "/.udocker"
+    conf['topdir'] = os.path.expanduser("~") + "/.udocker"
+    conf['homedir'] = conf['topdir']
     conf['bindir'] = None
     conf['libdir'] = None
     conf['reposdir'] = None
