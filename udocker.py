@@ -609,7 +609,7 @@ class GuestInfo(object):
 
     def arch(self):
         """Get guest system architecture"""
-        for filename in OSInfo._binarylist:
+        for filename in GuestInfo._binarylist:
             f_path = self._root_dir + filename
             filetype = self.get_filetype(f_path)
             if not filetype:
