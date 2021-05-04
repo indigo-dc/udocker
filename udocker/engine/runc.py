@@ -32,6 +32,7 @@ class RuncEngine(ExecutionEngineCommon):
         self.executable = None                   # runc
         self._container_specjson = None
         self._container_specfile = None
+        self._container_specdir = self.container_dir
         self._filebind = None
         self.execution_id = None
         self.engine_type = ""
@@ -83,7 +84,8 @@ class RuncEngine(ExecutionEngineCommon):
             cmd_l = [self.executable, "spec", "--rootless", ]
             status = subprocess.call(cmd_l, shell=False, stderr=Msg.chlderr,
                                      close_fds=True,
-                                     cwd=os.path.realpath(self.container_dir))
+                                     cwd=os.path.realpath(\
+                                         self._container_specdir))
             if status:
                 return False
 
@@ -364,8 +366,13 @@ class RuncEngine(ExecutionEngineCommon):
 
         self._container_specfile = "config.json"
         if self.container_dir:
+            if self.localrepo.iswriteable_container(container_id):
+                self._container_specdir = self.container_dir
+            else:
+                self._container_specdir = FileUtil("SPECDIR").mktmpdir()
+                FileUtil(self._container_specdir).register_prefix()
             self._container_specfile = \
-                    self.container_dir + '/' + self._container_specfile
+                    self._container_specdir + '/' + self._container_specfile
 
         self._filebind = FileBind(self.localrepo, container_id)
         self._filebind.setup()
@@ -409,8 +416,8 @@ class RuncEngine(ExecutionEngineCommon):
         cmd_l = self._set_cpu_affinity()
         cmd_l.append(self.executable)
         cmd_l.extend(runc_debug)
-        cmd_l.extend(["--root", self.container_dir, "run"])
-        cmd_l.extend(["--bundle", self.container_dir, self.execution_id])
+        cmd_l.extend(["--root", self._container_specdir, "run"])
+        cmd_l.extend(["--bundle", self._container_specdir, self.execution_id])
         Msg().err("CMD =", cmd_l, l=Msg.VER)
         self._run_banner(self.opt["cmd"][0], '%')
         if sys.stdout.isatty():
