@@ -17,22 +17,33 @@ tar is needed when using `udocker install` to unpackage binaries and libraries.
 
 ## 2. USER INSTALLATION
 
-### 2.1. INSTALL LATEST VERSIONS DIRECTLY FROM GITHUB
+### 2.1. INSTALL FROM A RELEASED VERSION
 
 ---
-Download the install script
+Download a release tarball from https://github.com/indigo-dc/udocker/releases: 
 
 ```
-wget https://github.com/indigo-dc/udocker/releases/download/devel3_1.2.7/udocker-1.2.7.tar.gz
-tar zxvf udocker-1.2.7.tar.gz
+  wget https://github.com/indigo-dc/udocker/releases/download/devel3_1.2.7/udocker-1.2.7.tar.gz
 
-export PATH=`pwd`/udocker:$PATH
+  tar zxvf udocker-1.2.7.tar.gz
+
+  export PATH=`pwd`/udocker:$PATH
 ```
 
-Complete the installation by invoking udocker install:
+alternatively use `curl` instead of `wget` as follows:
 
 ```
-udocker install
+  curl -L https://github.com/indigo-dc/udocker/releases/download/devel3_1.2.7/udocker-1.2.7.tar.gz > udocker-1.2.7.tar.gz
+
+  tar zxvf udocker-1.2.7.tar.gz
+
+  export PATH=`pwd`/udocker:$PATH
+```
+
+Complete the installation by invoking udocker install to download and install udockertools:
+
+```
+  udocker install
 ```
 
 A default configuration file can be found in directory `udocker/etc/udocker.conf`,
@@ -43,7 +54,24 @@ you can copy it to your home directory `$HOME` or to `$UDOCKER`
 This installation method contains statically compiled binaries and is built 
 to be used across different hosts and OS distributions.
 
-### 2.4. OBTAINING THE URL OF THE TARBALL
+### 2.2. INSTALL FROM THE DEVELOPMENT BRANCH
+
+To install from the github development branch `devel3`:
+
+```
+  git clone -b devel3 --depth=1 https://github.com/indigo-dc/udocker.git
+  
+  export PATH=`pwd`/udocker:$PATH
+```
+
+As before complete the installation by invoking udocker install to download and install udockertools:
+
+```
+  udocker install
+```
+
+
+### 2.3. OBTAINING THE URL OF THE TARBALL
 
 The udocker installation tarball mentioned in section 2.2 can be obtained using the 
 following method. First download udocker. Second use udocker itself to display the
@@ -60,9 +88,9 @@ as explained in section 2.2, udocker can be deployed without having to downloade
 everytime from the official repositories. The UDOCKER_TARBALL environment variable
 can also be pointed to an http or https URL.
 
-### 2.5. FORCE REINSTALLATION
+### 2.4. FORCE REINSTALLATION OF udockertools
 
-To force download and reinstallation of the udocker tools. Invoke udocker install 
+To force download and reinstallation of udockertools. Invoke udocker install 
 with the flag `--force`:
 
 ```
