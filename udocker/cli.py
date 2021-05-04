@@ -245,6 +245,10 @@ class UdockerCLI(object):
         --httpproxy=socks5://user:pass@host:port        :use http proxy
         --httpproxy=socks4://host:port                  :use http proxy
         --httpproxy=socks5://host:port                  :use http proxy
+        --httpproxy=socks4a://user:pass@host:port       :use http proxy
+        --httpproxy=socks5h://user:pass@host:port       :use http proxy
+        --httpproxy=socks4a://host:port                 :use http proxy
+        --httpproxy=socks5h://host:port                 :use http proxy
         """
         pause = not cmdp.get("-a")
         index_url = cmdp.get("--index=")
@@ -505,6 +509,10 @@ class UdockerCLI(object):
         --httpproxy=socks5://user:pass@host:port        :use http proxy
         --httpproxy=socks4://host:port                  :use http proxy
         --httpproxy=socks5://host:port                  :use http proxy
+        --httpproxy=socks4a://user:pass@host:port       :use http proxy
+        --httpproxy=socks5h://user:pass@host:port       :use http proxy
+        --httpproxy=socks4a://host:port                 :use http proxy
+        --httpproxy=socks5h://host:port                 :use http proxy
         --index=https://index.docker.io/v1              :docker index
         --registry=https://registry-1.docker.io         :docker registry
 
