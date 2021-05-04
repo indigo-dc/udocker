@@ -1,3 +1,7 @@
+# udocker (1.2.7)
+
+  * Porting to Python 3
+
 # udocker (1.1.7)
 
   * Fix P1 when Linux 4.8.0 SECCOMP is backported, affects newer CentOS 7 
