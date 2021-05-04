@@ -67,7 +67,9 @@ This pre-release is based on udocker 1.1.7, with additional bug fixes and compat
 
 Complete the installation with:
 
+```
     udocker install
+```
 
 ### 2.3. INSTALL FROM UDOCKERTOOLS TARBALL
 
