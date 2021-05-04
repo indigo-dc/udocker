@@ -345,8 +345,6 @@ class DockerIoAPI(object):
 
     def get_v2_image_tags(self, imagerepo, tags_only=False):
         """Get list of tags in a repo from Docker Hub"""
-        #if '/' not in imagerepo:
-        #    imagerepo = "library/" + imagerepo
         url = self.registry_url + "/v2/" + imagerepo + "/tags/list"
         Msg().out("Info: tags url", url, l=Msg.DBG)
         (dummy, buf) = self._get_url(url)
@@ -365,12 +363,6 @@ class DockerIoAPI(object):
         """Get the image manifest which contains JSON metadata
         that is common to all layers in this image tag
         """
-        #if '/' not in imagerepo:
-        #    url = self.registry_url + "/v2/library/" + \
-        #        imagerepo + "/manifests/" + tag
-        #else:
-        #    url = self.registry_url + "/v2/" + imagerepo + \
-        #        "/manifests/" + tag
         url = self.registry_url + "/v2/" + imagerepo +
             "/manifests/" + tag
         Msg().out("Info: manifest url", url, l=Msg.DBG)
@@ -382,12 +374,6 @@ class DockerIoAPI(object):
 
     def get_v2_image_layer(self, imagerepo, layer_id):
         """Get one image layer data file (tarball)"""
-        #if '/' not in imagerepo:
-        #    url = self.registry_url + "/v2/library/" + \
-        #        imagerepo + "/blobs/" + layer_id
-        #else:
-        #    url = self.registry_url + "/v2/" + imagerepo + \
-        #        "/blobs/" + layer_id
         url = self.registry_url + "/v2/" + imagerepo + \
             "/blobs/" + layer_id
         Msg().out("Info: layer url", url, l=Msg.DBG)
