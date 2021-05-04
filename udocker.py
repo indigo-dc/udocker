@@ -509,12 +509,17 @@ class HostInfo(object):
 
     def oskernel_isgreater(self, ref_version):
         """Compare kernel version is greater or equal than ref_version"""
-        os_release = self.oskernel().split('-')[0].split('+')[0]
-        os_version = [int(x) for x in os_release.split('.')[0:3]]
-        for idx in (0, 1, 2):
-            if os_version[idx] > ref_version[idx]:
+        match = re.search(r"([0-9.]+)", self.oskernel())
+        if match:
+            os_release = match.group(1)
+        else:
+            return True
+        for (idx, os_version) in enumerate(os_release.split('.')):
+            if idx >= len(ref_version):
+                break;
+            if int(os_version) > int(ref_version[idx]):
                 return True
-            elif os_version[idx] < ref_version[idx]:
+            elif int(os_version) < int(ref_version[idx]):
                 return False
         return True
 
