@@ -62,7 +62,8 @@ using tools and libraries such as:
 
 See the **[Installation manual](doc/installation_manual.md)**
 See the **[Users manual](doc/user_manual.md)**.
-See the **[All documentation](SUMMARY.md)**
+See the **[All documentation for Python 2](SUMMARY.md)**
+See the **[All documentation for Python 3](https://github.com/indigo-dc/udocker/blob/devel3/SUMMARY.md)**
 
 ## Syntax
 ```
