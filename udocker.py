@@ -6300,12 +6300,8 @@ class DockerIoAPI(object):
         """Get the image manifest which contains JSON metadata
         that is common to all layers in this image tag
         """
-        if '/' not in imagerepo:
-            url = self.registry_url + "/v2/" + \
-                imagerepo + "/manifests/" + tag
-        else:
-            url = self.registry_url + "/v2/" + imagerepo + \
-                "/manifests/" + tag
+        url = self.registry_url + "/v2/" + imagerepo + \
+            "/manifests/" + tag
         Msg().err("manifest url:", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
@@ -6315,12 +6311,8 @@ class DockerIoAPI(object):
 
     def get_v2_image_layer(self, imagerepo, layer_id):
         """Get one image layer data file (tarball)"""
-        if '/' not in imagerepo:
-            url = self.registry_url + "/v2/" + \
-                imagerepo + "/blobs/" + layer_id
-        else:
-            url = self.registry_url + "/v2/" + imagerepo + \
-                "/blobs/" + layer_id
+        url = self.registry_url + "/v2/" + imagerepo + \
+            "/blobs/" + layer_id
         Msg().err("layer url:", url, l=Msg.DBG)
         filename = self.localrepo.layersdir + '/' + layer_id
         if self._get_file(url, filename, 3):
@@ -6446,13 +6438,11 @@ class DockerIoAPI(object):
         components = imagerepo.split('/')
         if '.' in components[0] and len(components) >= 2:
             registry = components[0]
-            remoterepo = '/'.join(components[1:])
+            del components[0]
         elif ('.' not in components[0] and
               components[0] != "library" and len(components) == 1):
             components.insert(0, "library")
-            remoterepo = '/'.join(components)
-        else:
-            remoterepo = '/'.join(components)
+        remoterepo = '/'.join(components)
         if registry:
             try:
                 registry_url = Config.docker_registries[registry][0]
@@ -7400,6 +7390,10 @@ class Udocker(object):
         --httpproxy=socks5://user:pass@host:port        :use http proxy
         --httpproxy=socks4://host:port                  :use http proxy
         --httpproxy=socks5://host:port                  :use http proxy
+        --httpproxy=socks4a://user:pass@host:port       :use http proxy
+        --httpproxy=socks5h://user:pass@host:port       :use http proxy
+        --httpproxy=socks4a://host:port                 :use http proxy
+        --httpproxy=socks5h://host:port                 :use http proxy
         """
         pause = not cmdp.get("-a")
         index_url = cmdp.get("--index=")
@@ -7650,6 +7644,10 @@ class Udocker(object):
         --httpproxy=socks5://user:pass@host:port        :use http proxy
         --httpproxy=socks4://host:port                  :use http proxy
         --httpproxy=socks5://host:port                  :use http proxy
+        --httpproxy=socks4a://user:pass@host:port       :use http proxy
+        --httpproxy=socks5h://user:pass@host:port       :use http proxy
+        --httpproxy=socks4a://host:port                 :use http proxy
+        --httpproxy=socks5h://host:port                 :use http proxy
         --index=https://index.docker.io                 :docker index
         --registry=https://registry-1.docker.io         :docker registry
 
