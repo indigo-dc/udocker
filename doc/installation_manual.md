@@ -68,9 +68,9 @@ Test with:
     udocker --help
     udocker install
     
-For further information see the `devel3` branch documentation:
- * **[Installation documentation](https://github.com/indigo-dc/udocker/blob/devel3/doc/installation_manual.md)**
-* **[All Documantation](https://github.com/indigo-dc/udocker/blob/devel3/SUMMARY.md)**
+For further information see the `devel3` branch documentation for Python 3:
+* **[Installation documentation for Python 3](https://github.com/indigo-dc/udocker/blob/devel3/doc/installation_manual.md)**
+* **[All documentation for Python 3](https://github.com/indigo-dc/udocker/blob/devel3/SUMMARY.md)**
 
 ### 2.3. INSTALL FROM UDOCKERTOOLS TARBALL
 
