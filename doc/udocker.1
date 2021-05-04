@@ -48,7 +48,7 @@ Prints a usage summary. Further help for specific udocker commands can be obtain
 Search for IMAGES in a Docker registry. Not all registries support searching. The \-a option displays all matching entries without pausing. The \--list-tags option lists the tags for a given repository in this case STRING must be a repository name.
 .TP
 .BR pull " " [ " " \--httpproxy=PROXY " " | " " \--index=INDEX " " | " " \--registry=REGISTRY " " ] " " IMAGE
-Pull an IMAGE from Docker Hub or from a private repository. A socks4 or socks5 proxy can be specified with \--httpproxy the syntax of PROXY is socks[4|5]://user:pass@host:port. The --registry and --index options enable other repositories (beyond dockerhub) to be selected, it is an URL prefix (ex. https://myrepository.mydomain).
+Pull an IMAGE from Docker Hub or from a private repository. A socks4 or socks5 proxy can be specified with \--httpproxy the syntax of PROXY is socks[4|5|4a|5h]://user:pass@host:port. The --registry and --index options enable other repositories (beyond dockerhub) to be selected, it is an URL prefix (ex. https://myrepository.mydomain).
 .TP
 .BR images " " [ " " \-l " " ]
 Lists IMAGES available in the local udocker repository. The \-l option provides additional image details.
