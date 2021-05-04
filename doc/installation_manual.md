@@ -59,13 +59,14 @@ To get a specific released version of udocker such as the old v1.1.4:
 
 This pre-release is based on udocker 1.1.7, with additional bug fixes and compatibility to run in python3. Follow this steps to install and run udocker:
 
+```
     wget https://github.com/indigo-dc/udocker/releases/download/devel3_1.2.7/udocker-1.2.7.tar.gz
     tar zxvf udocker-1.2.7.tar.gz
     export PATH=`pwd`/udocker:$PATH
+```
 
-Test with:
+Complete the installation with:
 
-    udocker --help
     udocker install
 
 ### 2.3. INSTALL FROM UDOCKERTOOLS TARBALL
@@ -180,8 +181,8 @@ The location of the udocker directories can be changed via environment variables
  * UDOCKER_REPOS: images metadata and links to layers
  * UDOCKER_LAYERS: the common location for image layers data
  * UDOCKER_CONTAINERS : top directory for storing containers (not images)
- * UDOCKER_KEYSTORE : location of keystore for login/logout credentials
  * UDOCKER_TMP : location of temporary directory
+ * UDOCKER_KEYSTORE : location of keystore for login/logout credentials
  * UDOCKER_TARBALL : location of installation tarball (file of URL)
  * UDOCKER_NOSYSCONF: do not read udocker system wide config files in /etc
 
@@ -209,7 +210,7 @@ the environment variables described below together with the default behavior.
 A value of "UDOCKER" will force the usage of the executables provided by the 
 udocker installation.
 A full pathname can be used to select a specific executable (or library) from the
-host or from the udocker instalaltion.
+host or from the udocker installation.
 
  * UDOCKER_USE_PROOT_EXECUTABLE : path to proot, default is proot from udocker
  * UDOCKER_USE_RUNC_EXECUTABLE : path to runc, default is search the host and if not found use runc from udocker

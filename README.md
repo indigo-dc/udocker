@@ -59,8 +59,10 @@ using tools and libraries such as:
   CentOS 6, CentOS 7, CentOS 8, Ubuntu 14, Ubuntu 16, Ubuntu 18, Ubuntu 20, Fedora, etc
 
 ## Installation and Users manuals
+
 See the **[Installation manual](doc/installation_manual.md)**
-and the **[Users manual](doc/user_manual.md)**.
+See the **[Users manual](doc/user_manual.md)**.
+See the **[All documentation](SUMMARY.md)**
 
 ## Syntax
 ```
@@ -319,6 +321,7 @@ The full documentation is available at:
 
 * master: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
 * devel: https://github.com/indigo-dc/udocker/blob/devel/SUMMARY.md
+* devel3: https://github.com/indigo-dc/udocker/blob/devel3/SUMMARY.md
 
 ## Contributing
 
@@ -335,6 +338,7 @@ When citing udocker please use the following:
 * PRoot https://proot-me.github.io/
 * Fakechroot https://github.com/dex4er/fakechroot/wiki
 * runC https://runc.io/
+* crun https://github.com/containers/crun
 * Singularity https://www.sylabs.io/
 * Open Container Initiative https://www.opencontainers.org/
 * INDIGO DataCloud https://www.indigo-datacloud.eu
