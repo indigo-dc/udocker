@@ -593,6 +593,7 @@ class GuestInfo(object):
 
     def get_filetype(self, filename):
         """Get the file architecture"""
+        filetype = ""
         if not filename.startswith(self._root_dir):
             filename = self._root_dir + '/' + filename
         if os.path.islink(filename):
@@ -601,25 +602,26 @@ class GuestInfo(object):
                 f_path = os.path.dirname(filename) + '/' + f_path
             return self.get_filetype(f_path)
         if os.path.isfile(filename):
-            return Uprocess().get_output(["file", filename])
-        return ""
+            filetype = Uprocess().get_output(["file", filename])
+            if not filetype:
+               filetype = Uprocess().get_output(["readelf", "-h", filename])
+        return filetype
 
     def arch(self):
         """Get guest system architecture"""
-        for filename in GuestInfo._binarylist:
+        for filename in OSInfo._binarylist:
             f_path = self._root_dir + filename
             filetype = self.get_filetype(f_path)
             if not filetype:
                 continue
-            if "x86-64," in filetype:
+            if "x86-64" in filetype.lower():
                 return "amd64"
-            if "80386," in filetype:
+            if "Intel 80386" in filetype:
                 return "i386"
-            if "ARM," in filetype:
-                if "64-bit" in filetype:
-                    return "arm64"
-                else:
-                    return "arm"
+            if "aarch64" in filetype.lower():
+                return "arm64"
+            if "ARM" in filetype:
+                return "arm"
         return ""
 
     def osdistribution(self):
