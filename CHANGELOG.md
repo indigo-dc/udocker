@@ -1,3 +1,11 @@
+# udocker (1.2.8b2)
+
+  * Fix Rn modes to enable containers execution from readonly dirs
+  * Documentation centralized installation and readonly setups
+  * Fix handling of dockerhub repository names in /v2
+  * Improve documentation and algn with 1.1.8b2
+  * Add credits
+
 # udocker (1.2.7)
 
   * Porting to Python 3
