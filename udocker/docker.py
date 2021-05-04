@@ -345,8 +345,8 @@ class DockerIoAPI(object):
 
     def get_v2_image_tags(self, imagerepo, tags_only=False):
         """Get list of tags in a repo from Docker Hub"""
-        if '/' not in imagerepo:
-            imagerepo = "library/" + imagerepo
+        #if '/' not in imagerepo:
+        #    imagerepo = "library/" + imagerepo
         url = self.registry_url + "/v2/" + imagerepo + "/tags/list"
         Msg().out("Info: tags url", url, l=Msg.DBG)
         (dummy, buf) = self._get_url(url)
@@ -365,12 +365,14 @@ class DockerIoAPI(object):
         """Get the image manifest which contains JSON metadata
         that is common to all layers in this image tag
         """
-        if '/' not in imagerepo:
-            url = self.registry_url + "/v2/library/" + \
-                imagerepo + "/manifests/" + tag
-        else:
-            url = self.registry_url + "/v2/" + imagerepo + \
-                "/manifests/" + tag
+        #if '/' not in imagerepo:
+        #    url = self.registry_url + "/v2/library/" + \
+        #        imagerepo + "/manifests/" + tag
+        #else:
+        #    url = self.registry_url + "/v2/" + imagerepo + \
+        #        "/manifests/" + tag
+        url = self.registry_url + "/v2/" + imagerepo +
+            "/manifests/" + tag
         Msg().out("Info: manifest url", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
@@ -380,12 +382,14 @@ class DockerIoAPI(object):
 
     def get_v2_image_layer(self, imagerepo, layer_id):
         """Get one image layer data file (tarball)"""
-        if '/' not in imagerepo:
-            url = self.registry_url + "/v2/library/" + \
-                imagerepo + "/blobs/" + layer_id
-        else:
-            url = self.registry_url + "/v2/" + imagerepo + \
-                "/blobs/" + layer_id
+        #if '/' not in imagerepo:
+        #    url = self.registry_url + "/v2/library/" + \
+        #        imagerepo + "/blobs/" + layer_id
+        #else:
+        #    url = self.registry_url + "/v2/" + imagerepo + \
+        #        "/blobs/" + layer_id
+        url = self.registry_url + "/v2/" + imagerepo + \
+            "/blobs/" + layer_id
         Msg().out("Info: layer url", url, l=Msg.DBG)
         filename = self.localrepo.layersdir + '/' + layer_id
         if self._get_file(url, filename, 3):
@@ -512,17 +516,11 @@ class DockerIoAPI(object):
         components = imagerepo.split('/')
         if '.' in components[0] and len(components) >= 2:
             registry = components[0]
-            if components[1] == "library":
-                remoterepo = '/'.join(components[2:])
-                del components[1]
-                imagerepo = '/'.join(components)
-            else:
-                remoterepo = '/'.join(components[1:])
-        else:
-            if components[0] == "library" and len(components) >= 1:
-                del components[0]
-                remoterepo = '/'.join(components)
-                imagerepo = '/'.join(components)
+            del components[0]
+        elif ('.' not in components[0] and
+              components[0] != "library" and len(components) == 1):
+            components.insert(0, "library")
+        remoterepo = '/'.join(components)
         if registry:
             try:
                 registry_url = Config.conf['docker_registries'][registry][0]
