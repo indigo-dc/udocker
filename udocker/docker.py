@@ -311,8 +311,6 @@ class DockerIoAPI(object):
         try:
             self.v2_auth_token = \
                 base64.b64encode(("%s:%s" % (username, password)).encode("utf-8")).decode("ascii")
-            #self.v2_auth_token = \
-            #    base64.b64encode("%s:%s" % (username, password))
         except (KeyError, AttributeError, TypeError, ValueError, NameError):
             self.v2_auth_token = ""
         return self.v2_auth_token
