@@ -620,7 +620,7 @@ class GuestInfo(object):
                 return "i386"
             if "aarch64" in filetype.lower():
                 return "arm64"
-            if "ARM" in filetype:
+            if " ARM" in filetype:
                 return "arm"
         return ""
 
