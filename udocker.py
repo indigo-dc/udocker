@@ -319,6 +319,7 @@ class Config(object):
                 "none": None, }[fakechroot_expand_symlinks]
         except (KeyError, ValueError):
             Msg().err("Error: in UDOCKER_FAKECHROOT_EXPAND_SYMLINKS")
+        os.environ["PROOT_TMP_DIR"] = os.getenv("PROOT_TMP_DIR", Config.tmpdir) 
 
     def _read_config(self, config_file, ignore_keys=None):
         """Interpret config file content"""
