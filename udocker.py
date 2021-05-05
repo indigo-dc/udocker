@@ -138,7 +138,7 @@ class Config(object):
     keystore = "keystore"
 
     # for tmp files only
-    tmpdir = "/tmp"
+    tmpdir = os.getenv("TMPDIR", "/tmp")
 
     # default command to be executed within the containers
     cmd = ["/bin/bash", "-i"]
@@ -2667,6 +2667,7 @@ class ExecutionEngineCommon(object):
                 if (host_path in Config.dri_list or
                         host_path in Config.sysdirs_list):
                     self.opt["vol"].remove(vol)
+                    continue
                 else:
                     Msg().err("Error: invalid host volume path:", host_path)
                     return False
