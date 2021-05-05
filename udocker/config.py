@@ -37,7 +37,7 @@ class Config(object):
     conf['autoinstall'] = True
     conf['config'] = "udocker.conf"
     conf['keystore'] = "keystore"
-    conf['tmpdir'] = "/tmp"    # for tmp files only
+    conf['tmpdir'] = os.getenv("TMPDIR", "/tmp")    # for tmp files only
 
     # defaults for container execution
     conf['cmd'] = ["/bin/bash", "-i"]  # Comand to execute
@@ -254,12 +254,14 @@ class Config(object):
         Config.conf['fakechroot_expand_symlinks'] = \
             os.getenv("UDOCKER_FAKECHROOT_EXPAND_SYMLINKS",
                       str(Config.conf['fakechroot_expand_symlinks'])).lower()
+        os.environ["PROOT_TMP_DIR"] = os.getenv("PROOT_TMP_DIR", Config.conf['tmpdir'])
         # try:
         #     Config.fakechroot_expand_symlinks = {
         #         "false": False, "true": True,
         #         "none": None, }[fakechroot_expand_symlinks]
         # except (KeyError, ValueError):
         #     Msg().err("Error: in UDOCKER_FAKECHROOT_EXPAND_SYMLINKS")
+
 
     def getconf(self, user_cfile="u.conf"):
         """Return all configuration variables"""
