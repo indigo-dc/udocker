@@ -156,6 +156,7 @@ class ExecutionEngineCommon(object):
                 if (host_path in Config.conf['dri_list'] or
                         host_path in Config.conf['sysdirs_list']):
                     self.opt["vol"].remove(vol)
+                    continue
                 else:
                     Msg().err("Error: invalid host volume path:", host_path)
                     return False
