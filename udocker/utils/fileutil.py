@@ -379,7 +379,6 @@ class FileUtil(object):
     def _find_exec(self, path, rootdir="", volumes="", workdir="",
                    cont2host=False):
         """Find file in a path set such as PATH=/usr/bin:/bin"""
-        # DEBUG
         for directory in path:
             if not directory:
                 continue
