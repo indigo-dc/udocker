@@ -358,7 +358,7 @@ class LocalRepository(object):
                 layer_file = tag_dir + '/' + linkname
                 if not FileUtil(f_path).remove() and not force:
                     return False
-                if not self._inrepository(linkname):
+                if not self._inrepository(os.path.basename(linkname)):
                     # removing actual layers not reference by other repos
                     if not FileUtil(layer_file).remove() and not force:
                         return False
