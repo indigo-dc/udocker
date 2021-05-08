@@ -1372,6 +1372,9 @@ class FileUtil(object):
 
     def find_exec(self):
         """Find an executable pathname by using which or type -p"""
+        cmd = self.find_inpath(os.getenv("PATH", ""))
+        if cmd:
+            return cmd
         cmd = self._find_exec(["which", self.basename, ])
         if cmd:
             return cmd
