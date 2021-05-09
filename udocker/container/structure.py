@@ -247,8 +247,9 @@ class ContainerStructure(object):
             if Msg.level >= Msg.VER:
                 verbose = 'v'
                 Msg().out("Info: extracting:", tarf, l=Msg.INF)
-            cmd = ["tar", "-C", destdir, "-x" + verbose, "--one-file-system",
-                   "--exclude=dev/*", "--no-same-owner", "--overwrite",
+            cmd = ["tar", "-C", destdir, "-x" + verbose,
+                   "--one-file-system", "--no-same-owner", "--overwrite",
+                   "--exclude=dev/*", "--exclude=etc/udev/devices/*",
                    "--no-same-permissions", ] + wildcards + ["-f", tarf]
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
                 Msg().err("Error: while extracting image layer")
