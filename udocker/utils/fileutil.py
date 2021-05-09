@@ -117,6 +117,8 @@ class FileUtil(object):
         for safe_prefix in FileUtil.safe_prefixes:
             if filename.startswith(safe_prefix):
                 return True
+            if filename.startswith(os.path.realpath(safe_prefix)):
+                return True
         return False
 
     def chown(self, uid=0, gid=0, recursive=False):
