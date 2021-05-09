@@ -1133,6 +1133,8 @@ class FileUtil(object):
         for safe_prefix in FileUtil.safe_prefixes:
             if filename.startswith(safe_prefix):
                 return True
+            if filename.startswith(os.path.realpath(safe_prefix)):
+                return True
         return False
 
     def chown(self, uid=0, gid=0, recursive=False):
@@ -4709,7 +4711,8 @@ class ContainerStructure(object):
                 verbose = 'v'
                 Msg().out("Info: extracting:", tarf, l=Msg.INF)
             cmd = ["tar", "-C", destdir, "-x" + verbose, "--one-file-system",
-                   "--exclude=dev/*", "--no-same-owner", "--no-same-permissions",
+                   "--no-same-owner", "--no-same-permissions",
+                   "--exclude=dev/*", "--exclude=etc/udev/devices/*",
                    "--overwrite", ] + wildcards + ["-f", tarf]
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
                 Msg().err("Error: while extracting image layer")
