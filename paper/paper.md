@@ -27,12 +27,6 @@ authors:
   - name: Pablo Orviz
     orcid: 0000-0002-2473-6405
     affiliation: 3
-#  - name: Alvaro López-García 
-#    orcid: 0000-0002-0013-4602
-#    affiliation: 3
-#  - name: Emanuele Bagnaschi
-#    orcid: 0000-0002-6827-5022
-#    affiliation: 4
     
 affiliations:
  - name: LIP, Laboratório de Instrumentação e Física Experimental de Partículas, Lisboa, Portugal
@@ -41,8 +35,6 @@ affiliations:
    index: 2
  - name: IFCA, Consejo Superior de Investigaciones Científicas-CSIC, Santander, Spain
    index: 3
-# - name: PSI, Paul Scherrer Institut, Villigen, Switzerland
-#   index: 4 
 date: 12 May 2021
 bibliography: paper.bib
 
