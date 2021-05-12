@@ -27,9 +27,9 @@ authors:
   - name: Pablo Orviz
     orcid: 0000-0002-2473-6405
     affiliation: 3
-  - name: Alvaro López-García 
-    orcid: 0000-0002-0013-4602
-    affiliation: 3
+#  - name: Alvaro López-García 
+#    orcid: 0000-0002-0013-4602
+#    affiliation: 3
 #  - name: Emanuele Bagnaschi
 #    orcid: 0000-0002-6827-5022
 #    affiliation: 4
