@@ -371,8 +371,8 @@ ISSN 0010-4655, https://doi.org/10.1016/j.cpc.2018.05.021
 * Open Container Initiative https://www.opencontainers.org/
 * INDIGO DataCloud https://www.indigo-datacloud.eu
 * DEEP-Hybrid-DataCloud https://deep-hybrid-datacloud.eu
-* LIP https://www.lip.pt
-* INCD https://www.incd.pt
+* LIP [https://www.lip.pt](https://www.lip.pt/?section=home&page=homepage&lang=en)
+* INCD [https://www.incd.pt](https://www.incd.pt/?lang=en)
 * EOSC-hub https://eosc-hub.eu
 
 
