@@ -38,7 +38,7 @@ using tools and libraries such as:
 
 * PRoot
 * Fakechroot
-* runC
+* runc / crun
 * Singularity
 
 ## Advantages
