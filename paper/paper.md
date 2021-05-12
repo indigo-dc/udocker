@@ -104,15 +104,15 @@ following engines are currently provided:
 * **F** engine: uses the Linux shared library PRELOAD mechanism to intercept
   shared library calls and translate pathnames providing an unprivileged chroot 
   like functionality. It is implemented by an extensively enhanced [@FAKECHROOT] 
-  shared library with versions for GLIBC [@fakechroot-glibc-udocker] and MUSL 
-  [@fakechroot-musl-udocker]. 
+  shared library with versions for GLIBC [@FAKECHROOT-GLIBC-UDOCKER] and MUSL 
+  [@FAKECHROOT-MUSL-UDOCKER]. 
   This approach requires the modification of the ELF headers of shared libraries 
   and executables which are performed by udocker using using a modified [@PATCHELF] 
-  available at [@patchelf-udocker]. This is the execution engine that provides the 
+  available at [@PATCHELF-UDOCKER]. This is the execution engine that provides the 
   highest performance. 
 * **P** engine: uses the Linux PTRACE mechanism to implement a chroot like 
   environment by intercepting system calls and translating pathnames. It is 
-  implemented by a modified [@PRoot] available at [@proot-udocker]. This engine 
+  implemented by a modified [@PROOT] available at [@PROOT-UDOCKER]. This engine 
   provides the highest interoperability across Linux distributions both older 
   and newer, and constitutes the default execution engine for udocker. 
 * **R** engine: uses either RUNC [@RUNC] or CRUN [@CRUN] to execute the extracted 
