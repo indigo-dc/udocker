@@ -1,3 +1,5 @@
+# udocker paper for JOSS May 2021
+
 ---
 title: 'udocker: a user oriented tool for unprivileged Linux containers'
 tags:
@@ -111,12 +113,12 @@ engines are currently provided:
   older and newer, and constitutes the default execution engine for udocker. 
 * **R** engine: uses either `runc` [@RUNC] or `crun` [@CRUN] to execute the 
   containers without privileges using Linux user namespaces. Both tools are 
-  provided with udocker for wider interoperability and are automatically selected.
+  provided with udocker for wider interoperability.
 * **S** engine: uses Singularity [@KURTZER2017] to execute the containers using 
   user namespaces or other Singularity execution method when available. 
   
 All required executables are statically compiled for execution across a
-wide range of systems. The libraries for the **F** modes are also provided
+wide range of systems. The shared libraries for the **F** modes are also provided
 for major Linux distributions. Support for the ARM architecture is provided 
 for the **P** mode and is ongoing for the other modes. The binaries for the 
 **S** engine are not provided with udocker, as this mode is provided to take 
@@ -126,17 +128,18 @@ Once the udocker Python code is transferred to the target host it can be
 used by an unprivileged user to download the additional executables and 
 binaries into the user home directory. The user can then use udocker to 
 pull images, create container directories from the images and execute them. 
-Each extracted container can be easily setup for execution with any of the 
+Each extracted container can be easily setup for execution using any of the 
 execution engines. udocker provides a command line interface with a syntax 
 similar to docker.
 
 # Research with udocker
-udocker was developed in the context of the INDIGO-DataCloud [@INDIGO2018] project 
-(2015-2017) to support the execution of scientific applications in Linux batch 
-and interactive systems where container run times can be unavailable, and as a 
-common tool to easily execute containers across the ecosystem of computing 
-resources available to the researchers. Examples of usage can be found in
-several domains including:
+udocker was initially developed in the context of the INDIGO-DataCloud
+ [@INDIGO2018] project between 2015 and 2017 to support the execution of 
+scientific applications in Linux batch and interactive systems where 
+container run times can be unavailable, and as a common tool to easily 
+execute containers across the ecosystem of computing resources available 
+to the researchers. Examples of usage can be found in several domains 
+including:
 physics [@BAGNASCHI2018] [@BAGNASCHI2019] [@BEZYAZEEKOV2019] [@BEZYAZEEKOV2021],
 life sciences [@KORHONEN2019] [@ZIEMANN2019] [@MERELLI2019] [@KERN2020] [@CHILLARON2017] [@KORHONEN2019], 
 coastal modeling [@OLIVEIRA2019] [@OLIVEIRA2020], 
@@ -145,14 +148,14 @@ structural biology [@TRAYNOR2020],
 fusion [@LAHIFF2020],
 earth sciences [@KERZENMACHER2021] [@AGUILAR2017],
 machine learning [@GRUPP2019] [@DEEP2020] [@CAVALLARO2019],
-and computer science in general [@CABALLER2021] [@RISCO2021] [@SUFI2020] [@DENIS2019] [@ALDINUCCI2017] [@OWSIAK2017].
+and computer science in general [@CABALLER2021] [@RISCO2021] [@SUFI2020] [@ALDINUCCI2017] [@OWSIAK2017].
 
 
 udocker was used in the European projects EOSC-hub [@EOSCHUB] where it 
 was further improved and DEEP-hybrid-datacloud [@DEEP2020] where it was ported 
 to Python 3, enhanced to support nvidia GPUs and used to execute deep 
 learning frameworks. Since 2021 is used in the EOSC-Synergy [@KERZENMACHER2021], 
-EGI-ACE [@EGIACE] and BIG-HPC [@PAULO2020] projects. Although is a tool meant for
+EGI-ACE [@EGIACE] and BIG-HPC [@PAULO2020] projects. Althrough is a tool meant for
 end-users, it is also supported by several scientific and academic computer 
 centers and research infrastructures worldwide such as:
 
