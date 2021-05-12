@@ -29,6 +29,9 @@ authors:
   - name: Pablo Orviz
     orcid: 0000-0002-2473-6405
     affiliation: 3
+  - name: Alvaro López-García
+    orcid: 0000-0002-0013-4602
+    affiliation: 3
     
 affiliations:
  - name: LIP, Laboratório de Instrumentação e Física Experimental de Partículas, Lisboa, Portugal
