@@ -30,9 +30,9 @@ authors:
   - name: Alvaro López-García 
     orcid: 0000-0002-0013-4602
     affiliation: 3
-  - name: Emanuele Bagnaschi
-    orcid: 0000-0002-6827-5022
-    affiliation: 4
+#  - name: Emanuele Bagnaschi
+#    orcid: 0000-0002-6827-5022
+#    affiliation: 4
     
 affiliations:
  - name: LIP, Laboratório de Instrumentação e Física Experimental de Partículas, Lisboa, Portugal
@@ -41,9 +41,9 @@ affiliations:
    index: 2
  - name: IFCA, Consejo Superior de Investigaciones Científicas-CSIC, Santander, Spain
    index: 3
- - name: PSI, Paul Scherrer Institut, Villigen, Switzerland
-   index: 4 
-date: 10 may 2021
+# - name: PSI, Paul Scherrer Institut, Villigen, Switzerland
+#   index: 4 
+date: 12 May 2021
 bibliography: paper.bib
 
 ## Optional fields if submitting to a AAS journal too, see this blog post:
@@ -73,7 +73,7 @@ effort due to system changes and software updates. Furthermore ensuring the
 reproducibility across heterogeneous computing resources can be challenging when 
 the software needs to be adapted to the specificities of each resource. In this 
 context Linux containers have gained interest as means to enable encapsulation of 
-research software for easier execution in these environments.
+research software for easier execution across these environments.
 
 udocker is designed to address the requirement of executing scientific 
 applications easily across a wide range of computing systems and digital 
@@ -85,8 +85,8 @@ required to execute containers by providing an integrated solution to execute
 Linux containers leveraging different approaches suitable for unprivileged
 users. Finally by executing containers without privileges udocker decreases the 
 risks of privilege escalation. The udocker development started in 2016 and 
-the original papers were published in 2017 [@GOMES2017] and 2018 [@GOMES2018] 
-documenting version 1.1.1. Since then several new features have been added.
+the original papers documenting versions 1.1.0 and 1.1.1 were published in 2017 
+[@GOMES2017] and 2018 [@GOMES2018]. Since then several new features released.
 
 # Concept
 udocker provides a self contained solution with minimal dependencies to enable
@@ -98,28 +98,28 @@ a local repository in the user home directory. The layers composing a container
 image can then be sequentialy extracted to create a flatened directory tree.
 Furthermore udocker also provides the logic to interface with the several 
 execution engines that enable the execution of code extracted from the container 
-images.
-The execution engines are largely based on upstream software that in most cases
-has been further developed, integrated and packaged to be used with udocker. The 
-following engines are currently provided:
+images, thus hiding as much as possible the execution engines specificities.
+The execution engines are based on existing software that in most cases has been
+further developed, integrated and packaged to be used with udocker. The following
+engines are currently provided:
 
 * **F** engine: uses the Linux shared library PRELOAD mechanism to intercept
-  shared library calls and translate pathnames providing an unprivileged chroot 
-  like functionality. It is implemented by an extensively enhanced [@FAKECHROOT] 
-  shared library with versions for GLIBC [@FAKECHROOT-GLIBC-UDOCKER] and MUSL 
-  [@FAKECHROOT-MUSL-UDOCKER]. 
+  shared library calls and translate pathnames to provide an unprivileged chroot 
+  like functionality. It is implemented by an extensively enhanced Fakechroot 
+  [@FAKECHROOT] shared library with versions for the `glibc` [@FAKECHROOT-GLIBC-UDOCKER] 
+  and `musl` [@FAKECHROOT-MUSL-UDOCKER] C standard libraries. 
   This approach requires the modification of pathnames in the ELF headers of 
   shared libraries and executables. These changes are performed by udocker using 
-  using a modified [@PATCHELF] available at [@PATCHELF-UDOCKER]. This is the 
-  execution engine that provides the highest performance. 
+  a modified `Patchelf` [@PATCHELF] available at [@PATCHELF-UDOCKER]. This is the 
+  execution engine that generally provides the highest performance. 
 * **P** engine: uses the Linux PTRACE mechanism to implement a chroot like 
   environment by intercepting system calls and translating pathnames. It is 
-  implemented by a modified [@PROOT] available at [@PROOT-UDOCKER]. This engine 
-  provides the highest interoperability across Linux distributions both older 
-  and newer, and constitutes the default execution engine for udocker. 
-* **R** engine: uses either RUNC [@RUNC] or CRUN [@CRUN] to execute the extracted 
-  directories without privileges, using Linux user namespaces. Both tools are 
-  provided with udocker and are automatically selected.
+  implemented by a modified PRoot [@PROOT] available at [@PROOT-UDOCKER]. This 
+  engine provides the highest interoperability across Linux distributions both 
+  older and newer, and constitutes the default execution engine for udocker. 
+* **R** engine: uses either `runc` [@RUNC] or `crun` [@CRUN] to execute the 
+  containers without privileges using Linux user namespaces. Both tools are 
+  provided with udocker for wider interoperability and are automatically selected.
 * **S** engine: uses Singularity [@KURTZER2017] to execute the containers using 
   user namespaces or other Singularity execution method when available. 
   
@@ -141,7 +141,7 @@ similar to docker.
 # Research with udocker
 udocker was developed in the context of the INDIGO-DataCloud [@INDIGO2018] project 
 (2015-2017) to support the execution of scientific applications in Linux batch 
-and interactive systems where container run times are unavailable, and as a 
+and interactive systems where container run times can be unavailable, and as a 
 common tool to easily execute containers across the ecosystem of computing 
 resources available to the researchers. Examples of usage can be found in
 several domains including:
