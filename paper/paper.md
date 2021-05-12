@@ -160,25 +160,25 @@ learning applications. Since 2021 is used in the EOSC-Synergy [@KERZENMACHER2021
 EGI-ACE [@EGIACE] and BIG-HPC [@PAULO2020] projects. Although is a tool meant for
 end-users, it is also supported by several scientific and academic computer 
 centers and research infrastructures worldwide such as:
-* EGI advanced computing infrastructure in Europe [@EGI]
-* IBERGRID Iberian distributed computing infrastructure [@IBERGRID]
-* INCD Portuguese Distributed Computing Infrastructure [@INCD]
-* CESGA Supercomputing Center of Galicia [@CESGA]
-* HPC center of the Telaviv University  [@TELAVIV]
-* Trinity College HPC center in Dublin [@TCD]
-* University of Utah HPC center [@UTAH] 
-* University of Coruña Pluton Cluster [@CORUNA]
+ * EGI advanced computing infrastructure in Europe [@EGI]
+ * IBERGRID Iberian distributed computing infrastructure [@IBERGRID]
+ * INCD Portuguese Distributed Computing Infrastructure [@INCD]
+ * CESGA Supercomputing Center of Galicia [@CESGA]
+ * HPC center of the Telaviv University  [@TELAVIV]
+ * Trinity College HPC center in Dublin [@TCD]
+ * University of Utah HPC center [@UTAH] 
+ * University of Coruña Pluton Cluster [@CORUNA]
 
 udocker was been integrated in several research oriented framemworks such as: 
-* SCAR - Serverless Container-aware ARchitectures [@PEREZ2018] to enable execution of containers in Amazon Lambda exploiting function as a service (FaaS);
-* common-workflow-language [@CWL2016], [@KORHONEN2019] to enable containers in scientific workflows;
-* bioconda [@GRUNING2018] for the conda package manager specialized in bioinformatics software;
-* openmole  workflow engine [@REUILLON2013] for exploration of simulation models using high throughput computing.
+ * SCAR - Serverless Container-aware ARchitectures [@PEREZ2018] to enable execution of containers in Amazon Lambda exploiting function as a service (FaaS);
+ * common-workflow-language [@CWL2016], [@KORHONEN2019] to enable containers in scientific workflows;
+ * bioconda [@GRUNING2018] for the conda package manager specialized in bioinformatics software;
+ * openmole  workflow engine [@REUILLON2013] for exploration of simulation models using high throughput computing.
 
 
 # Acknowledgements
 
-udocker has been developed in the framework of the H2020 projects INDIGO-Datacloud (RIA 653549), EOSC-hub (RIA 777536) and DEEP-Hybrid-DataCloud (RIA 777435). The proofs of concept have been performed at INCD-Infraestrutura Nacional de Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER under the project number 22153-01/SAICT/2016) in Portugal, at the FinisTerrae II machine provided by CESGA (funded by Xunta de Galicia and MINECO) and at the Altamira machine (funded by the University of Cantabria and MINECO) in Spain.
+udocker has been developed in the framework of the H2020 projects INDIGO-Datacloud (RIA 653549), EOSC-hub (RIA 777536) and DEEP-Hybrid-DataCloud (RIA 777435). The proofs of concept have been performed at INCD-Infraestrutura Nacional de Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER under the project number 22153-01/SAICT/2016), FinisTerrae II machine provided by CESGA (funded by Xunta de Galicia and MINECO) and Altamira machine (funded by the University of Cantabria and MINECO).
 
 # References
 
