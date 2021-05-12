@@ -319,7 +319,7 @@ class Config(object):
                 "none": None, }[fakechroot_expand_symlinks]
         except (KeyError, ValueError):
             Msg().err("Error: in UDOCKER_FAKECHROOT_EXPAND_SYMLINKS")
-        os.environ["PROOT_TMP_DIR"] = os.getenv("PROOT_TMP_DIR", Config.tmpdir) 
+        os.environ["PROOT_TMP_DIR"] = os.getenv("PROOT_TMP_DIR", Config.tmpdir)
 
     def _read_config(self, config_file, ignore_keys=None):
         """Interpret config file content"""
@@ -517,7 +517,7 @@ class HostInfo(object):
             return True
         for (idx, os_version) in enumerate(os_release.split('.')):
             if idx >= len(ref_version):
-                break;
+                break
             if int(os_version) > int(ref_version[idx]):
                 return True
             elif int(os_version) < int(ref_version[idx]):
@@ -610,7 +610,7 @@ class GuestInfo(object):
         if os.path.isfile(filename):
             filetype = Uprocess().get_output(["file", filename])
             if not filetype:
-               filetype = Uprocess().get_output(["readelf", "-h", filename])
+                filetype = Uprocess().get_output(["readelf", "-h", filename])
         return filetype
 
     def arch(self):
@@ -2674,9 +2674,8 @@ class ExecutionEngineCommon(object):
                         host_path in Config.sysdirs_list):
                     self.opt["vol"].remove(vol)
                     continue
-                else:
-                    Msg().err("Error: invalid host volume path:", host_path)
-                    return False
+                Msg().err("Error: invalid host volume path:", host_path)
+                return False
             if not self._create_mountpoint(host_path, cont_path):
                 Msg().err("Error: creating mountpoint:", host_path, cont_path)
                 return False
