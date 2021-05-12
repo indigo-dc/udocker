@@ -85,8 +85,8 @@ required to execute containers by providing an integrated solution to execute
 Linux containers leveraging different approaches suitable for unprivileged
 users. Finally by executing containers without privileges udocker decreases the 
 risks of privilege escalation. The udocker development started in 2016 and 
-the original papers documenting versions 1.1.0 and 1.1.1 were published in 2017 
-[@GOMES2017] and 2018 [@GOMES2018]. Since then several new features released.
+the original papers documented versions 1.1.0 [@GOMES2017] and 1.1.1 [@GOMES2018].
+Since then several new features have been released.
 
 # Concept
 udocker provides a self contained solution with minimal dependencies to enable
@@ -106,15 +106,15 @@ engines are currently provided:
 * **F** engine: uses the Linux shared library PRELOAD mechanism to intercept
   shared library calls and translate pathnames to provide an unprivileged chroot 
   like functionality. It is implemented by an extensively enhanced Fakechroot 
-  [@FAKECHROOT] shared library with versions for the `glibc` [@FAKECHROOT-GLIBC-UDOCKER] 
+  shared library with versions for the `glibc` [@FAKECHROOT-GLIBC-UDOCKER] 
   and `musl` [@FAKECHROOT-MUSL-UDOCKER] C standard libraries. 
   This approach requires the modification of pathnames in the ELF headers of 
   shared libraries and executables. These changes are performed by udocker using 
-  a modified `Patchelf` [@PATCHELF] available at [@PATCHELF-UDOCKER]. This is the 
+  a modified `Patchelf` [@PATCHELF-UDOCKER]. This is the 
   execution engine that generally provides the highest performance. 
 * **P** engine: uses the Linux PTRACE mechanism to implement a chroot like 
   environment by intercepting system calls and translating pathnames. It is 
-  implemented by a modified PRoot [@PROOT] available at [@PROOT-UDOCKER]. This 
+  implemented by a modified PRoot [@PROOT-UDOCKER]. This 
   engine provides the highest interoperability across Linux distributions both 
   older and newer, and constitutes the default execution engine for udocker. 
 * **R** engine: uses either `runc` [@RUNC] or `crun` [@CRUN] to execute the 
