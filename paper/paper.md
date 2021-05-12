@@ -60,7 +60,7 @@ environments. Distinctively from other tools, udocker is meant for easy deployme
 and provides multiple execution engines to cope with different host environments. 
 udocker can execute containers with or without using Linux namespaces. udocker is 
 being used by a wide range of projects and research communities to facilitate the 
-execution of Linux containers in heterogeneous computing environments.
+execution of Linux containers across heterogeneous computing environments.
 
 # Statement of need
 
@@ -70,33 +70,35 @@ execution of scientific codes across such resources often requires significant
 effort to adapt to the underlying system configurations. This can be particularly
 difficult for codes with complex software dependencies and can become a continous 
 effort due to system changes and software updates. Furthermore ensuring the 
-reproducibility across heterogeneous resources can be challenging when the software 
-needs to be adapted to the specificities of each resource. In this context Linux 
-containers have gained interest as means to enable encapsulation of research 
-software for easier execution across such environments.
+reproducibility across heterogeneous computing resources can be challenging when 
+the software needs to be adapted to the specificities of each resource. In this 
+context Linux containers have gained interest as means to enable encapsulation of 
+research software for easier execution in these environments.
 
-udocker is designed to address the requirement of executing 
-scientific applications easily across a wide range of computing systems and digital 
-infrastructures where the user may not have administration privileges, and where
-run times or functionalities to support Linux containers may not be available. 
+udocker is designed to address the requirement of executing scientific 
+applications easily across a wide range of computing systems and digital 
+infrastructures where the user may not have administration privileges, and
+where run times and functionalities to support Linux containers may not be
+available. 
 In addition, udocker also simplifies the researcher interaction with the tools 
 required to execute containers by providing an integrated solution to execute 
 Linux containers leveraging different approaches suitable for unprivileged
 users. Finally by executing containers without privileges udocker decreases the 
-risks of privilege escalation. The udocker development started in 2015 and 
+risks of privilege escalation. The udocker development started in 2016 and 
 the original papers were published in 2017 [@GOMES2017] and 2018 [@GOMES2018] 
 documenting version 1.1.1. Since then several new features have been added.
 
 # Concept
 udocker provides a self contained solution with minimal dependencies to enable
-execution across systems without need of compilation. The udocker itself was 
+execution across systems without need of compilation. udocker itself was 
 initialy implemented in Python 2 and later ported to Python 3.
 
 udocker implements pulling, importing and loading of docker or OCI containers to 
 a local repository in the user home directory. The layers composing a container 
 image can then be sequentialy extracted to create a flatened directory tree.
-The integration layer also provides the logic to interface with the several 
-execution engines that enable the execution of code from the extracted images.
+Furthermore udocker also provides the logic to interface with the several 
+execution engines that enable the execution of code extracted from the container 
+images.
 The execution engines are largely based on upstream software that in most cases
 has been further developed, integrated and packaged to be used with udocker. The 
 following engines are currently provided:
@@ -106,10 +108,10 @@ following engines are currently provided:
   like functionality. It is implemented by an extensively enhanced [@FAKECHROOT] 
   shared library with versions for GLIBC [@FAKECHROOT-GLIBC-UDOCKER] and MUSL 
   [@FAKECHROOT-MUSL-UDOCKER]. 
-  This approach requires the modification of the ELF headers of shared libraries 
-  and executables which are performed by udocker using using a modified [@PATCHELF] 
-  available at [@PATCHELF-UDOCKER]. This is the execution engine that provides the 
-  highest performance. 
+  This approach requires the modification of pathnames in the ELF headers of 
+  shared libraries and executables. These changes are performed by udocker using 
+  using a modified [@PATCHELF] available at [@PATCHELF-UDOCKER]. This is the 
+  execution engine that provides the highest performance. 
 * **P** engine: uses the Linux PTRACE mechanism to implement a chroot like 
   environment by intercepting system calls and translating pathnames. It is 
   implemented by a modified [@PROOT] available at [@PROOT-UDOCKER]. This engine 
@@ -118,14 +120,14 @@ following engines are currently provided:
 * **R** engine: uses either RUNC [@RUNC] or CRUN [@CRUN] to execute the extracted 
   directories without privileges, using Linux user namespaces. Both tools are 
   provided with udocker and are automatically selected.
-* **S** engine: uses Singularity [@KURTZER2017] to execute the continers using 
-  user namespaces or other Singularity execution methods when available. 
+* **S** engine: uses Singularity [@KURTZER2017] to execute the containers using 
+  user namespaces or other Singularity execution method when available. 
   
 All required executables are statically compiled for execution across a
 wide range of systems. The libraries for the **F** modes are also provided
 for major Linux distributions. Support for the ARM architecture is provided 
 for the **P** mode and is ongoing for the other modes. The binaries for the 
-**S** engine are not provided with udocker, this mode is provided to take 
+**S** engine are not provided with udocker, as this mode is provided to take 
 advantage of local installations of Singularity where available.
 
 Once the udocker Python code is transferred to the target host it can be 
@@ -142,24 +144,26 @@ udocker was developed in the context of the INDIGO-DataCloud [@INDIGO2018] proje
 and interactive systems where container run times are unavailable, and as a 
 common tool to easily execute containers across the ecosystem of computing 
 resources available to the researchers. Examples of usage can be found in
-several domains including structural biology [@TRAYNOR2020], 
-life sciences [@KORHONEN2019] [@ZIEMANN2019] [@MERELLI2019] [@KERN2020] [@CHILLARON2017] [@KORHONEN2019], 
+several domains including:
 physics [@BAGNASCHI2018] [@BAGNASCHI2019] [@BEZYAZEEKOV2019] [@BEZYAZEEKOV2021],
+life sciences [@KORHONEN2019] [@ZIEMANN2019] [@MERELLI2019] [@KERN2020] [@CHILLARON2017] [@KORHONEN2019], 
 coastal modeling [@OLIVEIRA2019] [@OLIVEIRA2020], 
 chemistry [@NALINI2020] [@DBLP2020],
+structural biology [@TRAYNOR2020], 
 fusion [@LAHIFF2020],
 earth sciences [@KERZENMACHER2021] [@AGUILAR2017],
 machine learning [@GRUPP2019] [@DEEP2020] [@CAVALLARO2019],
 and computer science in general [@CABALLER2021] [@RISCO2021] [@SUFI2020] [@DENIS2019] [@ALDINUCCI2017] [@OWSIAK2017].
 
 
-It was used in the European projects EOSC-hub [@EOSCHUB] where it 
+udocker was used in the European projects EOSC-hub [@EOSCHUB] where it 
 was further improved and DEEP-hybrid-datacloud [@DEEP2020] where it was ported 
-to Python 3, enhanced to support nvidia GPUs and used to support deep 
-learning applications. Since 2021 is used in the EOSC-Synergy [@KERZENMACHER2021], 
+to Python 3, enhanced to support nvidia GPUs and used to execute deep 
+learning frameworks. Since 2021 is used in the EOSC-Synergy [@KERZENMACHER2021], 
 EGI-ACE [@EGIACE] and BIG-HPC [@PAULO2020] projects. Although is a tool meant for
 end-users, it is also supported by several scientific and academic computer 
 centers and research infrastructures worldwide such as:
+
  * EGI advanced computing infrastructure in Europe [@EGI]
  * IBERGRID Iberian distributed computing infrastructure [@IBERGRID]
  * INCD Portuguese Distributed Computing Infrastructure [@INCD]
@@ -170,6 +174,7 @@ centers and research infrastructures worldwide such as:
  * University of Coruña Pluton Cluster [@CORUNA]
 
 udocker was been integrated in several research oriented framemworks such as: 
+
  * SCAR - Serverless Container-aware ARchitectures [@PEREZ2018] to enable execution of containers in Amazon Lambda exploiting function as a service (FaaS);
  * common-workflow-language [@CWL2016], [@KORHONEN2019] to enable containers in scientific workflows;
  * bioconda [@GRUNING2018] for the conda package manager specialized in bioinformatics software;
