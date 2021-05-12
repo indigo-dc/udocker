@@ -165,7 +165,7 @@ centers and research infrastructures worldwide such as:
  * University of Utah HPC center [@UTAH] 
  * University of Coruña Pluton Cluster [@CORUNA]
 
-udocker was been integrated in several research oriented framemworks such as: 
+udocker was been integrated in several research oriented frameworks such as: 
 
  * SCAR - Serverless Container-aware ARchitectures [@PEREZ2018] to enable execution of containers in Amazon Lambda exploiting function as a service (FaaS);
  * common-workflow-language [@CWL2016], [@KORHONEN2019] to enable containers in scientific workflows;
