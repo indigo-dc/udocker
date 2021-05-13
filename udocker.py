@@ -2517,6 +2517,7 @@ class ExecutionEngineCommon(object):
         self.opt["portsmap"] = []                # Ports mapped in container
         self.opt["portsexp"] = []                # Ports exposed by container
         self.opt["devices"] = []                 # Devices passed to container
+        self.opt["nobanner"] = False             # Don't show banner
 
     def _has_option(self, search_option, arg=None):
         """Check if executable has a given cli option"""
@@ -3063,14 +3064,15 @@ class ExecutionEngineCommon(object):
 
     def _run_banner(self, cmd, char='*'):
         """Print a container startup banner"""
-        Msg().err("",
-                  '\n', char * 78,
-                  '\n', char, ' ' * 74, char,
-                  '\n', char,
-                  ("STARTING " + self.container_id).center(74, ' '), char,
-                  '\n', char, ' ' * 74, char,
-                  '\n', char * 78, '\n',
-                  "executing:", os.path.basename(cmd), l=Msg.INF)
+        if not self.opt["nobanner"]:
+            Msg().err("",
+                      '\n', char * 78,
+                      '\n', char, ' ' * 74, char,
+                      '\n', char,
+                      ("STARTING " + self.container_id).center(74, ' '), char,
+                      '\n', char, ' ' * 74, char,
+                      '\n', char * 78, '\n',
+                      "executing:", os.path.basename(cmd), l=Msg.INF)
 
     def _run_env_cleanup_dict(self):
         """Allow only to pass essential environment variables."""
@@ -7813,6 +7815,10 @@ class Udocker(object):
             "devices": {
                 "fl": ("--device=",), "act": 'E',
                 "p2": "CMD_OPT", "p3": True
+            },
+            "nobanner": {
+                "fl": ("--nobanner",), "act": 'R',
+                "p2": "CMD_OPT", "p3": False
             }
         }
         for option, cmdp_args in cmd_options.iteritems():
@@ -7853,6 +7859,7 @@ class Udocker(object):
         --bindhome                 :bind the home directory into the container
         --kernel=<kernel-id>       :use this Linux kernel identifier
         --location=<path-to-dir>   :use root tree outside the repository
+        --nobanner                 :don't print a startup banner
 
         Only available in Rn execution modes:
         --device=/dev/xxx          :pass device to container (R1 mode only)
