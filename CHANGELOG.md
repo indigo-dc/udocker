@@ -5,6 +5,19 @@
   * Fix handling of dockerhub repository names in /v2
   * Improve documentation and algn with 1.1.8b2
   * Add credits
+  * Fix delete of paths with symlinks
+    - closes: #267, #265
+  * Fix issues with login credentials
+    - closes: #310
+  * Fix pull images from docker hub in Termux
+    - closes: #307 
+  * Fix issues on running udocker in googlecolab
+    - closes: #286
+  * Fix execution with Pn modes in alternate /tmp
+    - closes: #284
+  * Add conditional delay-directory-restore to untar layers
+  * Add exclude of whiteouts on layer untar
+  * Add --nobanner to udocker run
 
 # udocker (1.2.7)
 
