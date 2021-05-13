@@ -21,14 +21,14 @@ Other host libraries and tools required:
 
 ## 2. USER INSTALLATION
 
-### 2.1. INSTALL LATEST VERSIONS DIRECTLY FROM GITHUB
+### 2.1. PYTHON2: INSTALL DIRECTLY FROM GITHUB
 
 Just download and execute the udocker python script and the remainder of the
 installation including downloading and installing the udockertools will 
 be performed automatically.
 
-Once you download the udocker executable from github you can move it around 
-between systems. Once you start it in a new system it will install the
+Once the udocker executable is downloaded from github it can be moved around 
+between systems. Once executed in a new system it will install the
 required udockertools. The installation requires outbound network connectivity.
 
 From the master branch for *production*:
@@ -47,7 +47,7 @@ From the *development* branch for the latest additions and fixes:
   ./udocker install
 ```
 
-To get a specific released version of udocker such as v1.1.4:
+To get a specific released version of udocker such as the old v1.1.4:
 
 ```
   curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.4/udocker.py > udocker
@@ -55,47 +55,63 @@ To get a specific released version of udocker such as v1.1.4:
   ./udocker install
 ```
 
-### 2.2. INSTALL FROM UDOCKERTOOLS TARBALL
+### 2.2. PYTHON3: INSTALL PRE-RELEASE
+
+This pre-release is based on udocker 1.1.7, with additional bug fixes and compatibility to run in python3. Follow this steps to install and run udocker:
+
+```
+    wget https://github.com/indigo-dc/udocker/releases/download/devel3_1.2.7/udocker-1.2.7.tar.gz
+    tar zxvf udocker-1.2.7.tar.gz
+    export PATH=`pwd`/udocker:$PATH
+```
+
+Complete the installation with:
+
+```
+    udocker install
+```
+
+### 2.3. INSTALL FROM UDOCKERTOOLS TARBALL
 
 This installation method uses the udockertools tarball that contains statically compiled 
 binaries and is built to be used across different hosts and OS distributions. Please 
 check the repositories for the latest release.
 
-Example of installing or upgrading udocker to version v1.1.4:
+Example of installing or upgrading udocker to version v1.1.7:
 
 ```
-  curl https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.4.tar.gz > udocker-1.1.4.tar.gz
-  export UDOCKER_TARBALL=$(pwd)/udocker-1.1.4.tar.gz
+  curl https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.7.tar.gz > udocker-1.1.7.tar.gz
+  export UDOCKER_TARBALL=$(pwd)/udocker-1.1.7.tar.gz
   tar xzvf $UDOCKER_TARBALL udocker
   chmod u+rx udocker
   ./udocker install
-  mv ./udocker $HOME/bin/   # move the executable to your preferred location for binaries
+  mv ./udocker $HOME/bin/   # move the executable to the preferred location for binaries
 ```
 
-### 2.3. OBTAINING UDOCKERTOOLS TARBALL FROM OTHER LOCATIONS
+### 2.4. OBTAINING UDOCKERTOOLS TARBALL FROM OTHER LOCATIONS
 
-The udockertools installation tarball mentioned in section 2.2 can also be obtained using 
+The udockertools installation tarball mentioned in section 2.3 can also be obtained using 
 the following method. First download the udocker python script. Second use udocker 
 itself to display the udockertools tarball URLs by invoking the `version` command. The
 tarball location contains several URLs pointing to different mirrors.
 
 ```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.4/udocker.py > udocker  
+  curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.7/udocker.py > udocker  
   chmod u+rx ./udocker
   ./udocker version
 ```
 
 Pick one URL and download the udockertools tarball using curl or wget.
 By using a previously downloaded tarball and the UDOCKER_TARBALL environment variable 
-as explained in section 2.2, udocker can be deployed without having to downloaded it 
+as explained in section 2.3, udocker can be deployed without having to downloaded it 
 everytime from the official repositories. The UDOCKER_TARBALL environment variable
 can also be pointed to an http or https URL of your choice.
 
 ```
-  curl $(./udocker version | grep '^tarball:' | cut -d' ' -f3) > udocker-1.1.4.tar.gz
+  curl $(./udocker version | grep '^tarball:' | cut -d' ' -f2- ) > udocker-1.1.7.tar.gz
 ```
 
-### 2.4. FORCE REINSTALLATION of UDOCKERTOOLS
+### 2.5. FORCE REINSTALLATION of UDOCKERTOOLS
 
 To force download and reinstallation of the udockertools. Invoke udocker install 
 with the flag `--force`:
@@ -104,7 +120,7 @@ with the flag `--force`:
   ./udocker install --force
 ```
 
-## 2.5. INSTALLATION WITH PIP
+### 2.6. INSTALLATION WITH PIP
 
 For installation with pip it is advisable to setup a Python2 virtual environment
 before proceeding, see instructions [HERE](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/)
@@ -122,10 +138,10 @@ From the *development* branch for the latest additions and fixes:
   pip install git+https://github.com/indigo-dc/udocker@devel
 ```
 
-To get a specific release version of udocker such as *v1.1.4*:
+To get a specific release version of udocker such as *v1.1.7*:
 
 ```
-  pip install git+https://github.com/indigo-dc/udocker@v1.1.4
+  pip install git+https://github.com/indigo-dc/udocker@v1.1.7
 ```
 
 ## 3. SOURCE CODE AND BUILD
@@ -164,9 +180,11 @@ The location of the udocker directories can be changed via environment variables
  * UDOCKER_DIR : root directory of udocker usually $HOME/.udocker
  * UDOCKER_BIN : location of udocker related executables
  * UDOCKER_LIB : location of udocker related libraries
+ * UDOCKER_REPOS: images metadata and links to layers
+ * UDOCKER_LAYERS: the common location for image layers data
  * UDOCKER_CONTAINERS : top directory for storing containers (not images)
- * UDOCKER_KEYSTORE : location of keystore for login/logout credentials
  * UDOCKER_TMP : location of temporary directory
+ * UDOCKER_KEYSTORE : location of keystore for login/logout credentials
  * UDOCKER_TARBALL : location of installation tarball (file of URL)
  * UDOCKER_NOSYSCONF: do not read udocker system wide config files in /etc
 
@@ -194,7 +212,7 @@ the environment variables described below together with the default behavior.
 A value of "UDOCKER" will force the usage of the executables provided by the 
 udocker installation.
 A full pathname can be used to select a specific executable (or library) from the
-host or from the udocker instalaltion.
+host or from the udocker installation.
 
  * UDOCKER_USE_PROOT_EXECUTABLE : path to proot, default is proot from udocker
  * UDOCKER_USE_RUNC_EXECUTABLE : path to runc, default is search the host and if not found use runc from udocker
@@ -219,7 +237,7 @@ Examples of the udocker.conf syntax:
   # Increase verbosity
   verbose_level = 5
   # Require this version the `tarball` attribute must point to the correct tarball
-  tarball_release = "1.1.4"
+  tarball_release = "1.1.7"
   # Specific the installation tarball location
   tarball = "https://hostname/somepath"
   # Disable autoinstall
@@ -230,3 +248,222 @@ Examples of the udocker.conf syntax:
   tmpdir = "/someplace"
 ```
 
+## 7. CENTRAL INSTALLATION
+
+udocker can be installed and made available system wide from a central location
+such as a shared read-only directory tree or file-system. 
+
+### 7.1. EXECUTABLES AND LIBRARIES
+
+The executables and libraries can be installed with any of the methods described
+in section 2 of this manual. The directory tree should contain the following
+subdirectories: `bin`,  `containers`,  `layers`,  `lib`,  `repos`. For the
+binaries and libraries the only directories required are `bin` and `lib`.
+The actual udocker command can be placed in the `bin` directory.
+
+Directing users to the central udocker installation can be done using the 
+environment variables described in section 5, or through the configuration files 
+described in section 6. The recommended approach is to set environment 
+variables at the user level as in the example where the assumed central location 
+will be under `/sw/udocker`:
+
+```
+ export UDOCKER_BIN=/sw/udocker/bin
+ export UDOCKER_LIB=/sw/udocker/lib
+ export PATH=$PATH:/sw/udocker/bin
+```
+
+Make sure that the file protections are adequate namelly that the files are
+not modifiable by others.
+
+### 7.2. IMAGES AND LAYERS IN A COMMON LOCATION
+
+The repository of pulled images can also be placed in a different location 
+than the user home directory `$HOME/.udocker`. Notice that if the target
+location is not writable then the users will be unable to pull new images, 
+which may be fine if these images are managed centrally by someone else.
+Make sure that the file protections are adequate to the intended purpose.
+
+From the images in the common location the users can then create containers 
+whose content will be placed in the user home directory under `$HOME/.udocker`. 
+This can be accomplished by redirecting the directories `layers` and  `lib` 
+to a common location. The users will need to set the following environment 
+variables. Therefore assuming that the common location will be `/sw/udocker`:
+
+```
+ export UDOCKER_REPOS=/sw/udocker/repos
+ export UDOCKER_LAYERS=/sw/udocker/layers
+```
+
+### 7.3. CONTAINERS IN THE COMMON LOCATION
+
+If a container is extracted to  the common location, it is possible to
+point udocker to execute the container from that location. Making
+udocker pointing at different `containers` directory such as for example
+`/sw/udocker/containers` can be performed with:
+
+```
+ export UDOCKER_CONTAINERS=/sw/udocker/containers
+```
+
+Assuming that the container is to be created under `/sw/udocker/containers`
+it can be extracted with:
+
+```
+ export UDOCKER_CONTAINERS=/sw/udocker/containers
+ udocker --allow-root pull  centos:centos7
+ udocker --allow-root create  --name=myContainerId  centos:centos7
+ udocker --allow-root run  -v /tmp myContainerId
+```
+
+Notice the `--allow-root` should only be used when running
+from the root user.
+
+However depending on the execution mode and several other factors the 
+limitations described in the next sections apply.
+
+
+#### 7.3.1. SELECTION OF EXECUTION MODE
+
+The selection of the execution mode requires writing in the `containers`
+directory, therefore if the container is in a read-only location the
+execution mode cannot be changed. If a container is to be executed in a mode
+other than the default then this must be set in advance. This must be done
+by a someone with write access. A table summarizing the execution modes 
+and their implications:
+
+|Mode| Engine      | Execution from readonly location
+|----|:------------|:------------------------------------------
+| P1 | PRoot       | OK
+| P2 | PRoot       | OK
+| F1 | Fakechroot  | OK
+| F2 | Fakechroot  | OK
+| F3 | Fakechroot  | OK see restrictions in section 7.3.1.2.
+| F4 | Fakechroot  | NOT SUPPORTED
+| R1 | runC / crun | OK requires a udocker version above v1.1.7
+| R2 | runC / crun | OK see restrictions in section 7.3.1.3. 
+| R3 | runC / crun | OK see restrictions in section 7.3.1.3.
+| S1 | Singularity | OK
+
+Changing the execution mode can be accomplished with the following udocker
+command where `<MODE>` is one of the supported modes in column one.
+
+```
+ udocker --allow-root setup --execmode=<MODE>   myContainerId
+```
+
+Notice the `--allow-root` should only be used when running
+from the root user.
+
+If the same container is to be provided for execution using more
+than one execution mode (e.g. to be executed with P1 and F3), then
+make copies of the initial container and setup each one of them with 
+the intended mode. The command `udocker clone` can be used to create
+copies of existing containers.
+
+##### 7.3.1.1. Mode F4 is not supported
+The mode F4 is not suitable for readonly containers as it is meant to
+support the dynamic creation of new executables and libraries inside of
+the container, which cannot happen if the container is readonly. Use the
+mode F3 instead of F4.
+
+##### 7.3.1.2. Mode F3 restrictions
+The F3 mode (and also F4) perform changes to the container executables 
+and libraries, in particular they change the pathnames in ELF headers
+making them pointing at the container location. This means that the
+pathname to the container must be always the same across all the
+hosts that may share the common location. Therefore if the original 
+location pathname is `/sw/udocker/containers` then all hosts must 
+also mount it at the same exact path `/sw/udocker/containers`.
+
+##### 7.3.1.3. Modes R2 and R3 restrictions
+Central installation from readonly location using any of the R modes 
+requires udocker above v1.1.7 available from the udocker `devel` branch.
+These modes require the creation of a mountpoint inside the container
+that is transparently created when the container is first executed,
+therefore (as recommended for all other modes) the container
+must be executed once by someone with write access prior to making it 
+available to the users. Furthermore these execution modes are nested 
+they use P1 or P2 inside the R engine, the Pn modes require a tmp 
+directory that is writable. Therefore it is recommended to mount the 
+host /tmp in the container /tmp like this:
+
+```
+ udocker --allow-root run  -v /tmp myContainerId
+```
+
+or alternatively:
+
+```
+ export PROOT_TMP_DIR=/<path-to-host-writable-directory>
+ udocker --allow-root run  -v /<path-to-host-writable-directory>  myContainerId
+```
+
+Notice the `--allow-root` should only be used when running
+from the root user.
+
+
+#### 7.3.2. MOUNT OF DIRECTORIES AND FILES
+
+Making host files and directories visible inside the container requires
+creating the corresponding mount points. The creation of mount-points 
+requires write access to the container. Therefore if a container is in 
+a read-only location these files and directories must be created in 
+advance.
+
+Notice that some default mount points are required and automatically
+created by udocker itself, therefore the container should be executed
+by the administrator to ensure that the required files and directories
+are created. Furthermore if additional mountpoints are required to
+access data or other user files from the host, such mountpoints
+must be also created by the administrator by executing the container
+with the adequate volume pathnames. The example shows how to setup
+the default mountpoints and in addition create a new mountpoint 
+named `/data`. 
+
+```
+ udocker --allow-root run -v /home:/data  myContainerId
+```
+
+Notice the `--allow-root` should only be used when running 
+from the root user.
+
+Notice that once `/data` is setup the end users can mount other
+directories in `/data` at runtime, meaning that users are not 
+restricted to mount only the `/home` directory as the mapping 
+is defined at run time.
+
+#### 7.3.3. PROTECTION OF CONTAINER FILES AND DIRECTORIES
+
+For the container to be executed by other users the files and
+directories within the container must be readable. When udocker 
+is installed in the user home directory all files belong to
+the user and are therefore readable by him. If a common location
+is shared by several users the file protections will likelly
+need to be adjusted. Consider carefully your security policies 
+and requirements when changing the file protections.
+
+The following example assumes making all files readable to
+anyone and making all files (and directories) that have the
+executable bit to be also *executable* by anyone.
+
+```
+ mycdir=$(udocker --allow-root inspect -p myContainerId)
+ chmod -R uog+r $mycdir
+ find $mycdir -executable -exec chmod oug+x {} \;
+```
+
+Notice the `--allow-root` should only be used when running
+from the root user.
+
+
+### 7.4. USING A COMMON DIRECTORY FOR BOTH EXECUTABLES AND CONTAINERS
+
+If the common directory is used both for executables and containers
+then the following environment variables can be used:
+
+```
+ export UDOCKER_DIR=/sw/udocker
+ export PATH=$PATH:/sw/udocker/bin
+```
+ 

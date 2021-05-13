@@ -1,0 +1,25 @@
+sqa_criteria:
+   qc_coverage:
+     repos:
+       udocker:
+         container: udocker-testing
+         tox:
+           tox_file: /udocker/tox.ini
+           testenv:
+              - cover
+   qc_style:
+     repos:
+       udocker:
+         container: udocker-testing
+         tox:
+           tox_file: /udocker/tox.ini
+           testenv:
+              - pylint
+   qc_security:
+     repos:
+       udocker:
+         container: udocker-testing
+         tox:
+           tox_file: /udocker/tox.ini
+           testenv:
+              - bandit

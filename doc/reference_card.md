@@ -25,6 +25,8 @@ verbose_level = 5
  * UDOCKER_DIR : root directory of udocker usually $HOME/.udocker
  * UDOCKER_BIN : location of udocker related executables
  * UDOCKER_LIB : location of udocker related libraries
+ * UDOCKER_REPOS: images metadata and links to layers
+ * UDOCKER_LAYERS: the common location for image layers data
  * UDOCKER_CONTAINERS : location of container directory trees (not images)
  * UDOCKER_TMP : location of temporary directory
  * UDOCKER_KEYSTORE : location of keystore for repository login/logout
@@ -63,7 +65,8 @@ invoking it.
 
 Most udocker execution modes do not provide process isolation features
 such as docker. Due to the lack of isolation udocker must not be run 
-by privileged users.
+by privileged users, and please make sure that you really trust the 
+containers that you execute using udocker.
 
 ## Troubleshooting
 
