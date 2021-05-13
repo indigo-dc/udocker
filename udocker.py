@@ -1046,7 +1046,7 @@ class FileUtil(object):
             self.basename = '-'
             return
         try:
-            self.filename = os.path.join(os.getcwd(), filename)
+            self.filename = os.path.abspath(filename)
             self.basename = os.path.basename(self.filename)
         except (AttributeError, TypeError):
             self.filename = filename
@@ -1055,6 +1055,7 @@ class FileUtil(object):
 
     def _register_prefix(self, prefix):
         """Register directory prefixes where remove() is allowed"""
+        prefix = os.path.realpath(prefix)
         if prefix not in FileUtil.safe_prefixes:
             filename = prefix
             if os.path.isdir(filename) and not filename.endswith('/'):
@@ -1126,6 +1127,7 @@ class FileUtil(object):
 
     def _is_safe_prefix(self, filename):
         """Check if file prefix falls under valid prefixes"""
+        filename = os.path.realpath(filename)
         if os.path.isdir(filename):
             filename += '/'
         for safe_prefix in FileUtil.safe_prefixes:
