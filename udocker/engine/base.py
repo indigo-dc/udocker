@@ -49,6 +49,7 @@ class ExecutionEngineCommon(object):
     opt["portsmap"] = []             # Ports mapped in container
     opt["portsexp"] = []             # Ports exposed by container
     opt["devices"] = []              # Devices passed to container
+    opt["nobanner"] = False          # Printing of startup banner
 
     def __init__(self, localrepo, exec_mode):
         self.localrepo = localrepo            # LocalRepository instance
@@ -508,14 +509,15 @@ class ExecutionEngineCommon(object):
 
     def _run_banner(self, cmd, char="*"):
         """Print a container startup banner"""
-        Msg().out("",
-                  "\n", char * 78,
-                  "\n", char, " " * 74, char,
-                  "\n", char,
-                  ("STARTING " + self.container_id).center(74, " "), char,
-                  "\n", char, " " * 74, char,
-                  "\n", char * 78, "\n",
-                  "executing:", os.path.basename(cmd), l=Msg.INF)
+        if not self.opt["nobanner"]:
+            Msg().out("",
+                      "\n", char * 78,
+                      "\n", char, " " * 74, char,
+                      "\n", char,
+                      ("STARTING " + self.container_id).center(74, " "), char,
+                      "\n", char, " " * 74, char,
+                      "\n", char * 78, "\n",
+                      "executing:", os.path.basename(cmd), l=Msg.INF)
 
     def _run_env_cleanup_dict(self):
         """Allow only to pass essential environment variables."""

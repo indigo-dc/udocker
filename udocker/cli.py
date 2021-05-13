@@ -664,6 +664,10 @@ class UdockerCLI(object):
             "devices": {
                 "fl": ("--device=",), "act": "E",
                 "p2": "CMD_OPT", "p3": True
+            },
+            "nobanner": {
+                "fl": ("--nobanner",), "act": 'R',
+                "p2": "CMD_OPT", "p3": False
             }
         }
         for option, cmdp_args in list(cmd_options.items()):
@@ -708,6 +712,7 @@ class UdockerCLI(object):
         --kernel=<kernel-id>       :simulate this Linux kernel version
         --device=/dev/xxx          :pass device to container (R1 mode only)
         --location=<container-dir> :use container outside the repository
+        --nobanner                 :don't print a startup banner
 
         Only available in Rn execution modes:
         --device=/dev/xxx          :pass device to container (R1 mode only)
