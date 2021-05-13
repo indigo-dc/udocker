@@ -8,10 +8,10 @@ tags:
   - Advanced computing
 authors:
   - name: Jorge Gomes^[corresponding author]
-    orcid: 7514-1C96-A542
+    orcid: 0000-0002-9142-2596
     affiliation: "1, 2" # (Multiple affiliations must be quoted)
   - name: Mario David
-    orcid: 7C16-C900-96E2
+    orcid: 0000-0003-1802-5356
     affiliation: "1, 2"
   - name: João Martins
     orcid: 0000-0003-4308-266X
@@ -76,7 +76,7 @@ required to execute containers by providing an integrated solution to execute
 Linux containers leveraging different approaches suitable for unprivileged
 users. Finally by executing containers without privileges udocker decreases the 
 risks of privilege escalation. The udocker development started in 2016 and 
-the original papers documented versions 1.1.0 [@GOMES2017] and 1.1.1 [@GOMES2018].
+the original udocker paper [@GOMES2018] documented versions 1.1.0 and 1.1.1.
 Since then several new features have been released.
 
 # Concept
