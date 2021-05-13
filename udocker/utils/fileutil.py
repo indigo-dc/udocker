@@ -105,7 +105,7 @@ class FileUtil(object):
     def uid(self):
         """Get the file owner user id"""
         try:
-            return os.stat(self.filename).st_uid
+            return os.lstat(self.filename).st_uid
         except (IOError, OSError):
             return -1
 
@@ -116,6 +116,8 @@ class FileUtil(object):
             filename += '/'
         for safe_prefix in FileUtil.safe_prefixes:
             if filename.startswith(safe_prefix):
+                return True
+            if filename.startswith(os.path.realpath(safe_prefix)):
                 return True
         return False
 
@@ -379,7 +381,6 @@ class FileUtil(object):
     def _find_exec(self, path, rootdir="", volumes="", workdir="",
                    cont2host=False):
         """Find file in a path set such as PATH=/usr/bin:/bin"""
-        # DEBUG
         for directory in path:
             if not directory:
                 continue

@@ -41,13 +41,16 @@ class SingularityEngineTestCase(TestCase):
         self.assertEqual(sing.executable, None)
         self.assertEqual(sing.execution_id, None)
 
+    @patch('udocker.helper.elfpatcher.os.path.exists')
     @patch('udocker.engine.singularity.HostInfo.arch')
     @patch('udocker.engine.singularity.FileUtil.find_file_in_dir')
     @patch('udocker.engine.singularity.FileUtil.find_exec')
-    def test_02_select_singularity(self, mock_findexe, mock_find, mock_arch):
+    def test_02_select_singularity(self, mock_findexe, mock_find,
+                                   mock_arch, mock_exists):
         """Test02 SingularityEngine().select_singularity()."""
         Config.conf['use_singularity_executable'] = ""
         mock_findexe.return_value = "/bin/runc-arm"
+        mock_exists.return_value = True
         sing = SingularityEngine(self.local, self.xmode)
         sing.select_singularity()
         self.assertTrue(mock_findexe.called)
@@ -55,6 +58,7 @@ class SingularityEngineTestCase(TestCase):
         Config.conf['use_singularity_executable'] = "UDOCKER"
         mock_arch.return_value = "amd64"
         mock_find.return_value = "singularity-x86_64"
+        mock_exists.return_value = True
         sing = SingularityEngine(self.local, self.xmode)
         sing.select_singularity()
         self.assertTrue(mock_arch.called)
@@ -63,6 +67,7 @@ class SingularityEngineTestCase(TestCase):
         Config.conf['use_singularity_executable'] = "UDOCKER"
         mock_arch.return_value = "i386"
         mock_find.return_value = "singularity-x86"
+        mock_exists.return_value = True
         sing = SingularityEngine(self.local, self.xmode)
         sing.select_singularity()
         self.assertTrue(mock_arch.called)

@@ -1,7 +1,7 @@
 .\" Manpage for udocker
 .\" Contact udocker@lip.pt to correct errors or typos.
 .\" To read this man page use:   man -l udocker.1
-.TH udocker 1 "25 Oct 2018" "version 1.1.3" "udocker man page"
+.TH udocker 1 "25 Jan 2020" "version 1.1.7" "udocker man page"
 .SH NAME
 udocker \- execute Docker containers in user space without privileges
 .SH SYNOPSIS
@@ -42,7 +42,7 @@ Prints a usage summary. Further help for specific udocker commands can be obtain
 Search for IMAGES in a Docker repository. The IMAGE name must match the given STRING. The \-a option displays all matching entries without pausing.
 .TP
 .BR pull " " [ " " \--httpproxy=PROXY " " | " " \--index=INDEX " " | " " \--registry=REGISTRY " " ] " " IMAGE
-Pull an IMAGE from Docker Hub or from a private repository. The option INDEX defaults to https://index.docker.io. The option REGISTRY defaults to https://registry-1.docker.io. A socks4 or socks5 proxy can be specified with \--httpproxy the syntax of PROXY is socks[4|5]://user:pass@host:port.
+Pull an IMAGE from Docker Hub or from a private repository. The option INDEX defaults to https://index.docker.io. The option REGISTRY defaults to https://registry-1.docker.io. A socks4 or socks5 proxy can be specified with \--httpproxy the syntax of PROXY is socks[4|5|4a|5h]://user:pass@host:port.
 .TP
 .BR images " " [ " " \-l " " ]
 Lists IMAGES available in the local udocker repository. The \-l option provides additional details.

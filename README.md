@@ -1,6 +1,5 @@
-
 <!---
-[![Build Status](https://travis-ci.com/undu/udocker.svg?branch=master)](https://travis-ci.com/undu/udocker)
+[![Build Status](https://jenkins.indigo-datacloud.eu/buildStatus/icon?job=Pipeline-as-code/udocker/master)](https://jenkins.indigo-datacloud.eu/job/Pipeline-as-code/job/udocker/job/master/)
 -->
 [![Build Status](https://jenkins.indigo-datacloud.eu/buildStatus/icon?job=Pipeline-as-code/udocker/master)](https://jenkins.indigo-datacloud.eu/job/Pipeline-as-code/job/udocker/job/master/)
 
@@ -23,6 +22,7 @@ docker capabilities including pulling images and running containers
 with minimal functionality.
 
 ## How does it work
+
 udocker is a simple tool written in Python, it has a minimal set
 of dependencies so that can be executed in a wide range of Linux
 systems.
@@ -31,83 +31,98 @@ udocker does not make use of docker nor requires its presence.
 
 udocker "executes" the containers by simply providing a chroot like
 environment over the extracted container. The current implementation
-supports different methods to mimic chroot enabling execution of
-containers without requiring privileges under a chroot like environment.
+supports different methods to mimic chroot thus enabling execution of
+containers under a chroot like environment without requiring privileges.
 udocker transparently supports several methods to execute the containers
 using tools and libraries such as:
 
 * PRoot
 * Fakechroot
-* runC
+* runc / crun
 * Singularity
 
 ## Advantages
+
 * Provides a docker like command line interface
 * Supports a subset of docker commands:
-  search, pull, import, export, load, create and run
+  search, pull, import, export, load, save, create and run
 * Understands docker container metadata
+* Allows loading of docker and OCI containers
 * Can be deployed by the end-user
 * Does not require privileges for installation
 * Does not require privileges for execution
 * Does not require compilation, just transfer the Python script and run
-* Encapsulates several execution methods
-* Includes the required tools already compiled to work across systems
+* Encapsulates several tools and execution methods
+* Includes the required tools already statically compiled to work
+  across systems
 * Tested with GPGPU and MPI applications
 * Runs both on new and older Linux distributions including:
-  CentOS 6, CentOS 7, Ubuntu 14, Ubuntu 16, Ubunto 18, Fedora, etc
+  CentOS 6, CentOS 7, CentOS 8, Ubuntu 14, Ubuntu 16, Ubuntu 18, Ubuntu 20, 
+  Fedora, etc
 
-## Installation
-See the [Installation manual](doc/installation_manual.md)
+## Installation and Users manuals
+
+See the **[Installation manual](doc/installation_manual.md)**
+See the **[Users manual](doc/user_manual.md)**.
+See the **[All documentation](SUMMARY.md)**
 
 ## Syntax
+
 ```
-Commands:
-  search <repo/image:tag>       :Search dockerhub for container images
-  pull <repo/image:tag>         :Pull container image from dockerhub
-  images                        :List container images
-  create <repo/image:tag>       :Create container from a pulled image
-  ps                            :List created containers
-  rm  <container>               :Delete container
-  run <container>               :Execute container
-  inspect <container>           :Low level information on container
-  name <container_id> <name>    :Give name to container
-  rmname <name>                 :Delete name from container
+        Commands:
+          search <repo/expression>      :Search dockerhub for container images
+          pull <repo/image:tag>         :Pull container image from dockerhub
+          create <repo/image:tag>       :Create container from a pulled image
+          run <container>               :Execute container
 
-  rmi <repo/image:tag>          :Delete image
-  rm <container-id>             :Delete container
-  import <tar> <repo/image:tag> :Import tar file (exported by docker)
-  import - <repo/image:tag>     :Import from stdin (exported by docker)
-  load -i <exported-image>      :Load image from file (saved by docker)
-  load                          :Load image from stdin (saved by docker)
-  export -o <tar> <container>   :Export container rootfs to file
-  export - <container>          :Export container rootfs to stdin
-  inspect <repo/image:tag>      :Return low level information on image
-  verify <repo/image:tag>       :Verify a pulled image
-  clone <container>             :duplicate container
+          images -l                     :List container images
+          ps -m -s                      :List created containers
+          name <container_id> <name>    :Give name to container
+          rmname <name>                 :Delete name from container
+          rename <name> <new_name>      :Change container name 
+          clone <container_id>          :Duplicate container
+          rm <container-id>             :Delete container
+          rmi <repo/image:tag>          :Delete image
 
-  protect <repo/image:tag>      :Protect repository
-  unprotect <repo/image:tag>    :Unprotect repository
-  protect <container>           :Protect container
-  unprotect <container>         :Unprotect container
+          import <tar> <repo/image:tag> :Import tar file (exported by docker)
+          import - <repo/image:tag>     :Import from stdin (exported by docker)
+          export -o <tar> <container>   :Export container directory tree
+          export - <container>          :Export container directory tree
+          load -i <imagefile>           :Load image from file (saved by docker)
+          load                          :Load image from stdin (saved by docker)
+          save -o <imagefile> <repo/image:tag>  :Save image with layers to file
 
-  mkrepo <topdir>               :Create repository in another location
-  setup                         :Change container execution settings
-  login                         :Login into docker repository
-  logout                        :Logout from docker repository
+          inspect -p <repo/image:tag>   :Return low level information on image
+          verify <repo/image:tag>       :Verify a pulled or loaded image
 
-  help                          :This help
-  run --help                    :Command specific help
+          protect <repo/image:tag>      :Protect repository
+          unprotect <repo/image:tag>    :Unprotect repository
+          protect <container>           :Protect container
+          unprotect <container>         :Unprotect container
 
+          mkrepo <top-repo-dir>         :Create another repository in location
+          setup                         :Change container execution settings
+          login                         :Login into docker repository
+          logout                        :Logout from docker repository
 
-Options common to all commands must appear before the command:
-  -D                          :Debug
-  --repo=<directory>          :Use repository at directory
+          help                          :This help
+          run --help                    :Command specific help
+          version                       :Shows udocker version
+
+        Options common to all commands must appear before the command:
+          -D                            :Debug
+          --quiet                       :Less verbosity
+          --repo=<directory>            :Use repository at directory
+          --insecure                    :Allow insecure non authenticated https
+          --allow-root                  :Allow execution by root NOT recommended
 ```
 
 ## Examples
+
 Some examples of usage:
 
 Search container images in dockerhub.
+
 ```
 udocker search  fedora
 udocker search  ubuntu
@@ -115,52 +130,72 @@ udocker search  indigodatacloud
 ```
 
 Pull from dockerhub and list the pulled images.
+
 ```
-udocker pull  fedora:25
-udocker pull  busybox
-udocker pull  iscampos/openqcd
+udocker pull   fedora:29
+udocker pull   busybox
+udocker pull   iscampos/openqcd
 udocker images
 ```
 
 Pull from a registry other than dockerhub.
+
 ```
-udocker pull --registry=https://registry.access.redhat.com  rhel7
-udocker create --name=rh7 rhel7
-udocker run rh7
+udocker search  quay.io/bio
+udocker search  --list-tags  quay.io/biocontainers/scikit-bio
+udocker pull    quay.io/biocontainers/scikit-bio:0.2.3--np112py35_0
+udocker images
 ```
 
-Create the container from a pulled image and run it.
+Create a container from a pulled image and run it.
+
 ```
-udocker create --name=myfed  fedora:25
+udocker create --name=myfed  fedora:29
 udocker run  myfed  cat /etc/redhat-release
 ```
 
-Run mounting the host /home/u457 into the container directory /home/cuser.
-Notice that you can "mount" any host directory inside the container, this
-is not a real mount but the directories will be visible inside the container.
+The three steps of pulling, creating and running can be achieved in
+a single command, however this will create a new container in each
+invocation consuming additional space and time. Therefore is better
+to pull and create separately and use the identifier returned by
+create or use an alias to execute the container as demonstrated above.
+
+```
+udocker run  fedora:29  cat /etc/redhat-release
+```
+
+Execute mounting the host /home/u457 into the container directory /home/cuser.
+Notice that you can "mount" any host directory inside the container.
+Depending on the execution mode the "mount" is implemented differently and
+may have restrictions.
+
 ```
 udocker run -v /home/u457:/home/cuser -w /home/user myfed  /bin/bash
 udocker run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
 ```
 
 Put a script in your host /tmp and execute it in the container.
+
 ```
 udocker run  -v /tmp  myfed  /bin/bash -c 'cd /tmp; ./myscript.sh'
 ```
 
-Run mounting the host /var, /proc, /sys and /tmp in the same container
+Execute mounting the host /var, /proc, /sys and /tmp in the same container
 directories. Notice that the content of these container directories will
 be obfuscated.
+
 ```
 udocker run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
 ```
 
 Install software inside the container.
+
 ```
 udocker run  --user=root myfed  yum install -y firefox pulseaudio gnash-plugin
 ```
 
 Run as some user. The usernames should exist in the container.
+
 ```
 udocker run --user 1000:1001  myfed  /bin/id
 udocker run --user root   myfed  /bin/id
@@ -168,36 +203,49 @@ udocker run --user jorge  myfed  /bin/id
 ```
 
 Running Firefox.
+
 ```
-./udocker run --bindhome --hostauth --hostenv \
+udocker run --bindhome --hostauth --hostenv \
    -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed  firefox
 ```
 
 Change execution engine mode from PRoot to Fakechroot and run.
-```
-./udocker setup  --execmode=F4  myfed
 
-./udocker run --bindhome --hostauth --hostenv \
+```
+udocker setup  --execmode=F3  myfed
+
+udocker run --bindhome --hostauth --hostenv \
    -v /sys -v /proc -v /var/run -v /dev --user=jorge --dri myfed  firefox
 ```
 
 Change execution engine mode to accelerated PRoot.
+
 ```
-./udocker setup  --execmode=P1  myfed
+udocker setup  --execmode=P1  myfed
 ```
 
 Change execution engine to runC.
+
 ```
-./udocker setup  --execmode=R1  myfed
+udocker setup  --execmode=R1  myfed
 ```
 
 Change execution engine to Singularity. Requires the availability of
 Singularity in the host system.
+
 ```
 ./udocker setup  --execmode=S1  myfed
 ```
 
+Install software running as root emulation in Singularity:
+
+```
+udocker setup  --execmode=S1  myfed
+udocker run  --user=root myfed  yum install -y firefox pulseaudio gnash-plugin
+```
+
 ## Limitations
+
 Since root privileges are not involved any operation that really
 requires such privileges will not be possible. The following  are
 examples of operations that are not possible:
@@ -223,16 +271,15 @@ Debugging inside of udocker with the PRoot engine will not work due to
 the way PRoot implements the chroot environment
 
 udocker is mainly oriented at providing a run-time environment for
-containers execution in user space.
-
-udocker is particularly suited to run user applications encapsulated
-in docker containers.
+containers execution in user space. udocker is particularly suited to 
+run user applications encapsulated in docker containers.
 
 ## Security
+
 Because of the limitations described in the previous section udocker does
-not offer isolation features such as the ones offered by docker. If the
-containers content is not trusted then these containers should not be
-executed with udocker as they will run inside the user environment.
+not offer robust isolation features such as the ones offered by docker. 
+If the containers content is not trusted then these containers should not 
+be executed with udocker as they will run inside the user environment.
 
 The containers data will be unpacked and stored in the user home directory or
 other location of choice. Therefore the containers data will be subjected to
@@ -253,26 +300,49 @@ of some tools that do not require actual privileges but which refuse to
 work if the username or id are not root or 0. This enables for instance
 software installation using rpm, yum or dnf inside the container.
 
-Due to the lack of isolation udocker must not be run by privileged users.
+udocker must not be run by privileged users.
+
+udocker also provides execution with runc and Singularity, these modes make
+use of rootless namespaces and enable a normal user to execute as root with
+certain limitations.
 
 ## Other limitations
-Notice that when using execution engines other than PRoot (Pn modes) the
-created containers cannot be moved across hosts. In this case convert back
-to a Pn mode before transfer.
 
-The accelerated mode of PRoot (mode P1) may exhibit failures in Linux kernels
-above 4.0 with some applications due to kernel changes and upstream issues in
-this case use mode P2 or any of the other modes.
+When using execution modes such as F2, F3 and F4 the created
+containers cannot be moved across hosts. In this case convert back to a Pn
+mode before transfer.
+This is not needed if the hosts are part of an homogeneous cluster where
+the mount points and directory structure is the same. This limitation
+applies to the absolute realpath to the container directory.
 
+
+The default accelerated mode of PRoot (mode P1) may exhibit failures in Linux 
+kernels above 4.0 due to kernel changes and upstream issues, in this case use
+mode P2 or any of the other execution modes.
+
+```
+./udocker setup  --execmode=P2  my-container-id
+```
+
+The Fn modes require shared libraries compiled against the libc within
+the containers. udocker provides these libraries for several distributions
+and versions, they are installed under:
+
+```
+$HOME/.udocker/lib/libfakechroot-*
+```
+ 
 The runC mode requires a recent kernel with user namespaces enabled.
 
 The singularity mode requires the availability of Singularity in the host
 system.
 
 ## Documentation
+
 The full documentation is available at:
 
-* GitBook: https://indigo-dc.gitbooks.io/udocker/content/
+* devel3: https://github.com/indigo-dc/udocker/blob/devel3/SUMMARY.md
+
 * master: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
 * devel: https://github.com/indigo-dc/udocker/blob/devel/SUMMARY.md
 
@@ -281,9 +351,14 @@ The full documentation is available at:
 See: [Contributing](CONTRIBUTING.md)
 
 ## Citing
+
 When citing udocker please use the following:
 
-* Jorge Gomes, Emanuele Bagnaschi, Isabel Campos, Mario David, Luís Alves, João Martins, João Pina, Alvaro López-García, Pablo Orviz, Enabling rootless Linux Containers in multi-user environments: The udocker tool, Computer Physics Communications, Available online 6 June 2018, ISSN 0010-4655, https://doi.org/10.1016/j.cpc.2018.05.021
+* Jorge Gomes, Emanuele Bagnaschi, Isabel Campos, Mario David,
+Luís Alves, João Martins, João Pina, Alvaro López-García, Pablo Orviz, 
+Enabling rootless Linux Containers in multi-user environments: The udocker 
+tool, Computer Physics Communications, Available online 6 June 2018,
+ISSN 0010-4655, https://doi.org/10.1016/j.cpc.2018.05.021
 
 ## Acknowledgements
 
@@ -291,8 +366,19 @@ When citing udocker please use the following:
 * PRoot https://proot-me.github.io/
 * Fakechroot https://github.com/dex4er/fakechroot/wiki
 * runC https://runc.io/
+* crun https://github.com/containers/crun
 * Singularity https://www.sylabs.io/
+* Open Container Initiative https://www.opencontainers.org/
 * INDIGO DataCloud https://www.indigo-datacloud.eu
-* EOSC-hub https://eosc-hub.eu
 * DEEP-Hybrid-DataCloud https://deep-hybrid-datacloud.eu
+* LIP [https://www.lip.pt](https://www.lip.pt/?section=home&page=homepage&lang=en)
+* INCD [https://www.incd.pt](https://www.incd.pt/?lang=en)
+* EOSC-hub https://eosc-hub.eu
 
+
+This work was performed in the framework of the H2020 project INDIGO-Datacloud (RIA 653549) and further developed with co-funding by the projects EOSC-hub (Horizon 2020) under Grant number 777536 and DEEP-Hybrid-DataCloud (Horizon 2020) under Grant number 777435.
+The authors which to acknowleadge the support of INCD-Infraestrutura Nacional de Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER under the project number 22153-01/SAICT/2016).
+<!---
+<img src="https://wiki.eosc-hub.eu/download/attachments/1867786/eu%20logo.jpeg?version=1&modificationDate=1459256840098&api=v2" height="24">
+<img src="https://wiki.eosc-hub.eu/download/attachments/18973612/eosc-hub-web.png?version=1&modificationDate=1516099993132&api=v2" height="24">
+-->

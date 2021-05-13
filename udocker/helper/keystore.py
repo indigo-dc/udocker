@@ -48,7 +48,7 @@ class KeyStore(object):
         try:
             size = FileUtil(self.keystore_file).size()
             with open(self.keystore_file, "rb+") as filep:
-                filep.write(" " * size)
+                filep.write(b" " * size)
         except (IOError, OSError):
             exit_status = 1
             return exit_status

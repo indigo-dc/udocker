@@ -66,11 +66,20 @@ echo "============================================="
 echo "* This script tests udocker run and options *"
 echo "* and volume mount options                  *"
 echo "============================================="
+udocker rm c7
+udocker rm ub18
+udocker rm jv
+udocker rmi centos:7
+udocker rmi ubuntu:18.04
+udocker rmi java
+
 udocker pull centos:7; return=$?
 udocker pull ubuntu:18.04; return=$?
+udocker pull java; return=$?
 udocker images; return=$?
 udocker create --name=c7 centos:7; return=$?
 udocker create --name=ub18 ubuntu:18.04; return=$?
+udocker create --name=jv java; return=$?
 udocker ps; return=$?
 
 echo "===================="
@@ -78,6 +87,14 @@ echo "* Test udocker run *"
 echo "===================="
 
 echo "===================================== execmode = P1"
+STRING="T006: udocker setup jv"
+udocker setup jv; return=$?
+result
+
+STRING="T007: udocker run jv java -version"
+udocker run jv java -version; return=$?
+result
+
 STRING="T008: udocker setup c7"
 udocker setup c7; return=$?
 result
@@ -95,6 +112,14 @@ udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = P2"
+STRING="T006: udocker setup --execmode=P2 jv"
+udocker setup --execmode=P2 jv; return=$?
+result
+
+STRING="T007: udocker run jv java -version"
+udocker run jv java -version; return=$?
+result
+
 STRING="T012: udocker setup --execmode=P2 c7"
 udocker setup --execmode=P2 c7; return=$?
 result
@@ -146,6 +171,14 @@ udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = F3"
+STRING="T006: udocker setup --execmode=F3 jv"
+udocker setup --execmode=F3 jv; return=$?
+result
+
+STRING="T007: udocker run jv java -version"
+udocker run --env="LANG=C" jv java -version; return=$?
+result
+
 STRING="T016: udocker setup --execmode=F3 c7"
 udocker setup --execmode=F3 c7; return=$?
 result
@@ -163,6 +196,14 @@ udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = F4"
+STRING="T006: udocker setup --execmode=F4 jv"
+udocker setup --execmode=F4 jv; return=$?
+result
+
+STRING="T007: udocker run jv java -version"
+udocker run --env="LANG=C" jv java -version; return=$?
+result
+
 STRING="T016: udocker setup --execmode=F4 c7"
 udocker setup --execmode=F4 c7; return=$?
 result
@@ -180,6 +221,14 @@ udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = R1"
+STRING="T006: udocker setup --execmode=R1 jv"
+udocker setup --execmode=R1 jv; return=$?
+result
+
+STRING="T007: udocker run jv java -version"
+udocker run jv java -version; return=$?
+result
+
 STRING="T020: udocker setup --execmode=R1 c7"
 udocker setup --execmode=R1 c7; return=$?
 result
@@ -197,6 +246,14 @@ udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = R2"
+STRING="T006: udocker setup --execmode=R2 jv"
+udocker setup --execmode=R2 jv; return=$?
+result
+
+STRING="T007: udocker run jv java -version"
+udocker run jv java -version; return=$?
+result
+
 STRING="T024: udocker setup --execmode=R2 c7"
 udocker setup --execmode=R2 c7; return=$?
 result
@@ -214,6 +271,14 @@ udocker run ub18 env; return=$?
 result
 
 echo "===================================== execmode = R3"
+STRING="T006: udocker setup --execmode=R3 jv"
+udocker setup --execmode=R3 jv; return=$?
+result
+
+STRING="T007: udocker run jv java -version"
+udocker run jv java -version; return=$?
+result
+
 STRING="T028: udocker setup --execmode=R3 c7"
 udocker setup --execmode=R3 c7; return=$?
 result

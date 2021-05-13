@@ -4,6 +4,7 @@
 import os
 import sys
 import re
+import json
 
 from udocker import is_genstr
 from udocker.msg import Msg
@@ -155,6 +156,7 @@ class ExecutionEngineCommon(object):
                 if (host_path in Config.conf['dri_list'] or
                         host_path in Config.conf['sysdirs_list']):
                     self.opt["vol"].remove(vol)
+                    continue
                 else:
                     Msg().err("Error: invalid host volume path:", host_path)
                     return False
@@ -623,3 +625,33 @@ class ExecutionEngineCommon(object):
         exec_path = self._check_executable()
 
         return exec_path
+
+    def _is_same_osenv(self, filename):
+        """Check if the host has changed"""
+        try:
+            saved = json.loads(FileUtil(filename).getdata())
+            if (saved["osversion"] == HostInfo().osversion() and
+                    saved["oskernel"] == HostInfo().oskernel() and
+                    saved["arch"] == HostInfo().arch() and
+                    saved["osdistribution"] == str(HostInfo().osdistribution())):
+                return saved
+        except (IOError, OSError, AttributeError, ValueError, TypeError,
+                IndexError, KeyError):
+            pass
+        return dict()
+
+    def _save_osenv(self, filename, save=None):
+        """Save host info for is_same_host()"""
+        if save is None:
+            save = dict()
+        try:
+            save["osversion"] = HostInfo().osversion()
+            save["oskernel"] = HostInfo().oskernel()
+            save["arch"] = HostInfo().arch()
+            save["osdistribution"] = str(HostInfo().osdistribution())
+            if FileUtil(filename).putdata(json.dumps(save)):
+                return True
+        except (AttributeError, ValueError, TypeError,
+                IndexError, KeyError):
+            pass
+        return False

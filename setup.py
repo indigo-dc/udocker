@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 """
 =============
 udocker setup
@@ -22,10 +23,10 @@ limitations under the License.
 from setuptools import setup, find_packages
 from udocker import __version__
 
-with open('README.md') as readme_file:
+with open('README.md', 'r', encoding='utf8') as readme_file:
     README = readme_file.read()
 
-with open('CHANGELOG.md') as history_file:
+with open('CHANGELOG.md', 'r', encoding='utf8') as history_file:
     HISTORY = history_file.read()
 
 CONF_DIR = '/udocker/etc'
@@ -50,6 +51,8 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
     description="A basic user tool to execute simple docker \
         containers in batch or interactive systems without root privileges",

@@ -250,3 +250,12 @@ result
 STRING="T036: udocker rmi ${DOCKER_IMG}"
 udocker rmi ${DOCKER_IMG}; return=$?
 result
+
+# Cleanup files containers and images used in test
+echo "Clean up files containers and images used in test"
+rm -rf centos7-cont.tar centos7.tar myexportcont.tar .udockermy
+udocker rm mycont
+udocker rm clone_cont
+udocker rm myclone
+udocker rmi mycentos1
+udocker rmi centos:7

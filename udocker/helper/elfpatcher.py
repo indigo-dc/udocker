@@ -51,11 +51,13 @@ class ElfPatcher(object):
             image_list = ["patchelf-arm64", "patchelf"]
         elif arch == "arm":
             image_list = ["patchelf-arm", "patchelf"]
+
         f_util = FileUtil(self.localrepo.bindir)
         patchelf_exec = f_util.find_file_in_dir(image_list)
-        if not patchelf_exec:
+        if not os.path.exists(patchelf_exec):
             Msg().err("Error: patchelf executable not found")
             sys.exit(1)
+
         return patchelf_exec
 
     def _replace(self, cmd, path):
@@ -260,7 +262,7 @@ class ElfPatcher(object):
                     f_path = dir_path + '/' + f_name
                     if not os.access(f_path, os.R_OK):
                         continue
-                    elif os.path.isfile(f_path):
+                    if os.path.isfile(f_path):
                         if self._shlib.match(f_name):
                             if dir_path not in ld_list:
                                 ld_list.append(dir_path)

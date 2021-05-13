@@ -2,7 +2,7 @@
 
 Repository path udocker/udocker
 
-It is based in version 1.1.3 release in DEEP
+Based in version 1.1.3 released in the DEEP-Hybrid-dataCloud project.
 
 ## Base directory
 

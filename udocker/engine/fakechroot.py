@@ -37,6 +37,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                 image_list = Config.conf['fakechroot_so']
             elif is_genstr(Config.conf['fakechroot_so']):
                 image_list = [Config.conf['fakechroot_so'], ]
+
             if "/" in Config.conf['fakechroot_so']:
                 if os.path.exists(Config.conf['fakechroot_so']):
                     return os.path.realpath(Config.conf['fakechroot_so'])
@@ -51,6 +52,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             (distro, version) = guest.osdistribution()
             if "Alpine" not in distro:
                 version = version.split(".")[0]
+
             if arch == "amd64":
                 image_list = ["%s-%s-%s-x86_64.so" % (lib, distro, version),
                               "%s-%s-x86_64.so" % (lib, distro),
@@ -67,11 +69,13 @@ class FakechrootEngine(ExecutionEngineCommon):
                 image_list = ["%s-%s-%s-arm.so" % (lib, distro, version),
                               "%s-%s-arm.so" % (lib, distro),
                               "%s-arm.so" % (lib), deflib]
+
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
-        if not fakechroot_so:
+        if not os.path.exists(fakechroot_so):
             Msg().err("Error: no libfakechroot found", image_list)
             sys.exit(1)
+
         Msg().out("Info: fakechroot_so:", fakechroot_so, l=Msg.DBG)
         return fakechroot_so
 
@@ -130,7 +134,6 @@ class FakechrootEngine(ExecutionEngineCommon):
         (host_volumes, map_volumes) = self._get_volume_bindings()
         self._fakechroot_so = self.select_fakechroot_so()
         access_filesok = self._get_access_filesok()
-        #
         self.opt["env"].append("PWD=" + self.opt["cwd"])
         self.opt["env"].append("FAKECHROOT_BASE=" +
                                os.path.realpath(self.container_root))
@@ -141,20 +144,25 @@ class FakechrootEngine(ExecutionEngineCommon):
         else:
             self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" + \
                     str(Config.conf['fakechroot_expand_symlinks']).lower())
-        #
+
         if not self._is_volume("/tmp"):
             self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" +
                                    Config.conf['tmpdir'])
+
         if host_volumes:
             self.opt["env"].append("FAKECHROOT_EXCLUDE_PATH=" + host_volumes)
+
         if map_volumes:
             self.opt["env"].append("FAKECHROOT_DIR_MAP=" + map_volumes)
+
         if Msg.level >= Msg.DBG:
             self.opt["env"].append("FAKECHROOT_DEBUG=true")
             self.opt["env"].append("LD_DEBUG=libs:files")
+
         if access_filesok:
             self.opt["env"].append("FAKECHROOT_ACCESS_FILESOK=" +
                                    access_filesok)
+
         # execution mode
         ld_library_real = self._elfpatcher.get_ld_library_path()
         xmode = self.exec_mode.get_mode()
@@ -168,17 +176,14 @@ class FakechrootEngine(ExecutionEngineCommon):
             self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_PATH=" + ld_library_real)
-            #self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
         elif xmode == "F3":
             self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_PATH=" + ld_library_real)
-            #self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
         elif xmode == "F4":
             self.opt["env"].append("FAKECHROOT_LIBRARY_ORIG=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_REAL=" + ld_library_real)
             self.opt["env"].append("LD_LIBRARY_PATH=" + ld_library_real)
-            #self.opt["env"].append("FAKECHROOT_DISALLOW_ENV_CHANGES=true")
             patchelf_exec = self._elfpatcher.select_patchelf()
             if patchelf_exec:
                 self.opt["env"].append("FAKECHROOT_PATCH_PATCHELF=" +

@@ -173,7 +173,7 @@ class GetURLpyCurl(GetURL):
 
     def _select_implementation(self):
         """Override the parent class method"""
-        pass
+        return
 
     def _set_defaults(self, pyc, hdr):
         """Set options for pycurl"""
@@ -300,7 +300,7 @@ class GetURLexeCurl(GetURL):
 
     def _select_implementation(self):
         """Override the parent class method"""
-        pass
+        return
 
     def _set_defaults(self):
         """Set defaults for curl command line options"""

@@ -61,20 +61,23 @@ class KeyStoreTestCase(TestCase):
     @patch('udocker.helper.keystore.FileUtil.size')
     def test_04__shred(self, mock_size, mock_verks):
         """Test04 KeyStore()._shred()."""
+        mock_verks.return_value = None
         with patch(BUILTINS + '.open', mock_open()):
             kstore = KeyStore("filename")
             status = kstore._shred()
             self.assertEqual(status, 0)
 
         mock_size.return_value = 123
+        mock_verks.return_value = None
         with patch(BUILTINS + '.open', mock_open()):
             kstore = KeyStore("filename")
             status = kstore._shred()
             self.assertEqual(status, 0)
 
+    @patch.object(KeyStore, '_verify_keystore')
     @patch('udocker.helper.keystore.json.dump')
     @patch('udocker.helper.keystore.os.umask')
-    def test_05__write_all(self, mock_umask, mock_jdump):
+    def test_05__write_all(self, mock_umask, mock_jdump, mock_verks):
         """Test05 KeyStore()._write_all()."""
         url = u'https://xxx'
         email = u'user@domain'
@@ -82,6 +85,7 @@ class KeyStoreTestCase(TestCase):
         credentials = {url: {u'email': email, u'auth': auth}}
         mock_umask.return_value = 0o77
         mock_jdump.side_effect = IOError('json dump')
+        mock_verks.return_value = None
         with patch(BUILTINS + '.open', mock_open()):
             kstore = KeyStore("filename")
             status = kstore._write_all(credentials)
@@ -99,17 +103,20 @@ class KeyStoreTestCase(TestCase):
         self.assertTrue(kstore.get(url))
         self.assertFalse(kstore.get("NOT EXISTING ENTRY"))
 
+    @patch.object(KeyStore, '_shred')
     @patch.object(KeyStore, '_write_all')
     @patch.object(KeyStore, '_read_all')
-    def test_07_put(self, mock_readall, mock_writeall):
+    def test_07_put(self, mock_readall, mock_writeall, mock_shred):
         """Test07 KeyStore().put()."""
         url = u'https://xxx'
         email = u'user@domain'
         auth = u'xxx'
         credentials = {url: {u'email': email, u'auth': auth}}
+        mock_shred.return_value = None
         kstore = KeyStore("filename")
         self.assertFalse(kstore.put("", "", ""))
 
+        mock_shred.return_value = None
         mock_readall.return_value = dict()
         kstore = KeyStore("filename")
         kstore.put(url, auth, email)
@@ -128,6 +135,7 @@ class KeyStoreTestCase(TestCase):
         credentials = {url: {u'email': email, u'auth': auth}}
         mock_readall.return_value = credentials
         mock_writeall.return_value = 0
+        mock_verks.return_value = None
         kstore = KeyStore("filename")
         status = kstore.delete(url)
         mock_writeall.assert_called_once_with({})
@@ -138,10 +146,14 @@ class KeyStoreTestCase(TestCase):
     @patch.object(KeyStore, '_shred')
     def test_09_erase(self, mock_shred, mock_verks, mock_unlink):
         """Test09 KeyStore().erase()."""
+        mock_verks.return_value = None
+        mock_shred.return_value = None
         kstore = KeyStore("filename")
         self.assertEqual(kstore.erase(), 0)
         mock_unlink.assert_called_once_with("filename")
 
+        mock_verks.return_value = None
+        mock_shred.return_value = None
         mock_unlink.side_effect = IOError
         kstore = KeyStore("filename")
         self.assertEqual(kstore.erase(), 1)

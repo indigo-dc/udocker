@@ -18,8 +18,8 @@ class Config(object):
     """
     conf = dict()
     conf['verbose_level'] = 3
-    conf['homedir'] = os.path.expanduser("~")
-    conf['topdir'] = conf['homedir'] + "/.udocker"
+    conf['topdir'] = os.path.expanduser("~") + "/.udocker"
+    conf['homedir'] = conf['topdir']
     conf['bindir'] = None
     conf['libdir'] = None
     conf['reposdir'] = None
@@ -27,26 +27,17 @@ class Config(object):
     conf['containersdir'] = None
 
     # udocker installation tarball
-    conf['tarball_release'] = "1.2.4"
-    # conf['tarball'] = (
-    #     "https://owncloud.indigo-datacloud.eu/index.php"
-    #     "/s/QF09QQGUzG0P1pK/download"
-    #     " "
-    #     "https://raw.githubusercontent.com"
-    #     "/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.4.tar.gz"
-    #     " "
-    #     "https://cernbox.cern.ch/index.php/s/g1qv4aycRoBFsDO/download"
-    #     " "
-    #     "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.4.tar.gz"
-    # )
-    conf['tarball'] = "https://download.ncg.ingrid.pt/webdav/udocker/udocker-englib-1.2.4.tar.gz"
+    conf['tarball_release'] = "1.2.7"
+    conf['tarball'] = (
+        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-englib-1.2.7.tar.gz"
+    )
     conf['installinfo'] = [
         "https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
     conf['installretry'] = 3
     conf['autoinstall'] = True
     conf['config'] = "udocker.conf"
     conf['keystore'] = "keystore"
-    conf['tmpdir'] = "/tmp"    # for tmp files only
+    conf['tmpdir'] = os.getenv("TMPDIR", "/tmp")    # for tmp files only
 
     # defaults for container execution
     conf['cmd'] = ["/bin/bash", "-i"]  # Comand to execute
@@ -125,8 +116,11 @@ class Config(object):
         "CAP_SYS_CHROOT", "CAP_MKNOD", "CAP_AUDIT_WRITE", "CAP_SETFCAP",
     ]
 
-    conf['singularity_options'] = ["-w", ]  # singul. opts -u --nv -w
-    conf['valid_host_env'] = ("TERM", "PATH", )  # Pass host env vars
+    # singul. opts -u --nv -w
+    conf['singularity_options'] = ["-w", ]
+
+    # Pass host env vars
+    conf['valid_host_env'] = ("TERM", "PATH", "PROOT_TMP_DIR", )
     conf['invalid_host_env'] = ("VTE_VERSION", )
 
     # CPU affinity executables to use with: run --cpuset-cpus="1,2,3-4"
@@ -260,12 +254,14 @@ class Config(object):
         Config.conf['fakechroot_expand_symlinks'] = \
             os.getenv("UDOCKER_FAKECHROOT_EXPAND_SYMLINKS",
                       str(Config.conf['fakechroot_expand_symlinks'])).lower()
+        os.environ["PROOT_TMP_DIR"] = os.getenv("PROOT_TMP_DIR", Config.conf['tmpdir'])
         # try:
         #     Config.fakechroot_expand_symlinks = {
         #         "false": False, "true": True,
         #         "none": None, }[fakechroot_expand_symlinks]
         # except (KeyError, ValueError):
         #     Msg().err("Error: in UDOCKER_FAKECHROOT_EXPAND_SYMLINKS")
+
 
     def getconf(self, user_cfile="u.conf"):
         """Return all configuration variables"""

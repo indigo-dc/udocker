@@ -1,4 +1,120 @@
+# udocker (1.2.8b2)
+
+  * Fix Rn modes to enable containers execution from readonly dirs
+  * Documentation centralized installation and readonly setups
+  * Fix handling of dockerhub repository names in /v2
+  * Improve documentation and algn with 1.1.8b2
+  * Add credits
+
+# udocker (1.2.7)
+
+  * Porting to Python 3
+
+# udocker (1.1.7)
+
+  * Fix P1 when Linux 4.8.0 SECCOMP is backported, affects newer CentOS 7 
+    - closes: #282
+  * Check for file ownership on remove wrongly follows symlinks 
+    - closes: #266, #267
+  * udocker unexpectedly uses P1 exec mode instead of P2
+    - closes: #274
+  * allow passsing of PROOT_TMP_DIR environment variable
+    - closes: #284
+
+# udocker (1.1.6)
+
+  * Complete fix for of ELF paths in modes Fn for $ORIGIN:$ORIGIN
+    - closes: #255
+
+# udocker (1.1.5)
+
+  * Preliminary fix for of ELF paths in modes Fn for $ORIGIN:$ORIGIN
+  * Add Fn libraries for Ubuntu20, Fedora32, Fedora33
+  * Add Fn libraries for Alpine 3.12, 3.13
+
+# udocker (1.1.4-1)
+
+  * Fix run --location
+  * Fix udocker integrated help
+  * Fix naming of containers
+  * Improve parsing of image names
+  * Documentation improvements
+  * os._exit from Unshare.unshare()
+  * Disable FAKECHROOT_DISALLOW_ENV_CHANGES in F4 mode
+
+# udocker (1.1.4)
+
+  * Use hub.docker.com as default registry
+  * Search using v1 and v2 APIs
+  * Implement API /v2/search/repositories
+  * Adjust search results to screen size
+  * List container size with ps -s
+  * List container execution modes with ps -m
+  * Added support for nameat() and statx() in Pn and Fn modes
+  * Added Fn libraries for Ubuntu18, Ubuntu19, Fedora29, Fedora30, Fedora31, CentOS8
+  * Added Fn libraries for Alpine 3.8, 3.9, 3.10, 3.11
+  * Added support for sha512 hashes
+  * Added support for opaque whiteouts
+  * Added search --list-tags to available tags for a given repository
+  * Add CLI support for image names in format host/repository:tag
+  * Support for fake root in Sn execution modes via --user=root
+  * Improve verify of loaded/pulled images
+  * Improve handling of mountpoints
+  * Added --containerauth to enable direct use of the container passwd and group
+  * Added support for file mount bindings in singularity
+  * Added UDOCKER_USE_PROOT_EXECUTABLE env var to select proot location
+  * Added UDOCKER_USE_RUNC_EXECUTABLE env var to select runc location
+  * Added UDOCKER_USE_SINGULARITY_EXECUTABLE env var to select singularity
+  * Added UDOCKER_DEFAULT_EXECUTION_MODE env var to select default execution mode
+  * Added R2 and R3 execution modes for PRoot overlay execution in runc
+  * Added setup --purge for cleanup of mountpoints and files 
+  * Added setup --fixperms to fix container file permissions
+  * Added run --env-file= to load file with environment variables
+  * Improve file and directory binding support for Singularity and runc
+  * Add command rename for renaming of containers
+  * Create processes without shell context
+  * Safer parsing of config files and removal of directories
+  * Improve installation
+  * Improved fix of SECCOMP accelerated mode for P1 mode
+  * Added loading and handling of container images in OCI format
+  * Fixes for udocker in ARM aarch64
+  * Fix processing of --dri in Sn mode
+    - closes: #241
+  * Improve handling of container and host authentication
+    - partially addresses: #239
+  * Fixes to address authentication and redirects in pull
+    - closes: #225, #230
+  * Added minimal support to load OCI images
+    - closes: #111
+  * Added Pn support for newer distributions
+    - closes: #192
+  * Improve the installation of udockertools
+    - closes: #220, #228
+  * Read environment variables from file with --env-file=
+    - closes: #212
+  * Prepare for pypy
+    - closes: #211
+  * Fixes for verification of container images
+    - closes: #209
+  * Fix command line processing for "-" in argument
+    - closes: #202
+  * Fix file protections on extraction making files u+r
+    - closes: #202, #206
+  * Fix comparison of kernel versions having non-integers
+    - closes: #183
+  * Support for both manifest V2 schema 1 and schema 2
+    - closes: #218, #225
+  * Further improved pathname translation in Fn modes
+    - closes: #160
+  * Implement save images in docker format
+    - closes: #74
+  * useradd and groupadd not working in containers
+    - closes: #141
+  * fix return code when exporting to stdin
+    - closes: #202
+
 # udocker (1.1.3)
+
   * Support for nvidia drivers on ubuntu
     - closes: #162
   * Installation improvements
@@ -7,6 +123,7 @@
     - partially addresses: #160
 
 # udocker (1.1.2)
+
   * Improve parsing of quotes in the command line
     - closes: #98
   * Fix version command to exit with 0
