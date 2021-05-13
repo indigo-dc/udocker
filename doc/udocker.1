@@ -1,7 +1,7 @@
 .\" Manpage for udocker
 .\" Contact udocker@lip.pt to correct errors or typos.
 .\" To read this man page use:   man -l udocker.1
-.TH udocker 1 "25 Jan 2020" "version 1.1.7" "udocker man page"
+.TH udocker 1 "13 May 2021" "version 1.1.8" "udocker man page"
 .SH NAME
 udocker \- execute Docker containers in user space without privileges
 .SH SYNOPSIS
@@ -179,6 +179,9 @@ Map a container port to another port in the host, only available in Pn modes. (E
 .TP
 --publish-all
 Map container ports to different random ports, only available in Pn modes. (EXPERIMENTAL)
+.TP
+--nobanner
+Do not print the startup banner.
 .RE
 
 .SH ENVIRONMENT

@@ -2517,7 +2517,7 @@ class ExecutionEngineCommon(object):
         self.opt["portsmap"] = []                # Ports mapped in container
         self.opt["portsexp"] = []                # Ports exposed by container
         self.opt["devices"] = []                 # Devices passed to container
-        self.opt["nobanner"] = False             # Don't show banner
+        self.opt["nobanner"] = False             # Printing of startup banner
 
     def _has_option(self, search_option, arg=None):
         """Check if executable has a given cli option"""

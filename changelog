@@ -2,6 +2,17 @@ udocker (1.1.8b2)
   * Fix Rn modes to enable containers execution from readonly dirs
   * Documentation centralized installation and readonly setups
   * Fix handling of dockerhub repository names in /v2
+  * Fix delete of paths with symlinks and checking of safe paths
+    - closes: #267, #265
+  * Fix pull images from docker hub in Termux
+    - closes: #307
+  * Fix issues on running udocker in googlecolab
+    - closes: #286
+  * Fix execution with Pn modes in alternate /tmp
+    - closes: #284
+  * Add conditional delay-directory-restore to untar layers
+  * Add exclude of whiteouts on layer untar
+  * Add --nobanner to udocker run
 
 udocker (1.1.7)
   * Fix P1 when Linux 4.8.0 SECCOMP is backported, affects newer CentOS 7 
