@@ -59,10 +59,10 @@ Researchers have at their disposal a wide range of computing resources ranging
 from laptops to high performance computing clusters and cloud services. Enabling 
 execution of scientific codes across such resources often requires significant 
 effort to adapt to the underlying system configurations. This can be particularly
-difficult for codes with complex software dependencies and can become a continous 
+difficult for codes with complex software dependencies and can become a continuous 
 effort due to system changes and software updates. Furthermore ensuring the 
 reproducibility across heterogeneous computing resources can be challenging when 
-the software needs to be adapted to the specificities of each resource. In this 
+the software needs to be adapted to the specificity of each resource. In this 
 context Linux containers have gained interest as means to enable encapsulation of 
 research software for easier execution across these environments.
 
@@ -82,14 +82,14 @@ Since then several new features have been released.
 # Concept
 udocker provides a self contained solution with minimal dependencies to enable
 execution across systems without need of compilation. udocker itself was 
-initialy implemented in Python 2 and later ported to Python 3.
+initially implemented in Python 2 and later ported to Python 3.
 
 udocker implements pulling, importing and loading of docker or OCI containers to 
 a local repository in the user home directory. The layers composing a container 
-image can then be sequentialy extracted to create a flatened directory tree.
+image can then be sequentially extracted to create a flattened directory tree.
 Furthermore udocker also provides the logic to interface with the several 
 execution engines that enable the execution of code extracted from the container 
-images, thus hiding as much as possible the execution engines specificities.
+images, thus hiding as much as possible the execution engines specificity.
 The execution engines are based on existing software that in most cases has been
 further developed, integrated and packaged to be used with udocker. The following
 engines are currently provided:
@@ -149,10 +149,10 @@ and computer science in general [@CABALLER2021] [@RISCO2021] [@SUFI2020] [@ALDIN
 
 
 udocker was used in the European projects EOSC-hub [@EOSCHUB] where it 
-was further improved and DEEP-hybrid-datacloud [@DEEP2020] where it was ported 
+was further improved and DEEP-hybrid-DataCloud [@DEEP2020] where it was ported 
 to Python 3, enhanced to support nvidia GPUs and used to execute deep 
 learning frameworks. Since 2021 is used in the EOSC-Synergy [@KERZENMACHER2021], 
-EGI-ACE [@EGIACE] and BIG-HPC [@PAULO2020] projects. Althrough is a tool meant for
+EGI-ACE [@EGIACE] and BIG-HPC [@PAULO2020] projects. Although is a tool meant for
 end-users, it is also supported by several scientific and academic computer 
 centers and research infrastructures worldwide such as:
 
@@ -175,7 +175,7 @@ udocker was been integrated in several research oriented frameworks such as:
 
 # Acknowledgements
 
-udocker has been developed in the framework of the H2020 projects INDIGO-Datacloud (RIA 653549), EOSC-hub (RIA 777536) and DEEP-Hybrid-DataCloud (RIA 777435). The proofs of concept have been performed at INCD-Infraestrutura Nacional de Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER under the project number 22153-01/SAICT/2016), FinisTerrae II machine provided by CESGA (funded by Xunta de Galicia and MINECO) and Altamira machine (funded by the University of Cantabria and MINECO).
+udocker has been developed in the framework of the H2020 projects INDIGO-DataCloud (RIA 653549), EOSC-hub (RIA 777536) and DEEP-Hybrid-DataCloud (RIA 777435). The proofs of concept have been performed at INCD-Infraestrutura Nacional de Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER under the project number 22153-01/SAICT/2016), FinisTerrae II machine provided by CESGA (funded by Xunta de Galicia and MINECO) and Altamira machine (funded by the University of Cantabria and MINECO).
 
 # References
 
