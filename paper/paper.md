@@ -170,8 +170,8 @@ udocker was been integrated in several research oriented frameworks such as:
  * SCAR - Serverless Container-aware ARchitectures [@PEREZ2018] to enable execution of containers in Amazon Lambda exploiting function as a service (FaaS);
  * common-workflow-language [@CWL2016], [@KORHONEN2019] to enable containers in scientific workflows;
  * bioconda [@GRUNING2018] for the conda package manager specialized in bioinformatics software;
- * openmole  workflow engine [@REUILLON2013] for exploration of simulation models using high throughput computing.
-
+ * openmole  workflow engine [@REUILLON2013] for exploration of simulation models using high throughput computing;
+ * and is also referenced in the SLURM Containers Guide [@SLURM].
 
 # Acknowledgements
 
