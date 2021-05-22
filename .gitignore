@@ -112,7 +112,7 @@ ENV/
 .idea
 
 # VSCode
-.vscode
+.vscode/
 
 # Eclipse
 .project

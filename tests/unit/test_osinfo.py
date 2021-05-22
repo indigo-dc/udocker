@@ -59,14 +59,14 @@ class GuestInfoTestCase(TestCase):
         self.assertEqual(status, "amd64")
 
         # arch is i386
-        ftype = "/bin/ls: yyy, 80386, xxx"
+        ftype = "/bin/ls: yyy, Intel 80386, xxx"
         mock_getftype.return_value = ftype
         ginfo = OSInfo(self.rootdir)
         status = ginfo.arch()
         self.assertEqual(status, "i386")
 
         # arch is arm 64
-        ftype = "/bin/ls: yyy, ARM, 64-bit"
+        ftype = "/bin/ls: yyy, aarch64"
         mock_getftype.return_value = ftype
         ginfo = OSInfo(self.rootdir)
         status = ginfo.arch()
