@@ -560,7 +560,7 @@ class UdockerCLITestCase(TestCase):
         mock_ksput.return_value = 1
         udoc = UdockerCLI(self.local)
         status = udoc.do_login(cmdp)
-        # self.assertEqual(status, 1)
+        self.assertEqual(status, 1)
         self.assertTrue(mock_setrepo.called)
         self.assertTrue(mock_dioalog.called)
         self.assertTrue(mock_ksput.called)
