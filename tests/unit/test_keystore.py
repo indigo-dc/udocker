@@ -114,12 +114,13 @@ class KeyStoreTestCase(TestCase):
         credentials = {url: {u'email': email, u'auth': auth}}
         mock_shred.return_value = None
         kstore = KeyStore("filename")
-        self.assertFalse(kstore.put("", "", ""))
+        status = kstore.put("", "", "")
+        self.assertEqual(status, 1)
 
         mock_shred.return_value = None
         mock_readall.return_value = dict()
         kstore = KeyStore("filename")
-        kstore.put(url, auth, email)
+        status = kstore.put(url, auth, email)
         mock_writeall.assert_called_once_with(credentials)
 
     @patch.object(KeyStore, '_verify_keystore')

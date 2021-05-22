@@ -555,9 +555,9 @@ class UdockerCLITestCase(TestCase):
                 "--password", "xx"]
         cmdp = CmdParser()
         cmdp.parse(argv)
-        mock_setrepo.return_value = None
+        mock_setrepo.return_value = True
         mock_dioalog.return_value = "zx1"
-        mock_ksput.return_value = False
+        mock_ksput.return_value = 1
         udoc = UdockerCLI(self.local)
         status = udoc.do_login(cmdp)
         self.assertEqual(status, 1)
@@ -571,7 +571,7 @@ class UdockerCLITestCase(TestCase):
         cmdp.parse(argv)
         mock_setrepo.return_value = None
         mock_dioalog.return_value = "zx1"
-        mock_ksput.return_value = True
+        mock_ksput.return_value = 0
         udoc = UdockerCLI(self.local)
         status = udoc.do_login(cmdp)
         self.assertEqual(status, 0)
