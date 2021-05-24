@@ -30,7 +30,7 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.2.8b2"
+__version__ = "1.2.9"
 __date__ = "2021"
 
 def is_genstr(objstr):
