@@ -5,10 +5,12 @@ udocker unit tests: Unshare
 
 from unittest import TestCase, main
 from udocker.helper.unshare import Unshare
-try:
-    from unittest.mock import patch, MagicMock
-except ImportError:
-    from mock import patch, MagicMock
+from unittest.mock import patch, MagicMock
+
+# try:
+#     from unittest.mock import patch, MagicMock
+# except ImportError:
+#     from mock import patch, MagicMock
 
 
 class UnshareTestCase(TestCase):
@@ -26,7 +28,11 @@ class UnshareTestCase(TestCase):
         status = Unshare().unshare(False)
         self.assertTrue(mock_cdll.return_value.unshare.called)
         self.assertTrue(status)
-        # TODO test for flag = True
+
+        mock_cdll.return_value.unshare.return_value = -1
+        status = Unshare().unshare(True)
+        self.assertTrue(mock_cdll.return_value.unshare.called)
+        self.assertFalse(status)
 
     @patch('udocker.helper.unshare.os._exit')
     @patch.object(Unshare, 'unshare')

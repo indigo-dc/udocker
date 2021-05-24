@@ -128,7 +128,8 @@ class FileUtil(object):
                 for dir_path, dirs, files in os.walk(self.filename):
                     for f_name in dirs + files:
                         os.lchown(dir_path + '/' + f_name, uid, gid)
-            self._chmod(self.filename, uid, gid)
+            else:
+                os.lchown(self.filename, uid, gid)
         except OSError:
             return False
         return True
