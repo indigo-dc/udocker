@@ -20,12 +20,28 @@ commands = bandit udocker -f html -o bandit.html"""
 
     stages {
         stage('Code fetching') {
+            when {
+              anyOf {
+                branch 'master'
+                branch 'devel*'
+                buildingTag()
+                changeRequest target: 'master'
+              }
+            }
             steps {
                 checkout scm
             }
         }
 
         stage('Environment setup') {
+            when {
+              anyOf {
+                branch 'master'
+                branch 'devel*'
+                buildingTag()
+                changeRequest target: 'master'
+              }
+            }
             steps {
                 PipRequirements(
                     ['pylint', 'nose', 'nosexcover', 'mock', 'bandit', 'funcsigs'],
@@ -40,6 +56,14 @@ commands = bandit udocker -f html -o bandit.html"""
         }
 
         stage('Style analysis') {
+            when {
+              anyOf {
+                branch 'master'
+                branch 'devel*'
+                buildingTag()
+                changeRequest target: 'master'
+              }
+            }
             steps {
                 ToxEnvRun('pylint', 'tox_jenkins.ini')
             }
@@ -51,6 +75,14 @@ commands = bandit udocker -f html -o bandit.html"""
         }
 
         stage('Unit testing coverage') {
+            when {
+              anyOf {
+                branch 'master'
+                branch 'devel*'
+                buildingTag()
+                changeRequest target: 'master'
+              }
+            }
             steps {
                 script {
                     try {
@@ -73,6 +105,14 @@ commands = bandit udocker -f html -o bandit.html"""
         }
 
         stage('Security scanner') {
+            when {
+              anyOf {
+                branch 'master'
+                branch 'devel*'
+                buildingTag()
+                changeRequest target: 'master'
+              }
+            }
             steps {
                 script {
                     try {
@@ -118,6 +158,14 @@ commands = bandit udocker -f html -o bandit.html"""
         stage('Metrics gathering') {
             agent {
                 label 'sloc'
+            }
+            when {
+              anyOf {
+                branch 'master'
+                branch 'devel*'
+                buildingTag()
+                changeRequest target: 'master'
+              }
             }
             steps {
                 checkout scm
