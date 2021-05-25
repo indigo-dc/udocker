@@ -164,6 +164,7 @@ commands = bandit udocker -f html -o bandit.html"""
         }
         */
 
+/*
         stage('Metrics gathering') {
             agent {
                 label 'sloc'
@@ -187,7 +188,7 @@ commands = bandit udocker -f html -o bandit.html"""
                 }
             }
         }
-
+*/
         stage('PyPI delivery') {
             when {
                 anyOf {
