@@ -136,6 +136,15 @@ commands = bandit udocker -f html -o bandit.html"""
             agent {
                 label 'docker-build'
             }
+            when {
+              anyOf {
+                beforeAgent true
+                branch 'master'
+                branch 'devel*'
+                buildingTag()
+                changeRequest target: 'master'
+              }
+            }
             steps {
                 checkout scm
                 OWASPDependencyCheckRun(
@@ -161,6 +170,7 @@ commands = bandit udocker -f html -o bandit.html"""
             }
             when {
               anyOf {
+                beforeAgent true
                 branch 'master'
                 branch 'devel*'
                 buildingTag()
