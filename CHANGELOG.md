@@ -1,3 +1,26 @@
+# udocker (1.3.0)
+
+  * add codemeta.json, metadata for the software
+
+# udocker (1.2.9)
+
+  * fix issue #254: in method Unshare.unshare os.strerror() takes one argument,
+  * add unit test #254
+  * fix issue #276: in method chown udocker.utils.fileutil FileUtil
+  * several fixes of unit tests and pylint
+  * Fix confusion between exit code 0 and inferred False
+  * dereference on safe_prefixes
+  * untar exclude dev
+  * fix rmi for referenced layers
+  * set default for PROOT_TMP_DIR
+  * sysdir mountpoint not found and set tmpdir
+  * update installation instructions
+  * Improve oskernel_isgreater()
+  * improve osinfo()
+  * Fix repository login/logout
+  * improve keystore logic
+  * fix pull /v2
+
 # udocker (1.2.8b2)
 
   * Fix Rn modes to enable containers execution from readonly dirs
@@ -8,7 +31,11 @@
 
 # udocker (1.2.7)
 
-  * Porting to Python 3
+  * Major restructuring of the code
+  * Major restructuring of the unit tests
+  * Porting to Python 3, still supports python 2.7
+  * all fixes up to previous 1.1.7 version have been applied
+  * added scripts tests udocker: utils/udocker_test.sh utils/udocker_test-run.sh
 
 # udocker (1.1.7)
 
