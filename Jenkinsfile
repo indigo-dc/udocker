@@ -13,6 +13,7 @@ pipeline {
                 branch 'devel*'
                 buildingTag()
                 changeRequest target: 'master'
+                changeRequest target: 'devel3'
               }
             }
             steps {
