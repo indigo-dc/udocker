@@ -39,7 +39,7 @@ setup(
     author_email='udocker@lip.pt',
     version=__version__,
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Intended Audience :: End Users/Desktop',
         'Intended Audience :: Science/Research',
@@ -53,6 +53,8 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Topic :: System',
+        'Topic :: Utilities',
     ],
     description="A basic user tool to execute simple docker \
         containers in batch or interactive systems without root privileges",
@@ -63,7 +65,7 @@ setup(
     license="Apache Software License 2.0",
     long_description=README + '\n\n' + HISTORY,
     include_package_data=True,
-    keywords='udocker',
+    keywords='Linux containers, HPC on cloud, Virtualization',
     name='udocker',
     packages=find_packages(),
     data_files=[(CONF_DIR, ['etc/udocker.conf'])],

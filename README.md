@@ -337,6 +337,28 @@ The runC mode requires a recent kernel with user namespaces enabled.
 The singularity mode requires the availability of Singularity in the host
 system.
 
+## Metadata generation
+
+The `codemeta-json` metadata file was initially generated with `codemetapy`
+package:
+
+```
+codemetapy udocker --with-orcid --affiliation "LIP Lisbon" \
+  --buildInstructions "https://udocker_install" \
+  --citation "https://doi.org/10.1016/j.cpc.2018.05.021" \
+  --codeRepository "https://github.com/indigo-dc/udocker" \
+  --contIntegration "https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/master/" --contributor "Mario David" \
+  --copyrightHolder "LIP"  --copyrightYear "2016" --creator "Jorge Gomes" \
+  --dateCreated "2021-05-26" --maintainer "Jorge Gomes" \
+  --readme "https://github.com/indigo-dc/udocker/blob/master/README.md" \
+  --referencePublication "https://doi.org/10.1016/j.cpc.2018.05.021" \
+  --releaseNotes "https://github.com/indigo-dc/udocker/blob/master/changelog" \
+  -O codemeta.json
+```
+
+One should note that further update is needed to have the correct values in
+the metadata file.
+
 ## Documentation
 
 The full documentation is available at:
