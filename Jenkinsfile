@@ -7,6 +7,15 @@ pipeline {
 
     stages {
         stage('SQA baseline dynamic stages') {
+            when {
+              anyOf {
+                branch 'master'
+                branch 'devel*'
+                buildingTag()
+                changeRequest target: 'master'
+                changeRequest target: 'devel3'
+              }
+            }
             steps {
                 script {
                     projectConfig = pipelineConfig()

@@ -1,7 +1,7 @@
 <!---
 [![Build Status](https://jenkins.indigo-datacloud.eu/buildStatus/icon?job=Pipeline-as-code/udocker/master)](https://jenkins.indigo-datacloud.eu/job/Pipeline-as-code/job/udocker/job/master/)
 -->
-[![Build Status](https://jenkins.indigo-datacloud.eu/buildStatus/icon?job=Pipeline-as-code/udocker/master)](https://jenkins.indigo-datacloud.eu/job/Pipeline-as-code/job/udocker/job/master/)
+[![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc/udocker/devel3)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/devel3/)
 
 [![logo](https://raw.githubusercontent.com/indigo-dc/udocker/master/doc/logo-small.png)]()
 
@@ -337,6 +337,28 @@ The runC mode requires a recent kernel with user namespaces enabled.
 The singularity mode requires the availability of Singularity in the host
 system.
 
+## Metadata generation
+
+The `codemeta-json` metadata file was initially generated with `codemetapy`
+package:
+
+```
+codemetapy udocker --with-orcid --affiliation "LIP Lisbon" \
+  --buildInstructions "https://udocker_install" \
+  --citation "https://doi.org/10.1016/j.cpc.2018.05.021" \
+  --codeRepository "https://github.com/indigo-dc/udocker" \
+  --contIntegration "https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/master/" --contributor "Mario David" \
+  --copyrightHolder "LIP"  --copyrightYear "2016" --creator "Jorge Gomes" \
+  --dateCreated "2021-05-26" --maintainer "Jorge Gomes" \
+  --readme "https://github.com/indigo-dc/udocker/blob/master/README.md" \
+  --referencePublication "https://doi.org/10.1016/j.cpc.2018.05.021" \
+  --releaseNotes "https://github.com/indigo-dc/udocker/blob/master/changelog" \
+  -O codemeta.json
+```
+
+One should note that further update is needed to have the correct values in
+the metadata file.
+
 ## Documentation
 
 The full documentation is available at:
@@ -377,7 +399,7 @@ ISSN 0010-4655, https://doi.org/10.1016/j.cpc.2018.05.021
 
 
 This work was performed in the framework of the H2020 project INDIGO-Datacloud (RIA 653549) and further developed with co-funding by the projects EOSC-hub (Horizon 2020) under Grant number 777536 and DEEP-Hybrid-DataCloud (Horizon 2020) under Grant number 777435.
-The authors which to acknowleadge the support of INCD-Infraestrutura Nacional de Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER under the project number 22153-01/SAICT/2016).
+The authors wish to acknowleadge the support of INCD-Infraestrutura Nacional de Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER under the project number 22153-01/SAICT/2016).
 <!---
 <img src="https://wiki.eosc-hub.eu/download/attachments/1867786/eu%20logo.jpeg?version=1&modificationDate=1459256840098&api=v2" height="24">
 <img src="https://wiki.eosc-hub.eu/download/attachments/18973612/eosc-hub-web.png?version=1&modificationDate=1516099993132&api=v2" height="24">

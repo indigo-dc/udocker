@@ -38,7 +38,7 @@ class OSInfo(object):
         if os.path.isfile(filename):
             filetype = Uprocess().get_output(["file", filename])
             if not filetype:
-               filetype = Uprocess().get_output(["readelf", "-h", filename])
+                filetype = Uprocess().get_output(["readelf", "-h", filename])
         return filetype
 
     def arch(self):

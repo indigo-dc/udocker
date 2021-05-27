@@ -69,7 +69,7 @@ class HostInfo(object):
             return True
         for (idx, os_version) in enumerate(os_release.split('.')):
             if idx >= len(version):
-                break;
+                break
             if int(os_version) > int(version[idx]):
                 return True
             elif int(os_version) < int(version[idx]):

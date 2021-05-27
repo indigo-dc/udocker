@@ -112,11 +112,11 @@ ENV/
 .idea
 
 # VSCode
-.vscode
+.vscode/
 
 # Eclipse
 .project
 .pydevproject
 
 rm-udtmp.sh
-
+udocker/udocker

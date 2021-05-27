@@ -189,10 +189,9 @@ class ExecutionEngineCommonTestCase(TestCase):
         ex_eng.opt["vol"] = list()
         ex_eng.opt["vol"].append("/HOSTDIR:/CONTDIR")
         status = ex_eng._check_volumes()
-        self.assertFalse(status)
+        self.assertTrue(status)
         self.assertEqual(ex_eng.opt["vol"], list())
         self.assertTrue(mock_exists.called)
-        self.assertTrue(mock_crmpoint.called)
 
         Config.conf['sysdirs_list'] = ["/sys"]
         mock_exists.return_value = False
