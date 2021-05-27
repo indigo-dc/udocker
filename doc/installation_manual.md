@@ -15,6 +15,8 @@ udocker requires:
  * python hashlib or alternatively the openssl command
  * tar
  * find
+ * chmod
+ * chgrp
  * ldconfig (only used by the Fn execution modes)
 
 ## 2. INSTALLATION
