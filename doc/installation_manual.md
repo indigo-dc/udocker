@@ -1,0 +1,1 @@
+../docs/installation_manual.md
