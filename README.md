@@ -3,7 +3,7 @@
 -->
 [![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc/udocker/devel3)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/devel3/)
 
-[![logo](docs/logo-small.png)]
+![logo](docs/logo-small.png)
 
 udocker is a basic user tool to execute simple docker containers in user
 space without requiring root privileges. Enables download and execution
@@ -22,6 +22,15 @@ via user namespaces.
 udocker is a wrapper around several tools to mimic a subset of the
 docker capabilities including pulling images and running containers
 with minimal functionality.
+
+## Documentation
+
+The full documentation is available at:
+
+* [udocker documentation](https://indigo-dc.github.io/udocker/)
+  * [User manual](https://indigo-dc.github.io/udocker/user_manual.html)
+  * [Installation manual](https://indigo-dc.github.io/udocker/installation_manual.html)
+  * [Reference card](https://indigo-dc.github.io/udocker/reference_card.html)
 
 ## How does it work
 udocker is written in Python, it has a minimal set of dependencies so 
@@ -69,13 +78,8 @@ and does not require privileges.
 ## Python 2 and Python 3
 
 Since v1.2.0 udocker supports both Python 2 and Python 3. The original
-version of udocker for Python 2 only is available [here](https://github.com/indigo-dc/udocker/tree/devel)
-
-## Installation and Users manuals
-
-See the **[Installation manual](docs/installation_manual.md)**
-See the **[Users manual](docs/user_manual.md)**.
-See the **[All documentation](SUMMARY.md)**
+version of udocker for Python 2 only is available
+[here](https://github.com/indigo-dc/udocker/tree/devel)
 
 ## Syntax
 
@@ -373,18 +377,13 @@ codemetapy udocker --with-orcid --affiliation "LIP Lisbon" \
 Further updates may be needed to add the correct values in
 the metadata file.
 
-## Documentation
-
-The full documentation is available at:
-
-* master: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
-* devel3: https://github.com/indigo-dc/udocker/blob/devel3/SUMMARY.md
-
 ## Contributing
 
 See: [Contributing](CONTRIBUTING.md)
 
 ## Citing
+
+See: [Citing](CITING.md)
 
 When citing udocker please use the following:
 
@@ -412,8 +411,15 @@ ISSN 0010-4655, https://doi.org/10.1016/j.cpc.2018.05.021
 * INCD [https://www.incd.pt](https://www.incd.pt/?lang=en)
 
 
-This work was performed in the framework of the H2020 project INDIGO-Datacloud (RIA 653549) and further developed with co-funding by the projects EOSC-hub (Horizon 2020) under Grant number 777536 and DEEP-Hybrid-DataCloud (Horizon 2020) under Grant number 777435. Software Quality Assurance is performed with the support of by the project EOSC-Synergy (Horizon 2020).
-The authors wish to acknowleadge the support of INCD-Infraestrutura Nacional de Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER under the project number 22153-01/SAICT/2016).
+This work was performed in the framework of the H2020 project INDIGO-Datacloud
+(RIA 653549) and further developed with co-funding by the projects EOSC-hub
+(Horizon 2020) under Grant number 777536 and DEEP-Hybrid-DataCloud
+(Horizon 2020) under Grant number 777435. Software Quality Assurance is
+performed with the support of by the project EOSC-Synergy (Horizon 2020).
+The authors wish to acknowleadge the support of INCD-Infraestrutura Nacional de
+Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER
+under the project number 22153-01/SAICT/2016).
+
 <!---
 <img src="https://wiki.eosc-hub.eu/download/attachments/1867786/eu%20logo.jpeg?version=1&modificationDate=1459256840098&api=v2" height="24">
 <img src="https://wiki.eosc-hub.eu/download/attachments/18973612/eosc-hub-web.png?version=1&modificationDate=1516099993132&api=v2" height="24">
