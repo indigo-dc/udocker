@@ -55,6 +55,9 @@ you can copy it to your home directory `$HOME` or to `$UDOCKER`
 
 ---
 
+The both the installed files and also the containers to be downloaded or created  
+with udocker will be installed by default under `$HOME/.udocker`.
+
 ### 2.2. INSTALL FROM THE DEVELOPMENT BRANCH
 
 To install the latest stable code from the github `master` branch:
