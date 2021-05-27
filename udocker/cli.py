@@ -474,7 +474,8 @@ class UdockerCLI(object):
                       "Caps Lock ?", l=Msg.WAR)
 
         v2_auth_token = self.dockerioapi.get_v2_login_token(username, password)
-        if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, "") == 0:
+        if self.keystore.put(self.dockerioapi.registry_url,
+                             v2_auth_token, "") == 0:
             return self.STATUS_OK
 
         Msg().err("Error: invalid credentials")
@@ -664,6 +665,10 @@ class UdockerCLI(object):
             "devices": {
                 "fl": ("--device=",), "act": "E",
                 "p2": "CMD_OPT", "p3": True
+            },
+            "nobanner": {
+                "fl": ("--nobanner",), "act": 'R',
+                "p2": "CMD_OPT", "p3": False
             }
         }
         for option, cmdp_args in list(cmd_options.items()):
@@ -708,6 +713,7 @@ class UdockerCLI(object):
         --kernel=<kernel-id>       :simulate this Linux kernel version
         --device=/dev/xxx          :pass device to container (R1 mode only)
         --location=<container-dir> :use container outside the repository
+        --nobanner                 :don't print a startup banner
 
         Only available in Rn execution modes:
         --device=/dev/xxx          :pass device to container (R1 mode only)

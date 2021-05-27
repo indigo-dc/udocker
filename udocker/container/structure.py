@@ -55,8 +55,8 @@ class ContainerStructure(object):
         if container_json[confidx]  and param in container_json[confidx]:
             if container_json[confidx][param] is None:
                 pass
-            elif (is_genstr(container_json[confidx][param])
-                    and (isinstance(default, (list, tuple)))):
+            elif (is_genstr(container_json[confidx][param]) and
+                  (isinstance(default, (list, tuple)))):
                 return container_json[confidx][param].strip().split()
             elif (is_genstr(default) and (
                     isinstance(container_json[confidx][param], (list, tuple)))):
@@ -206,7 +206,7 @@ class ContainerStructure(object):
         wildcards = ["--wildcards", ]
         if not HostInfo().cmd_has_option("tar", wildcards[0]):
             wildcards = []
-        cmd = ["tar", "t" + verbose] + wildcards + ["-f", tarf, "*/.wh.*"]
+        cmd = ["tar", "t" + verbose] + wildcards + ["-f", tarf, r"*/.wh.*"]
         whiteouts = Uprocess().get_output(cmd, True)
         if not whiteouts:
             return
@@ -237,9 +237,10 @@ class ContainerStructure(object):
             return False
         status = True
         gid = str(HostInfo.gid)
-        wildcards = ["--wildcards", ]
-        if not HostInfo().cmd_has_option("tar", wildcards[0]):
-            wildcards = []
+        optional_flags = ["--wildcards", "--delay-directory-restore", ]
+        for option in optional_flags:
+            if not HostInfo().cmd_has_option("tar", option):
+                optional_flags.remove(option)
         for tarf in tarfiles:
             if tarf != '-':
                 self._apply_whiteouts(tarf, destdir)
@@ -250,20 +251,21 @@ class ContainerStructure(object):
             cmd = ["tar", "-C", destdir, "-x" + verbose,
                    "--one-file-system", "--no-same-owner", "--overwrite",
                    "--exclude=dev/*", "--exclude=etc/udev/devices/*",
-                   "--no-same-permissions", ] + wildcards + ["-f", tarf]
+                   "--no-same-permissions", r"--exclude=.wh.*",
+                   ] + optional_flags + ["-f", tarf]
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
                 Msg().err("Error: while extracting image layer")
                 status = False
             cmd = ["find", destdir,
                    "(", "-type", "d", "!", "-perm", "-u=x", "-exec",
-                   "/bin/chmod", "u+x", "{}", ";", ")", ",",
-                   "(", "!", "-perm", "-u=w", "-exec", "/bin/chmod",
+                   "chmod", "u+x", "{}", ";", ")", ",",
+                   "(", "!", "-perm", "-u=w", "-exec", "chmod",
                    "u+w", "{}", ";", ")", ",",
-                   "(", "!", "-perm", "-u=r", "-exec", "/bin/chmod",
+                   "(", "!", "-perm", "-u=r", "-exec", "chmod",
                    "u+r", "{}", ";", ")", ",",
-                   "(", "!", "-gid", gid, "-exec", "/bin/chgrp", gid,
+                   "(", "!", "-gid", gid, "-exec", "chgrp", gid,
                    "{}", ";", ")", ",",
-                   "(", "-name", ".wh.*", "-exec", "/bin/rm", "-f",
+                   "(", "-name", ".wh.*", "-exec", "rm", "-f",
                    "--preserve-root", "{}", ";", ")"]
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
                 status = False
