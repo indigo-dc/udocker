@@ -9,7 +9,7 @@ tags:
 authors:
   - name: Jorge Gomes^[corresponding author]
     orcid: 0000-0002-9142-2596
-    affiliation: "1, 2" # (Multiple affiliations must be quoted)
+    affiliation: "1, 2"
   - name: Mario David
     orcid: 0000-0003-1802-5356
     affiliation: "1, 2"
@@ -76,8 +76,8 @@ required to execute containers by providing an integrated solution to execute
 Linux containers leveraging different approaches suitable for unprivileged
 users. Finally by executing containers without privileges udocker decreases the 
 risks of privilege escalation. The udocker development started in 2016 and 
-the original udocker paper [@GOMES2018] documented versions 1.1.0 and 1.1.1.
-Since then several new features have been released.
+the original udocker paper [@GOMES2018] documented versions 1.1.0 and 1.1.1 
+for Python 2. Since then several new features have been released.
 
 # Concept
 udocker provides a self contained solution with minimal dependencies to enable
@@ -110,16 +110,16 @@ engines are currently provided:
   older and newer, and constitutes the default execution engine for udocker. 
 * **R** engine: uses either `runc` [@RUNC] or `crun` [@CRUN] to execute the 
   containers without privileges using Linux user namespaces. Both tools are 
-  provided with udocker for wider interoperability.
+  provided with udocker for increased interoperability.
 * **S** engine: uses Singularity [@KURTZER2017] to execute the containers using 
   user namespaces or other Singularity execution method when available. 
   
 All required executables are statically compiled for execution across a
-wide range of systems. The shared libraries for the **F** modes are also provided
-for major Linux distributions. Support for the ARM architecture is provided 
-for the **P** mode and is ongoing for the other modes. The binaries for the 
-**S** engine are not provided with udocker, as this mode is provided to take 
-advantage of local installations of Singularity where available.
+wide range of systems. The shared libraries for the **F** modes are also 
+provided for major Linux distributions. Support for the ARM architecture is 
+provided for the **P** mode and is ongoing for the other modes. The binaries 
+for the **S** engine are not provided with udocker, as this mode is provided 
+to take advantage of local installations of Singularity where available.
 
 Once the udocker Python code is transferred to the target host it can be 
 used by an unprivileged user to download the additional executables and 
