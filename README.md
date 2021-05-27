@@ -3,7 +3,7 @@
 -->
 [![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc/udocker/devel3)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/devel3/)
 
-[![logo](docs/logo-small.png)]
+![logo](docs/logo-small.png)
 
 udocker is a basic user tool to execute simple docker containers in user
 space without requiring root privileges. Enables download and execution
