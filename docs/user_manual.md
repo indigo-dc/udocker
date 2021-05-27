@@ -1,4 +1,4 @@
-# udocker USER MANUAL
+# User manual
 
 A basic user tool to execute simple Docker containers in user space 
 without requiring root privileges. udocker enables basic download and execution 
@@ -22,9 +22,10 @@ udocker is mainly meant to execute user applications packaged in Docker
 containers. We recommend the use of Docker whenever possible, but when 
 it is unavailable udocker can be the right tool to run your applications.
 
-## 1. INTRODUCTION
+## 1. Introduction
 
 ### 1.1. How does it work
+
 udocker is written in Python, from version 1.2.0 onwards udocker supports
 both Python 3 and Python 2. udocker has a minimal set of dependencies so 
 that can be executed in a wide range of Linux systems. udocker does not 
@@ -42,9 +43,9 @@ in the usual way; create the container out of that image (flatenning the image
 on the filesystem), and finally run the container with the name we gave it in
 the creation process:
 
-  * `udocker pull` busybox
-  * `udocker create` --name=verybusy busybox
-  * `udocker run` verybusy
+* `udocker pull` busybox
+* `udocker create` --name=verybusy busybox
+* `udocker run` verybusy
 
 This sequence allows the created container to be executed many times. If simultaneous
 executions are envisage just make sure that input/output files are not overwritten by
@@ -56,9 +57,10 @@ case a new container is created for every run invocation thus occupying more sto
 space. To pull, create and execute in a single step invoke run with an image name
 instead of container name:
 
- * `udocker run` busybox
+* `udocker run` busybox
 
 ### 1.2. Limitations
+
 Since root privileges are not involved, any operation that really requires privileges
 is not possible. The following are examples of operations that are not possible:
 
@@ -76,10 +78,12 @@ Other limitations:
 * udocker does not provide all the Docker features, and is not intended as a Docker replacement;
 * debugging and tracing in the PRoot engine will not work;
 * the Fakechroot engine does not support execution of statically linked executables;
-* udocker is mainly oriented at providing a run-time environment for containers execution in user space.
+* udocker is mainly oriented at providing a run-time environment for containers
+  execution in user space.
 * udocker does not offer robust isolation features such as the ones offered by docker.
 
 ### 1.3. Security
+
 udocker does not offer robust isolation features such as the ones offered
 by docker. Therefore if the containers content is not trusted then these
 containers should not be executed with udocker as they will run inside the
@@ -122,6 +126,7 @@ udocker does not have privileged escalation issues as it runs entirely
 without privileges.
 
 ### 1.4. Basic flow
+
 The basic flow with udocker is:
 
 1. The user downloads udocker to its home directory and executes it
@@ -135,57 +140,62 @@ Additionally:
 * Containers saved with `docker save` can be loaded with `udocker load -i`
 * Tarballs created with `docker export` can be imported with `udocker import`
 
-
-## 2. INSTALLATION
+## 2. Installation
 
 udocker can be deployed in the user home directory and thus does not require
-system installation. For further information see the [installation manual](installation_manual.md).
+system installation. For further information see the
+[Installation manual](installation_manual.md).
 
-
-## 3. COMMANDS
+## 3. Commands
 
 ### 3.1. Syntax
+
 The udocker syntax is very similar to Docker. Since version 1.0.1 the udocker
 preferred command name changed from udocker.py to udocker. A symbolic link
-between udocker and udocker.py is provided when installing with the distribution
-tarball.
+between `udocker` and `maincmd.py` is provided when installing with the
+distribution tarball.
 
-```
-  udocker [GLOBAL-PARAMETERS] COMMAND [COMMAND-OPTIONS] [COMMAND-ARGUMENTS]
+```bash
+udocker [GLOBAL-PARAMETERS] COMMAND [COMMAND-OPTIONS] [COMMAND-ARGUMENTS]
 ```
 
 Quick examples:
 
-```
-  udocker --help
-  udocker run --help
+```bash
+udocker --help
+udocker run --help
 
-  udocker pull busybox
-  udocker --insecure pull busybox
-  udocker create --name=verybusy busybox
-  udocker run -v /tmp/mydir verybusy
-  udocker run verybusy /bin/ls -l /etc
+udocker pull busybox
+udocker --insecure pull busybox
+udocker create --name=verybusy busybox
+udocker run -v /tmp/mydir verybusy
+udocker run verybusy /bin/ls -l /etc
 
-  udocker pull --registry=https://registry.access.redhat.com  rhel7
-  udocker create --name=rh7 rhel7
-  udocker run rh7
+udocker pull --registry=https://registry.access.redhat.com  rhel7
+udocker create --name=rh7 rhel7
+udocker run rh7
 ```
 
 ### 3.2. Obtaining help
+
 General help about available commands can be obtained with:
-```
-  udocker --help
+
+```bash
+udocker --help
 ```
 
 Command specific help can be obtained with:
-```  
-  udocker COMMAND --help
+
+```bash
+udocker COMMAND --help
 ```
 
 ### 3.3. install
+
+```bash
+udocker install [OPTIONS]
 ```
-  udocker install [OPTIONS]
-```
+
 Install of udocker tools. Pulls the tools and installs them in the user
 home directory under `$HOME/.udocker` or in a location defined by the
 environment variable `UDOCKER_DIR`. The pulling may attempt several 
@@ -197,16 +207,19 @@ Options:
 * `--purge` remove files from older installations. 
 
 Examples:
-```
-  udocker install
-  udocker install --force --purge
+
+```bash
+udocker install
+udocker install --force --purge
 ```
 
 ### 3.4. search
+
+```bash
+udocker search [-a] STRING
+udocker search --list-tags REPO/IMAGE
 ```
-  udocker search [-a] STRING
-  udocker search --list-tags REPO/IMAGE
-```
+
 Search Docker Hub for container images. The command displays containers one
 page at a time and pauses for user input. Not all registries have search
 capabilities.
@@ -221,17 +234,20 @@ Options:
 * `--httpproxy=proxy` specify a socks proxy for downloading
 
 Examples:
-```
-  udocker search busybox
-  udocker search -a busybox
-  udocker search iscampos/openqcd
-  udocker search --list-tags centos
+
+```bash
+udocker search busybox
+udocker search -a busybox
+udocker search iscampos/openqcd
+udocker search --list-tags centos
 ```
 
 ### 3.5. pull
+
+```bash
+udocker pull [OPTIONS] REPO/IMAGE:TAG
 ```
-  udocker pull [OPTIONS] REPO/IMAGE:TAG
-```
+
 Pull a container image from a docker repository by default uses dockerhub. 
 The associated layers and metadata are downloaded from dockerhub. Requires 
 python pycurl or the presence of the curl command.
@@ -243,25 +259,28 @@ Options:
 * `--httpproxy=proxy` specify a socks proxy for downloading
 
 Examples:
-```
-  udocker pull busybox
-  udocker pull fedora:latest
-  udocker pull indigodatacloudapps/disvis
-  udocker pull quay.io/something/somewhere
-  udocker pull --httpproxy=socks4://host:port busybox
-  udocker pull --httpproxy=socks5://host:port busybox
-  udocker pull --httpproxy=socks4://user:pass@host:port busybox
-  udocker pull --httpproxy=socks5://user:pass@host:port busybox
-  udocker pull --httpproxy=socks4a://host:port busybox
-  udocker pull --httpproxy=socks5h://host:port busybox
-  udocker pull --httpproxy=socks4a://user:pass@host:port busybox
-  udocker pull --httpproxy=socks5h://user:pass@host:port busybox
+
+```bash
+udocker pull busybox
+udocker pull fedora:latest
+udocker pull indigodatacloudapps/disvis
+udocker pull quay.io/something/somewhere
+udocker pull --httpproxy=socks4://host:port busybox
+udocker pull --httpproxy=socks5://host:port busybox
+udocker pull --httpproxy=socks4://user:pass@host:port busybox
+udocker pull --httpproxy=socks5://user:pass@host:port busybox
+udocker pull --httpproxy=socks4a://host:port busybox
+udocker pull --httpproxy=socks5h://host:port busybox
+udocker pull --httpproxy=socks4a://user:pass@host:port busybox
+udocker pull --httpproxy=socks5h://user:pass@host:port busybox
 ```
 
 ### 3.6. images
+
+```bash
+udocker images [OPTIONS]
 ```
-  udocker images [OPTIONS]
-```
+
 List images available in the local repository, these are images pulled
 form Docker Hub, and/or load or imported from files.
 
@@ -270,15 +289,18 @@ Options:
 * `-l` long format, display more information about the images and related layers
 
 Examples:
-```
-  udocker images
-  udocker images -l
+
+```bash
+udocker images
+udocker images -l
 ```
 
 ### 3.7. create
+
+```bash
+udocker create [OPTIONS] REPO/IMAGE:TAG
 ```
-  udocker create [OPTIONS] REPO/IMAGE:TAG
-```
+
 Extract a container from an image available in the local repository.
 Requires that the image has been previously pulled from Docker Hub,
 and/or load or imported into the local repository from a file.
@@ -291,14 +313,17 @@ Options:
 * `--name=NAME` give a name to the extracted container 
 
 Examples:
-```
-  udocker create --name=mycontainer indigodatacloud/disvis:latest
+
+```bash
+udocker create --name=mycontainer indigodatacloud/disvis:latest
 ```
 
 ### 3.8. ps
+
+```bash
+udocker ps [options]
 ```
-  udocker ps [options]
-```
+
 List extracted containers. These are not processes but containers
 extracted and available to the executed with `udocker run`.
 The command displays:
@@ -317,14 +342,17 @@ Options:
 * `-s` show current disk usage (container size in MB), can be very slow
 
 Examples:
-```
-  udocker ps
+
+```bash
+udocker ps
 ```
 
 ### 3.9. rmi
+
 ```
-  udocker rmi [OPTIONS] REPO/IMAGE:TAG
+udocker rmi [OPTIONS] REPO/IMAGE:TAG
 ```
+
 Delete a local container image previously pulled/loaded/imported. 
 Existing images in the local repository can be listed with `udocker images`.
 If short of disk space deleting the image after creating the container can be
@@ -335,14 +363,17 @@ Options:
 * `-f` force removal independently from errors
 
 Examples:
+
 ```
-  udocker rmi -f indigodatacloud/ambertools\_app:latest
+udocker rmi -f indigodatacloud/ambertools\_app:latest
 ```
 
 ### 3.10. rm
+
 ```
-  udocker rm [options] CONTAINER-ID
+udocker rm [options] CONTAINER-ID
 ```
+
 Delete a previously created container. Removes the entire directory tree
 extracted from the container image and associated metadata. The data in the
 container tree WILL BE LOST. The container id or name can be used.
@@ -352,16 +383,19 @@ Options:
 * `-f` force removal by changing file permissions
 
 Examples:
+
 ```
-  udocker rm 7b2d4456-9ee7-3138-ad01-63d1342d8545
-  udocker rm mycontainer
+udocker rm 7b2d4456-9ee7-3138-ad01-63d1342d8545
+udocker rm mycontainer
 ```
 
 ### 3.11. inspect
+
 ```
-  udocker inspect REPO/IMAGE:TAG
-  udocker inspect [OPTIONS] CONTAINER-ID
+udocker inspect REPO/IMAGE:TAG
+udocker inspect [OPTIONS] CONTAINER-ID
 ```
+
 Prints container metadata. Applies both to container images or to 
 previously extracted containers, accepts both an image or container id
 as input.
@@ -371,62 +405,76 @@ Options:
 * `-p` with a container-id prints the pathname to the root of the container directory tree
 
 Examples:
+
 ```
-  udocker inspect ubuntu:latest
-  udocker inspect d2578feb-acfc-37e0-8561-47335f85e46d
-  udocker inspect -p d2578feb-acfc-37e0-8561-47335f85e46d
+udocker inspect ubuntu:latest
+udocker inspect d2578feb-acfc-37e0-8561-47335f85e46d
+udocker inspect -p d2578feb-acfc-37e0-8561-47335f85e46d
 ```
 
 ### 3.12. name
+
 ```
-  udocker name CONTAINER-ID NAME
+udocker name CONTAINER-ID NAME
 ```
+
 Give an easier to remember name to an extracted container.
 This is an alternative to the use of `create --name=`
 
 Examples:
+
 ```
-  udocker name d2578feb-acfc-37e0-8561-47335f85e46d BLUE
+udocker name d2578feb-acfc-37e0-8561-47335f85e46d BLUE
 ```
 
 ### 3.13. rmname
+
 ```
-  udocker rmname NAME
+udocker rmname NAME
 ```
+
 Remove a name previously given to an extracted container with 
 `udocker --name=` or with `udocker name`. Does not remove the container.
 
 Examples:
+
 ```
-  udocker rmname BLUE
+udocker rmname BLUE
 ```
 
 ### 3.14. rename
+
 ```
-  udocker rename NAME NEWNAME
+udocker rename NAME NEWNAME
 ```
+
 Change a container name previously given to an extracted container with 
 `udocker --name=` or with `udocker name`. Does not change the container id.
 
 Examples:
+
 ```
-  udocker rename BLUE GREEN
+udocker rename BLUE GREEN
 ```
 
 ### 3.15. verify
+
 ```
-  udocker verify REPO/IMAGE:TAG
+udocker verify REPO/IMAGE:TAG
 ```
+
 Performs sanity checks to verify a image available in the local repository.
 
 Examples:
+
 ```
-  udocker verify indigodatacloud/powerfit:latest
+udocker verify indigodatacloud/powerfit:latest
 ```
 
 ### 3.16. import
+
 ```
-  udocker import [OPTIONS] TARBALL|- REPO/IMAGE:TAG
+udocker import [OPTIONS] TARBALL|- REPO/IMAGE:TAG
 ```
 
 Import a tarball from file or stdin. The tarball can be imported into a new
@@ -450,20 +498,23 @@ Options:
 * `--name=ALIAS` with `--tocontainer` or `--clone` to give an alias to the container
 
 Examples:
+
 ```
-  udocker import docker_container.tar myrepo:latest
-  udocker import - myrepo:latest < docker_container.tar
-  udocker import --mv docker_container.tar myrepo:latest
-  udocker import --tocontainer --name=BLUE docker_container.tar 
-  udocker import --clone --name=RED udocker_container.tar 
+udocker import docker_container.tar myrepo:latest
+udocker import - myrepo:latest < docker_container.tar
+udocker import --mv docker_container.tar myrepo:latest
+udocker import --tocontainer --name=BLUE docker_container.tar 
+udocker import --clone --name=RED udocker_container.tar 
 ```
 
 ### 3.17. load
+
 ```
-  udocker load -i IMAGE-FILE
-  udocker load -i IMAGE-FILE NAME
-  udocker load -
+udocker load -i IMAGE-FILE
+udocker load -i IMAGE-FILE NAME
+udocker load -
 ```
+
 Loads into the local repository a tarball containing a Docker image with
 its layers and metadata. This is equivalent to pulling an image from
 Docker Hub but instead loading from a locally available file. It can be
@@ -478,61 +529,73 @@ OCI image does not provide a name and the argument NAME is also not
 provided in the command line, then udocker will generate a random name.
 
 Examples:
+
 ```
-  udocker load -i docker-image.tar
-  udocker load - < docker-image.tar
-  udocker load -i oci-image.tar test-image
+udocker load -i docker-image.tar
+udocker load - < docker-image.tar
+udocker load -i oci-image.tar test-image
 ```
 
 ### 3.18. protect
+
 ```
-  udocker protect REPO/IMAGE:TAG
-  udocker protect CONTAINER-ID
+udocker protect REPO/IMAGE:TAG
+udocker protect CONTAINER-ID
 ```
+
 Marks an image or container against deletion by udocker.
 Prevents `udocker rmi` and `udocker rm` from removing
 images or containers.
 
 Examples:
+
 ```
-  udocker protect indigodatacloud/ambertools\_app:latest
-  udocker protect 3d528987-a51e-331a-94a0-d278bacf79d9
+udocker protect indigodatacloud/ambertools\_app:latest
+udocker protect 3d528987-a51e-331a-94a0-d278bacf79d9
 ```
 
 ### 3.19. unprotect
+
 ```
-  udocker unprotect REPO/IMAGE:TAG
-  udocker unprotect CONTAINER-ID
+udocker unprotect REPO/IMAGE:TAG
+udocker unprotect CONTAINER-ID
 ```
+
 Removes a mark against deletion placed by `udocker protect`.
 
 Examples:
+
 ```
-  udocker unprotect indigodatacloud/ambertools\_app:latest
-  udocker unprotect 3d528987-a51e-331a-94a0-d278bacf79d9
+udocker unprotect indigodatacloud/ambertools\_app:latest
+udocker unprotect 3d528987-a51e-331a-94a0-d278bacf79d9
 ```
 
 ### 3.20. mkrepo
+
 ```
-  udocker mkrepo DIRECTORY
+udocker mkrepo DIRECTORY
 ```
+
 Creates a udocker local repository in specify directory other than
 the default one ($HOME/.udocker). Can be used to place the containers
 in another filesystem. The created repository can then be accessed
 with `udocker --repo=DIRECTORY COMMAND`.
 
 Examples:
+
 ```
-  udocker mkrepo /tmp/myrepo
-  udocker --repo=/tmp/myrepo pull docker.io/fedora/memcached
-  udocker --repo=/tmp/myrepo images
+udocker mkrepo /tmp/myrepo
+udocker --repo=/tmp/myrepo pull docker.io/fedora/memcached
+udocker --repo=/tmp/myrepo images
 ```
 
 ### 3.21. run
+
 ```
-  udocker run [OPTIONS] CONTAINER-ID|CONTAINER-NAME
-  udocker run [OPTIONS] REPO/IMAGE:TAG
+udocker run [OPTIONS] CONTAINER-ID|CONTAINER-NAME
+udocker run [OPTIONS] REPO/IMAGE:TAG
 ```
+
 Executes a container. The execution several execution engines are
 provided. The container can be specified using the container id or its
 associated name. Additionally it is possible to invoke run with an image
@@ -579,92 +642,98 @@ Options valid only in Rn execution modes:
 * `--device=/dev/xxx` pass device to container
 
 Examples:
-```
-  # Pull fedora from Docker Hub
-  udocker pull fedora:29
 
-  # create the container named myfed from the image named fedora
-  udocker create --name=myfed  fedora:29
+```bash
+# Pull fedora from Docker Hub
+udocker pull fedora:29
 
-  # execute a cat inside of the container
-  udocker run  myfed  cat /etc/redhat-release
+# create the container named myfed from the image named fedora
+udocker create --name=myfed  fedora:29
 
-  # The above three operations could have done with a single command
-  # However each time udocker is invoked this way a new container
-  # directory tree is created consuming additional space and time
-  udocker run fedora:29 cat /etc/redhat-release
+# execute a cat inside of the container
+udocker run  myfed  cat /etc/redhat-release
 
-  # In this example the host /tmp is mapped to the container /tmp
-  udocker run --volume=/tmp  myfed  /bin/bash
+# The above three operations could have done with a single command
+# However each time udocker is invoked this way a new container
+# directory tree is created consuming additional space and time
+udocker run fedora:29 cat /etc/redhat-release
 
-  # Same as above but running something in /tmp
-  udocker run  -v=/tmp  myfed  /bin/bash -c "cd /tmp; ./myscript.sh"
+# In this example the host /tmp is mapped to the container /tmp
+udocker run --volume=/tmp  myfed  /bin/bash
 
-  # Run binding a host directory inside the container to make it available
-  # The host $HOME is mapped to /home/user inside the container
-  # The shortest -v form is used instead of --volume=
-  # The option -w same as --workdir is used to change dir to /home/user
-  udocker run -v=$HOME:/home/user -w=/home/user myfed  /bin/bash
+# Same as above but running something in /tmp
+udocker run  -v=/tmp  myfed  /bin/bash -c "cd /tmp; ./myscript.sh"
 
-  # Install software inside the container
-  udocker run  --user=root myfed  yum install -y firefox pulseaudio gnash-plugin
+# Run binding a host directory inside the container to make it available
+# The host $HOME is mapped to /home/user inside the container
+# The shortest -v form is used instead of --volume=
+# The option -w same as --workdir is used to change dir to /home/user
+udocker run -v=$HOME:/home/user -w=/home/user myfed  /bin/bash
 
-  # Run as certain uid:gid inside the container
-  udocker run --user=1000:1001  myfed  /bin/id
+# Install software inside the container
+udocker run  --user=root myfed  yum install -y firefox pulseaudio gnash-plugin
 
-  # Run firefox
-  udocker run --bindhome --hostauth --hostenv \
-     -v /sys -v /proc -v /var/run -v /dev --user=green --dri myfed  firefox
-  
-  # Run in a script
-  udocker run ubuntu  /bin/bash <<EOF
+# Run as certain uid:gid inside the container
+udocker run --user=1000:1001  myfed  /bin/id
+
+# Run firefox
+udocker run --bindhome --hostauth --hostenv \
+    -v /sys -v /proc -v /var/run -v /dev --user=green --dri myfed  firefox
+
+# Run in a script
+udocker run ubuntu  /bin/bash <<EOF
 cd /etc
 cat motd
 cat lsb-release
 EOF
 
 
-  # Search and pull from another repository than dockerhub
-  # First search for the expression `myrepo` in quay.io 
-  # Second list the tags for a given image in quay.io
-  # Third finally pull a given image:tag from quay.io
-  udocker search quay.io/myrepo
-  udocker search --list-tags quay.io/myrepository/myimage
-  udocker pull quay.io/myrepository/myimage:v2.3.1
+# Search and pull from another repository than dockerhub
+# First search for the expression `myrepo` in quay.io 
+# Second list the tags for a given image in quay.io
+# Third finally pull a given image:tag from quay.io
+udocker search quay.io/myrepo
+udocker search --list-tags quay.io/myrepository/myimage
+udocker pull quay.io/myrepository/myimage:v2.3.1
 
-  # Run container in a given directory tree using the DEFAULT EXECUTION MODE 
-  # Below ROOT is the complete directory structure of the container operating system
-  # This enables udocker to execute directory trees created by other tools
-  # Much of the udocker functionality is not usable when using --location
-  ./udocker run --location=/tmp/u/containers/07b3226e-6513-3f85-884f-e3cfdd2fbc0e/ROOT
+# Run container in a given directory tree using the DEFAULT EXECUTION MODE 
+# Below ROOT is the complete directory structure of the container operating system
+# This enables udocker to execute directory trees created by other tools
+# Much of the udocker functionality is not usable when using --location
+./udocker run --location=/tmp/u/containers/07b3226e-6513-3f85-884f-e3cfdd2fbc0e/ROOT
 ```
 
 
 ### 3.22. Debug and Verbosity
+
 Further debugging information can be obtaining by running with `-D`.
 
 Examples:
+
 ```
-  udocker -D pull busybox:latest
-  udocker -D run busybox:latest
+udocker -D pull busybox:latest
+udocker -D run busybox:latest
 ```
 
-The options '-q' or '--quiet' can be specified before each command 
+The options `-q` or `--quiet` can be specified before each command 
 to reduce verbosity. The verbosity level can also be specified by 
 assigning a value between 0 and 5 to the environment variable 
-UDOCKER_LOGLEVEL.
+`UDOCKER_LOGLEVEL`.
 
 Examples:
-```
-  udocker -q run busybox:latest /bin/ls
-  UDOCKER_LOGLEVEL=2 udocker run busybox:latest /bin/ls
+
+```bash
+udocker -q run busybox:latest /bin/ls
+UDOCKER_LOGLEVEL=2 udocker run busybox:latest /bin/ls
 ```
 
 
 ### 3.23. login
+
 ```
-  udocker login [--username=USERNAME] [--password=PASSWORD] [--registry=REGISTRY]
+udocker login [--username=USERNAME] [--password=PASSWORD] [--registry=REGISTRY]
 ```
+
 Login into a Docker registry using v2 API. Only basic authentication
 using username and password is supported. The username and password
 can be prompted or specified in the command line. The username is the
@@ -677,18 +746,20 @@ Options:
 * `--registry=REGISTRY` credentials are for this registry
 
 Examples:
-```
-  udocker login --username=xxxx --password=yyyy
 
-  udocker login --registry="https://hostname:5000"
-  username: xxxx
-  password: ****
+```
+udocker login --username=xxxx --password=yyyy
+udocker login --registry="https://hostname:5000"
+username: xxxx
+password: ****
 ```
 
 ### 3.24. logout
+
 ```
-  udocker logout [-a]
+udocker logout [-a]
 ```
+
 Delete the login credentials (username and password) stored by
 previous logins. Without arguments deletes the credentials for 
 the current registry. To delete all registry credentials use -a.
@@ -699,16 +770,19 @@ Options:
 * `--registry=REGISTRY` delete credentials for this registry
 
 Examples:
+
 ```
-  udocker logout
-  udocker logout --registry="https://hostname:5000"
-  udocker logout -a
+udocker logout
+udocker logout --registry="https://hostname:5000"
+udocker logout -a
 ```
 
 ### 3.25. clone
+
 ```
-  udocker clone [--name=NAME] CONTAINER-ID|CONTAINER-NAME
+udocker clone [--name=NAME] CONTAINER-ID|CONTAINER-NAME
 ```
+
 Duplicate an existing container creating a complete replica. The replica receives a different CONTAINER-ID. An alias can be assigned to the newly created container by using `--name=NAME`.
 
 Options:
@@ -716,32 +790,38 @@ Options:
 * `--name=NAME` assign a name alias to the newly created container
 
 Examples:
+
 ```
-  udocker clone f24771be-f0bb-3046-80f0-db301e099517
-  udocker clone --name=RED  f24771be-f0bb-3046-80f0-db301e099517
-  udocker clone --name=RED  BLUE
+udocker clone f24771be-f0bb-3046-80f0-db301e099517
+udocker clone --name=RED  f24771be-f0bb-3046-80f0-db301e099517
+udocker clone --name=RED  BLUE
 ```
 
 ### 3.26. save
+
 ```
-  udocker save -o IMAGE-FILE REPO/IMAGE:TAG
-  udocker save -o - REPO/IMAGE:TAG
+udocker save -o IMAGE-FILE REPO/IMAGE:TAG
+udocker save -o - REPO/IMAGE:TAG
 ```
+
 Saves an image including all its layers and metadata to a tarball.
 The input is an image not a container, to produce a tarball of a 
 container use export. The saved images can be read by udocker or Docker
 using the command load.
 
 Examples:
+
 ```
-  udocker save -o docker-image.tar centos:centos7
-  udocker save -o - > docker-image.tar ubuntu:16.04 ubuntu:18.04 ubuntu:19.04
+udocker save -o docker-image.tar centos:centos7
+udocker save -o - > docker-image.tar ubuntu:16.04 ubuntu:18.04 ubuntu:19.04
 ```
 
 ### 3.27. setup
+
 ```
-  udocker setup [--execmode=XY] [--force] [--nvidia] [--purge] CONTAINER-ID|CONTAINER-NAME
+udocker setup [--execmode=XY] [--force] [--nvidia] [--purge] CONTAINER-ID|CONTAINER-NAME
 ```
+
 With `--execmode` chooses an execution mode to define how a given container 
 will be executed, namelly enables selection of an execution engine and 
 its related execution modes. Without options, setup will print the current 
@@ -820,7 +900,7 @@ manipulation of uids and gids that may cause certain operations to fail
 such as software installations. To overcome this limitation of the R1 
 execution mode, udocker provides the R2 and R3 execution modes that 
 combine runc with the proot uid/gid emulation. In these modes the 
-execution chain is 
+execution chain is:
 
 `runc -> proot -> executable`
 
@@ -851,25 +931,25 @@ and to execute applications that expected to run under root.
  
 Examples:
 
-```
-  udocker create --name=mycontainer  fedora:25
+```bash
+udocker create --name=mycontainer  fedora:25
 
-  udocker setup --execmode=F3  mycontainer
-  udocker setup  mycontainer                 # prints the execution mode
+udocker setup --execmode=F3  mycontainer
+udocker setup  mycontainer                 # prints the execution mode
 
-  udocker run  mycontainer /bin/ls
+udocker run  mycontainer /bin/ls
 
-  udocker setup  --execmode=F4  mycontainer
-  udocker run  mycontainer /bin/ls
+udocker setup  --execmode=F4  mycontainer
+udocker run  mycontainer /bin/ls
 
-  udocker setup  --execmode=P1  mycontainer
-  udocker run  mycontainer  /bin/ls
+udocker setup  --execmode=P1  mycontainer
+udocker run  mycontainer  /bin/ls
 
-  udocker setup  --execmode=R1  mycontainer
-  udocker run  mycontainer  /bin/ls
+udocker setup  --execmode=R1  mycontainer
+udocker run  mycontainer  /bin/ls
 
-  udocker setup  --execmode=S1  mycontainer
-  udocker run  mycontainer  /bin/ls
+udocker setup  --execmode=S1  mycontainer
+udocker run  mycontainer  /bin/ls
 ```
 
 The default execution mode of udocker can also be changed. This has however
@@ -884,11 +964,11 @@ mode can be useful in case the default does not work as expected.
 
 Example:
 
-```
-  UDOCKER_DEFAULT_EXECUTION_MODE=P2 ./udocker run mycontainer /bin/ls
+```bash
+UDOCKER_DEFAULT_EXECUTION_MODE=P2 ./udocker run mycontainer /bin/ls
 ```
 
-## 4. RUNNING MPI JOBS
+## 4. Running MPI jobs
 
 In this section we will use the Lattice QCD simulation software openQCD to
 demonstrate how to run Open MPI applications with udocker 
@@ -905,18 +985,17 @@ A container image of openQCD can be downloaded from the Docker Hub repository.
 From this image a container can be extracted to the filesystem (using udocker
 create) as described below.
 
-
+```bash
+./udocker pull iscampos/openqcd
+./udocker create --name=openqcd iscampos/openqcd
+fbeb130b-9f14-3a9d-9962-089b4acf3ea8
 ```
-  ./udocker pull iscampos/openqcd
-  ./udocker create --name=openqcd iscampos/openqcd
-  fbeb130b-9f14-3a9d-9962-089b4acf3ea8
-```
 
-Next the created container is executed (notice that the variable LD_LIBRARY_PATH is explicitly set):
+Next the created container is executed (notice that the variable
+`LD_LIBRARY_PATH` is explicitly set):
 
-
-```
-  ./udocker run -e LD_LIBRARY_PATH=/usr/lib openqcd /bin/bash
+```bash
+./udocker run -e LD_LIBRARY_PATH=/usr/lib openqcd /bin/bash
 ```
 
 In this approach the host mpiexec will submit the N MPI process instances, as
@@ -933,8 +1012,8 @@ container.
 Note: first the example Open MPI installation that comes along with the openqcd
 container are removed with: 
 
-```
-  yum remove openmpi
+```bash
+yum remove openmpi
 ```
 
 We download Open MPI v.2.0.1 from https://www.open-mpi.org/software/ompi/v2.0 and compile it. 
@@ -945,31 +1024,31 @@ TCP/IP is enough.
 
 To install the Infiniband drivers one needs to install the epel repository.
 
-```
-  yum install -y epel-release
+```bash
+yum install -y epel-release
 ```
 
 The list of packages to be installed is:
 
 ```
-  openib
-  libibverbs, libibverbs-utils, libibverbs-devel
-  librdmacm, librdmacm-utils, ibacm
-  libnes
-  libibumad
-  libfabric, libfabric-devel
-  opensm-libs
-  swig
-  ibutils-libs, ibutils
-  opensm
-  libibmad
-  infiniband-diags
+openib
+libibverbs, libibverbs-utils, libibverbs-devel
+librdmacm, librdmacm-utils, ibacm
+libnes
+libibumad
+libfabric, libfabric-devel
+opensm-libs
+swig
+ibutils-libs, ibutils
+opensm
+libibmad
+infiniband-diags
 ```
 
 The driver needs to be installed as well, in our examples the Mellanox driver.
 
-```
-  yum install mlx4*x86_64
+```bash
+yum install mlx4*x86_64
 ```
 
 The installation of both, i686 and x86_64 versions might be conflictive, and lead to an 
@@ -979,28 +1058,28 @@ is to install only the version for the architecture of the machine in this case 
 
 The Open MPI source is compiled and installed in the container under /usr for convenience:
 
+```bash
+cd /usr
+tar xvf openmpi-2.0.1.tgz 
+cd /usr/openmpi-2.0.1
+./configure --with-verbs --prefix=/usr
+make
+make install
 ```
-  cd /usr
-  tar xvf openmpi-2.0.1.tgz 
-  cd /usr/openmpi-2.0.1
-  ./configure --with-verbs --prefix=/usr
-  make
-  make install
-```
-
 
 OpenQCD can then be compiled inside the udocker container in the usual way. 
 The MPI job submission to the HPC cluster succeeds by including this line in 
 the batch script:
 
-```
-  /opt/cesga/openmpi/2.0.1/gcc/6.3.0/bin/mpiexec -np 128 \
+```bash
+/opt/cesga/openmpi/2.0.1/gcc/6.3.0/bin/mpiexec -np 128 \
   $LUSTRE/udocker-master/udocker run -e LD_LIBRARY_PATH=/usr/lib  \
   --hostenv --hostauth --user=cscdiica -v /tmp \
   --workdir=/op/projects/openQCD-1.6/main openqcd \
   /opt/projects/openQCD-1.6/main/ym1 -i ym1.in -noloc 
 ```
-(where $LUSTRE points to the appropriate user filesystem directory in the HPC system)
+
+(where `$LUSTRE` points to the appropriate user filesystem directory in the HPC system)
 
 Notice that depending on the application and host operating system a variable 
 performance degradation may occur when using the default execution mode (Pn). In 
@@ -1008,8 +1087,7 @@ this situation other execution modes (such as Fn) may provide significantly high
 performance. The command `udocker setup --execmode=<mode> <container-id>` can be used to change
 between execution modes (see section 3.25).
 
-
-## 5. ACCESSING GP/GPUs
+## 5. Accessing GP/GPUs
 
 The host (either the physical machine or VM) where the container will run has to have
 the NVIDIA driver installed. Moreover, the NVIDIA driver version has to be known apriori,
@@ -1039,20 +1117,20 @@ In order to build your docker image with a given CUDA or OpenCL application, the
 aforementioned images can be used. When the docker image with your application has 
 been built you can run udocker with that image as described in the previous sections.
 
-## 6. ACCESSING AND TRANSFERRING UDOCKER CONTAINERS
+## 6. Accessing and transfering udocker containers
 
 In udocker, images and containers are stored in the filesystem
 usually in the user home directory under $HOME/.udocker. If this location is in
 a shared filesystem such as in a computing farm or cluster then the content will 
 be seen by all the hosts mounting the filesystem and can be used transparently by
 udocker across these hosts. If the home directory is not shared but some other
-location is, then you may point the UDOCKER_DIR environment variable to such a 
+location is, then you may point the `UDOCKER_DIR` environment variable to such a 
 location and use it to store the udocker installation, including udockertools,
 images and containers.
 
 ### 6.1. Directory structure
 
-The directory structure of .udocker (or UDOCKER_DIR) is a as follows:
+The directory structure of `.udocker` (or `UDOCKER_DIR`) is a as follows:
 
 * `bin/` udocker executables
 * `lib/` udocker libraries
@@ -1063,9 +1141,9 @@ The directory structure of .udocker (or UDOCKER_DIR) is a as follows:
 For a given container its directory pathname in the filesystem can be obtained
 as follows:
 
-```
-  udocker inspect -p ubuntu17
-  /home/user01/.udocker/containers/feb0041d-e1b6-3eee-89d8-2d0617feb13a/ROOT
+```bash
+udocker inspect -p ubuntu17
+/home/user01/.udocker/containers/feb0041d-e1b6-3eee-89d8-2d0617feb13a/ROOT
 ```
 
 The pathname in the example is the root of the container filesystem tree.
@@ -1116,16 +1194,17 @@ The example below shows a container named MyContainer being manually transferred
 to another host and executed. Make sure the udocker executable is in your PATH on 
 both the local and remote hosts.
 
-```
-  MYC_ROOT=$(udocker inspect -p MyContainer)
-  MYC_PATH=$(dirname $MYC_ROOT)
-  MYC_ID=$(basename $MYC_PATH)
-  MYC_DIR=$(dirname $MYC_PATH)
-  cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost "udocker install ; cd ~/.udocker/containers; tar xf -"
-  ssh user@ahost "udocker name $MYC_ID MyContainer; udocker run MyContainer"
+```bash
+export MYC_ROOT=$(udocker inspect -p MyContainer)
+export MYC_PATH=$(dirname $MYC_ROOT)
+export MYC_ID=$(basename $MYC_PATH)
+export MYC_DIR=$(dirname $MYC_PATH)
+cd $MYC_DIR; tar cvf - $MYC_ID | ssh user@ahost \
+  "udocker install ; cd ~/.udocker/containers; tar xf -"
+ssh user@ahost "udocker name $MYC_ID MyContainer; udocker run MyContainer"
 ```
 
-## 7. RUNNING AS ROOT INSIDE CONTAINERS
+## 7. Running as root inside containers
 
 The behavior and capabilities of running as root inside the containers
 depends on the execution mode. In the Pn and Rn modes udocker will run
@@ -1133,7 +1212,7 @@ as root. In other modes execution as root is achieved by invoking
 run with the `--user=root` option:
 
 ```
-  udocker run --user=root <container-id>` 
+udocker run --user=root <container-id>` 
 ```
 
 ### 7.1. Running as root in Pn modes
@@ -1209,27 +1288,28 @@ udocker needs to run with direct access to the container passwd and group files
 as follows:
 
 ```
-  udocker run --user=root --containerauth <CONTAINER-ID>
+udocker run --user=root --containerauth <CONTAINER-ID>
 ```
 
 For **software installation** the recommended execution modes are **P2**, **S1**
 and **R3**. The emulation is not perfect and issues can still arise.  Namelly 
 when using APT it can be required to install using:
 
-```
-  apt-get -o APT::Sandbox::User=root update
-  apt-get -o APT::Sandbox::User=root install <package>
+```bash
+apt-get -o APT::Sandbox::User=root update
+apt-get -o APT::Sandbox::User=root install <package>
 ```
 
 Upon APT errors such as `cannot get security labeling handle: No such file or directory` 
 try to run as mentioned above using **P2** mode, but not mounting /sys from the host by
- starting udocker as:
+starting udocker as:
 
-```
-  udocker.py run --user=root --nosysdirs -v /etc/resolv.conf -v /dev --containerauth <CONTAINER-ID>
+```bash
+udocker.py run --user=root --nosysdirs -v /etc/resolv.conf -v /dev \
+  --containerauth <CONTAINER-ID>
 ```
 
-## 8. NESTED EXECUTION
+## 8. Nested execution
 
 udocker as not been designed for nested executions, meaning execution
 of containers within containers. However there are sucessful examples of using
@@ -1249,7 +1329,7 @@ For running udocker within udocker itself the following guidelines apply:
 * Fn within Fn: Not possible
 * Pn within Fn: Not possible
 
-## 9. PERFORMANCE
+## 9. Performance
 
 The experienced performance in the different execution modes will depend
 greatly on the application being executed. In general the following
@@ -1264,7 +1344,7 @@ considerations may hold:
    multithreading or I/O limitations.
  * Singularity and runC should provide similar performances.
 
-## 10. ISSUES
+## 10. Issues
 
 To avoid corruption backups for safeguard or transfer should only be performed 
 when the container is not being executed (not locally nor in any other host if 
@@ -1280,7 +1360,10 @@ When experiencing issues in the default execution mode (P1) you may try
 to setup the container to execute using mode P2 or one of the Fn or 
 Rn modes. See section 3.23 for information on changing execution modes.
 
-Some execution modes require the creation of auxiliary files, directories and mountpoints. These can be purged from a given container using "setup --purge", however this operation must be performed when the container is not being executed. 
+Some execution modes require the creation of auxiliary files, directories
+and mountpoints. These can be purged from a given container using
+"setup --purge", however this operation must be performed when the
+container is not being executed. 
 
 ## Acknowledgements
 

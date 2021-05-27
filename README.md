@@ -3,7 +3,7 @@
 -->
 [![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc/udocker/devel3)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/devel3/)
 
-[![logo](https://raw.githubusercontent.com/indigo-dc/udocker/master/doc/logo-small.png)]()
+[![logo](https://raw.githubusercontent.com/indigo-dc/udocker/master/docs/logo-small.png)]()
 
 udocker is a basic user tool to execute simple docker containers in user
 space without requiring root privileges. Enables download and execution
@@ -73,8 +73,8 @@ version of udocker for Python 2 only is available [here](https://github.com/indi
 
 ## Installation and Users manuals
 
-See the **[Installation manual](doc/installation_manual.md)**
-See the **[Users manual](doc/user_manual.md)**.
+See the **[Installation manual](docs/installation_manual.md)**
+See the **[Users manual](docs/user_manual.md)**.
 See the **[All documentation](SUMMARY.md)**
 
 ## Syntax
