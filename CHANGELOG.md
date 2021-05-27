@@ -1,6 +1,8 @@
 # udocker (1.3.0)
 
   * add codemeta.json, metadata for the software
+  * first production release of udocker for Python 3 and 2.7
+  * improve user and installation documentation
 
 # udocker (1.2.9)
 
