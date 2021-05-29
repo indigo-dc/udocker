@@ -1,27 +1,35 @@
 # udocker (1.3.0)
 
-  * add codemeta.json, metadata for the software
-  * first production release of udocker for Python 3 and 2.7
-  * improve user and installation documentation
+  * Fixes to move the stable code for Python 3 from devel3 to master
+  * Add codemeta.json, metadata for the software
+  * Improve user and installation documentation
+  * Add support for `faccessat2()` in Pn and Fn execution modes
+  * Cmd and entrypoint metadata and arguments processing changed to mimic docker
+  * Implement use of `--entrypoint=<cmd>` to force execution of command
+    - closes: #306
+  * Implement use of `--entrypoint=""` to bypass entrypoint in metadata
+    - closes: #306
 
 # udocker (1.2.9)
 
-  * fix issue #254: in method Unshare.unshare os.strerror() takes one argument,
-  * add unit test #254
-  * fix issue #276: in method chown udocker.utils.fileutil FileUtil
-  * several fixes of unit tests and pylint
+  * method Unshare.unshare os.strerror() takes one argument,
+    - closes: #254
+  * Add unit test for #254
+  * Method chown udocker.utils.fileutil FileUtil
+    - closes: #276
+  * Several fixes of unit tests and pylint
   * Fix confusion between exit code 0 and inferred False
-  * dereference on safe_prefixes
+  * Dereference on `safe_prefixes`
   * untar exclude dev
-  * fix rmi for referenced layers
-  * set default for PROOT_TMP_DIR
+  * Fix rmi for referenced layers
+  * Set default for `PROOT_TMP_DIR`
   * sysdir mountpoint not found and set tmpdir
-  * update installation instructions
-  * Improve oskernel_isgreater()
-  * improve osinfo()
+  * Update installation instructions
+  * Improve `oskernel_isgreater()`
+  * Improve `osinfo()`
   * Fix repository login/logout
-  * improve keystore logic
-  * fix pull /v2
+  * Improve keystore logic
+  * Fix pull /v2
 
 # udocker (1.2.8b2)
 
@@ -50,7 +58,7 @@
   * Major restructuring of the unit tests
   * Porting to Python 3, still supports python 2.7
   * all fixes up to previous 1.1.7 version have been applied
-  * added scripts tests udocker: utils/udocker_test.sh utils/udocker_test-run.sh
+  * added scripts tests udocker: `utils/udocker_test.sh utils/udocker_test-run.sh`
 
 # udocker (1.1.7)
 
@@ -60,7 +68,7 @@
     - closes: #266, #267
   * udocker unexpectedly uses P1 exec mode instead of P2
     - closes: #274
-  * allow passsing of PROOT_TMP_DIR environment variable
+  * Allow passing of `PROOT_TMP_DIR` environment variable
     - closes: #284
 
 # udocker (1.1.6)
@@ -81,8 +89,8 @@
   * Fix naming of containers
   * Improve parsing of image names
   * Documentation improvements
-  * os._exit from Unshare.unshare()
-  * Disable FAKECHROOT_DISALLOW_ENV_CHANGES in F4 mode
+  * `os._exit` from Unshare.unshare()
+  * Disable `FAKECHROOT_DISALLOW_ENV_CHANGES` in F4 mode
 
 # udocker (1.1.4)
 
@@ -104,10 +112,10 @@
   * Improve handling of mountpoints
   * Added --containerauth to enable direct use of the container passwd and group
   * Added support for file mount bindings in singularity
-  * Added UDOCKER_USE_PROOT_EXECUTABLE env var to select proot location
-  * Added UDOCKER_USE_RUNC_EXECUTABLE env var to select runc location
-  * Added UDOCKER_USE_SINGULARITY_EXECUTABLE env var to select singularity
-  * Added UDOCKER_DEFAULT_EXECUTION_MODE env var to select default execution mode
+  * Added `UDOCKER_USE_PROOT_EXECUTABLE` env var to select proot location
+  * Added `UDOCKER_USE_RUNC_EXECUTABLE` env var to select runc location
+  * Added `UDOCKER_USE_SINGULARITY_EXECUTABLE` env var to select singularity
+  * Added `UDOCKER_DEFAULT_EXECUTION_MODE` env var to select default execution mode
   * Added R2 and R3 execution modes for PRoot overlay execution in runc
   * Added setup --purge for cleanup of mountpoints and files 
   * Added setup --fixperms to fix container file permissions
@@ -216,7 +224,7 @@
   * Automatic selection of libfakechroot.so from container info
   * Improve automatic install
   * Enable resetting prefix paths in Fn modes in remote hosts
-  * Do not set AF_UNIX_PATH in Fn modes when the host /tmp is a volume
+  * Do not set `AF_UNIX_PATH` in Fn modes when the host /tmp is a volume
   * Export containers in both docker and udocker format
   * Import containers docker and udocker format
   * Load, import and export to/from stdin/stdout
@@ -236,9 +244,9 @@
   * Improve proot tmp files cleanup on non ext filesystems
   * Improve search returning empty on Docker repositories
   * Improve runC execution portability 
-  * Add environment variable UDOCKER_KEYSTORE
+  * Add environment variable `UDOCKER_KEYSTORE`
     - closes: #75
-  * Prevent creation of .udocker when UDOCKER_KEYSTORE is used
+  * Prevent creation of .udocker when `UDOCKER_KEYSTORE` is used
     - closes: #75
 
 # udocker (1.0.4)
