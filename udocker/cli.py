@@ -1265,7 +1265,8 @@ Examples:
   udocker run --hostauth --hostenv --bindhome  mycontainer
   udocker run --user=root  mycontainer  yum install firefox
   udocker run --hostauth --hostenv --bindhome mycontainer  firefox
-  udocker run --hostauth --hostenv --bindhome mycontainer  /bin/bash -i
+  udocker run --entrypoint="" mycontainer  /bin/bash -i
+  udocker run --entrypoint="/bin/bash" mycontainer -i
 
   udocker clone --name=anotherc mycontainer
   udocker rm anotherc
