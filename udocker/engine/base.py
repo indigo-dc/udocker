@@ -42,7 +42,7 @@ class ExecutionEngineCommon(object):
     opt["user"] = ""                 # User to run in the container
     opt["cwd"] = ""                  # Default dir in the container
     opt["entryp"] = ""               # Container entrypoint
-    opt["cmd"] = Config.conf['cmd']  # Comand to execute
+    opt["cmd"] = []                  # Comand to execute
     opt["hostname"] = ""             # Hostname TBD
     opt["domain"] = ""               # Host domainname TBD
     opt["volfrom"] = []              # Mount vol from container TBD
@@ -158,9 +158,8 @@ class ExecutionEngineCommon(object):
                         host_path in Config.conf['sysdirs_list']):
                     self.opt["vol"].remove(vol)
                     continue
-                else:
-                    Msg().err("Error: invalid host volume path:", host_path)
-                    return False
+                Msg().err("Error: invalid host volume path:", host_path)
+                return False
             if not self._create_mountpoint(host_path, cont_path):
                 Msg().err("Error: creating mountpoint:", host_path, cont_path)
                 return False
@@ -233,8 +232,8 @@ class ExecutionEngineCommon(object):
     def _check_executable(self):
         """Check if executable exists and has execute permissions"""
         if self.opt["entryp"] and is_genstr(self.opt["entryp"]):
-            self.opt["cmd"] = self.opt["entryp"].strip().split(' ')
-        elif self.opt["entryp"] and isinstance(self.opt["entryp"], list):
+            self.opt["entryp"] = self.opt["entryp"].strip().split(' ')
+        if isinstance(self.opt["entryp"], list):
             if self.opt["cmd"]:                                     # and cmd
                 cmd_args = self.opt["cmd"]
                 self.opt["cmd"] = self.opt["entryp"]
@@ -292,14 +291,20 @@ class ExecutionEngineCommon(object):
                     self.opt["domain"] = \
                         container_structure.get_container_meta(
                             "Domainname", "", container_json)
-                if not self.opt["cmd"]:
-                    self.opt["cmd"] = \
-                        container_structure.get_container_meta(
-                            "Cmd", [], container_json)
-                if not self.opt["entryp"]:
+                if self.opt["entryp"] is False:
                     self.opt["entryp"] = \
                         container_structure.get_container_meta(
                             "Entrypoint", [], container_json)
+                    if not self.opt["cmd"]:
+                        self.opt["cmd"] = \
+                            container_structure.get_container_meta(
+                                "Cmd", [], container_json)
+                elif not self.opt["entryp"]:
+                    self.opt["entryp"] = []
+                else:
+                    if isinstance(self.opt["entryp"], str):
+                        self.opt["entryp"] = \
+                            self.opt["entryp"].strip().split(' ')
                 self.opt["Volumes"] = \
                     container_structure.get_container_meta(
                         "Volumes", [], container_json)
@@ -635,7 +640,8 @@ class ExecutionEngineCommon(object):
             if (saved["osversion"] == HostInfo().osversion() and
                     saved["oskernel"] == HostInfo().oskernel() and
                     saved["arch"] == HostInfo().arch() and
-                    saved["osdistribution"] == str(HostInfo().osdistribution())):
+                    saved["osdistribution"] == \
+                        str(HostInfo().osdistribution())):
                 return saved
         except (IOError, OSError, AttributeError, ValueError, TypeError,
                 IndexError, KeyError):
