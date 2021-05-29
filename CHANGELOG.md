@@ -1,6 +1,7 @@
 # udocker (1.3.0)
 
-  * Fixes to move the stable code for Python 3 from devel3 to master
+  * Prepare to move the stable code for Python 3 and Python 2 >= 2.6 to master
+  * Installation procedure changed see the `installation_manual`
   * Add codemeta.json, metadata for the software
   * Improve user and installation documentation
   * Add support for `faccessat2()` in Pn and Fn execution modes
