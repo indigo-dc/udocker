@@ -493,7 +493,7 @@ class ExecutionEngineCommon(object):
             FileUtil().umask()
         if not (self.opt["containerauth"] or self.opt["hostauth"]):
             Msg().out("Warning: non-existing user will be created",
-                      l=Msg.WAR)
+                      l=Msg.DBG)
             self._fill_user()
             new_auth = NixAuthentication(tmp_passwd, tmp_group)
             new_auth.add_user(self.opt["user"], 'x',
