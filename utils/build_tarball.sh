@@ -19,13 +19,13 @@
 # ##################################################################
 
 # The tarball containing the build binaries for udocker is
-# maintained separately and has its own version.
-# Each release of udocker requires a udocker-englib tarball 
-# that is equal or greather than a given base version.
-# i.e. udocker 1.3.0 requires a udocker-englib tarball >= 1.2.7
+# maintained separately and has its own version. Each release of
+# udocker requires a tarball that is equal or greather than a given
+# base version.
+# i.e. udocker 1.3.0 requires a tarball >= 1.2.8
 
 # This script produces the following udocker-englib tarball
-TARBALL_VERSION_OVERRIDE="1.2.7"
+TARBALL_VERSION_OVERRIDE="1.2.8"
 
 sanity_check() 
 {
@@ -45,8 +45,14 @@ tarball_version()
 {
     if [ -n "$TARBALL_VERSION_OVERRIDE" ]; then
 	echo "$TARBALL_VERSION_OVERRIDE"
-    else
-        $REPO_DIR/maincmd.py version | grep "tarball_release:" | cut -f2- '-d ' | cut -f1 '-d-'
+    elif [ -x "$REPO_DIR/maincmd.py" ]; then
+        $REPO_DIR/maincmd.py version | \
+		grep "tarball_release:" | cut -f2- '-d ' | cut -f1 '-d-'
+    elif [ -x "$REPO_DIR/udocker.py" ]; then
+	$REPO_DIR/udocker.py version | \
+		grep "tarball_release:" | cut -f2- '-d ' | cut -f1 '-d-'
+    else 
+	echo "udocker not found"
     fi
 }
 
@@ -76,7 +82,6 @@ prepare_proot_source()
     fi
 
     #git clone --branch v5.1.0 --depth=1 https://github.com/proot-me/PRoot 
-    #git clone --branch udocker-1.1.1 --depth=1 https://github.com/jorge-lip/PRoot.git
     #git clone --branch udocker-2 --depth=1 https://github.com/jorge-lip/proot-udocker.git
 
     git clone --branch udocker-3 https://github.com/jorge-lip/proot-udocker.git
@@ -106,7 +111,6 @@ prepare_patchelf_source()
         return
     fi
 
-    #tag for 0.10 not yet in github getting latest
     #git clone --depth=1 --branch=0.9 https://github.com/NixOS/patchelf.git
     git clone --branch udocker-1 --depth=1 https://github.com/jorge-lip/patchelf-udocker.git
     /bin/rm -Rf $BUILD_DIR/patchelf-udocker/.git
