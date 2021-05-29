@@ -43,7 +43,7 @@ environment over the extracted container. The current implementation
 supports different methods to mimic chroot thus enabling execution of
 containers under a chroot like environment without requiring privileges.
 udocker transparently supports several methods to execute the containers
-using tools and libraries such as:
+based on tools and libraries such as:
 
 * PRoot
 * Fakechroot
@@ -51,23 +51,25 @@ using tools and libraries such as:
 * crun
 * Singularity
 
-With the exception of Singularity the tools and libraries to support 
-execution are deployed by udocker during the installation processed. 
-This installation process is performed in the user home directory
-and does not require privileges.
+With the exception of Singularity the tools and libraries to support
+execution are downloaded and deployed by udocker during the installation 
+process. This installation is performed in the user home directory
+and does not require privileges. The udocker related files such as
+libraries, executables, container images and extracted directory
+trees are placed by default under `$HOME/.udocker`.
 
 ## Advantages
 
 * Can be deployed by the end-user
 * Does not require privileges for installation
 * Does not require privileges for execution
-* Does not require compilation, just transfer the Python script and run
+* Does not require compilation, just transfer the Python code
 * Encapsulates several tools and execution methods
 * Includes the required tools already statically compiled to work
   across systems
 * Provides a docker like command line interface
 * Supports a subset of docker commands:
-  search, pull, import, export, load, save, create and run
+  search, pull, import, export, load, save, login, logout, create and run
 * Understands docker container metadata
 * Allows loading of docker and OCI containers
 * Supports GPGPU and MPI applications
@@ -192,7 +194,9 @@ udocker run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
 Put a script in your host /tmp and execute it in the container.
 
 ```
-udocker run  -v /tmp  myfed  /bin/bash -c 'cd /tmp; ./myscript.sh'
+udocker run  -v /tmp  --entrypoint="" myfed  /bin/bash -c 'cd /tmp; ./myscript.sh'
+
+udocker run  -v /tmp  --entrypoint=/bin/bash  myfed  -c 'cd /tmp; ./myscript.sh'
 ```
 
 Execute mounting the host /var, /proc, /sys and /tmp in the same container
@@ -274,11 +278,11 @@ containers should not be executed with udocker as they will run inside the
 user environment. For this reason udocker should not be run by privileged 
 users.
 
-The containers data will be unpacked and stored in the user home directory or
-other location of choice. Therefore the containers data will be subjected to
-the same filesystem protections as other files owned by the user. If the
-containers have sensitive information the files and directories should be
-adequately protected by the user.
+Container images and filesystems will be unpacked and stored in the user 
+home directory under `$HOME/.udocker` or other location of choice. Therefore 
+the containers data will be subjected to the same filesystem protections as 
+other files owned by the user. If the containers have sensitive information 
+the files and directories should be adequately protected by the user.
 
 udocker does not require privileges and runs under the identity of the user
 invoking it.
@@ -290,8 +294,8 @@ udocker also provides execution with runc, crun and Singularity, these modes
 make use of rootless namespaces and enable a normal user to execute as root 
 with the limitations that apply to user namespaces and to these tools.
 
-udocker does not have privileged escalation issues as it runs entirely
-without privileges.
+udocker limits privilege escalation issues as it runs entirely without
+privileges.
 
 ## General Limitations
 
@@ -306,22 +310,22 @@ examples of operations that are not possible:
 * change the system time
 * changing routing tables, firewall rules, or network interfaces
 
-If the containers require such capabilities then docker should be used
-instead.
+If the containers require such privileged capabilities then docker 
+should be used instead.
 
 The current implementation is limited to the pulling of docker images
-and its execution. The actual containers should be built using docker
-and dockerfiles.
+and its execution. Creation of containers should be performed using
+docker and dockerfiles.
 
 udocker does not provide all the docker features, and is not intended
 as a docker replacement.
 
-Debugging inside of udocker with the PRoot engine will not work due to
-the way PRoot implements the chroot environment
-
 udocker is mainly oriented at providing a run-time environment for
 containers execution in user space. udocker is particularly suited to 
 run user applications encapsulated in docker containers.
+
+Debugging inside of udocker with the PRoot engine will not work due to
+the way PRoot implements the chroot environment
 
 ## Execution mode specific limitations
 
