@@ -27,9 +27,9 @@ class Config(object):
     conf['containersdir'] = None
 
     # udocker installation tarball
-    conf['tarball_release'] = "1.2.7"
+    conf['tarball_release'] = "1.2.8"
     conf['tarball'] = (
-        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-englib-1.2.7.tar.gz"
+        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-englib-1.2.8.tar.gz"
     )
     conf['installinfo'] = [
         "https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
