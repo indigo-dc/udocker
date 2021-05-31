@@ -11,6 +11,8 @@
   * Remove broken links in FileUtil.remove()
   * update minimum udocker tools tarball to 1.2.8
   * Cmd and entrypoint metadata and arguments processing changed to mimic docker
+  * Improve removal of files and links in install and filebind restore
+  * Add follow location option to GetURL()
   * Implement use of `--entrypoint=<cmd>` to force execution of command
     - closes: #306
   * Implement use of `--entrypoint=""` to bypass entrypoint in metadata
