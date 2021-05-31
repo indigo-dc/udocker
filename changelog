@@ -13,6 +13,8 @@ udocker (1.1.8b2)
   * Add conditional delay-directory-restore to untar layers
   * Add exclude of whiteouts on layer untar
   * Add --nobanner to udocker run
+  * Extract documentation upon installation
+  * Remove broken links in FileUtil.remove()
 
 udocker (1.1.7)
   * Fix P1 when Linux 4.8.0 SECCOMP is backported, affects newer CentOS 7 
@@ -49,7 +51,7 @@ udocker (1.1.4)
   * Adjust search results to screen size
   * List container size with ps -s
   * List container execution modes with ps -m
-  * Added support for nameat() and statx() in Pn and Fn modes
+  * Added support for renameat() and statx() in Pn and Fn modes
   * Added Fn libraries for Ubuntu18, Ubuntu19, Fedora29, Fedora30, Fedora31, CentOS8
   * Added Fn libraries for Alpine 3.8, 3.9, 3.10, 3.11
   * Added support for sha512 hashes
