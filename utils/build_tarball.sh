@@ -25,34 +25,28 @@
 # i.e. udocker 1.3.0 requires a tarball >= 1.2.8
 
 # This script produces the following udocker-englib tarball
-TARBALL_VERSION_OVERRIDE="1.2.8"
+
+DEVEL3=$(realpath "$0" | grep "devel3")
+
+TARBALL_VERSION_P3="1.2.8"
+TARBALL_VERSION_P2="1.1.8"
 
 sanity_check() 
 {
     echo "sanity_check"
-    maincmd="$REPO_DIR/udocker/maincmd.py"
-    if [ ! -f "$maincmd" ] ; then
-        echo "$maincmd not found aborting"
+    local udocker_script
+    if [ -n "$DEVEL3" ]; then
+        udocker_script="$REPO_DIR/udocker/maincmd.py"
+    else
+	udocker_script="$REPO_DIR/udocker.py"
+    fi
+    if [ ! -f "$udocker_script" ] ; then
+        echo "$udocker_script not found aborting"
         exit 1
     fi
 
     if [ -e "$BUILD_DIR" ] ; then
         echo "$BUILD_DIR already exists"
-    fi
-}
-
-tarball_version()
-{
-    if [ -n "$TARBALL_VERSION_OVERRIDE" ]; then
-	echo "$TARBALL_VERSION_OVERRIDE"
-    elif [ -x "$REPO_DIR/maincmd.py" ]; then
-        $REPO_DIR/maincmd.py version | \
-		grep "tarball_release:" | cut -f2- '-d ' | cut -f1 '-d-'
-    elif [ -x "$REPO_DIR/udocker.py" ]; then
-	$REPO_DIR/udocker.py version | \
-		grep "tarball_release:" | cut -f2- '-d ' | cut -f1 '-d-'
-    else 
-	echo "udocker not found"
     fi
 }
 
@@ -207,6 +201,18 @@ prepare_package()
         /bin/mkdir -p "${PACKAGE_DIR}/udocker_dir/bin"
         /bin/mkdir -p "${PACKAGE_DIR}/udocker_dir/lib"
         /bin/mkdir -p "${PACKAGE_DIR}/udocker_dir/doc"
+    fi
+}
+
+addto_package_udocker()
+{
+    if [ -z "$DEVEL3" ]; then
+        echo "addto_package_udocker: add udocker for Python2"
+        /bin/cp -f -L  "${REPO_DIR}/udocker.py"  "${PACKAGE_DIR}/udocker"
+        (cd ${PACKAGE_DIR}; /bin/ln -s udocker udocker.py)
+    else
+	/bin/rm -f "${PACKAGE_DIR}/udocker"
+	/bin/rm -f "${PACKAGE_DIR}/udocker.py"
     fi
 }
 
@@ -4605,8 +4611,13 @@ create_package_tarball()
         return
     fi
 
-    echo $(tarball_version)
-    echo $(tarball_version) > "${PACKAGE_DIR}/udocker_dir/lib/VERSION"
+    if [ -n "$DEVEL3" ] ; then
+        echo "$TARBALL_VERSION_P3"
+        echo "$TARBALL_VERSION_P3" > "${PACKAGE_DIR}/udocker_dir/lib/VERSION"
+    else
+        echo "$TARBALL_VERSION_P2"
+        echo "$TARBALL_VERSION_P2" > "${PACKAGE_DIR}/udocker_dir/lib/VERSION"
+    fi
 
     /bin/cp -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-30.bin" \
                "${PACKAGE_DIR}/udocker_dir/bin/proot-x86-4_8_0"
@@ -4729,6 +4740,10 @@ create_package_tarball()
     find "${PACKAGE_DIR}" -type f -exec /bin/chmod u=+r+w,og=r  {} \;
     find "${PACKAGE_DIR}/udocker_dir/bin" -type f -exec /bin/chmod u=rwx,og=rx  {} \;
     /bin/chmod u=rwx,og=rx ${PACKAGE_DIR}/setup.py
+    [ -e "${PACKAGE_DIR}/udocker" ] && \
+        /bin/chmod u=rwx,og=rx ${PACKAGE_DIR}/udocker 
+    [ -e "${PACKAGE_DIR}/setup.py" ] && \
+        /bin/chmod u=rwx,og=rx ${PACKAGE_DIR}/setup.py 
 
     /bin/rm -f $TARBALL_FILE 2>&1 > /dev/null
 
@@ -4745,11 +4760,16 @@ REPO_DIR="$(dirname $utils_dir)"
 
 sanity_check
 
-BUILD_DIR=${HOME}/udocker-englib-$(tarball_version)
+BUILD_DIR="${HOME}/udocker-englib-${TARBALL_VERSION_P3}"
 S_PROOT_DIR="${BUILD_DIR}/proot-static-build/static"
 S_PROOT_PACKAGES_DIR="${BUILD_DIR}/proot-static-build/packages"
 PACKAGE_DIR="${BUILD_DIR}/package"
-TARBALL_FILE="${BUILD_DIR}/udocker-englib-$(tarball_version).tar.gz"
+
+if [ -n "$DEVEL3" ]; then
+    TARBALL_FILE="${BUILD_DIR}/udocker-englib-${TARBALL_VERSION_P3}.tar.gz"
+else
+    TARBALL_FILE="${BUILD_DIR}/udocker-${TARBALL_VERSION_P2}.tar.gz"
+fi
 
 [ ! -e "$BUILD_DIR" ] && /bin/mkdir -p "$BUILD_DIR"
 
@@ -4924,5 +4944,6 @@ fedora31_build_proot "aarch64" "${BUILD_DIR}/proot-source-aarch64"
 # #######
 #addto_package_simplejson
 addto_package_other
+addto_package_udocker
 create_package_tarball
 
