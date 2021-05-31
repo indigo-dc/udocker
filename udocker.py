@@ -112,6 +112,7 @@ class Config(object):
     topdir = homedir
     bindir = None
     libdir = None
+    docdir = None
     reposdir = None
     layersdir = None
     containersdir = None
@@ -286,6 +287,7 @@ class Config(object):
         Config.topdir = os.getenv("UDOCKER_DIR", Config.topdir)
         Config.bindir = os.getenv("UDOCKER_BIN", Config.bindir)
         Config.libdir = os.getenv("UDOCKER_LIB", Config.libdir)
+        Config.docdir = os.getenv("UDOCKER_DOC", Config.docdir)
         Config.reposdir = os.getenv("UDOCKER_REPOS", Config.reposdir)
         Config.layersdir = os.getenv("UDOCKER_LAYERS", Config.layersdir)
         Config.containersdir = os.getenv("UDOCKER_CONTAINERS",
@@ -1218,7 +1220,7 @@ class FileUtil(object):
 
     def remove(self, force=False, recursive=False):
         """Delete files or directories"""
-        if not os.path.exists(self.filename):
+        if not os.path.lexists(self.filename):
             pass
         elif self.filename.count('/') < 2:
             Msg().err("Error: delete pathname too short: ", self.filename)
@@ -1709,6 +1711,9 @@ class UdockerTools(object):
         for f_name in os.listdir(self.localrepo.libdir):
             FileUtil(self.localrepo.libdir + '/' + f_name).register_prefix()
             FileUtil(self.localrepo.libdir + '/' + f_name).remove(recursive=True)
+        for f_name in os.listdir(self.localrepo.docdir):
+            FileUtil(self.localrepo.docdir + '/' + f_name).register_prefix()
+            FileUtil(self.localrepo.docdir + '/' + f_name).remove(recursive=True)
 
     def _install(self, tarball_file):
         """Install the tarball"""
@@ -1720,6 +1725,7 @@ class UdockerTools(object):
             extract = "-xvzf"
         else:
             extract = "-xzf"
+
         cmd = ["tar", "-C", self.localrepo.bindir, "--strip-components=2",
                "--overwrite", extract, tarball_file, "udocker_dir/bin"]
         FileUtil(self.localrepo.bindir).rchmod()
@@ -1729,12 +1735,22 @@ class UdockerTools(object):
                                                stat.S_IXUSR)
         if status:
             return False
+
         cmd = ["tar", "-C", self.localrepo.libdir, "--strip-components=2",
                "--overwrite", extract, tarball_file, "udocker_dir/lib"]
         FileUtil(self.localrepo.libdir).rchmod()
         status = Uprocess().call(cmd, close_fds=True, stderr=Msg.chlderr,
                                  stdout=Msg.chlderr)
         FileUtil(self.localrepo.libdir).rchmod()
+        if status:
+            return False
+
+        cmd = ["tar", "-C", self.localrepo.docdir, "--strip-components=2",
+               "--overwrite", extract, tarball_file, "udocker_dir/doc"]
+        FileUtil(self.localrepo.docdir).rchmod()
+        status = Uprocess().call(cmd, close_fds=True, stderr=Msg.chlderr,
+                                 stdout=Msg.chlderr)
+        FileUtil(self.localrepo.docdir).rchmod()
         if status:
             return False
         return True
@@ -4847,6 +4863,7 @@ class LocalRepository(object):
 
         self.bindir = Config.bindir
         self.libdir = Config.libdir
+        self.docdir = Config.docdir
         self.reposdir = Config.reposdir
         self.layersdir = Config.layersdir
         self.containersdir = Config.containersdir
@@ -4856,6 +4873,8 @@ class LocalRepository(object):
             self.bindir = self.topdir + "/bin"
         if not self.libdir:
             self.libdir = self.topdir + "/lib"
+        if not self.docdir:
+            self.docdir = self.topdir + "/doc"
         if not self.reposdir:
             self.reposdir = self.topdir + "/repos"
         if not self.layersdir:
@@ -4892,6 +4911,8 @@ class LocalRepository(object):
                 os.makedirs(self.bindir)
             if not os.path.exists(self.libdir):
                 os.makedirs(self.libdir)
+            if not os.path.exists(self.docdir):
+                os.makedirs(self.docdir)
             if not (Config.keystore.startswith('/') or os.path.exists(self.homedir)):
                 os.makedirs(self.homedir)
         except(IOError, OSError):
