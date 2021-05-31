@@ -120,8 +120,8 @@ class Config(object):
     # udocker installation tarball
     tarball_release = "1.1.8"
     tarball = (
-        "https://raw.githubusercontent.com"
-        "/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.8.tar.gz"
+        "https://github.com/jorge-lip/udocker-builds"
+        "/raw/master/tarballs/udocker-1.1.8.tar.gz"
         " "
         "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.8.tar.gz"
     )
@@ -1660,7 +1660,7 @@ class UdockerTools(object):
         download_file = FileUtil("udockertools").mktmp()
         if Msg.level <= Msg.DEF:
             Msg().setlevel(Msg.NIL)
-        (hdr, dummy) = self.curl.get(url, ofile=download_file)
+        (hdr, dummy) = self.curl.get(url, ofile=download_file, follow=True)
         if Msg.level == Msg.NIL:
             Msg().setlevel()
         try:
@@ -1767,6 +1767,7 @@ class UdockerTools(object):
 
     def get_installinfo(self):
         """Get json containing installation info"""
+        Msg().out("Info: searching for messages:", l=Msg.VER)
         for url in self._get_mirrors(self._installinfo):
             infofile = self._get_file(url)
             try:
@@ -5781,6 +5782,8 @@ class GetURLpyCurl(GetURL):
         """Prepare curl command line according to invocation options"""
         self._url = str(args[0])
         pyc.setopt(pycurl.URL, self._url)
+        if "follow" in kwargs:
+            pyc.setopt(pyc.FOLLOWLOCATION, kwargs["follow"])
         if "post" in kwargs:
             pyc.setopt(pyc.POST, 1)
             pyc.setopt(pyc.HTTPHEADER, ['Content-Type: application/json'])
@@ -5909,6 +5912,8 @@ class GetURLexeCurl(GetURL):
     def _mkcurlcmd(self, *args, **kwargs):
         """Prepare curl command line according to invocation options"""
         self._files["url"] = str(args[0])
+        if "follow" in kwargs and kwargs["follow"]:
+            self._opts["follow"] = ["-L"]
         if "post" in kwargs:
             self._opts["post"] = ["-X", "POST", "-H", "Content-Type: application/json"]
             self._opts["post"] += ["-d", json.dumps(kwargs["post"])]
