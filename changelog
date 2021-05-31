@@ -13,8 +13,11 @@ udocker (1.1.8b2)
   * Add conditional delay-directory-restore to untar layers
   * Add exclude of whiteouts on layer untar
   * Add --nobanner to udocker run
+  * Improve installation
   * Extract documentation upon installation
   * Remove broken links in FileUtil.remove()
+  * Improve removal of files and links in install and filebind restore
+  * Add follow location as option to GetURL()
 
 udocker (1.1.7)
   * Fix P1 when Linux 4.8.0 SECCOMP is backported, affects newer CentOS 7 
