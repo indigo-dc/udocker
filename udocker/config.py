@@ -32,6 +32,9 @@ class Config(object):
     conf['tarball_release'] = "1.2.8"
     conf['tarball'] = (
         "https://download.ncg.ingrid.pt/webdav/udocker/udocker-englib-1.2.8.tar.gz"
+        " "
+        "https://raw.githubusercontent.com"
+        "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.8.tar.gz"
     )
     conf['installinfo'] = [
         "https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]

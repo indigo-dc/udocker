@@ -124,7 +124,7 @@ class UdockerTools(object):
         download_file = FileUtil("udockertools").mktmp()
         if Msg.level <= Msg.DEF:
             Msg().setlevel(Msg.NIL)
-        (hdr, dummy) = self.curl.get(url, ofile=download_file)
+        (hdr, dummy) = self.curl.get(url, ofile=download_file, follow=True)
         if Msg.level == Msg.NIL:
             Msg().setlevel()
         try:
@@ -220,6 +220,7 @@ class UdockerTools(object):
 
     def get_installinfo(self):
         """Get json containing installation info"""
+        Msg().out("Info: searching for messages:", l=Msg.VER)
         for url in self._get_mirrors(self._installinfo):
             infofile = self._get_file(url)
             try:
