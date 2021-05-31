@@ -27,7 +27,8 @@ class Config(object):
     conf['layersdir'] = None
     conf['containersdir'] = None
 
-    # udocker installation tarball
+    # udocker installation tarball the release is the minimum requirement
+    # the actual tarball used in the installation can have a higher version
     conf['tarball_release'] = "1.2.8"
     conf['tarball'] = (
         "https://download.ncg.ingrid.pt/webdav/udocker/udocker-englib-1.2.8.tar.gz"

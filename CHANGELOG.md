@@ -3,12 +3,13 @@
   * Prepare to move the stable code for Python 3 and Python 2 >= 2.6 to master
   * Installation procedure changed since 1.1.x series see the `installation_manual`
   * Improve user and installation documentation
-  * Add installation of documentation
+  * Extract documentation upon installation
   * Add codemeta.json, metadata for the software
   * Add support for `faccessat2()` in Pn and Fn execution modes
   * Fix support for `newfstatat()` in Pn execution modes
   * Add Fn libraries for Fedora 34 and Ubuntu 21.04
   * Remove broken links in FileUtil.remove()
+  * update minimum udocker tools tarball to 1.2.8
   * Cmd and entrypoint metadata and arguments processing changed to mimic docker
   * Implement use of `--entrypoint=<cmd>` to force execution of command
     - closes: #306
