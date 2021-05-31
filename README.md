@@ -6,6 +6,10 @@
 
 [![logo](https://raw.githubusercontent.com/indigo-dc/udocker/master/doc/logo-small.png)]()
 
+This branch contains the original udocker for Python 2. This version is
+still maintained but new features will not be added. The Python 3 version
+is now available from the [master branch](https://github.com/indigo-dc/udocker) and [devel3 branch](https://github.com/indigo-dc/udocker/tree/devel3).
+
 udocker is a basic user tool to execute simple docker containers in user
 space without requiring root privileges. Enables download and execution
 of docker containers by non-privileged users in Linux systems where
@@ -16,16 +20,17 @@ managed batch or interactive systems.
 
 udocker does not require any type of privileges nor the deployment of
 services by system administrators. It can be downloaded and executed
-entirely by the end user.
+entirely by the end user. The limited root functionality provided by
+some of the udocker execution modes is either simulated or provided 
+via user namespaces.
 
 udocker is a wrapper around several tools to mimic a subset of the
 docker capabilities including pulling images and running containers
 with minimal functionality.
 
 ## How does it work
-udocker is a simple tool written in Python, it has a minimal set
-of dependencies so that can be executed in a wide range of Linux
-systems.
+udocker is written in Python, it has a minimal set of dependencies so
+that can be executed in a wide range of Linux systems.
 
 udocker does not make use of docker nor requires its presence.
 
@@ -34,7 +39,7 @@ environment over the extracted container. The current implementation
 supports different methods to mimic chroot thus enabling execution of
 containers under a chroot like environment without requiring privileges.
 udocker transparently supports several methods to execute the containers
-using tools and libraries such as:
+based on tools and libraries such as:
 
 * PRoot
 * Fakechroot
@@ -42,27 +47,40 @@ using tools and libraries such as:
 * crun
 * Singularity
 
+With the exception of Singularity the tools and libraries to support 
+execution are downloaded and deployed by udocker during the installation 
+process. This installation is performed in the user home directory
+and does not require privileges. The udocker related files such as
+libraries, executables, container images and extracted directory
+trees are placed by default under `$HOME/.udocker`.
+
 ## Advantages
-* Provides a docker like command line interface
-* Supports a subset of docker commands:
-  search, pull, import, export, load, save, create and run
-* Understands docker container metadata
-* Allows loading of docker and OCI containers
+
 * Can be deployed by the end-user
 * Does not require privileges for installation
 * Does not require privileges for execution
-* Does not require compilation, just transfer the Python script and run
+* Does not require compilation, just transfer the Python script
 * Encapsulates several tools and execution methods
-* Includes the required tools already statically compiled to work across systems
-* Tested with GPGPU and MPI applications
+* Includes the required tools already statically compiled to work
+  across systems
+* Provides a docker like command line interface
+* Supports a subset of docker commands:
+  search, pull, import, export, load, save, create, login, logout and run
+* Understands docker container metadata
+* Allows loading of docker and OCI containers
+* Supports GPGPU and MPI applications
 * Runs both on new and older Linux distributions including:
-  CentOS 6, CentOS 7, CentOS 8, Ubuntu 14, Ubuntu 16, Ubuntu 18, Ubuntu 20, Fedora, etc
+  CentOS 6, CentOS 7, CentOS 8, Ubuntu 14, Ubuntu 16, Ubuntu 18, Ubuntu 20,
+  Fedora, etc
 
 ## Installation and Users manuals
 
 See the **[Installation manual](doc/installation_manual.md)**
 See the **[Users manual](doc/user_manual.md)**.
 See the **[All documentation for Python 2](SUMMARY.md)**
+
+For the new Python 3 version:
+
 See the **[All documentation for Python 3](https://github.com/indigo-dc/udocker/blob/devel3/SUMMARY.md)**
 
 ## Syntax
@@ -226,8 +244,42 @@ udocker setup  --execmode=S1  myfed
 udocker run  --user=root myfed  yum install -y firefox pulseaudio gnash-plugin
 ```
 
+## Security
 
-## Limitations
+By default udocker via PRoot offers the emulation of the root user. This 
+emulation mimics a real root user (e.g getuid will return 0). This is just 
+an emulation no root privileges are involved. This feature makes possible 
+the execution of some tools that do not require actual privileges but which 
+refuse to work if the username or id are not root or 0. This enables for 
+instance software installation using rpm, yum or dnf inside the container.
+
+udocker does not offer robust isolation features such as the ones offered 
+by docker. Therefore if the containers content is not trusted then these 
+containers should not be executed with udocker as they will run inside the 
+user environment. For this reason udocker should not be run by privileged
+users.
+
+Container images and filesystems will be unpacked and stored in the user 
+home directory under `$HOME/.udocker` or other location of choice. Therefore 
+the containers data will be subjected to the same filesystem protections as 
+other files owned by the user. If the containers have sensitive information 
+the files and directories should be adequately protected by the user.
+
+udocker does not require privileges and runs under the identity of the user
+invoking it.
+
+Users can downloaded udocker and execute it without requiring system
+administrators intervention.
+
+udocker also provides execution with runc, crun and Singularity, these modes
+make use of rootless namespaces and enable a normal user to execute as root
+with the limitations that apply to user namespaces and to these tools.
+
+udocker limits privilege escalation issues as it runs entirely without 
+privileges.
+
+## General Limitations
+
 Since root privileges are not involved any operation that really
 requires such privileges will not be possible. The following  are
 examples of operations that are not possible:
@@ -239,64 +291,35 @@ examples of operations that are not possible:
 * change the system time
 * changing routing tables, firewall rules, or network interfaces
 
-If the containers require such capabilities then docker should be used
-instead.
+If the containers require such privileged capabilities then docker 
+should be used instead.
 
 The current implementation is limited to the pulling of docker images
-and its execution. The actual containers should be built using docker
-and dockerfiles.
+and its execution. Creation of containers should be performed using
+docker and dockerfiles.
 
 udocker does not provide all the docker features, and is not intended
 as a docker replacement.
 
+udocker is mainly oriented at providing a run-time environment for
+containers execution in user space. udocker is particularly suited to
+run user applications encapsulated in docker containers.
+
 Debugging inside of udocker with the PRoot engine will not work due to
 the way PRoot implements the chroot environment
 
-udocker is mainly oriented at providing a run-time environment for
-containers execution in user space. udocker is particularly suited to 
-run user applications encapsulated in docker containers.
+## Execution mode specific limitations
 
-## Security
-Because of the limitations described in the previous section udocker does
-not offer robust isolation features such as the ones offered by docker. 
-If the containers content is not trusted then these containers should not 
-be executed with udocker as they will run inside the user environment.
+udocker offers multiple execution modes leveraging several tools.
 
-The containers data will be unpacked and stored in the user home directory or
-other location of choice. Therefore the containers data will be subjected to
-the same filesystem protections as other files owned by the user. If the
-containers have sensitive information the files and directories should be
-adequately protected by the user.
-
-udocker does not require privileges and runs under the identity of the user
-invoking it.
-
-Users can downloaded udocker and execute it without requiring system
-administrators intervention.
-
-udocker via PRoot offers the emulation of the root user. This emulation
-mimics a real root user (e.g getuid will return 0). This is just an emulation
-no root privileges are involved. This feature makes possible the execution
-of some tools that do not require actual privileges but which refuse to
-work if the username or id are not root or 0. This enables for instance
-software installation using rpm, yum or dnf inside the container.
-
-udocker must not be run by privileged users.
-
-udocker also provides execution with runc and Singularity, these modes make
-use of rootless namespaces and enable a normal user to execute as root with
-certain limitations.
-
-## Other limitations
 When using execution modes such as F2, F3 and F4 the created
 containers cannot be moved across hosts. In this case convert back to a Pn
 mode before transfer.
 This is not needed if the hosts are part of an homogeneous cluster where
 the mount points and directory structure is the same. This limitation
-applies to the absolute realpath to the container directory.
+applies whenever the absolute realpath to the container directory changes.
 
-
-The default accelerated mode of PRoot (mode P1) may exhibit failures in Linux 
+The default accelerated mode of PRoot (mode P1) may exhibit failures in Linux
 kernels above 4.0 due to kernel changes and upstream issues, in this case use
 mode P2 or any of the other execution modes.
 
@@ -304,18 +327,18 @@ mode P2 or any of the other execution modes.
 ./udocker setup  --execmode=P2  my-container-id
 ```
 
-The Fn modes require shared libraries compiled against the libc within
-the containers. udocker provides these libraries for several distributions
-and versions, they are installed under:
+The Fn modes require shared libraries compiled against the libc shipped
+with the container. udocker provides these libraries for several Linux
+distributions, these shared libraries are installed by udocker under:
 
 ```
 $HOME/.udocker/lib/libfakechroot-*
 ```
- 
-The runC mode requires a recent kernel with user namespaces enabled.
+
+The runc and crun modes require a kernel with user namespaces enabled.
 
 The singularity mode requires the availability of Singularity in the host
-system.
+system. Singularity is not shipped with udocker.
 
 ## Documentation
 The full documentation is available at:
@@ -338,16 +361,19 @@ When citing udocker please use the following:
 * Docker https://www.docker.com/
 * PRoot https://proot-me.github.io/
 * Fakechroot https://github.com/dex4er/fakechroot/wiki
-* runC https://runc.io/
+* runc https://runc.io/
 * crun https://github.com/containers/crun
 * Singularity https://www.sylabs.io/
 * Open Container Initiative https://www.opencontainers.org/
 * INDIGO DataCloud https://www.indigo-datacloud.eu
 * DEEP-Hybrid-DataCloud https://deep-hybrid-datacloud.eu
+* EGI-ACE https://www.egi.eu/projects/egi-ace/
+* EOSC-Synergy https://www.eosc-synergy.eu/
 * LIP https://www.lip.pt
 * INCD https://www.incd.pt
 * EOSC-hub https://eosc-hub.eu
 
-This work is co-funded by the EOSC-hub project (Horizon 2020) under Grant number 777536
+This work was performed in the framework of the H2020 project INDIGO-Datacloud (RIA 653549) and further developed with co-funding by the projects EOSC-hub (Horizon 2020) under Grant number 777536 and DEEP-Hybrid-DataCloud (Horizon 2020) under Grant number 777435. Software Quality Assurance is performed with the support of by the project EOSC-Synergy (Horizon 2020).
+The authors wish to acknowleadge the support of INCD-Infraestrutura Nacional de Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER under the project number 22153-01/SAICT/2016).
 <img src="https://wiki.eosc-hub.eu/download/attachments/1867786/eu%20logo.jpeg?version=1&modificationDate=1459256840098&api=v2" height="24">
 <img src="https://wiki.eosc-hub.eu/download/attachments/18973612/eosc-hub-web.png?version=1&modificationDate=1516099993132&api=v2" height="24">
