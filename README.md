@@ -7,8 +7,13 @@
 [![logo](https://raw.githubusercontent.com/indigo-dc/udocker/master/doc/logo-small.png)]()
 
 This branch contains the original udocker for Python 2. This version is
-still maintained but new features will not be added. The Python 3 version
-is now available from the [master branch](https://github.com/indigo-dc/udocker) and [devel3 branch](https://github.com/indigo-dc/udocker/tree/devel3).
+still maintained but new features will not be added. The newer udocker for 
+Python 3 also suports Python >= 2.6 and is now available from the
+[devel3 branch](https://github.com/indigo-dc/udocker/tree/devel3).
+
+<!---
+from the [master branch](https://github.com/indigo-dc/udocker)
+-->
 
 udocker is a basic user tool to execute simple docker containers in user
 space without requiring root privileges. Enables download and execution
