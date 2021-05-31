@@ -105,13 +105,17 @@ class UdockerTools(object):
         return self._version_isok(version)
 
     def purge(self):
-        """Remove existing files in bin and lib"""
+        """Remove existing files in bin, lib and doc"""
         for f_name in os.listdir(self.localrepo.bindir):
             f_path = self.localrepo.bindir + '/' + f_name
             FileUtil(f_path).register_prefix()
             FileUtil(f_path).remove(recursive=True)
         for f_name in os.listdir(self.localrepo.libdir):
             f_path = self.localrepo.libdir + '/' + f_name
+            FileUtil(f_path).register_prefix()
+            FileUtil(f_path).remove(recursive=True)
+        for f_name in os.listdir(self.localrepo.docdir):
+            f_path = self.localrepo.docdir + '/' + f_name
             FileUtil(f_path).register_prefix()
             FileUtil(f_path).remove(recursive=True)
 
@@ -183,6 +187,7 @@ class UdockerTools(object):
                     tfile.extract(tar_in, self.localrepo.bindir)
             FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR |
                                                    stat.S_IWUSR | stat.S_IXUSR)
+
             FileUtil(self.localrepo.libdir).rchmod()
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/lib/"):
@@ -190,6 +195,14 @@ class UdockerTools(object):
                     Msg().out("Info: extrating", tar_in.name, l=Msg.DBG)
                     tfile.extract(tar_in, self.localrepo.libdir)
             FileUtil(self.localrepo.libdir).rchmod()
+
+            FileUtil(self.localrepo.docdir).rchmod()
+            for tar_in in tfile.getmembers():
+                if tar_in.name.startswith("udocker_dir/doc/"):
+                    tar_in.name = os.path.basename(tar_in.name)
+                    Msg().out("Info: extrating", tar_in.name, l=Msg.DBG)
+                    tfile.extract(tar_in, self.localrepo.docdir)
+            FileUtil(self.localrepo.docdir).rchmod()
             tfile.close()
         except tarfile.TarError:
             return False

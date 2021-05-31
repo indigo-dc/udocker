@@ -206,6 +206,7 @@ prepare_package()
         /bin/mkdir -p "${PACKAGE_DIR}"
         /bin/mkdir -p "${PACKAGE_DIR}/udocker_dir/bin"
         /bin/mkdir -p "${PACKAGE_DIR}/udocker_dir/lib"
+        /bin/mkdir -p "${PACKAGE_DIR}/udocker_dir/doc"
     fi
 }
 
@@ -229,18 +230,21 @@ addto_package_simplejson()
 addto_package_other()
 {
     echo "addto_package_other"
-    /bin/cp -f "${REPO_DIR}/LICENSE"       "${PACKAGE_DIR}/"
-    /bin/cp -f "${REPO_DIR}/README.md"     "${PACKAGE_DIR}/"
-    /bin/cp -f "${REPO_DIR}/CHANGELOG.md"  "${PACKAGE_DIR}/"
-    /bin/cp -R "${REPO_DIR}/doc"           "${PACKAGE_DIR}/udocker_dir/"
+    /bin/cp -f "${REPO_DIR}/LICENSE"                       "${PACKAGE_DIR}/udocker_dir/doc/LICENSE.udocker"
+    /bin/cp -f "${REPO_DIR}/README.md"                     "${PACKAGE_DIR}/udocker_dir/doc/"
+    /bin/cp -f "${REPO_DIR}/CHANGELOG.md"                  "${PACKAGE_DIR}/udocker_dir/doc/"
+    /bin/cp -R "${REPO_DIR}/doc/udocker.1"                 "${PACKAGE_DIR}/udocker_dir/doc/"
+    /bin/cp -R "${REPO_DIR}/docs/installation_manual.md"   "${PACKAGE_DIR}/udocker_dir/doc/"
+    /bin/cp -R "${REPO_DIR}/docs/reference_card.md"        "${PACKAGE_DIR}/udocker_dir/doc/"
+    /bin/cp -R "${REPO_DIR}/docs/user_manual.md"           "${PACKAGE_DIR}/udocker_dir/doc/"
 
-    /bin/cp -f "${REPO_DIR}/ansible_install.yaml" "${PACKAGE_DIR}/"
-    /bin/cp -f "${REPO_DIR}/setup.py"             "${PACKAGE_DIR}/"
+    /bin/cp -f "${REPO_DIR}/ansible_install.yaml"          "${PACKAGE_DIR}/"
+    /bin/cp -f "${REPO_DIR}/setup.py"                      "${PACKAGE_DIR}/"
 
-    #/bin/cp -f "${S_PROOT_DIR}/proot-x86"    "${PACKAGE_DIR}/udocker_dir/bin/"
-    #/bin/cp -f "${S_PROOT_DIR}/proot-x86_64" "${PACKAGE_DIR}/udocker_dir/bin/"
-    /bin/cp -f "${S_PROOT_DIR}/proot-arm"    "${PACKAGE_DIR}/udocker_dir/bin/"
-    /bin/cp -f "${S_PROOT_DIR}/proot-arm64"  "${PACKAGE_DIR}/udocker_dir/bin/"
+    #/bin/cp -f "${S_PROOT_DIR}/proot-x86"                 "${PACKAGE_DIR}/udocker_dir/bin/"
+    #/bin/cp -f "${S_PROOT_DIR}/proot-x86_64"              "${PACKAGE_DIR}/udocker_dir/bin/"
+    /bin/cp -f "${S_PROOT_DIR}/proot-arm"                  "${PACKAGE_DIR}/udocker_dir/bin/"
+    /bin/cp -f "${S_PROOT_DIR}/proot-arm64"                "${PACKAGE_DIR}/udocker_dir/bin/"
 }
 
 # #############################################################################
@@ -4614,9 +4618,13 @@ create_package_tarball()
                "${PACKAGE_DIR}/udocker_dir/bin/proot-x86"
     /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25.bin" \
                "${PACKAGE_DIR}/udocker_dir/bin/proot-x86_64"
+    /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/COPYING" \
+               "${PACKAGE_DIR}/udocker_dir/doc/COPYING.proot"
 
     /bin/cp -f "${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-25" \
                "${PACKAGE_DIR}/udocker_dir/bin/patchelf-x86_64"
+    /bin/cp -f "${BUILD_DIR}/patchelf-source-x86_64/COPYING" \
+               "${PACKAGE_DIR}/udocker_dir/doc/COPYING.patchelf"
 
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-25.so" \
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Fedora-25-x86_64.so"
@@ -4668,19 +4676,18 @@ create_package_tarball()
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Alpine-3.13-x86_64.so"
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/LICENSE" \
                "${PACKAGE_DIR}/udocker_dir/doc/LICENSE.fakechroot"
+    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/COPYING" \
+               "${PACKAGE_DIR}/udocker_dir/doc/COPYING.fakechroot"
 
     /bin/cp -f "${BUILD_DIR}/runc-source-x86_64/runc" \
                "${PACKAGE_DIR}/udocker_dir/bin/runc-x86_64"
     /bin/cp -f "${BUILD_DIR}/runc-source-x86_64/LICENSE" \
                "${PACKAGE_DIR}/udocker_dir/doc/LICENSE.runc"
+
     /bin/cp -f "${BUILD_DIR}/crun-source-x86_64/crun-nix-latest" \
                "${PACKAGE_DIR}/udocker_dir/bin/crun-x86_64"
     /bin/cp -f "${BUILD_DIR}/crun-source-x86_64/COPYING" \
                "${PACKAGE_DIR}/udocker_dir/doc/COPYING.crun"
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/COPYING" \
-               "${PACKAGE_DIR}/udocker_dir/doc/COPYING.proot"
-    /bin/cp -f "${BUILD_DIR}/patchelf-source-x86_64/COPYING" \
-               "${PACKAGE_DIR}/udocker_dir/doc/COPYING.patchelf"
 
     (cd "${PACKAGE_DIR}/udocker_dir/lib"; \
         ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-x86_64.so ; \
@@ -4715,6 +4722,7 @@ create_package_tarball()
         ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-Ubuntu-13-x86_64.so ; \
         ln -s libfakechroot-Ubuntu-16-x86_64.so libfakechroot-Ubuntu-15-x86_64.so ; \
         ln -s libfakechroot-Ubuntu-18-x86_64.so libfakechroot-Ubuntu-17-x86_64.so ; \
+        ln -s libfakechroot-Ubuntu-21-x86_64.so libfakechroot-Ubuntu-22-x86_64.so ; \
         ln -s libfakechroot-Alpine-3.6-x86_64.so libfakechroot-Alpine-x86_64.so)
 
     find "${PACKAGE_DIR}" -type d -exec /bin/chmod u=rwx,og=rx  {} \;

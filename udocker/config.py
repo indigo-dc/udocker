@@ -22,6 +22,7 @@ class Config(object):
     conf['homedir'] = conf['topdir']
     conf['bindir'] = None
     conf['libdir'] = None
+    conf['docdir'] = None
     conf['reposdir'] = None
     conf['layersdir'] = None
     conf['containersdir'] = None
@@ -218,6 +219,7 @@ class Config(object):
         Config.conf['topdir'] = os.getenv("UDOCKER_DIR", Config.conf['topdir'])
         Config.conf['bindir'] = os.getenv("UDOCKER_BIN", Config.conf['bindir'])
         Config.conf['libdir'] = os.getenv("UDOCKER_LIB", Config.conf['libdir'])
+        Config.conf['docdir'] = os.getenv("UDOCKER_DOC", Config.conf['docdir'])
         Config.conf['reposdir'] = \
             os.getenv("UDOCKER_REPOS", Config.conf['reposdir'])
         Config.conf['layersdir'] = \

@@ -36,6 +36,7 @@ class LocalRepository(object):
         self.topdir = topdir if topdir else Config.conf['topdir']
         self.bindir = Config.conf['bindir']
         self.libdir = Config.conf['libdir']
+        self.docdir = Config.conf['docdir']
         self.reposdir = Config.conf['reposdir']
         self.layersdir = Config.conf['layersdir']
         self.containersdir = Config.conf['containersdir']
@@ -45,6 +46,8 @@ class LocalRepository(object):
             self.bindir = self.topdir + "/bin"
         if not self.libdir:
             self.libdir = self.topdir + "/lib"
+        if not self.docdir:
+            self.docdir = self.topdir + "/doc"
         if not self.reposdir:
             self.reposdir = self.topdir + "/repos"
         if not self.layersdir:
@@ -81,6 +84,8 @@ class LocalRepository(object):
                 os.makedirs(self.bindir)
             if not os.path.exists(self.libdir):
                 os.makedirs(self.libdir)
+            if not os.path.exists(self.docdir):
+                os.makedirs(self.docdir)
             if not (Config.conf['keystore'].startswith("/") or \
                     os.path.exists(self.homedir)):
                 os.makedirs(self.homedir)
