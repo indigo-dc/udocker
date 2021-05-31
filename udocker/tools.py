@@ -246,7 +246,7 @@ class UdockerTools(object):
                 status = self._install(tarballfile)
             else:
                 Msg().err("Error: version is", version, "for", url, l=Msg.VER)
-            if "://" in url:
+            if "://" in url and tarballfile:
                 FileUtil(tarballfile).remove()
             if status:
                 return True
