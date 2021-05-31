@@ -118,14 +118,12 @@ class Config(object):
     containersdir = None
 
     # udocker installation tarball
-    tarball_release = "1.1.7"
+    tarball_release = "1.1.8"
     tarball = (
         "https://raw.githubusercontent.com"
-        "/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.7.tar.gz"
+        "/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.8.tar.gz"
         " "
-        "https://cernbox.cern.ch/index.php/s/fuO6cXiiiUckNPA/download"
-        " "
-        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.7.tar.gz"
+        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-1.1.8.tar.gz"
     )
 
     installinfo = [
@@ -1043,6 +1041,8 @@ class FileUtil(object):
 
     def __init__(self, filename=None):
         self._tmpdir = Config.tmpdir
+        if filename == "":
+            raise AttributeError("Invalid filename")
         if filename == '-':
             self.filename = '-'
             self.basename = '-'
@@ -1793,7 +1793,7 @@ class UdockerTools(object):
                 status = self._install(tarfile)
             else:
                 Msg().err("Error: version is", version, "for", url, l=Msg.VER)
-            if "://" in url:
+            if "://" in url and tarfile:
                 FileUtil(tarfile).remove()
             if status:
                 return True
@@ -2313,6 +2313,7 @@ class FileBind(object):
             cont_file = os.path.basename(f_name).replace('#', '/')
             cont_file = self.container_root + '/' + cont_file
             if os.path.islink(cont_file):
+                FileUtil(cont_file).register_prefix()
                 FileUtil(cont_file).remove()
             elif os.path.exists(cont_file):
                 continue
