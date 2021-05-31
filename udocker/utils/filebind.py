@@ -50,6 +50,7 @@ class FileBind(object):
             cont_file = os.path.basename(f_name).replace('#', '/')
             cont_file = self.container_root + '/' + cont_file
             if os.path.islink(cont_file):
+                FileUtil(cont_file).register_prefix()
                 FileUtil(cont_file).remove()
             elif os.path.exists(cont_file):
                 continue
