@@ -85,14 +85,14 @@ class LocalRepositoryTestCase(TestCase):
         mock_fu.return_value.register_prefix.side_effect = \
             [None, None, None]
         mock_exists.side_effect = [False, False, False, False,
-                                   False, False, False]
+                                   False, False, False, False]
         mock_mkdir.side_effect = [None, None, None, None,
-                                  None, None, None]
+                                  None, None, None, None]
         lrepo = LocalRepository(UDOCKER_TOPDIR)
         status = lrepo.create_repo()
         self.assertTrue(status)
-        self.assertTrue(mock_exists.call_count, 7)
-        self.assertTrue(mock_mkdir.call_count, 7)
+        self.assertTrue(mock_exists.call_count, 8)
+        self.assertTrue(mock_mkdir.call_count, 8)
 
         Config.conf['keystore'] = "tmp"
         mock_fu.return_value.register_prefix.side_effect = \

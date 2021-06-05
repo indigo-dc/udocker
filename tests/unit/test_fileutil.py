@@ -464,7 +464,7 @@ class FileUtilTestCase(TestCase):
         # under /
         futil = FileUtil("/filename4.txt")
         status = futil.remove()
-        self.assertFalse(status)
+        self.assertTrue(status)
 
         # wrong uid
         mock_base.return_value = 'filename4.txt'
@@ -472,7 +472,7 @@ class FileUtilTestCase(TestCase):
         mock_uid.return_value = 1001
         futil = FileUtil("/tmp/filename4.txt")
         status = futil.remove()
-        self.assertFalse(status)
+        self.assertTrue(status)
 
         # under /tmp TEST to be checked
         # mock_base.return_value = 'filename4.txt'
@@ -497,7 +497,7 @@ class FileUtilTestCase(TestCase):
         futil = FileUtil("/etc/filename4.txt")
         futil.safe_prefixes = []
         status = futil.remove()
-        self.assertFalse(status)
+        self.assertTrue(status)
 
     @patch('udocker.utils.fileutil.Msg')
     @patch('udocker.utils.fileutil.Uprocess.call')
