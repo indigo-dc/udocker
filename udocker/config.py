@@ -22,14 +22,19 @@ class Config(object):
     conf['homedir'] = conf['topdir']
     conf['bindir'] = None
     conf['libdir'] = None
+    conf['docdir'] = None
     conf['reposdir'] = None
     conf['layersdir'] = None
     conf['containersdir'] = None
 
-    # udocker installation tarball
-    conf['tarball_release'] = "1.2.7"
+    # udocker installation tarball the release is the minimum requirement
+    # the actual tarball used in the installation can have a higher version
+    conf['tarball_release'] = "1.2.8"
     conf['tarball'] = (
-        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-englib-1.2.7.tar.gz"
+        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-englib-1.2.8.tar.gz"
+        " "
+        "https://raw.githubusercontent.com"
+        "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.8.tar.gz"
     )
     conf['installinfo'] = [
         "https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
@@ -218,6 +223,7 @@ class Config(object):
         Config.conf['topdir'] = os.getenv("UDOCKER_DIR", Config.conf['topdir'])
         Config.conf['bindir'] = os.getenv("UDOCKER_BIN", Config.conf['bindir'])
         Config.conf['libdir'] = os.getenv("UDOCKER_LIB", Config.conf['libdir'])
+        Config.conf['docdir'] = os.getenv("UDOCKER_DOC", Config.conf['docdir'])
         Config.conf['reposdir'] = \
             os.getenv("UDOCKER_REPOS", Config.conf['reposdir'])
         Config.conf['layersdir'] = \

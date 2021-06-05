@@ -105,7 +105,7 @@ class UdockerTools(object):
         return self._version_isok(version)
 
     def purge(self):
-        """Remove existing files in bin and lib"""
+        """Remove existing files in bin, lib and doc"""
         for f_name in os.listdir(self.localrepo.bindir):
             f_path = self.localrepo.bindir + '/' + f_name
             FileUtil(f_path).register_prefix()
@@ -114,13 +114,17 @@ class UdockerTools(object):
             f_path = self.localrepo.libdir + '/' + f_name
             FileUtil(f_path).register_prefix()
             FileUtil(f_path).remove(recursive=True)
+        for f_name in os.listdir(self.localrepo.docdir):
+            f_path = self.localrepo.docdir + '/' + f_name
+            FileUtil(f_path).register_prefix()
+            FileUtil(f_path).remove(recursive=True)
 
     def _download(self, url):
         """Download a file """
         download_file = FileUtil("udockertools").mktmp()
         if Msg.level <= Msg.DEF:
             Msg().setlevel(Msg.NIL)
-        (hdr, dummy) = self.curl.get(url, ofile=download_file)
+        (hdr, dummy) = self.curl.get(url, ofile=download_file, follow=True)
         if Msg.level == Msg.NIL:
             Msg().setlevel()
         try:
@@ -183,6 +187,7 @@ class UdockerTools(object):
                     tfile.extract(tar_in, self.localrepo.bindir)
             FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR |
                                                    stat.S_IWUSR | stat.S_IXUSR)
+
             FileUtil(self.localrepo.libdir).rchmod()
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/lib/"):
@@ -190,6 +195,14 @@ class UdockerTools(object):
                     Msg().out("Info: extrating", tar_in.name, l=Msg.DBG)
                     tfile.extract(tar_in, self.localrepo.libdir)
             FileUtil(self.localrepo.libdir).rchmod()
+
+            FileUtil(self.localrepo.docdir).rchmod()
+            for tar_in in tfile.getmembers():
+                if tar_in.name.startswith("udocker_dir/doc/"):
+                    tar_in.name = os.path.basename(tar_in.name)
+                    Msg().out("Info: extrating", tar_in.name, l=Msg.DBG)
+                    tfile.extract(tar_in, self.localrepo.docdir)
+            FileUtil(self.localrepo.docdir).rchmod()
             tfile.close()
         except tarfile.TarError:
             return False
@@ -207,6 +220,7 @@ class UdockerTools(object):
 
     def get_installinfo(self):
         """Get json containing installation info"""
+        Msg().out("Info: searching for messages:", l=Msg.VER)
         for url in self._get_mirrors(self._installinfo):
             infofile = self._get_file(url)
             try:
@@ -233,7 +247,7 @@ class UdockerTools(object):
                 status = self._install(tarballfile)
             else:
                 Msg().err("Error: version is", version, "for", url, l=Msg.VER)
-            if "://" in url:
+            if "://" in url and tarballfile:
                 FileUtil(tarballfile).remove()
             if status:
                 return True

@@ -203,7 +203,7 @@ class FileUtil(object):
 
     def remove(self, force=False, recursive=False):
         """Delete files or directories"""
-        if not os.path.exists(self.filename):
+        if not os.path.lexists(self.filename):
             pass
         elif self.filename.count("/") < 2:
             Msg().err("Error: delete pathname too short: ", self.filename)

@@ -199,6 +199,8 @@ class GetURLpyCurl(GetURL):
         """Prepare curl command line according to invocation options"""
         self._url = str(args[0])
         pyc.setopt(pycurl.URL, self._url)
+        if "follow" in kwargs:
+            pyc.setopt(pyc.FOLLOWLOCATION, kwargs["follow"])
         if "post" in kwargs:
             pyc.setopt(pyc.POST, 1)
             pyc.setopt(pyc.HTTPHEADER, ['Content-Type: application/json'])
@@ -329,6 +331,8 @@ class GetURLexeCurl(GetURL):
     def _mkcurlcmd(self, *args, **kwargs):
         """Prepare curl command line according to invocation options"""
         self._files["url"] = str(args[0])
+        if "follow" in kwargs and kwargs["follow"]:
+            self._opts["follow"] = ["-L"]
         if "post" in kwargs:
             self._opts["post"] = ["-X", "POST", "-H",
                                   "Content-Type: application/json"]
