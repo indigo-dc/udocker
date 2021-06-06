@@ -260,7 +260,7 @@ single-line-if-stmt=no
 no-space-check=trailing-comma,dict-separator
 
 # Maximum number of lines in a module
-max-module-lines=1000
+max-module-lines=1500
 
 # String used as indentation unit. This is usually " " (4 spaces) or "\t" (1
 # tab).
@@ -375,13 +375,13 @@ max-branches=16
 max-statements=50
 
 # Maximum number of parents for a class (see R0901).
-max-parents=9
+max-parents=12
 
 # Maximum number of attributes for a class (see R0902).
-max-attributes=11
+max-attributes=12
 
 # Minimum number of public methods for a class (see R0903).
-min-public-methods=2
+min-public-methods=1
 
 # Maximum number of public methods for a class (see R0904).
 max-public-methods=50
