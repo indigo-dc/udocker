@@ -76,7 +76,7 @@ class CmdParser(object):
                                         self._argv_split[opt_where],
                                         self._argv_consumed_options[opt_where],
                                         self._argv_consumed_params[opt_where]))
- 
+
             if opt_name.startswith('-'):
                 return (self._get_option(opt_name,
                                          self._argv_split[opt_where],

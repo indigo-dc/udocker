@@ -321,7 +321,8 @@ class ContainerStructure(object):
         if not status:
             Msg().err("Error: creating container:", dest_container_id)
             return False
-        elif not self._chk_container_root(dest_container_id):
+
+        if not self._chk_container_root(dest_container_id):
             Msg().out("Warning: check container content:", dest_container_id,
                       l=Msg.WAR)
 

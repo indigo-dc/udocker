@@ -19,10 +19,11 @@ class Uvolume(object):
                 if not (char == p_char and char == '/'):
                     clean_path += char
             p_char = char
+
         if clean_path == "/":
             return clean_path
-        else:
-            return clean_path.rstrip('/')
+
+        return clean_path.rstrip('/')
 
     def split(self):
         """Split volume string host_path:container_path into list"""
