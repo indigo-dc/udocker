@@ -77,9 +77,9 @@ Linux containers leveraging different approaches suitable for unprivileged
 users. Finally by executing containers without privileges udocker decreases the 
 risks of privilege escalation. The udocker development started in 2016 and 
 the original udocker paper [@GOMES2018] documented versions 1.1.0 and 1.1.1.
-Since then several new features have been released.
 
 # Concept
+
 udocker provides a self contained solution with minimal dependencies to enable
 execution across systems without need of compilation. udocker itself was 
 initially implemented in Python 2 and later ported to Python 3.
@@ -129,7 +129,58 @@ Each extracted container can be easily setup for execution using any of the
 execution engines. udocker provides a command line interface with a syntax 
 similar to docker.
 
+# Developments since 1.1.1
+
+The initial code was restructured, modularized and ported to Python 3.
+Support for OCI containers format was added. The udocker implementation
+of the Docker Hub API was reimplemented and support for the Docker Hub 
+v2 API was added. The verification of containers images including 
+checksumming was also implemented. The search functionality was 
+reimplemented, support for v1 and v2 repositories and listing of 
+tags was added. Support for nvidia drivers was implemented for all 
+execution modes enabling execution of GPU codes in different host systems. 
+The command line was significantly improved fixing many of the original 
+limitations. Support for container names including the repository hostname 
+was implemented. Saving of images was implemented. Cloning of containers
+was implemented.  Export of created containers in a udocker specific 
+format was implemented to store or transfer containers across systems 
+retaining the udocker specific configurations.
+The installation of the udockertools tarball containing the tools
+and libraries to support the execution modes was reimplemented 
+and support for multiple mirrors was added. The udocker tools
+tarball was decoupled from udocker so that new tarballs of the tools
+can be released independently from udocker. The configuration files
+were reimplemented for the Python 3 version and new environment
+variables were added to control the configuration.  Support for 
+central readon-only installations was added. Support for execution
+on ARM64 and x86_64 was added.  Many other improvements and fixes were 
+introduced as described in the changelogs.
+
+In the **F** engine, the pathname translation for volumes 
+in the udocker version of `fakechroot` [@FAKECHROOT-GLIBC-UDOCKER] was 
+reimplemented to enable translation of mount points with different prefixes. 
+The original version of `fakechroot` only supports mounts where the host 
+mount point prefix matches the prefix within the guest file system 
+tree. A porting of the `fakechroot` to the MUSL C library was performed 
+[@FAKECHROOT-MUSL-UDOCKER] and include to support distributions such as 
+Alpine. The `fakechroot` libraries are built and provided for the most 
+common operating systems. Implementation of new C library calls as they
+become available and used.
+
+In the **R** engine, addition of pseudo-terminal support to the `runC` 
+execution mode to support execution in environments such as batch systems. 
+Addition of `crun` as backend for the **R** engine. The engine selects
+which implemention `runC`or `crun` should be used for a given host.
+
+In the **P** engine, the udocker PROOT implementation [@PROOT-UDOCKER]
+of SECCOMP was changed to enable support for both kernels older and newer 
+than 4.8 were SECCOMP and PTRACE interaction changed. Implementation of 
+new system calls and addition of code for system call backwards 
+compatibility enabling execution of new containers in old kernels.
+This engine is provided the x86_64 and ARM64 architectures.
+
 # Research with udocker
+
 udocker was initially developed in the context of the INDIGO-DataCloud
  [@INDIGO2018] project between 2015 and 2017 to support the execution of 
 scientific applications in Linux batch and interactive systems where 

@@ -13,6 +13,7 @@ pipeline {
                 branch 'devel*'
                 buildingTag()
                 changeRequest target: 'master'
+                changeRequest target: 'devel3'
               }
             }
             steps {
@@ -20,12 +21,12 @@ pipeline {
                     projectConfig = pipelineConfig()
                     buildStages(projectConfig)
                 }
-             }
-             post {
+            }
+            post {
                 cleanup {
-                      cleanWs()
+                    cleanWs()
                 }
-              }
+            }
         }
-   }
+    }
 }

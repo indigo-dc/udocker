@@ -1,7 +1,14 @@
+# Config file for automatic testing at travis-ci.org
+
 sudo: false
 language: python
-cache: pip
 python:
-  - '2.7'
-install: pip install tox-travis
+  - 2.7
+
+cache: pip
+
+# Command to install dependencies, e.g. pip install -r requirements-dev.txt --use-mirrors
+install: pip install -U tox-travis
+
+# Command to run tests, e.g. python setup.py test
 script: tox
