@@ -9,7 +9,7 @@ tags:
 authors:
   - name: Jorge Gomes^[corresponding author]
     orcid: 0000-0002-9142-2596
-    affiliation: "1, 2"
+    affiliation: "1, 2" # (Multiple affiliations must be quoted)
   - name: Mario David
     orcid: 0000-0003-1802-5356
     affiliation: "1, 2"
@@ -76,10 +76,10 @@ required to execute containers by providing an integrated solution to execute
 Linux containers leveraging different approaches suitable for unprivileged
 users. Finally by executing containers without privileges udocker decreases the 
 risks of privilege escalation. The udocker development started in 2016 and 
-the original udocker paper [@GOMES2018] documented versions 1.1.0 and 1.1.1 
-for Python 2. Since then several new features have been released.
+the original udocker paper [@GOMES2018] documented versions 1.1.0 and 1.1.1.
 
 # Concept
+
 udocker provides a self contained solution with minimal dependencies to enable
 execution across systems without need of compilation. udocker itself was 
 initially implemented in Python 2 and later ported to Python 3.
@@ -110,16 +110,16 @@ engines are currently provided:
   older and newer, and constitutes the default execution engine for udocker. 
 * **R** engine: uses either `runc` [@RUNC] or `crun` [@CRUN] to execute the 
   containers without privileges using Linux user namespaces. Both tools are 
-  provided with udocker for increased interoperability.
+  provided with udocker for wider interoperability.
 * **S** engine: uses Singularity [@KURTZER2017] to execute the containers using 
   user namespaces or other Singularity execution method when available. 
   
 All required executables are statically compiled for execution across a
-wide range of systems. The shared libraries for the **F** modes are also 
-provided for major Linux distributions. Support for the ARM architecture is 
-provided for the **P** mode and is ongoing for the other modes. The binaries 
-for the **S** engine are not provided with udocker, as this mode is provided 
-to take advantage of local installations of Singularity where available.
+wide range of systems. The shared libraries for the **F** modes are also provided
+for major Linux distributions. Support for the ARM architecture is provided 
+for the **P** mode and is ongoing for the other modes. The binaries for the 
+**S** engine are not provided with udocker, as this mode is provided to take 
+advantage of local installations of Singularity where available.
 
 Once the udocker Python code is transferred to the target host it can be 
 used by an unprivileged user to download the additional executables and 
@@ -129,7 +129,54 @@ Each extracted container can be easily setup for execution using any of the
 execution engines. udocker provides a command line interface with a syntax 
 similar to docker.
 
+# Developments since 1.1.1
+
+The initial code was restructured, modularized and ported to Python 3.
+Support for OCI containers format was added. The udocker implementation
+of the Docker Hub API was reimplemented including addition of support 
+for Docker Hub v2 API. The verification of containers images including 
+checksumming was also implemented. The search functionality was 
+reimplemented, support for v1 and v2 repositories and listing of 
+tags was added. Support for nvidia drivers was implemented for all 
+execution modes enabling execution of GPU codes across host systems. 
+The command line was significantly improved fixing many of the original 
+limitations. Support for container names including the repository hostname 
+was implemented. Saving of images was implemented. Export of created 
+containers in a udocker specific format was implemented to store or 
+transfer containers across systems retaining the udocker configurations.
+The installation of the udockertools tarball containing the tools
+and libraries to support the execution modes was reimplemented 
+and support for multiple mirrors was added. The udocker tools
+tarball was decoupled from udocker so that new tarballs of the tools
+can be released independently from udocker. The configuration files
+were reimplemented for the Python 3 version and new environment
+variables were added to control the configuration. many other
+improvements and fixes were added as described in the changelogs.
+
+In the **F** engine, the pathname translation for volumes 
+in the udocker version of `fakechroot` [@FAKECHROOT-GLIBC-UDOCKER] was 
+reimplemented to enable translation of mount points with different prefixes. 
+The original version of `fakechroot` only supports mounts where the host 
+mount point prefix matches the prefix within the guest file system 
+tree. A porting of the `fakechroot` to the MUSL C library was performed 
+[@FAKECHROOT-MUSL-UDOCKER] and include to support distributions such as 
+Alpine. The `fakechroot` libraries are built and provided for the most 
+common operating systems. Implementation of new C library calls as they
+become available and used.
+
+In the **R** engine, addition of pseudo-terminal support to the `runC` 
+execution mode to support execution in environments such as batch systems. 
+Addition of `crun` as backend for the **R** engine. The engine selects
+which implemention `runC`or `crun` should be used for a given host.
+
+In the **P** engine, the udocker PROOT implementation [@PROOT-UDOCKER]
+of SECCOMP was changed to enable support for both kernels older and newer 
+than 4.8 were SECCOMP and PTRACE interaction changed. Implementation of 
+new system calls and addition of code for system call backwards 
+compatibility enabling execution of new containers in old kernels.
+
 # Research with udocker
+
 udocker was initially developed in the context of the INDIGO-DataCloud
  [@INDIGO2018] project between 2015 and 2017 to support the execution of 
 scientific applications in Linux batch and interactive systems where 
