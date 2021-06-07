@@ -194,7 +194,7 @@ udocker run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
 ```
 
 Place a script in your host /tmp and execute it in the container. Notice
-that the behaviour of `--entrypoint` changed from the previous versions
+that the behavior of `--entrypoint` changed from the previous versions
 for better compatibility with docker.
 
 ```

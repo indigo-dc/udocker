@@ -1211,7 +1211,7 @@ depends on the execution mode. In the Pn and Rn modes udocker will run
 as root. In other modes execution as root is achieved by invoking
 run with the `--user=root` option:
 
-```
+```bash
 udocker run --user=root <container-id>` 
 ```
 
@@ -1287,7 +1287,7 @@ If the software installation will need to create/change users and groups then
 udocker needs to run with direct access to the container passwd and group files
 as follows:
 
-```
+```bash
 udocker run --user=root --containerauth <CONTAINER-ID>
 ```
 
@@ -1346,7 +1346,14 @@ considerations may hold:
  * Depending on application the Fn modes are often faster than
    all other modes.
 
-## 10. Issues
+## 10. Hardware architectures
+The udocker Python code was the built-in logic to support several hardware 
+architectures namely x86 (i386), x86_64, ARM and ARM64 (aarch64). However 
+the required engine binaries and/or libraries must also be provided for 
+each of the architectures. Currently only the Pn modes are provided with 
+compiled executables to support execution on x86, x86_64, ARM and ARM64.
+
+## 11. Issues
 
 To avoid corruption the execution of data backups and container copies should 
 only be performed when the container is not being executed (not locally nor 
