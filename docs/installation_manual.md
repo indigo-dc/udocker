@@ -27,7 +27,7 @@ udocker requires:
 Download a release tarball from https://github.com/indigo-dc/udocker/releases: 
 
 ```bash
-wget https://github.com/indigo-dc/udocker/releases/download/1.3.0/udocker-1.3.0.tar.gz
+wget https://github.com/indigo-dc/udocker/releases/download/v1.3.0/udocker-1.3.0.tar.gz
 tar zxvf udocker-1.3.0.tar.gz
 export PATH=`pwd`/udocker:$PATH
 ```
@@ -35,7 +35,7 @@ export PATH=`pwd`/udocker:$PATH
 Alternatively use `curl` instead of `wget` as follows:
 
 ```bash
-curl -L https://github.com/indigo-dc/udocker/releases/download/1.3.0/udocker-1.3.0.tar.gz \
+curl -L https://github.com/indigo-dc/udocker/releases/download/v1.3.0/udocker-1.3.0.tar.gz \
   > udocker-1.3.0.tar.gz
 tar zxvf udocker-1.3.0.tar.gz
 export PATH=`pwd`/udocker:$PATH
@@ -68,7 +68,7 @@ export PATH=`pwd`/udocker:$PATH
 ```
 
 Complete the installation by invoking `udocker install` to download and install 
-the `udockertools` tarball containing the tools and libraries required to execute 
+the udocker tarball containing the tools and libraries required to execute 
 containers.
 
 ```bash
@@ -78,11 +78,11 @@ udocker install
 ### 2.3. Installing without outbound network access
 
 When installation is performed without network connectivity the installation 
-of the udocker tools and libraries invoking `udocker install` will fail in the 
-download step. The solution is to fetch the the tarball in advance and then 
-install it directly from the tarball file.
+of the udocker binary tools and libraries invoking `udocker install` will fail 
+in the download step. The solution is to fetch the the tarball in advance and 
+then install it directly from the tarball file.
 
-The `udockertools` tarballs are available at https://github.com/jorge-lip/udocker-builds.
+The tarballs containing the tools and libraries are available at https://github.com/jorge-lip/udocker-builds.
 
 To download a tarball file use:
 
@@ -94,7 +94,7 @@ Finally transfer both udocker and tools and libraries tarball to the target
 destination host and perform the `udocker install` step using the tarball file.
 
 ```bash
-export UDOCKER_TARBALL=udocker-tools-filename
+export UDOCKER_TARBALL=udocker-englib-1.2.8.tar.gz
 udocker install
 ```
 
@@ -111,7 +111,7 @@ udocker install --force
 ```
 
 ## 3. Directories
-udocker creates several subdirectories under  `$HOME/.udocker` these are:
+udocker creates files and subdirectories under `$HOME/.udocker` these are:
 
 * `bin`: executables to support the execution engines.
 * `lib`: libraries, namely the fakechroot libraries to support the **F** execution mode.
