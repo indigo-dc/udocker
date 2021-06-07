@@ -76,5 +76,5 @@ udocker -D run <container>
 ## 6. Documentation
 
 For Python 3:
-* https://github.com/indigo-dc/udocker/blob/devel3/SUMMARY.md
+* https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
 

@@ -28,8 +28,8 @@ with minimal functionality.
 The full documentation is available at:
 
 * [udocker documentation](https://indigo-dc.github.io/udocker/)
-  * [User manual](https://indigo-dc.github.io/udocker/user_manual.html)
   * [Installation manual](https://indigo-dc.github.io/udocker/installation_manual.html)
+  * [User manual](https://indigo-dc.github.io/udocker/user_manual.html)
   * [Reference card](https://indigo-dc.github.io/udocker/reference_card.html)
 
 ## How does it work
@@ -79,11 +79,9 @@ trees are placed by default under `$HOME/.udocker`.
 
 ## Python 2 and Python 3
 
-Since v1.2.0 udocker supports both Python 2 and Python 3. The original
-v1.1.x of udocker for Python 2 only is available
-[here](https://github.com/indigo-dc/udocker/tree/devel). Most  
-functionalities of the new versions have been backported to the v1.1.x 
-series.
+Since v1.2.0 udocker supports Python 2.6, 2.7 and Python >= 3.6. 
+The original udocker v1.1.x for Python 2 only is still available
+[here](https://github.com/indigo-dc/udocker/tree/devel).
 
 ## Syntax
 
