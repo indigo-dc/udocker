@@ -4,20 +4,21 @@ In most cases the end user can download and execute udocker without
 system administrator intervention. udocker itself is written in Python, but 
 also uses external binaries and libraries to provide a chroot like
 environment where containers are executed in user space. These tools do not
-require any privileges and constitute the `udockertools` component that is
-downloaded and installed by udocker itself.
+require any privileges and constitute the udocker tools and libraries for 
+engines that is downloaded and installed by udocker itself.
 
 ## 1. Dependencies
 
+The udocker dependencies are minimal and should be supported by most Linux installations.
 udocker requires:
- * Python 3 or alternatively Python >= 2.6
- * pycurl or alteratively the curl command
- * python hashlib or alternatively the openssl command
- * tar
- * find
- * chmod
- * chgrp
- * ldconfig (only used by the Fn execution modes)
+* Python 3 or alternatively Python >= 2.6
+* pycurl or alteratively the curl command
+* python hashlib or alternatively the openssl command
+* tar
+* find
+* chmod
+* chgrp
+* ldconfig (only used by the Fn execution modes)
 
 ## 2. Installation
 
@@ -41,20 +42,14 @@ export PATH=`pwd`/udocker:$PATH
 ```
 
 Complete the installation by invoking `udocker install` to download and install 
-the `udockertools` tarball containing the tools and libraries required to execute 
-container:
+the tarball containing the tools and libraries required to execute containers:
 
 ```
 udocker install
 ```
 
-A default configuration file can be found in directory `udocker/etc/udocker.conf`,
-you can copy it to your home directory `$HOME` or to `$UDOCKER`.
 
-Both installed files, as well as the containers to be downloaded or created  
-with udocker, will be installed by default under `$HOME/.udocker`.
-
-### 2.2. Install from the development branch
+### 2.2. Install from the GitHub repositories
 
 To install the latest stable code from the github `master` branch:
 
@@ -80,65 +75,66 @@ containers.
 udocker install
 ```
 
-### 2.3. Obtaining the URL of the udockertools tarball
+### 2.3. Installing without outbound network access
 
 When installation is performed without network connectivity the installation 
-of `udockertools` invoking `udocker install` will fail in the download step.
-The solution is to fetch the the tarball containing the `udockertools` in
-advance and then install it from the tarball file.
+of the udocker tools and libraries invoking `udocker install` will fail in the 
+download step. The solution is to fetch the the tarball in advance and then 
+install it directly from the tarball file.
 
 The `udockertools` tarballs are available at https://github.com/jorge-lip/udocker-builds.
 
-To download a file use:
+To download a tarball file use:
 
 ```bash
-curl -L https://github.com/jorge-lip/udocker-builds/raw/master/tarballs/udockertools-1.2.7.tar.gz > udockertools-1.2.7.tar.gz
+curl -L https://github.com/jorge-lip/udocker-builds/raw/master/tarballs/udocker-englib-1.2.8.tar.gz > udocker-englib-1.2.8.tar.gz
 ```
 
-Finally transfer udocker and udockertools to the target destination host and
-perform the `udocker install` step using the tarball file.
+Finally transfer both udocker and tools and libraries tarball to the target 
+destination host and perform the `udocker install` step using the tarball file.
 
 ```bash
-export UDOCKER_TARBALL=udockertools-filename
+export UDOCKER_TARBALL=udocker-tools-filename
 udocker install
 ```
 
 The environment variable `UDOCKER_TARBALL` can also point to an URL to fetch 
 the `udockertools` from a specific or alternate location.
 
-### 2.4. Force the re-installation of udockertools
+### 2.4. Force the re-installation of the tools and libraries
 
-To force download and reinstallation of `udockertools`. Invoke `udocker install` 
+To force download and reinstallation of the udocker tools and libraries. Invoke `udocker install` 
 with the flag `--force`:
 
 ```bash
 udocker install --force
 ```
 
-## 3. Source code and build of udockertools
+## 3. Directories
+udocker creates several subdirectories under  `$HOME/.udocker` these are:
 
-A udockertools distribution tarball can be built using the script
-`build_tarball.sh` in the utils directory. The script fetches the code
-necessary to build the binary executables such as proot and compiles them
-statically. The following example builds the tarball from the master repository.
+* `bin`: executables to support the execution engines.
+* `lib`: libraries, namely the fakechroot libraries to support the **F** execution mode.
+* `doc`: documentation and licenses.
+* `repos`: container image repositories.
+* `layers`: the layers and metadata for the container images.
+* `containers`: created containers.
+* `keystore.github`: authentication to access repositories (created on demand).
 
-```bash
-git clone -b devel3 https://github.com/indigo-dc/udocker
-cd udocker/utils
-./build_tarball.sh
-```
+These tools are installed under `$HOME/.udocker` and currently include:
 
-## 4. Directories
+* **P** engine: A modified version of PRoot compiled statically for x86_64 and ARM
+* **F** engine: Modified fakechroot libraries for many Linux distributions on x86_64 and patchelf for x86_64
+* **R** engine: crun and runc compiled statically for x86_64
 
-The binary executables and containers are usually kept in the user home
-directory under `$HOME/.udocker` this directory will contain:
+A default configuration file can be found in directory `udocker/etc/udocker.conf`,
+you can copy it to your home directory `$HOME` or to `$UDOCKER`.
 
-* Additional tools and modules for udocker such as proot, etc.
-* Data from pulled container images (layers and metadata).
-* Directory trees for the containers extracted from the layers.
-* Autentication credentials file `keystore`.
+Both installed files, as well as the containers to be downloaded or created  
+with udocker, will be installed by default under `$HOME/.udocker`.
 
-## 5. Environment
+
+## 4. Environment
 
 The following environment variables can be used to customize the installation.
 The location of the udocker directories can be changed via the environment
@@ -197,7 +193,7 @@ host or from the udocker installation.
 * `UDOCKER_DEFAULT_EXECUTION_MODE`: default execution mode can be P1, P2, F1,
   S1, R1, R2 or R3.
 
-## 6. Configuration
+## 5. Configuration
 
 udocker loads the following configuration files:
 
@@ -214,6 +210,30 @@ http_insecure = True
 verbose_level = 5
 ```
 
+## 6. Source code for the tools and libraries
+
+The source code for the udocker tools and libraries is kept in different repositories:
+
+* **P** engine PRoot: https://github.com/jorge-lip/proot-udocker
+* **F** engine glibc: https://github.com/jorge-lip/libfakechroot-glibc-udocker
+* **F** engine musl: https://github.com/jorge-lip/libfakechroot-musl-udocker
+* **F** engine patchelf: https://github.com/jorge-lip/patchelf-udocker
+* **R** engine runc: https://github.com/opencontainers/runc
+* **R** engine crun: https://github.com/containers/crun
+
+As mentioned in the previous sections the compiled binaries can be installed 
+with `udocker install`. They can also be downloaded from the repository at
+https://github.com/jorge-lip/udocker-builds
+
+The executables are provided statically compiled for use across systems.
+The latest tarball can be produced from the source code using:
+
+```bash
+git clone -b devel3 https://github.com/indigo-dc/udocker
+cd udocker/utils
+./build_tarball.sh
+```
+
 ## 7. Central installation
 
 udocker can be installed and made available system wide from a central location
@@ -221,7 +241,7 @@ such as a shared read-only directory tree or file-system. The following guidelin
 should be followed when installing udocker in a central shared location or in a
 read only file system.
 
-### 7.1. Executables and libraries
+### 7.1. Install executables and libraries centrally
 
 The executables and libraries can be installed with any of the methods described
 in section 2 of this manual. The directory tree should contain the following
@@ -254,7 +274,7 @@ directory structure, while `/sw/udocker/bin` has all execution engines.
 Make sure that the file protections are adequate namelly that the files are
 not modifiable by others.
 
-### 7.2. Images and layers in a common location
+### 7.2. Images and layers in central installations
 
 The repository of pulled images can also be placed in a different location
 than the user home directory `$HOME/.udocker`. Notice that if the target
@@ -273,7 +293,7 @@ export UDOCKER_REPOS=/sw/udocker/repos
 export UDOCKER_LAYERS=/sw/udocker/layers
 ```
 
-### 7.3. Containers in a common location
+### 7.3. Containers in central installations
 
 If a container is extracted to the common location, it is possible to
 point udocker to execute the container from that location. Making
@@ -298,7 +318,7 @@ Notice the `--allow-root` should only be used when running
 from the root user. However depending on the execution mode and several other
 factors the limitations described in the next sections apply.
 
-#### 7.3.1. Selection of execution mode
+#### 7.3.1. Selection of execution mode for central installations
 
 The selection of the execution mode requires writing in the `containers`
 directory, therefore if the container is in a read-only location the
@@ -314,7 +334,7 @@ and their implications:
 | F1 | Fakechroot  | OK
 | F2 | Fakechroot  | OK
 | F3 | Fakechroot  | OK see restrictions in section 7.3.1.2.
-| F4 | Fakechroot  | NOT SUPPORTED
+| F4 | Fakechroot  | NOT SUPPORTED REQUIRES WRITE ACCESS
 | R1 | runC / crun | OK requires udocker version above v1.1.7
 | R2 | runC / crun | OK see restrictions in section 7.3.1.3.
 | R3 | runC / crun | OK see restrictions in section 7.3.1.3.
@@ -377,7 +397,7 @@ udocker --allow-root run  -v /<path-to-host-writable-directory>  myContainerId
 Notice the `--allow-root` should only be used when running from the root user.
 
 
-#### 7.3.2. Mount directories and files
+#### 7.3.2. Mount directories and files in central installations
 
 Making host files and directories visible inside the container requires
 creating the corresponding mount points. The creation of mount-points
