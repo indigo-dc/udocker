@@ -12,7 +12,7 @@ engines that is downloaded and installed by udocker itself.
 The udocker dependencies are minimal and should be supported by most Linux installations.
 udocker requires:
 * Python 3 or alternatively Python >= 2.6
-* pycurl or alteratively the curl command
+* pycurl or alternatively the curl command
 * python hashlib or alternatively the openssl command
 * tar
 * find
@@ -103,7 +103,7 @@ the `udockertools` from a specific or alternate location.
 
 ### 2.4. Force the re-installation of the tools and libraries
 
-To force download and reinstallation of the udocker tools and libraries. Invoke `udocker install` 
+To force download and re-installation of the udocker tools and libraries. Invoke `udocker install` 
 with the flag `--force`:
 
 ```bash
@@ -151,7 +151,7 @@ variables:
 * `UDOCKER_TARBALL`: location of installation tarball (file of URL)
 * `UDOCKER_NOSYSCONF`: do not read system wide config files in /etc
 
-The Docker index and registry can be overrided via the environment variables.
+The Docker index and registry can be overridden via the environment variables.
 
 * `UDOCKER_INDEX=https://...`
 * `UDOCKER_REGISTRY=https://...`
@@ -271,7 +271,7 @@ export PATH=$PATH:$UDOCKER_BIN:/sw/udocker
 Note that the command `udocker` will be in `/sw/udocker` with all the python
 directory structure, while `/sw/udocker/bin` has all execution engines.
 
-Make sure that the file protections are adequate namelly that the files are
+Make sure that the file protections are adequate namely that the files are
 not modifiable by others.
 
 ### 7.2. Images and layers in central installations
@@ -335,9 +335,9 @@ and their implications:
 | F2 | Fakechroot  | OK
 | F3 | Fakechroot  | OK see restrictions in section 7.3.1.2.
 | F4 | Fakechroot  | NOT SUPPORTED REQUIRES WRITE ACCESS
-| R1 | runC / crun | OK requires udocker version above v1.1.7
-| R2 | runC / crun | OK see restrictions in section 7.3.1.3.
-| R3 | runC / crun | OK see restrictions in section 7.3.1.3.
+| R1 | runc / crun | OK requires udocker version above v1.1.7
+| R2 | runc / crun | OK see restrictions in section 7.3.1.3.
+| R3 | runc / crun | OK see restrictions in section 7.3.1.3.
 | S1 | Singularity | OK
 
 Changing the execution mode can be accomplished with the following udocker
@@ -374,7 +374,7 @@ also mount it at the same exact path `/sw/udocker/containers`.
 ##### 7.3.1.3. Modes R2 and R3 restrictions
 Central installation from readonly location using any of the R modes
 requires udocker above v1.1.7 available from the udocker `devel` branch.
-These modes require the creation of a mountpoint inside the container
+These modes require the creation of a mount point inside the container
 that is transparently created when the container is first executed,
 therefore (as recommended for all other modes) the container
 must be executed once by someone with write access prior to making it
@@ -408,11 +408,11 @@ advance.
 Notice that some default mount points are required and automatically
 created by udocker itself, therefore the container should be executed
 by the administrator to ensure that the required files and directories
-are created. Furthermore if additional mountpoints are required to
-access data or other user files from the host, such mountpoints
+are created. Furthermore if additional mount points are required to
+access data or other user files from the host, such mount points
 must also be created by the administrator by executing the container
 with the adequate volume pathnames. The example shows how to setup
-the default mountpoints and in addition create a new mountpoint
+the default mount points and in addition create a new mount point
 named `/data`.
 
 ```bash
@@ -433,7 +433,7 @@ For the container to be executed by other users the files and
 directories within the container must be readable. When udocker
 is installed in the user home directory all files belong to
 the user and are therefore readable by him. If a common location
-is shared by several users the file protections will likelly
+is shared by several users the file protections will likely
 need to be adjusted. Consider carefully your security policies
 and requirements when changing the file protections.
 
