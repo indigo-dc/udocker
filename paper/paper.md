@@ -133,25 +133,28 @@ similar to docker.
 
 The initial code was restructured, modularized and ported to Python 3.
 Support for OCI containers format was added. The udocker implementation
-of the Docker Hub API was reimplemented including addition of support 
-for Docker Hub v2 API. The verification of containers images including 
+of the Docker Hub API was reimplemented and support for the Docker Hub 
+v2 API was added. The verification of containers images including 
 checksumming was also implemented. The search functionality was 
 reimplemented, support for v1 and v2 repositories and listing of 
 tags was added. Support for nvidia drivers was implemented for all 
-execution modes enabling execution of GPU codes across host systems. 
+execution modes enabling execution of GPU codes in different host systems. 
 The command line was significantly improved fixing many of the original 
 limitations. Support for container names including the repository hostname 
-was implemented. Saving of images was implemented. Export of created 
-containers in a udocker specific format was implemented to store or 
-transfer containers across systems retaining the udocker configurations.
+was implemented. Saving of images was implemented. Cloning of containers
+was implemented.  Export of created containers in a udocker specific 
+format was implemented to store or transfer containers across systems 
+retaining the udocker specific configurations.
 The installation of the udockertools tarball containing the tools
 and libraries to support the execution modes was reimplemented 
 and support for multiple mirrors was added. The udocker tools
 tarball was decoupled from udocker so that new tarballs of the tools
 can be released independently from udocker. The configuration files
 were reimplemented for the Python 3 version and new environment
-variables were added to control the configuration. many other
-improvements and fixes were added as described in the changelogs.
+variables were added to control the configuration.  Support for 
+central readon-only installations was added. Support for execution
+on ARM64 and x86_64 was added.  Many other improvements and fixes were 
+introduced as described in the changelogs.
 
 In the **F** engine, the pathname translation for volumes 
 in the udocker version of `fakechroot` [@FAKECHROOT-GLIBC-UDOCKER] was 
@@ -174,6 +177,7 @@ of SECCOMP was changed to enable support for both kernels older and newer
 than 4.8 were SECCOMP and PTRACE interaction changed. Implementation of 
 new system calls and addition of code for system call backwards 
 compatibility enabling execution of new containers in old kernels.
+This engine is provided the x86_64 and ARM64 architectures.
 
 # Research with udocker
 
