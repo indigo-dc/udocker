@@ -1,0 +1,261 @@
+.\" Manpage for udocker
+.\" Contact udocker@lip.pt to correct errors or typos.
+.\" To read this man page use:   man -l udocker.1
+.TH udocker 1 "27 May 2021" "version 1.3.0" "udocker man page"
+.SH NAME
+udocker \- execute Docker containers in user space without privileges
+.SH SYNOPSIS
+udocker [OPTIONS] COMMAND [CMDOPTIONS] [PARAMETERS]
+.SH DESCRIPTION
+udocker is a basic user tool to execute simple Docker containers in user space without requiring root privileges. Enables basic download and execution of Docker containers by non-privileged users in Linux systems when Docker is not available. It can be used to access and execute the content of Docker containers in Linux batch systems and interactive clusters that are managed by other entities such as grid infrastructures or externally managed batch or interactive systems.
+
+udocker does not require any type of privileges nor the deployment of services by system administrators.
+
+udocker is a wrapper around several tools to mimic a subset of the Docker capabilities including pulling images and running then with minimal functionality.
+
+udocker provides several approaches (execution modes) to facilitate the execution of Docker containers across different Linux distributions and environments.
+
+.SH OPTIONS
+Options common to all commands. These options must be specified before the udocker specific command. The following example performs an image "pull" with insecure and debug: "udocker --insecure --debug pull myimage"
+
+.TP
+.BR \--quiet ", " \-q
+Less verbosity, also removes displaying of headers and banners.
+.TP
+.BR \--debug ", " \-D
+Increase verbosity.
+.TP
+.BR \--repo=directory
+Specify an alternate location for the local repository of images and containers, overriding the use of $HOME/.udocker.
+.TP
+.BR \--insecure
+Allow insecure https communication.
+.TP
+.BR \--allow-root
+Running under a privileged user, this is NOT safe and is NOT recommended. 
+
+.SH COMMANDS
+udocker supports a subset of Docker commands and uses a similar syntax for IMAGE names. An IMAGE name is defined as REPOSITORY/IMAGE:TAG. By default udocker searches and pulls images from Docker Hub. Private repositories are also supported. 
+
+udocker manages a local repository kept by default under $HOME/.udocker. The local repository contains the IMAGES and the CONTAINERS created from those IMAGES. The local repository also contains tools and libraries used by udocker.
+
+Supported commands:
+.TP
+.BR help
+Prints a usage summary. Further help for specific udocker commands can be obtained with "udocker COMMAND -h | --help".
+.TP
+.BR search " " [ " " \-a " " ] " " | " " [ " " \--list-tags " " ] " " | " " [ " " --registry=REGISTRY " " ] " " | " " STRING
+Search for IMAGES in a Docker registry. Not all registries support searching. The \-a option displays all matching entries without pausing. The \--list-tags option lists the tags for a given repository in this case STRING must be a repository name.
+.TP
+.BR pull " " [ " " \--httpproxy=PROXY " " | " " \--index=INDEX " " | " " \--registry=REGISTRY " " ] " " IMAGE
+Pull an IMAGE from Docker Hub or from a private repository. A socks4 or socks5 proxy can be specified with \--httpproxy the syntax of PROXY is socks[4|5|4a|5h]://user:pass@host:port. The --registry and --index options enable other repositories (beyond dockerhub) to be selected, it is an URL prefix (ex. https://myrepository.mydomain).
+.TP
+.BR images " " [ " " \-l " " ]
+Lists IMAGES available in the local udocker repository. The \-l option provides additional image details.
+.TP
+.BR create " " [ " " --name=ALIAS " " ] " " IMAGE
+Creates a container for execution from an IMAGE stored in the local repository. Multiple containers can be extracted from a single image. Each created container is identified by a CONTAINER-ID which is printed upon successful extraction. The option --name allows an ALIAS name to be assigned to the newly created container to facilitate identification. The ALIAS can later be used instead of the CONTAINER-ID.
+.TP
+.BR ps " " [ " " \-m " " ] " " | " " [ " " \-s " " ]
+List containers in the local repository. These are containers produced with the command "create" and that can be executed with the command "run". The list contains the CONTAINER-ID, the protection flag against deletion, write status, ALIASEs, and the corresponding IMAGE. The command name "ps" has been kept for compatibility with the Docker command line, in udocker the command ps does not show running containers instead shows the created containers extracted to the filesystem that are ready to be executed. The option \-m adds the execution mode. The option \-s adds the size in MB.
+.TP
+.BR rm " " [ " " -f " " ] " " CONTAINER\-ID " " | " " ALIAS " " ...
+Delete containers using the CONTAINER\-ID or ALIAS. The flag -f forces the removal by changing the file protections.
+.TP
+.BR inspect " " IMAGE " " | " " [ " " \-p " " ] " " CONTAINER\-ID " " | " " [ " " \-p " " ] " " ALIAS
+Print information about an IMAGE or CONTAINER. The \-p option applies only to CONTAINERS and prints the pathname to the root of the CONTAINER directory tree. Useful for direct access to the CONTAINER files.
+.TP
+.BR name " " CONTAINER\-ID " " ALIAS
+Assign a new ALIAS to a given CONTAINER\-ID. With ALIASEs the containers can be accessed both using the ALIAS name or the CONTAINER-ID.
+.TP
+.BR rmname " " ALIAS
+Remove an ALIAS. The CONTAINER itself is not affected and can be used via its CONTAINER-ID.
+.TP
+.BR rename " " ALIAS " " NEWALIAS
+Change a given container ALIAS name.
+.TP
+.BR rmi " " [ " " -f " " ] " " IMAGE
+Delete an IMAGE in the local repository. Any related CONTAINERS previously extracted are NOT affected by the parent IMAGE removal. The option \-f forces the deletion, and can be used when the IMAGE structure is damaged.
+.TP
+.BR import " " [ " " --mv " " ] " " TARBALL " " IMAGE " " | " " - " " IMAGE 
+.TP
+.BR import " " --tocontainer " " --name=ALIAS " " TARBALL " " | " " --tocontainer " " --name=ALIAS " " - " "
+.TP
+.BR import " " --clone " " --name=ALIAS " " TARBALL " " | " " --clone " " --name=ALIAS " " - " "
+Import a tarball from file or stdin. The tarball can be imported into a new image or container. The first form can be used to import a container exported by docker into a new image. The second form uses --tocontainer to import directly into a container without creating an image. The third form uses --clone to import a udocker container (e.g. exported with udocker export --clone) into a new container without creating an image, preserving the container metadata and execution modes. When importing to an image (default) the option --mv will try to move the tarball file into the repository instead of copying the content. When importing to a container the option --name can be used to provide a name alias to the created container.
+.TP
+.BR load " " - " "
+.TP
+.BR load " " -i " " IMAGE\-TARBALL
+Load an IMAGE\-TARBALL previously saved by "docker save". The IMAGE\-TARBALL contains the several layers of a Docker layered filesystem plus the associated metadata. The image and its layers are loaded into the local images repository. The load command also supports loading of OCI container images (EXPERIMENTAL).
+.TP
+.BR save " " -o " " - " " IMAGE
+.TP
+.BR save " " -o " " IMAGE\-TARBALL " " IMAGE
+Save an image stored in the local images repository to a tarball. The IMAGE\-TARBALL contains the several layers of a Docker layered filesystem plus the associated metadata. The tarball will contain the image metadata and all the individual layers that compose it. The saved tarball can be loaded into another repository using the command load. 
+.TP
+.BR verify " " IMAGE
+Verify the integrity of an IMAGE in the local repository.
+.TP
+.BR clone " " CONTAINER\-ID " " | " " --name=ALIAS " " CONTAINER\-ID
+Duplicate an existing container creating a complete replica. The replica receives a different CONTAINER\-ID. An ALIAS can be assigned to the newly created container by using --name.
+.TP
+.BR protect " " IMAGE " " | " " CONTAINER\-ID " " | " " ALIAS
+Protect an IMAGE or CONTAINER against accidental deletion by "udocker rm" or "udocker rmi". Does not protect against deletion by operating system commands.
+.TP
+.BR unprotect " " IMAGE " " | " " CONTAINER\-ID " " | " " ALIAS
+Remove a protection flag placed by "protect".
+.TP
+.BR mkrepo " " DIRECTORY
+Setup a local repository in the host DIRECTORY. The required directory structure is created.
+.TP
+.BR login " " --username=USERNAME " " | " " --password=PASSWORD " " | " " --registry=REGISTRY
+Setup of authentication information for access to remote Docker registries. Enables "pull" of IMAGES from private registries. The option --registry can be used to access registries other than the default dockerhub. If USERNAME or PASSWORD are not provided in the command line, the user will be prompted to provide them.
+.TP
+.BR logout " " [ " " \-a " " ] " " | " " --registry=REGISTRY
+Remove authentication information created by "login". By default authentication is removed for the default REGISTRY. A specific REGISTRY can be specified with --registry. Alternatively ALL previously entered authentication information can be removed with the -a option.
+.TP
+.BR setup " "  --execmode=<Pn> " " | " " --execmode=<Fn> " " |  " " --execmode=<Rn> " " | " " --execmode=<Sn> " " | " " --force " " | " "  --nvidia " " | " " --purge " " CONTAINER\-ID
+Change container execution settings. The option --execmode enables selection of an alternative execution engine. In certain cases when experiencing execution errors changing the execution mode to mode P2 may solve the problem. The option --force can be used with --execmode to force a given execution mode upon a setup error. The option --nvidia enables access to GPGPUs by adding the necessary host libraries to the container (EXPERIMENTAL). The option --force can also be used with --nvidia to force the setup of the nvidia environment. The option --purge cleans mountpoints and auxiliary files created by udocker.
+.TP
+.BR run " " [ " " RUNOPTIONS " " ] " " IMAGE " " | " " CONTAINER-ID " " | " " ALIAS " " [ " " COMMAND " " ARG1 " " ARG2 " " ... " " ]
+Execute a CONTAINER identified by CONTAINER-ID or ALIAS name. If an IMAGE name is provided instead of a CONTAINER-ID or ALIAS, then a CONTAINER will be automatically created from the specified IMAGE and executed. The "run" command will try to respect the execution information specified in the container or image metadata, if such information is not provided it will try to find a shell interpreter inside the container and execute it. Optionally a COMMAND to be executed inside the CONTAINER environment can be provided in the command line. The following RUNOPTIONS are available:
+.RS
+.TP
+--rm
+Remove the CONTAINER after execution.
+.TP
+--workdir=DIR
+Change to a given working directory inside the container.
+.TP
+--user=USER
+Use the given USER as username or uid inside the container.
+.TP 
+--volume=HOSTDIR:CONTAINERDIR
+.PD 0
+.TP 
+-v=HOSTDIR:CONTAINERDIR
+Make the host directory HOSTDIR visible inside of the container as directory CONTAINERDIR. If CONTAINERDIR is not specified it will default to the same pathname of HOSTDIR. Example "udocker run -v=/tmp:/scratch mycontainer" will make the host /tmp visible inside the container as /scratch.
+.PD
+.TP
+--novol=HOSTDIR
+udocker makes several host directories visible inside the container. The option --novol prevents specific directories from being made visible. Example "udocker run --novol=/dev mycontainer" will prevent the host /dev from being visible in the container.
+.TP
+--env="VAR=VALUE"
+Define an environment variable.
+.TP
+--hostauth
+Obtain user account details from the host and add them to the container passwd and group.
+.TP
+--nosysdirs
+udocker makes several host directories visible inside the container. The list of host directories includes /dev /proc /sys /etc/resolv.conf /etc/host.conf /lib/modules. This option prevents all these directories from being visible inside the container.
+.TP
+--nometa
+Ignore the container metadata.
+.TP
+--dri
+Makes host directories containing dri libraries visible inside the container.
+.TP
+--hostenv
+Passes the environment variables from the user session in the host to the container.
+.TP
+--cpuset-cpus="1,2-3"
+Binds the processes to the given CPUs.
+.TP
+--name=ALIAS
+Add an ALIAS to the CONTAINER.
+.TP
+--bindhome
+Make the user home directory visible inside the container.
+.TP
+--location=HOSTDIR
+Use a directory tree directly. Instead of using a CONTAINER from the local repository, udocker will use HOSTDIR as the root of an operating system directory tree. Allows execution of systems in foreign locations similarly to a chroot. 
+.TP
+--kernel=N.N.N 
+Emulate a given kernel to enable execution in very old host kernels.
+.TP
+--publish=HOST_PORT:CONT_PORT
+Map a container port to another port in the host, only available in Pn modes. (EXPERIMENTAL)
+.TP
+--publish-all
+Map container ports to different random ports, only available in Pn modes. (EXPERIMENTAL)
+.TP
+--nobanner
+Do not print the startup banner.
+.RE
+
+.SH ENVIRONMENT
+.TP
+.BR UDOCKER_DIR
+Override the location of the local repository.
+.TP
+.BR UDOCKER_BIN
+Override location of udocker related executables.
+.TP
+.BR UDOCKER_LIB
+Override location of udocker related libraries.
+.TP
+.BR UDOCKER_CONTAINERS
+Override location of udocker containers.
+.TP
+.BR UDOCKER_TMP
+Override location of udocker temporary directory default is /tmp.
+.TP
+.BR UDOCKER_KEYSTORE
+Override location of udocker keystore default is $HOME/.udocker/keystore.
+.TP
+.BR UDOCKER_TARBALL
+Location of a tarball containing a udocker distribution for installation or upgrade. Example "export UDOCKER_TARBALL=udocker_1.0.1.tgz; tar xzvf $UDOCKER_TARBALL udocker; ./udocker".
+.TP
+.BR UDOCKER_LOGLEVEL
+A number defining the verbosity of udocker. Zero is the least verbose. 
+.TP
+.BR UDOCKER_REGISTRY
+Override the default udocker registry pointing to Docker Hub.
+.TP
+.BR UDOCKER_INDEX
+Override the default udocker index pointing to Docker Hub.
+.TP
+.BR UDOCKER_DEFAULT_EXECUTION_MODE
+Change the default execution mode, not all modes are supported as default execution mode.
+.TP
+UDOCKER_FAKECHROOT_SO.BR UDOCKER_USE_CURL_EXECUTABLE
+Forces the use of a curl executable instead of pycurl and enables selection of a given curl executable pathname.
+.TP
+.BR UDOCKER_USE_PROOT_EXECUTABLE
+For Pn modes forces the use of a given proot executable instead of the default from udockertools.
+.TP
+.BR UDOCKER_USE_RUNC_EXECUTABLE
+For Rn modes forces the use of a given runc executable. By default udocker searches for a runc executable in the PATH, if it does not find one it will use the runc provided by udockertools.
+.TP
+.BR UDOCKER_USE_SINGULARITY_EXECUTABLE
+For Sn modes forces the use of a given singularity executable. By default udocker searches for a singularity executable in the PATH. Singularity is not provided in the udockertools.
+.TP
+.BR UDOCKER_FAKECHROOT_SO
+For Fn modes forces the use of a given fakechroot sharable library. By default udocker will use the libraries provided in udockertools.
+.TP
+.BR UDOCKER_FAKECHROOT_EXPAND_SYMLINKS
+For Fn modes controls translation of symbolic links in volume pathnames. A value of "true" enables correct translation at the expense of additional time and capacity. A default value of "none" enables automatic selection. A value of "false" disables the expansion of symbolic links in volume pathnames.
+.TP
+.BR UDOCKER_NOSYSCONF
+Ignore settings in udocker system configuration files.
+
+.SH FILES
+.TP
+.BR $HOME/.udocker
+Default local repository for IMAGES and CONTAINERS.
+.TP
+.BR $HOME/.udocker/udocker.conf
+udocker user configuration file. Enables to changing the value of the Config class attributes. Example "http_insecure = True" changes the default value of the http_insecure attribute.
+.TP
+.BR $HOME/.udocker/containers/<container-id>/container.conf
+udocker container specific configuration file. Enables to changing the value of the Config class attributes for a specific container. 
+.TP
+.BR /etc/udocker.conf
+udocker host configuration file. Parsed before the user configuration file.
+
+.SH SEE ALSO
+The udocker complete documentation at https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
+
+.SH AUTHOR
+udocker maintainer (udocker@lip.pt)
