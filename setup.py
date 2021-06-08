@@ -64,6 +64,7 @@ setup(
     install_requires=REQUIREMENTS,
     license="Apache Software License 2.0",
     long_description=README + '\n\n' + HISTORY,
+    long_description_content_type='text/markdown',
     include_package_data=True,
     keywords='Linux containers, HPC on cloud, Virtualization',
     name='udocker',
