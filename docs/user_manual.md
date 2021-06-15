@@ -1348,12 +1348,45 @@ considerations may hold:
 
 ## 10. Hardware architectures
 The udocker Python code was the built-in logic to support several hardware 
-architectures namely x86 (i386), x86_64, ARM and ARM64 (aarch64). However 
-the required engine binaries and/or libraries must also be provided for 
-each of the architectures. Currently only the Pn modes are provided with 
+architectures namely i386, x86_64, arm (32 bit) and aarch64 (arm 64 bit). 
+However the required engine binaries and/or libraries must also be provided 
+for each of the architectures. Currently only the Pn modes are provided with 
 compiled executables to support execution on x86, x86_64, ARM and ARM64.
 
-## 11. Issues
+## 11. Host environment specific notes
+
+### 11.1. Termux
+
+udocker can be used with Termux on Android, the only mode currently supported 
+is **P** using PRoot. It is recommended to install and use the proot binary
+provided by Termux which is adapted to the Termux Android environment.
+
+```bash
+export UDOCKER_USE_PROOT_EXECUTABLE=$(which proot)
+udocker run ubuntu:18.04
+```
+
+### 11.2. Google Colab
+udocker can run on Google Colab using the **P** or **F** modes.
+
+```bash
+!PATH=`pwd`/udocker:$PATH udocker --allow-root pull centos:centos7
+!PATH=`pwd`/udocker:$PATH udocker --allow-root create --name=c7 centos:centos7
+!PATH=`pwd`/udocker:$PATH udocker --allow-root run c7
+```
+
+### 11.3. Docker
+udocker can be used to execute containers within Docker, the only mode currently
+supported is **F** using Fakechroot.
+
+```bash
+udocker --allow-root pull ubuntu:18.04
+udocker --allow-root create --name=ub18 ubuntu:18.04
+udocker --allow-root setup --execmode=F3 ub18
+udocker --allow-root run ub18
+```
+
+## 12. Issues
 
 To avoid corruption the execution of data backups and container copies should 
 only be performed when the container is not being executed (not locally nor 
