@@ -91,9 +91,9 @@ image can then be sequentially extracted to create a flattened directory tree.
 Furthermore udocker also provides the logic to interface with the several 
 execution engines that enable the execution of code extracted from the container 
 images, thus hiding as much as possible the execution engines specificity.
-The execution engines are based on existing software that where required has been
-further developed, integrated and packaged to be used with udocker. The following
-engines are currently provided:
+The execution engines are based on existing open source software that in several
+cases has been significantly improved, integrated and packaged to be used with 
+udocker. The following engines are currently provided:
 
 * **F** engine: uses the Linux shared library PRELOAD mechanism to intercept
   shared library calls and translate pathnames to provide an unprivileged chroot 
@@ -151,27 +151,28 @@ promoting the adoption of containers in these environments.
 Being a proof of concept the initial versions were not designed for
 production use. Later in the project it become evident that udocker
 had gain adoption beyond its original purpose and scope and that is was 
-already being actively used in production environments. After version 
-1.1.1  and the first udocker paper publication, the effort was directed
+already being actively used in production environments. After the 
+first udocker publication [@GOMES2018] that was produced using versions
+1.1.0 and 1.1.1, the development effort was directed
 to enhance udocker for production use by improving the design, robustness 
 and functionality. Two code branches became supported in parallel, versions 
 1.1.x retaining the original design, and a number of version 1.2.x pre-releases
-aimed at introducing enhancements. The version 1.3.0 marks the point
-of the first production release of the enhanced version.  
+aimed at introducing enhancements. The version 1.3.0 released in June of 
+2021 is the first production release of this enhanced version.  
 
 Since version 1.1.1 the udocker code was reorganized, largely rewritten 
 and improved. Starting with version 1.2.0, udocker supports both Python 3 and 
 Python 2 and was completely restructured moving from being a single large 
 monolithic Python script to become a modular Python application, making 
 maintenance and contributions easier. The new structure has 40 Python
-modules and supports both Python 2.6 or higher and Python 3. Container 
+modules and supports both Python 2.6 or higher and Python 3. Since container 
 technologies are in constant evolution, this new code structure was 
 essential to accommodate any future improvements such as new container 
 formats, APIs and execution engines as they become mainstream. 
 
-The improvements included a more robust command line interface. Several of
-the problems that affected the initial versions in terms of command line
-parsing and validation of arguments among others were addressed.
+The improvements added after 1.1.1 include a more robust command line 
+interface addressing several of the problems that affected the initial 
+versions in terms of command line parsing and validation of arguments.
 The parsing of the configuration files was reimplemented to simplify
 the design and prevent injection of code via the configuration files.
 Configuration is now possible at three levels, system configuration via 
@@ -194,8 +195,8 @@ or *crun* executable for use in **R** execution modes.
 *Singularity* executable for use in **S** execution modes.
 * `UDOCKER_FAKECHROOT_EXPAND_SYMLINKS`: to control the expansion of
 symbolic links in paths pointing to volumes when using the **F** modes. 
-Allows to disable the new path translation algorithms that are much more
-accurate but slower. 
+This variable allows to disable the new path translation algorithm that 
+is now accurate but slower. 
 * `PROOT_TMP_DIR`: is now supported and correctly passed to the *PRoot*
 execution engine.
 
@@ -211,20 +212,20 @@ Currently the external tools and libraries compiled and provided with
 udocker support *x86_64*, *aarch64*, *arm* 32bit and *i386* for use with the 
 **P** modes. The binaries for the remaining execution modes are currently 
 only provided for *x86_64* hosts, this will likely change in the future as 
-other architectures become more popular. 
+these and other architectures become more widely used. 
 
 The **F** mode is particularly specific to udocker. It relies on the interception 
 of shared library calls using a modified *Fakechroot* shared library. By default 
 *Fakechroot* requires the same libraries and dynamic loader both in the host 
 and inside the `chroot` environment. The *Fakechroot* libraries modified for udocker 
 in combination with udocker itself enable the usage of *Fakechroot* to support the 
-execution of containers whose libraries can be different from the ones in the host, 
-such as running a Debian based container on a CentOS based host. 
-Since version 1.1.1 the *Fakechroot* implementation of udocker was 
-significantly improved to enable these scenarios. A complete porting of the 
+execution of containers whose shared libraries can be different from the ones in 
+the host, such as when running a Debian based container on a CentOS based host. 
+After version 1.1.1 the *Fakechroot* implementation of udocker was 
+much improved to enable these scenarios. A complete porting of the 
 *Fakechroot* libraries was performed for the *musl libc*, enabling support for
 containers having code compiled against *musl libc* such as *Alpine* based containers.
-The original *Fakechroot* implementation is limited in terms of mapping
+The original *Fakechroot* implementation is very limited in terms of mapping
 host pathnames to container pathnames. A host pathname can only be passed to
 the `chroot` environment if the pathname remains the same, (e.g. the host /dev 
 can only be mapped into the container /dev). This is a strong limitation as the
@@ -239,45 +240,46 @@ as many times as the number of required changes. The changes required to the sha
 objects include the pathname to the system loader and the pathnames for shared 
 libraries. Support for the handling of loader string tokens such as `$ORIGIN`
 that were previously ignored also had to be added. The complete functionality 
-became available with udocker 1.1.6. New system calls were also added to the 
-libraries. The **F** execution engine requires *Fakechroot* shared libraries 
-compiled against the *libc* of the container. Therefore the range of libraries 
-provided increased largely since the initial versions with libraries
-to support new distributions and releases being regularly added.
+for *Fakechroot* became available with udocker 1.1.6. The shared libraries must
+be compiled against the *libc* of the container environment. Therefore the range 
+of libraries provided has been growing constantly since the initial versions. 
+Libraries to support new distributions and releases have been regularly added.
+This effort includes any necessary updates to *Fakechroot* such as adding
+support for new C standard library calls as required. 
 
 The **P** mode is based on *PRoot* and is the original execution engine
 supported since version 1.0.0. As shipped with udocker it offers a transparent 
-method to execute the containers across Linux distributions that conversely
+method to execute containers across Linux distributions that conversely
 to the **F** mode based on *Fakechroot* does not require changes to the 
-container binaries. The same executable statically compiled can be used across
-a wide range of distributions and versions as the pathname translations are
-performed at system call level. Since version 1.0.1 the support for syscall 
-interception using PTRACE and SECCOMP had to be modified to cope with
-kernel changes. This was a major issue the deeply affected the performance
-of containers execution with this engine and for which no upstream solution 
-was available. A first incomplete fix was created by the udocker developers 
-and introduced with 1.0.1. The complete implementation only became available 
-with udocker 1.1.4, which was later extended in 1.1.7 to address the special 
-case of distributions that backported the PTRACE kernel patches to previous 
-versions of the kernel. In addition support for several new system calls 
-had to be incorporated including *faccessat2()*, *newfstatat()*, *renameat()*
-and *statx()*. Emulation was also added enabling the execution of code invoking 
-these calls in kernels where they are unavailable. This capability is
-quite unique as it allows applications compiled to use newer systems calls 
-to still work on older Linux distributions where a *kernel too old* error
-would be issued.
+container binaries. Since the pathname translation is performed at the
+system call level, the same *PRoot* statically compiled executable can be 
+used across a wide range of distributions and versions. Still care must
+be taken to dynamically adapt to the underlying kernel capabilities.
+Since version 1.0.1 the support for syscall interception using PTRACE and 
+SECCOMP had to be modified to cope with kernel changes. This was a major 
+issue the deeply affected the performance of *PRoot* and for which no 
+upstream solution existed. A first incomplete fix was created by the udocker 
+developers and introduced with 1.0.1. The complete implementation only became 
+available with udocker 1.1.4, which was later extended in 1.1.7 to address 
+the special case of distributions that backported the PTRACE kernel patches 
+to previous versions of the kernel. In addition support for several new 
+system calls had to be incorporated including *faccessat2()*, *newfstatat()*,
+*renameat()* and *statx()*. Emulation was also added enabling the execution 
+of code invoking these calls in kernels where they are unavailable. This 
+capability is allows applications that use newer systems calls to still 
+work on older Linux releases where a *kernel too old* error would be issued.
 
 The **R** execution mode was originally implemented by using *runc*
 in rootless mode. In this mode udocker creates the require configurations 
 for *runc* to execute containers without requiring privileges using
-the user namespace. In version 1.1.2 support for pseudo ttys was added
+the Linux user namespace. In version 1.1.2 support for pseudo ttys was added
 to udocker for *runc* enabling execution in batch systems and other
 environments without a terminal. In version 1.1.4, the support for *crun* 
 was also introduced. While *runc* is written in *go*, *crun* is written 
 in *C* and is generally faster. Furthermore *crun* provided support for the 
-kernel *cgroups* version 2 earlier which stared to become required in some 
-distributions. Both tools are now provided statically compiled with udocker 
-and the Python code was enhanced to support both.
+kernel *cgroups* version 2 which became required in some distributions. 
+Both tools are now provided statically compiled with udocker and the 
+Python code was enhanced to support both.
 
 udocker implements its own code to manipulate container images and
 interact with container repositories. The initial versions were limited
@@ -285,20 +287,21 @@ to the Docker image format and were largely tied to *DockerHub*. Since then
 effort was put to improve the implementation of the Docker Registry API 
 making it interoperable with other container repositories. Support for 
 the OCI images according to the v1 specification was also added on version 
-1.1.4 improving interoperability. Better interoperability with other
-container repositories led to the introduction of image reference names
-that also include a hostname component (e.g. hostname/repository:tag).
-This change improved interoperability and made easier the usage of 
-container repositories other than *DockerHub*, but also implied changes
-across the command line interface and container image handling.
+1.1.4 improving interoperability. This improvement in repository
+interoperability led to the change of the schema used in the container
+image names. Since 1.1.4 the container image names can include a hostname 
+component (e.g. hostname/repository:tag). The new name schema improved
+interoperability further and made easier the usage of repositories other 
+than *DockerHub*, however it also required changes across the container 
+image handling code and also in the command line interface.
 
-The search functionality was reimplemented to support search with both the 
-registry API v1 and v2 using `/v2/search/repositories`. 
-In addition support to list image tags was also implemented as part of the 
-search command. Support for the use of proxies in searches was added enabling 
-both `search` and `pull` of containers via socks proxies. The handling of http 
-redirects was also added to udocker to address shortcomings that affected
-some releases of *curl* and consequently also *pycurl*. 
+The search functionality was reimplemented to support both the registry 
+API v1 and v2 using `/v2/search/repositories`. In addition support to 
+list image tags was also implemented as part of the search command. 
+Support for the use of proxies in image searches was added enabling both 
+`search` and `pull` of containers via socks proxies. The handling of http 
+redirects was also implemented inside udocker to address shortcomings that 
+affected some releases of *curl* and consequently also *pycurl*. 
 
 Also in version 1.1.4 the checksumming of container layers was improved, 
 the *sha512* hash was added and the code was restructured to accommodate multiple 
@@ -307,32 +310,39 @@ images implemented by the `verify` command was also improved to include
 all supported container image formats performing both the structure 
 validation and the file checksumming where applicable.
 
-New udocker commands include `save` to save container images to file or standard 
-output, `rename` to change the name of a created container and `clone` to 
-duplicate a created container including its changes and retaining udocker 
-specific configurations. Several existing commands got new flags such as 
-`run` where `--env-file=filename` enables reading environment variables from a 
-file, `--device` adds additional host devices to container when using the **R** 
-execution modes, and `--containerauth` that prevents the default udocker 
+The new udocker commands introduced since 1.1.1 include the `save` of
+container images to file or standard output, `rename` to change the name 
+of a created container and `clone` to duplicate a created container 
+including its changes and retaining udocker specific configurations. Several 
+existing commands got new flags such as `run` where `--env-file=filename` 
+enables reading environment variables from a file, `--device` adds additional
+host devices to container when using the **R** execution modes, and 
+`--containerauth` that prevents the default udocker 
 behavior of adding the invoking user to the container password and group files. 
-The handling of both `--entrypoint` in `run` and *entrypoint* metadata was
-changed in version 1.3.0 to match the *docker* behavior and allow bypassing
-the *entrypoint* metadata within a container. The `ps` command got two new 
-flags, `-s` to list the size of the created containers, and `-m` to list the 
-execution engine configured for each created container. The `setup` command 
-used to configure the created containers also got new flags, namely `--purge` 
-to remove files created within a container by such as mount points, and 
-`--fixperms` to fix the permissions and also the ownership of files created 
-by the **R** execution modes using user namespaces.
+The handling of entrypoint information provided via `run --entrypoint` or
+through the container metadata was changed in version 1.3.0 to match the 
+*docker* behavior and allow bypassing the container *entrypoint*.
+The `ps` command got two new flags, `-s` to list the size of the created 
+containers, and `-m` to list the execution engine configured for each 
+created container, which is particularly useful since the execution
+mode is defined per container. The `setup` command used to configure the 
+created containers also got new flags, namely `--purge` to remove files 
+created within a container by such as mount points, and `--fixperms` to 
+fix the permissions and also the ownership of files created by the **R** 
+execution modes while using user namespaces. To this end udocker provides
+is own Python implementation of *unshare* to enable the removal of files
+owned by different subordinated uid or gid identifiers.
 
 The `setup` command was also enhanced with the `--nvidia` flag, that provides
 am `nvidia-docker` like capability for udocker providing support for the execution 
 of GPU accelerated applications across different hosts systems. For `udocker` this 
-functionality needs to take into account the specificities of each execution engine. 
+functionality needs to take into account the characteristics of each execution engine. 
 While in some engines the required host pathnames can be transparently mapped into 
-the container in other modes this may require creation of mount points or the copy 
+the container, in other modes this may require creation of mount points or the copy 
 of the actual host files to the container. These requirements are now handled 
-transparently as part of the udocker volume handling.
+transparently as part of the udocker volume handling. Thanks to these improvements
+udocker has been increasingly used to support accelerated computing applications 
+and in particular machine learning.
 
 udocker has been successfully used in environments where conventional container
 tools cannot be used, such as when namespaces are not available or privileges
@@ -348,39 +358,44 @@ simultaneously with udocker. The handling of the versions of both udocker
 and of the package was decoupled to make possible the release of new tools 
 and libraries without requiring a new release of udocker. For each
 udocker version there is now a minimum release of the package containing 
-the tools and libraries. New versions of the package if available can
+the tools and libraries. If available new versions of the package can
 be installed or updated using the `install` command. The resilience of
-this installation was improved and better recovery from download errors
-was implemented. The extraction of documentation and software licenses from 
-the package was included as part of the installation process. The documentation
-is extracted to `$HOME/.udocker/doc`. In addition the command `version` 
-was added to display the versions and the locations from which the package 
-containing the tools and libraries can be obtained. udocker itself can 
-be installed from the GitHub releases and is now also available from *PyPI*
-[@PYPI].
+the installation process was improved and better recovery from download 
+errors was implemented. The extraction of documentation and software 
+licenses from the package was included as part of the installation process. 
+The documentation is now extracted to a new directory `$HOME/.udocker/doc`. 
+In addition the command `version` was added to display the versions and 
+the locations from which the package containing the tools and libraries 
+can be obtained. udocker itself can be installed from the GitHub releases 
+and is now also available from *PyPI*[@PYPI].
 
 The system wide installation of udocker from a central shared filesystem 
 has become a more frequent deployment scenario. In this situation udocker 
 is installed in a shared location often readonly. Depending on the 
 situation the installation may include just the executables and libraries 
-or a combination that may also include pre-defined images or even the 
-extracted ready to use containers. The steps and implications of using
-a shared installation and in particular of using readonly locations have 
-been addressed and extensively documented.
+or a combination that may also include pre-defined images or even created
+containers that are ready to be executed. The steps and implications of 
+using a shared installation and in particular of using readonly locations 
+have been addressed and are also documented in the installation manual.
 
 The software quality assurance for udocker was improved. The *Jenkins
 Pipeline Library* [@JEPL] was adopted to describe the quality assurance
-pipelines that include stages for code style checking using pylint,
-security using bandit and execution of the unit and integration tests.
-Unit test coverage is also obtained and is currently at 70%. The 
+pipelines that include stages for code style checking using *pylint*,
+security using *bandit* and execution of the unit and integration tests.
+Unit test coverage is also obtained and for version 1.3.0 is 70%. The 
 introduction of the security checks led to several code improvements
 including the removal of shell context from process creation and
 the reimplementation of the configuration files handling to prevent
-the injection of undesired code.
+the injection of undesired code. 
 
+Between versions 1.1.1 and 1.1.7 the udocker source code grew from 
+6663 lines to 8703 lines, the *diffstat* metrics report 3847 lines 
+inserted and 1807 lines deleted. These metrics correspond to the 
+Python 2 version, they exclude the development effort related to
+the execution engines, the unit tests and the development of the 
+Python 3 version now available in production as 1.3.0.
 
 # Research with udocker
-
 
 Examples of usage can be found in several domains including:
 physics [@BAGNASCHI2018] [@BAGNASCHI2019] [@BEZYAZEEKOV2019] [@BEZYAZEEKOV2021],
