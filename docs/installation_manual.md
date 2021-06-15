@@ -121,11 +121,6 @@ udocker creates files and subdirectories under `$HOME/.udocker` these are:
 * `containers`: created containers.
 * `keystore.github`: authentication to access repositories (created on demand).
 
-These tools are installed under `$HOME/.udocker` and currently include:
-
-* **P** engine: A modified version of PRoot compiled statically for x86_64 and ARM
-* **F** engine: Modified fakechroot libraries for many Linux distributions on x86_64 and patchelf for x86_64
-* **R** engine: crun and runc compiled statically for x86_64
 
 A default configuration file can be found in directory `udocker/etc/udocker.conf`,
 you can copy it to your home directory `$HOME` or to `$UDOCKER`.
@@ -210,16 +205,18 @@ http_insecure = True
 verbose_level = 5
 ```
 
-## 6. Source code for the tools and libraries
+## 6. External tools and libraries
 
-udocker uses several external tools and libraries to execute the containers. 
+### 6.1. Source code repositories and licenses
+
+udocker uses several external tools and libraries to execute the created containers. 
 The source code for the udocker tools and libraries is taken from several repositories.
 The **F** modes need heavily modified Fakechroot libraries and also a modified Patchelf 
 both improved to work with udocker. The **P** modes need a modified PRoot that includes 
 fixes and enhancements to work with udocker. The **R** modes use the original runc and 
 crun software with small changes for static compilation. The following table highlights 
 the repositories used by udocker containing the modified source code and the original 
-repositories together with the software licenses.
+repositories together with the corresponding software licenses.
 
 
 | Mode  | Engine           | Repository used by udocker                                 | Original repository                      | License 
@@ -231,12 +228,27 @@ repositories together with the software licenses.
 | **R** | runc             |                                                            | <https://github.com/opencontainers/runc> | [Apache v2.0](https://github.com/opencontainers/runc/blob/master/LICENSE)
 | **R** | crun             |                                                            | <https://github.com/containers/crun>     | [GPL v2](https://github.com/containers/crun/blob/master/COPYING)
 
+### 6.2. Binaries
+
 As mentioned in the previous sections the compiled binaries can be installed 
 with `udocker install`. Optionally they can be downloaded from the repository 
 containing the binary builds at: <https://github.com/jorge-lip/udocker-builds>
 
 The executables are provided statically compiled for use across systems.
-The latest tarball can be produced from the source code using:
+The shared libraries that support the **F** modes need to match the libc 
+within the container and are provided for several Linux distributions. 
+See `$HOME/.udocker/lib` for the supported distributions and corresponding 
+versions. The tools are also delivered for several architectures.
+
+| Mode  | Supported architecture                       |
+|-------|:---------------------------------------------|
+| **P** | x86_64, i386, aarch64 and arm                |
+| **F** | x86_64                                       |
+| **R** | x86_64                                       |
+| **S** | uses the binaries present in the host system |
+
+
+The latest binary tarball can be produced from the source code using:
 
 ```bash
 git clone -b devel3 https://github.com/indigo-dc/udocker
