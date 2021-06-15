@@ -1016,7 +1016,7 @@ container are removed with:
 yum remove openmpi
 ```
 
-We download Open MPI v.2.0.1 from https://www.open-mpi.org/software/ompi/v2.0 and compile it. 
+We download Open MPI v.2.0.1 from <https://www.open-mpi.org/software/ompi/v2.0> and compile it. 
 
 Openib and libibverbs need to be install to compile Open MPI over Infiniband. For that,
 install the epel repository on the container. This step is not required if running using 
@@ -1101,17 +1101,17 @@ Another different approach is to have docker images already prepared with the dr
 files but they must match what is being used in the target host. For instance base
 docker images with several version of the NVIDIA driver can be found in dockerhub:
 
-* https://hub.docker.com/r/lipcomputing/nvidia-ubuntu16.04/
-* https://hub.docker.com/r/lipcomputing/nvidia-centos7/
+* <https://hub.docker.com/r/lipcomputing/nvidia-ubuntu16.04/>
+* <https://hub.docker.com/r/lipcomputing/nvidia-centos7/>
 
 In the tags tab one can check which versions are available. Dockerfiles and Ansible
 roles used to build these images are in the github repository: 
-https://github.com/LIP-Computing/ansible-role-nvidia 
+<https://github.com/LIP-Computing/ansible-role-nvidia>
 
 Examples of using those NVIDIA base images with a given application are the "disvis" and 
 "powerfit" images whose Dockerfiles and Ansible roles can be found in:
 
-* https://github.com/indigo-dc/ansible-role-disvis-powerfit
+* <https://github.com/indigo-dc/ansible-role-disvis-powerfit>
 
 In order to build your docker image with a given CUDA or OpenCL application, the 
 aforementioned images can be used. When the docker image with your application has 
@@ -1409,14 +1409,14 @@ container is not being executed.
 
 ## Acknowledgments
 
-* Docker https://www.docker.com/
-* PRoot http://proot.me
-* Fakechroot https://github.com/dex4er/fakechroot/wiki
-* runC https://runc.io/
-* crun https://github.com/containers/crun
-* Singularity http://singularity.lbl.gov
-* INDIGO DataCloud https://www.indigo-datacloud.eu
-* EOSC-hub https://eosc-hub.eu
-* DEEP-Hybrid-DataCloud https://deep-hybrid-datacloud.eu
-* OpenMPI https://www.open-mpi.org
-* openQCD http://luscher.web.cern.ch/luscher/openQCD
+* Docker <https://www.docker.com/>
+* PRoot <http://proot.me>
+* Fakechroot <https://github.com/dex4er/fakechroot/wiki>
+* runC <https://runc.io/>
+* crun <https://github.com/containers/crun>
+* Singularity <http://singularity.lbl.gov>
+* INDIGO DataCloud <https://www.indigo-datacloud.eu>
+* EOSC-hub <https://eosc-hub.eu>
+* DEEP-Hybrid-DataCloud <https://deep-hybrid-datacloud.eu>
+* OpenMPI <https://www.open-mpi.org>
+* openQCD <http://luscher.web.cern.ch/luscher/openQCD>
