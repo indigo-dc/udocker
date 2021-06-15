@@ -24,7 +24,7 @@ udocker requires:
 
 ### 2.1. Install from a released version
 
-Download a release tarball from https://github.com/indigo-dc/udocker/releases: 
+Download a release tarball from <https://github.com/indigo-dc/udocker/releases>: 
 
 ```bash
 wget https://github.com/indigo-dc/udocker/releases/download/v1.3.0/udocker-1.3.0.tar.gz
