@@ -82,7 +82,7 @@ of the udocker binary tools and libraries invoking `udocker install` will fail
 in the download step. The solution is to fetch the the tarball in advance and 
 then install it directly from the tarball file.
 
-The tarballs containing the tools and libraries are available at https://github.com/jorge-lip/udocker-builds.
+The tarballs containing the tools and libraries are available at <https://github.com/jorge-lip/udocker-builds>.
 
 To download a tarball file use:
 
@@ -212,18 +212,28 @@ verbose_level = 5
 
 ## 6. Source code for the tools and libraries
 
-The source code for the udocker tools and libraries is kept in different repositories:
+udocker uses several external tools and libraries to execute the containers. 
+The source code for the udocker tools and libraries is taken from several repositories.
+The **F** modes need heavily modified Fakechroot libraries and also a modified Patchelf 
+both improved to work with udocker. The **P** modes need a modified PRoot that includes 
+fixes and enhancements to work with udocker. The **R** modes use the original runc and 
+crun software with small changes for static compilation. The following table highlights 
+the repositories used by udocker containing the modified source code and the original 
+repositories together with the software licenses.
 
-* **P** engine PRoot: https://github.com/jorge-lip/proot-udocker
-* **F** engine glibc: https://github.com/jorge-lip/libfakechroot-glibc-udocker
-* **F** engine musl: https://github.com/jorge-lip/libfakechroot-musl-udocker
-* **F** engine patchelf: https://github.com/jorge-lip/patchelf-udocker
-* **R** engine runc: https://github.com/opencontainers/runc
-* **R** engine crun: https://github.com/containers/crun
+
+| Mode  | Engine           | Repository used by udocker                                 | Original repository                      | License 
+|-------|:-----------------|:-----------------------------------------------------------|:-----------------------------------------|:----------
+| **P** | PRoot            | <https://github.com/jorge-lip/proot-udocker>               | <https://github.com/proot-me/proot>      | [GPL v2](https://github.com/jorge-lip/proot-udocker)
+| **F** | Fakechroot glibc | <https://github.com/jorge-lip/libfakechroot-glibc-udocker> | <https://github.com/dex4er/fakechroot>   | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-glibc-udocker)
+| **F** | Fakechroot musl  | <https://github.com/jorge-lip/libfakechroot-musl-udocker>  | <https://github.com/dex4er/fakechroot>   | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-musl-udocker)
+| **F** | Patchelf         | <https://github.com/jorge-lip/patchelf-udocker>            | <https://github.com/NixOS/patchelf>      | [GPL v3](https://github.com/jorge-lip/patchelf-udocker/blob/master/COPYING)
+| **R** | runc             |                                                            | <https://github.com/opencontainers/runc> | [Apache v2.0](https://github.com/opencontainers/runc/blob/master/LICENSE)
+| **R** | crun             |                                                            | <https://github.com/containers/crun>     | [GPL v2](https://github.com/containers/crun/blob/master/COPYING)
 
 As mentioned in the previous sections the compiled binaries can be installed 
-with `udocker install`. They can also be downloaded from the repository at
-https://github.com/jorge-lip/udocker-builds
+with `udocker install`. Optionally they can be downloaded from the repository 
+containing the binary builds at: <https://github.com/jorge-lip/udocker-builds>
 
 The executables are provided statically compiled for use across systems.
 The latest tarball can be produced from the source code using:
