@@ -209,14 +209,15 @@ verbose_level = 5
 
 ### 6.1. Source code repositories
 
-udocker uses several external tools and libraries to execute the created containers. 
+udocker uses external tools and libraries to execute the created containers. 
 The source code for the udocker tools and libraries is taken from several repositories.
 The **F** modes need heavily modified Fakechroot libraries and also a modified Patchelf 
-both improved to work with udocker. The **P** modes need a modified PRoot that includes 
-fixes and enhancements to work with udocker. The **R** modes use the original runc and 
-crun software with small changes for static compilation. The following table highlights 
-the repositories used by udocker containing the modified source code and the original 
-repositories.
+both specifically improved to work with udocker. The Fakechroot for musl is a port
+of the Fakechroot library for the musl libc performed by the udocker development team. 
+The **P** modes need a modified PRoot that includes fixes and enhancements to work with 
+udocker. The **R** modes use the original runc and crun software with small changes for 
+static compilation. The following table highlights the repositories used by udocker 
+containing the modified source code and the original repositories.
 
 
 | Mode  | Engine           | Repository used by udocker                                 | Original repository                      
