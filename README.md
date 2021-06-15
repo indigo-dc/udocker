@@ -399,22 +399,22 @@ When citing udocker please use the following:
 Luís Alves, João Martins, João Pina, Alvaro López-García, Pablo Orviz, 
 Enabling rootless Linux Containers in multi-user environments: The udocker 
 tool, Computer Physics Communications, Available online 6 June 2018,
-ISSN 0010-4655, https://doi.org/10.1016/j.cpc.2018.05.021
+ISSN 0010-4655, <https://doi.org/10.1016/j.cpc.2018.05.021>
 
 ## Acknowledgements
 
-* Docker https://www.docker.com/
-* PRoot https://proot-me.github.io/
-* Fakechroot https://github.com/dex4er/fakechroot/wiki
-* runC https://runc.io/
-* crun https://github.com/containers/crun
-* Singularity https://www.sylabs.io/
-* Open Container Initiative https://www.opencontainers.org/
-* INDIGO DataCloud https://www.indigo-datacloud.eu
-* DEEP-Hybrid-DataCloud https://deep-hybrid-datacloud.eu
-* EOSC-hub https://eosc-hub.eu
-* EGI-ACE https://www.egi.eu/projects/egi-ace/
-* EOSC-Synergy https://www.eosc-synergy.eu/
+* Docker <https://www.docker.com/>
+* PRoot <https://proot-me.github.io/>
+* Fakechroot <https://github.com/dex4er/fakechroot/wiki>
+* runC <https://runc.io/>
+* crun <https://github.com/containers/crun>
+* Singularity <https://www.sylabs.io/>
+* Open Container Initiative <https://www.opencontainers.org/>
+* INDIGO DataCloud <https://www.indigo-datacloud.eu>
+* DEEP-Hybrid-DataCloud <https://deep-hybrid-datacloud.eu>
+* EOSC-hub <https://eosc-hub.eu>
+* EGI-ACE <https://www.egi.eu/projects/egi-ace/>
+* EOSC-Synergy <https://www.eosc-synergy.eu/>
 * LIP [https://www.lip.pt](https://www.lip.pt/?section=home&page=homepage&lang=en)
 * INCD [https://www.incd.pt](https://www.incd.pt/?lang=en)
 
