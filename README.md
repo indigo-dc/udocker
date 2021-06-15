@@ -19,9 +19,9 @@ entirely by the end user. The limited root functionality provided by
 some of the udocker execution modes is either simulated or provided 
 via user namespaces.
 
-udocker is a wrapper around several tools to mimic a subset of the
-docker capabilities including pulling images and running containers
-with minimal functionality.
+udocker is a wrapper around several tools and libraries to mimic a 
+subset of the docker capabilities including pulling images and running 
+containers with minimal functionality.
 
 ## Documentation
 
@@ -55,8 +55,8 @@ With the exception of Singularity the tools and libraries to support
 execution are downloaded and deployed by udocker during the installation 
 process. This installation is performed in the user home directory
 and does not require privileges. The udocker related files such as
-libraries, executables, container images and extracted directory
-trees are placed by default under `$HOME/.udocker`.
+libraries, executables, documentation, licenses, container images and 
+extracted directory trees are placed by default under `$HOME/.udocker`.
 
 ## Advantages
 
@@ -73,6 +73,8 @@ trees are placed by default under `$HOME/.udocker`.
 * Understands docker container metadata
 * Allows loading of docker and OCI containers
 * Supports NVIDIA GPGPU applications
+* Can execute in systems and environments where Linux namespaces 
+  support is unavailable
 * Runs both on new and older Linux distributions including:
   CentOS 6, CentOS 7, CentOS 8, Ubuntu 14, Ubuntu 16, Ubuntu 18, Ubuntu 20, 
   Ubuntu 21, Alpine, Fedora, etc
