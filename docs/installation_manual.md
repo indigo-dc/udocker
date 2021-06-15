@@ -223,10 +223,10 @@ repositories together with the software licenses.
 
 
 | Mode  | Engine           | Repository used by udocker                                 | Original repository                      | License 
-|-------|:-----------------|:-----------------------------------------------------------|:-----------------------------------------|:----------
-| **P** | PRoot            | <https://github.com/jorge-lip/proot-udocker>               | <https://github.com/proot-me/proot>      | [GPL v2](https://github.com/jorge-lip/proot-udocker)
-| **F** | Fakechroot glibc | <https://github.com/jorge-lip/libfakechroot-glibc-udocker> | <https://github.com/dex4er/fakechroot>   | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-glibc-udocker)
-| **F** | Fakechroot musl  | <https://github.com/jorge-lip/libfakechroot-musl-udocker>  | <https://github.com/dex4er/fakechroot>   | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-musl-udocker)
+|-------|:-----------------|:-----------------------------------------------------------|:-----------------------------------------|:----------------------------------------------------------------------------
+| **P** | PRoot            | <https://github.com/jorge-lip/proot-udocker>               | <https://github.com/proot-me/proot>      | [GPL v2](https://github.com/jorge-lip/proot-udocker/COPYING)
+| **F** | Fakechroot glibc | <https://github.com/jorge-lip/libfakechroot-glibc-udocker> | <https://github.com/dex4er/fakechroot>   | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-glibc-udocker/LICENSE)
+| **F** | Fakechroot musl  | <https://github.com/jorge-lip/libfakechroot-musl-udocker>  | <https://github.com/dex4er/fakechroot>   | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-musl-udocker/LICENSE)
 | **F** | Patchelf         | <https://github.com/jorge-lip/patchelf-udocker>            | <https://github.com/NixOS/patchelf>      | [GPL v3](https://github.com/jorge-lip/patchelf-udocker/blob/master/COPYING)
 | **R** | runc             |                                                            | <https://github.com/opencontainers/runc> | [Apache v2.0](https://github.com/opencontainers/runc/blob/master/LICENSE)
 | **R** | crun             |                                                            | <https://github.com/containers/crun>     | [GPL v2](https://github.com/containers/crun/blob/master/COPYING)
