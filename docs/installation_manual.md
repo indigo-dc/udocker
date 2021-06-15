@@ -233,9 +233,9 @@ containing the modified source code and the original repositories.
 
 | Mode  | Engine           | License 
 |-------|:-----------------|:----------------------------------------------------------------------------
-| **P** | PRoot            | [GPL v2](https://github.com/jorge-lip/proot-udocker/COPYING)
-| **F** | Fakechroot glibc | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-glibc-udocker/LICENSE)
-| **F** | Fakechroot musl  | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-musl-udocker/LICENSE)
+| **P** | PRoot            | [GPL v2](https://github.com/jorge-lip/proot-udocker/blob/master/COPYING)
+| **F** | Fakechroot glibc | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-glibc-udocker/blob/master/LICENSE)
+| **F** | Fakechroot musl  | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-musl-udocker/blob/master/LICENSE)
 | **F** | Patchelf         | [GPL v3](https://github.com/jorge-lip/patchelf-udocker/blob/master/COPYING)
 | **R** | runc             | [Apache v2.0](https://github.com/opencontainers/runc/blob/master/LICENSE)
 | **R** | crun             | [GPL v2](https://github.com/containers/crun/blob/master/COPYING)
