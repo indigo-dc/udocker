@@ -2,10 +2,10 @@
 
 In most cases the end user can download and execute udocker without
 system administrator intervention. udocker itself is written in Python, but 
-also uses external binaries and libraries to provide a chroot like
+also uses external tools and libraries to provide a chroot like
 environment where containers are executed in user space. These tools do not
 require any privileges and constitute the udocker tools and libraries for 
-engines that is downloaded and installed by udocker itself.
+engines that are downloaded and installed by udocker itself.
 
 ## 1. Dependencies
 
@@ -24,7 +24,7 @@ udocker requires:
 
 ### 2.1. Install from a released version
 
-Download a release tarball from https://github.com/indigo-dc/udocker/releases: 
+Download a release tarball from <https://github.com/indigo-dc/udocker/releases>: 
 
 ```bash
 wget https://github.com/indigo-dc/udocker/releases/download/v1.3.0/udocker-1.3.0.tar.gz
