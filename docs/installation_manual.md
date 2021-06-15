@@ -207,7 +207,7 @@ verbose_level = 5
 
 ## 6. External tools and libraries
 
-### 6.1. Source code repositories and licenses
+### 6.1. Source code repositories
 
 udocker uses several external tools and libraries to execute the created containers. 
 The source code for the udocker tools and libraries is taken from several repositories.
@@ -216,19 +216,30 @@ both improved to work with udocker. The **P** modes need a modified PRoot that i
 fixes and enhancements to work with udocker. The **R** modes use the original runc and 
 crun software with small changes for static compilation. The following table highlights 
 the repositories used by udocker containing the modified source code and the original 
-repositories together with the corresponding software licenses.
+repositories.
 
 
-| Mode  | Engine           | Repository used by udocker                                 | Original repository                      | License 
-|-------|:-----------------|:-----------------------------------------------------------|:-----------------------------------------|:----------------------------------------------------------------------------
-| **P** | PRoot            | <https://github.com/jorge-lip/proot-udocker>               | <https://github.com/proot-me/proot>      | [GPL v2](https://github.com/jorge-lip/proot-udocker/COPYING)
-| **F** | Fakechroot glibc | <https://github.com/jorge-lip/libfakechroot-glibc-udocker> | <https://github.com/dex4er/fakechroot>   | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-glibc-udocker/LICENSE)
-| **F** | Fakechroot musl  | <https://github.com/jorge-lip/libfakechroot-musl-udocker>  | <https://github.com/dex4er/fakechroot>   | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-musl-udocker/LICENSE)
-| **F** | Patchelf         | <https://github.com/jorge-lip/patchelf-udocker>            | <https://github.com/NixOS/patchelf>      | [GPL v3](https://github.com/jorge-lip/patchelf-udocker/blob/master/COPYING)
-| **R** | runc             |                                                            | <https://github.com/opencontainers/runc> | [Apache v2.0](https://github.com/opencontainers/runc/blob/master/LICENSE)
-| **R** | crun             |                                                            | <https://github.com/containers/crun>     | [GPL v2](https://github.com/containers/crun/blob/master/COPYING)
+| Mode  | Engine           | Repository used by udocker                                 | Original repository                      
+|-------|:-----------------|:-----------------------------------------------------------|:-----------------------------------------
+| **P** | PRoot            | <https://github.com/jorge-lip/proot-udocker>               | <https://github.com/proot-me/proot>
+| **F** | Fakechroot glibc | <https://github.com/jorge-lip/libfakechroot-glibc-udocker> | <https://github.com/dex4er/fakechroot>
+| **F** | Fakechroot musl  | <https://github.com/jorge-lip/libfakechroot-musl-udocker>  | <https://github.com/dex4er/fakechroot>
+| **F** | Patchelf         | <https://github.com/jorge-lip/patchelf-udocker>            | <https://github.com/NixOS/patchelf>
+| **R** | runc             |                                                            | <https://github.com/opencontainers/runc>
+| **R** | crun             |                                                            | <https://github.com/containers/crun>
 
-### 6.2. Binaries
+### 6.2. Software Licenses
+
+| Mode  | Engine           | License 
+|-------|:-----------------|:----------------------------------------------------------------------------
+| **P** | PRoot            | [GPL v2](https://github.com/jorge-lip/proot-udocker/COPYING)
+| **F** | Fakechroot glibc | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-glibc-udocker/LICENSE)
+| **F** | Fakechroot musl  | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-musl-udocker/LICENSE)
+| **F** | Patchelf         | [GPL v3](https://github.com/jorge-lip/patchelf-udocker/blob/master/COPYING)
+| **R** | runc             | [Apache v2.0](https://github.com/opencontainers/runc/blob/master/LICENSE)
+| **R** | crun             | [GPL v2](https://github.com/containers/crun/blob/master/COPYING)
+
+### 6.3. Binaries
 
 As mentioned in the previous sections the compiled binaries can be installed 
 with `udocker install`. Optionally they can be downloaded from the repository 
