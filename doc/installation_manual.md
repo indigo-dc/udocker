@@ -38,10 +38,10 @@ From the *development* branch containing the original Python 2 based code:
   ./udocker install
 ```
 
-To get a specific released version of udocker such as the old v1.1.7:
+To get a specific released version of udocker such as v1.1.8:
 
 ```
-  curl -L https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.7/udocker.py > udocker
+  curl -L https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.8/udocker.py > udocker
   chmod u+rx ./udocker
   ./udocker install
 ```
@@ -52,11 +52,11 @@ This installation method uses the udockertools tarball that contains statically 
 binaries and is built to be used across different hosts and OS distributions. Please 
 check the repositories for the latest release.
 
-Example of installing or upgrading udocker to version v1.1.7:
+Example of installing or upgrading udocker to version v1.1.8:
 
 ```
-  curl -L https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.7.tar.gz > udocker-1.1.7.tar.gz
-  export UDOCKER_TARBALL=$(pwd)/udocker-1.1.7.tar.gz
+  curl -L https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.8.tar.gz > udocker-1.1.8.tar.gz
+  export UDOCKER_TARBALL=$(pwd)/udocker-1.1.8.tar.gz
   tar xzvf $UDOCKER_TARBALL udocker
   chmod u+rx udocker
   ./udocker install
@@ -71,7 +71,7 @@ itself to display the udockertools tarball URLs by invoking the `version` comman
 tarball location contains several URLs pointing to different mirrors.
 
 ```
-  curl -L https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.7/udocker.py > udocker  
+  curl -L https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.8/udocker.py > udocker  
   chmod u+rx ./udocker
   ./udocker version
 ```
@@ -83,7 +83,7 @@ everytime from the official repositories. The UDOCKER_TARBALL environment variab
 can also be pointed to an http or https URL of your choice.
 
 ```
-  curl -L $(./udocker version | grep '^tarball:' | cut -d' ' -f2- ) > udocker-1.1.7.tar.gz
+  curl -L $(./udocker version | grep '^tarball:' | cut -d' ' -f2- ) > udocker-1.1.8.tar.gz
 ```
 
 ### 2.5. FORCE REINSTALLATION of UDOCKERTOOLS
@@ -93,24 +93,6 @@ with the flag `--force`:
 
 ```
   ./udocker install --force
-```
-
-### 2.6. INSTALLATION WITH PIP
-
-For installation with pip it is advisable to setup a Python2 virtual environment
-before proceeding, see instructions [HERE](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/)
-The actual installation of udocker can be performed directly from github with pip.
-
-From the *development* branch for the original Python 2 based code:
-
-```
-  pip install git+https://github.com/indigo-dc/udocker@devel
-```
-
-To get a specific release version of udocker such as *v1.1.7*:
-
-```
-  pip install git+https://github.com/indigo-dc/udocker@v1.1.7
 ```
 
 ## 3. SOURCE CODE AND BUILD
@@ -207,7 +189,7 @@ Examples of the udocker.conf syntax:
   # Increase verbosity
   verbose_level = 5
   # Require this version the `tarball` attribute must point to the correct tarball
-  tarball_release = "1.1.7"
+  tarball_release = "1.1.8"
   # Specific the installation tarball location
   tarball = "https://hostname/somepath"
   # Disable autoinstall

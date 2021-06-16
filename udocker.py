@@ -47,7 +47,7 @@ __credits__ = ["PRoot http://proot.me",
                "Singularity http://singularity.lbl.gov"
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.1.8b2"
+__version__ = "1.1.8"
 __date__ = "2021"
 
 # Python version major.minor

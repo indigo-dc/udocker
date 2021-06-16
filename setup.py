@@ -40,7 +40,7 @@ requirements = []
 setup(
     author="Jorge Gomes",
     author_email='udocker@lip.pt',
-    version="1.1.7",
+    version="1.1.8",
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',

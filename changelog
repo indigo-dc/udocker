@@ -1,3 +1,6 @@
+udocker (1.1.8)
+  * Documentation improvements and updates
+
 udocker (1.1.8b2)
   * Fix Rn modes to enable containers execution from readonly dirs
   * Documentation centralized installation and readonly setups
