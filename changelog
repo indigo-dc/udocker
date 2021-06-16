@@ -26,7 +26,7 @@ udocker (1.1.7)
     - closes: #266, #267
   * udocker unexpectedly uses P1 exec mode instead of P2
     - closes: #274
-  * allow passsing of PROOT_TMP_DIR environment variable
+  * allow passing of PROOT_TMP_DIR environment variable
     - closes: #284
 
 udocker (1.1.6)
