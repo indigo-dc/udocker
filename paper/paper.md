@@ -137,14 +137,14 @@ execution engines. udocker provides a command line interface with a syntax
 similar to docker.
 
 Compared with other container tools that can enable unprivileged 
-execution such as *podman*, *docker*, *Singularity* among others, udocker 
+execution such as *podman*, *docker*, or *Singularity* among others, udocker 
 is unique in offering multiple execution engines for unprivileged execution,
 two of these engines are based on pathname translation not requiring kernel 
 features such as Linux user namespaces thus enabling execution across a 
 wider range of systems and services where user namespaces are unavailable. 
 The Linux user namespaces approach also has limitations and may create 
 problems when accessing host files via bind mount due to the usage of 
-subordinate uid and gid identifiers. The same problems and limitations 
+subordinate uid and gid identifiers. These limitations 
 extend to system calls that may return uid and gid or when credentials 
 are passed across sockets. In addition user namespaces still expose 
 code in the kernel to normal users that was previously only really 
@@ -153,16 +153,16 @@ arise. If isolation between the container and the running host is
 important then namespaces provide the highest level of isolation at the 
 expense of the described risks and limitations. For the users that wish 
 to rely on Linux namespaces udocker also offers support for this approach 
-through *runc* and *crun* or if locally installed through *Singularity*. 
+through *runc* and *crun* or through *Singularity* if locally installed. 
 The tools that can execute containers using `chroot` or `pivot_root` and 
 use privileges such as *Shifter*, *Sarus* [@BENEDICIC2019] or the original 
 mode of *Singularity* have the limitation of requiring installation and 
 configuration by a system administrator and of having a higher risk of 
-privilege escalation since privileges are used in some operations. 
+privilege escalation as privileges are used in some operations. 
 Since these tools run with privileges they can use approaches such as 
-using *squashfs*. On de other hand udocker is focused on deployment and 
-execution entirely by the end-user and thus cannot provide features 
-that require privileges. 
+using *squashfs* to improve file access. On de other hand udocker is 
+focused on deployment and execution entirely by the end-user and thus 
+cannot provide features that require privileges. 
 
 
 # Developments since 1.1.1
