@@ -1,14 +1,14 @@
 
 <!---
 [![Build Status](https://jenkins.indigo-datacloud.eu/buildStatus/icon?job=Pipeline-as-code/udocker/master)](https://jenkins.indigo-datacloud.eu/job/Pipeline-as-code/job/udocker/job/master/)
--->
 [![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc/udocker/devel)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/devel/)
+-->
 
-[![logo](https://raw.githubusercontent.com/indigo-dc/udocker/master/doc/logo-small.png)]()
 
 This branch contains the original udocker for Python 2. This version is
 still maintained but new features will not be added. The newer udocker for 
-Python 3 also suports Python >= 2.6 and is now available from the
+Python 3 also suports Python >= 2.6 and is available from the
+[master branch](https://github.com/indigo-dc/udocker).
 [devel3 branch](https://github.com/indigo-dc/udocker/tree/devel3).
 
 <!---
@@ -78,15 +78,11 @@ trees are placed by default under `$HOME/.udocker`.
   CentOS 6, CentOS 7, CentOS 8, Ubuntu 14, Ubuntu 16, Ubuntu 18, Ubuntu 20,
   Fedora, etc
 
-## Installation and Users manuals
+## Installation and Users manuals for the Python 2 version
 
 See the **[Installation manual](doc/installation_manual.md)**
 See the **[Users manual](doc/user_manual.md)**.
 See the **[All documentation for Python 2](SUMMARY.md)**
-
-For the new Python 3 version:
-
-See the **[All documentation for Python 3](https://github.com/indigo-dc/udocker/blob/devel3/SUMMARY.md)**
 
 ## Syntax
 ```
@@ -346,11 +342,9 @@ The singularity mode requires the availability of Singularity in the host
 system. Singularity is not shipped with udocker.
 
 ## Documentation
-The full documentation is available at:
+The full documentation for the Python 2 version is available at:
 
-* master: https://github.com/indigo-dc/udocker/blob/master/SUMMARY.md
-* devel: https://github.com/indigo-dc/udocker/blob/devel/SUMMARY.md
-* devel3: https://github.com/indigo-dc/udocker/blob/devel3/SUMMARY.md
+* https://github.com/indigo-dc/udocker/blob/devel/SUMMARY.md
 
 ## Contributing
 

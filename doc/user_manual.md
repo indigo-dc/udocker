@@ -10,20 +10,22 @@ or other externally managed batch or interactive systems.
 
 udocker does not require any type of privileges nor the deployment of 
 services by system administrators. It can be downloaded and executed 
-entirely by the end user. 
+entirely by the end user. The limited root functionality provided by
+some of the udocker execution modes is either simulated or provided
+via user namespaces.
 
 udocker is a wrapper around several tools and technologies to mimic a 
 subset of the Docker capabilities including pulling images and running 
-then with minimal functionality. It is mainly meant to execute user 
-applications packaged in Docker containers. 
+then with minimal functionality.
 
-We recommend the use of Docker whenever possible, but when it is 
-unavailable udocker can be the right tool to run your applications.
+udocker is mainly meant to execute user applications packaged in Docker 
+containers. We recommend the use of Docker whenever possible, but when 
+it is unavailable udocker can be the right tool to run your applications.
 
 ## 1. INTRODUCTION
 
 ### 1.1. How does it work
-udocker is a simple tool written in Python, it has a minimal set of 
+udocker written in Python, it has a minimal set of 
 dependencies so that can be executed in a wide range of Linux systems. 
 udocker does not make use of Docker nor requires its installation.
 
@@ -31,8 +33,8 @@ udocker "executes" the containers by simply providing a chroot like
 environment to the extracted container. udocker is meant to integrate
 several technologies and approaches hence providing an integrated environment
 that offers several execution options. This version provides execution engines
-based on PRoot, Fakechroot, runC and Singularity to facilitate the execution
-of Docker containers without privileges.
+based on PRoot, Fakechroot, runc, crun and Singularity to facilitate the 
+execution of Docker containers without privileges.
 
 The basic usage flow starts by downloading the image from an image repository
 in the usual way; create the container out of that image (flatenning the image
@@ -76,26 +78,24 @@ Other limitations:
 * udocker is mainly oriented at providing a run-time environment for containers execution in user space.
 
 ### 1.3. Security
-Because of the limitations described in section 1.2 udocker does not offer 
-isolation features such as the ones offered by Docker. If the containers
-content is not trusted then they should not be executed within udocker as
-they will run inside the user environment. 
-
-Due to the lack of isolation features udocker must not be run by privileged 
+udocker does not offer robust isolation features such as the ones offered
+by docker. Therefore if the containers content is not trusted then these
+containers should not be executed with udocker as they will run inside the
+user environment. For this reason udocker should not be run by privileged
 users.
 
-The containers data will be unpacked and stored in the user home directory or 
+udocker does not require privileges and runs under the identity of the user
+invoking it.
+
+The containers data will be unpacked and stored in the user home directory or
 other location of choice. Therefore the containers data will be subjected to
 the same filesystem protections as other files owned by the user. If the
 containers have sensitive information the files and directories should be
 adequately protected by the user.
 
-udocker does not require privileges and runs under the identity of the user 
-invoking it.
-
-Users can download the udocker tarball, install in the home directory and 
-execute it from their own accounts without requiring system administration 
-intervention. 
+Users can download the udocker tarball, install in the home directory and
+execute it from their own accounts without requiring system administration
+intervention.
 
 udocker provides a chroot like environment for container execution. This is
 currently implemented by:
@@ -107,14 +107,17 @@ currently implemented by:
 
 udocker via PRoot offers the emulation of the root user. This emulation
 mimics a real root user (e.g getuid will return 0). This is just an emulation
-no root privileges are involved. This feature enables tools that do not 
+no root privileges are involved. This feature enables tools that do not
 require privileges but that check the user id to work properly. This enables
 for instance software installation with rpm and yum inside the container.
 
-Similarly to Docker, the login credentials for private repositories are stored 
-in a file and can be easily accessed. Logout can be used to delete the credentials. 
-If the host system is not trustable the login feature should not be used as it may
-expose the login credentials.
+Similarly to Docker, the login credentials for private repositories are 
+stored in a file and can be easily accessed. Logout can be used to delete 
+the credentials. If the host system is not trustable the login feature 
+should not be used as it may expose the login credentials.
+
+udocker does not have privileged escalation issues as it runs entirely
+without privileges.
 
 ### 1.4. Basic flow
 The basic flow with udocker is:
@@ -133,8 +136,8 @@ Additionally:
 
 ## 2. INSTALLATION
 
-udocker can be placed in the user home directory and thus does not require
-system installation. For further information see the installation manual.
+udocker can be deployed in the user home directory and thus does not require
+system installation. For further information see the [installation manual](installation_manual.md).
 
 
 ## 3. COMMANDS

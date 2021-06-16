@@ -1,14 +1,13 @@
 # udocker INSTALLATION MANUAL
 
-In most cases the end user itself can download and execute udocker without the
-system administrator's intervention. udocker is written in Python, but 
-also uses external binaries and sharable libraries to provide a chroot like
+In most cases the end user can download and execute udocker without
+system administrator intervention. udocker itself is written in Python, but
+also uses external binaries and libraries to provide a chroot like
 environment where containers are executed in user space. These tools do not
-require any privileges.
+require any privileges and constitute the *udockertools* component that is
+downloaded and installed by udocker itself.
 
 ## 1. DEPENDENCIES
-
-Python dependencies are described in the file [requirements.txt](../requirements.txt).
 
 Other host libraries and tools required:
  * udocker requires either pycurl or the curl executable command, to download both the 
@@ -19,9 +18,9 @@ Other host libraries and tools required:
  * openssl or python hashlib are required to calculate hashes. 
  * ldconfig is used in Fn execution modes to obtain the host sharable libraries.
 
-## 2. USER INSTALLATION
+## 2. INSTALLATION
 
-### 2.1. PYTHON2: INSTALL DIRECTLY FROM GITHUB
+### 2.1. PYTHON 2: INSTALL DIRECTLY FROM GITHUB
 
 Just download and execute the udocker python script and the remainder of the
 installation including downloading and installing the udockertools will 
@@ -31,44 +30,20 @@ Once the udocker executable is downloaded from github it can be moved around
 between systems. Once executed in a new system it will install the
 required udockertools. The installation requires outbound network connectivity.
 
-From the master branch for *production*:
+From the *development* branch containing the original Python 2 based code:
 
 ```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/master/udocker.py > udocker
+  curl -L https://raw.githubusercontent.com/indigo-dc/udocker/devel/udocker.py > udocker
   chmod u+rx ./udocker
   ./udocker install
 ```
 
-From the *development* branch for the latest additions and fixes:
+To get a specific released version of udocker such as the old v1.1.7:
 
 ```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/devel/udocker.py > udocker
+  curl -L https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.7/udocker.py > udocker
   chmod u+rx ./udocker
   ./udocker install
-```
-
-To get a specific released version of udocker such as the old v1.1.4:
-
-```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.4/udocker.py > udocker
-  chmod u+rx ./udocker
-  ./udocker install
-```
-
-### 2.2. PYTHON3: INSTALL PRE-RELEASE
-
-This pre-release is based on udocker 1.1.7, with additional bug fixes and compatibility to run in python3. Follow this steps to install and run udocker:
-
-```
-    wget https://github.com/indigo-dc/udocker/releases/download/devel3_1.2.7/udocker-1.2.7.tar.gz
-    tar zxvf udocker-1.2.7.tar.gz
-    export PATH=`pwd`/udocker:$PATH
-```
-
-Complete the installation with:
-
-```
-    udocker install
 ```
 
 ### 2.3. INSTALL FROM UDOCKERTOOLS TARBALL
@@ -80,7 +55,7 @@ check the repositories for the latest release.
 Example of installing or upgrading udocker to version v1.1.7:
 
 ```
-  curl https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.7.tar.gz > udocker-1.1.7.tar.gz
+  curl -L https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-1.1.7.tar.gz > udocker-1.1.7.tar.gz
   export UDOCKER_TARBALL=$(pwd)/udocker-1.1.7.tar.gz
   tar xzvf $UDOCKER_TARBALL udocker
   chmod u+rx udocker
@@ -96,7 +71,7 @@ itself to display the udockertools tarball URLs by invoking the `version` comman
 tarball location contains several URLs pointing to different mirrors.
 
 ```
-  curl https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.7/udocker.py > udocker  
+  curl -L https://raw.githubusercontent.com/indigo-dc/udocker/v1.1.7/udocker.py > udocker  
   chmod u+rx ./udocker
   ./udocker version
 ```
@@ -108,7 +83,7 @@ everytime from the official repositories. The UDOCKER_TARBALL environment variab
 can also be pointed to an http or https URL of your choice.
 
 ```
-  curl $(./udocker version | grep '^tarball:' | cut -d' ' -f2- ) > udocker-1.1.7.tar.gz
+  curl -L $(./udocker version | grep '^tarball:' | cut -d' ' -f2- ) > udocker-1.1.7.tar.gz
 ```
 
 ### 2.5. FORCE REINSTALLATION of UDOCKERTOOLS
@@ -126,13 +101,7 @@ For installation with pip it is advisable to setup a Python2 virtual environment
 before proceeding, see instructions [HERE](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/)
 The actual installation of udocker can be performed directly from github with pip.
 
-From the master branch for *production*:
-
-```
-  pip install git+https://github.com/indigo-dc/udocker
-```
- 
-From the *development* branch for the latest additions and fixes:
+From the *development* branch for the original Python 2 based code:
 
 ```
   pip install git+https://github.com/indigo-dc/udocker@devel
@@ -153,6 +122,7 @@ example builds the tarball from the master repository.
 
 ```
   git clone https://github.com/indigo-dc/udocker
+  git checkout devel
   cd udocker/utils
   ./build_tarball.sh
 ```
