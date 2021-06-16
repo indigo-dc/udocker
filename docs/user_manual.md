@@ -1397,7 +1397,7 @@ Containers should only be copied for transfer when they are in the execution
 modes Pn or Rn. The modes Fn perform changes to the containers that will make
 them fail if they are execute in a different host where the absolute pathname 
 to the container location is different. In this later case convert back to P1 
-(using:  udocker setup --execmode=P1) before performing the backup.
+(using:  `udocker setup --execmode=P1`) before performing the backup.
 
 When experiencing issues in the default execution mode (P1) you may try
 to setup the container to execute using mode P2 or one of the Fn or 
@@ -1405,7 +1405,7 @@ Rn modes. See section 3.27 for information on changing execution modes.
 
 Some execution modes require the creation of auxiliary files, directories
 and mount points. These can be purged from a given container using
-"setup --purge", however this operation must be performed when the
+`setup --purge`, however this operation must be performed when the
 container is not being executed. 
 
 ## Acknowledgments
