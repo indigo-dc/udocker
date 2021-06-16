@@ -75,7 +75,23 @@ containers.
 udocker install
 ```
 
-### 2.3. Installing without outbound network access
+### 2.3. Install from PyPI using pip
+
+For installation with pip it is advisable to setup a Python3 virtual environment
+before proceeding, see 
+[Creating a virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment).
+
+```bash
+python3 -m venv udockervenv
+source udockervenv/bin/activate
+pip install udocker
+udockervenv/bin/udocker install
+```
+
+The just installed udocker command will be `udockervenv/bin/udocker`.
+
+
+### 2.4. Installing without outbound network access
 
 When installation is performed without network connectivity the installation 
 of the udocker binary tools and libraries invoking `udocker install` will fail 
@@ -101,7 +117,7 @@ udocker install
 The environment variable `UDOCKER_TARBALL` can also point to an URL to fetch 
 the `udockertools` from a specific or alternate location.
 
-### 2.4. Force the re-installation of the tools and libraries
+### 2.5. Force the re-installation of the tools and libraries
 
 To force download and re-installation of the udocker tools and libraries. Invoke `udocker install` 
 with the flag `--force`:
