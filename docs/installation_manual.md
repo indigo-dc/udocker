@@ -113,9 +113,9 @@ udocker install --force
 ## 3. Directories
 udocker creates files and subdirectories under `$HOME/.udocker` these are:
 
+* `doc`: documentation and licenses.
 * `bin`: executables to support the execution engines.
 * `lib`: libraries, namely the fakechroot libraries to support the **F** execution mode.
-* `doc`: documentation and licenses.
 * `repos`: container image repositories.
 * `layers`: the layers and metadata for the container images.
 * `containers`: created containers.
@@ -138,6 +138,7 @@ variables:
 * `UDOCKER_DIR`: root directory of udocker usually $HOME/.udocker
 * `UDOCKER_BIN`: location of udocker related executables
 * `UDOCKER_LIB`: location of udocker related libraries
+* `UDOCKER_DOC`: location of documentation and licenses
 * `UDOCKER_REPOS` images metadata and links to layers
 * `UDOCKER_LAYERS`: the common location for image layers data
 * `UDOCKER_CONTAINERS`: location of container directory trees (not images)
