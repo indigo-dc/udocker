@@ -8,7 +8,7 @@
 This branch contains the original udocker for Python 2. This version is
 still maintained but new features will not be added. The newer udocker for 
 Python 3 also suports Python >= 2.6 and is available from the
-[master branch](https://github.com/indigo-dc/udocker).
+[master branch](https://github.com/indigo-dc/udocker) and
 [devel3 branch](https://github.com/indigo-dc/udocker/tree/devel3).
 
 <!---
