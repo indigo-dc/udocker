@@ -493,3 +493,24 @@ then the following environment variables can be used:
 export UDOCKER_DIR=/sw/udocker
 export PATH=$PATH:$UDOCKER_DIR:$UDOCKER_DIR/bin
 ```
+
+## 8. Uninstall
+
+udocker does not provide an uninstall command. udocker can be uninstalled 
+by simply removing the created files and directories. The recommended 
+approach is as follows:
+
+1. identify containers using the **R** execution mode with `udocker ps -m | cut -f1,4 -d' ' | grep R`
+2. use `udocker setup --fixperm <container-id>` on each of the containers that use the **R** mode
+3. remove the *udocker directory tree* usually under `$HOME/.udocker` or `$UDOCKER_DIR` if defined
+4. remove the udocker Python code
+
+The *udocker directory tree* contains the external executables, libraries, 
+documentation, container images and container file system trees. By removing
+it all created containers will be also removed. Changing the file permissions
+might be required prior to deletion especially for the container file system 
+trees in the `containers` subdirectory.
+
+When using containers in the **R** modes files can be created with ownership 
+of a subordinate uid and gid. The command `udocker setup --fixperm` addresses
+these issues.
