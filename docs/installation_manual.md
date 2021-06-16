@@ -64,7 +64,7 @@ Alternatively, install the latest development code from the github `devel3` bran
 ```bash
 git clone -b devel3 --depth=1 https://github.com/indigo-dc/udocker.git
 (cd udocker/udocker; ln -s maincmd.py udocker)  
-export PATH=`pwd`/udocker/udockder:$PATH
+export PATH=`pwd`/udocker/udocker:$PATH
 ```
 
 Complete the installation by invoking `udocker install` to download and install 
