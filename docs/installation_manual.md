@@ -55,16 +55,16 @@ To install the latest stable code from the github `master` branch:
 
 ```bash
 git clone --depth=1 https://github.com/indigo-dc/udocker.git
-(cd udocker; ln -s maincmd.py udocker)  
-export PATH=`pwd`/udocker:$PATH
+(cd udocker/udocker; ln -s maincmd.py udocker)  
+export PATH=`pwd`/udocker/udocker:$PATH
 ```
 
 Alternatively, install the latest development code from the github `devel3` branch:
 
 ```bash
 git clone -b devel3 --depth=1 https://github.com/indigo-dc/udocker.git
-(cd udocker; ln -s maincmd.py udocker)  
-export PATH=`pwd`/udocker:$PATH
+(cd udocker/udocker; ln -s maincmd.py udocker)  
+export PATH=`pwd`/udocker/udockder:$PATH
 ```
 
 Complete the installation by invoking `udocker install` to download and install 
@@ -85,7 +85,8 @@ before proceeding, see
 python3 -m venv udockervenv
 source udockervenv/bin/activate
 pip install udocker
-udockervenv/bin/udocker install
+export PATH=`pwd`/udockervenv/bin:$PATH
+udocker install
 ```
 
 The just installed udocker command will be `udockervenv/bin/udocker`.
