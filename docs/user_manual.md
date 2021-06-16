@@ -603,14 +603,14 @@ name, in this case the image is extracted and run is invoked over the
 newly extracted container. Using this later approach will create multiple
 container directory trees possibly occupying considerable disk space, 
 therefore the recommended approach is to first extract a container using
-"udocker create" and only then execute with "udocker run". The same
+`udocker create` and only then execute with `udocker run`. The same
 extracted container can then be executed as many times as required without
 duplication.
 
 udocker provides several execution modes to support the actual execution
 within a container. Execution modes can be changed using the command
 `udocker setup --execmode=<mode> <container-id>` for more information
-on available modes and their characteristics see section 3.25.
+on available modes and their characteristics see section 3.27.
 
 Options:
 
@@ -884,7 +884,7 @@ executables and libraries) to remove absolute references pointing to
 the host shareable libraries. These changes are performed once during 
 the setup, executables added after setup will not have their ELF headers 
 fixed and will fail to run. Notice that setup can be rerun with the 
---force option to fix these binaries. F4 performs the ELF header
+`--force` option to fix these binaries. F4 performs the ELF header
 changes dynamically (on-the-fly) thus enabling compilation and linking 
 within the container and new executables to be transferred to the 
 container and executed. Executables and libraries in host volumes are
