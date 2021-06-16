@@ -333,8 +333,8 @@ The command displays:
 * whether the container tree is writable (is in a R/W location)
 * the easier to remember name(s)
 * the name of the container image from which it was extracted
-* with option -m adds the execution mode
-* with option -s adds the container current size in MB
+* with option `-m` adds the execution mode
+* with option `-s` adds the container current size in MB
 
 Options:
 
