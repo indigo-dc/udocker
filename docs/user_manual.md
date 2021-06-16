@@ -106,9 +106,9 @@ intervention.
 udocker provides a chroot like environment for container execution. This is
 currently implemented by:
 
-* PRoot engine via the kernel ptrace system call;
-* Fakechroot engine via shared library preload;
-* runc engine using rootless namespaces;
+* PRoot via the kernel ptrace system call;
+* Fakechroot via shared library preload;
+* runc and crun using rootless namespaces;
 * Singularity if available in the host system.
 
 udocker via PRoot offers the emulation of the root user. This emulation
@@ -1401,7 +1401,7 @@ to the container location is different. In this later case convert back to P1
 
 When experiencing issues in the default execution mode (P1) you may try
 to setup the container to execute using mode P2 or one of the Fn or 
-Rn modes. See section 3.23 for information on changing execution modes.
+Rn modes. See section 3.27 for information on changing execution modes.
 
 Some execution modes require the creation of auxiliary files, directories
 and mount points. These can be purged from a given container using
