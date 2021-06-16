@@ -532,3 +532,9 @@ trees in the `containers` subdirectory.
 When using containers in the **R** modes files can be created with ownership 
 of a subordinate uid and gid. The command `udocker setup --fixperm` addresses
 these issues.
+
+## 9. Quality assurance
+
+The unit, functional and integration tests used in the software quality assurance pipelines are available at <https://github.com/indigo-dc/udocker/tree/master/tests>
+
+Additional high level tests used for release validation are available in <https://github.com/indigo-dc/udocker/tree/master/utils>
