@@ -55,16 +55,16 @@ To install the latest stable code from the github `master` branch:
 
 ```bash
 git clone --depth=1 https://github.com/indigo-dc/udocker.git
-(cd udocker; ln -s maincmd.py udocker)  
-export PATH=`pwd`/udocker:$PATH
+(cd udocker/udocker; ln -s maincmd.py udocker)  
+export PATH=`pwd`/udocker/udocker:$PATH
 ```
 
 Alternatively, install the latest development code from the github `devel3` branch:
 
 ```bash
 git clone -b devel3 --depth=1 https://github.com/indigo-dc/udocker.git
-(cd udocker; ln -s maincmd.py udocker)  
-export PATH=`pwd`/udocker:$PATH
+(cd udocker/udocker; ln -s maincmd.py udocker)  
+export PATH=`pwd`/udocker/udocker:$PATH
 ```
 
 Complete the installation by invoking `udocker install` to download and install 
@@ -75,7 +75,24 @@ containers.
 udocker install
 ```
 
-### 2.3. Installing without outbound network access
+### 2.3. Install from PyPI using pip
+
+For installation with pip it is advisable to setup a Python3 virtual environment
+before proceeding, see 
+[Creating a virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment).
+
+```bash
+python3 -m venv udockervenv
+source udockervenv/bin/activate
+pip install udocker
+export PATH=`pwd`/udockervenv/bin:$PATH
+udocker install
+```
+
+The just installed udocker command will be `udockervenv/bin/udocker`.
+
+
+### 2.4. Installing without outbound network access
 
 When installation is performed without network connectivity the installation 
 of the udocker binary tools and libraries invoking `udocker install` will fail 
@@ -101,7 +118,7 @@ udocker install
 The environment variable `UDOCKER_TARBALL` can also point to an URL to fetch 
 the `udockertools` from a specific or alternate location.
 
-### 2.4. Force the re-installation of the tools and libraries
+### 2.5. Force the re-installation of the tools and libraries
 
 To force download and re-installation of the udocker tools and libraries. Invoke `udocker install` 
 with the flag `--force`:
@@ -113,9 +130,9 @@ udocker install --force
 ## 3. Directories
 udocker creates files and subdirectories under `$HOME/.udocker` these are:
 
+* `doc`: documentation and licenses.
 * `bin`: executables to support the execution engines.
 * `lib`: libraries, namely the fakechroot libraries to support the **F** execution mode.
-* `doc`: documentation and licenses.
 * `repos`: container image repositories.
 * `layers`: the layers and metadata for the container images.
 * `containers`: created containers.
@@ -138,6 +155,7 @@ variables:
 * `UDOCKER_DIR`: root directory of udocker usually $HOME/.udocker
 * `UDOCKER_BIN`: location of udocker related executables
 * `UDOCKER_LIB`: location of udocker related libraries
+* `UDOCKER_DOC`: location of documentation and licenses
 * `UDOCKER_REPOS` images metadata and links to layers
 * `UDOCKER_LAYERS`: the common location for image layers data
 * `UDOCKER_CONTAINERS`: location of container directory trees (not images)
@@ -493,3 +511,30 @@ then the following environment variables can be used:
 export UDOCKER_DIR=/sw/udocker
 export PATH=$PATH:$UDOCKER_DIR:$UDOCKER_DIR/bin
 ```
+
+## 8. Uninstall
+
+udocker does not provide an uninstall command. udocker can be uninstalled 
+by simply removing the created files and directories. The recommended 
+approach is as follows:
+
+1. identify containers using the **R** execution mode with `udocker ps -m | cut -f1,4 -d' ' | grep R`
+2. use `udocker setup --fixperm <container-id>` on each of the containers that use the **R** mode
+3. remove the *udocker directory tree* usually under `$HOME/.udocker` or `$UDOCKER_DIR` if defined
+4. remove the udocker Python code
+
+The *udocker directory tree* contains the external executables, libraries, 
+documentation, container images and container file system trees. By removing
+it all created containers will be also removed. Changing the file permissions
+might be required prior to deletion especially for the container file system 
+trees in the `containers` subdirectory.
+
+When using containers in the **R** modes files can be created with ownership 
+of a subordinate uid and gid. The command `udocker setup --fixperm` addresses
+these issues.
+
+## 9. Quality assurance
+
+The unit, functional and integration tests used in the software quality assurance pipelines are available at <https://github.com/indigo-dc/udocker/tree/master/tests>
+
+Additional high level tests used for release validation are available in <https://github.com/indigo-dc/udocker/tree/master/utils>

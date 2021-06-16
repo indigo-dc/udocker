@@ -106,9 +106,9 @@ intervention.
 udocker provides a chroot like environment for container execution. This is
 currently implemented by:
 
-* PRoot engine via the kernel ptrace system call;
-* Fakechroot engine via shared library preload;
-* runc engine using rootless namespaces;
+* PRoot via the kernel ptrace system call;
+* Fakechroot via shared library preload;
+* runc and crun using rootless namespaces;
 * Singularity if available in the host system.
 
 udocker via PRoot offers the emulation of the root user. This emulation
@@ -155,7 +155,7 @@ preferred command name changed from udocker.py to udocker. A symbolic link
 between `udocker` and `maincmd.py` is provided when installing with the
 distribution tarball.
 
-```bash
+```
 udocker [GLOBAL-PARAMETERS] COMMAND [COMMAND-OPTIONS] [COMMAND-ARGUMENTS]
 ```
 
@@ -192,7 +192,7 @@ udocker COMMAND --help
 
 ### 3.3. install
 
-```bash
+```
 udocker install [OPTIONS]
 ```
 
@@ -215,7 +215,7 @@ udocker install --force --purge
 
 ### 3.4. search
 
-```bash
+```
 udocker search [-a] STRING
 udocker search --list-tags REPO/IMAGE
 ```
@@ -244,7 +244,7 @@ udocker search --list-tags centos
 
 ### 3.5. pull
 
-```bash
+```
 udocker pull [OPTIONS] REPO/IMAGE:TAG
 ```
 
@@ -277,7 +277,7 @@ udocker pull --httpproxy=socks5h://user:pass@host:port busybox
 
 ### 3.6. images
 
-```bash
+```
 udocker images [OPTIONS]
 ```
 
@@ -297,7 +297,7 @@ udocker images -l
 
 ### 3.7. create
 
-```bash
+```
 udocker create [OPTIONS] REPO/IMAGE:TAG
 ```
 
@@ -320,7 +320,7 @@ udocker create --name=mycontainer indigodatacloud/disvis:latest
 
 ### 3.8. ps
 
-```bash
+```
 udocker ps [options]
 ```
 
@@ -333,8 +333,8 @@ The command displays:
 * whether the container tree is writable (is in a R/W location)
 * the easier to remember name(s)
 * the name of the container image from which it was extracted
-* with option -m adds the execution mode
-* with option -s adds the container current size in MB
+* with option `-m` adds the execution mode
+* with option `-s` adds the container current size in MB
 
 Options:
 
@@ -364,7 +364,7 @@ Options:
 
 Examples:
 
-```
+```bash
 udocker rmi -f indigodatacloud/ambertools\_app:latest
 ```
 
@@ -384,7 +384,7 @@ Options:
 
 Examples:
 
-```
+```bash
 udocker rm 7b2d4456-9ee7-3138-ad01-63d1342d8545
 udocker rm mycontainer
 ```
@@ -406,7 +406,7 @@ Options:
 
 Examples:
 
-```
+```bash
 udocker inspect ubuntu:latest
 udocker inspect d2578feb-acfc-37e0-8561-47335f85e46d
 udocker inspect -p d2578feb-acfc-37e0-8561-47335f85e46d
@@ -423,7 +423,7 @@ This is an alternative to the use of `create --name=`
 
 Examples:
 
-```
+```bash
 udocker name d2578feb-acfc-37e0-8561-47335f85e46d BLUE
 ```
 
@@ -438,7 +438,7 @@ Remove a name previously given to an extracted container with
 
 Examples:
 
-```
+```bash
 udocker rmname BLUE
 ```
 
@@ -467,7 +467,7 @@ Performs sanity checks to verify a image available in the local repository.
 
 Examples:
 
-```
+```bash
 udocker verify indigodatacloud/powerfit:latest
 ```
 
@@ -499,7 +499,7 @@ Options:
 
 Examples:
 
-```
+```bash
 udocker import docker_container.tar myrepo:latest
 udocker import - myrepo:latest < docker_container.tar
 udocker import --mv docker_container.tar myrepo:latest
@@ -530,7 +530,7 @@ provided in the command line, then udocker will generate a random name.
 
 Examples:
 
-```
+```bash
 udocker load -i docker-image.tar
 udocker load - < docker-image.tar
 udocker load -i oci-image.tar test-image
@@ -549,7 +549,7 @@ images or containers.
 
 Examples:
 
-```
+```bash
 udocker protect indigodatacloud/ambertools\_app:latest
 udocker protect 3d528987-a51e-331a-94a0-d278bacf79d9
 ```
@@ -565,7 +565,7 @@ Removes a mark against deletion placed by `udocker protect`.
 
 Examples:
 
-```
+```bash
 udocker unprotect indigodatacloud/ambertools\_app:latest
 udocker unprotect 3d528987-a51e-331a-94a0-d278bacf79d9
 ```
@@ -583,7 +583,7 @@ with `udocker --repo=DIRECTORY COMMAND`.
 
 Examples:
 
-```
+```bash
 udocker mkrepo /tmp/myrepo
 udocker --repo=/tmp/myrepo pull docker.io/fedora/memcached
 udocker --repo=/tmp/myrepo images
@@ -603,14 +603,14 @@ name, in this case the image is extracted and run is invoked over the
 newly extracted container. Using this later approach will create multiple
 container directory trees possibly occupying considerable disk space, 
 therefore the recommended approach is to first extract a container using
-"udocker create" and only then execute with "udocker run". The same
+`udocker create` and only then execute with `udocker run`. The same
 extracted container can then be executed as many times as required without
 duplication.
 
 udocker provides several execution modes to support the actual execution
 within a container. Execution modes can be changed using the command
 `udocker setup --execmode=<mode> <container-id>` for more information
-on available modes and their characteristics see section 3.25.
+on available modes and their characteristics see section 3.27.
 
 Options:
 
@@ -747,7 +747,7 @@ Options:
 
 Examples:
 
-```
+```bash
 udocker login --username=xxxx --password=yyyy
 udocker login --registry="https://hostname:5000"
 username: xxxx
@@ -771,7 +771,7 @@ Options:
 
 Examples:
 
-```
+```bash
 udocker logout
 udocker logout --registry="https://hostname:5000"
 udocker logout -a
@@ -791,7 +791,7 @@ Options:
 
 Examples:
 
-```
+```bash
 udocker clone f24771be-f0bb-3046-80f0-db301e099517
 udocker clone --name=RED  f24771be-f0bb-3046-80f0-db301e099517
 udocker clone --name=RED  BLUE
@@ -811,7 +811,7 @@ using the command load.
 
 Examples:
 
-```
+```bash
 udocker save -o docker-image.tar centos:centos7
 udocker save -o - > docker-image.tar ubuntu:16.04 ubuntu:18.04 ubuntu:19.04
 ```
@@ -884,7 +884,7 @@ executables and libraries) to remove absolute references pointing to
 the host shareable libraries. These changes are performed once during 
 the setup, executables added after setup will not have their ELF headers 
 fixed and will fail to run. Notice that setup can be rerun with the 
---force option to fix these binaries. F4 performs the ELF header
+`--force` option to fix these binaries. F4 performs the ELF header
 changes dynamically (on-the-fly) thus enabling compilation and linking 
 within the container and new executables to be transferred to the 
 container and executed. Executables and libraries in host volumes are
@@ -902,7 +902,7 @@ execution mode, udocker provides the R2 and R3 execution modes that
 combine runc with the proot uid/gid emulation. In these modes the 
 execution chain is:
 
-`runc -> proot -> executable`
+ `runc -> proot -> executable`
 
 When using the Rn modes, udocker will search for a runc executable in the
 host system, only if it does not find one it will default to use the runc
@@ -1132,6 +1132,7 @@ images and containers.
 
 The directory structure of `.udocker` (or `UDOCKER_DIR`) is a as follows:
 
+* `doc/` documentation and licenses
 * `bin/` udocker executables
 * `lib/` udocker libraries
 * `repos/` images pulled or imported by udocker
@@ -1396,15 +1397,15 @@ Containers should only be copied for transfer when they are in the execution
 modes Pn or Rn. The modes Fn perform changes to the containers that will make
 them fail if they are execute in a different host where the absolute pathname 
 to the container location is different. In this later case convert back to P1 
-(using:  udocker setup --execmode=P1) before performing the backup.
+(using:  `udocker setup --execmode=P1`) before performing the backup.
 
 When experiencing issues in the default execution mode (P1) you may try
 to setup the container to execute using mode P2 or one of the Fn or 
-Rn modes. See section 3.23 for information on changing execution modes.
+Rn modes. See section 3.27 for information on changing execution modes.
 
 Some execution modes require the creation of auxiliary files, directories
 and mount points. These can be purged from a given container using
-"setup --purge", however this operation must be performed when the
+`setup --purge`, however this operation must be performed when the
 container is not being executed. 
 
 ## Acknowledgments
