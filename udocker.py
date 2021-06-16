@@ -5380,7 +5380,7 @@ class LocalRepository(object):
         directory = self.cur_tagdir
         if os.path.exists(directory + "/v1"):   # if dockerhub API v1
             return self._get_image_attributes_v1(directory)
-        elif os.path.exists(directory + "/v2"):  # if dockerhub API v1
+        elif os.path.exists(directory + "/v2"):  # if dockerhub API v2
             manifest = self.load_json("manifest")
             if manifest and "fsLayers" in manifest:
                 return self._get_image_attributes_v2_s1(directory, manifest)
