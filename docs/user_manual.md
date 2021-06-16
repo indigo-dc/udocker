@@ -1132,6 +1132,7 @@ images and containers.
 
 The directory structure of `.udocker` (or `UDOCKER_DIR`) is a as follows:
 
+* `doc/` documentation and licenses
 * `bin/` udocker executables
 * `lib/` udocker libraries
 * `repos/` images pulled or imported by udocker
