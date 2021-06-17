@@ -547,7 +547,8 @@ trees in the `containers` subdirectory.
 ## 9. Quality assurance
 
 The unit tests used in the software quality assurance pipelines are available at <https://github.com/indigo-dc/udocker/tree/master/tests/unit>.
-The tests can be executed after creating a virtualenv and installing the `requirements-dev.txt`:
+The tests can be executed after creating a virtualenv and installing the development 
+requirements in [requirements-dev.txt](https://github.com/indigo-dc/udocker/blob/master/requirements-dev.txt)
 
 ```bash
 virtualenv -p python3 ud3
@@ -557,25 +558,28 @@ cd udocker
 pip install -r requirements-dev.txt
 ```
 
-Now one can execute the unit tests coverage:
+The unit tests coverage can be executed with:
 
 ```bash
 nosetests -v --with-coverage --cover-package=udocker tests/unit
 ```
 
-Other tests configured in the `tox.ini`, can be executed as well, such as linting (style code checking) and static security test:
+Other tests configured in `tox.ini`, can be executed as well, such as linting (code style checking) and static security tests:
 
 ```bash
 pylint --rcfile=pylintrc --disable=R,C udocker
 bandit -r udocker -f html -o bandit.html
 ```
 
-Additional high level tests used for release validation are available in <https://github.com/indigo-dc/udocker/tree/master/utils>.
-After installing udocker, one can execute the `bash` scripts:
+Additional high level tests used for quality assurance are available in <https://github.com/indigo-dc/udocker/tree/master/utils>.
+After installing udocker these `bash` scripts can be executed with:
 
 ```bash
+cd utils
 ./udocker_test.sh
 ./udocker_test-run.sh
 ```
 
-If the `.udocker` directory exists the are not run, the tests should be run in a clean environment.
+If the `.udocker` directory already exists these tests are not executed as they 
+require a clean environment.
+
