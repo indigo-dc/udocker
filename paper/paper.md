@@ -136,6 +136,35 @@ Each extracted container can be easily setup for execution using any of the
 execution engines. udocker provides a command line interface with a syntax 
 similar to docker.
 
+Compared with other container tools that can enable unprivileged 
+execution such as *podman*, *docker*, or *Singularity* among others, udocker 
+is unique in offering multiple execution engines for unprivileged execution,
+two of these engines are based on pathname translation not requiring kernel 
+features such as Linux user namespaces thus enabling execution across a 
+wider range of systems and services where user namespaces are unavailable. 
+The Linux user namespaces approach also has limitations and may create 
+problems when accessing host files via bind mount due to the usage of 
+subordinate uid and gid identifiers. These limitations 
+extend to system calls that may return uid and gid or when credentials 
+are passed across sockets. In addition user namespaces still expose 
+code in the kernel to normal users that was previously only really 
+accessible to root creating opportunities for new vulnerabilities to
+arise. If isolation between the container and the running host is 
+important then namespaces provide the highest level of isolation at the 
+expense of the described risks and limitations. For the users that wish 
+to rely on Linux namespaces udocker also offers support for this approach 
+through *runc* and *crun* or through *Singularity* if locally installed. 
+The tools that can execute containers using `chroot` or `pivot_root` and 
+use privileges such as *Shifter*, *Sarus* [@BENEDICIC2019] or the original 
+mode of *Singularity* have the limitation of requiring installation and 
+configuration by a system administrator and of having a higher risk of 
+privilege escalation as privileges are used in some operations. 
+Since these tools run with privileges they can use approaches such as 
+using *squashfs* to improve file access. On de other hand udocker is 
+focused on deployment and execution entirely by the end-user and thus 
+cannot provide features that require privileges. 
+
+
 # Developments since 1.1.1
 
 udocker was initially developed in the context of the INDIGO-DataCloud
@@ -144,27 +173,30 @@ aimed to show that scientific applications could be encapsulated in Linux
 containers to ease execution across the growing ecosystem of computing 
 resources available to researchers including Linux batch systems and 
 interactive clusters. In particular it aimed to show that containers could 
-be executed by the end-users without changes to the computing systems and 
-without system administrator intervention, thus empowering users and 
-promoting the adoption of containers in these environments.
+be executed by the end-users without requiring changes to the computing 
+systems and without system administrator intervention, thus empowering users 
+and promoting the adoption of containers in these environments.
 
 Being a proof of concept the initial versions were not designed for
 production use. Later in the project it become evident that udocker
 had gain adoption beyond its original purpose and scope and that is was 
 already being actively used in production environments. After the 
-first udocker publication [@GOMES2018] that was produced using versions
+first udocker publication [@GOMES2018] produced using versions
 1.1.0 and 1.1.1, the development effort was directed
 to enhance udocker for production use by improving the design, robustness 
-and functionality. Two code branches became supported in parallel, versions 
-1.1.x retaining the original design, and a number of version 1.2.x pre-releases
-aimed at introducing enhancements. The version 1.3.0 released in June of 
-2021 is the first production release of this enhanced version.  
+and functionality. Two code branches became supported in parallel.
+The *devel* branch for the production versions 1.1.x retained the original 
+proof of concept code for Python 2, while the *devel3* branch supported 
+the development of the new modular design with support for Python 3 that 
+later gave origin to the 1.2.x pre-releases. The version 1.3.0 released in 
+June of 2021 is the first production release having the new design and 
+support for Python 2 and 3.
 
 Since version 1.1.1 the udocker code was reorganized, largely rewritten 
-and improved. Starting with version 1.2.0, udocker supports both Python 3 and 
-Python 2 and was completely restructured moving from being a single large 
+and improved. Starting with the 1.2.0 pre-release, udocker was completely 
+restructured moving from being a single large 
 monolithic Python script to become a modular Python application, making 
-maintenance and contributions easier. The new structure has 40 Python
+maintenance and contributions easier. The new code structure has 40 Python
 modules and supports both Python 2.6 or higher and Python 3. Since container 
 technologies are in constant evolution, this new code structure was 
 essential to accommodate any future improvements such as new container 
@@ -178,8 +210,8 @@ the design and prevent injection of code via the configuration files.
 Configuration is now possible at three levels, system configuration via 
 `/etc/udocker.conf`, user configuration via `$HOME/.udocker/udocker.conf` 
 and udocker repository level via `$UDOCKER_DIR/udocker.conf`. 
-Some configuration options can now be overridden by a more extensive set 
-of environment variables. The new environment variables are:
+The most relevant configuration options can now be overridden through
+new environment variables.
 
 * `UDOCKER_DEFAULT_EXECUTION_MODE`: to change the default execution 
 engine mode, which is currently **P1** using *PRoot*.
@@ -205,6 +237,7 @@ the new automated selection of the engine executables and libraries based
 on system architecture, kernel version, and Linux distribution of both 
 the host and container. This selection is performed automatically but can 
 be overridden by the corresponding environment variables. Support in udocker
+<<<<<<< HEAD
 to select the execution engine binaries was added now supporting *x86_64*, 
 *aarch64*, *arm* 32bit and *i386*. However the corresponding binaries must be 
 provided and placed under `$HOME/.udocker/bin` or `$HOME/.udocker/lib`.
@@ -222,13 +255,36 @@ in combination with udocker itself enable the usage of *Fakechroot* to support t
 execution of containers whose shared libraries can be different from the ones in 
 the host, such as when running a Debian based container on a CentOS based host. 
 After version 1.1.1 the *Fakechroot* implementation of udocker was 
+=======
+to select the execution engine binaries for the architectures *x86_64*, 
+*aarch64*, *arm* 32bit and *i386* was added. However the corresponding 
+binaries must be provided and placed under `$HOME/.udocker/bin` for
+executables and `$HOME/.udocker/lib` for libraries.
+Currently the external tools and libraries compiled and provided with
+udocker support *x86_64*, *aarch64*, *arm* 32bit and *i386* for use with the 
+**P** modes. The binaries for the remaining execution modes are currently 
+only provided for *x86_64* systems, this may change in the future as these 
+and other architectures become more widely used. 
+
+The **F** mode is particularly unique to udocker. It relies on the interception 
+of shared library calls using a modified *Fakechroot* shared library. By default 
+*Fakechroot* requires the same libraries and dynamic loader both in the host 
+and in the `chroot` environment. The *Fakechroot* libraries modified for udocker 
+in combination with udocker itself enable the execution of containers whose shared 
+libraries and dynamic loader can be completely different from the ones used in the 
+host system.  After version 1.1.1 the *Fakechroot* implementation of udocker was 
+>>>>>>> master
 much improved to enable these scenarios. A complete porting of the 
 *Fakechroot* libraries was performed for the *musl libc*, enabling support for
 containers having code compiled against *musl libc* such as *Alpine* based containers.
 The original *Fakechroot* implementation is very limited in terms of mapping
 host pathnames to container pathnames. A host pathname can only be passed to
 the `chroot` environment if the pathname remains the same, (e.g. the host /dev 
+<<<<<<< HEAD
 can only be mapped into the container /dev). This is a strong limitation as the
+=======
+can only be mapped to the container /dev). This is a strong limitation as the
+>>>>>>> master
 host pathnames may need to be mapped to different container locations.
 Implementing a complete mapping required extensive modifications to *Fakechroot* 
 that were only completed for the libraries distributed with udocker version 
@@ -349,8 +405,8 @@ tools cannot be used, such as when namespaces are not available or privileges
 are required. These include running containers within *docker* itself, and 
 running within services and applications such as *AWS lambda*, *google colab* [@COLAB]
 or *Termux* [@TERMUX]. Several enhancements were introduced since version 1.1.1 to 
-enable the usage of udocker within this type of environments exploiting 
-the **P** or **F** execution engines based on pathname translation. 
+enable the usage of udocker within this type of environments using the pathname
+translation approaches provided by the **P** and **F** execution engines.
 
 The external tools and libraries used by udocker to support the execution
 engines are distributed in binary format in a package that was released
@@ -390,10 +446,10 @@ the injection of undesired code.
 
 Between versions 1.1.1 and 1.1.7 the udocker source code grew from 
 6663 lines to 8703 lines, the *diffstat* metrics report 3847 lines 
-inserted and 1807 lines deleted. These metrics correspond to the 
-Python 2 version, they exclude the development effort related to
-the execution engines, the unit tests and the development of the 
-Python 3 version now available in production as 1.3.0.
+inserted and 1807 lines deleted. These metrics correspond to the changes
+introduced in the 1.1.x versions for Python 2, they exclude the development 
+effort related to the execution engines, the unit tests and the development 
+of the Python 3 version now available in production as 1.3.0.
 
 # Research with udocker
 
