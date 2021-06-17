@@ -564,15 +564,19 @@ The unit tests coverage can be executed with:
 nosetests -v --with-coverage --cover-package=udocker tests/unit
 ```
 
-Other tests configured in `tox.ini`, can be executed as well, such as linting (code style checking) and static security tests:
+Other tests configured in `tox.ini`, can be executed as well, such as linting 
+(code style checking) and static security tests:
 
 ```bash
 pylint --rcfile=pylintrc --disable=R,C udocker
 bandit -r udocker -f html -o bandit.html
 ```
 
-Additional high level tests used for quality assurance are available in <https://github.com/indigo-dc/udocker/tree/master/utils>.
-After installing udocker these `bash` scripts can be executed with:
+Additional high level tests used for quality assurance are available in 
+<https://github.com/indigo-dc/udocker/tree/master/utils>.
+If the `.udocker` directory already exists these tests will not execute as they require 
+a clean environment. After cloning the udocker repository with `git` these `bash` scripts 
+can be executed with:
 
 ```bash
 cd utils
@@ -580,6 +584,4 @@ cd utils
 ./udocker_test-run.sh
 ```
 
-If the `.udocker` directory already exists these tests are not executed as they 
-require a clean environment.
 
