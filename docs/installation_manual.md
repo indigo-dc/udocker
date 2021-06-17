@@ -542,13 +542,14 @@ The tests can be executed after creating a virtualenv and installing the `requir
 virtualenv -p python3 ud3
 source ud3/bin/activate
 git clone https://github.com/indigo-dc/udocker.git
+cd udocker
 pip install -r requirements-dev.txt
 ```
 
 Now one can execute the unit tests coverage:
 
 ```bash
-nosetests -v --with-xcoverage --cover-package=udocker tests/unit
+nosetests -v --with-coverage --cover-package=udocker tests/unit
 ```
 
 Other tests configured in the `tox.ini`, can be executed as well, such as linting (style code checking) and static security test:
