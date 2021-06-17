@@ -551,7 +551,7 @@ Now one can execute the unit tests coverage:
 nosetests -v --with-xcoverage --cover-package=udocker tests/unit
 ```
 
-Other tests configured in the `tox.ini`, can be executed as well, such as linting (style code checking) and static security:
+Other tests configured in the `tox.ini`, can be executed as well, such as linting (style code checking) and static security test:
 
 ```bash
 pylint --rcfile=pylintrc --disable=R,C udocker
