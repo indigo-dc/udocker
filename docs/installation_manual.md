@@ -535,6 +535,35 @@ these issues.
 
 ## 9. Quality assurance
 
-The unit, functional and integration tests used in the software quality assurance pipelines are available at <https://github.com/indigo-dc/udocker/tree/master/tests>
+The unit tests used in the software quality assurance pipelines are available at <https://github.com/indigo-dc/udocker/tree/master/tests/unit>.
+The tests can be executed after creating a virtualenv and installing the `requirements-dev.txt`:
 
-Additional high level tests used for release validation are available in <https://github.com/indigo-dc/udocker/tree/master/utils>
+```bash
+virtualenv -p python3 ud3
+source ud3/bin/activate
+git clone https://github.com/indigo-dc/udocker.git
+pip install -r requirements-dev.txt
+```
+
+Now one can execute the unit tests coverage:
+
+```bash
+nosetests -v --with-xcoverage --cover-package=udocker tests/unit
+```
+
+Other tests configured in the `tox.ini`, can be executed as well, such as linting (style code checking) and static security test:
+
+```bash
+pylint --rcfile=pylintrc --disable=R,C udocker
+bandit -r udocker -f html -o bandit.html
+```
+
+Additional high level tests used for release validation are available in <https://github.com/indigo-dc/udocker/tree/master/utils>.
+After installing udocker, one can execute the `bash` scripts:
+
+```bash
+./udocker_test.sh
+./udocker_test-run.sh
+```
+
+If the `.udocker` directory exists the are not run, the tests should be run in a clean environment.
