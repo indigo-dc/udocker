@@ -558,7 +558,7 @@ cd udocker
 pip install -r requirements-dev.txt
 ```
 
-The unit tests coverage can be executed with:
+The unit tests coverage can be executed using:
 
 ```bash
 nosetests -v --with-coverage --cover-package=udocker tests/unit
@@ -576,7 +576,7 @@ Additional high level tests used for quality assurance are available in
 <https://github.com/indigo-dc/udocker/tree/master/utils>.
 If the `.udocker` directory already exists these tests will not execute as they require 
 a clean environment. After cloning the udocker repository with `git` these `bash` scripts 
-can be executed with:
+can be executed using:
 
 ```bash
 cd utils
