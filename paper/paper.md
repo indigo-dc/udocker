@@ -237,25 +237,6 @@ the new automated selection of the engine executables and libraries based
 on system architecture, kernel version, and Linux distribution of both 
 the host and container. This selection is performed automatically but can 
 be overridden by the corresponding environment variables. Support in udocker
-<<<<<<< HEAD
-to select the execution engine binaries was added now supporting *x86_64*, 
-*aarch64*, *arm* 32bit and *i386*. However the corresponding binaries must be 
-provided and placed under `$HOME/.udocker/bin` or `$HOME/.udocker/lib`.
-Currently the external tools and libraries compiled and provided with
-udocker support *x86_64*, *aarch64*, *arm* 32bit and *i386* for use with the 
-**P** modes. The binaries for the remaining execution modes are currently 
-only provided for *x86_64* hosts, this will likely change in the future as 
-these and other architectures become more widely used. 
-
-The **F** mode is particularly specific to udocker. It relies on the interception 
-of shared library calls using a modified *Fakechroot* shared library. By default 
-*Fakechroot* requires the same libraries and dynamic loader both in the host 
-and inside the `chroot` environment. The *Fakechroot* libraries modified for udocker 
-in combination with udocker itself enable the usage of *Fakechroot* to support the 
-execution of containers whose shared libraries can be different from the ones in 
-the host, such as when running a Debian based container on a CentOS based host. 
-After version 1.1.1 the *Fakechroot* implementation of udocker was 
-=======
 to select the execution engine binaries for the architectures *x86_64*, 
 *aarch64*, *arm* 32bit and *i386* was added. However the corresponding 
 binaries must be provided and placed under `$HOME/.udocker/bin` for
@@ -273,18 +254,13 @@ and in the `chroot` environment. The *Fakechroot* libraries modified for udocker
 in combination with udocker itself enable the execution of containers whose shared 
 libraries and dynamic loader can be completely different from the ones used in the 
 host system.  After version 1.1.1 the *Fakechroot* implementation of udocker was 
->>>>>>> master
 much improved to enable these scenarios. A complete porting of the 
 *Fakechroot* libraries was performed for the *musl libc*, enabling support for
 containers having code compiled against *musl libc* such as *Alpine* based containers.
 The original *Fakechroot* implementation is very limited in terms of mapping
 host pathnames to container pathnames. A host pathname can only be passed to
 the `chroot` environment if the pathname remains the same, (e.g. the host /dev 
-<<<<<<< HEAD
-can only be mapped into the container /dev). This is a strong limitation as the
-=======
 can only be mapped to the container /dev). This is a strong limitation as the
->>>>>>> master
 host pathnames may need to be mapped to different container locations.
 Implementing a complete mapping required extensive modifications to *Fakechroot* 
 that were only completed for the libraries distributed with udocker version 
