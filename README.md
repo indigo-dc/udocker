@@ -1,7 +1,7 @@
 <!---
 [![Build Status](https://jenkins.indigo-datacloud.eu/buildStatus/icon?job=Pipeline-as-code/udocker/master)](https://jenkins.indigo-datacloud.eu/job/Pipeline-as-code/job/udocker/job/master/)
 -->
-[![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc/udocker/devel3)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/devel3/)
+[![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc/udocker/master)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/master/)
 
 ![logo](docs/logo-small.png)
 
@@ -19,17 +19,17 @@ entirely by the end user. The limited root functionality provided by
 some of the udocker execution modes is either simulated or provided 
 via user namespaces.
 
-udocker is a wrapper around several tools to mimic a subset of the
-docker capabilities including pulling images and running containers
-with minimal functionality.
+udocker is a wrapper around several tools and libraries to mimic a 
+subset of the docker capabilities including pulling images and running 
+containers with minimal functionality.
 
 ## Documentation
 
 The full documentation is available at:
 
 * [udocker documentation](https://indigo-dc.github.io/udocker/)
-  * [User manual](https://indigo-dc.github.io/udocker/user_manual.html)
   * [Installation manual](https://indigo-dc.github.io/udocker/installation_manual.html)
+  * [User manual](https://indigo-dc.github.io/udocker/user_manual.html)
   * [Reference card](https://indigo-dc.github.io/udocker/reference_card.html)
 
 ## How does it work
@@ -43,7 +43,7 @@ environment over the extracted container. The current implementation
 supports different methods to mimic chroot thus enabling execution of
 containers under a chroot like environment without requiring privileges.
 udocker transparently supports several methods to execute the containers
-based on tools and libraries such as:
+based on external tools and libraries such as:
 
 * PRoot
 * Fakechroot
@@ -55,8 +55,8 @@ With the exception of Singularity the tools and libraries to support
 execution are downloaded and deployed by udocker during the installation 
 process. This installation is performed in the user home directory
 and does not require privileges. The udocker related files such as
-libraries, executables, container images and extracted directory
-trees are placed by default under `$HOME/.udocker`.
+libraries, executables, documentation, licenses, container images and 
+extracted directory trees are placed by default under `$HOME/.udocker`.
 
 ## Advantages
 
@@ -72,16 +72,18 @@ trees are placed by default under `$HOME/.udocker`.
   search, pull, import, export, load, save, login, logout, create and run
 * Understands docker container metadata
 * Allows loading of docker and OCI containers
-* Supports GPGPU and MPI applications
+* Supports NVIDIA GPGPU applications
+* Can execute in systems and environments where Linux namespaces 
+  support is unavailable
 * Runs both on new and older Linux distributions including:
   CentOS 6, CentOS 7, CentOS 8, Ubuntu 14, Ubuntu 16, Ubuntu 18, Ubuntu 20, 
-  Fedora, etc
+  Ubuntu 21, Alpine, Fedora, etc
 
 ## Python 2 and Python 3
 
-Since v1.2.0 udocker supports both Python 2 and Python 3. The original
-version of udocker for Python 2 only is available
-[here](https://github.com/indigo-dc/udocker/tree/devel)
+Since v1.2.0 udocker supports Python 2.6, 2.7 and Python >= 3.6. 
+The original udocker v1.1.x for Python 2 only is still available
+[here](https://github.com/indigo-dc/udocker/tree/devel).
 
 ## Syntax
 
@@ -191,7 +193,9 @@ udocker run -v /home/u457:/home/cuser -w /home/user myfed  /bin/bash
 udocker run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
 ```
 
-Put a script in your host /tmp and execute it in the container.
+Place a script in your host /tmp and execute it in the container. Notice
+that the behavior of `--entrypoint` changed from the previous versions
+for better compatibility with docker.
 
 ```
 udocker run  -v /tmp  --entrypoint="" myfed  /bin/bash -c 'cd /tmp; ./myscript.sh'
@@ -294,8 +298,8 @@ udocker also provides execution with runc, crun and Singularity, these modes
 make use of rootless namespaces and enable a normal user to execute as root 
 with the limitations that apply to user namespaces and to these tools.
 
-udocker limits privilege escalation issues as it runs entirely without
-privileges.
+When executed by normal unprivileged users, udocker limits privilege 
+escalation issues since it does not use or require system privileges.
 
 ## General Limitations
 
@@ -310,12 +314,11 @@ examples of operations that are not possible:
 * change the system time
 * changing routing tables, firewall rules, or network interfaces
 
-If the containers require such privileged capabilities then docker 
+If the containers require such privilege capabilities then docker 
 should be used instead.
 
-The current implementation is limited to the pulling of docker images
-and its execution. Creation of containers should be performed using
-docker and dockerfiles.
+udocker is not meant to create containers. Creation of containers 
+is better performed using docker and dockerfiles.
 
 udocker does not provide all the docker features, and is not intended
 as a docker replacement.
@@ -329,16 +332,18 @@ the way PRoot implements the chroot environment
 
 ## Execution mode specific limitations
 
-udocker offers multiple execution modes leveraging several tools.
+udocker offers multiple execution modes leveraging several external tools
+such as PRoot (P mode), Fakechroot (F mode), runC (R mode), crun (R mode) 
+and Singularity (S mode).
 
-When using execution modes such as F2, F3 and F4 the created
+When using execution Fakechroot modes such as F2, F3 and F4 the created
 containers cannot be moved across hosts. In this case convert back to a Pn
 mode before transfer.
 This is not needed if the hosts are part of an homogeneous cluster where
 the mount points and directory structure is the same. This limitation
 applies whenever the absolute realpath to the container directory changes.
 
-The default accelerated mode of PRoot (mode P1) may exhibit failures in Linux 
+The default accelerated mode of PRoot (mode P1) may exhibit problems in Linux 
 kernels above 4.0 due to kernel changes and upstream issues, in this case use
 mode P2 or any of the other execution modes.
 
@@ -346,18 +351,19 @@ mode P2 or any of the other execution modes.
 ./udocker setup  --execmode=P2  my-container-id
 ```
 
-The Fn modes require shared libraries compiled against the libc shipped
-with the container. udocker provides these libraries for several Linux
-distributions, these shared libraries are installed by udocker under:
+The Fakechroot modes (Fn modes) require shared libraries compiled against 
+the libc shipped with the container. udocker provides these libraries for 
+several Linux distributions, these shared libraries are installed by 
+udocker under:
 
 ```
 $HOME/.udocker/lib/libfakechroot-*
 ```
  
-The runc and crun modes require a kernel with user namespaces enabled.
+The runc and crun modes (R modes) require a kernel with user namespaces enabled.
 
-The singularity mode requires the availability of Singularity in the host
-system. Singularity is not shipped with udocker.
+The singularity mode (S mode) requires the availability of Singularity in 
+the host system. Singularity is not shipped with udocker.
 
 ## Metadata generation
 
@@ -366,7 +372,7 @@ package:
 
 ```
 codemetapy udocker --with-orcid --affiliation "LIP Lisbon" \
-  --buildInstructions "https://https://github.com/indigo-dc/udocker/blob/master/doc/installation_manual.md#3-source-code-and-build" \
+  --buildInstructions "https://https://github.com/indigo-dc/udocker/blob/master/docs/installation_manual.md#3-source-code-and-build" \
   --citation "https://doi.org/10.1016/j.cpc.2018.05.021" \
   --codeRepository "https://github.com/indigo-dc/udocker" \
   --contIntegration "https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/master/" --contributor "Mario David" \
@@ -395,22 +401,22 @@ When citing udocker please use the following:
 Luís Alves, João Martins, João Pina, Alvaro López-García, Pablo Orviz, 
 Enabling rootless Linux Containers in multi-user environments: The udocker 
 tool, Computer Physics Communications, Available online 6 June 2018,
-ISSN 0010-4655, https://doi.org/10.1016/j.cpc.2018.05.021
+ISSN 0010-4655, <https://doi.org/10.1016/j.cpc.2018.05.021>
 
 ## Acknowledgements
 
-* Docker https://www.docker.com/
-* PRoot https://proot-me.github.io/
-* Fakechroot https://github.com/dex4er/fakechroot/wiki
-* runC https://runc.io/
-* crun https://github.com/containers/crun
-* Singularity https://www.sylabs.io/
-* Open Container Initiative https://www.opencontainers.org/
-* INDIGO DataCloud https://www.indigo-datacloud.eu
-* DEEP-Hybrid-DataCloud https://deep-hybrid-datacloud.eu
-* EOSC-hub https://eosc-hub.eu
-* EGI-ACE https://www.egi.eu/projects/egi-ace/
-* EOSC-Synergy https://www.eosc-synergy.eu/
+* Docker <https://www.docker.com/>
+* PRoot <https://proot-me.github.io/>
+* Fakechroot <https://github.com/dex4er/fakechroot/wiki>
+* runC <https://runc.io/>
+* crun <https://github.com/containers/crun>
+* Singularity <https://www.sylabs.io/>
+* Open Container Initiative <https://www.opencontainers.org/>
+* INDIGO DataCloud <https://www.indigo-datacloud.eu>
+* DEEP-Hybrid-DataCloud <https://deep-hybrid-datacloud.eu>
+* EOSC-hub <https://eosc-hub.eu>
+* EGI-ACE <https://www.egi.eu/projects/egi-ace/>
+* EOSC-Synergy <https://www.eosc-synergy.eu/>
 * LIP [https://www.lip.pt](https://www.lip.pt/?section=home&page=homepage&lang=en)
 * INCD [https://www.incd.pt](https://www.incd.pt/?lang=en)
 

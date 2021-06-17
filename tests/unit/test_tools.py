@@ -91,12 +91,14 @@ class UdockerToolsTestCase(TestCase):
     @patch('udocker.tools.os.listdir')
     def test_06_purge(self, mock_lsdir, mock_fureg, mock_furm):
         """Test06 UdockerTools().purge()."""
-        mock_lsdir.side_effect = [["f1", "f2"], ["f3", "f4"]]
-        mock_fureg.side_effect = [None, None, None, None]
-        mock_furm.side_effect = [None, None, None, None]
+        mock_lsdir.side_effect = [["f1", "f2"],
+                                  ["f3", "f4"],
+                                  ["f5", "f6"]]
+        mock_fureg.side_effect = [None, None, None, None, None, None]
+        mock_furm.side_effect = [None, None, None, None, None, None]
         utools = UdockerTools(self.local)
         utools.purge()
-        self.assertTrue(mock_lsdir.call_count, 2)
+        self.assertTrue(mock_lsdir.call_count, 3)
         self.assertTrue(mock_fureg.call_count, 4)
         self.assertTrue(mock_furm.call_count, 4)
 
@@ -218,11 +220,13 @@ class UdockerToolsTestCase(TestCase):
         tfile = "udocker.tar"
         mock_isfile.return_value = True
         mock_futil.return_value.chmod.return_value = None
-        mock_futil.return_value.rchmod.side_effect = [None, None, None, None]
-        mock_osbase.side_effect = ["ls", "ls", "lib1", "lib1"]
+        mock_futil.return_value.rchmod.side_effect = [None, None, None,
+                                                      None, None, None]
+        mock_osbase.side_effect = ["ls", "ls", "lib1", "lib1", "doc", "doc1"]
         self.local.create_repo.return_value = None
         with patch.object(tarfile, 'open', autospec=True) as open_mock:
             open_mock.return_value.getmembers.side_effect = [[tinfo1, tinfo2],
+                                                             [tinfo1, tinfo2],
                                                              [tinfo1, tinfo2]]
             open_mock.return_value.extract.side_effect = [None, None]
             utools = UdockerTools(self.local)

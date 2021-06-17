@@ -25,6 +25,7 @@ verbose_level = 5
 * `UDOCKER_DIR`: root directory of udocker usually $HOME/.udocker
 * `UDOCKER_BIN`: location of udocker related executables
 * `UDOCKER_LIB`: location of udocker related libraries
+* `UDOCKER_DOC`: location of documentation and licenses
 * `UDOCKER_CONTAINERS`: location of container directory trees (not images)
 * `UDOCKER_TMP`: location of temporary directory
 * `UDOCKER_KEYSTORE`: location of keystore for repository login/logout
@@ -76,5 +77,5 @@ udocker -D run <container>
 ## 6. Documentation
 
 For Python 3:
-* https://github.com/indigo-dc/udocker/blob/devel3/SUMMARY.md
+* <https://indigo-dc.github.io/udocker/>
 
