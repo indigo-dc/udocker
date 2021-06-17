@@ -69,9 +69,11 @@ git clone -b devel3 --depth=1 https://github.com/indigo-dc/udocker.git
 export PATH=`pwd`/udocker/udocker:$PATH
 ```
 
-Complete the installation by invoking `udocker install` to download and install 
-the udocker tarball containing the tools and libraries required to execute 
-containers.
+udocker executes containers using external tools and libraries that
+are enhanced and packaged for use with udocker. For more information see 
+[section 6. External tools and libraries](#6-external-tools-and-libraries).
+Therefore to complete the installation invoke `udocker install` to download
+and install the required tools and libraries. 
 
 ```bash
 udocker install
@@ -88,11 +90,19 @@ python3 -m venv udockervenv
 source udockervenv/bin/activate
 pip install udocker
 export PATH=`pwd`/udockervenv/bin:$PATH
-udocker install
 ```
 
 The just installed udocker command will be `udockervenv/bin/udocker`.
 
+udocker executes containers using external tools and libraries that
+are enhanced and packaged for use with udocker. For more information see 
+[section 6. External tools and libraries](#6-external-tools-and-libraries).
+Therefore to complete the installation invoke `udocker install` to download
+and install the required tools and libraries. 
+
+```bash
+udocker install
+```
 
 ### 2.4. Installing without outbound network access
 
@@ -246,8 +256,8 @@ containing the modified source code and the original repositories.
 | **F** | Fakechroot glibc | <https://github.com/jorge-lip/libfakechroot-glibc-udocker> | <https://github.com/dex4er/fakechroot>
 | **F** | Fakechroot musl  | <https://github.com/jorge-lip/libfakechroot-musl-udocker>  | <https://github.com/dex4er/fakechroot>
 | **F** | Patchelf         | <https://github.com/jorge-lip/patchelf-udocker>            | <https://github.com/NixOS/patchelf>
-| **R** | runc             |                                                            | <https://github.com/opencontainers/runc>
-| **R** | crun             |                                                            | <https://github.com/containers/crun>
+| **R** | runc             | THE ORIGINAL REPOSITORY IS USED                            | <https://github.com/opencontainers/runc>
+| **R** | crun             | THE ORIGINAL REPOSITORY IS USED                            | <https://github.com/containers/crun>
 
 ### 6.2. Software Licenses
 
@@ -520,20 +530,19 @@ udocker does not provide an uninstall command. udocker can be uninstalled
 by simply removing the created files and directories. The recommended 
 approach is as follows:
 
-1. identify containers using the **R** execution mode with `udocker ps -m | cut -f1,4 -d' ' | grep R`
-2. use `udocker setup --fixperm <container-id>` on each of the containers that use the **R** mode
-3. remove the *udocker directory tree* usually under `$HOME/.udocker` or `$UDOCKER_DIR` if defined
-4. remove the udocker Python code
+1. Fix permissions for all created containers
+   `for id in $(udocker ps | cut -f1 -d" " | grep -v CONTAINER); do udocker setup --fixperm $id; done`
+2. Remove all created containers
+   `for id in $(udocker ps | cut -f1 -d" " | grep -v CONTAINER); do udocker rm -f $id; done`
+3. Remove the *udocker directory tree* usually under `$HOME/.udocker`
+   `cd $HOME ; rm -Rf .udocker`
+4. Remove the udocker Python code
 
 The *udocker directory tree* contains the external executables, libraries, 
 documentation, container images and container file system trees. By removing
 it all created containers will be also removed. Changing the file permissions
 might be required prior to deletion especially for the container file system 
 trees in the `containers` subdirectory.
-
-When using containers in the **R** modes files can be created with ownership 
-of a subordinate uid and gid. The command `udocker setup --fixperm` addresses
-these issues.
 
 ## 9. Quality assurance
 
