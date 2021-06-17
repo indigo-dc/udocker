@@ -41,13 +41,15 @@ tar zxvf udocker-1.3.0.tar.gz
 export PATH=`pwd`/udocker:$PATH
 ```
 
-Complete the installation by invoking `udocker install` to download and install 
-the tarball containing the tools and libraries required to execute containers:
+udocker executes containers using external tools and libraries that
+are enhanced and packaged for use with udocker. For more information see 
+[section 6. External tools and libraries](#6-external-tools-and-libraries).
+Therefore to complete the installation invoke `udocker install` to download
+and install the required tools and libraries. 
 
 ```
 udocker install
 ```
-
 
 ### 2.2. Install from the GitHub repositories
 
