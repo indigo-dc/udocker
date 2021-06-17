@@ -52,7 +52,11 @@ function print_fail
 
 function clean
 {
-  rm -rf ${DEFAULT_UDIR}
+  if [ -d ${DEFAULT_UDIR} ]
+  then
+    echo "${DEFAULT_UDIR} exists, exiting"
+    exit 1
+  fi
 }
 
 function result

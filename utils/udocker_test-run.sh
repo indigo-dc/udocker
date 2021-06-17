@@ -66,6 +66,14 @@ echo "============================================="
 echo "* This script tests udocker run and options *"
 echo "* and volume mount options                  *"
 echo "============================================="
+
+DEFAULT_UDIR=$HOME/.udocker
+if [ -d ${DEFAULT_UDIR} ]
+then
+  echo "${DEFAULT_UDIR} exists, will not run tests"
+  exit 1
+fi
+
 udocker rm c7
 udocker rm ub18
 udocker rm jv
