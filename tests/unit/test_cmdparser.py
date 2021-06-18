@@ -4,6 +4,7 @@
 """
 udocker unit tests: CmdParser
 """
+
 from unittest import TestCase, main
 from udocker.cmdparser import CmdParser
 

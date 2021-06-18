@@ -5,23 +5,11 @@
 udocker unit tests: Config
 """
 
-import sys
 from unittest import TestCase, main
+from unittest.mock import patch
 from udocker.config import Config
 
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-if sys.version_info[0] >= 3:
-    BUILTINS = "builtins"
-else:
-    BUILTINS = "__builtin__"
+BUILTINS = "builtins"
 
 
 class ConfigTestCase(TestCase):
