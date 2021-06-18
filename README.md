@@ -405,9 +405,9 @@ ISSN 0010-4655, <https://doi.org/10.1016/j.cpc.2018.05.021>
 
 ## Licensing
 Redistribution, commercial use and code changes must regard all licenses 
-shipped with udocker. These include the udocker license and the individual
-licences of the external tools and libraries packaged for use with udocker.
-For further information see the 
+shipped with udocker. These include the [udocker license](LICENSE) and the 
+individual licences of the external tools and libraries packaged for use 
+with udocker. For further information see the 
 [software licenses section](https://indigo-dc.github.io/udocker/installation_manual.html#62-software-licenses)
 of the installation manual.
 

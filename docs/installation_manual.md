@@ -266,7 +266,7 @@ containing the modified source code and the original repositories.
 ### 6.2. Software Licenses
 
 Redistribution, commercial use and code changes must regard all licenses
-shipped with udocker. These include the udocker license and the individual
+shipped with udocker. These include the [udocker license](../LICENSE) and the individual
 licences of the external tools and libraries packaged for use with udocker.
 
 | Mode  | Engine           | License 
