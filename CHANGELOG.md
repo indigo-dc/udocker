@@ -1,3 +1,13 @@
+# udocker (latest)
+
+  * Improve tests: udocker_test.sh and udocker_test-run.sh
+  * Documentation revision and improvements
+  * Add licenses and licenses notice to documentation
+  * Add test instructions
+  * Issues with --allow-root in Python 3.8
+  * Add security policy SECURITY.md
+  * Remove old Python 2 tests
+
 # udocker (1.3.0)
 
   * Prepare to move the stable code for Python 3 and Python 2 >= 2.6 to master
