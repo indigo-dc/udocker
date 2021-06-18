@@ -5,24 +5,17 @@
 udocker unit tests: UdockerCLI
 """
 
-import sys
-sys.path.append('.')
-sys.path.append('../../')
+# import sys
+# sys.path.append('.')
+# sys.path.append('../../')
 
+from unittest import TestCase, main
+from unittest.mock import Mock, patch
 from udocker.config import Config
 from udocker.cmdparser import CmdParser
 from udocker.cli import UdockerCLI
-from unittest import TestCase, main
-try:
-    from unittest.mock import Mock, patch, MagicMock, mock_open
-except ImportError:
-    from mock import Mock, patch, MagicMock, mock_open
 
-if sys.version_info[0] >= 3:
-    BUILTIN = "builtins"
-else:
-    BUILTIN = "__builtin__"
-
+BUILTIN = "builtins"
 BOPEN = BUILTIN + '.open'
 
 
@@ -33,8 +26,9 @@ class UdockerCLITestCase(TestCase):
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
-        Config().conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
-                                                ["taskset", "-c", "%s", ])
+        Config().conf['cpu_affinity_exec_tools'] = \
+            (["numactl", "-C", "%s", "--", ],
+             ["taskset", "-c", "%s", ])
         Config().conf['valid_host_env'] = "HOME"
         Config().conf['username'] = "user"
         Config().conf['userhome'] = "/"
@@ -58,14 +52,14 @@ class UdockerCLITestCase(TestCase):
         """Test01 UdockerCLI() constructor."""
         # Test Config().conf['keystore'] starts with /
         Config().conf['keystore'] = "/xxx"
-        udoc = UdockerCLI(self.local)
+        UdockerCLI(self.local)
         self.assertTrue(mock_dioapi.called)
         self.assertTrue(mock_lfapi.called)
         self.assertTrue(mock_ks.called_with(Config().conf['keystore']))
 
         # Test Config().conf['keystore'] does not starts with /
         Config().conf['keystore'] = "xx"
-        udoc = UdockerCLI(self.local)
+        UdockerCLI(self.local)
         self.assertTrue(mock_ks.called_with(Config().conf['keystore']))
 
     @patch('udocker.cli.FileUtil.isdir')
@@ -741,6 +735,7 @@ class UdockerCLITestCase(TestCase):
                        mock_msg, mock_exec):
         """Test23 UdockerCLI().do_run()."""
         mock_msg.level = 0
+        mock_pull.return_value = None
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -751,6 +746,7 @@ class UdockerCLITestCase(TestCase):
         argv = ["udocker", "run"]
         cmdp = CmdParser()
         cmdp.parse(argv)
+        mock_pull.return_value = None
         udoc = UdockerCLI(self.local)
         status = udoc.do_run(cmdp)
         self.assertEqual(status, 1)
@@ -758,12 +754,14 @@ class UdockerCLITestCase(TestCase):
         argv = ["udocker", "run", "--location=/tmp/udocker", "ipyrad"]
         cmdp = CmdParser()
         cmdp.parse(argv)
+        mock_pull.return_value = None
         mock_exec.return_value.get_engine.return_value = False
         udoc = UdockerCLI(self.local)
         status = udoc.do_run(cmdp)
         self.assertEqual(status, 1)
         self.assertTrue(mock_exec.return_value.get_engine.called)
 
+        mock_pull.return_value = None
         exeng_patch = patch("udocker.engine.proot.PRootEngine")
         proot = exeng_patch.start()
         mock_proot = Mock()
@@ -772,6 +770,7 @@ class UdockerCLITestCase(TestCase):
         argv = ["udocker", "run", "--location=/tmp/udocker", "ipyrad"]
         cmdp = CmdParser()
         cmdp.parse(argv)
+        mock_pull.return_value = None
         mock_exec.return_value.get_engine.return_value = proot
         proot.run.return_value = 0
         udoc = UdockerCLI(self.local)
@@ -784,6 +783,7 @@ class UdockerCLITestCase(TestCase):
         cmdp = CmdParser()
         cmdp.parse(argv)
         self.local.get_container_id.return_value = ""
+        mock_pull.return_value = None
         mock_exec.return_value.get_engine.return_value = proot
         proot.run.return_value = 0
         mock_chkimg.return_value = ("ipyrad", "latest")
