@@ -306,7 +306,6 @@ result
 
 STRING="T031: udocker run ub18 env|sort"
 udocker run ub18 env; return=$?
-return=3
 result
 
 # Report failed tests

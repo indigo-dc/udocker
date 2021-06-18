@@ -276,6 +276,18 @@ STRING="T042: udocker rmi ${DOCKER_IMG}"
 udocker rmi ${DOCKER_IMG}; return=$?
 result
 
+STRING="T043: udocker ps -m"
+udocker ps -m; return=$?
+result
+
+STRING="T044: udocker ps -s -m"
+udocker ps -s -m; return=$?
+result
+
+STRING="T045: udocker images -l"
+udocker images -l; return=$?
+result
+
 # Cleanup files containers and images used in the tests
 echo "Clean up files containers and images used in the tests"
 rm -rf myexportcont.tar "${TEST_UDIR}" "${TAR_IMAGE}" "${TAR_CONT}" > /dev/null 2>&1
