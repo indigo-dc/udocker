@@ -30,6 +30,9 @@ OK_STR="${GREEN}[OK]${NC}"
 FAIL_STR="${RED}[FAIL]${NC}"
 THIS_SCRIPT_NAME=$( basename "$0" )
 
+# Variables for the tests
+declare -a FAILED_TESTS
+
 function print_ok
 {
   printf "${OK_STR}"
@@ -47,6 +50,7 @@ function result
       print_ok; echo "    $STRING"
   else
       print_fail; echo "    $STRING"
+      FAILED_TESTS+=("$STRING")
   fi
   echo "------------------------------------------------------------>"
 }
@@ -58,6 +62,7 @@ function result_inv
       print_ok; echo "    $STRING"
   else
       print_fail; echo "    $STRING"
+      FAILED_TESTS+=("$STRING")
   fi
   echo "------------------------------------------------------------>"
 }
@@ -301,4 +306,20 @@ result
 
 STRING="T031: udocker run ub18 env|sort"
 udocker run ub18 env; return=$?
+return=3
 result
+
+# Report failed tests
+if [ "${#FAILED_TESTS[*]}" -le 0 ]
+then
+    printf "${OK_STR}    All tests passed\n"
+    exit 0
+fi
+
+printf "${FAIL_STR}    The following tests have failed:\n"
+for (( i=0; i<${#FAILED_TESTS[@]}; i++ ))
+do
+    printf "${FAIL_STR}    ${FAILED_TESTS[$i]}\n"
+done
+exit 1
+
