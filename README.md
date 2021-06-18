@@ -166,22 +166,24 @@ udocker pull    quay.io/biocontainers/scikit-bio:0.2.3--np112py35_0
 udocker images
 ```
 
-Create a container from a pulled image and run it.
+Create a container from a pulled image, assign a name to the created
+container and run it. A created container can be run multiple times
+until it is explicitely removed.
 
 ```
 udocker create --name=myfed  fedora:29
 udocker run  myfed  cat /etc/redhat-release
 ```
 
-The three steps of pulling, creating and running can be achieved in
-a single command, however this will create a new container in each
-invocation consuming additional space and time. Therefore is better
-to pull and create separately and use the identifier returned by
-create or use an alias to execute the container as demonstrated above.
+The three steps of pulling, creating and running can be also achieved 
+in a single command, however this will be much slower for multiple
+invocations of the same container, as a new container will be created
+for each invocation. This approach will also consume more storage space.
+The following example creates a new container for each invocation.
 
 ```
 udocker run  fedora:29  cat /etc/redhat-release
-```
+``` 
 
 Execute mounting the host /home/u457 into the container directory /home/cuser.
 Notice that you can "mount" any host directory inside the container.
@@ -289,10 +291,8 @@ other files owned by the user. If the containers have sensitive information
 the files and directories should be adequately protected by the user.
 
 udocker does not require privileges and runs under the identity of the user
-invoking it.
-
-Users can downloaded udocker and execute it without requiring system
-administrators intervention.
+invoking it. Users can downloaded udocker and execute it without requiring 
+system administrators intervention.
 
 udocker also provides execution with runc, crun and Singularity, these modes
 make use of rootless namespaces and enable a normal user to execute as root 
