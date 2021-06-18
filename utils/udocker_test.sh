@@ -31,8 +31,9 @@ FAIL_STR="${RED}[FAIL]${NC}"
 THIS_SCRIPT_NAME=$( basename "$0" )
 
 # Variables for the tests
+declare -a FAILED_TESTS
 DEFAULT_UDIR=$HOME/.udocker
-TEST_UDIR=$HOME/.udockermy
+TEST_UDIR=$HOME/.udocker-test-h45y7k9X
 TAR_IMAGE="centos7.tar"
 TAR_CONT="centos7-cont.tar"
 TAR_IMAGE_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_IMAGE}"
@@ -66,6 +67,7 @@ function result
       print_ok; echo "    $STRING"
   else
       print_fail; echo "    $STRING"
+      FAILED_TESTS+=("$STRING")
   fi
   echo "------------------------------------------------------------>"
 }
@@ -77,6 +79,7 @@ function result_inv
       print_ok; echo "    $STRING"
   else
       print_fail; echo "    $STRING"
+      FAILED_TESTS+=("$STRING")
   fi
   echo "------------------------------------------------------------>"
 }
@@ -116,150 +119,195 @@ STRING="T007: udocker version"
 udocker version; return=$?
 result
 
-STRING="T008: udocker -V"
+STRING="T008: udocker -D version"
+udocker -D version; return=$?
+result
+
+STRING="T009: udocker --quiet version"
+udocker --quiet version; return=$?
+result
+
+STRING="T010: udocker -q version"
+udocker -q version; return=$?
+result
+
+STRING="T011: udocker --debug version"
+udocker --debug version; return=$?
+result
+
+STRING="T012: udocker -V"
 udocker -V >/dev/null 2>&1 ; return=$?
 result
 
-STRING="T009: udocker --version"
+STRING="T013: udocker --version"
 udocker --version >/dev/null 2>&1 ; return=$?
 result
 
-STRING="T010: udocker search -a"
+STRING="T014: udocker search -a"
 udocker search -a gromacs | grep ^gromacs; return=$?
 result
 
-STRING="T011: udocker pull ${DOCKER_IMG}"
+STRING="T015: udocker pull ${DOCKER_IMG}"
 udocker pull ${DOCKER_IMG}; return=$?
 result
 
-STRING="T012: udocker verify ${DOCKER_IMG}"
+STRING="T016: udocker --insecure pull ${DOCKER_IMG}"
+udocker --insecure pull ${DOCKER_IMG}; return=$?
+result
+
+STRING="T017: udocker verify ${DOCKER_IMG}"
 udocker verify ${DOCKER_IMG}; return=$?
 result
 ## TODO: Add test to check layers after pull
 
-STRING="T013: udocker images"
+STRING="T018: udocker images"
 udocker images; return=$?
 result
 
-STRING="T014: udocker inspect (image)"
+STRING="T019: udocker inspect (image)"
 udocker inspect ${DOCKER_IMG}; return=$?
 result
 
-STRING="T015: udocker create ${DOCKER_IMG}"
+STRING="T020: udocker create ${DOCKER_IMG}"
 CONT_ID=`udocker create ${DOCKER_IMG}`; return=$?
 echo "ContainerID = ${CONT_ID}"
 result
 
-STRING="T016: udocker create --name=${CONT} ${DOCKER_IMG}"
+STRING="T021: udocker create --name=${CONT} ${DOCKER_IMG}"
 CONT_ID_NAME=`udocker create --name=${CONT} ${DOCKER_IMG}`; return=$?
 result
 
-STRING="T017: udocker ps"
+STRING="T022: udocker ps"
 udocker ps; return=$?
 result
 
-STRING="T018: udocker name ${CONT_ID}"
+STRING="T023: udocker name ${CONT_ID}"
 udocker name ${CONT_ID} conti; return=$?
 udocker ps |grep conti
 result
 
-STRING="T019: udocker rmname"
+STRING="T024: udocker rmname"
 udocker rmname conti; return=$?
 udocker ps |grep ${CONT_ID}
 result
 
-STRING="T020: udocker inspect (container ${CONT_ID})"
+STRING="T025: udocker inspect (container ${CONT_ID})"
 udocker inspect ${CONT_ID}; return=$?
 result
 
-STRING="T021: udocker clone --name=myclone ${CONT_ID}"
+STRING="T026: udocker clone --name=myclone ${CONT_ID}"
 udocker clone --name=myclone ${CONT_ID}; return=$?
 result
 
-STRING="T022: udocker export -o myexportcont.tar ${CONT_ID}"
+STRING="T027: udocker export -o myexportcont.tar ${CONT_ID}"
 chmod -R u+x ${DEFAULT_UDIR}/containers/${CONT_ID}/ROOT
 udocker export -o myexportcont.tar ${CONT_ID}; return=$?
 result
 
-STRING="T023: udocker rm ${CONT_ID}"
+STRING="T028: udocker rm ${CONT_ID}"
 udocker rm ${CONT_ID}; return=$?
 result
 
-STRING="T024: udocker setup ${CONT}"
+STRING="T029: udocker setup ${CONT}"
 udocker setup ${CONT}; return=$?
 result
 
-STRING="T025: udocker mkrepo ${TEST_UDIR}"
+rm -Rf "${TEST_UDIR}" > /dev/null 2>&1
+
+STRING="T030: udocker mkrepo ${TEST_UDIR}"
 udocker mkrepo ${TEST_UDIR}; return=$?
 result
 
-STRING="T026: udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}"
+STRING="T031: udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}"
 udocker --repo=${TEST_UDIR} pull ${DOCKER_IMG}; return=$?
 result
 
-STRING="T027: udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
+STRING="T032: udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
 udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}; return=$?
 result
 
-if [[ -f ${TAR_IMAGE} ]];
-then
-    echo "tar img file exists ${TAR_IMAGE_URL}"
-else
-    echo "Download a docker tar img file ${TAR_IMAGE_URL}"
-    wget ${TAR_IMAGE_URL}
-fi
+STRING="T033: udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
+UDOCKER_DIR=${TEST_UDIR} udocker verify ${DOCKER_IMG}; return=$?
+result
+
+rm -f ${TAR_IMAGE} > /dev/null 2>&1
+echo "Download a docker tar img file ${TAR_IMAGE_URL}"
+wget ${TAR_IMAGE_URL}
 echo "------------------------------------------------------------>"
 
-STRING="T028: udocker load -i ${TAR_IMAGE}"
+STRING="T034: udocker load -i ${TAR_IMAGE}"
 udocker load -i ${TAR_IMAGE}; return=$?
 result
 
-STRING="T029: udocker protect ${CONT} (container)"
+STRING="T035: udocker protect ${CONT} (container)"
 udocker protect ${CONT}; return=$?
 result
 
-STRING="T030: udocker rm ${CONT} (try to remove protected container)"
+STRING="T036: udocker rm ${CONT} (try to remove protected container)"
 udocker rm ${CONT}; return=$?
 result_inv
 
-STRING="T031: udocker unprotect ${CONT} (container)"
+STRING="T037: udocker unprotect ${CONT} (container)"
 udocker unprotect ${CONT}; return=$?
 result
 
-STRING="T032: udocker rm ${CONT} (try to remove unprotected container)"
+STRING="T038: udocker rm ${CONT} (try to remove unprotected container)"
 udocker rm ${CONT}; return=$?
 result
 
-if [[ -f ${TAR_CONT} ]];
-then
-    echo "tar container file exists ${TAR_CONT_URL}"
-else
-    echo "Download a docker tar container file ${TAR_CONT_URL}"
-    wget ${TAR_CONT_URL}
-fi
+rm -f ${TAR_CONT} > /dev/null 2>&1
+echo "Download a docker tar container file ${TAR_CONT_URL}"
+wget ${TAR_CONT_URL}
 echo "------------------------------------------------------------>"
 
-STRING="T033: udocker import ${TAR_CONT} mycentos1:latest"
+STRING="T039: udocker import ${TAR_CONT} mycentos1:latest"
 udocker import ${TAR_CONT} mycentos1:latest; return=$?
 result
 
-STRING="T034: udocker import --tocontainer --name=mycont ${TAR_CONT}"
+STRING="T040: udocker import --tocontainer --name=mycont ${TAR_CONT}"
 udocker import --tocontainer --name=mycont ${TAR_CONT}; return=$?
 result
 
-STRING="T035: udocker import --clone --name=clone_cont ${TAR_CONT}"
+STRING="T041: udocker import --clone --name=clone_cont ${TAR_CONT}"
 udocker import --clone --name=clone_cont ${TAR_CONT}; return=$?
 result
 
-STRING="T036: udocker rmi ${DOCKER_IMG}"
+STRING="T042: udocker rmi ${DOCKER_IMG}"
 udocker rmi ${DOCKER_IMG}; return=$?
 result
 
-# Cleanup files containers and images used in test
-echo "Clean up files containers and images used in test"
-rm -rf centos7-cont.tar centos7.tar myexportcont.tar .udockermy
+STRING="T043: udocker ps -m"
+udocker ps -m; return=$?
+result
+
+STRING="T044: udocker ps -s -m"
+udocker ps -s -m; return=$?
+result
+
+STRING="T045: udocker images -l"
+udocker images -l; return=$?
+result
+
+# Cleanup files containers and images used in the tests
+echo "Clean up files containers and images used in the tests"
+rm -rf myexportcont.tar "${TEST_UDIR}" "${TAR_IMAGE}" "${TAR_CONT}" > /dev/null 2>&1
 udocker rm mycont
 udocker rm clone_cont
 udocker rm myclone
 udocker rmi mycentos1
 udocker rmi centos:7
+echo "------------------------------------------------------------>"
+
+# Report failed tests
+if [ "${#FAILED_TESTS[*]}" -le 0 ]
+then
+    printf "${OK_STR}    All tests passed\n"
+    exit 0
+fi
+
+printf "${FAIL_STR}    The following tests have failed:\n"
+for (( i=0; i<${#FAILED_TESTS[@]}; i++ ))
+do
+    printf "${FAIL_STR}    ${FAILED_TESTS[$i]}\n"
+done
+exit 1
