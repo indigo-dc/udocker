@@ -7,6 +7,10 @@ environment where containers are executed in user space. These tools do not
 require any privileges and constitute the udocker tools and libraries for 
 engines that is downloaded and installed by udocker itself.
 
+Redistribution, commercial use and code changes must regard all licenses 
+shipped with udocker. For more information see
+[section 6 External tools and libraries](#6-external-tools-and-libraries).
+
 ## 1. Dependencies
 
 The udocker dependencies are minimal and should be supported by most Linux installations.
@@ -43,7 +47,7 @@ export PATH=`pwd`/udocker:$PATH
 
 udocker executes containers using external tools and libraries that
 are enhanced and packaged for use with udocker. For more information see 
-[section 6. External tools and libraries](#6-external-tools-and-libraries).
+[section 6 External tools and libraries](#6-external-tools-and-libraries).
 Therefore to complete the installation invoke `udocker install` to download
 and install the required tools and libraries. 
 
@@ -71,7 +75,7 @@ export PATH=`pwd`/udocker/udocker:$PATH
 
 udocker executes containers using external tools and libraries that
 are enhanced and packaged for use with udocker. For more information see 
-[section 6. External tools and libraries](#6-external-tools-and-libraries).
+[section 6 External tools and libraries](#6-external-tools-and-libraries).
 Therefore to complete the installation invoke `udocker install` to download
 and install the required tools and libraries. 
 
@@ -96,7 +100,7 @@ The just installed udocker command will be `udockervenv/bin/udocker`.
 
 udocker executes containers using external tools and libraries that
 are enhanced and packaged for use with udocker. For more information see 
-[section 6. External tools and libraries](#6-external-tools-and-libraries).
+[section 6 External tools and libraries](#6-external-tools-and-libraries).
 Therefore to complete the installation invoke `udocker install` to download
 and install the required tools and libraries. 
 
@@ -260,6 +264,9 @@ containing the modified source code and the original repositories.
 | **R** | crun             | THE ORIGINAL REPOSITORY IS USED                            | <https://github.com/containers/crun>
 
 ### 6.2. Software Licenses
+
+Redistribution, commercial use and code changes must regard all licenses 
+shipped with udocker. 
 
 | Mode  | Engine           | License 
 |-------|:-----------------|:----------------------------------------------------------------------------
