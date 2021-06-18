@@ -7,6 +7,10 @@ environment where containers are executed in user space. These tools do not
 require any privileges and constitute the udocker tools and libraries for 
 engines that is downloaded and installed by udocker itself.
 
+Redistribution, commercial use and code changes must regard all licenses 
+shipped with udocker. For more information see
+[section 6 External tools and libraries](#6-external-tools-and-libraries).
+
 ## 1. Dependencies
 
 The udocker dependencies are minimal and should be supported by most Linux installations.
@@ -41,13 +45,15 @@ tar zxvf udocker-1.3.0.tar.gz
 export PATH=`pwd`/udocker:$PATH
 ```
 
-Complete the installation by invoking `udocker install` to download and install 
-the tarball containing the tools and libraries required to execute containers:
+udocker executes containers using external tools and libraries that
+are enhanced and packaged for use with udocker. For more information see 
+[section 6 External tools and libraries](#6-external-tools-and-libraries).
+Therefore to complete the installation invoke `udocker install` to download
+and install the required tools and libraries. 
 
 ```
 udocker install
 ```
-
 
 ### 2.2. Install from the GitHub repositories
 
@@ -67,9 +73,11 @@ git clone -b devel3 --depth=1 https://github.com/indigo-dc/udocker.git
 export PATH=`pwd`/udocker/udocker:$PATH
 ```
 
-Complete the installation by invoking `udocker install` to download and install 
-the udocker tarball containing the tools and libraries required to execute 
-containers.
+udocker executes containers using external tools and libraries that
+are enhanced and packaged for use with udocker. For more information see 
+[section 6 External tools and libraries](#6-external-tools-and-libraries).
+Therefore to complete the installation invoke `udocker install` to download
+and install the required tools and libraries. 
 
 ```bash
 udocker install
@@ -86,11 +94,19 @@ python3 -m venv udockervenv
 source udockervenv/bin/activate
 pip install udocker
 export PATH=`pwd`/udockervenv/bin:$PATH
-udocker install
 ```
 
 The just installed udocker command will be `udockervenv/bin/udocker`.
 
+udocker executes containers using external tools and libraries that
+are enhanced and packaged for use with udocker. For more information see 
+[section 6 External tools and libraries](#6-external-tools-and-libraries).
+Therefore to complete the installation invoke `udocker install` to download
+and install the required tools and libraries. 
+
+```bash
+udocker install
+```
 
 ### 2.4. Installing without outbound network access
 
@@ -244,10 +260,14 @@ containing the modified source code and the original repositories.
 | **F** | Fakechroot glibc | <https://github.com/jorge-lip/libfakechroot-glibc-udocker> | <https://github.com/dex4er/fakechroot>
 | **F** | Fakechroot musl  | <https://github.com/jorge-lip/libfakechroot-musl-udocker>  | <https://github.com/dex4er/fakechroot>
 | **F** | Patchelf         | <https://github.com/jorge-lip/patchelf-udocker>            | <https://github.com/NixOS/patchelf>
-| **R** | runc             |                                                            | <https://github.com/opencontainers/runc>
-| **R** | crun             |                                                            | <https://github.com/containers/crun>
+| **R** | runc             | THE ORIGINAL REPOSITORY IS USED                            | <https://github.com/opencontainers/runc>
+| **R** | crun             | THE ORIGINAL REPOSITORY IS USED                            | <https://github.com/containers/crun>
 
 ### 6.2. Software Licenses
+
+Redistribution, commercial use and code changes must regard all licenses
+shipped with udocker. These include the [udocker license](https://github.com/indigo-dc/udocker/blob/master/LICENSE) and the individual
+licences of the external tools and libraries packaged for use with udocker.
 
 | Mode  | Engine           | License 
 |-------|:-----------------|:----------------------------------------------------------------------------
@@ -518,10 +538,13 @@ udocker does not provide an uninstall command. udocker can be uninstalled
 by simply removing the created files and directories. The recommended 
 approach is as follows:
 
-1. identify containers using the **R** execution mode with `udocker ps -m | cut -f1,4 -d' ' | grep R`
-2. use `udocker setup --fixperm <container-id>` on each of the containers that use the **R** mode
-3. remove the *udocker directory tree* usually under `$HOME/.udocker` or `$UDOCKER_DIR` if defined
-4. remove the udocker Python code
+1. Fix permissions for all created containers
+   `for id in $(udocker ps | cut -f1 -d" " | grep -v CONTAINER); do udocker setup --fixperm $id; done`
+2. Remove all created containers
+   `for id in $(udocker ps | cut -f1 -d" " | grep -v CONTAINER); do udocker rm -f $id; done`
+3. Remove the *udocker directory tree* usually under `$HOME/.udocker`
+   `cd $HOME ; rm -Rf .udocker`
+4. Remove the udocker Python code
 
 The *udocker directory tree* contains the external executables, libraries, 
 documentation, container images and container file system trees. By removing
@@ -529,14 +552,11 @@ it all created containers will be also removed. Changing the file permissions
 might be required prior to deletion especially for the container file system 
 trees in the `containers` subdirectory.
 
-When using containers in the **R** modes files can be created with ownership 
-of a subordinate uid and gid. The command `udocker setup --fixperm` addresses
-these issues.
-
 ## 9. Quality assurance
 
 The unit tests used in the software quality assurance pipelines are available at <https://github.com/indigo-dc/udocker/tree/master/tests/unit>.
-The tests can be executed after creating a virtualenv and installing the `requirements-dev.txt`:
+The tests can be executed after creating a virtualenv and installing the development 
+requirements in [requirements-dev.txt](https://github.com/indigo-dc/udocker/blob/master/requirements-dev.txt)
 
 ```bash
 virtualenv -p python3 ud3
@@ -546,25 +566,30 @@ cd udocker
 pip install -r requirements-dev.txt
 ```
 
-Now one can execute the unit tests coverage:
+The unit tests coverage can be executed using:
 
 ```bash
 nosetests -v --with-coverage --cover-package=udocker tests/unit
 ```
 
-Other tests configured in the `tox.ini`, can be executed as well, such as linting (style code checking) and static security test:
+Other tests configured in `tox.ini`, can be executed as well, such as linting 
+(code style checking) and static security tests:
 
 ```bash
 pylint --rcfile=pylintrc --disable=R,C udocker
 bandit -r udocker -f html -o bandit.html
 ```
 
-Additional high level tests used for release validation are available in <https://github.com/indigo-dc/udocker/tree/master/utils>.
-After installing udocker, one can execute the `bash` scripts:
+Additional high level tests used for quality assurance are available in 
+<https://github.com/indigo-dc/udocker/tree/master/utils>.
+If the `.udocker` directory already exists these tests will not execute as they require 
+a clean environment. After cloning the udocker repository with `git` these `bash` scripts 
+can be executed using:
 
 ```bash
+cd utils
 ./udocker_test.sh
 ./udocker_test-run.sh
 ```
 
-If the `.udocker` directory exists the are not run, the tests should be run in a clean environment.
+

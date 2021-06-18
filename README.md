@@ -403,6 +403,14 @@ Enabling rootless Linux Containers in multi-user environments: The udocker
 tool, Computer Physics Communications, Available online 6 June 2018,
 ISSN 0010-4655, <https://doi.org/10.1016/j.cpc.2018.05.021>
 
+## Licensing
+Redistribution, commercial use and code changes must regard all licenses 
+shipped with udocker. These include the [udocker license](LICENSE) and the 
+individual licences of the external tools and libraries packaged for use 
+with udocker. For further information see the 
+[software licenses section](https://indigo-dc.github.io/udocker/installation_manual.html#62-software-licenses)
+of the installation manual.
+
 ## Acknowledgements
 
 * Docker <https://www.docker.com/>
