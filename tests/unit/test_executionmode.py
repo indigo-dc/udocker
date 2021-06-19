@@ -4,16 +4,13 @@ udocker unit tests: ExecutionMode
 """
 
 from unittest import TestCase, main
+from unittest.mock import Mock, patch
 from udocker.engine.execmode import ExecutionMode
 from udocker.engine.proot import PRootEngine
 from udocker.engine.runc import RuncEngine
 from udocker.engine.fakechroot import FakechrootEngine
 from udocker.engine.singularity import SingularityEngine
 from udocker.config import Config
-try:
-    from unittest.mock import Mock, MagicMock, patch, mock_open
-except ImportError:
-    from mock import Mock, MagicMock, patch, mock_open
 
 
 class ExecutionModeTestCase(TestCase):
@@ -23,8 +20,8 @@ class ExecutionModeTestCase(TestCase):
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
-        Config().conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
-                                                    ["taskset", "-c", "%s", ])
+        Config().conf['cpu_affinity_exec_tools'] = \
+            (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
         Config().conf['valid_host_env'] = "HOME"
         Config().conf['username'] = "user"
         Config().conf['userhome'] = "/"
@@ -78,11 +75,7 @@ class ExecutionModeTestCase(TestCase):
 
     @patch('udocker.engine.execmode.os.path')
     @patch('udocker.engine.execmode.FileUtil.putdata')
-    @patch('udocker.engine.execmode.ElfPatcher.patch_binaries')
-    @patch('udocker.engine.execmode.ElfPatcher.patch_ld')
     @patch('udocker.engine.execmode.FileBind.setup')
-    @patch('udocker.engine.execmode.ElfPatcher.restore_binaries')
-    @patch('udocker.engine.execmode.ElfPatcher.restore_ld')
     @patch('udocker.engine.execmode.ElfPatcher.get_ld_libdirs')
     @patch('udocker.engine.execmode.FileUtil.links_conv')
     @patch('udocker.engine.execmode.FileBind.restore')
@@ -93,13 +86,15 @@ class ExecutionModeTestCase(TestCase):
     @patch.object(ExecutionMode, 'get_mode')
     def test_03_set_mode(self, mock_getmode, mock_elfp, mock_fbind,
                          mock_futil, mock_getdata, mock_restore,
-                         mock_links, mock_getld, mock_restld, mock_resbin,
-                         mock_fbset, mock_ptcld, mock_ptcbin, mock_putdata,
+                         mock_links, mock_getld,
+                         mock_fbset, mock_putdata,
                          mock_path):
         """Test03 ExecutionMode().set_mode."""
         mock_getmode.side_effect = \
             ["", "P1", "R1", "R1", "F4", "P1", "F3", "P2", "P2", "F4", "F4"]
         mock_getdata.return_value = "F3"
+        mock_restore.return_value = None
+        mock_fbset.return_value = None
         uexm = ExecutionMode(self.local, self.container_id)
         status = uexm.set_mode("")
         self.assertTrue(mock_getmode.called)
@@ -108,41 +103,61 @@ class ExecutionModeTestCase(TestCase):
         self.assertTrue(mock_futil.called)
         self.assertFalse(status)
 
+        mock_restore.return_value = None
+        mock_fbset.return_value = None
         uexm = ExecutionMode(self.local, self.container_id)
         status = uexm.set_mode("P1")
         self.assertTrue(status)
 
+        mock_restore.return_value = None
+        mock_fbset.return_value = None
+        mock_links.return_value = True
+        mock_getld.return_value = True
         uexm = ExecutionMode(self.local, self.container_id)
         status = uexm.set_mode("F1", True)
         self.assertTrue(status)
 
+        mock_restore.return_value = None
+        mock_fbset.return_value = None
         mock_putdata.return_value = True
         mock_path.return_value = "/tmp"
         uexm = ExecutionMode(self.local, self.container_id)
         status = uexm.set_mode("P1")
         self.assertTrue(status)
 
+        mock_restore.return_value = None
+        mock_fbset.return_value = None
         uexm = ExecutionMode(self.local, self.container_id)
         uexm.set_mode("F1")
         self.assertTrue(mock_futil.return_value.links_conv.called)
 
+        mock_restore.return_value = None
+        mock_fbset.return_value = None
         uexm = ExecutionMode(self.local, self.container_id)
         uexm.set_mode("P2")
         self.assertTrue(mock_elfp.return_value.restore_ld.called)
 
+        mock_restore.return_value = None
+        mock_fbset.return_value = None
         uexm = ExecutionMode(self.local, self.container_id)
         uexm.set_mode("F2")
         self.assertTrue(mock_elfp.return_value.restore_binaries.called)
 
+        mock_restore.return_value = None
+        mock_fbset.return_value = None
         uexm = ExecutionMode(self.local, self.container_id)
         uexm.set_mode("F2")
         self.assertTrue(mock_elfp.return_value.patch_ld.called)
 
+        mock_restore.return_value = None
+        mock_fbset.return_value = None
         uexm = ExecutionMode(self.local, self.container_id)
         uexm.set_mode("F3")
         self.assertTrue(mock_elfp.return_value.patch_ld.called and
                         mock_elfp.return_value.patch_binaries.called)
 
+        mock_restore.return_value = None
+        mock_fbset.return_value = None
         uexm = ExecutionMode(self.local, self.container_id)
         status = uexm.set_mode("F3")
         self.assertTrue(status)
