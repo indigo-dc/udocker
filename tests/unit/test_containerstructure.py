@@ -4,14 +4,11 @@
 """
 udocker unit tests: ContainerStructure
 """
-import sys
+
 from unittest import TestCase, main
+from unittest.mock import patch, Mock
 from udocker.container.structure import ContainerStructure
 from udocker.config import Config
-try:
-    from unittest.mock import patch, Mock
-except ImportError:
-    from mock import patch, Mock
 
 
 class ContainerStructureTestCase(TestCase):
@@ -21,8 +18,9 @@ class ContainerStructureTestCase(TestCase):
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
-        Config().conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
-                                                    ["taskset", "-c", "%s", ])
+        Config().conf['cpu_affinity_exec_tools'] = \
+            (["numactl", "-C", "%s", "--", ],
+             ["taskset", "-c", "%s", ])
         Config().conf['valid_host_env'] = "HOME"
         Config().conf['username'] = "user"
         Config().conf['userhome'] = "/"
