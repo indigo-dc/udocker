@@ -3,19 +3,11 @@
 udocker unit tests: ExecutionEngineCommon
 """
 
-import sys
-sys.path.append('.')
-sys.path.append('../../')
-
+from unittest import TestCase, main
+from unittest.mock import Mock, patch
 from udocker.engine.base import ExecutionEngineCommon
 from udocker.utils.uenv import Uenv
 from udocker.config import Config
-from udocker.container.localrepo import LocalRepository
-from unittest import TestCase, main
-try:
-    from unittest.mock import Mock, patch, MagicMock, mock_open
-except ImportError:
-    from mock import Mock, patch, MagicMock, mock_open
 
 
 class ExecutionEngineCommonTestCase(TestCase):
@@ -27,8 +19,8 @@ class ExecutionEngineCommonTestCase(TestCase):
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
-        Config().conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
-                                                    ["taskset", "-c", "%s", ])
+        Config().conf['cpu_affinity_exec_tools'] = \
+            (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
         Config().conf['location'] = ""
         Config().conf['uid'] = 1000
         Config().conf['sysdirs_list'] = ["/", ]

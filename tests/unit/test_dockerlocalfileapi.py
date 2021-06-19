@@ -2,21 +2,11 @@
 """
 udocker unit tests: DockerLocalFileAPI
 """
-import sys
-sys.path.append('.')
-sys.path.append('../../')
 
 from unittest import TestCase, main
+from unittest.mock import patch, Mock
 from udocker.docker import DockerLocalFileAPI
 from udocker.config import Config
-try:
-    from unittest.mock import patch, Mock
-except ImportError:
-    from mock import patch, Mock
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 
 class DockerLocalFileAPITestCase(TestCase):
@@ -67,7 +57,7 @@ class DockerLocalFileAPITestCase(TestCase):
 
         jfname = "x" * 70 + ".json"
         res = {"repolayers": {},
-               "repoconfigs": {jfname: {"json": {"k": "v"}, 
+               "repoconfigs": {jfname: {"json": {"k": "v"},
                                         "json_f": "/tmp/"+jfname}}}
         mock_isdir.return_value = False
         mock_ldir.return_value = [jfname, ]
@@ -266,7 +256,8 @@ class DockerLocalFileAPITestCase(TestCase):
         tmp_imgdir = "/tmp/img1"
         manifest = dict()
         self.local.cd_imagerepo.return_value = None
-        self.local.get_image_attributes.return_value = (manifest, ['/cont/lname1.layer'])
+        self.local.get_image_attributes.return_value = \
+            (manifest, ['/cont/lname1.layer'])
         self.local.save_json.side_effect = [False, True]
         dlocapi = DockerLocalFileAPI(self.local)
         status = dlocapi._save_image(imgrepo, tag, struct, tmp_imgdir)
@@ -283,14 +274,16 @@ class DockerLocalFileAPITestCase(TestCase):
             "fsLayers": ({"blobSum": "foolayername"},),
             "history": ({"v1Compatibility": '["foojsonstring"]'},)
         }
-        mock_sha256.return_value = "8a29a15cefaeccf6545f7ecf11298f9672d2f0cdaf9e357a95133ac3ad3e1f07"
+        mock_sha256.return_value = \
+            "8a29a15cefaeccf6545f7ecf11298f9672d2f0cdaf9e357a95133ac3ad3e1f07"
         mock_rename.return_value = None
         mock_osbase.return_value = "lname1.layer"
         mock_exists.return_value = False
         mock_mkdir.return_value = None
         mock_copyto.return_value = False
         self.local.cd_imagerepo.return_value = None
-        self.local.get_image_attributes.return_value = (manifest, ['/cont/lname1.layer'])
+        self.local.get_image_attributes.return_value = \
+            (manifest, ['/cont/lname1.layer'])
         self.local.save_json.side_effect = [True, True]
         dlocapi = DockerLocalFileAPI(self.local)
         status = dlocapi._save_image(imgrepo, tag, struc, tmp_imgdir)
@@ -308,7 +301,8 @@ class DockerLocalFileAPITestCase(TestCase):
                  "repositories": {"repo1": {"TAG": "tag1", }, },
                  "manifest": [manifest]}
         tmp_imgdir = "/tmp/img1"
-        mock_sha256.return_value = "8a29a15cefaeccf6545f7ecf11298f9672d2f0cdaf9e357a95133ac3ad3e1f07"
+        mock_sha256.return_value = \
+            "8a29a15cefaeccf6545f7ecf11298f9672d2f0cdaf9e357a95133ac3ad3e1f07"
         mock_rename.return_value = None
         mock_osbase.return_value = "lname1.layer"
         mock_exists.return_value = False
@@ -318,7 +312,8 @@ class DockerLocalFileAPITestCase(TestCase):
         self.local.save_json.return_value = True
         mock_put.return_value = True
         self.local.cd_imagerepo.return_value = None
-        self.local.get_image_attributes.return_value = (manifest, ['/cont/lname1.layer'])
+        self.local.get_image_attributes.return_value = \
+            (manifest, ['/cont/lname1.layer'])
         self.local.save_json.side_effect = [True, True]
         dlocapi = DockerLocalFileAPI(self.local)
         status = dlocapi._save_image(imgrepo, tag, struc, tmp_imgdir)
