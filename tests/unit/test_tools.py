@@ -283,11 +283,14 @@ class UdockerToolsTestCase(TestCase):
         status = utools._install_logic(False)
         self.assertFalse(status)
 
+    @patch('udocker.cli.Msg')
     @patch.object(UdockerTools, 'get_installinfo')
     @patch.object(UdockerTools, '_install_logic')
     @patch.object(UdockerTools, 'is_available')
-    def test_14_install(self, mock_isavail, mock_instlog, mock_getinfo):
+    def test_14_install(self, mock_isavail, mock_instlog,
+                        mock_getinfo, mock_msg):
         """Test14 UdockerTools().install()."""
+        mock_msg.level = 0
         Config.conf['autoinstall'] = True
         Config.conf['tarball'] = "udocker-1.2.7.tar.gz"
         Config.conf['tarball_release'] = "1.2.7"
