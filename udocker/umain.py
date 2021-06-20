@@ -29,7 +29,8 @@ class UMain(object):
         """Prepare configuration, parse and execute the command line"""
         self.cmdp = CmdParser()
         self.cmdp.parse(self.argv)
-        if not (os.geteuid() or self.cmdp.get("--allow-root", "GEN_OPT")):
+        allow_root = self.cmdp.get("--allow-root", "GEN_OPT")
+        if not (os.geteuid() or allow_root):
             Msg().err("Error: do not run as root !")
             sys.exit(self.STATUS_ERROR)
 
