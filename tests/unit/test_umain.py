@@ -3,13 +3,10 @@
 udocker unit tests: UMain
 """
 
-from udocker.config import Config
 from unittest import TestCase, main
+from unittest.mock import patch
 from udocker.umain import UMain
-try:
-    from unittest.mock import patch, Mock
-except ImportError:
-    from mock import patch, Mock
+from udocker.config import Config
 
 
 class UMainTestCase(TestCase):
@@ -36,8 +33,8 @@ class UMainTestCase(TestCase):
         argv = ["udocker", "-h"]
         mock_getuid.return_value = 0
         with patch('sys.exit') as mock_exit:
-            um = UMain(argv)
-            status = um._prepare_exec()
+            umain = UMain(argv)
+            umain._prepare_exec()
             self.assertTrue(mock_exit.called)
 
         argv = ["udocker", "-h", "--debug", "--insecure"]
@@ -45,8 +42,8 @@ class UMainTestCase(TestCase):
         mock_local.return_value.is_repo.return_value = True
         mock_local.return_value.create_repo.return_value = None
         mock_ucli.return_value = None
-        um = UMain(argv)
-        um._prepare_exec()
+        umain = UMain(argv)
+        umain._prepare_exec()
         self.assertTrue(mock_getuid.called)
         self.assertTrue(mock_local.return_value.is_repo.called)
         self.assertTrue(mock_ucli.called)
