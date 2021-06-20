@@ -2,23 +2,18 @@
 """
 udocker unit tests: FileUtil
 """
+
 import sys
 import os
 from unittest import TestCase, main
+from unittest.mock import patch, mock_open
 from udocker.utils.fileutil import FileUtil
 from udocker.config import Config
-try:
-    from unittest.mock import patch, mock_open
-except ImportError:
-    from mock import patch, mock_open
 
 STDOUT = sys.stdout
 STDERR = sys.stderr
 UDOCKER_TOPDIR = "test_topdir"
-if sys.version_info[0] >= 3:
-    BUILTINS = "builtins"
-else:
-    BUILTINS = "__builtin__"
+BUILTINS = "builtins"
 
 
 def find_str(self, find_exp, where):
@@ -69,7 +64,6 @@ class FileUtilTestCase(TestCase):
         self.assertEqual(futil.filename, '-')
         self.assertEqual(futil.basename, '-')
 
-    # TODO: needs proper implementation and verification
     # @patch('udocker.utils.fileutil.os.path.isdir')
     # @patch('udocker.utils.fileutil.os.path.realpath')
     # def test_02__register_prefix(self, mock_rpath,
@@ -300,7 +294,6 @@ class FileUtilTestCase(TestCase):
         status = futil.rchown()
         self.assertTrue(status)
 
-    @patch('udocker.utils.fileutil.Msg.err')
     @patch('udocker.utils.fileutil.stat')
     @patch('udocker.utils.fileutil.os.chmod')
     @patch('udocker.utils.fileutil.os.lstat')
@@ -309,7 +302,7 @@ class FileUtilTestCase(TestCase):
     @patch.object(FileUtil, '_register_prefix')
     def test_13__chmod(self, mock_regpre, mock_base,
                        mock_absp, mock_lstat, mock_chmod,
-                       mock_stat, mock_msgerr):
+                       mock_stat):
         """Test13 FileUtil._chmod()."""
         mock_regpre.return_value = None
         mock_base.return_value = 'filename.txt'
@@ -343,7 +336,7 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.path.basename')
     @patch.object(FileUtil, '_register_prefix')
     def test14_chmod(self, mock_regpre, mock_base,
-                      mock_absp, mock_walk, mock_fuchmod):
+                     mock_absp, mock_walk, mock_fuchmod):
         """Test14 FileUtil.chmod()."""
         mock_regpre.return_value = None
         mock_base.return_value = 'filename.txt'
@@ -449,6 +442,7 @@ class FileUtilTestCase(TestCase):
                        mock_isfile, mock_islink, mock_remove, mock_msg,
                        mock_exists, mock_realpath):
         """Test17 FileUtil.remove() with plain files."""
+        mock_msg.level = 0
         mock_regpre.return_value = None
         mock_base.return_value = '/filename4.txt'
         mock_absp.return_value = '/filename4.txt'
@@ -458,6 +452,8 @@ class FileUtilTestCase(TestCase):
         mock_isfile.return_value = True
         mock_exists.return_value = True
         mock_safe.return_value = True
+        mock_islink.return_value = False
+        mock_remove.return_value = None
         Config().conf['uid'] = 1000
         Config().conf['tmpdir'] = "/tmp"
         mock_realpath.return_value = "/tmp"
@@ -528,13 +524,16 @@ class FileUtilTestCase(TestCase):
         status = FileUtil("tarball.tar").verify_tar()
         self.assertFalse(status)
 
+    @patch('udocker.utils.fileutil.Msg')
     @patch('udocker.utils.fileutil.Uprocess.call')
     @patch('udocker.utils.fileutil.os.path.abspath')
     @patch('udocker.utils.fileutil.os.path.basename')
     @patch.object(FileUtil, '_register_prefix')
     def test_19_tar(self, mock_regpre, mock_base, mock_absp,
-                    mock_call):
+                    mock_call, mock_msg):
         """Test19 FileUtil.tar()."""
+        mock_msg.level = 0
+        mock_msg.VER = 4
         mock_regpre.return_value = None
         mock_base.return_value = 'filename.txt'
         mock_absp.return_value = '/tmp/filename.txt'
@@ -870,6 +869,7 @@ class FileUtilTestCase(TestCase):
                                    mock_remove, mock_symlink):
         """Test38 FileUtil._link_change_apply()."""
         mock_regpre.return_value = None
+        mock_chmod.return_value = None
         mock_base.return_value = 'filename.txt'
         mock_absp.return_value = '/tmp/filename.txt'
         mock_realpath.return_value = "/HOST/DIR"
@@ -1000,6 +1000,7 @@ class FileUtilTestCase(TestCase):
                            mock_lstat, mock_is_safe_prefix, mock_msg,
                            mock_link_set, mock_link_restore):
         """Test41 FileUtil.links_conv()."""
+        mock_msg.level = 0
         mock_regpre.return_value = None
         mock_base.return_value = 'filename.txt'
         mock_absp.return_value = '/tmp/filename.txt'
@@ -1012,6 +1013,7 @@ class FileUtilTestCase(TestCase):
         mock_realpath.return_value = "/ROOT"
         mock_is_safe_prefix.return_value = True
         mock_walk.return_value = []
+        mock_islink.return_value = True
         futil = FileUtil("/ROOT")
         status = futil.links_conv(False, True, "")
         self.assertEqual(status, [])
@@ -1079,6 +1081,7 @@ class FileUtilTestCase(TestCase):
         mock_absp.return_value = "/con/filename.txt"
         mock_dirname.return_value = "/con/fil*"
         mock_isdir.return_value = False
+        mock_listdir.return_value = list()
         futil = FileUtil("/con/filename.txt")
         status = futil.match()
         self.assertEqual(status, [])
