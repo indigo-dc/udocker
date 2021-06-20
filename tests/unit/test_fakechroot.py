@@ -3,17 +3,10 @@
 udocker unit tests: FakechrootEngine
 """
 
-import sys
-sys.path.append('.')
-sys.path.append('../../')
-
 from unittest import TestCase, main
+from unittest.mock import patch, Mock
 from udocker.config import Config
 from udocker.engine.fakechroot import FakechrootEngine
-try:
-    from unittest.mock import patch, Mock
-except ImportError:
-    from mock import patch, Mock
 
 
 class FakechrootEngineTestCase(TestCase):
@@ -27,8 +20,8 @@ class FakechrootEngineTestCase(TestCase):
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
-        Config().conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
-                                                    ["taskset", "-c", "%s", ])
+        Config().conf['cpu_affinity_exec_tools'] = \
+            (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
         Config().conf['valid_host_env'] = "HOME"
         Config().conf['username'] = "user"
         Config().conf['userhome'] = "/"
@@ -59,13 +52,11 @@ class FakechrootEngineTestCase(TestCase):
 
     @patch('udocker.engine.fakechroot.sys.exit')
     @patch('udocker.engine.fakechroot.OSInfo')
-    @patch('udocker.engine.fakechroot.Msg.err')
     @patch('udocker.engine.fakechroot.os.path.realpath')
     @patch('udocker.engine.fakechroot.os.path.exists')
     @patch('udocker.engine.fakechroot.FileUtil')
     def test_02_select_fakechroot_so(self, mock_futil, mock_exists,
-                                     mock_rpath, mock_msgerr, mock_osinfo,
-                                     mock_sysex):
+                                     mock_rpath, mock_osinfo, mock_sysex):
         """Test02 FakechrootEngine.select_fakechroot_so."""
         Config().conf['fakechroot_so'] = "/s/fake1"
         mock_exists.return_value = True
@@ -83,7 +74,8 @@ class FakechrootEngineTestCase(TestCase):
         Config().conf['fakechroot_so'] = ""
         mock_exists.return_value = False
         mock_osinfo.return_value.arch.return_value = "amd64"
-        mock_osinfo.return_value.osdistribution.return_value = ("linux", "4.8.1")
+        mock_osinfo.return_value.osdistribution.return_value = \
+            ("linux", "4.8.1")
         mock_futil.return_value.find_file_in_dir.return_value = ""
         mock_sysex.return_value = 1
         ufake = FakechrootEngine(self.local, self.xmode)
@@ -94,8 +86,10 @@ class FakechrootEngineTestCase(TestCase):
         Config().conf['fakechroot_so'] = ""
         mock_exists.return_value = False
         mock_osinfo.return_value.arch.return_value = "amd64"
-        mock_osinfo.return_value.osdistribution.return_value = ("linux", "4.8.1")
-        mock_futil.return_value.find_file_in_dir.return_value = "/libfakechroot.so"
+        mock_osinfo.return_value.osdistribution.return_value = \
+            ("linux", "4.8.1")
+        mock_futil.return_value.find_file_in_dir.return_value = \
+            "/libfakechroot.so"
         ufake = FakechrootEngine(self.local, self.xmode)
         out = ufake.select_fakechroot_so()
         self.assertTrue(mock_futil.called)
@@ -104,8 +98,10 @@ class FakechrootEngineTestCase(TestCase):
         Config().conf['fakechroot_so'] = ""
         mock_exists.return_value = False
         mock_osinfo.return_value.arch.return_value = "i386"
-        mock_osinfo.return_value.osdistribution.return_value = ("linux", "4.8.1")
-        mock_futil.return_value.find_file_in_dir.return_value = "/libfakechroot.so"
+        mock_osinfo.return_value.osdistribution.return_value = \
+            ("linux", "4.8.1")
+        mock_futil.return_value.find_file_in_dir.return_value = \
+            "/libfakechroot.so"
         ufake = FakechrootEngine(self.local, self.xmode)
         out = ufake.select_fakechroot_so()
         self.assertTrue(mock_futil.called)
@@ -114,8 +110,10 @@ class FakechrootEngineTestCase(TestCase):
         Config().conf['fakechroot_so'] = ""
         mock_exists.return_value = False
         mock_osinfo.return_value.arch.return_value = "arm64"
-        mock_osinfo.return_value.osdistribution.return_value = ("linux", "4.8.1")
-        mock_futil.return_value.find_file_in_dir.return_value = "/libfakechroot.so"
+        mock_osinfo.return_value.osdistribution.return_value = \
+            ("linux", "4.8.1")
+        mock_futil.return_value.find_file_in_dir.return_value = \
+            "/libfakechroot.so"
         ufake = FakechrootEngine(self.local, self.xmode)
         out = ufake.select_fakechroot_so()
         self.assertTrue(mock_futil.called)
