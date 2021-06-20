@@ -4,26 +4,14 @@ udocker unit tests: Msg
 """
 import sys
 from unittest import TestCase, main
-try:
-    from unittest.mock import Mock, patch
-except ImportError:
-    from mock import Mock, patch
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
+from unittest.mock import patch
+from io import StringIO
 from udocker.msg import Msg
 
 STDOUT = sys.stdout
 STDERR = sys.stderr
 UDOCKER_TOPDIR = "test_topdir"
-
-if sys.version_info[0] >= 3:
-    BUILTINS = "builtins"
-else:
-    BUILTINS = "__builtin__"
+BUILTINS = "builtins"
 
 
 def is_writable_file(obj):

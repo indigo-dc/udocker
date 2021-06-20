@@ -3,14 +3,10 @@
 udocker unit tests: SingularityEngine
 """
 
-import sys
 from unittest import TestCase, main
+from unittest.mock import Mock, patch
 from udocker.config import Config
 from udocker.engine.singularity import SingularityEngine
-try:
-    from unittest.mock import Mock, patch, MagicMock, mock_open
-except ImportError:
-    from mock import Mock, patch, MagicMock, mock_open
 
 
 class SingularityEngineTestCase(TestCase):
