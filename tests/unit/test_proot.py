@@ -3,16 +3,10 @@
 udocker unit tests: PRootEngine
 """
 
-import sys
 from unittest import TestCase, main
+from unittest.mock import Mock, patch
 from udocker.config import Config
 from udocker.engine.proot import PRootEngine
-try:
-    from unittest.mock import Mock, patch, MagicMock, mock_open
-except ImportError:
-    from mock import Mock, patch, MagicMock, mock_open
-
-sys.path.append('.')
 
 
 class PRootEngineTestCase(TestCase):
@@ -22,8 +16,8 @@ class PRootEngineTestCase(TestCase):
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
-        Config().conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
-                                                    ["taskset", "-c", "%s", ])
+        Config().conf['cpu_affinity_exec_tools'] = \
+            (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
         Config().conf['valid_host_env'] = "HOME"
         Config().conf['username'] = "user"
         Config().conf['userhome'] = "/"

@@ -4,23 +4,13 @@
 """
 udocker unit tests: CurlHeader
 """
-import sys
+
 from unittest import TestCase, main
+from unittest.mock import patch
+from io import StringIO
 from udocker.utils.curl import CurlHeader
-try:
-    from unittest.mock import patch, Mock
-except ImportError:
-    from mock import patch, Mock
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-if sys.version_info[0] >= 3:
-    BUILTINS = "builtins"
-else:
-    BUILTINS = "__builtin__"
+BUILTINS = "builtins"
 
 
 class CurlHeaderTestCase(TestCase):

@@ -4,19 +4,13 @@
 """
 udocker unit tests: GetURL
 """
-import sys
-sys.path.append('.')
-sys.path.append('../../')
 
 from unittest import TestCase, main
+from unittest.mock import patch
 from udocker.utils.curl import GetURL
 from udocker.utils.curl import GetURLpyCurl
 from udocker.utils.curl import GetURLexeCurl
 from udocker.config import Config
-try:
-    from unittest.mock import patch, Mock
-except ImportError:
-    from mock import patch, Mock
 
 
 class GetURLTestCase(TestCase):

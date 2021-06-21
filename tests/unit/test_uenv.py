@@ -3,15 +3,8 @@
 udocker unit tests: Uenv
 """
 
-import sys
 from unittest import TestCase, main
 from udocker.utils.uenv import Uenv
-try:
-    from unittest.mock import Mock, MagicMock, patch, mock_open
-except ImportError:
-    from mock import Mock, MagicMock, patch, mock_open
-
-sys.path.append('.')
 
 
 class UenvTestCase(TestCase):
@@ -168,10 +161,10 @@ class UenvTestCase(TestCase):
     def test_14_keys(self):
         """Test14 Uenv().keys"""
         envt = 'HOME=/home/user'
-        result = ['HOME', 'LANG']
+        result = {'HOME': None, 'LANG': None}
         uenv = Uenv(envt)
         uenv.setenv('LANG', 'en_US.UTF-8')
-        # self.assertEqual(uenv.keys(), result)
+        self.assertEqual(uenv.keys(), result.keys())
 
 
 if __name__ == '__main__':

@@ -67,13 +67,15 @@ class HostInfo(object):
             os_release = match.group(1)
         else:
             return True
+
         for (idx, os_version) in enumerate(os_release.split('.')):
             if idx >= len(version):
                 break
             if int(os_version) > int(version[idx]):
                 return True
-            elif int(os_version) < int(version[idx]):
+            if int(os_version) < int(version[idx]):
                 return False
+
         return True
 
     def cmd_has_option(self, executable, search_option, arg=None):

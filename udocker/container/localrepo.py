@@ -198,17 +198,18 @@ class LocalRepository(object):
         container_dir = self.cd_container(container_id)
         if not container_dir:
             return False
-        else:
-            if container_dir in self.get_containers_list(True):
-                for name in self.get_container_name(container_id):
-                    self.del_container_name(name)  # delete aliases links
-                if force:
-                    FileUtil(container_dir).rchmod(stat.S_IWUSR | stat.S_IRUSR,
-                                                   stat.S_IWUSR | stat.S_IRUSR |
-                                                   stat.S_IXUSR)
-                if FileUtil(container_dir).remove(recursive=True):
-                    self.cur_containerdir = ""
-                    return True
+
+        if container_dir in self.get_containers_list(True):
+            for name in self.get_container_name(container_id):
+                self.del_container_name(name)  # delete aliases links
+            if force:
+                FileUtil(container_dir).rchmod(stat.S_IWUSR | stat.S_IRUSR,
+                                                stat.S_IWUSR | stat.S_IRUSR |
+                                                stat.S_IXUSR)
+            if FileUtil(container_dir).remove(recursive=True):
+                self.cur_containerdir = ""
+                return True
+
         return False
 
     def cd_container(self, container_id):
@@ -266,8 +267,9 @@ class LocalRepository(object):
             pathname = self.containersdir + "/" + container_name
             if os.path.islink(pathname):
                 return os.path.basename(os.readlink(pathname))
-            elif os.path.isdir(pathname):
+            if os.path.isdir(pathname):
                 return container_name
+
         return ""
 
     def get_container_name(self, container_id):
@@ -441,9 +443,9 @@ class LocalRepository(object):
                 os.makedirs(directory)
                 self.cur_repodir = directory
                 return True
-            else:
-                self.cur_repodir = directory
-                return False
+
+            self.cur_repodir = directory
+            return False
         except (IOError, OSError):
             return None
 
@@ -551,12 +553,14 @@ class LocalRepository(object):
         directory = self.cur_tagdir
         if os.path.exists(directory + "/v1"):   # if dockerhub API v1
             return self._get_image_attributes_v1(directory)
-        elif os.path.exists(directory + "/v2"):  # if dockerhub API v1
+
+        if os.path.exists(directory + "/v2"):  # if dockerhub API v1
             manifest = self.load_json("manifest")
             if manifest and "fsLayers" in manifest:
                 return self._get_image_attributes_v2_s1(directory, manifest)
-            elif manifest and "layers" in manifest:
+            if manifest and "layers" in manifest:
                 return self._get_image_attributes_v2_s2(directory, manifest)
+
         return (None, None)
 
     def save_json(self, filename, data):
@@ -620,9 +624,11 @@ class LocalRepository(object):
                 f_path = imagetagdir + '/' + fname
                 if fname == "ancestry":
                     structure["ancestry"] = self.load_json(f_path)
-                elif fname == "manifest":
+
+                if fname == "manifest":
                     structure["manifest"] = self.load_json(f_path)
-                elif len(fname) >= 64:
+
+                if len(fname) >= 64:
                     layer_id = fname.replace(".json", "").replace(".layer", "")
                     if layer_id not in structure["repolayers"]:
                         structure["repolayers"][layer_id] = dict()
@@ -640,9 +646,9 @@ class LocalRepository(object):
                                   l=Msg.WAR)
                 elif fname in ("TAG", "v1", "v2", "PROTECT", "container.json"):
                     pass
-                else:
-                    Msg().out("Warning: unkwnon file in image:", f_path,
-                              l=Msg.WAR)
+
+                Msg().out("Warning: unkwnon file in image:", f_path, l=Msg.WAR)
+
         return structure
 
     def _find_top_layer_id(self, structure, my_layer_id=""):
@@ -651,25 +657,28 @@ class LocalRepository(object):
         """
         if "repolayers" not in structure:
             return ""
-        else:
-            if not my_layer_id:
-                if sys.version_info[0] >= 3:
-                    my_layer_id = list(structure["repolayers"].keys())[0]
-                else:
-                    my_layer_id = structure["repolayers"].keys()[0]
-            found = ""
-            for layer_id in structure["repolayers"]:
-                if "json" not in structure["repolayers"][layer_id]:   # v2
-                    continue
-                if "parent" not in structure["repolayers"][layer_id]["json"]:
-                    continue
-                if (my_layer_id ==
-                        structure["repolayers"][layer_id]["json"]["parent"]):
-                    found = self._find_top_layer_id(structure, layer_id)
-                    break
-            if not found:
-                return my_layer_id
-            return found
+
+        if not my_layer_id:
+            if sys.version_info[0] >= 3:
+                my_layer_id = list(structure["repolayers"].keys())[0]
+            else:
+                my_layer_id = structure["repolayers"].keys()[0]
+
+        found = ""
+        for layer_id in structure["repolayers"]:
+            if "json" not in structure["repolayers"][layer_id]:   # v2
+                continue
+            if "parent" not in structure["repolayers"][layer_id]["json"]:
+                continue
+            if (my_layer_id ==
+                    structure["repolayers"][layer_id]["json"]["parent"]):
+                found = self._find_top_layer_id(structure, layer_id)
+                break
+
+        if not found:
+            return my_layer_id
+
+        return found
 
     def _sorted_layers(self, structure, top_layer_id):
         """Return the image layers sorted"""
@@ -693,8 +702,8 @@ class LocalRepository(object):
         """Split layer_id (sha256:xxxxx)"""
         if ':' in layer_id:
             return layer_id.split(":", 1)
-        else:
-            return ("", layer_id)
+
+        return ("", layer_id)
 
     def _verify_layer_file(self, structure, layer_id):
         """Verify layer file in repository"""

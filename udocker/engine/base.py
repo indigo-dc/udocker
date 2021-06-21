@@ -342,15 +342,17 @@ class ExecutionEngineCommon(object):
         user_id = dict()
         if not is_genstr(user):
             return user_id
+
         if re.match("^[a-zA-Z_][a-zA-Z0-9_-]*$", user):
             user_id["user"] = user
             return user_id
-        else:
-            match = re.match("^(\\d+)(:(\\d+)){0,1}$", user)
-            if match:
-                user_id["uid"] = match.group(1)
-                if match.group(3):
-                    user_id["gid"] = match.group(3)
+
+        match = re.match("^(\\d+)(:(\\d+)){0,1}$", user)
+        if match:
+            user_id["uid"] = match.group(1)
+            if match.group(3):
+                user_id["gid"] = match.group(3)
+
         return user_id
 
     def _user_from_str(self, user, host_auth=None, container_auth=None):

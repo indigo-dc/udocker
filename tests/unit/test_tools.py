@@ -3,30 +3,16 @@
 udocker unit tests: UdockerTools
 """
 
-import sys
 import tarfile
-sys.path.append('.')
-sys.path.append('../../')
-
+from tarfile import TarInfo
 from unittest import TestCase, main
+from unittest.mock import Mock, patch
+from io import StringIO
 from udocker.config import Config
 from udocker.utils.curl import CurlHeader
 from udocker.tools import UdockerTools
-from tarfile import TarInfo
-try:
-    from unittest.mock import Mock, patch, MagicMock, mock_open
-except ImportError:
-    from mock import Mock, patch, MagicMock, mock_open
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
-if sys.version_info[0] >= 3:
-    BUILTINS = "builtins"
-else:
-    BUILTINS = "__builtin__"
-
+BUILTINS = "builtins"
 BOPEN = BUILTINS + '.open'
 
 
@@ -159,7 +145,6 @@ class UdockerToolsTestCase(TestCase):
         self.assertEqual(status, "/tmp/file")
 
     @patch.object(UdockerTools, '_version_isok')
-    @patch('udocker.tools.tarfile.TarInfo')
     @patch('udocker.tools.FileUtil.remove')
     @patch('udocker.tools.FileUtil.getdata')
     @patch('udocker.tools.os.path.basename')
@@ -167,8 +152,7 @@ class UdockerToolsTestCase(TestCase):
     @patch('udocker.tools.os.path.isfile')
     def test_09__verify_version(self, mock_isfile, mock_fumktmp,
                                 mock_osbase, mock_fugetdata,
-                                mock_furm, mock_tarinfo,
-                                mock_versionok):
+                                mock_furm, mock_versionok):
         """Test09 UdockerTools()._verify_version()."""
         tball = "/home/udocker.tar"
         mock_isfile.return_value = False
@@ -299,13 +283,14 @@ class UdockerToolsTestCase(TestCase):
         status = utools._install_logic(False)
         self.assertFalse(status)
 
-    @patch.object(UdockerTools, '_instructions')
+    @patch('udocker.tools.Msg')
     @patch.object(UdockerTools, 'get_installinfo')
     @patch.object(UdockerTools, '_install_logic')
     @patch.object(UdockerTools, 'is_available')
-    def test_14_install(self, mock_isavail, mock_instlog, mock_getinfo,
-                        mock_instruct):
+    def test_14_install(self, mock_isavail, mock_instlog,
+                        mock_getinfo, mock_msg):
         """Test14 UdockerTools().install()."""
+        mock_msg.level = 0
         Config.conf['autoinstall'] = True
         Config.conf['tarball'] = "udocker-1.2.7.tar.gz"
         Config.conf['tarball_release'] = "1.2.7"

@@ -447,11 +447,13 @@ class FileUtil(object):
             fpsrc = open(self.filename, "rb")
         except (IOError, OSError):
             return False
+
         while True:
             copy_buffer = fpsrc.read(1024 * 1024)
             if not copy_buffer:
                 break
             sys.stdout.write(copy_buffer)
+
         fpsrc.close()
         return True
 
@@ -483,12 +485,14 @@ class FileUtil(object):
         """
         if self.filename == "-" and dest_filename != "-":
             return self._stream2file(dest_filename, mode)
-        elif self.filename != "-" and dest_filename == "-":
+
+        if self.filename != "-" and dest_filename == "-":
             return self._file2stream()
-        elif self.filename != "-" and dest_filename != "-":
+
+        if self.filename != "-" and dest_filename != "-":
             return self._file2file(dest_filename, mode)
-        else:
-            return False
+
+        return False
 
     def find_file_in_dir(self, image_list):
         """Find and return first file of list in dir"""

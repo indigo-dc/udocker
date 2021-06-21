@@ -4,27 +4,17 @@
 """
 udocker unit tests: CurlHeader
 """
-import sys
+
 from unittest import TestCase, main
+from unittest.mock import patch
+from io import StringIO
 from udocker.utils.curl import CurlHeader
 from udocker.utils.curl import GetURL
 from udocker.utils.curl import GetURLpyCurl
 from udocker.utils.curl import GetURLexeCurl
 from udocker.config import Config
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-if sys.version_info[0] >= 3:
-    BUILTINS = "builtins"
-else:
-    BUILTINS = "__builtin__"
+BUILTINS = "builtins"
 
 
 class CurlHeaderTestCase(TestCase):
@@ -126,7 +116,8 @@ class GetURLTestCase(TestCase):
     @patch('udocker.utils.curl.Msg')
     @patch.object(GetURLexeCurl, 'is_available')
     @patch.object(GetURLpyCurl, 'is_available')
-    def test_02__select_implementation(self, mock_gupycurl, mock_guexecurl, mock_msg):
+    def test_02__select_implementation(self, mock_gupycurl,
+                                       mock_guexecurl, mock_msg):
         """Test02 GetURL()._select_implementation()."""
         mock_msg.level = 0
         mock_gupycurl.return_value = True
@@ -269,7 +260,6 @@ class GetURLpyCurlTestCase(TestCase):
         geturl._set_defaults(mock_pyc, mock_hdr)
         self.assertEqual(mock_pyc.setopt.call_count, 27)
 
-    # TODO: proper implement test
     # @patch.object(GetURLpyCurl, 'is_available')
     # @patch('udocker.utils.curl.Msg')
     # @patch('udocker.utils.curl.pycurl')
@@ -281,8 +271,7 @@ class GetURLpyCurlTestCase(TestCase):
     #     geturl._mkpycurl(mock_pyc, mock_hdr)
     #     self.assertTrue(mock_pyc.setopt.called)
 
-    @patch.object(GetURLpyCurl, 'is_available')
-    def test_06_get(self, mock_sel):
+    def test_06_get(self):
         """Test06 GetURLpyCurl().get() generic get."""
         geturl = GetURLpyCurl()
         geturl._geturl = type('test', (object,), {})()
@@ -310,9 +299,7 @@ class GetURLexeCurlTestCase(TestCase):
         """Mock for pycurl.get."""
         return args[0]
 
-    @patch('udocker.utils.curl.Msg')
-    @patch('udocker.utils.curl.GetURL')
-    def test_01_init(self, mock_gcurl, mock_msg):
+    def test_01_init(self):
         """Test01 GetURLexeCurl() constructor."""
         geturl = GetURLexeCurl()
         self.assertIsNone(geturl._opts)

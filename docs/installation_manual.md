@@ -110,21 +110,23 @@ udocker install
 
 ### 2.4. Installing without outbound network access
 
-When installation is performed without network connectivity the installation 
-of the udocker binary tools and libraries invoking `udocker install` will fail 
-in the download step. The solution is to fetch the the tarball in advance and 
-then install it directly from the tarball file.
+When installation is attempted without having outbound network connectivity, 
+the installation of the binary tools and libraries with `udocker install` will 
+fail the download step. The solution is to fetch the the tarball in advance
+and then install the tools and libraries directly from the tarball file.
 
 The tarballs containing the tools and libraries are available at <https://github.com/jorge-lip/udocker-builds>.
 
-To download a tarball file use:
+First, download a tarball file using:
 
 ```bash
 curl -L https://github.com/jorge-lip/udocker-builds/raw/master/tarballs/udocker-englib-1.2.8.tar.gz > udocker-englib-1.2.8.tar.gz
 ```
 
-Finally transfer both udocker and tools and libraries tarball to the target 
-destination host and perform the `udocker install` step using the tarball file.
+Second, transfer the udocker code plus the tarball containing the tools and 
+libraries to the target destination host.
+
+Finally perform the `udocker install` step using the transferred tarball file.
 
 ```bash
 export UDOCKER_TARBALL=udocker-englib-1.2.8.tar.gz
@@ -132,7 +134,14 @@ udocker install
 ```
 
 The environment variable `UDOCKER_TARBALL` can also point to an URL to fetch 
-the `udockertools` from a specific or alternate location.
+the tarball from a specific or alternate location. To fetch from multiple
+possible locations for redundancy the environment variable `UDOCKER_TARBALL`
+can contain multiple URLs separated by a blank.
+
+```bash
+export UDOCKER_TARBALL="https://... https://... http://..."
+udocker install
+```
 
 ### 2.5. Force the re-installation of the tools and libraries
 
@@ -155,12 +164,13 @@ udocker creates files and subdirectories under `$HOME/.udocker` these are:
 * `keystore.github`: authentication to access repositories (created on demand).
 
 
-A default configuration file can be found in directory `udocker/etc/udocker.conf`,
-you can copy it to your home directory `$HOME` or to `$UDOCKER`.
-
 Both installed files, as well as the containers to be downloaded or created  
 with udocker, will be installed by default under `$HOME/.udocker`.
 
+A default configuration file is available at
+[udocker.conf](https://github.com/indigo-dc/udocker/blob/master/etc/udocker.conf)
+it can be copied to your udocker directory as `$HOME/.udocker/udocker.conf` and 
+costumized.
 
 ## 4. Environment
 

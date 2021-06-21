@@ -82,24 +82,31 @@ class ElfPatcher(object):
                     f_path = dir_path + '/' + f_name
                     if os.path.islink(f_path):
                         continue
+
                     if os.stat(f_path).st_uid != self._uid:
                         if action & self.ABORT_ON_ERROR:
                             return ""
-                        else:
-                            continue
+
+                        continue
+
                     if ((action & self.BIN and os.access(f_path, os.X_OK)) or
                             (action & self.LIB and self._shlib.match(f_name))):
                         out = Uprocess().get_output(self._replace(cmd, f_path))
                         if out:
                             status = out
+
                     if action & self.ABORT_ON_ERROR and status is None:
                         return ""
-                    elif action & self.ONE_SUCCESS and status is not None:
+
+                    if action & self.ONE_SUCCESS and status is not None:
                         return status
-                    elif action & self.ONE_OUTPUT and status:
+
+                    if action & self.ONE_OUTPUT and status:
                         return status
+
                 except OSError:
                     pass
+
         return status
 
     def guess_elf_loader(self):

@@ -48,20 +48,23 @@ class CommonLocalFileApi(object):
             cd_imagerepo = self._imagerepo
         else:
             cd_imagerepo = imagerepo
+
         if self.localrepo.cd_imagerepo(cd_imagerepo, tag):
             Msg().err("Error: repository and tag already exist",
                       cd_imagerepo, tag)
             return []
-        else:
-            self.localrepo.setup_imagerepo(cd_imagerepo)
-            tag_dir = self.localrepo.setup_tag(tag)
-            if not tag_dir:
-                Msg().err("Error: setting up repository", cd_imagerepo, tag)
-                return []
-            if not self.localrepo.set_version("v1"):
-                Msg().err("Error: setting repository version")
-                return []
-            return self._load_image_step2(structure, imagerepo, tag)
+
+        self.localrepo.setup_imagerepo(cd_imagerepo)
+        tag_dir = self.localrepo.setup_tag(tag)
+        if not tag_dir:
+            Msg().err("Error: setting up repository", cd_imagerepo, tag)
+            return []
+
+        if not self.localrepo.set_version("v1"):
+            Msg().err("Error: setting repository version")
+            return []
+
+        return self._load_image_step2(structure, imagerepo, tag)
 
     def _untar_saved_container(self, tarfile, destdir):
         """Untar container created with docker save"""
@@ -69,10 +72,12 @@ class CommonLocalFileApi(object):
         verbose = ''
         if Msg.level >= Msg.VER:
             verbose = 'v'
+
         cmd = ["tar", "-C", destdir, "-x" + verbose,
                "--delay-directory-restore", "--one-file-system",
                "--no-same-owner", "--no-same-permissions", "--overwrite",
                "-f", tarfile]
+
         status = Uprocess().call(cmd, stderr=Msg.chlderr, close_fds=True)
         return not status
 

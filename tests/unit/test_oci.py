@@ -4,11 +4,8 @@ udocker unit tests: OciLocalFileAPI
 """
 
 from unittest import TestCase, main
+from unittest.mock import patch, Mock
 from udocker.oci import OciLocalFileAPI
-try:
-    from unittest.mock import patch, Mock
-except ImportError:
-    from mock import patch, Mock
 
 
 class OciLocalFileAPITestCase(TestCase):
@@ -29,7 +26,8 @@ class OciLocalFileAPITestCase(TestCase):
 
     @patch('udocker.oci.FileUtil.isdir')
     @patch('udocker.oci.os.listdir')
-    @patch('udocker.container.localrepo.LocalRepository.load_json', autospec=True)
+    @patch('udocker.container.localrepo.LocalRepository.load_json',\
+        autospec=True)
     def test_02__load_structure(self, mock_ljson, mock_oslist, mock_isdir):
         """Test02 OciLocalFileAPI()._load_structure."""
         mock_ljson.side_effect = [[], []]
@@ -71,10 +69,12 @@ class OciLocalFileAPITestCase(TestCase):
 
     # @patch('udocker.oci.Unique.imagename')
     # @patch('udocker.oci.Unique.imagetag')
-    # @patch('udocker.container.localrepo.LocalRepository.load_json', autospec=True)
+    # @patch('udocker.container.localrepo.LocalRepository.load_json',\
+    #   autospec=True)
     # def test_04__load_manifest(self, mock_ljson, mock_uniqtag, mock_uniqname):
     #     """Test04 OciLocalFileAPI()._load_manifest."""
-    #     manifest = {'annotations': {'org.opencontainers.image.ref.name': '123'}}
+    #     manifest = {'annotations':
+    #           {'org.opencontainers.image.ref.name': '123'}}
     #     mock_uniqtag.return_value = '123'
     #     mock_uniqname.return_value = 'imgname'
     #     mock_ljson.return_value = {'layers': [{'digest': 'd1'},
