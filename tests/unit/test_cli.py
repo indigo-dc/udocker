@@ -1374,10 +1374,10 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.cli.NvidiaMode')
     @patch('udocker.cli.FileUtil.rchmod')
     @patch('udocker.cli.Unshare.namespace_exec')
-    @patch('udocker.cli.MountPoint.restore')
-    @patch('udocker.cli.FileBind.restore')
+    @patch('udocker.cli.MountPoint')
+    @patch('udocker.cli.FileBind')
     @patch('udocker.cli.Msg')
-    def test_35_do_setup(self, mock_msg, mock_fbrest, mock_mprest,
+    def test_35_do_setup(self, mock_msg, mock_fb, mock_mp,
                          mock_unshr, mock_furchmod, mock_nv, mock_execm):
         """Test35 UdockerCLI().do_setup()."""
         mock_msg.level = 0
@@ -1414,8 +1414,8 @@ class UdockerCLITestCase(TestCase):
         self.local.cd_container.return_value = "/ROOT/cont1"
         self.local.isprotected_container.return_value = False
         mock_msg.level = 0
-        mock_fbrest.return_value = None
-        mock_mprest.return_value = None
+        mock_fb.return_value.restore.return_value = None
+        mock_mp.return_value.restore.return_value = None
         mock_unshr.return_value = None
         mock_furchmod.return_value = None
         mock_nv.return_value.set_mode.return_value = None
@@ -1423,8 +1423,8 @@ class UdockerCLITestCase(TestCase):
         udoc = UdockerCLI(self.local)
         status = udoc.do_setup(cmdp)
         self.assertEqual(status, 0)
-        self.assertTrue(mock_fbrest.called)
-        self.assertTrue(mock_mprest.called)
+        self.assertTrue(mock_fb.return_value.restore.called)
+        self.assertTrue(mock_mp.return_value.restore.called)
         self.assertTrue(mock_unshr.called)
         self.assertTrue(mock_furchmod.called)
         self.assertTrue(mock_nv.return_value.set_mode.called)
@@ -1437,8 +1437,8 @@ class UdockerCLITestCase(TestCase):
         self.local.cd_container.return_value = "/ROOT/cont1"
         self.local.isprotected_container.return_value = False
         mock_msg.level = 0
-        mock_fbrest.return_value = None
-        mock_mprest.return_value = None
+        mock_fb.return_value.restore.return_value = None
+        mock_mp.return_value.restore.return_value = None
         mock_unshr.return_value = None
         mock_furchmod.return_value = None
         mock_nv.return_value.set_mode.return_value = None
