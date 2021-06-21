@@ -2,13 +2,11 @@
 """
 udocker unit tests: NVIDIA mode
 """
+
 from unittest import TestCase, main
+from unittest.mock import patch, Mock
 from udocker.config import Config
 from udocker.engine.nvidia import NvidiaMode
-try:
-    from unittest.mock import patch, Mock
-except ImportError:
-    from mock import patch, Mock
 
 
 class NvidiaModeTestCase(TestCase):
@@ -116,7 +114,9 @@ class NvidiaModeTestCase(TestCase):
     # def test_05__find_host_dir_ldconfig(self, mock_uproc, mock_realp):
     #     """Test05 NvidiaMode._find_host_dir_ldconfig."""
     #     res_set = set()
-    #     mock_uproc.return_value = "libnvidia-cfg.so.1 (libc6,x86-64) => /lib/x86_64-linux-gnu/libnvidia-cfg.so.1"
+    #     mock_uproc.return_value = \
+    #       "libnvidia-cfg.so.1 (libc6,x86-64) => \
+    #       /lib/x86_64-linux-gnu/libnvidia-cfg.so.1"
     #     mock_realp.return_value = "/lib/x86_64-linux-gnu/libnvidia-cfg.so.1"
     #     res_set.add("/lib/x86_64-linux-gnu/")
     #     nvmode = NvidiaMode(self.local, self.cont_id)

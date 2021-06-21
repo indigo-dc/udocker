@@ -4,13 +4,8 @@ udocker unit tests: Unshare
 """
 
 from unittest import TestCase, main
-from udocker.helper.unshare import Unshare
 from unittest.mock import patch, MagicMock
-
-# try:
-#     from unittest.mock import patch, MagicMock
-# except ImportError:
-#     from mock import patch, MagicMock
+from udocker.helper.unshare import Unshare
 
 
 class UnshareTestCase(TestCase):
@@ -22,9 +17,11 @@ class UnshareTestCase(TestCase):
     def tearDown(self):
         pass
 
+    @patch('udocker.helper.unshare.Msg.err')
     @patch('udocker.helper.unshare.ctypes.CDLL')
-    def test_01_unshare(self, mock_cdll):
+    def test_01_unshare(self, mock_cdll, mock_msg):
         """Test01 Unshare().unshare"""
+        mock_msg.level = 0
         status = Unshare().unshare(False)
         self.assertTrue(mock_cdll.return_value.unshare.called)
         self.assertTrue(status)
@@ -57,6 +54,7 @@ class UnshareTestCase(TestCase):
         """Test02 Unshare().namespace_exec"""
 
         # cpid exists waitpid=0
+        mock_msg.level = 0
         mock_pipe.side_effect = [('rfid1', 'wfid1'), ('rfid2', 'wfid2')]
         mock_fork.return_value = 1234
         mock_close.side_effect = [None, None]
@@ -90,7 +88,7 @@ class UnshareTestCase(TestCase):
         mock_setgrp.return_value = None
         mock_exit.return_value = 1
         status = Unshare().namespace_exec(mock_method)
-        self.assertFalse(status)
+        self.assertTrue(status)
 
 
 if __name__ == '__main__':

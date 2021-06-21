@@ -88,13 +88,13 @@ class DockerIoAPI(object):
                 www_authenticate = hdr.data["www-authenticate"]
                 if not "realm" in www_authenticate:
                     return (hdr, buf)
-                elif 'error="insufficient_scope"' in www_authenticate:
+                if 'error="insufficient_scope"' in www_authenticate:
                     return (hdr, buf)
                 auth_header = ""
                 if "/v2/" in url:
                     auth_header = self._get_v2_auth(www_authenticate,
                                                     kwargs["RETRY"])
-                elif "/v1/" in url:
+                if "/v1/" in url:
                     auth_header = self._get_v1_auth(www_authenticate)
                 auth_kwargs.update({"header": [auth_header]})
         (hdr, buf) = self._get_url(*args, **auth_kwargs)
@@ -111,8 +111,7 @@ class DockerIoAPI(object):
             layer_f_chksum = ChkSUM().hash(filename, match.group(1))
             if layer_f_chksum == match.group(2):
                 return True             # is cached skip download
-            else:
-                cache_mode = 0
+            cache_mode = 0
         if self.curl.cache_support and cache_mode:
             if cache_mode == 1:
                 (hdr, dummy) = self._get_url(url, nobody=1)
@@ -208,8 +207,8 @@ class DockerIoAPI(object):
                 for tag in json.loads(buf.getvalue()):
                     tags.append(tag["name"])
                 return tags
-            else:
-                return json.loads(buf.getvalue())
+
+            return json.loads(buf.getvalue())
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return []
 
@@ -310,7 +309,8 @@ class DockerIoAPI(object):
             return ""
         try:
             self.v2_auth_token = \
-                base64.b64encode(("%s:%s" % (username, password)).encode("utf-8")).decode("ascii")
+                base64.b64encode(("%s:%s" % \
+                    (username, password)).encode("utf-8")).decode("ascii")
         except (KeyError, AttributeError, TypeError, ValueError, NameError):
             self.v2_auth_token = ""
         return self.v2_auth_token
@@ -354,8 +354,8 @@ class DockerIoAPI(object):
                 for tag in json.loads(buf.getvalue())["tags"]:
                     tags.append(tag)
                 return tags
-            else:
-                return json.loads(buf.getvalue())
+
+            return json.loads(buf.getvalue())
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return []
 
@@ -545,8 +545,8 @@ class DockerIoAPI(object):
         Msg().out("Info: get tags", imagerepo, l=Msg.DBG)
         if self.is_v2():
             return self.get_v2_image_tags(imagerepo, True)  # try v2
-        else:
-            return self.get_v1_image_tags(imagerepo, True)  # try v1
+
+        return self.get_v1_image_tags(imagerepo, True)  # try v1
 
     def search_init(self, pause):
         """Setup new search"""
@@ -669,24 +669,27 @@ class DockerLocalFileAPI(CommonLocalFileApi):
         """Find the top layer within a Docker image"""
         if "repolayers" not in structure:
             return ""
-        else:
-            if not my_layer_id:
-                # if Python 3 TypeError: 'dict_keys' object is not subscriptable
-                if sys.version_info[0] >= 3:
-                    my_layer_id = list(structure["repolayers"].keys())[0]
-                else:
-                    my_layer_id = structure["repolayers"].keys()[0]
-            found = ""
-            for layer_id in structure["repolayers"]:
-                if "parent" not in structure["repolayers"][layer_id]["json"]:
-                    continue
-                if (my_layer_id ==
-                        structure["repolayers"][layer_id]["json"]["parent"]):
-                    found = self._find_top_layer_id(structure, layer_id)
-                    break
-            if not found:
-                return my_layer_id
-            return found
+
+        if not my_layer_id:
+            # if Python 3 TypeError: 'dict_keys' object is not subscriptable
+            if sys.version_info[0] >= 3:
+                my_layer_id = list(structure["repolayers"].keys())[0]
+            else:
+                my_layer_id = structure["repolayers"].keys()[0]
+
+        found = ""
+        for layer_id in structure["repolayers"]:
+            if "parent" not in structure["repolayers"][layer_id]["json"]:
+                continue
+            if (my_layer_id ==
+                    structure["repolayers"][layer_id]["json"]["parent"]):
+                found = self._find_top_layer_id(structure, layer_id)
+                break
+
+        if not found:
+            return my_layer_id
+
+        return found
 
     def _sorted_layers(self, structure, top_layer_id):
         """Return the layers sorted"""

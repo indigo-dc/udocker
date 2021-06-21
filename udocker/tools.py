@@ -186,7 +186,8 @@ class UdockerTools(object):
                     Msg().out("Info: extrating", tar_in.name, l=Msg.DBG)
                     tfile.extract(tar_in, self.localrepo.bindir)
             FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR |
-                                                   stat.S_IWUSR | stat.S_IXUSR)
+                                                   stat.S_IWUSR |
+                                                   stat.S_IXUSR)
 
             FileUtil(self.localrepo.libdir).rchmod()
             for tar_in in tfile.getmembers():
@@ -257,26 +258,30 @@ class UdockerTools(object):
         """Get the udocker tools tarball and install the binaries"""
         if self.is_available() and not force:
             return True
-        elif not self._autoinstall and not force:
+
+        if not self._autoinstall and not force:
             Msg().out("Warning: installation missing and autoinstall disabled",
                       l=Msg.WAR)
             return None
-        elif not self._tarball:
+
+        if not self._tarball:
             Msg().out("Info: UDOCKER_TARBALL not set, installation skipped",
                       l=Msg.VER)
             return True
-        else:
-            Msg().out("Info: udocker command line interface", __version__)
-            Msg().out("Info: searching for udockertools",
-                      self._tarball_release, l=Msg.INF)
-            retry = self._installretry
-            while  retry:
-                if self._install_logic(force):
-                    self.get_installinfo()
-                    Msg().out("Info: installation of udockertools successful")
-                    return True
-                retry = retry - 1
-                Msg().err("Error: installation failure retrying ...", l=Msg.VER)
+
+        Msg().out("Info: udocker command line interface", __version__)
+        Msg().out("Info: searching for udockertools",
+                  self._tarball_release, l=Msg.INF)
+        retry = self._installretry
+        while  retry:
+            if self._install_logic(force):
+                self.get_installinfo()
+                Msg().out("Info: installation of udockertools successful")
+                return True
+
+            retry = retry - 1
+            Msg().err("Error: installation failure retrying ...", l=Msg.VER)
+
         self._instructions()
         self.get_installinfo()
         Msg().err("Error: installation of udockertools failed")

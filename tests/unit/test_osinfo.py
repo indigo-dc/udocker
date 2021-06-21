@@ -2,13 +2,11 @@
 """
 udocker unit tests: OSInfo
 """
+
 from unittest import TestCase, main
+from unittest.mock import patch
 from udocker.helper.osinfo import OSInfo
 from udocker.config import Config
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
 
 
 class GuestInfoTestCase(TestCase):

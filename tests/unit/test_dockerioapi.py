@@ -3,24 +3,11 @@
 udocker unit tests: DockerIoAPI
 """
 
-import sys
 from unittest import TestCase, main
+from unittest.mock import patch, Mock
+from io import BytesIO as strio
 from udocker.docker import DockerIoAPI
 from udocker.config import Config
-try:
-    from unittest.mock import patch, Mock
-except ImportError:
-    from mock import patch, Mock
-
-# try:
-#     from StringIO import StringIO
-# except ImportError:
-#     from io import StringIO
-
-if sys.version_info[0] >= 3:
-    from io import BytesIO as strio
-else:
-    from StringIO import StringIO as strio
 
 
 class DockerIoAPITestCase(TestCase):
@@ -45,8 +32,10 @@ class DockerIoAPITestCase(TestCase):
         """Test01 DockerIoAPI() constructor"""
         mock_geturl.return_value = None
         doia = DockerIoAPI(self.local)
-        self.assertEqual(doia.index_url, Config.conf['dockerio_index_url'])
-        self.assertEqual(doia.registry_url, Config.conf['dockerio_registry_url'])
+        self.assertEqual(doia.index_url,
+                         Config.conf['dockerio_index_url'])
+        self.assertEqual(doia.registry_url,
+                         Config.conf['dockerio_registry_url'])
         self.assertEqual(doia.v1_auth_header, "")
         self.assertEqual(doia.v2_auth_header, "")
         self.assertEqual(doia.v2_auth_token, "")
@@ -95,7 +84,7 @@ class DockerIoAPITestCase(TestCase):
         args = ["http://some1.org"]
         kwargs = list()
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 200 Reason-Phrase"}
         buff = strio()
         mock_get.return_value = (hdr, buff)
@@ -107,7 +96,7 @@ class DockerIoAPITestCase(TestCase):
         args = ["http://some1.org"]
         kwargs = list()
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 400 Reason-Phrase",
                     "X-ND-CURLSTATUS": 0,
                     "location": "http://some1.org"}
@@ -121,7 +110,7 @@ class DockerIoAPITestCase(TestCase):
         args = ["http://some1.org"]
         kwargs = {"RETRY": True, "FOLLOW": True}
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 400 Reason-Phrase",
                     "X-ND-CURLSTATUS": 0}
         buff = strio()
@@ -153,7 +142,7 @@ class DockerIoAPITestCase(TestCase):
         fname = ""
         cache = 1
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 400 Reason-Phrase",
                     "X-ND-CURLSTATUS": 0}
         buff = strio()
@@ -171,7 +160,7 @@ class DockerIoAPITestCase(TestCase):
         fname = cks + ".layer"
         cache = 0
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 400 Reason-Phrase",
                     "X-ND-CURLSTATUS": 0}
         buff = strio()
@@ -196,7 +185,7 @@ class DockerIoAPITestCase(TestCase):
     def test_09_is_v1(self, mock_geturl):
         """Test09 DockerIoAPI().is_v1()."""
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 200 Reason-Phrase",
                     "X-ND-CURLSTATUS": 0}
         buff = strio()
@@ -206,7 +195,7 @@ class DockerIoAPITestCase(TestCase):
         self.assertTrue(status)
 
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 400 Reason-Phrase",
                     "X-ND-CURLSTATUS": 0}
         buff = strio()
@@ -220,7 +209,7 @@ class DockerIoAPITestCase(TestCase):
         """Test10 DockerIoAPI().has_search_v1()."""
         url = "http://some1.org/file1"
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 200 Reason-Phrase",
                     "X-ND-CURLSTATUS": 0}
         buff = strio()
@@ -230,7 +219,7 @@ class DockerIoAPITestCase(TestCase):
         self.assertTrue(status)
 
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 400 Reason-Phrase",
                     "X-ND-CURLSTATUS": 0}
         buff = strio()
@@ -415,7 +404,7 @@ class DockerIoAPITestCase(TestCase):
         self.assertFalse(out)
 
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 200 Reason-Phrase",
                     "X-ND-CURLSTATUS": 0}
         buff = strio()
@@ -429,7 +418,7 @@ class DockerIoAPITestCase(TestCase):
     def test_23_has_search_v2(self, mock_dgu):
         """Test23 DockerIoAPI().has_search_v2"""
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 400 Reason-Phrase",
                     "X-ND-CURLSTATUS": 0}
         buff = strio()
@@ -440,7 +429,7 @@ class DockerIoAPITestCase(TestCase):
         self.assertFalse(out)
 
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 200 Reason-Phrase",
                     "X-ND-CURLSTATUS": 0}
         buff = strio()
@@ -456,7 +445,7 @@ class DockerIoAPITestCase(TestCase):
         """Test24 DockerIoAPI().get_v2_image_tags"""
         imgrepo = "img1"
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 200 Reason-Phrase",
                     "X-ND-CURLSTATUS": 0}
         buff = strio()
@@ -469,7 +458,7 @@ class DockerIoAPITestCase(TestCase):
 
         imgrepo = "img1"
         hdr = type('test', (object,), {})()
-        hdr.data = {"content-length": 10, 
+        hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 200 Reason-Phrase",
                     "X-ND-CURLSTATUS": 0}
         buff = strio()
@@ -495,9 +484,8 @@ class DockerIoAPITestCase(TestCase):
         self.assertIsInstance(out, tuple)
 
     @patch('udocker.docker.Msg')
-    @patch('udocker.utils.curl.CurlHeader')
     @patch.object(DockerIoAPI, '_get_file')
-    def test_26_get_v2_image_layer(self, mock_dgf, mock_hdr, mock_msg):
+    def test_26_get_v2_image_layer(self, mock_dgf, mock_msg):
         """Test26 DockerIoAPI().get_v2_image_layer"""
         mock_msg.level = 0
         imagerepo = "REPO"
@@ -535,12 +523,13 @@ class DockerIoAPITestCase(TestCase):
         out = doia.get_v2_layers_all(imagerepo, fslayers)
         self.assertEqual(out, ['foolayername'])
 
+    @patch('udocker.docker.Msg')
     @patch('udocker.docker.GetURL.get_status_code')
     @patch.object(DockerIoAPI, 'get_v2_image_manifest')
     @patch.object(DockerIoAPI, 'get_v2_layers_all')
     @patch.object(DockerIoAPI, '_get_url')
     def test_28_get_v2(self, mock_dgu, mock_dgv2, mock_manif,
-                       mock_getstatus):
+                       mock_getstatus, mock_msg):
         """Test28 DockerIoAPI().get_v2"""
         imgrepo = "img1"
         hdr = type('test', (object,), {})()
@@ -550,6 +539,7 @@ class DockerIoAPITestCase(TestCase):
         hdr.data = hdr_data
         buff = strio()
         manifest = list()
+        mock_msg.level = 0
         mock_dgu.return_value = (hdr, buff)
         mock_manif.return_value = (hdr_data, manifest)
         mock_dgv2.return_value = []
@@ -615,6 +605,7 @@ class DockerIoAPITestCase(TestCase):
         out = doia._get_v1_id_from_images(imgarr, shortid)
         self.assertEqual(out, "1234567890")
 
+    @patch('udocker.docker.Msg')
     @patch('udocker.docker.GetURL.get_status_code')
     @patch.object(DockerIoAPI, 'get_v1_layers_all')
     @patch.object(DockerIoAPI, 'get_v1_image_ancestry')
@@ -624,7 +615,7 @@ class DockerIoAPITestCase(TestCase):
     @patch.object(DockerIoAPI, 'get_v1_repo')
     def test_31_get_v1(self, mock_dgv1repo, mock_v1imgtag,
                        mock_v1idtag, mock_v1idimg, mock_v1ances,
-                       mock_v1layer, mock_status):
+                       mock_v1layer, mock_status, mock_msg):
         """Test31 DockerIoAPI().get_v1"""
         imgarr = [{"id": "1234567890"}]
         imagerepo = "REPO"
@@ -635,7 +626,7 @@ class DockerIoAPITestCase(TestCase):
                     "X-ND-CURLSTATUS": 0,
                     "x-docker-endpoints": "https://registry-1.docker.io"}
         hdr.data = hdr_data
-        buff = strio()
+        mock_msg.level = 0
         mock_dgv1repo.return_value = (hdr_data, imgarr)
         mock_status.return_value = 401
         doia = DockerIoAPI(self.local)
