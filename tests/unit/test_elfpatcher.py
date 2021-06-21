@@ -34,13 +34,15 @@ class ElfPatcherTestCase(TestCase):
         self.assertTrue(mock_path.callled)
         self.assertEqual(elfp._uid, "1000")
 
+    @patch('udocker.helper.elfpatcher.Msg')
     @patch('udocker.helper.elfpatcher.os.path.exists')
     @patch('udocker.helper.elfpatcher.HostInfo.arch')
     @patch('udocker.helper.elfpatcher.FileUtil.find_file_in_dir')
     @patch('udocker.helper.elfpatcher.os.path.realpath')
     def test_02_select_patchelf(self, mock_path, mock_find,
-                                mock_arch, mock_exists):
+                                mock_arch, mock_exists, mock_msg):
         """Test02 ElfPatcher().select_patchelf()."""
+        mock_msg.level = 0
         mock_path.return_value = "/some_contdir"
         mock_arch.return_value = "arm"
         mock_find.return_value = "runc-arm"
@@ -279,12 +281,15 @@ class ElfPatcherTestCase(TestCase):
         elfp = ElfPatcher(self.local, self.contid)
         self.assertFalse(elfp.patch_ld("OUTPUT_ELF"))
 
+    @patch('udocker.helper.elfpatcher.Msg')
     @patch.object(ElfPatcher, 'get_container_loader')
     @patch('udocker.helper.elfpatcher.os.path.realpath')
     @patch('udocker.helper.elfpatcher.FileUtil.size')
     @patch('udocker.helper.elfpatcher.FileUtil.copyto')
-    def test_14_restore_ld(self, mock_copyto, mock_size, mock_path, mock_gcl):
+    def test_14_restore_ld(self, mock_copyto, mock_size, mock_path,
+                           mock_gcl, mock_msg):
         """Test14 ElfPatcher().restore_ld()."""
+        mock_msg.level = 0
         mock_size.return_value = -1
         mock_path.return_value = "/some_contdir"
         mock_gcl.return_value = ""

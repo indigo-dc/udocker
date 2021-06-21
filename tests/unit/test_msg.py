@@ -40,7 +40,7 @@ class MsgTestCase(TestCase):
         self.assertEqual(msg.level, 0)
 
     def test_02_setlevel(self):
-        """Test02 Msg.setlevel() change of log level."""
+        """Test02 Msg.setlevel()."""
         msg = Msg(5)
         self._verify_descriptors(msg)
         self.assertEqual(msg.level, 5)
@@ -52,7 +52,7 @@ class MsgTestCase(TestCase):
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_03_out(self, mock_stdout):
-        """Test03 Msg.out() screen messages."""
+        """Test03 Msg.out()."""
         msg = Msg(Msg.MSG)
         msg.out("111", "222", "333", 444, ('555'))
         self.assertEqual("111 222 333 444 555\n", mock_stdout.getvalue())
@@ -61,7 +61,7 @@ class MsgTestCase(TestCase):
 
     @patch('sys.stderr', new_callable=StringIO)
     def test_04_err(self, mock_stderr):
-        """Test04 Msg.err() screen messages."""
+        """Test04 Msg.err()."""
         msg = Msg(Msg.ERR)
         msg.err("111", "222", "333", 444, ('555'))
         self.assertEqual("111 222 333 444 555\n", mock_stderr.getvalue())

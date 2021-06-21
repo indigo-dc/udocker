@@ -50,15 +50,17 @@ class FakechrootEngineTestCase(TestCase):
         self.assertEqual(ufake._fakechroot_so, "")
         self.assertIsNone(ufake._elfpatcher)
 
+    @patch('udocker.engine.fakechroot.Msg')
     @patch('udocker.engine.fakechroot.sys.exit')
     @patch('udocker.engine.fakechroot.OSInfo')
     @patch('udocker.engine.fakechroot.os.path.realpath')
     @patch('udocker.engine.fakechroot.os.path.exists')
     @patch('udocker.engine.fakechroot.FileUtil')
     def test_02_select_fakechroot_so(self, mock_futil, mock_exists,
-                                     mock_rpath, mock_osinfo, mock_sysex):
+                                     mock_rpath, mock_osinfo, mock_sysex, mock_msg):
         """Test02 FakechrootEngine.select_fakechroot_so."""
         Config().conf['fakechroot_so'] = "/s/fake1"
+        mock_msg.level = 0
         mock_exists.return_value = True
         mock_rpath.return_value = "/s/fake1"
         ufake = FakechrootEngine(self.local, self.xmode)

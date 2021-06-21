@@ -1407,13 +1407,13 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 1)
         self.assertTrue(self.local.isprotected_container.called)
 
-        mock_msg.level = 0
         argv = ["udocker", "setup", "--execmode=P2",
                 "--purge", "--fixperm", "--nvidia", "mycont"]
         cmdp = CmdParser()
         cmdp.parse(argv)
         self.local.cd_container.return_value = "/ROOT/cont1"
         self.local.isprotected_container.return_value = False
+        mock_msg.level = 0
         mock_fbrest.return_value = None
         mock_mprest.return_value = None
         mock_unshr.return_value = None
@@ -1436,6 +1436,7 @@ class UdockerCLITestCase(TestCase):
         cmdp.parse(argv)
         self.local.cd_container.return_value = "/ROOT/cont1"
         self.local.isprotected_container.return_value = False
+        mock_msg.level = 0
         mock_fbrest.return_value = None
         mock_mprest.return_value = None
         mock_unshr.return_value = None

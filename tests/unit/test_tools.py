@@ -283,7 +283,7 @@ class UdockerToolsTestCase(TestCase):
         status = utools._install_logic(False)
         self.assertFalse(status)
 
-    @patch('udocker.cli.Msg')
+    @patch('udocker.tools.Msg')
     @patch.object(UdockerTools, 'get_installinfo')
     @patch.object(UdockerTools, '_install_logic')
     @patch.object(UdockerTools, 'is_available')

@@ -441,7 +441,7 @@ class FileUtilTestCase(TestCase):
                        mock_uid, mock_isdir,
                        mock_isfile, mock_islink, mock_remove, mock_msg,
                        mock_exists, mock_realpath):
-        """Test17 FileUtil.remove() with plain files."""
+        """Test17 FileUtil.remove()."""
         mock_msg.level = 0
         mock_regpre.return_value = None
         mock_base.return_value = '/filename4.txt'
@@ -568,7 +568,7 @@ class FileUtilTestCase(TestCase):
     @patch('udocker.utils.fileutil.os.path.basename')
     @patch.object(FileUtil, '_register_prefix')
     def test_21_cleanup(self, mock_regpre, mock_base, mock_absp, mock_remove):
-        """Test21 FileUtil.cleanup() delete tmp files."""
+        """Test21 FileUtil.cleanup()."""
         mock_regpre.return_value = None
         mock_base.return_value = 'filename.txt'
         mock_absp.return_value = '/tmp/filename.txt'
