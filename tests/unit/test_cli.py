@@ -1407,6 +1407,7 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 1)
         self.assertTrue(self.local.isprotected_container.called)
 
+        mock_msg.level = 0
         argv = ["udocker", "setup", "--execmode=P2",
                 "--purge", "--fixperm", "--nvidia", "mycont"]
         cmdp = CmdParser()
