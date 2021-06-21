@@ -540,7 +540,7 @@ class UdockerCLITestCase(TestCase):
     def test_17_do_login(self, mock_setrepo, mock_dioalog,
                          mock_ksput, mock_msg):
         """Test17 UdockerCLI().do_login()."""
-        mock_msg = 0
+        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
