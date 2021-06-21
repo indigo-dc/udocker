@@ -180,42 +180,32 @@ class Config(object):
 
     conf['nvi_dev_list'] = ['/dev/nvidia', ]
 
+    def _conf_file_read(self, cfpath, ignore_keys=None):
+        """
+        Read config file
+        """
+        Msg().out('Info: using config file: %s', cfpath)
+        cfnparser = ConfigParser()
+        cfnparser.read(cfpath)
+        for (key, val) in cfnparser.items('DEFAULT'):
+            if ignore_keys and key in ignore_keys:
+                continue
+            if val is not None:
+                Config.conf[key] = val
+
     def _file_override(self, user_cfile, ignore_keys=None):
         """
         Override values from config file
         """
-        cfpath = '/etc/' + Config.conf['config']
-        if os.path.exists(cfpath):
-            Msg().out('Info: using config file: %s', cfpath)
-            cfnparser = ConfigParser()
-            cfnparser.read(cfpath)
-            for (key, val) in cfnparser.items('DEFAULT'):
-                if ignore_keys and key in ignore_keys:
-                    continue
-                if val is not None:
-                    Config.conf[key] = val
+        if os.path.exists('/etc/' + Config.conf['config']):
+            self._conf_file_read('/etc/' + Config.conf['config'], ignore_keys)
 
         cfpath = Config.conf['homedir'] + Config.conf['config']
         if os.path.exists(cfpath):
-            Msg().out('Info: using config file: %s', cfpath)
-            cfnparser = ConfigParser()
-            cfnparser.read(cfpath)
-            for (key, val) in cfnparser.items('DEFAULT'):
-                if ignore_keys and key in ignore_keys:
-                    continue
-                if val is not None:
-                    Config.conf[key] = val
+            self._conf_file_read(cfpath, ignore_keys)
 
-        cfpath = user_cfile
-        if os.path.exists(cfpath):
-            Msg().out('Info: using config file: %s', cfpath)
-            cfnparser = ConfigParser()
-            cfnparser.read(cfpath)
-            for (key, val) in cfnparser.items('DEFAULT'):
-                if ignore_keys and key in ignore_keys:
-                    continue
-                if val is not None:
-                    Config.conf[key] = val
+        if os.path.exists(user_cfile):
+            self._conf_file_read(user_cfile, ignore_keys)
 
     def _env_override(self):
         """Override config with environment"""
