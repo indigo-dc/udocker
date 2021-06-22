@@ -148,7 +148,8 @@ class Config(object):
     # docker hub index
     conf['dockerio_index_url'] = "https://hub.docker.com"
     # docker hub registry
-    conf['dockerio_registry_url'] = "https://registry.hub.docker.com"
+    #conf['dockerio_registry_url'] = "https://registry.hub.docker.com"
+    conf['dockerio_registry_url'] = "https://registry-1.docker.io"
     # private repository v2
     # conf['dockerio_registry_url'] = "http://localhost:5000"
 
