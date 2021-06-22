@@ -18,8 +18,8 @@ class Config(object):
     """
     conf = dict()
     conf['verbose_level'] = 3
-    conf['topdir'] = os.path.expanduser("~") + "/.udocker"
-    conf['homedir'] = conf['topdir']
+    conf['homedir'] = os.path.expanduser("~") + "/.udocker"
+    conf['topdir'] = conf['homedir']
     conf['bindir'] = None
     conf['libdir'] = None
     conf['docdir'] = None
@@ -185,7 +185,7 @@ class Config(object):
         """
         Read config file
         """
-        Msg().out('Info: using config file: %s', cfpath)
+        Msg().out('Info: using config file: ', cfpath)
         cfnparser = ConfigParser()
         cfnparser.read(cfpath)
         for (key, val) in cfnparser.items('DEFAULT'):
@@ -204,6 +204,11 @@ class Config(object):
         cfpath = Config.conf['homedir'] + Config.conf['config']
         if os.path.exists(cfpath):
             self._conf_file_read(cfpath, ignore_keys)
+
+        if Config.conf['topdir'] != Config.conf['homedir']:
+            cfpath = Config.conf['topdir'] + Config.conf['config']
+            if os.path.exists(cfpath):
+                self._conf_file_read(cfpath, ignore_keys)
 
         if os.path.exists(user_cfile):
             self._conf_file_read(user_cfile, ignore_keys)
