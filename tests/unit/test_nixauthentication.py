@@ -2,27 +2,16 @@
 """
 udocker unit tests: NixAuthentication
 """
-import sys
+
 import pwd
 import grp
 from unittest import TestCase, main
+from unittest.mock import patch, mock_open
+from io import StringIO
 from udocker.helper.nixauth import NixAuthentication
 from udocker.config import Config
-try:
-    from unittest.mock import Mock, MagicMock, patch, mock_open
-except ImportError:
-    from mock import Mock, MagicMock, patch, mock_open
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
-sys.path.append('.')
-
-if sys.version_info[0] >= 3:
-    BUILTINS = "builtins"
-else:
-    BUILTINS = "__builtin__"
+BUILTINS = "builtins"
 
 
 class NixAuthenticationTestCase(TestCase):

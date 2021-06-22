@@ -4,13 +4,11 @@
 """
 udocker unit tests: HostInfo
 """
-from unittest import TestCase, main
+
 import pwd
+from unittest import TestCase, main
+from unittest.mock import patch
 from udocker.helper.hostinfo import HostInfo
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
 
 
 class HostInfoTestCase(TestCase):

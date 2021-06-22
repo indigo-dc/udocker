@@ -4,17 +4,11 @@
 """
 udocker unit tests: GetURLexeCurl
 """
-import sys
-sys.path.append('.')
-sys.path.append('../../')
 
 from unittest import TestCase, main
+from unittest.mock import patch
 from udocker.utils.curl import GetURLexeCurl
 from udocker.config import Config
-try:
-    from unittest.mock import patch, Mock
-except ImportError:
-    from mock import patch, Mock
 
 
 class GetURLexeCurlTestCase(TestCase):

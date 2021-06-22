@@ -114,14 +114,17 @@ class SingularityEngine(ExecutionEngineCommon):
         if "user" in self.opt:
             if self.opt["user"] == username:
                 return False
-            elif self.opt["user"] != "root" and self.opt["uid"] != '0':
+
+            if self.opt["user"] != "root" and self.opt["uid"] != '0':
                 Msg().out("Warning: running as another user not supported")
                 return False
-            elif self._has_option("--fakeroot", "exec"):
+
+            if self._has_option("--fakeroot", "exec"):
                 if (NixAuthentication().user_in_subuid(username) and
                         NixAuthentication().user_in_subgid(username)):
                     Config.conf['singularity_options'].extend(["--fakeroot", ])
                     return True
+
         self.opt["user"] = username
         return False
 

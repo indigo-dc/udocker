@@ -3,23 +3,12 @@
 udocker unit tests: RuncEngine
 """
 
-import sys
-sys.path.append('.')
-sys.path.append('../../')
-
 from unittest import TestCase, main
+from unittest.mock import Mock, patch, mock_open
 from udocker.config import Config
 from udocker.engine.runc import RuncEngine
-try:
-    from unittest.mock import Mock, patch, MagicMock, mock_open
-except ImportError:
-    from mock import Mock, patch, MagicMock, mock_open
 
-if sys.version_info[0] >= 3:
-    BUILTINS = "builtins"
-else:
-    BUILTINS = "__builtin__"
-
+BUILTINS = "builtins"
 BOPEN = BUILTINS + '.open'
 
 
@@ -30,8 +19,8 @@ class RuncEngineTestCase(TestCase):
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
-        Config().conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
-                                                    ["taskset", "-c", "%s", ])
+        Config().conf['cpu_affinity_exec_tools'] = \
+            (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
         Config().conf['runc_capabilities'] = [
             "CAP_KILL", "CAP_NET_BIND_SERVICE", "CAP_CHOWN", "CAP_DAC_OVERRIDE",
             "CAP_FOWNER", "CAP_FSETID", "CAP_KILL", "CAP_SETGID", "CAP_SETUID",
@@ -282,12 +271,12 @@ class RuncEngineTestCase(TestCase):
         """Test07 RuncEngine()._add_capabilities_spec()."""
         rcex = RuncEngine(self.local, self.xmode)
         Config.conf['runc_capabilities'] = ""
-        status = rcex._add_capabilities_spec()
-        self.assertEqual(status, None)
+        self.assertEqual(rcex._add_capabilities_spec(), None)
 
         rcex = RuncEngine(self.local, self.xmode)
         Config.conf['runc_capabilities'] = ["CAP_KILL",
-                    "CAP_NET_BIND_SERVICE", "CAP_CHOWN"]
+                                            "CAP_NET_BIND_SERVICE",
+                                            "CAP_CHOWN"]
         rcex._container_specjson = dict()
         rcex._container_specjson["process"] = dict()
         rcex._container_specjson["process"]["capabilities"] = dict()
@@ -477,6 +466,7 @@ class RuncEngineTestCase(TestCase):
                                      mock_add_mount_spec,
                                      mock_isdir, mock_isfile, mock_msg):
         """Test14 RuncEngine()._add_volume_bindings()."""
+        mock_msg.level = 0
         mock_add_mount_spec.side_effect = [None, None]
         rcex = RuncEngine(self.local, self.xmode)
         rcex._filebind = mock_fbind
@@ -615,6 +605,7 @@ class RuncEngineTestCase(TestCase):
         mock_delmnt.return_value = None
         mock_delns.return_value = None
         mock_setid.return_value = None
+        mock_env_set.return_value = None
         rcex = RuncEngine(self.local, self.xmode)
         status = rcex.run("CONTAINERID")
         self.assertEqual(status, 2)

@@ -31,7 +31,8 @@ class Config(object):
     # the actual tarball used in the installation can have a higher version
     conf['tarball_release'] = "1.2.8"
     conf['tarball'] = (
-        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-englib-1.2.8.tar.gz"
+        "https://download.ncg.ingrid.pt/"
+        "webdav/udocker/udocker-englib-1.2.8.tar.gz"
         " "
         "https://raw.githubusercontent.com"
         "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.8.tar.gz"
@@ -261,7 +262,8 @@ class Config(object):
         Config.conf['fakechroot_expand_symlinks'] = \
             os.getenv("UDOCKER_FAKECHROOT_EXPAND_SYMLINKS",
                       str(Config.conf['fakechroot_expand_symlinks'])).lower()
-        os.environ["PROOT_TMP_DIR"] = os.getenv("PROOT_TMP_DIR", Config.conf['tmpdir'])
+        os.environ["PROOT_TMP_DIR"] = os.getenv("PROOT_TMP_DIR",
+                                                Config.conf['tmpdir'])
         # try:
         #     Config.fakechroot_expand_symlinks = {
         #         "false": False, "true": True,
@@ -272,14 +274,6 @@ class Config(object):
 
     def getconf(self, user_cfile="u.conf"):
         """Return all configuration variables"""
-        # osinfo = OSInfo(Config.conf, "")
-        # Config.conf['uid'] = os.getuid()
-        # Config.conf['gid'] = os.getgid()
-        # Config.conf['username'] = pwd.getpwuid(Config.conf['uid']).pw_name
-        # Config.conf['oskernel'] = platform.release()
-        # Config.conf['arch'] = osinfo.arch()
-        # Config.conf['osversion'] = osinfo.osversion()
-        # Config.conf['osdistribution'] = osinfo.osdistribution()
         self._file_override(user_cfile)   # Override with variables in conf file
         self._env_override()    # Override with variables in environment
 

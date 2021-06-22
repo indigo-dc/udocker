@@ -4,27 +4,14 @@
 """
 udocker unit tests: GetURLpyCurl
 """
-import sys
-sys.path.append('.')
-sys.path.append('../../')
 
 from unittest import TestCase, main
+from unittest.mock import patch, Mock
+from io import BytesIO as strio
 from udocker.utils.curl import GetURLpyCurl
 from udocker.config import Config
-try:
-    from unittest.mock import patch, Mock
-except ImportError:
-    from mock import patch, Mock
 
-if sys.version_info[0] >= 3:
-    from io import BytesIO as strio
-else:
-    from StringIO import StringIO as strio
-
-if sys.version_info[0] >= 3:
-    BUILTINS = "builtins"
-else:
-    BUILTINS = "__builtin__"
+BUILTINS = "builtins"
 
 
 class GetURLpyCurlTestCase(TestCase):
@@ -141,6 +128,7 @@ class GetURLpyCurlTestCase(TestCase):
     @patch.object(GetURLpyCurl, 'is_available')
     def test_06_get(self, mock_sel):
         """Test06 GetURLpyCurl().get() generic get."""
+        mock_sel.return_value = True
         geturl = GetURLpyCurl()
         geturl._geturl = type('test', (object,), {})()
         geturl.get = self._get

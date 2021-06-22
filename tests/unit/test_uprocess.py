@@ -2,17 +2,12 @@
 """
 udocker unit tests: Uprocess
 """
+
 import subprocess
-import sys
 from unittest import TestCase, main
+from unittest.mock import patch
 from udocker.utils.uprocess import Uprocess
 from udocker.config import Config
-try:
-    from unittest.mock import Mock, patch
-except ImportError:
-    from mock import Mock, patch
-
-sys.path.append('.')
 
 
 class UprocessTestCase(TestCase):

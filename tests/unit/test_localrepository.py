@@ -2,29 +2,13 @@
 """
 udocker unit tests: LocalRepository
 """
-import sys
-import os
-sys.path.append('.')
-sys.path.append('../../')
 
 from unittest import TestCase, main
+from unittest.mock import patch, mock_open, call
 from udocker.container.localrepo import LocalRepository
 from udocker.config import Config
-try:
-    from unittest.mock import patch, mock_open, call, Mock
-except ImportError:
-    from mock import patch, mock_open, call, Mock
 
-try:
-    from io import BytesIO as bytestr
-except ImportError:
-    from StringIO import StringIO as bytestr
-
-if sys.version_info[0] >= 3:
-    BUILTIN = "builtins"
-else:
-    BUILTIN = "__builtin__"
-
+BUILTIN = "builtins"
 BOPEN = BUILTIN + '.open'
 UDOCKER_TOPDIR = "/home/u1/.udocker"
 
@@ -867,11 +851,11 @@ class LocalRepositoryTestCase(TestCase):
 
     def _sideffect_test_32(self, arg):
         """Side effect for isdir on test 23 _get_tags()."""
-        if self.iter < 3:
-            self.iter += 1
+        if self.itr < 3:
+            self.itr += 1
             return False
-        else:
-            return True
+
+        return True
 
     @patch('udocker.container.localrepo.os.path.isdir')
     @patch('udocker.container.localrepo.os.listdir')
@@ -911,13 +895,13 @@ class LocalRepositoryTestCase(TestCase):
         mock_isdir.return_value = True
         mock_listdir.return_value = ["FILE1", "FILE2"]
         mock_is.return_value = False
-        self.iter = 0
+        self.itr = 0
         mock_isdir.side_effect = self._sideffect_test_32
         lrepo = LocalRepository(UDOCKER_TOPDIR)
         status = lrepo._get_tags("CONTAINERS_DIR")
         expected_status = [('CONTAINERS_DIR', 'FILE1'),
                            ('CONTAINERS_DIR', 'FILE2')]
-        self.assertEqual(self.iter, 2)
+        self.assertEqual(self.itr, 2)
         self.assertEqual(status, [])
 
     @patch.object(LocalRepository, '_get_tags')
@@ -1123,8 +1107,8 @@ class LocalRepositoryTestCase(TestCase):
     @patch.object(LocalRepository, 'load_json')
     @patch('udocker.container.localrepo.os.path.exists')
     @patch('udocker.container.localrepo.FileUtil')
-    def test_39__get_image_attributes_v1(self, mock_fu, mock_exists,
-                                         mock_loadjson):
+    def test_39__get_image_attr_v1(self, mock_fu, mock_exists,
+                                   mock_loadjson):
         """Test39 LocalRepository()._get_image_attributes_v1()."""
         mock_fu.return_value.register_prefix.side_effect = \
             [None, None, None]
@@ -1152,8 +1136,8 @@ class LocalRepositoryTestCase(TestCase):
     @patch('udocker.container.localrepo.json.loads')
     @patch('udocker.container.localrepo.os.path.exists')
     @patch('udocker.container.localrepo.FileUtil')
-    def test_40__get_image_attributes_v2_s1(self, mock_fu, mock_exists,
-                                            mock_jload):
+    def test_40__get_image_attr_v2_s1(self, mock_fu, mock_exists,
+                                      mock_jload):
         """Test40 LocalRepository()._get_image_attributes_v2_s1()."""
         manifest = {
             "fsLayers": ({"blobSum": "foolayername"},),
@@ -1182,8 +1166,8 @@ class LocalRepositoryTestCase(TestCase):
     @patch('udocker.container.localrepo.json.loads')
     @patch('udocker.container.localrepo.os.path.exists')
     @patch('udocker.container.localrepo.FileUtil')
-    def test_41__get_image_attributes_v2_s2(self, mock_fu, mock_exists,
-                                            mock_jload):
+    def test_41__get_image_attr_v2_s2(self, mock_fu, mock_exists,
+                                      mock_jload):
         """Test41 LocalRepository()._get_image_attributes_v2_s2()."""
         manifest = {
             "layers": ({"digest": "foolayername"},),
@@ -1201,7 +1185,7 @@ class LocalRepositoryTestCase(TestCase):
             "layers": ({"digest": "foolayername"},),
             "config": ({"digest": '["foojsonstring"]'},)
         }
-        res = (['foojsonstring'], ['/cont/foolayername'])
+        # res = (['foojsonstring'], ['/cont/foolayername'])
         mock_fu.return_value.register_prefix.side_effect = \
             [None, None, None]
         mock_exists.side_effect = [True, True]
