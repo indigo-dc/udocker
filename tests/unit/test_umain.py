@@ -58,42 +58,42 @@ class UMainTestCase(TestCase):
     def test_03_execute(self, mock_ucli, mock_msg):
         """Test03 UMain().execute()."""
         mock_msg.level = 0
-        argv = ["udocker", "-h"]
+        argv = ['udocker', '--allow-root', '-h']
         mock_ucli.return_value.do_help.return_value = 0
         umain = UMain(argv)
         status = umain.execute()
         self.assertTrue(mock_ucli.return_value.do_help.called)
         self.assertEqual(status, 0)
 
-        argv = ['udocker', '--version']
+        argv = ['udocker', '--allow-root', '--version']
         mock_ucli.return_value.do_version.return_value = 0
         umain = UMain(argv)
         status = umain.execute()
         self.assertTrue(mock_ucli.return_value.do_version.called)
         self.assertEqual(status, 0)
 
-        argv = ['udocker', 'install']
+        argv = ['udocker', '--allow-root', 'install']
         mock_ucli.return_value.do_install.return_value = 0
         umain = UMain(argv)
         status = umain.execute()
         self.assertTrue(mock_ucli.return_value.do_install.called)
         self.assertEqual(status, 0)
 
-        argv = ['udocker', 'showconf']
+        argv = ['udocker', '--allow-root', 'showconf']
         mock_ucli.return_value.do_showconf.return_value = 0
         umain = UMain(argv)
         status = umain.execute()
         self.assertTrue(mock_ucli.return_value.do_showconf.called)
         self.assertEqual(status, 0)
 
-        argv = ['udocker', 'rm']
+        argv = ['udocker', '--allow-root', 'rm']
         mock_ucli.return_value.do_rm.return_value = 0
         umain = UMain(argv)
         status = umain.execute()
         self.assertTrue(mock_ucli.return_value.do_rm.called)
         self.assertEqual(status, 0)
 
-        argv = ['udocker', 'faking']
+        argv = ['udocker', '--allow-root', 'faking']
         umain = UMain(argv)
         status = umain.execute()
         self.assertEqual(status, 1)

@@ -2,7 +2,7 @@ config:
   project_repos:
     udocker:
       repo: 'https://github.com/indigo-dc/udocker.git'      
-      branch: master    
+      branch: devel3    
 sqa_criteria:
    qc_style:
      repos:
