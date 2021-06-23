@@ -725,6 +725,7 @@ class UdockerCLI(object):
         --device=/dev/xxx          :pass device to container (R1 mode only)
         --location=<container-dir> :use container outside the repository
         --nobanner                 :don't print a startup banner
+        --entrypoint               :override the container metadata entrypoint
 
         Only available in Rn execution modes:
         --device=/dev/xxx          :pass device to container (R1 mode only)
