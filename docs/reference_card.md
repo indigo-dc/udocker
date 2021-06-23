@@ -1,26 +1,36 @@
 # Reference card
 
 udocker is user oriented tool to enable pulling and execution of docker
-containers were docker is unavailable or cannot be used safely. 
+containers were docker is unavailable or cannot be used safely.
 
-## 1. Configuration files
+## 1. Configuration
 
-* `/etc/udocker.conf`
-* `$UDOCKER_DIR/udocker.conf`
-* `$HOME/.udocker/udocker.conf`
-* `$HOME/.udocker/containers/<container-id>/container.conf`
+The configuration of udocker has the following hierarchy:
 
-All attributes of the udocker::Config class can be modified via the
-configuration files. Example:
+1. The default configuration options are set in the `conf` dictionary in the `Config` class.
+2. If a configuration file is present, it will override 1.
+3. If environment variables are set they will override 2.
+4. The presence of general udocker command line options, will override 3. .
 
-```bash
-# do not verify digital certificates
+## 2. Configuration files
+
+The configuration files allow overriding of the udocker `Config` class
+`conf` dictionary. Example of the `udocker.conf` syntax:
+
+```ini
+dockerio_registry_url = "https://myregistry.mydomain:5000"
 http_insecure = True
-# set default verbose level
 verbose_level = 5
 ```
 
-## 2. Environment variables
+udocker loads the following configuration files if they are present:
+
+1. `/etc/udocker.conf`
+2. `$HOME/.udocker/udocker.conf`: overrides the options set in 1.
+3. `$UDOCKER_DIR/udocker.conf` (if different from the above): overrides the options set in 2.
+4. Configuration file set with the general CLI option `--config=`: overrides the options set in 3.
+
+## 3. Environment variables
 
 * `UDOCKER_DIR`: root directory of udocker usually $HOME/.udocker
 * `UDOCKER_BIN`: location of udocker related executables
@@ -42,7 +52,7 @@ verbose_level = 5
 * `UDOCKER_FAKECHROOT_EXPAND_SYMLINKS`: translate symbolic links in Fn modes
 * `UDOCKER_NOSYSCONF`: prevent loading of udocker system wide configuration
 
-## 3. Verbosity
+## 4. Verbosity
 
 The verbosity level of udocker can be enforced. Removing banners and most
 messages can be achieved by executing with `UDOCKER_LOGLEVEL=2`:
@@ -55,18 +65,18 @@ Optionally invoke udocker with `--quiet` or `-q` to decrease verbosity.
 udocker --quiet run <container>
 ```
 
-## 4. Security
+## 5. Security
 
-udocker does not require any type of privileges nor the deployment of 
-services by system administrators. It can be downloaded and executed 
+udocker does not require any type of privileges nor the deployment of
+services by system administrators. It can be downloaded and executed
 entirely by the end user. udocker runs under the identity of the user
 invoking it.
 
 Most udocker execution modes do not provide process isolation features
-such as docker. Due to the lack of isolation udocker must not be run 
+such as docker. Due to the lack of isolation udocker must not be run
 by privileged users.
 
-## 5. Troubleshooting
+## 6. Troubleshooting
 
 Invoke udocker with `-D` for debugging.
 
@@ -74,8 +84,8 @@ Invoke udocker with `-D` for debugging.
 udocker -D run <container>
 ```
 
-## 6. Documentation
+## 7. Documentation
 
 For Python 3:
-* <https://indigo-dc.github.io/udocker/>
 
+* <https://indigo-dc.github.io/udocker/>
