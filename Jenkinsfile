@@ -3,7 +3,12 @@
 def projectConfig
 
 pipeline {
-    agent any
+    agent { label 'udocker' }
+
+    options {
+        lock('udocker')
+        throttle(['StandaloneByNode'])
+    }
 
     stages {
         stage('SQA baseline dynamic stages') {
