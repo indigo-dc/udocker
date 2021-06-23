@@ -40,7 +40,7 @@ Other issues and or feature enhancements can be communicated on GitHub
 
 ## Code contributions
 
-* Perform pull requests against the devel branch for the stable python 2 based version <https://github.com/indigo-dc/udocker/tree/devel>
-* Perform pull requests against the devel3 branch for the upcoming python 3 based version: <https://github.com/indigo-dc/udocker/tree/devel3>
+* Perform pull requests against the devel3 branch for the python 3 based version: <https://github.com/indigo-dc/udocker/tree/devel3>
+* Perform pull requests against the devel branch for maintenance of the old python 2 based version <https://github.com/indigo-dc/udocker/tree/devel>
 * Please check you Python code with pylint.
 * For new features please also provide unit tests.

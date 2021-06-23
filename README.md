@@ -283,7 +283,7 @@ user environment. For this reason udocker should not be run by privileged
 users.
 
 Container images and filesystems will be unpacked and stored in the user
-home directory under `$HOME/.udocker` or other location of choice. Therefor
+home directory under `$HOME/.udocker` or other location of choice. Therefore
 the containers data will be subjected to the same filesystem protections as
 other files owned by the user. If the containers have sensitive information
 the files and directories should be adequately protected by the user.
