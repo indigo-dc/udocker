@@ -1,5 +1,8 @@
 # udocker (latest)
 
+  * Add --entrypoint to run --help
+  * Set docker hub registry registry-1.docker.io
+  * Fix repository name in search --list-tags
   * Improve tests: udocker_test.sh and udocker_test-run.sh
   * Documentation revision and improvements
   * Add licenses and licenses notice to documentation
