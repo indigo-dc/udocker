@@ -259,18 +259,11 @@ class Config(object):
                       str(Config.conf['fakechroot_expand_symlinks'])).lower()
         os.environ["PROOT_TMP_DIR"] = os.getenv("PROOT_TMP_DIR",
                                                 Config.conf['tmpdir'])
-        # try:
-        #     Config.fakechroot_expand_symlinks = {
-        #         "false": False, "true": True,
-        #         "none": None, }[fakechroot_expand_symlinks]
-        # except (KeyError, ValueError):
-        #     Msg().err("Error: in UDOCKER_FAKECHROOT_EXPAND_SYMLINKS")
-
 
     def getconf(self, user_cfile="u.conf"):
         """Return all configuration variables"""
         self._file_override(user_cfile)   # Override with variables in conf file
-        self._env_override()    # Override with variables in environment
+        self._env_override()              # Override with variables in environment
 
     def container(self, user_cfile="u.conf"):
         """
