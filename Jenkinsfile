@@ -15,7 +15,7 @@ pipeline {
             when {
               anyOf {
                 branch 'master'
-                branch 'devel3'
+                branch 'devel*'
                 buildingTag()
                 changeRequest target: 'master'
                 changeRequest target: 'devel3'
