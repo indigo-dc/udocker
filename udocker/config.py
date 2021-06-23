@@ -201,12 +201,12 @@ class Config(object):
         if os.path.exists('/etc/' + Config.conf['config']):
             self._conf_file_read('/etc/' + Config.conf['config'], ignore_keys)
 
-        cfpath = Config.conf['homedir'] + Config.conf['config']
+        cfpath = Config.conf['homedir'] + '/' + Config.conf['config']
         if os.path.exists(cfpath):
             self._conf_file_read(cfpath, ignore_keys)
 
         if Config.conf['topdir'] != Config.conf['homedir']:
-            cfpath = Config.conf['topdir'] + Config.conf['config']
+            cfpath = Config.conf['topdir'] + '/'  + Config.conf['config']
             if os.path.exists(cfpath):
                 self._conf_file_read(cfpath, ignore_keys)
 
