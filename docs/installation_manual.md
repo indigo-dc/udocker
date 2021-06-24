@@ -578,10 +578,43 @@ trees in the `containers` subdirectory.
 
 ## 9. Quality assurance
 
+The udocker software quality assurance follows the Common Software 
+Quality Assurance Baseline Criteria for Research Projects 
+DOI: <http://hdl.handle.net/10261/160086.> available at
+<https://indigo-dc.github.io/sqa-baseline/>.
+
+udocker also uses the Jenkins Pipeline Library 
+<https://github.com/indigo-dc/jenkins-pipeline-library>
+to implement Jenkins CI/CD pipelines for quality assurance.
+
+### 9.1. Functional and integration tests
+
+High level functional and integration tests used for quality assurance are available 
+in <https://github.com/indigo-dc/udocker/tree/master/utils>.
+These tests are also suitable to be executed by end-users to verify the installation.
+After cloning the udocker repository with `git` the `bash` scripts
+can be executed using:
+
+```bash
+cd utils
+./udocker_test.sh
+./udocker_test-run.sh
+```
+
+If the `.udocker` directory already exists these tests will not execute as they require
+a clean environment. In this case proceed as follows:
+
+1. rename the directory `$HOME/.udocker`, like `mv $HOME/.udocker $HOME/.udocker.ORIG`
+2. execute the tests
+3. remove the `$HOME/.udocker` created by the tests
+4. restore the original directory like `mv $HOME/.udocker.ORIG $HOME/.udocker`
+
+### 9.2. Unit and security tests
 The unit tests used in the software quality assurance pipelines are available at
 <https://github.com/indigo-dc/udocker/tree/master/tests/unit>.
 The tests can be executed after creating a virtualenv and installing the development
 requirements in [requirements-dev.txt](https://github.com/indigo-dc/udocker/blob/master/requirements-dev.txt)
+These tests are meant to be executed by the automated quality assurance pipelines.
 
 ```bash
 virtualenv -p python3 ud3
@@ -605,14 +638,3 @@ pylint --rcfile=pylintrc --disable=R,C udocker
 bandit -r udocker -f html -o bandit.html
 ```
 
-Additional high level tests used for quality assurance are available in
-<https://github.com/indigo-dc/udocker/tree/master/utils>.
-If the `.udocker` directory already exists these tests will not execute as they require
-a clean environment. After cloning the udocker repository with `git` these `bash` scripts
-can be executed using:
-
-```bash
-cd utils
-./udocker_test.sh
-./udocker_test-run.sh
-```
