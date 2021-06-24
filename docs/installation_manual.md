@@ -583,7 +583,7 @@ Quality Assurance Baseline Criteria for Research Projects
 DOI: <http://hdl.handle.net/10261/160086.> available at
 <https://indigo-dc.github.io/sqa-baseline/>.
 
-udocker also uses the Jenkins Pipeline Library 
+udocker uses the Jenkins Pipeline Library 
 <https://github.com/indigo-dc/jenkins-pipeline-library>
 to implement Jenkins CI/CD pipelines for quality assurance.
 
@@ -604,10 +604,10 @@ cd utils
 If the `.udocker` directory already exists these tests will not execute as they require
 a clean environment. In this case proceed as follows:
 
-1. rename the directory `$HOME/.udocker`, like `mv $HOME/.udocker $HOME/.udocker.ORIG`
+1. rename the directory `$HOME/.udocker`, as in `mv $HOME/.udocker $HOME/.udocker.ORIG`
 2. execute the tests
 3. remove the `$HOME/.udocker` created by the tests
-4. restore the original directory like `mv $HOME/.udocker.ORIG $HOME/.udocker`
+4. restore the original `.udocker` directory as in `mv $HOME/.udocker.ORIG $HOME/.udocker`
 
 ### 9.2. Unit and security tests
 The unit tests used in the software quality assurance pipelines are available at
