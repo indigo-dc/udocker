@@ -1,8 +1,6 @@
 include *.md
-include changelog
 include LICENSE
 
-graft doc
+graft docs
 graft tests
 global-exclude *.py[co]
-

@@ -1,13 +1,13 @@
 # Installation and configuration manual
 
 In most cases the end user can download and execute udocker without
-system administrator intervention. udocker itself is written in Python, but 
+system administrator intervention. udocker itself is written in Python, but
 also uses external binaries and libraries to provide a chroot like
 environment where containers are executed in user space. These tools do not
-require any privileges and constitute the udocker tools and libraries for 
+require any privileges and constitute the udocker tools and libraries for
 engines that is downloaded and installed by udocker itself.
 
-Redistribution, commercial use and code changes must regard all licenses 
+Redistribution, commercial use and code changes must regard all licenses
 shipped with udocker. For more information see
 [section 6 External tools and libraries](#6-external-tools-and-libraries).
 
@@ -15,6 +15,7 @@ shipped with udocker. For more information see
 
 The udocker dependencies are minimal and should be supported by most Linux installations.
 udocker requires:
+
 * Python 3 or alternatively Python >= 2.6
 * pycurl or alternatively the curl command
 * python hashlib or alternatively the openssl command
@@ -28,30 +29,30 @@ udocker requires:
 
 ### 2.1. Install from a released version
 
-Download a release tarball from <https://github.com/indigo-dc/udocker/releases>: 
+Download a release tarball from <https://github.com/indigo-dc/udocker/releases>:
 
 ```bash
-wget https://github.com/indigo-dc/udocker/releases/download/v1.3.0/udocker-1.3.0.tar.gz
-tar zxvf udocker-1.3.0.tar.gz
+wget https://github.com/indigo-dc/udocker/releases/download/v1.3.1/udocker-1.3.1.tar.gz
+tar zxvf udocker-1.3.1.tar.gz
 export PATH=`pwd`/udocker:$PATH
 ```
 
 Alternatively use `curl` instead of `wget` as follows:
 
 ```bash
-curl -L https://github.com/indigo-dc/udocker/releases/download/v1.3.0/udocker-1.3.0.tar.gz \
-  > udocker-1.3.0.tar.gz
-tar zxvf udocker-1.3.0.tar.gz
+curl -L https://github.com/indigo-dc/udocker/releases/download/v1.3.1/udocker-1.3.1.tar.gz \
+  > udocker-1.3.1.tar.gz
+tar zxvf udocker-1.3.1.tar.gz
 export PATH=`pwd`/udocker:$PATH
 ```
 
 udocker executes containers using external tools and libraries that
-are enhanced and packaged for use with udocker. For more information see 
+are enhanced and packaged for use with udocker. For more information see
 [section 6 External tools and libraries](#6-external-tools-and-libraries).
 Therefore to complete the installation invoke `udocker install` to download
-and install the required tools and libraries. 
+and install the required tools and libraries.
 
-```
+```bash
 udocker install
 ```
 
@@ -74,10 +75,10 @@ export PATH=`pwd`/udocker/udocker:$PATH
 ```
 
 udocker executes containers using external tools and libraries that
-are enhanced and packaged for use with udocker. For more information see 
+are enhanced and packaged for use with udocker. For more information see
 [section 6 External tools and libraries](#6-external-tools-and-libraries).
 Therefore to complete the installation invoke `udocker install` to download
-and install the required tools and libraries. 
+and install the required tools and libraries.
 
 ```bash
 udocker install
@@ -86,32 +87,31 @@ udocker install
 ### 2.3. Install from PyPI using pip
 
 For installation with pip it is advisable to setup a Python3 virtual environment
-before proceeding, see 
+before proceeding, see
 [Creating a virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment).
 
 ```bash
 python3 -m venv udockervenv
 source udockervenv/bin/activate
 pip install udocker
-export PATH=`pwd`/udockervenv/bin:$PATH
 ```
 
-The just installed udocker command will be `udockervenv/bin/udocker`.
+The udocker command will be `udockervenv/bin/udocker`.
 
 udocker executes containers using external tools and libraries that
-are enhanced and packaged for use with udocker. For more information see 
+are enhanced and packaged for use with udocker. For more information see
 [section 6 External tools and libraries](#6-external-tools-and-libraries).
 Therefore to complete the installation invoke `udocker install` to download
-and install the required tools and libraries. 
+and install the required tools and libraries.
 
 ```bash
 udocker install
 ```
 
-### 2.4. Installing without outbound network access
+### 2.4. Install without outbound network access
 
-When installation is attempted without having outbound network connectivity, 
-the installation of the binary tools and libraries with `udocker install` will 
+When the installation is attempted without having outbound network connectivity,
+the installation of the binary tools and libraries with `udocker install` will
 fail the download step. The solution is to fetch the the tarball in advance
 and then install the tools and libraries directly from the tarball file.
 
@@ -123,7 +123,7 @@ First, download a tarball file using:
 curl -L https://github.com/jorge-lip/udocker-builds/raw/master/tarballs/udocker-englib-1.2.8.tar.gz > udocker-englib-1.2.8.tar.gz
 ```
 
-Second, transfer the udocker code plus the tarball containing the tools and 
+Second, transfer the udocker code plus the tarball containing the tools and
 libraries to the target destination host.
 
 Finally perform the `udocker install` step using the transferred tarball file.
@@ -133,7 +133,7 @@ export UDOCKER_TARBALL=udocker-englib-1.2.8.tar.gz
 udocker install
 ```
 
-The environment variable `UDOCKER_TARBALL` can also point to an URL to fetch 
+The environment variable `UDOCKER_TARBALL` can also point to an URL to fetch
 the tarball from a specific or alternate location. To fetch from multiple
 possible locations for redundancy the environment variable `UDOCKER_TARBALL`
 can contain multiple URLs separated by a blank.
@@ -145,15 +145,28 @@ udocker install
 
 ### 2.5. Force the re-installation of the tools and libraries
 
-To force download and re-installation of the udocker tools and libraries. Invoke `udocker install` 
-with the flag `--force`:
+To force download and re-installation of the udocker tools and libraries.
+Invoke `udocker install` with the flag `--force`:
 
 ```bash
 udocker install --force
 ```
 
-## 3. Directories
-udocker creates files and subdirectories under `$HOME/.udocker` these are:
+## 3. Configuration
+
+The configuration of udocker has the following hierarchy:
+
+1. The default configuration options are set in the `conf` dictionary in the `Config` class.
+2. If a configuration file is present ([section 4. Configuration files](#4-configuration-files)),
+   it will override 1.
+3. If environment variables are set ([section 5. Environment variables](#5-environment-variables)),
+   they will override 2.
+4. The presence of general udocker command line options, will override 3. .
+
+### 3.1. Directories
+
+With the default configuration, udocker creates files and subdirectories under
+`$HOME/.udocker` these are:
 
 * `doc`: documentation and licenses.
 * `bin`: executables to support the execution engines.
@@ -163,16 +176,33 @@ udocker creates files and subdirectories under `$HOME/.udocker` these are:
 * `containers`: created containers.
 * `keystore.github`: authentication to access repositories (created on demand).
 
-
 Both installed files, as well as the containers to be downloaded or created  
 with udocker, will be installed by default under `$HOME/.udocker`.
 
 A default configuration file is available at
 [udocker.conf](https://github.com/indigo-dc/udocker/blob/master/etc/udocker.conf)
-it can be copied to your udocker directory as `$HOME/.udocker/udocker.conf` and 
-costumized.
+it can be copied to your udocker directory as `$HOME/.udocker/udocker.conf` and
+customized.
 
-## 4. Environment
+## 4. Configuration files
+
+The configuration files allow overriding of the udocker `Config` class
+`conf` dictionary. Example of the `udocker.conf` syntax:
+
+```ini
+dockerio_registry_url = "https://myregistry.mydomain:5000"
+http_insecure = True
+verbose_level = 5
+```
+
+udocker loads the following configuration files if they are present:
+
+1. `/etc/udocker.conf`
+2. `$HOME/.udocker/udocker.conf`: overrides the options set in 1.
+3. `$UDOCKER_DIR/udocker.conf` (if different from the above): overrides the options set in 2.
+4. Configuration file set with the general CLI option `--config=`: overrides the options set in 3.
+
+## 5. Environment variables
 
 The following environment variables can be used to customize the installation.
 The location of the udocker directories can be changed via the environment
@@ -206,8 +236,8 @@ specified with:
 * `UDOCKER_USE_CURL_EXECUTABLE`: pathname to the location of curl executable
 
 The fakechroot execution modes (Fn modes), the translation of symbolic links
-to the actual links can be controlled by the environment variable 
-`UDOCKER_FAKECHROOT_EXPAND_SYMLINKS`. The default value is 
+to the actual links can be controlled by the environment variable
+`UDOCKER_FAKECHROOT_EXPAND_SYMLINKS`. The default value is
 `none` which will select automatically the mode to be used, `false` if mounts are
 not performed or if the mount points pathname for the host and container
 are equal (e.g `-v /home:/home`), `true` otherwise (e.g `-v /data:/home`).
@@ -232,39 +262,22 @@ host or from the udocker installation.
 * `UDOCKER_DEFAULT_EXECUTION_MODE`: default execution mode can be P1, P2, F1,
   S1, R1, R2 or R3.
 
-## 5. Configuration
-
-udocker loads the following configuration files:
-
-* `/etc/udocker.conf`
-* `$UDOCKER_DIR/udocker.conf`
-* `$HOME/.udocker/udocker.conf` (if different from the above)
-
-The configuration files allow modification of the udocker `Config` class
-attributes. Example of the `udocker.conf` syntax:
-
-```
-dockerio_registry_url = "https://myregistry.mydomain:5000"
-http_insecure = True
-verbose_level = 5
-```
-
 ## 6. External tools and libraries
 
 ### 6.1. Source code repositories
 
-udocker uses external tools and libraries to execute the created containers. 
+udocker uses external tools and libraries to execute the created containers.
 The source code for the udocker tools and libraries is taken from several repositories.
-The **F** modes need heavily modified Fakechroot libraries and also a modified Patchelf 
+The **F** modes need heavily modified Fakechroot libraries and also a modified Patchelf
 both specifically improved to work with udocker. The Fakechroot for musl is a port
-of the Fakechroot library for the musl libc performed by the udocker development team. 
-The **P** modes need a modified PRoot that includes fixes and enhancements to work with 
-udocker. The **R** modes use the original runc and crun software with small changes for 
-static compilation. The following table highlights the repositories used by udocker 
+of the Fakechroot library for the musl libc performed by the udocker development team.
+The **P** modes need a modified PRoot that includes fixes and enhancements to work with
+udocker. The **R** modes use the original runc and crun software with small changes for
+static compilation. The following table highlights the repositories used by udocker
 containing the modified source code and the original repositories.
 
 
-| Mode  | Engine           | Repository used by udocker                                 | Original repository                      
+| Mode  | Engine           | Repository used by udocker                                 | Original repository
 |-------|:-----------------|:-----------------------------------------------------------|:-----------------------------------------
 | **P** | PRoot            | <https://github.com/jorge-lip/proot-udocker>               | <https://github.com/proot-me/proot>
 | **F** | Fakechroot glibc | <https://github.com/jorge-lip/libfakechroot-glibc-udocker> | <https://github.com/dex4er/fakechroot>
@@ -275,11 +288,11 @@ containing the modified source code and the original repositories.
 
 ### 6.2. Software Licenses
 
-Redistribution, commercial use and code changes must regard all licenses
-shipped with udocker. These include the [udocker license](https://github.com/indigo-dc/udocker/blob/master/LICENSE) and the individual
-licences of the external tools and libraries packaged for use with udocker.
+Redistribution, commercial use and code changes must regard all licenses shipped with udocker.
+These include the [udocker license](https://github.com/indigo-dc/udocker/blob/master/LICENSE)
+and the individual licenses of the external tools and libraries packaged for use with udocker.
 
-| Mode  | Engine           | License 
+| Mode  | Engine           | License
 |-------|:-----------------|:----------------------------------------------------------------------------
 | **P** | PRoot            | [GPL v2](https://github.com/jorge-lip/proot-udocker/blob/master/COPYING)
 | **F** | Fakechroot glibc | [LGPL v2.1](https://github.com/jorge-lip/libfakechroot-glibc-udocker/blob/master/LICENSE)
@@ -290,14 +303,14 @@ licences of the external tools and libraries packaged for use with udocker.
 
 ### 6.3. Binaries
 
-As mentioned in the previous sections the compiled binaries can be installed 
-with `udocker install`. Optionally they can be downloaded from the repository 
+As mentioned in the previous sections the compiled binaries can be installed
+with `udocker install`. Optionally they can be downloaded from the repository
 containing the binary builds at: <https://github.com/jorge-lip/udocker-builds>
 
 The executables are provided statically compiled for use across systems.
-The shared libraries that support the **F** modes need to match the libc 
-within the container and are provided for several Linux distributions. 
-See `$HOME/.udocker/lib` for the supported distributions and corresponding 
+The shared libraries that support the **F** modes need to match the libc
+within the container and are provided for several Linux distributions.
+See `$HOME/.udocker/lib` for the supported distributions and corresponding
 versions. The tools are also delivered for several architectures.
 
 | Mode  | Supported architecture                       |
@@ -306,7 +319,6 @@ versions. The tools are also delivered for several architectures.
 | **F** | x86_64                                       |
 | **R** | x86_64                                       |
 | **S** | uses the binaries present in the host system |
-
 
 The latest binary tarball can be produced from the source code using:
 
@@ -334,8 +346,8 @@ The udocker tool should be installed as shown in section 2.1:
 
 ```bash
 cd /sw
-wget https://github.com/indigo-dc/udocker/releases/download/1.3.0/udocker-1.3.0.tar.gz
-tar zxvf udocker-1.3.0.tar.gz
+wget https://github.com/indigo-dc/udocker/releases/download/1.3.1/udocker-1.3.1.tar.gz
+tar zxvf udocker-1.3.1.tar.gz
 ```
 
 Directing users to the central udocker installation can be done using the
@@ -426,7 +438,7 @@ Changing the execution mode can be accomplished with the following udocker
 command where `<MODE>` is one of the supported modes in column one.
 
 ```bash
-udocker --allow-root setup --execmode=<MODE>   myContainerId
+udocker --allow-root setup --execmode=<MODE> myContainerId
 ```
 
 Notice the `--allow-root` should only be used when running
@@ -439,12 +451,14 @@ the intended mode. The command `udocker clone` can be used to create
 copies of existing containers.
 
 ##### 7.3.1.1. Mode F4 is not supported
+
 The mode F4 is not suitable for readonly containers as it is meant to
 support the dynamic creation of new executables and libraries inside of
 the container, which cannot happen if the container is readonly. Use the
 mode F3 instead of F4.
 
 ##### 7.3.1.2. Mode F3 restrictions
+
 The F3 mode (and also F4) perform changes to the container executables
 and libraries, in particular they change the pathnames in ELF headers
 making them pointing at the container location. This means that the
@@ -454,8 +468,9 @@ location pathname is `/sw/udocker/containers` then all hosts must
 also mount it at the same exact path `/sw/udocker/containers`.
 
 ##### 7.3.1.3. Modes R2 and R3 restrictions
+
 Central installation from readonly location using any of the R modes
-requires udocker above v1.1.7 available from the udocker `devel` branch.
+requires udocker above v1.1.7.
 These modes require the creation of a mount point inside the container
 that is transparently created when the container is first executed,
 therefore (as recommended for all other modes) the container
@@ -477,7 +492,6 @@ udocker --allow-root run  -v /<path-to-host-writable-directory>  myContainerId
 ```
 
 Notice the `--allow-root` should only be used when running from the root user.
-
 
 #### 7.3.2. Mount directories and files in central installations
 
@@ -544,8 +558,8 @@ export PATH=$PATH:$UDOCKER_DIR:$UDOCKER_DIR/bin
 
 ## 8. Uninstall
 
-udocker does not provide an uninstall command. udocker can be uninstalled 
-by simply removing the created files and directories. The recommended 
+udocker does not provide an uninstall command. udocker can be uninstalled
+by simply removing the created files and directories. The recommended
 approach is as follows:
 
 1. Fix permissions for all created containers
@@ -556,17 +570,51 @@ approach is as follows:
    `cd $HOME ; rm -Rf .udocker`
 4. Remove the udocker Python code
 
-The *udocker directory tree* contains the external executables, libraries, 
+The *udocker directory tree* contains the external executables, libraries,
 documentation, container images and container file system trees. By removing
 it all created containers will be also removed. Changing the file permissions
-might be required prior to deletion especially for the container file system 
+might be required prior to deletion especially for the container file system
 trees in the `containers` subdirectory.
 
 ## 9. Quality assurance
 
-The unit tests used in the software quality assurance pipelines are available at <https://github.com/indigo-dc/udocker/tree/master/tests/unit>.
-The tests can be executed after creating a virtualenv and installing the development 
+The udocker software quality assurance follows the Common Software 
+Quality Assurance Baseline Criteria for Research Projects 
+DOI: <http://hdl.handle.net/10261/160086.> available at
+<https://indigo-dc.github.io/sqa-baseline/>.
+
+udocker uses the Jenkins Pipeline Library 
+<https://github.com/indigo-dc/jenkins-pipeline-library>
+to implement Jenkins CI/CD pipelines for quality assurance.
+
+### 9.1. Functional and integration tests
+
+High level functional and integration tests used for quality assurance are available 
+in <https://github.com/indigo-dc/udocker/tree/master/utils>.
+These tests are also suitable to be executed by end-users to verify the installation.
+After cloning the udocker repository with `git` the `bash` scripts
+can be executed using:
+
+```bash
+cd utils
+./udocker_test.sh
+./udocker_test-run.sh
+```
+
+If the `.udocker` directory already exists these tests will not execute as they require
+a clean environment. In this case proceed as follows:
+
+1. rename the directory `$HOME/.udocker`, as in `mv $HOME/.udocker $HOME/.udocker.ORIG`
+2. execute the tests
+3. remove the `$HOME/.udocker` created by the tests
+4. restore the original `.udocker` directory as in `mv $HOME/.udocker.ORIG $HOME/.udocker`
+
+### 9.2. Unit and security tests
+The unit tests used in the software quality assurance pipelines are available at
+<https://github.com/indigo-dc/udocker/tree/master/tests/unit>.
+The tests can be executed after creating a virtualenv and installing the development
 requirements in [requirements-dev.txt](https://github.com/indigo-dc/udocker/blob/master/requirements-dev.txt)
+These tests are meant to be executed by the automated quality assurance pipelines.
 
 ```bash
 virtualenv -p python3 ud3
@@ -582,24 +630,11 @@ The unit tests coverage can be executed using:
 nosetests -v --with-coverage --cover-package=udocker tests/unit
 ```
 
-Other tests configured in `tox.ini`, can be executed as well, such as linting 
+Other tests configured in `tox.ini`, can be executed as well, such as linting
 (code style checking) and static security tests:
 
 ```bash
 pylint --rcfile=pylintrc --disable=R,C udocker
 bandit -r udocker -f html -o bandit.html
 ```
-
-Additional high level tests used for quality assurance are available in 
-<https://github.com/indigo-dc/udocker/tree/master/utils>.
-If the `.udocker` directory already exists these tests will not execute as they require 
-a clean environment. After cloning the udocker repository with `git` these `bash` scripts 
-can be executed using:
-
-```bash
-cd utils
-./udocker_test.sh
-./udocker_test-run.sh
-```
-
 

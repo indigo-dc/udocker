@@ -543,10 +543,10 @@ class DockerIoAPI(object):
     def get_tags(self, imagerepo):
         """List tags from a v2 or v1 repositories"""
         Msg().out("Info: get tags", imagerepo, l=Msg.DBG)
+        (dummy, remoterepo) = self._parse_imagerepo(imagerepo)
         if self.is_v2():
-            return self.get_v2_image_tags(imagerepo, True)  # try v2
-
-        return self.get_v1_image_tags(imagerepo, True)  # try v1
+            return self.get_v2_image_tags(remoterepo, True)  # try v2
+        return self.get_v1_image_tags(remoterepo, True)  # try v1
 
     def search_init(self, pause):
         """Setup new search"""
