@@ -2,6 +2,7 @@
 """Configurations options and treatment/overrinding"""
 import os
 import sys
+import logging
 from udocker.msg import Msg
 
 # if Python 3
@@ -265,11 +266,11 @@ class Config(object):
         self._file_override(user_cfile) # Override with variables in conf file
         self._env_override()          # Override with variables in environment
 
-    def container(self, user_cfile="u.conf"):
-        """
-        Load configuration for a container
-        Values should be in the form x = y
-        """
-        ignore_keys = ["topdir", "homedir", "reposdir", "layersdir",
-                       "containersdir", "location", ]
-        self._file_override(user_cfile, ignore_keys)
+    # def container(self, user_cfile="u.conf"):
+    #     """
+    #     Load configuration for a container
+    #     Values should be in the form x = y
+    #     """
+    #     ignore_keys = ["topdir", "homedir", "reposdir", "layersdir",
+    #                    "containersdir", "location", ]
+    #     self._file_override(user_cfile, ignore_keys)

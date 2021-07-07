@@ -20,11 +20,12 @@ limitations under the License.
 """
 import os
 import sys
+import logging
 
 sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 
 # pylint: disable=wrong-import-position
-from udocker.msg import Msg
+#from udocker.msg import Msg
 from udocker.umain import UMain
 from udocker.utils.fileutil import FileUtil
 
@@ -32,11 +33,13 @@ from udocker.utils.fileutil import FileUtil
 def main():
     """Program start and exception handling"""
 
+    logger = logging.getLogger(__name__)
     exit_status = 0
     try:
         exit_status = UMain(sys.argv).execute()
     except KeyboardInterrupt:
-        Msg().out("Info: keyboard interrupt", l=Msg.INF)
+        #Msg().out("Info: keyboard interrupt", l=Msg.INF)
+        logger.error("ERROR: keyboard interrupt")
         FileUtil().cleanup()
         exit_status = 1
     except SystemExit as error:

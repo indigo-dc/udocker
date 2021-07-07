@@ -1193,6 +1193,36 @@ class UdockerCLI(object):
         Msg().out(80*"-")
         return self.STATUS_OK
 
+    def do_showinst(self, cmdp):
+        return self.STATUS_OK
+
+    def do_avail(self, cmdp):
+        return self.STATUS_OK
+
+    def do_download(self, cmdp):
+        return self.STATUS_OK
+
+    def do_download_all(self, cmdp):
+        return self.STATUS_OK
+
+    def do_upgrade(self, cmdp):
+        return self.STATUS_OK
+
+    def do_upgrade_all(self, cmdp):
+        return self.STATUS_OK
+
+    def do_verify(self, cmdp):
+        return self.STATUS_OK
+
+    def do_delete(self, cmdp):
+        return self.STATUS_OK
+
+    def do_delete_all(self, cmdp):
+        return self.STATUS_OK
+
+    def do_delete_metadata(self, cmdp):
+        return self.STATUS_OK
+
     def do_version(self, cmdp):
         """
         version: Print version information
