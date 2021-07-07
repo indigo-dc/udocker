@@ -5,6 +5,7 @@ import os
 import sys
 import string
 import json
+import logging
 from getpass import getpass
 
 from udocker import __version__
@@ -29,7 +30,6 @@ if sys.version_info[0] >= 3:
     GET_INPUT = input
 else:
     BUILTIN = "__builtin__"
-    # pylint: disable=undefined-variable
     GET_INPUT = raw_input
 
 
@@ -46,6 +46,7 @@ class UdockerCLI(object):
         self.localrepo = localrepo
         self.dockerioapi = DockerIoAPI(self.localrepo)
         self.localfileapi = LocalFileAPI(self.localrepo)
+        self.logger = logging.getLogger(__name__)
         if Config.conf['keystore'].startswith("/"):
             self.keystore = KeyStore(Config.conf['keystore'])
         else:
@@ -1177,6 +1178,32 @@ class UdockerCLI(object):
 
         return self.STATUS_ERROR
 
+    def do_install2(self, cmdp):
+        """
+        install2: install modules
+        install2 [options] module1 module2
+        --force                    :force reinstall
+        --upgrade                  :upgrade modules
+        --purge                    :remove modules (be careful)
+        """
+        if cmdp is not None:
+            force = cmdp.get("--force")
+            purge = cmdp.get("--purge")
+            if cmdp.missing_options():  # syntax error
+                return self.STATUS_ERROR
+        else:
+            force = False
+            purge = False
+
+        utools = UdockerTools(self.localrepo)
+        if purge:
+            utools.purge()
+
+        if utools.install(force):
+            return self.STATUS_OK
+
+        return self.STATUS_ERROR
+
     def do_showconf(self, cmdp):
         """
         showconf: Print all configuration options
@@ -1194,9 +1221,17 @@ class UdockerCLI(object):
         return self.STATUS_OK
 
     def do_showinst(self, cmdp):
+        """
+        showinst: Show installed modules and versions
+        """
         return self.STATUS_OK
 
     def do_avail(self, cmdp):
+        """
+        avail: Show available modules and versions
+        """
+        utools = UdockerTools(self.localrepo)
+        modules_json = utools.get_metadata()
         return self.STATUS_OK
 
     def do_download(self, cmdp):
@@ -1205,22 +1240,16 @@ class UdockerCLI(object):
     def do_download_all(self, cmdp):
         return self.STATUS_OK
 
-    def do_upgrade(self, cmdp):
-        return self.STATUS_OK
-
-    def do_upgrade_all(self, cmdp):
-        return self.STATUS_OK
-
-    def do_verify(self, cmdp):
-        return self.STATUS_OK
-
-    def do_delete(self, cmdp):
-        return self.STATUS_OK
-
-    def do_delete_all(self, cmdp):
+    def do_verifymod(self, cmdp):
+        """
+        verifymod: Verify modules, checksums
+        """
         return self.STATUS_OK
 
     def do_delete_metadata(self, cmdp):
+        """
+        delete_metadata: Delete metadata.json
+        """
         return self.STATUS_OK
 
     def do_version(self, cmdp):

@@ -85,6 +85,11 @@ class UMain(object):
             "showconf": self.cli.do_showconf, "save": self.cli.do_save,
             "inspect": self.cli.do_inspect, "login": self.cli.do_login,
             "setup": self.cli.do_setup, "install": self.cli.do_install,
+            "install2": self.cli.do_install2, "showinst": self.cli.do_showinst,
+            "avail": self.cli.do_avail, "download": self.cli.do_download,
+            "download_all": self.cli.do_download_all,
+            "verifymod": self.cli.do_verifymod,
+            "delete_metadata": self.cli.do_delete_metadata
         }
 
         if ((len(self.argv) == 1) or
@@ -101,7 +106,7 @@ class UMain(object):
             if self.cmdp.get("--help", "CMD_OPT"):
                 Msg().out(cmds[command].__doc__)
                 return self.STATUS_OK
-            if command in ["version", "showconf"]:
+            if command in ["version", "showconf", "avail"]:
                 return cmds[command](self.cmdp)
             if command != "install":
                 self.cli.do_install(None)

@@ -46,8 +46,7 @@ class UdockerTools(object):
         """
         Udocker installation instructions are available at:
 
-          https://github.com/indigo-dc/udocker/tree/master/doc
-          https://github.com/indigo-dc/udocker/tree/devel/doc
+          https://indigo-dc.github.io/udocker/installation_manual.html
 
         Udocker requires additional tools to run. These are available
         in the udocker tarball. The tarballs are available at several
