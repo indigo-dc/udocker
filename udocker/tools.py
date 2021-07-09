@@ -39,6 +39,7 @@ class UdockerTools(object):
         self._installinfo = Config.conf['installinfo']  # URL or file
         self._tarball_release = Config.conf['tarball_release']
         self._installretry = Config.conf['installretry']
+        self._metajson = Config.conf['meta_json']
         self._install_json = dict()
         self.curl = GetURL()
 
@@ -118,9 +119,13 @@ class UdockerTools(object):
             FileUtil(f_path).register_prefix()
             FileUtil(f_path).remove(recursive=True)
 
-    def _download(self, url):
+    def _download(self, url, fileout=""):
         """Download a file """
-        download_file = FileUtil("udockertools").mktmp()
+        if fileout:
+            download_file = fileout
+        else:
+            download_file = FileUtil("udockertools").mktmp()
+
         if Msg.level <= Msg.DEF:
             Msg().setlevel(Msg.NIL)
         (hdr, dummy) = self.curl.get(url, ofile=download_file, follow=True)
@@ -134,11 +139,13 @@ class UdockerTools(object):
         FileUtil(download_file).remove()
         return ""
 
-    def _get_file(self, url):
-        """Get file from list of possible locations file or internet"""
+    def _get_file(self, url, fileout=""):
+        """Get file from list of possible locations file or internet,
+        url: URL or local file
+        fileout: full filename of downloaded file"""
         filename = ""
         if "://" in url:
-            filename = self._download(url)
+            filename = self._download(url, fileout)
         elif os.path.exists(url):
             filename = os.path.realpath(url)
         if filename and os.path.isfile(filename):
@@ -285,3 +292,19 @@ class UdockerTools(object):
         self.get_installinfo()
         Msg().err("Error: installation of udockertools failed")
         return False
+
+    def show_metadata(self):
+        """Show available modules and versions"""
+        fileout = Config.conf['topdir'] + "/" + "metadata.json"
+        for url in self._get_mirrors(self._metajson):
+            Msg().out("Info: Metadata json of modules:", url, l=Msg.VER)
+            mjson = self._get_file(url, fileout)
+
+        try:
+            with open(mjson, 'r') as filep:
+                self.metadict = json.load(filep)
+            for msg in self._install_json["messages"]:
+                Msg().out("Info:", msg)
+        except (KeyError, AttributeError, ValueError,
+                OSError, IOError):
+            Msg().err("Error reading file")

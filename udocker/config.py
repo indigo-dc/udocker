@@ -45,6 +45,9 @@ class Config(object):
     conf['config'] = "udocker.conf"
     conf['keystore'] = "keystore"
     conf['tmpdir'] = os.getenv("TMPDIR", "/tmp")    # for tmp files only
+    conf['meta_json'] = (
+        "https://download.ncg.ingrid.pt/webdav/udocker/metadata.json"
+    )
 
     # defaults for container execution
     conf['cmd'] = ["/bin/bash", "-i"]  # Comand to execute
