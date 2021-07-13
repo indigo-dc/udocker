@@ -302,9 +302,21 @@ class UdockerTools(object):
 
         try:
             with open(mjson, 'r') as filep:
-                self.metadict = json.load(filep)
-            for msg in self._install_json["messages"]:
-                Msg().out("Info:", msg)
+                metadict = json.load(filep)
+                for module in metadict:
+                    Msg().out(120*"_")
+                    Msg().out("Module:         ", module["module"])
+                    Msg().out("Version:        ", module["version"])
+                    Msg().out("Architecture:   ", module["arch"])
+                    Msg().out("OS version:     ", module["os_ver"])
+                    Msg().out("Kernel version: ", module["kernel_ver"])
+                    Msg().out("Dependencies:   ", module["dependencies"])
+                    Msg().out("URLs:           ")
+                    for url in module["urls"]:
+                        Msg().out("                ", url)
+                    Msg().out("Documentation:  ")
+                    for url in module["docs_url"]:
+                        Msg().out("                ", url)
         except (KeyError, AttributeError, ValueError,
                 OSError, IOError):
             Msg().err("Error reading file")
