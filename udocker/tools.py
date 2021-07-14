@@ -13,7 +13,6 @@ from udocker import is_genstr
 from udocker.config import Config
 from udocker.utils.curl import GetURL
 from udocker.utils.fileutil import FileUtil
-from udocker.msg import Msg
 from udocker import __version__
 
 LOG = logging.getLogger(__name__)
@@ -77,13 +76,8 @@ class UdockerTools(object):
            by default under $HOME/.udocker
 
         """
-        Msg().out(self._instructions.__doc__, l=Msg.ERR)
-        Msg().out("udocker command line interface version:", __version__,
-                  "\nrequires udockertools tarball release :",
-                  self._tarball_release, l=Msg.ERR)
-
-        msg = "LOG - udocker command line interface version: " + __version__ + \
-              "\nrequires udockertools tarball release :" + self._tarball_release
+        msg = "udocker command line interface version: " + __version__ + \
+              "\nrequires udockertools tarball release: " + self._tarball_release
         LOG.log(MSG_LEVEL, self._instructions.__doc__)
         LOG.log(MSG_LEVEL, msg)
 
@@ -109,8 +103,8 @@ class UdockerTools(object):
 
     def is_available(self):
         """Are the tools already installed"""
-        version = \
-            FileUtil(self.localrepo.libdir + "/VERSION").getdata('r').strip()
+        version_file = self.localrepo.libdir + "/VERSION"
+        version = FileUtil(version_file).getdata('r').strip()
         return self._version_isok(version)
 
     def purge(self):
@@ -138,16 +132,13 @@ class UdockerTools(object):
         else:
             download_file = FileUtil("udockertools").mktmp()
 
-        # if Msg.level <= Msg.DEF:
-        #     Msg().setlevel(Msg.NIL)
         (hdr, dummy) = self.curl.get(url, ofile=download_file, follow=True)
-        # if Msg.level == Msg.NIL:
-        #     Msg().setlevel()
         try:
             if "200" in hdr.data["X-ND-HTTPSTATUS"]:
                 return download_file
         except (KeyError, TypeError, AttributeError):
             pass
+
         FileUtil(download_file).remove()
         return ""
 
@@ -160,8 +151,10 @@ class UdockerTools(object):
             filename = self._download(url, fileout)
         elif os.path.exists(url):
             filename = os.path.realpath(url)
+
         if filename and os.path.isfile(filename):
             return filename
+
         return ""
 
     def _verify_version(self, tarball_file):
@@ -179,10 +172,12 @@ class UdockerTools(object):
                 if tar_in.name.startswith("udocker_dir/lib/VERSION"):
                     tar_in.name = os.path.basename(tar_in.name)
                     tfile.extract(tar_in, path=tmpdir)
+
             tfile.close()
         except tarfile.TarError:
             FileUtil(tmpdir).remove(recursive=True)
             return (False, "")
+
         tarball_version = FileUtil(tmpdir + "/VERSION").getdata('r').strip()
         status = self._version_isok(tarball_version)
         FileUtil(tmpdir).remove(recursive=True)
@@ -201,84 +196,85 @@ class UdockerTools(object):
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/bin/"):
                     tar_in.name = os.path.basename(tar_in.name)
-                    Msg().out("Info: extrating", tar_in.name, l=Msg.DBG)
-                    LOG.debug("LOG - Info: extrating %s" % tar_in.name)
+                    LOG.debug("LOG - Info: extrating %s", tar_in.name)
                     tfile.extract(tar_in, self.localrepo.bindir)
+
             FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR |
                                                    stat.S_IWUSR |
                                                    stat.S_IXUSR)
-
             FileUtil(self.localrepo.libdir).rchmod()
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/lib/"):
                     tar_in.name = os.path.basename(tar_in.name)
-                    Msg().out("Info: extrating", tar_in.name, l=Msg.DBG)
+                    LOG.log(MSG_LEVEL, "Info: extrating %s", tar_in.name)
                     tfile.extract(tar_in, self.localrepo.libdir)
-            FileUtil(self.localrepo.libdir).rchmod()
 
+            FileUtil(self.localrepo.libdir).rchmod()
             FileUtil(self.localrepo.docdir).rchmod()
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/doc/"):
                     tar_in.name = os.path.basename(tar_in.name)
-                    Msg().out("Info: extrating", tar_in.name, l=Msg.DBG)
+                    LOG.debug("Info: extrating %s", tar_in.name)
                     tfile.extract(tar_in, self.localrepo.docdir)
+
             FileUtil(self.localrepo.docdir).rchmod()
             tfile.close()
         except tarfile.TarError:
             return False
+
         return True
 
     def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
         if is_genstr(mirrors):
             mirrors = mirrors.split(' ')
+
         try:
             random.shuffle(mirrors)
         except NameError:
             pass
+
         return mirrors
 
     def get_installinfo(self):
         """Get json containing installation info"""
-        Msg().out("Info: searching for messages:", l=Msg.VER)
-        LOG.log(MSG_LEVEL, "LOG - searching for messages:")
+        LOG.log(MSG_LEVEL, "Info: searching for messages:")
         for url in self._get_mirrors(self._installinfo):
             infofile = self._get_file(url)
             try:
                 with open(infofile, 'r') as filep:
                     self._install_json = json.load(filep)
+
                 for msg in self._install_json["messages"]:
-                    Msg().out("Info:", msg)
-                    LOG.log(MSG_LEVEL, "LOG - Info: %s", msg)
-            except (KeyError, AttributeError, ValueError,
-                    OSError, IOError):
-                Msg().out("Info: no messages:", infofile, url, l=Msg.VER)
-                LOG.info("LOG - Info: no messages: %s %s", infofile, url)
+                    LOG.log(MSG_LEVEL, "Info: %s", msg)
+
+            except (KeyError, AttributeError, ValueError, OSError, IOError):
+                LOG.info("Info: no messages: %s %s", infofile, url)
+
             return self._install_json
 
     def _install_logic(self, force=False):
         """Obtain random mirror, download, verify and install"""
         for url in self._get_mirrors(self._tarball):
-            Msg().out("Info: install using:", url, l=Msg.VER)
-            LOG.info("LOG - Info: install using: %s", url)
+            LOG.info("Info: install using: %s", url)
             tarballfile = self._get_file(url)
             (status, version) = self._verify_version(tarballfile)
             if status:
-                Msg().out("Info: installing udockertools", version)
-                LOG.log(MSG_LEVEL, "LOG - Info: installing udockertools %s", version)
+                LOG.log(MSG_LEVEL, "Info: installing udockertools %s", version)
                 status = self._install(tarballfile)
             elif force:
-                Msg().out("Info: forcing install of udockertools", version)
-                LOG.log(MSG_LEVEL, "LOG - Info: forcing install of udockertools %s", version)
+                LOG.log(MSG_LEVEL, "Info: forcing install of udockertools %s", version)
                 status = self._install(tarballfile)
             else:
-                Msg().err("Error: version is", version, "for", url, l=Msg.VER)
-                LOG.error("LOG - version is %s for %s", version, url)
+                LOG.error("version is %s for %s", version, url)
+
             if "://" in url and tarballfile:
                 FileUtil(tarballfile).remove()
                 LOG.debug("Removing tarfile: %s", tarballfile)
+
             if status:
                 return True
+
         return False
 
     def install(self, force=False):
@@ -287,15 +283,11 @@ class UdockerTools(object):
             return True
 
         if not self._autoinstall and not force:
-            Msg().out("Warning: installation missing and autoinstall disabled",
-                      l=Msg.WAR)
-            LOG.warning("LOG: installation missing and autoinstall disabled")
+            LOG.warning("Warn: installation missing and autoinstall disabled")
             return None
 
         if not self._tarball:
-            Msg().out("Info: UDOCKER_TARBALL not set, installation skipped",
-                      l=Msg.VER)
-            LOG.info("LOG - UDOCKER_TARBALL not set, installation skipped")
+            LOG.info("Info: UDOCKER_TARBALL not set, installation skipped")
             return True
 
         LOG.log(MSG_LEVEL,"Info: udocker command line interface %s", __version__)
