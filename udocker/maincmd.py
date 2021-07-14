@@ -29,17 +29,18 @@ sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 from udocker.umain import UMain
 from udocker.utils.fileutil import FileUtil
 
+LOG = logging.getLogger(__name__)
+
 
 def main():
     """Program start and exception handling"""
 
-    logger = logging.getLogger(__name__)
     exit_status = 0
     try:
         exit_status = UMain(sys.argv).execute()
     except KeyboardInterrupt:
         #Msg().out("Info: keyboard interrupt", l=Msg.INF)
-        logger.error("ERROR: keyboard interrupt")
+        LOG.error("ERROR: keyboard interrupt")
         FileUtil().cleanup()
         exit_status = 1
     except SystemExit as error:

@@ -3,11 +3,15 @@
 
 import os
 import sys
+import logging
 from udocker.msg import Msg
 from udocker.cmdparser import CmdParser
 from udocker.config import Config
 from udocker.container.localrepo import LocalRepository
 from udocker.cli import UdockerCLI
+
+LOG = logging.getLogger(__name__)
+MSG_LEVEL = 60
 
 
 class UMain(object):
@@ -32,6 +36,7 @@ class UMain(object):
         allow_root = self.cmdp.get("--allow-root", "GEN_OPT")
         if not (os.geteuid() or allow_root):
             Msg().err("Error: do not run as root !")
+            LOG.error("LOGGING - Error: do not run as root !")
             sys.exit(self.STATUS_ERROR)
 
         if self.cmdp.get("--config=", "GEN_OPT"):
@@ -47,6 +52,7 @@ class UMain(object):
               self.cmdp.get("-q", "GEN_OPT")):
             Config.conf['verbose_level'] = Msg.MSG
         Msg().setlevel(Config.conf['verbose_level'])
+        LOG.setLevel(Config.conf['verbose_level'])
 
         if self.cmdp.get("--insecure", "GEN_OPT"):
             Config.conf['http_insecure'] = True
@@ -58,15 +64,16 @@ class UMain(object):
         if not self.local.is_repo():
             if topdir:
                 Msg().err("Error: invalid udocker repository:", topdir)
+                LOG.error("LOGGING - Error: invalid udocker repository: %s", topdir)
                 sys.exit(self.STATUS_ERROR)
             else:
                 Msg().out("Info: creating repo: " + Config.conf['topdir'],
                           l=Msg.INF)
+                LOG.info("LOGGING - Info: creating repo: %s", Config.conf['topdir'])
                 self.local.create_repo()
 
         self.cli = UdockerCLI(self.local)
 
-    # pylint: disable=too-many-return-statements
     def execute(self):
         """Command parsing and selection"""
         self._prepare_exec()
@@ -105,6 +112,7 @@ class UMain(object):
         if command in cmds:
             if self.cmdp.get("--help", "CMD_OPT"):
                 Msg().out(cmds[command].__doc__)
+                LOG.log(MSG_LEVEL, cmds[command].__doc__)
                 return self.STATUS_OK
             if command in ["version", "showconf", "avail"]:
                 return cmds[command](self.cmdp)
@@ -114,9 +122,12 @@ class UMain(object):
             if self.cmdp.missing_options():
                 Msg().err("Error: syntax error at: %s" %
                           " ".join(self.cmdp.missing_options()))
+                LOG.error("LOGGING - Error: syntax error at: %s",
+                          " ".join(self.cmdp.missing_options()))
                 return self.STATUS_ERROR
 
             return exit_status
 
         Msg().err("Error: invalid command:", command, "\n")
+        LOG.error("LOG - Error: invalid command: %s\n", command)
         return self.STATUS_ERROR
