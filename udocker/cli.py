@@ -30,10 +30,10 @@ ch.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s: %(message)s"))
 LOG.addHandler(ch)
 
 MSG = logging.getLogger("Messages")
-ch = logging.StreamHandler(sys.stdout)
-ch.setFormatter(logging.Formatter("%(message)s"))
+msgout = logging.StreamHandler(sys.stdout)
+msgout.setFormatter(logging.Formatter("%(message)s"))
 MSG.setLevel(logging.INFO)
-MSG.addHandler(ch)
+MSG.addHandler(msgout)
 
 # if Python 3
 if sys.version_info[0] >= 3:

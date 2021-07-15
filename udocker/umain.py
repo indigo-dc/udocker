@@ -16,10 +16,10 @@ ch.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s: %(message)s"))
 LOG.addHandler(ch)
 
 MSG = logging.getLogger("Messages")
-ch = logging.StreamHandler(sys.stdout)
-ch.setFormatter(logging.Formatter("%(message)s"))
+msgout = logging.StreamHandler(sys.stdout)
+msgout.setFormatter(logging.Formatter("%(message)s"))
 MSG.setLevel(logging.INFO)
-MSG.addHandler(ch)
+MSG.addHandler(msgout)
 
 
 class UMain(object):
