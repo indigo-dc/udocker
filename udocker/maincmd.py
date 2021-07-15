@@ -27,7 +27,8 @@ from udocker.utils.fileutil import FileUtil
 sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 LOG = logging.getLogger(__name__)
 ch = logging.StreamHandler()
-ch.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s: %(message)s"))
+logform = logging.Formatter("%(asctime)s:%(levelname)s: %(message)s")
+ch.setFormatter(logform)
 LOG.addHandler(ch)
 
 

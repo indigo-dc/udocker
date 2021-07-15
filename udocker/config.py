@@ -5,6 +5,11 @@ import sys
 import logging
 from udocker.msg import Msg
 
+LOG = logging.getLogger(__name__)
+ch = logging.StreamHandler()
+ch.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s: %(message)s"))
+LOG.addHandler(ch)
+
 # if Python 3
 if sys.version_info[0] >= 3:
     from configparser import ConfigParser
@@ -18,7 +23,7 @@ class Config(object):
     Config.init() and that can reside in ~/.udocker/udocker.conf
     """
     conf = dict()
-    conf['verbose_level'] = 3
+    conf['verbose_level'] = logging.INFO
     conf['homedir'] = os.path.expanduser("~") + "/.udocker"
     conf['topdir'] = conf['homedir']
     conf['bindir'] = None
@@ -184,7 +189,7 @@ class Config(object):
         """
         Read config file
         """
-        Msg().out('Info: using config file: ', cfpath)
+        LOG.info('using config file: %s', cfpath)
         cfnparser = ConfigParser()
         cfnparser.read(cfpath)
         for (key, val) in cfnparser.items('DEFAULT'):

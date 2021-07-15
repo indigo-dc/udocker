@@ -54,11 +54,11 @@ class UMain(object):
 
         if (self.cmdp.get("--debug", "GEN_OPT") or
                 self.cmdp.get("-D", "GEN_OPT")):
-            Config.conf['verbose_level'] = Msg.DBG
+            Config.conf['verbose_level'] = logging.DEBUG
         elif (self.cmdp.get("--quiet", "GEN_OPT") or
               self.cmdp.get("-q", "GEN_OPT")):
-            Config.conf['verbose_level'] = Msg.MSG
-        Msg().setlevel(Config.conf['verbose_level'])
+            Config.conf['verbose_level'] = logging.NOTSET
+        #Msg().setlevel(Config.conf['verbose_level'])
         LOG.setLevel(Config.conf['verbose_level'])
 
         if self.cmdp.get("--insecure", "GEN_OPT"):

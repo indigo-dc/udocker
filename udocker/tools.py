@@ -251,7 +251,7 @@ class UdockerTools(object):
 
     def get_installinfo(self):
         """Get json containing installation info"""
-        MSG.info("searching for messages:")
+        LOG.info("searching for messages:")
         for url in self._get_mirrors(self._installinfo):
             infofile = self._get_file(url)
             try:
@@ -273,10 +273,10 @@ class UdockerTools(object):
             tarballfile = self._get_file(url)
             (status, version) = self._verify_version(tarballfile)
             if status:
-                MSG.info("installing udockertools %s", version)
+                LOG.info("installing udockertools %s", version)
                 status = self._install(tarballfile)
             elif force:
-                MSG.info("forcing install of udockertools %s", version)
+                LOG.info("forcing install of udockertools %s", version)
                 status = self._install(tarballfile)
             else:
                 LOG.error("version is %s for %s", version, url)
@@ -303,13 +303,13 @@ class UdockerTools(object):
             LOG.info("UDOCKER_TARBALL not set, installation skipped")
             return True
 
-        MSG.info("udocker command line interface %s", __version__)
-        MSG.info("searching for udockertools %s", self._tarball_release)
+        LOG.info("udocker command line interface %s", __version__)
+        LOG.info("searching for udockertools %s", self._tarball_release)
         retry = self._installretry
         while  retry:
             if self._install_logic(force):
                 self.get_installinfo()
-                MSG.info("installation of udockertools successful")
+                LOG.info("installation of udockertools successful")
                 return True
 
             retry = retry - 1
@@ -324,7 +324,7 @@ class UdockerTools(object):
         """Show available modules and versions"""
         fileout = Config.conf['topdir'] + "/" + "metadata.json"
         for url in self._get_mirrors(self._metajson):
-            MSG.info("Info: Metadata json of modules: %s", url)
+            LOG.info("Metadata json of modules: %s", url)
             mjson = self._get_file(url, fileout)
 
         try:

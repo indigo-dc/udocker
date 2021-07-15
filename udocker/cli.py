@@ -1223,10 +1223,10 @@ class UdockerCLI(object):
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
-        Msg().out(80*"-")
-        Msg().out("\t\tConfiguration options")
+        MSG.info(80*"_")
+        MSG.info("\t\tConfiguration options")
         for varopt in Config.conf:
-            Msg().out(varopt, '=', Config.conf[varopt])
+            MSG.info(varopt, '=', Config.conf[varopt])
 
         Msg().out(80*"-")
         return self.STATUS_OK
@@ -1275,9 +1275,9 @@ class UdockerCLI(object):
             return self.STATUS_ERROR
 
         try:
-            Msg().out("%s %s" % ("version:", __version__))
-            Msg().out("%s %s" % ("tarball:", Config.conf['tarball']))
-            Msg().out("%s %s" % \
+            MSG.info("%s %s" % ("version:", __version__))
+            MSG.info("%s %s" % ("tarball:", Config.conf['tarball']))
+            MSG.info("%s %s" % \
                 ("tarball_release:", Config.conf['tarball_release']))
         except NameError:
             return self.STATUS_ERROR
@@ -1289,7 +1289,7 @@ class UdockerCLI(object):
         Print help information
         """
         cmdp.get("help", "CMD")
-        Msg().out(
+        MSG.info(
             """
 Syntax:
   udocker  [general_options] <command>  [command_options]  <command_args>
