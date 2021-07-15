@@ -78,7 +78,6 @@ class Config(object):
     conf['default_execution_mode'] = "P1"
 
     # PRoot override seccomp
-    # conf['proot_noseccomp'] = True
     conf['proot_noseccomp'] = None
     conf['proot_killonexit'] = True   # PRoot kill-on-exit
 
@@ -86,15 +85,13 @@ class Config(object):
     conf['ld_so_cache'] = "/etc/ld.so.cache"
 
     # fakechroot engine override fakechroot.so selection
-    # conf['fakechroot_so'] = "libfakechroot-CentOS-7-x86_64.so"
     conf['fakechroot_so'] = None
 
     # translate symbolic links in pathnames None means automatic
     conf['fakechroot_expand_symlinks'] = None
 
     # sharable library directories
-    conf['lib_dirs_list_x86_64'] = ("/usr/lib/x86_64-linux-gnu",
-                                    "/usr/lib64",)
+    conf['lib_dirs_list_x86_64'] = ("/usr/lib/x86_64-linux-gnu", "/usr/lib64",)
 
     # fakechroot sharable library directories
     conf['lib_dirs_list_essential'] = ("/lib/x86_64-linux-gnu",
@@ -151,11 +148,9 @@ class Config(object):
 
     # docker hub index
     conf['dockerio_index_url'] = "https://hub.docker.com"
+
     # docker hub registry
-    #conf['dockerio_registry_url'] = "https://registry.hub.docker.com"
     conf['dockerio_registry_url'] = "https://registry-1.docker.io"
-    # private repository v2
-    # conf['dockerio_registry_url'] = "http://localhost:5000"
 
     # registries table
     conf['docker_registries'] = {"docker.io": [conf['dockerio_registry_url'],

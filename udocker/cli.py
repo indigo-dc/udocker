@@ -24,6 +24,17 @@ from udocker.utils.fileutil import FileUtil
 from udocker.utils.filebind import FileBind
 from udocker.utils.mountpoint import MountPoint
 
+LOG = logging.getLogger(__name__)
+ch = logging.StreamHandler()
+ch.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s: %(message)s"))
+LOG.addHandler(ch)
+
+MSG = logging.getLogger("Messages")
+ch = logging.StreamHandler(sys.stdout)
+ch.setFormatter(logging.Formatter("%(message)s"))
+MSG.setLevel(logging.INFO)
+MSG.addHandler(ch)
+
 # if Python 3
 if sys.version_info[0] >= 3:
     BUILTIN = "builtins"

@@ -16,7 +16,15 @@ from udocker.utils.fileutil import FileUtil
 from udocker import __version__
 
 LOG = logging.getLogger(__name__)
-MSG_LEVEL = 60
+ch = logging.StreamHandler()
+ch.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s: %(message)s"))
+LOG.addHandler(ch)
+
+MSG = logging.getLogger("Messages")
+ch = logging.StreamHandler(sys.stdout)
+ch.setFormatter(logging.Formatter("%(message)s"))
+MSG.setLevel(logging.INFO)
+MSG.addHandler(ch)
 
 def _str(data):
     """Safe str for Python 3 and Python 2"""
@@ -78,8 +86,8 @@ class UdockerTools(object):
         """
         msg = "udocker command line interface version: " + __version__ + \
               "\nrequires udockertools tarball release: " + self._tarball_release
-        LOG.log(MSG_LEVEL, self._instructions.__doc__)
-        LOG.log(MSG_LEVEL, msg)
+        MSG.info(self._instructions.__doc__)
+        MSG.info(msg)
 
     def _version2int(self, version):
         """Convert version string to integer"""
@@ -90,13 +98,16 @@ class UdockerTools(object):
                 version_int = version_int + (int(vitem) * factor)
             except (TypeError, ValueError):
                 pass
+
             factor = factor / 1000
+
         return int(version_int)
 
     def _version_isok(self, version):
         """Is version >= than the minimum required tarball release"""
         if not (version and self._tarball_release):
             return False
+
         tarball_version_int = self._version2int(version)
         required_version_int = self._version2int(self._tarball_release)
         return tarball_version_int >= required_version_int
@@ -114,11 +125,13 @@ class UdockerTools(object):
             FileUtil(f_path).register_prefix()
             FileUtil(f_path).remove(recursive=True)
             LOG.debug("removed file: %s", f_path)
+
         for f_name in os.listdir(self.localrepo.libdir):
             f_path = self.localrepo.libdir + '/' + f_name
             FileUtil(f_path).register_prefix()
             FileUtil(f_path).remove(recursive=True)
             LOG.debug("removed file: %s", f_path)
+
         for f_name in os.listdir(self.localrepo.docdir):
             f_path = self.localrepo.docdir + '/' + f_name
             FileUtil(f_path).register_prefix()
@@ -187,16 +200,16 @@ class UdockerTools(object):
         """Install the tarball"""
         if not (tarball_file and os.path.isfile(tarball_file)):
             return False
+
         FileUtil(self.localrepo.topdir).chmod()
         self.localrepo.create_repo()
-
         try:
             tfile = tarfile.open(tarball_file, "r:gz")
             FileUtil(self.localrepo.bindir).rchmod()
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/bin/"):
                     tar_in.name = os.path.basename(tar_in.name)
-                    LOG.debug("LOG - Info: extrating %s", tar_in.name)
+                    LOG.debug("extrating %s", tar_in.name)
                     tfile.extract(tar_in, self.localrepo.bindir)
 
             FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR |
@@ -206,7 +219,7 @@ class UdockerTools(object):
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/lib/"):
                     tar_in.name = os.path.basename(tar_in.name)
-                    LOG.log(MSG_LEVEL, "Info: extrating %s", tar_in.name)
+                    LOG.debug("extrating %s", tar_in.name)
                     tfile.extract(tar_in, self.localrepo.libdir)
 
             FileUtil(self.localrepo.libdir).rchmod()
@@ -214,7 +227,7 @@ class UdockerTools(object):
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/doc/"):
                     tar_in.name = os.path.basename(tar_in.name)
-                    LOG.debug("Info: extrating %s", tar_in.name)
+                    LOG.debug("extrating %s", tar_in.name)
                     tfile.extract(tar_in, self.localrepo.docdir)
 
             FileUtil(self.localrepo.docdir).rchmod()
@@ -238,7 +251,7 @@ class UdockerTools(object):
 
     def get_installinfo(self):
         """Get json containing installation info"""
-        LOG.log(MSG_LEVEL, "Info: searching for messages:")
+        MSG.info("searching for messages:")
         for url in self._get_mirrors(self._installinfo):
             infofile = self._get_file(url)
             try:
@@ -246,24 +259,24 @@ class UdockerTools(object):
                     self._install_json = json.load(filep)
 
                 for msg in self._install_json["messages"]:
-                    LOG.log(MSG_LEVEL, "Info: %s", msg)
+                    MSG.info(msg)
 
             except (KeyError, AttributeError, ValueError, OSError, IOError):
-                LOG.info("Info: no messages: %s %s", infofile, url)
+                LOG.info("no messages: %s %s", infofile, url)
 
             return self._install_json
 
     def _install_logic(self, force=False):
         """Obtain random mirror, download, verify and install"""
         for url in self._get_mirrors(self._tarball):
-            LOG.info("Info: install using: %s", url)
+            LOG.info("install using: %s", url)
             tarballfile = self._get_file(url)
             (status, version) = self._verify_version(tarballfile)
             if status:
-                LOG.log(MSG_LEVEL, "Info: installing udockertools %s", version)
+                MSG.info("installing udockertools %s", version)
                 status = self._install(tarballfile)
             elif force:
-                LOG.log(MSG_LEVEL, "Info: forcing install of udockertools %s", version)
+                MSG.info("forcing install of udockertools %s", version)
                 status = self._install(tarballfile)
             else:
                 LOG.error("version is %s for %s", version, url)
@@ -283,54 +296,54 @@ class UdockerTools(object):
             return True
 
         if not self._autoinstall and not force:
-            LOG.warning("Warn: installation missing and autoinstall disabled")
+            LOG.warning("installation missing and autoinstall disabled")
             return None
 
         if not self._tarball:
-            LOG.info("Info: UDOCKER_TARBALL not set, installation skipped")
+            LOG.info("UDOCKER_TARBALL not set, installation skipped")
             return True
 
-        LOG.log(MSG_LEVEL,"Info: udocker command line interface %s", __version__)
-        LOG.log(MSG_LEVEL,"Info: searching for udockertools %s", self._tarball_release)
+        MSG.info("udocker command line interface %s", __version__)
+        MSG.info("searching for udockertools %s", self._tarball_release)
         retry = self._installretry
         while  retry:
             if self._install_logic(force):
                 self.get_installinfo()
-                LOG.log(MSG_LEVEL,"LOG: installation of udockertools successful")
+                MSG.info("installation of udockertools successful")
                 return True
 
             retry = retry - 1
-            LOG.error("Error: installation failure retrying ...")
+            LOG.error("installation failure retrying ...")
 
         self._instructions()
         self.get_installinfo()
-        LOG.error("Error: installation of udockertools failed")
+        LOG.error("installation of udockertools failed")
         return False
 
     def show_metadata(self):
         """Show available modules and versions"""
         fileout = Config.conf['topdir'] + "/" + "metadata.json"
         for url in self._get_mirrors(self._metajson):
-            LOG.log(MSG_LEVEL, "Info: Metadata json of modules: %s", url)
+            MSG.info("Info: Metadata json of modules: %s", url)
             mjson = self._get_file(url, fileout)
 
         try:
             with open(mjson, 'r') as filep:
                 metadict = json.load(filep)
                 for module in metadict:
-                    LOG.log(MSG_LEVEL, 120*"_")
-                    LOG.log(MSG_LEVEL, "Module:         %s", module["module"])
-                    LOG.log(MSG_LEVEL, "Version:        %s", module["version"])
-                    LOG.log(MSG_LEVEL, "Architecture:   %s", module["arch"])
-                    LOG.log(MSG_LEVEL, "OS version:     %s", module["os_ver"])
-                    LOG.log(MSG_LEVEL, "Kernel version: %s", module["kernel_ver"])
-                    LOG.log(MSG_LEVEL, "Dependencies:   %s", module["dependencies"])
-                    LOG.log(MSG_LEVEL, "URLs:")
+                    MSG.info(120*"_")
+                    MSG.info("Module:         %s", module["module"])
+                    MSG.info("Version:        %s", module["version"])
+                    MSG.info("Architecture:   %s", module["arch"])
+                    MSG.info("OS version:     %s", module["os_ver"])
+                    MSG.info("Kernel version: %s", module["kernel_ver"])
+                    MSG.info("Dependencies:   %s", module["dependencies"])
+                    MSG.info("URLs:")
                     for url in module["urls"]:
-                        LOG.log(MSG_LEVEL, "                %s", url)
-                    LOG.log(MSG_LEVEL, "Documentation:")
+                        MSG.info("                %s", url)
+                    MSG.info("Documentation:")
                     for url in module["docs_url"]:
-                        LOG.log(MSG_LEVEL, "                %s", url)
+                        MSG.info("                %s", url)
         except (KeyError, AttributeError, ValueError,
                 OSError, IOError):
-            LOG.error("Error reading file")
+            LOG.error("reading file")
