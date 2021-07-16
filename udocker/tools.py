@@ -13,18 +13,13 @@ from udocker import is_genstr
 from udocker.config import Config
 from udocker.utils.curl import GetURL
 from udocker.utils.fileutil import FileUtil
-from udocker import __version__
+from udocker import __version__, LOG
 
-LOG = logging.getLogger(__name__)
-ch = logging.StreamHandler()
-ch.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s: %(message)s"))
-LOG.addHandler(ch)
-
-MSG = logging.getLogger("Messages")
-msgout = logging.StreamHandler(sys.stdout)
-msgout.setFormatter(logging.Formatter("%(message)s"))
-MSG.setLevel(logging.INFO)
-MSG.addHandler(msgout)
+# MSG = logging.getLogger("Messages")
+# msgout = logging.StreamHandler(sys.stdout)
+# msgout.setFormatter(logging.Formatter("%(message)s"))
+# MSG.setLevel(logging.INFO)
+# MSG.addHandler(msgout)
 
 def _str(data):
     """Safe str for Python 3 and Python 2"""
@@ -86,8 +81,8 @@ class UdockerTools(object):
         """
         msg = "udocker command line interface version: " + __version__ + \
               "\nrequires udockertools tarball release: " + self._tarball_release
-        MSG.info(self._instructions.__doc__)
-        MSG.info(msg)
+        # MSG.info(self._instructions.__doc__)
+        # MSG.info(msg)
 
     def _version2int(self, version):
         """Convert version string to integer"""
@@ -258,8 +253,8 @@ class UdockerTools(object):
                 with open(infofile, 'r') as filep:
                     self._install_json = json.load(filep)
 
-                for msg in self._install_json["messages"]:
-                    MSG.info(msg)
+                # for msg in self._install_json["messages"]:
+                #     MSG.info(msg)
 
             except (KeyError, AttributeError, ValueError, OSError, IOError):
                 LOG.info("no messages: %s %s", infofile, url)
@@ -330,20 +325,20 @@ class UdockerTools(object):
         try:
             with open(mjson, 'r') as filep:
                 metadict = json.load(filep)
-                for module in metadict:
-                    MSG.info(120*"_")
-                    MSG.info("Module:         %s", module["module"])
-                    MSG.info("Version:        %s", module["version"])
-                    MSG.info("Architecture:   %s", module["arch"])
-                    MSG.info("OS version:     %s", module["os_ver"])
-                    MSG.info("Kernel version: %s", module["kernel_ver"])
-                    MSG.info("Dependencies:   %s", module["dependencies"])
-                    MSG.info("URLs:")
-                    for url in module["urls"]:
-                        MSG.info("                %s", url)
-                    MSG.info("Documentation:")
-                    for url in module["docs_url"]:
-                        MSG.info("                %s", url)
+                # for module in metadict:
+                #     MSG.info(120*"_")
+                #     MSG.info("Module:         %s", module["module"])
+                #     MSG.info("Version:        %s", module["version"])
+                #     MSG.info("Architecture:   %s", module["arch"])
+                #     MSG.info("OS version:     %s", module["os_ver"])
+                #     MSG.info("Kernel version: %s", module["kernel_ver"])
+                #     MSG.info("Dependencies:   %s", module["dependencies"])
+                #     MSG.info("URLs:")
+                #     for url in module["urls"]:
+                #         MSG.info("                %s", url)
+                #     MSG.info("Documentation:")
+                #     for url in module["docs_url"]:
+                #         MSG.info("                %s", url)
         except (KeyError, AttributeError, ValueError,
                 OSError, IOError):
             LOG.error("reading file")

@@ -23,17 +23,13 @@ from udocker.tools import UdockerTools
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.filebind import FileBind
 from udocker.utils.mountpoint import MountPoint
+from udocker import LOG
 
-LOG = logging.getLogger(__name__)
-ch = logging.StreamHandler()
-ch.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s: %(message)s"))
-LOG.addHandler(ch)
-
-MSG = logging.getLogger("Messages")
-msgout = logging.StreamHandler(sys.stdout)
-msgout.setFormatter(logging.Formatter("%(message)s"))
-MSG.setLevel(logging.INFO)
-MSG.addHandler(msgout)
+# MSG = logging.getLogger("Messages")
+# msgout = logging.StreamHandler(sys.stdout)
+# msgout.setFormatter(logging.Formatter("%(message)s"))
+# MSG.setLevel(logging.INFO)
+# MSG.addHandler(msgout)
 
 # if Python 3
 if sys.version_info[0] >= 3:
@@ -1223,12 +1219,12 @@ class UdockerCLI(object):
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
-        MSG.info(80*"_")
-        MSG.info("\t\tConfiguration options")
-        for varopt in Config.conf:
-            MSG.info(varopt, '=', Config.conf[varopt])
+        # MSG.info(80*"_")
+        # MSG.info("\t\tConfiguration options")
+        # for varopt in Config.conf:
+        #     MSG.info(varopt, '=', Config.conf[varopt])
 
-        Msg().out(80*"-")
+        # MSG.info(80*"_")
         return self.STATUS_OK
 
     def do_showinst(self, cmdp):
@@ -1274,13 +1270,13 @@ class UdockerCLI(object):
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
-        try:
-            MSG.info("%s %s" % ("version:", __version__))
-            MSG.info("%s %s" % ("tarball:", Config.conf['tarball']))
-            MSG.info("%s %s" % \
-                ("tarball_release:", Config.conf['tarball_release']))
-        except NameError:
-            return self.STATUS_ERROR
+        # try:
+        #     MSG.info("%s %s" % ("version:", __version__))
+        #     MSG.info("%s %s" % ("tarball:", Config.conf['tarball']))
+        #     MSG.info("%s %s" % \
+        #         ("tarball_release:", Config.conf['tarball_release']))
+        # except NameError:
+        #     return self.STATUS_ERROR
 
         return self.STATUS_OK
 

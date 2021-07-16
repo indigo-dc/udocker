@@ -21,6 +21,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import sys
+import logging
 __author__ = "udocker@lip.pt"
 __copyright__ = "Copyright 2016 - 2021, LIP"
 __credits__ = ["PRoot http://proot.me",
@@ -32,6 +33,11 @@ __credits__ = ["PRoot http://proot.me",
 __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "1.4.0"
 __date__ = "2021"
+LOG = logging.getLogger(__name__)
+ch = logging.StreamHandler()
+formout = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s: %(message)s")
+ch.setFormatter(formout)
+LOG.addHandler(ch)
 
 def is_genstr(objstr):
     """test if objstr is string or unicode both in py2 nd py3

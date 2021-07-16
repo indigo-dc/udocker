@@ -3,12 +3,7 @@
 import os
 import sys
 import logging
-from udocker.msg import Msg
-
-LOG = logging.getLogger(__name__)
-ch = logging.StreamHandler()
-ch.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s: %(message)s"))
-LOG.addHandler(ch)
+from udocker import LOG
 
 # if Python 3
 if sys.version_info[0] >= 3:
