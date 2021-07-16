@@ -4,6 +4,7 @@
 import os
 import time
 
+from udocker import LOG
 from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uprocess import Uprocess
@@ -31,11 +32,13 @@ class CommonLocalFileApi(object):
             target_file = self.localrepo.layersdir + '/' + layer_id + ".layer"
         else:
             return False
+
         try:
             os.rename(filepath, target_file)
         except(IOError, OSError):
             if not FileUtil(filepath).copyto(target_file):
                 return False
+
         self.localrepo.add_image_layer(target_file, linkname)
         return True
 
@@ -50,18 +53,18 @@ class CommonLocalFileApi(object):
             cd_imagerepo = imagerepo
 
         if self.localrepo.cd_imagerepo(cd_imagerepo, tag):
-            Msg().err("Error: repository and tag already exist",
+            LOG.error("repository: %s and tag: %s already exist",
                       cd_imagerepo, tag)
             return []
 
         self.localrepo.setup_imagerepo(cd_imagerepo)
         tag_dir = self.localrepo.setup_tag(tag)
         if not tag_dir:
-            Msg().err("Error: setting up repository", cd_imagerepo, tag)
+            LOG.error("setting up repository: %s %s", cd_imagerepo, tag)
             return []
 
         if not self.localrepo.set_version("v1"):
-            Msg().err("Error: setting repository version")
+            LOG.error("setting repository version")
             return []
 
         return self._load_image_step2(structure, imagerepo, tag)
@@ -157,20 +160,24 @@ class CommonLocalFileApi(object):
         """Import a tar file containing a simple directory tree possibly
         created with Docker export and create local image"""
         if not os.path.exists(tarfile) and tarfile != '-':
-            Msg().err("Error: tar file does not exist: ", tarfile)
+            LOG.error("tar file does not exist: %s", tarfile)
             return False
+
         self.localrepo.setup_imagerepo(imagerepo)
         tag_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
         if tag_dir:
-            Msg().err("Error: tag already exists in repo:", tag)
+            LOG.error("tag already exists in repo: %s", tag)
             return False
+
         tag_dir = self.localrepo.setup_tag(tag)
         if not tag_dir:
-            Msg().err("Error: creating repo and tag")
+            LOG.error("creating repo and tag")
             return False
+
         if not self.localrepo.set_version("v1"):
-            Msg().err("Error: setting repository version")
+            LOG.error("setting repository version")
             return False
+
         layer_id = Unique().layer_v1()
         layer_file = self.localrepo.layersdir + '/' + layer_id + ".layer"
         json_file = self.localrepo.layersdir + '/' + layer_id + ".json"
@@ -179,16 +186,18 @@ class CommonLocalFileApi(object):
                 os.rename(tarfile, layer_file)
             except(IOError, OSError):
                 pass
+
         if not os.path.exists(layer_file):
             if not FileUtil(tarfile).copyto(layer_file):
-                Msg().err("Error: in move/copy file", tarfile)
+                LOG.error("in move/copy file %s", tarfile)
                 return False
+
         self.localrepo.add_image_layer(layer_file)
         self.localrepo.save_json("ancestry", [layer_id])
         container_json = self.create_container_meta(layer_id)
         self.localrepo.save_json(json_file, container_json)
         self.localrepo.add_image_layer(json_file)
-        Msg().out("Info: added layer", layer_id, l=Msg.INF)
+        LOG.info("added layer: %s", layer_id)
         return layer_id
 
     def import_tocontainer(self, tarfile, imagerepo, tag, container_name):
@@ -197,20 +206,24 @@ class CommonLocalFileApi(object):
         if not imagerepo:
             imagerepo = "IMPORTED"
             tag = "latest"
+
         if not os.path.exists(tarfile) and tarfile != '-':
-            Msg().err("Error: tar file does not exist:", tarfile)
+            LOG.error("tar file does not exist: %s", tarfile)
             return False
+
         if container_name:
             if self.localrepo.get_container_id(container_name):
-                Msg().err("Error: container name already exists:",
+                LOG.error("container name already exists: %s",
                           container_name)
                 return False
+
         layer_id = Unique().layer_v1()
         container_json = self.create_container_meta(layer_id)
         container_id = ContainerStructure(self.localrepo).create_fromlayer(
             imagerepo, tag, tarfile, container_json)
         if container_name:
             self.localrepo.set_container_name(container_id, container_name)
+
         return container_id
 
     def import_clone(self, tarfile, container_name):
@@ -219,17 +232,20 @@ class CommonLocalFileApi(object):
         ready to use
         """
         if not os.path.exists(tarfile) and tarfile != '-':
-            Msg().err("Error: tar file does not exist:", tarfile)
+            LOG.error("tar file does not exist: %s", tarfile)
             return False
+
         if container_name:
             if self.localrepo.get_container_id(container_name):
-                Msg().err("Error: container name already exists:",
+                LOG.error("container name already exists: %s",
                           container_name)
                 return False
+
         container_id = ContainerStructure(self.localrepo).clone_fromfile(
             tarfile)
         if container_name:
             self.localrepo.set_container_name(container_id, container_name)
+
         return container_id
 
     def clone_container(self, container_id, container_name):
@@ -239,18 +255,21 @@ class CommonLocalFileApi(object):
         """
         if container_name:
             if self.localrepo.get_container_id(container_name):
-                Msg().err("Error: container name already exists:",
+                LOG.error("container name already exists: %s",
                           container_name)
                 return False
+
         dest_container_id = ContainerStructure(self.localrepo,
                                                container_id).clone()
         if container_name:
             self.localrepo.set_container_name(dest_container_id,
                                               container_name)
+
         exec_mode = ExecutionMode(self.localrepo, dest_container_id)
         xmode = exec_mode.get_mode()
         if xmode.startswith('F'):
             exec_mode.set_mode(xmode, True)
+
         return dest_container_id
 
     def _get_imagedir_type(self, tmp_imagedir):
@@ -260,4 +279,5 @@ class CommonLocalFileApi(object):
         for (checkfile, imagetype) in image_types_list:
             if os.path.exists(checkfile):
                 return imagetype
+
         return ""
