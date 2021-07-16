@@ -2,16 +2,18 @@
 """Common Class for LocalFile API"""
 
 import os
+import sys
 import time
+import logging
 
 from udocker import LOG
-from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uprocess import Uprocess
 from udocker.helper.unique import Unique
 from udocker.helper.hostinfo import HostInfo
 from udocker.container.structure import ContainerStructure
 from udocker.engine.execmode import ExecutionMode
+from udocker.config import Config
 
 
 class CommonLocalFileApi(object):
@@ -72,8 +74,8 @@ class CommonLocalFileApi(object):
     def _untar_saved_container(self, tarfile, destdir):
         """Untar container created with docker save"""
         #umask 022
-        verbose = ''
-        if Msg.level >= Msg.VER:
+        verbose = ""
+        if Config.conf['verbose_level'] == logging.DEBUG:
             verbose = 'v'
 
         cmd = ["tar", "-C", destdir, "-x" + verbose,
@@ -81,7 +83,7 @@ class CommonLocalFileApi(object):
                "--no-same-owner", "--no-same-permissions", "--overwrite",
                "-f", tarfile]
 
-        status = Uprocess().call(cmd, stderr=Msg.chlderr, close_fds=True)
+        status = Uprocess().call(cmd, stderr=sys.stderr, close_fds=True)
         return not status
 
     def create_container_meta(self, layer_id, comment="created by udocker"):
