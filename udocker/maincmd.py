@@ -20,7 +20,6 @@ limitations under the License.
 """
 import os
 import sys
-import logging
 from udocker import LOG
 from udocker.umain import UMain
 from udocker.utils.fileutil import FileUtil

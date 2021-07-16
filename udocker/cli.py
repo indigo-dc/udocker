@@ -8,7 +8,7 @@ import json
 import logging
 from getpass import getpass
 
-from udocker import __version__
+from udocker import __version__, LOG, MSG
 from udocker.config import Config
 from udocker.msg import Msg
 from udocker.docker import DockerIoAPI
@@ -23,13 +23,6 @@ from udocker.tools import UdockerTools
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.filebind import FileBind
 from udocker.utils.mountpoint import MountPoint
-from udocker import LOG
-
-# MSG = logging.getLogger("Messages")
-# msgout = logging.StreamHandler(sys.stdout)
-# msgout.setFormatter(logging.Formatter("%(message)s"))
-# MSG.setLevel(logging.INFO)
-# MSG.addHandler(msgout)
 
 # if Python 3
 if sys.version_info[0] >= 3:
@@ -67,8 +60,7 @@ class UdockerCLI(object):
             return False
 
         if not FileUtil(topdir).isdir():
-            Msg().out("Warning: localrepo directory is invalid: ",
-                      topdir, l=Msg.WAR)
+            LOG.warning("localrepo directory is invalid: %s", topdir)
             return False
 
         self.localrepo.setup(topdir)
@@ -1219,12 +1211,12 @@ class UdockerCLI(object):
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
-        # MSG.info(80*"_")
-        # MSG.info("\t\tConfiguration options")
-        # for varopt in Config.conf:
-        #     MSG.info(varopt, '=', Config.conf[varopt])
+        MSG.info(80*"_")
+        MSG.info("\t\tConfiguration options")
+        for varopt in Config.conf:
+            MSG.info(varopt, '=', Config.conf[varopt])
 
-        # MSG.info(80*"_")
+        MSG.info(80*"_")
         return self.STATUS_OK
 
     def do_showinst(self, cmdp):
@@ -1270,13 +1262,13 @@ class UdockerCLI(object):
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
-        # try:
-        #     MSG.info("%s %s" % ("version:", __version__))
-        #     MSG.info("%s %s" % ("tarball:", Config.conf['tarball']))
-        #     MSG.info("%s %s" % \
-        #         ("tarball_release:", Config.conf['tarball_release']))
-        # except NameError:
-        #     return self.STATUS_ERROR
+        try:
+            MSG.info("%s %s" % ("version:", __version__))
+            MSG.info("%s %s" % ("tarball:", Config.conf['tarball']))
+            MSG.info("%s %s" % \
+                ("tarball_release:", Config.conf['tarball_release']))
+        except NameError:
+            return self.STATUS_ERROR
 
         return self.STATUS_OK
 

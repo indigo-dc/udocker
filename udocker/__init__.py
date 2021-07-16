@@ -33,11 +33,19 @@ __credits__ = ["PRoot http://proot.me",
 __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "1.4.0"
 __date__ = "2021"
+
 LOG = logging.getLogger(__name__)
 ch = logging.StreamHandler()
 formout = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s: %(message)s")
 ch.setFormatter(formout)
 LOG.addHandler(ch)
+
+MSG = logging.getLogger("Messages")
+msgout = logging.StreamHandler(sys.stdout)
+formmsg = logging.Formatter("%(message)s")
+msgout.setFormatter(formmsg)
+MSG.setLevel(logging.INFO)
+MSG.addHandler(msgout)
 
 def is_genstr(objstr):
     """test if objstr is string or unicode both in py2 nd py3

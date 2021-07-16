@@ -4,18 +4,12 @@
 import os
 import sys
 import logging
+from udocker import LOG, MSG
 from udocker.msg import Msg
 from udocker.cmdparser import CmdParser
 from udocker.config import Config
 from udocker.container.localrepo import LocalRepository
 from udocker.cli import UdockerCLI
-from udocker import LOG
-
-# MSG = logging.getLogger("Messages")
-# msgout = logging.StreamHandler(sys.stdout)
-# msgout.setFormatter(logging.Formatter("%(message)s"))
-# MSG.setLevel(logging.INFO)
-# MSG.addHandler(msgout)
 
 
 class UMain(object):
@@ -111,7 +105,7 @@ class UMain(object):
         command = self.cmdp.get("", "CMD")
         if command in cmds:
             if self.cmdp.get("--help", "CMD_OPT"):
-                # MSG.info(cmds[command].__doc__)
+                MSG.info(cmds[command].__doc__)
                 return self.STATUS_OK
             if command in ["version", "showconf", "avail"]:
                 return cmds[command](self.cmdp)
