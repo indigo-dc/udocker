@@ -9,7 +9,6 @@ import json
 
 from udocker import LOG
 from udocker.config import Config
-from udocker.msg import Msg
 from udocker.commonlocalfile import CommonLocalFileApi
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.curl import GetURL
@@ -246,7 +245,7 @@ class DockerIoAPI(object):
     def get_v1_image_tag(self, endpoint, imagerepo, tag):
         """Get list of tags in a repo from Docker Hub"""
         url = endpoint + "/v1/repositories/" + imagerepo + "/tags/" + tag
-        Msg().out("Info: tags url", url, l=Msg.DBG)
+        LOG.debug("tags url: %s", url)
         (hdr, buf) = self._get_url(url)
         try:
             return (hdr.data, json.loads(buf.getvalue()))
@@ -256,7 +255,7 @@ class DockerIoAPI(object):
     def get_v1_image_ancestry(self, endpoint, image_id):
         """Get the ancestry which is an ordered list of layers"""
         url = endpoint + "/v1/images/" + image_id + "/ancestry"
-        Msg().out("Info: ancestry url", url, l=Msg.DBG)
+        LOG.debug("ancestry url: %s", url)
         (hdr, buf) = self._get_url(url)
         try:
             return (hdr.data, json.loads(buf.getvalue()))
@@ -266,21 +265,23 @@ class DockerIoAPI(object):
     def get_v1_image_json(self, endpoint, layer_id):
         """Get the JSON metadata for a specific layer"""
         url = endpoint + "/v1/images/" + layer_id + "/json"
-        Msg().out("Info: json url", url, l=Msg.DBG)
+        LOG.debug("json url: %s", url)
         filename = self.localrepo.layersdir + '/' + layer_id + ".json"
         if self._get_file(url, filename, 0):
             self.localrepo.add_image_layer(filename)
             return True
+
         return False
 
     def get_v1_image_layer(self, endpoint, layer_id):
         """Get a specific layer data file (layer files are tarballs)"""
         url = endpoint + "/v1/images/" + layer_id + "/layer"
-        Msg().out("Info: layer url", url, l=Msg.DBG)
+        LOG.debug("layer url: %s", url)
         filename = self.localrepo.layersdir + '/' + layer_id + ".layer"
         if self._get_file(url, filename, 3):
             self.localrepo.add_image_layer(filename)
             return True
+
         return False
 
     def get_v1_layers_all(self, endpoint, layer_list):
@@ -288,15 +289,18 @@ class DockerIoAPI(object):
         files = []
         if layer_list:
             for layer_id in reversed(layer_list):
-                Msg().out("Info: downloading layer", layer_id, l=Msg.INF)
+                LOG.info("downloading layer: %s", layer_id)
                 filesize = self.get_v1_image_json(endpoint, layer_id)
                 if not filesize:
                     return []
+
                 files.append(layer_id + ".json")
                 filesize = self.get_v1_image_layer(endpoint, layer_id)
                 if not filesize:
                     return []
+
                 files.append(layer_id + ".layer")
+
         return files
 
     def _get_v2_auth(self, www_authenticate, retry):
@@ -359,12 +363,14 @@ class DockerIoAPI(object):
                 return True
         except (KeyError, AttributeError, TypeError):
             pass
+
         return False
 
     def has_search_v2(self, url=None):
         """Check if registry has search capabilities in v2"""
         if url is None:
             url = self.registry_url
+
         (hdr, dummy) = self._get_url(url + "/v2/search/repositories")
         try:
             if ("200" in hdr.data["X-ND-HTTPSTATUS"] or
@@ -372,18 +378,20 @@ class DockerIoAPI(object):
                 return True
         except (KeyError, AttributeError, TypeError):
             pass
+
         return False
 
     def get_v2_image_tags(self, imagerepo, tags_only=False):
         """Get list of tags in a repo from Docker Hub"""
         url = self.registry_url + "/v2/" + imagerepo + "/tags/list"
-        Msg().out("Info: tags url", url, l=Msg.DBG)
+        LOG.debug("tags url: %s", url)
         (dummy, buf) = self._get_url(url)
         tags = []
         try:
             if tags_only:
                 for tag in json.loads(buf.getvalue())["tags"]:
                     tags.append(tag)
+
                 return tags
 
             return json.loads(buf.getvalue())
@@ -396,7 +404,7 @@ class DockerIoAPI(object):
         """
         url = self.registry_url + "/v2/" + imagerepo + \
             "/manifests/" + tag
-        Msg().out("Info: manifest url", url, l=Msg.DBG)
+        LOG.debug("manifest url: %s", url)
         (hdr, buf) = self._get_url(url)
         try:
             return (hdr.data, json.loads(buf.getvalue()))
@@ -407,11 +415,12 @@ class DockerIoAPI(object):
         """Get one image layer data file (tarball)"""
         url = self.registry_url + "/v2/" + imagerepo + \
             "/blobs/" + layer_id
-        Msg().out("Info: layer url", url, l=Msg.DBG)
+        LOG.debug("layer url: %s", url)
         filename = self.localrepo.layersdir + '/' + layer_id
         if self._get_file(url, filename, 3):
             self.localrepo.add_image_layer(filename)
             return True
+
         return False
 
     def get_v2_layers_all(self, imagerepo, fslayers):
@@ -424,10 +433,13 @@ class DockerIoAPI(object):
                     blob = layer["blobSum"]
                 elif "digest" in layer:
                     blob = layer["digest"]
-                Msg().out("Info: downloading layer", blob, l=Msg.INF)
+
+                LOG.info("downloading layer: %s", blob)
                 if not self.get_v2_image_layer(imagerepo, blob):
                     return []
+
                 files.append(blob)
+
         return files
 
     def get_v2(self, imagerepo, tag):
@@ -436,30 +448,36 @@ class DockerIoAPI(object):
         (hdr_data, manifest) = self.get_v2_image_manifest(imagerepo, tag)
         status = self.curl.get_status_code(hdr_data["X-ND-HTTPSTATUS"])
         if status == 401:
-            Msg().err("Error: manifest not found or not authorized")
+            LOG.error("manifest not found or not authorized")
             return []
+
         if status != 200:
-            Msg().err("Error: pulling manifest:")
+            LOG.error("pulling manifest:")
             return []
+
         try:
             if not (self.localrepo.setup_tag(tag) and
                     self.localrepo.set_version("v2")):
-                Msg().err("Error: setting localrepo v2 tag and version")
+                LOG.error("setting localrepo v2 tag and version")
                 return []
+
             self.localrepo.save_json("manifest", manifest)
-            Msg().out("Info: v2 layers: %s" % (imagerepo), l=Msg.DBG)
+            LOG.debug("v2 layers: %s", imagerepo)
             if "fsLayers" in manifest:
                 files = self.get_v2_layers_all(imagerepo,
                                                manifest["fsLayers"])
             elif "layers" in manifest:
                 if "config" in manifest:
                     manifest["layers"].append(manifest["config"])
+
                 files = self.get_v2_layers_all(imagerepo,
                                                manifest["layers"])
             else:
-                Msg().err("Error: layers section missing in manifest")
+                LOG.error("layers section missing in manifest")
+
         except (KeyError, AttributeError, IndexError, ValueError, TypeError):
             pass
+
         return files
 
     def _get_v1_id_from_tags(self, tags_obj, tag):
@@ -486,41 +504,48 @@ class DockerIoAPI(object):
                     return image_dict["id"]
         except KeyError:
             pass
+
         return ""
 
     def get_v1(self, imagerepo, tag):
         """Pull container with v1 API"""
-        Msg().out("Info: v1 image id: %s" % (imagerepo), l=Msg.DBG)
+        LOG.debug("v1 image id: %s", imagerepo)
         (hdr_data, images_array) = self.get_v1_repo(imagerepo)
         status = self.curl.get_status_code(hdr_data["X-ND-HTTPSTATUS"])
         if status == 401 or not images_array:
-            Msg().err("Error: image not found or not authorized")
+            LOG.error("image not found or not authorized")
             return []
+
         try:
             endpoint = "http://" + hdr_data["x-docker-endpoints"]
         except KeyError:
             endpoint = self.index_url
+
         (tags_array) = self.get_v1_image_tags(endpoint, imagerepo)
         image_id = self._get_v1_id_from_tags(tags_array, tag)
         if not image_id:
-            Msg().err("Error: image tag not found")
+            LOG.error("image tag not found")
             return []
+
         if len(image_id) <= 8:
             image_id = self._get_v1_id_from_images(images_array, image_id)
             if not image_id:
-                Msg().err("Error: image id not found")
+                LOG.error("image id not found")
                 return []
+
         if not (self.localrepo.setup_tag(tag) and
                 self.localrepo.set_version("v1")):
-            Msg().err("Error: setting localrepo v1 tag and version")
+            LOG.error("setting localrepo v1 tag and version")
             return []
-        Msg().out("Info: v1 ancestry", image_id, l=Msg.DBG)
+
+        LOG.debug("v1 ancestry: %s", image_id)
         (dummy, ancestry) = self.get_v1_image_ancestry(endpoint, image_id)
         if not ancestry:
-            Msg().err("Error: ancestry not found")
+            LOG.error("ancestry not found")
             return []
+
         self.localrepo.save_json("ancestry", ancestry)
-        Msg().out("Info: v1 layers", image_id, l=Msg.DBG)
+        LOG.debug("v1 layers: %s", image_id)
         files = self.get_v1_layers_all(endpoint, ancestry)
         return files
 
@@ -537,6 +562,7 @@ class DockerIoAPI(object):
         elif ('.' not in components[0] and
               components[0] != "library" and len(components) == 1):
             components.insert(0, "library")
+
         remoterepo = '/'.join(components)
         if registry:
             try:
@@ -546,37 +572,44 @@ class DockerIoAPI(object):
                 registry_url = registry
                 if "://" not in registry:
                     registry_url = "https://%s" % registry
+
                 index_url = registry_url
+
             if registry_url:
                 self.registry_url = registry_url
+
             if index_url:
                 self.index_url = index_url
+
         return (imagerepo, remoterepo)
 
     def get(self, imagerepo, tag):
         """Pull a docker image from a v2 registry or v1 index"""
-        Msg().out("Info: get imagerepo: %s tag: %s" % (imagerepo, tag),
-                  l=Msg.DBG)
+        LOG.debug("get imagerepo: %s tag: %s", imagerepo, tag)
         (imagerepo, remoterepo) = self._parse_imagerepo(imagerepo)
         if self.localrepo.cd_imagerepo(imagerepo, tag):
             new_repo = False
         else:
             self.localrepo.setup_imagerepo(imagerepo)
             new_repo = True
+
         if self.is_v2():
             files = self.get_v2(remoterepo, tag)  # try v2
         else:
             files = self.get_v1(remoterepo, tag)  # try v1
+
         if new_repo and not files:
             self.localrepo.del_imagerepo(imagerepo, tag, False)
+
         return files
 
     def get_tags(self, imagerepo):
         """List tags from a v2 or v1 repositories"""
-        Msg().out("Info: get tags", imagerepo, l=Msg.DBG)
+        LOG.debug("get tags: %s", imagerepo)
         (dummy, remoterepo) = self._parse_imagerepo(imagerepo)
         if self.is_v2():
             return self.get_v2_image_tags(remoterepo, True)  # try v2
+
         return self.get_v1_image_tags(remoterepo, True)  # try v1
 
     def search_init(self, pause):
@@ -692,8 +725,8 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                         structure["repolayers"][layer_id]["layer_f"] = \
                                 layer_f_path
                     else:
-                        Msg().out("Info: warning: unkwnon file in layer:",
-                                  f_path, l=Msg.WAR)
+                        LOG.warning("unknown file in layer: %s", f_path)
+
         return structure
 
     def _find_top_layer_id(self, structure, my_layer_id=""):
@@ -759,22 +792,25 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             layer_id = json_config_file.replace(".json", "")
             json_file = structure["repoconfigs"][json_config_file]["json_f"]
             self._move_layer_to_v1repo(json_file, layer_id, "container.json")
+
         top_layer_id = self._find_top_layer_id(structure)
         layers = self._sorted_layers(structure, top_layer_id)
         for layer_id in layers:
-            Msg().out("Info: adding layer:", layer_id, l=Msg.INF)
+            LOG.info("adding layer: %s", layer_id)
             if str(structure["repolayers"][layer_id]["VERSION"]) != "1.0":
-                Msg().err("Error: layer version unknown")
+                LOG.error("layer version unknown")
                 return []
+
             for layer_item in ("json_f", "layer_f"):
                 filename = str(structure["repolayers"][layer_id][layer_item])
                 if not self._move_layer_to_v1repo(filename, layer_id):
-                    Msg().err("Error: copying %s file %s"
-                              % (layer_item[:-2], filename), l=Msg.VER)
+                    LOG.error("copying %s file %s", layer_item[:-2], filename)
                     return []
+
         self.localrepo.save_json("ancestry", layers)
         if self._imagerepo:
             imagetag = self._imagerepo + ':' + tag
+
         return [imagetag]
 
     def _load_repositories(self, structure):
@@ -788,6 +824,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                     loaded_repo = self._load_image(structure, imagerepo, tag)
                     if loaded_repo:
                         loaded_repositories.extend(loaded_repo)
+
         return loaded_repositories
 
     def load(self, tmp_imagedir, imagerepo=None):
@@ -799,15 +836,18 @@ class DockerLocalFileAPI(CommonLocalFileApi):
         self._imagerepo = imagerepo
         structure = self._load_structure(tmp_imagedir)
         if not structure:
-            Msg().err("Error: failed to load image structure")
+            LOG.error("failed to load image structure")
             return []
+
         if "repositories" in structure and structure["repositories"]:
             repositories = self._load_repositories(structure)
         else:
             if not imagerepo:
                 imagerepo = Unique().imagename()
+
             tag = Unique().imagetag()
             repositories = self._load_image(structure, imagerepo, tag)
+
         return repositories
 
     def _save_image(self, imagerepo, tag, structure, tmp_imagedir):
@@ -863,6 +903,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             os.makedirs(tmp_imagedir)
         except (IOError, OSError):
             return False
+
         structure = dict()
         structure["manifest"] = []
         structure["repositories"] = dict()
@@ -870,17 +911,19 @@ class DockerLocalFileAPI(CommonLocalFileApi):
         for (imagerepo, tag) in imagetag_list:
             status = self._save_image(imagerepo, tag, structure, tmp_imagedir)
             if not status:
-                Msg().err("Error: save image failed:", imagerepo + ':' + tag)
+                LOG.error("save image failed: %s", imagerepo + ':' + tag)
                 break
+
         if status:
             self.localrepo.save_json(tmp_imagedir + "/manifest.json",
                                      structure["manifest"])
             self.localrepo.save_json(tmp_imagedir + "/repositories",
                                      structure["repositories"])
             if not FileUtil(tmp_imagedir).tar(imagefile):
-                Msg().err("Error: save image failed in writing tar", imagefile)
+                LOG.error("save image failed in writing tar: %s", imagefile)
                 status = False
         else:
-            Msg().err("Error: no images specified")
+            LOG.error("no images specified")
+
         FileUtil(tmp_imagedir).remove(recursive=True)
         return status
