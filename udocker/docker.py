@@ -7,6 +7,7 @@ import re
 import base64
 import json
 
+from udocker import LOG
 from udocker.config import Config
 from udocker.msg import Msg
 from udocker.commonlocalfile import CommonLocalFileApi
@@ -35,20 +36,24 @@ class DockerIoAPI(object):
 
     def set_proxy(self, http_proxy):
         """Select a socks http proxy for API access and file download"""
+        LOG.info("Setting proxy: %s", http_proxy)
         self.curl.set_proxy(http_proxy)
 
     def set_registry(self, registry_url):
         """Change docker registry url"""
+        LOG.info("Setting registry: %s", registry_url)
         self.registry_url = registry_url
 
     def set_index(self, index_url):
         """Change docker index url"""
+        LOG.info("Setting docker index: %s", index_url)
         self.index_url = index_url
 
     def is_repo_name(self, imagerepo):
         """Check if name matches authorized characters for a docker repo"""
         if imagerepo and re.match("^[a-zA-Z0-9][a-zA-Z0-9-_./:]+$", imagerepo):
             return True
+
         return False
 
     def _get_url(self, *args, **kwargs):
@@ -60,43 +65,55 @@ class DockerIoAPI(object):
         url = str(args[0])
         if "RETRY" not in kwargs:
             kwargs["RETRY"] = 3
+
         if "FOLLOW" not in kwargs:
             kwargs["FOLLOW"] = 3
+
         kwargs["RETRY"] -= 1
         (hdr, buf) = self.curl.get(*args, **kwargs)
-        Msg().out("Info: header: %s" % (hdr.data), l=Msg.DBG)
-        Msg().out("Info: buffer: %s" % (buf.getvalue()), l=Msg.DBG)
+        LOG.info("header: %s", (hdr.data))
+        LOG.info("buffer: %s", (buf.getvalue()))
         status_code = self.curl.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if status_code == 200:
             return (hdr, buf)
+
         if not kwargs["RETRY"]:
             hdr.data["X-ND-CURLSTATUS"] = 13  # Permission denied
             return (hdr, buf)
+
         auth_kwargs = kwargs.copy()
         if "location" not in hdr.data:
             kwargs["FOLLOW"] = 3
+
         if "location" in hdr.data and hdr.data['location']:
             if not kwargs["FOLLOW"]:
                 hdr.data["X-ND-CURLSTATUS"] = 13
                 return (hdr, buf)
+
             kwargs["FOLLOW"] -= 1
             args = [hdr.data['location']]
             if "header" in auth_kwargs:
                 del auth_kwargs["header"]
+
         elif status_code == 401:
             if "www-authenticate" in hdr.data:
                 www_authenticate = hdr.data["www-authenticate"]
                 if not "realm" in www_authenticate:
                     return (hdr, buf)
+
                 if 'error="insufficient_scope"' in www_authenticate:
                     return (hdr, buf)
+
                 auth_header = ""
                 if "/v2/" in url:
                     auth_header = self._get_v2_auth(www_authenticate,
                                                     kwargs["RETRY"])
+
                 if "/v1/" in url:
                     auth_header = self._get_v1_auth(www_authenticate)
+
                 auth_kwargs.update({"header": [auth_header]})
+
         (hdr, buf) = self._get_url(*args, **auth_kwargs)
         return (hdr, buf)
 
@@ -111,30 +128,38 @@ class DockerIoAPI(object):
             layer_f_chksum = ChkSUM().hash(filename, match.group(1))
             if layer_f_chksum == match.group(2):
                 return True             # is cached skip download
+
             cache_mode = 0
+
         if self.curl.cache_support and cache_mode:
             if cache_mode == 1:
                 (hdr, dummy) = self._get_url(url, nobody=1)
             elif cache_mode == 3:
                 (hdr, dummy) = self._get_url(url, sizeonly=True)
+
             remote_size = self.curl.get_content_length(hdr)
             if remote_size == FileUtil(filename).size():
                 return True             # is cached skip download
         else:
             remote_size = -1
+
         resume = False
         if filename.endswith("layer"):
             resume = True
+
         (hdr, dummy) = self._get_url(url, ofile=filename, resume=resume)
         if self.curl.get_status_code(hdr.data["X-ND-HTTPSTATUS"]) != 200:
             return False
+
         if remote_size == -1:
             remote_size = self.curl.get_content_length(hdr)
+
         if (remote_size != FileUtil(filename).size() and
                 hdr.data["X-ND-CURLSTATUS"]):
-            Msg().err("Error: file size mismatch:", filename,
+            LOG.error("file size mismatch: %s %s %s", filename,
                       remote_size, FileUtil(filename).size())
             return False
+
         return True
 
     def _split_fields(self, buf):
@@ -144,6 +169,7 @@ class DockerIoAPI(object):
             pair = field.split('=', 1)
             if len(pair) == 2:
                 all_fields[pair[0]] = pair[1].strip('"')
+
         return all_fields
 
     def is_v1(self):
@@ -156,12 +182,14 @@ class DockerIoAPI(object):
                     return True
             except (KeyError, AttributeError, TypeError):
                 pass
+
         return False
 
     def has_search_v1(self, url=None):
         """Check if registry has search capabilities in v1"""
         if url is None:
             url = self.index_url
+
         (hdr, dummy) = self._get_url(url + "/v1/search")
         try:
             if ("200" in hdr.data["X-ND-HTTPSTATUS"] or
@@ -169,12 +197,13 @@ class DockerIoAPI(object):
                 return True
         except (KeyError, AttributeError, TypeError):
             pass
+
         return False
 
     def get_v1_repo(self, imagerepo):
         """Get list of images in a repo from Docker Hub"""
         url = self.index_url + "/v1/repositories/" + imagerepo + "/images"
-        Msg().out("Info: repo url", url, l=Msg.DBG)
+        LOG.info("repo url: %s", url)
         (hdr, buf) = self._get_url(url, header=["X-Docker-Token: true"])
         try:
             self.v1_auth_header = "Authorization: Token " + \
@@ -189,6 +218,7 @@ class DockerIoAPI(object):
         """Authentication for v1 API"""
         if "Token" in www_authenticate:
             return self.v1_auth_header
+
         return ""
 
     def get_v1_image_tags(self, imagerepo, tags_only=False):
@@ -198,8 +228,9 @@ class DockerIoAPI(object):
             endpoint = "http://" + hdr_data["x-docker-endpoints"]
         except KeyError:
             endpoint = self.index_url
+
         url = endpoint + "/v1/repositories/" + imagerepo + "/tags"
-        Msg().out("Info: tags url", url, l=Msg.DBG)
+        LOG.info("tags url: %s", url)
         (dummy, buf) = self._get_url(url)
         tags = []
         try:
