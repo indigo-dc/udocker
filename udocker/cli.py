@@ -1301,7 +1301,7 @@ class UdockerCLI(object):
         MSG.info(80*"_")
         MSG.info("\t\tConfiguration options")
         for varopt in Config.conf:
-            MSG.info(varopt, '=', Config.conf[varopt])
+            MSG.info("%s = %s", varopt, Config.conf[varopt])
 
         MSG.info(80*"_")
         return self.STATUS_OK
