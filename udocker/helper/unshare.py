@@ -6,7 +6,6 @@ import ctypes
 import subprocess
 
 from udocker import LOG
-from udocker.msg import Msg
 from udocker.helper.hostinfo import HostInfo
 from udocker.helper.nixauth import NixAuthentication
 
