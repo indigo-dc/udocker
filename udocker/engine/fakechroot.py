@@ -6,10 +6,9 @@ import sys
 import re
 import subprocess
 
-from udocker import is_genstr
+from udocker import is_genstr, LOG
 from udocker.engine.base import ExecutionEngineCommon
 from udocker.helper.osinfo import OSInfo
-from udocker.msg import Msg
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uvolume import Uvolume
@@ -73,10 +72,10 @@ class FakechrootEngine(ExecutionEngineCommon):
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
         if not os.path.exists(fakechroot_so):
-            Msg().err("Error: no libfakechroot found", image_list)
+            LOG.error("no libfakechroot found: %s", image_list)
             sys.exit(1)
 
-        Msg().out("Info: fakechroot_so:", fakechroot_so, l=Msg.DBG)
+        LOG.debug("fakechroot_so: %s", fakechroot_so)
         return fakechroot_so
 
     def _setup_container_user(self, user):
@@ -87,8 +86,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         """Check the uid_map string for container run command"""
         if ("user" in self.opt and (self.opt["user"] == '0' or
                                     self.opt["user"] == "root")):
-            Msg().out("Warning: this engine does not support execution as root",
-                      l=Msg.WAR)
+            LOG.warning("this engine does not support execution as root")
 
     def _get_volume_bindings(self):
         """Get the volume bindings string for fakechroot run"""
@@ -99,6 +97,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             (host_path, cont_path) = Uvolume(vol).split()
             if not (host_path and cont_path):
                 continue
+
             real_host_path = os.path.realpath(host_path)
             if (host_path == cont_path and
                     Config.conf['fakechroot_expand_symlinks'] is False):
@@ -112,8 +111,10 @@ class FakechrootEngine(ExecutionEngineCommon):
                 map_volumes_dict[cont_path] = real_host_path + '!' + cont_path
                 if host_path != real_host_path or os.path.isdir(real_host_path):
                     self._recommend_expand_symlinks = True
+
         for cont_path in sorted(map_volumes_dict, reverse=True):
             map_volumes_list.append(map_volumes_dict[cont_path])
+
         return (':'.join(host_volumes_list), ':'.join(map_volumes_list))
 
     def _get_access_filesok(self):
@@ -127,6 +128,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                                                              self.opt["vol"])
             if h_file and os.path.exists(h_file):
                 file_list.append(c_path)
+
         return ":".join(file_list)
 
     def _fakechroot_env_set(self):
@@ -155,7 +157,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         if map_volumes:
             self.opt["env"].append("FAKECHROOT_DIR_MAP=" + map_volumes)
 
-        if Msg.level >= Msg.DBG:
+        if Config.conf['verbose_level'] == logging.DEBUG:
             self.opt["env"].append("FAKECHROOT_DEBUG=true")
             self.opt["env"].append("LD_DEBUG=libs:files")
 
@@ -196,11 +198,11 @@ class FakechrootEngine(ExecutionEngineCommon):
     def _run_invalid_options(self):
         """check -p --publish -P --publish-all --net-coop"""
         if self.opt["portsmap"]:
-            Msg().out("Warning: this execution mode does not support "
-                      "-p --publish", l=Msg.WAR)
+            LOG.warning("this execution mode does not support -p --publish")
+
         if self.opt["netcoop"]:
-            Msg().out("Warning: this execution mode does not support "
-                      "-P --netcoop --publish-all", l=Msg.WAR)
+            LOG.warning("this execution mode does not support -P --netcoop"
+                        "--publish-all")
 
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non binary executables (scripts)"""
@@ -209,29 +211,34 @@ class FakechrootEngine(ExecutionEngineCommon):
                                   "dynamic" in filetype):
             self.opt["cmd"][0] = exec_path
             return []
+
         env_exec = FileUtil("env").find_exec("/bin:/usr/bin",
                                              self.container_root)
         if  env_exec:
             return [self.container_root + '/' + env_exec, ]
+
         relc_path = exec_path.split(self.container_root, 1)[-1]
         real_path = FileUtil(self.container_root).cont2host(relc_path,
                                                             self.opt["vol"])
         hashbang = FileUtil(real_path).get1stline()
         match = re.match("#! *([^ ]+)(.*)", hashbang)
         if match and not match.group(1).startswith('/'):
-            Msg().err("Error: no such file", match.group(1), "in", exec_path)
+            LOG.error("no such file %s in %s", match.group(1), exec_path)
             sys.exit(1)
         elif match:
             interpreter = [self.container_root + '/' + match.group(1), ]
             if match.group(2):
                 interpreter.extend(match.group(2).strip().split(' '))
+
             self.opt["cmd"][0] = exec_path.split(self.container_root, 1)[-1]
             return interpreter
+
         sh_exec = FileUtil("sh").find_exec(self.opt["env"].getenv("PATH"),
                                            self.container_root)
         if sh_exec:
             return [self.container_root + '/' + sh_exec, ]
-        Msg().err("Error: sh not found")
+
+        LOG.error("sh not found")
         sys.exit(1)
 
     def run(self, container_id):
@@ -240,33 +247,26 @@ class FakechrootEngine(ExecutionEngineCommon):
           * argument: container_id or name
           * options:  many via self.opt see the help
         """
-
         # warning root execution not supported
         self._uid_check()
-
         # setup execution
         exec_path = self._run_init(container_id)
         if not exec_path:
             return 2
 
         self._run_invalid_options()
-
         # execution mode and get patcher
         xmode = self.exec_mode.get_mode()
         self._elfpatcher = ElfPatcher(self.localrepo, self.container_id)
-
         # verify if container pathnames are correct for this mode
         if not self._elfpatcher.check_container_path():
-            Msg().out("Warning: container path mismatch, use setup to convert",
-                      l=Msg.WAR)
+            LOG.warning("container path mismatch, use setup to convert")
 
         # set basic environment variables
         self._run_env_set()
         self._fakechroot_env_set()
-
         # if not --hostenv clean the environment
         self._run_env_cleanup_list()
-
         # build the actual command
         cmd_l = self._set_cpu_affinity()
         cmd_l.extend(["env", "-i", ])
@@ -275,10 +275,10 @@ class FakechrootEngine(ExecutionEngineCommon):
             container_loader = self._elfpatcher.get_container_loader()
             if container_loader:
                 cmd_l.append(container_loader)
+
         cmd_l.extend(self._run_add_script_support(exec_path))
         cmd_l.extend(self.opt["cmd"])
-        Msg().out("CMD =", cmd_l, l=Msg.VER)
-
+        LOG.info("CMD = %s", cmd_l)
         # execute
         self._run_banner(self.opt["cmd"][0], '#')
         cwd = FileUtil(self.container_root).cont2host(self.opt["cwd"],
