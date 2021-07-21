@@ -15,6 +15,8 @@ try:
 except ImportError:
     pass
 
+from udocker import LOG
+
 
 class Unique(object):
     """Produce unique identifiers for container names, temporary
@@ -34,6 +36,7 @@ class Unique(object):
         """Get an ID"""
         if not name:
             name = self.def_name
+
         try:
             return str(uuid.uuid3(uuid.uuid4(), str(name) + str(time.time())))
         except (NameError, AttributeError):
@@ -43,10 +46,12 @@ class Unique(object):
 
     def imagename(self):
         """Get a container image name"""
+        LOG.info("get a container image name")
         return self._rnd(16)
 
     def imagetag(self):
         """Get a container image tag"""
+        LOG.info("get a container image tag")
         return self._rnd(10)
 
     def layer_v1(self):
