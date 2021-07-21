@@ -312,7 +312,7 @@ class RuncEngine(ExecutionEngineCommon):
             (host_dir, cont_dir) = Uvolume(vol).split()
             if os.path.isdir(host_dir):
                 if host_dir == "/dev":
-                    LOG.warning"engine does not support -v %s", host_dir)
+                    LOG.warning("engine does not support -v %s", host_dir)
                     continue
 
                 self._add_mount_spec(host_dir, cont_dir, rwmode=True)
