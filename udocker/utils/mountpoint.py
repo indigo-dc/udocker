@@ -4,7 +4,7 @@
 import os
 import stat
 
-from udocker.msg import Msg
+from udocker import LOG
 from udocker.utils.fileutil import FileUtil
 
 
@@ -27,8 +27,9 @@ class MountPoint(object):
         """Prepare container for mountpoints"""
         if not os.path.isdir(self.mountpoints_orig_dir):
             if not FileUtil(self.mountpoints_orig_dir).mkdir():
-                Msg().err("Error: creating dir:", self.mountpoints_orig_dir)
+                LOG.error("creating dir: %s", self.mountpoints_orig_dir)
                 return False
+
         return True
 
     def add(self, cont_path):
@@ -38,6 +39,7 @@ class MountPoint(object):
         if orig_mpath:
             self.mountpoints[cont_path] = \
                 orig_mpath.replace(self.container_root, "", 1)
+
         if not self.mountpoints[cont_path]:
             self.mountpoints[cont_path] = "/"
 
@@ -45,6 +47,7 @@ class MountPoint(object):
         """Delete container mountpoint"""
         if cont_path not in self.mountpoints or not self.container_root:
             return False
+
         container_root = os.path.realpath(self.container_root)
         mountpoint = container_root + '/' + cont_path
         orig_mpath = container_root + '/' + self.mountpoints[cont_path]
@@ -53,11 +56,13 @@ class MountPoint(object):
         while mountpoint != orig_mpath:
             if mountpoint.startswith(container_root):
                 if not FileUtil(mountpoint).remove():
-                    Msg().err("Error: while deleting:", cont_path)
+                    LOG.error("while deleting: %s", cont_path)
                     return False
+
                 link_path = self.mountpoints[cont_path].replace('/', '#')
                 FileUtil(self.mountpoints_orig_dir + '/' + link_path).remove()
                 mountpoint = os.path.dirname(mountpoint)
+
         del self.mountpoints[cont_path]
         return True
 
@@ -74,9 +79,11 @@ class MountPoint(object):
             if (stat.S_IFMT(os.stat(mountpoint).st_mode) ==
                     stat.S_IFMT(os.stat(host_path).st_mode)):
                 return True
-            Msg().err("Error: host and container volume paths not same type:",
+
+            LOG.error("host and container volume paths not same type: %s and %s",
                       host_path, cont_path)
             return False
+
         self.add(cont_path)
         if os.path.isfile(host_path):
             FileUtil(os.path.dirname(mountpoint)).mkdir()
@@ -84,16 +91,19 @@ class MountPoint(object):
             status = os.path.isfile(mountpoint) or os.path.islink(mountpoint)
         elif os.path.isdir(host_path):
             status = FileUtil(mountpoint).mkdir()
+
         if not status:
-            Msg().err("Error: creating container mountpoint:", cont_path)
+            LOG.error("creating container mountpoint: %s", cont_path)
             self.delete(cont_path)
             return False
+
         return True
 
     def save(self, cont_path):
         """Save one mountpoint"""
         if cont_path not in self.mountpoints:
             return True
+
         orig_mountpoint = self.mountpoints[cont_path].replace('/', '#')
         curr_mountpoint = cont_path.replace('/', '#')
         curr_mountpoint = self.mountpoints_orig_dir + '/' + curr_mountpoint
@@ -102,6 +112,7 @@ class MountPoint(object):
                 os.symlink(orig_mountpoint, curr_mountpoint)
         except (IOError, OSError):
             return False
+
         return True
 
     def save_all(self):
