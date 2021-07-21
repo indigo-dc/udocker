@@ -196,7 +196,7 @@ class UdockerTools(object):
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/bin/"):
                     tar_in.name = os.path.basename(tar_in.name)
-                    LOG.debug("extrating %s", tar_in.name)
+                    LOG.debug("extracting %s", tar_in.name)
                     tfile.extract(tar_in, self.localrepo.bindir)
 
             FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR |
@@ -206,7 +206,7 @@ class UdockerTools(object):
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/lib/"):
                     tar_in.name = os.path.basename(tar_in.name)
-                    LOG.debug("extrating %s", tar_in.name)
+                    LOG.debug("extracting %s", tar_in.name)
                     tfile.extract(tar_in, self.localrepo.libdir)
 
             FileUtil(self.localrepo.libdir).rchmod()

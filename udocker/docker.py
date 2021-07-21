@@ -70,8 +70,8 @@ class DockerIoAPI(object):
 
         kwargs["RETRY"] -= 1
         (hdr, buf) = self.curl.get(*args, **kwargs)
-        LOG.info("header: %s", (hdr.data))
-        LOG.info("buffer: %s", (buf.getvalue()))
+        LOG.debug("header: %s", (hdr.data))
+        LOG.debug("buffer: %s", (buf.getvalue()))
         status_code = self.curl.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if status_code == 200:
             return (hdr, buf)
@@ -202,7 +202,7 @@ class DockerIoAPI(object):
     def get_v1_repo(self, imagerepo):
         """Get list of images in a repo from Docker Hub"""
         url = self.index_url + "/v1/repositories/" + imagerepo + "/images"
-        LOG.info("repo url: %s", url)
+        LOG.debug("repo url: %s", url)
         (hdr, buf) = self._get_url(url, header=["X-Docker-Token: true"])
         try:
             self.v1_auth_header = "Authorization: Token " + \
@@ -229,7 +229,7 @@ class DockerIoAPI(object):
             endpoint = self.index_url
 
         url = endpoint + "/v1/repositories/" + imagerepo + "/tags"
-        LOG.info("tags url: %s", url)
+        LOG.debug("tags url: %s", url)
         (dummy, buf) = self._get_url(url)
         tags = []
         try:

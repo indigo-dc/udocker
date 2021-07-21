@@ -75,15 +75,17 @@ class CommonLocalFileApi(object):
         """Untar container created with docker save"""
         #umask 022
         verbose = ""
+        stderror = None
         if Config.conf['verbose_level'] == logging.DEBUG:
-            verbose = 'v'
+            stderror = sys.stderr
+            verbose = "v"
 
         cmd = ["tar", "-C", destdir, "-x" + verbose,
                "--delay-directory-restore", "--one-file-system",
                "--no-same-owner", "--no-same-permissions", "--overwrite",
                "-f", tarfile]
 
-        status = Uprocess().call(cmd, stderr=sys.stderr, close_fds=True)
+        status = Uprocess().call(cmd, stderr=stderror, close_fds=True)
         return not status
 
     def create_container_meta(self, layer_id, comment="created by udocker"):

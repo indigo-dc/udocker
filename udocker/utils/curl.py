@@ -306,7 +306,8 @@ class GetURLpyCurl(GetURL):
                 kwargs["resume"] = False
                 (hdr, buf) = self.get(self._url, **kwargs)
             elif status_code != 200:
-                LOG.error("in download: %s", str(hdr.data["X-ND-HTTPSTATUS"]))
+                LOG.error("%s in download: %s", self._url,
+                          str(hdr.data["X-ND-HTTPSTATUS"]))
                 FileUtil(output_file).remove()
 
         return (hdr, buf)
@@ -447,7 +448,7 @@ class GetURLexeCurl(GetURL):
 
                 (hdr, buf) = self.get(self._files["url"], **kwargs)
             elif status_code != 200:
-                LOG.error("in download: %s:%s",
+                LOG.error("%s in download: %s:%s", self._files["url"],
                           str(hdr.data["X-ND-HTTPSTATUS"]), str(status))
                 FileUtil(self._files["output_file"]).remove()
             else:  # OK downloaded

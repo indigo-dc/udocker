@@ -258,12 +258,14 @@ class FileUtil(object):
         if not os.path.isfile(self.filename):
             return False
 
-        verbose = ''
+        verbose = ""
+        stderror = None
         if Config.conf['verbose_level'] == logging.DEBUG:
-            verbose = 'v'
+            stderror = sys.stderr
+            verbose = "v"
 
         cmd = ["tar", "t" + verbose + "f", self.filename]
-        if Uprocess().call(cmd, stderr=sys.stderr, stdout=sys.stderr,
+        if Uprocess().call(cmd, stderr=stderror, stdout=sys.stderr,
                            close_fds=True):
             return False
 
@@ -275,13 +277,15 @@ class FileUtil(object):
         if sourcedir is None:
             sourcedir = self.filename
 
-        verbose = ''
+        verbose = ""
+        stderror = None
         if Config.conf['verbose_level'] == logging.DEBUG:
-            verbose = 'v'
+            stderror = sys.stderr
+            verbose = "v"
 
         cmd = ["tar", "-C", sourcedir, "-c" + verbose, "--one-file-system",
                "-S", "--xattrs", "-f", tarfile, "."]
-        status = Uprocess().call(cmd, stderr=sys.stderr, close_fds=True)
+        status = Uprocess().call(cmd, stderr=stderror, close_fds=True)
         if status:
             LOG.error("creating tar file: %s", tarfile)
 
