@@ -3,7 +3,7 @@
 
 import os
 
-from udocker.msg import Msg
+from udocker import LOG
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.filebind import FileBind
@@ -43,10 +43,12 @@ class ExecutionMode(object):
         """Get execution mode"""
         if self.force_mode:
             return self.force_mode
+
         futil_xm = FileUtil(self.container_execmode)
         xmode = futil_xm.getdata('r').strip()
         if not xmode:
             xmode = Config.conf['default_execution_mode']
+
         return xmode
 
     def set_mode(self, xmode, force=False):
@@ -58,7 +60,7 @@ class ExecutionMode(object):
         futil_croot = FileUtil(self.container_orig_root)
         orig_path = futil_croot.getdata('r').strip()
         if xmode not in self.valid_modes:
-            Msg().err("Error: invalid execmode:", xmode)
+            LOG.error("invalid execmode: %s", xmode)
             return status
 
         if not (force or xmode != prev_xmode):
@@ -79,14 +81,18 @@ class ExecutionMode(object):
             elif force or prev_xmode in ("F2", "F3", "F4"):
                 status = ((elfpatcher.restore_ld() or force) and
                           elfpatcher.restore_binaries())
+
             if xmode[0] == 'R':
                 filebind.setup()
+
         elif xmode in ("F2", ):
             if force or prev_xmode in ("F3", "F4"):
                 status = elfpatcher.restore_binaries()
+
             if force or prev_xmode in ('P1', 'P2', 'F1', 'R1',
                                        'R2', 'R3', 'S1'):
                 status = elfpatcher.patch_ld()
+
         elif xmode in ("F3", "F4"):
             if force or prev_xmode in ('P1', 'P2', 'F1', 'F2',
                                        'R1', 'R2', 'R3', 'S1'):
@@ -109,7 +115,7 @@ class ExecutionMode(object):
             status = futil.putdata(os.path.realpath(self.container_root), "w")
 
         if (not status) and (not force):
-            Msg().err("Error: container setup failed")
+            LOG.error("container setup failed")
 
         return bool(status)
 
@@ -128,4 +134,5 @@ class ExecutionMode(object):
         elif xmode.startswith("S"):
             self.exec_engine = \
                 SingularityEngine(self.localrepo, self)
+
         return self.exec_engine
