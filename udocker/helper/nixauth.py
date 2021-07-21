@@ -5,6 +5,7 @@ import re
 import pwd
 import grp
 
+from udocker import LOG
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.hostinfo import HostInfo
 
@@ -25,6 +26,7 @@ class NixAuthentication(object):
         self.subgid_file = subgid_file
         if not self.subuid_file:
             self.subuid_file = "/etc/subuid"
+
         if not self.subgid_file:
             self.subgid_file = "/etc/subgid"
 
@@ -37,6 +39,7 @@ class NixAuthentication(object):
         else:
             (user, dummy, dummy, dummy, dummy, dummy) = \
                     self._get_user_from_host(wanted_user)
+
         try:
             insub = open(sub_file)
         except (IOError, OSError):
@@ -47,9 +50,12 @@ class NixAuthentication(object):
                     (subuser, subid, count) = line.strip().split(':')
                 except ValueError:
                     continue
+
                 if subuser == user:
                     subid_list.extend([(subid, count), ])
+
             insub.close()
+
         return subid_list
 
     def user_in_subuid(self, wanted_user):
@@ -75,6 +81,7 @@ class NixAuthentication(object):
                 return ("", "", "", "", "", "")
             return (str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
                     str(usr.pw_gecos), usr.pw_dir, usr.pw_shell)
+
         try:
             usr = pwd.getpwnam(wanted_user)
         except (IOError, OSError, KeyError):
@@ -89,6 +96,7 @@ class NixAuthentication(object):
                 re.match("^\\d+$", wanted_group)):
             wanted_gid = str(wanted_group)
             wanted_group = ""
+
         if wanted_gid:
             try:
                 hgr = grp.getgrgid(int(wanted_gid))
@@ -109,6 +117,7 @@ class NixAuthentication(object):
                 re.match("^\\d+$", wanted_user)):
             wanted_uid = str(wanted_user)
             wanted_user = ""
+
         try:
             inpasswd = open(self.passwd_file)
         except (IOError, OSError):
@@ -117,10 +126,13 @@ class NixAuthentication(object):
             for line in inpasswd:
                 (user, dummy, uid, gid, gecos, home,
                  shell) = line.strip().split(':')
+
                 if wanted_user and user == wanted_user:
                     return (user, uid, gid, gecos, home, shell)
+
                 if wanted_uid and uid == wanted_uid:
                     return (user, uid, gid, gecos, home, shell)
+
             inpasswd.close()
             return ("", "", "", "", "", "")
 
@@ -131,6 +143,7 @@ class NixAuthentication(object):
                 re.match("^\\d+$", wanted_group)):
             wanted_gid = str(wanted_group)
             wanted_group = ""
+
         try:
             ingroup = open(self.group_file)
         except (IOError, OSError):
@@ -140,8 +153,10 @@ class NixAuthentication(object):
                 (group, dummy, gid, users) = line.strip().split(':')
                 if wanted_group and group == wanted_group:
                     return (group, gid, users)
+
                 if wanted_gid and gid == wanted_gid:
                     return (group, gid, users)
+
             ingroup.close()
             return ("", "", "")
 
@@ -152,6 +167,7 @@ class NixAuthentication(object):
                 (user, passw, uid, gid, gecos, home, shell)
         if line in FileUtil(self.passwd_file).getdata('r'):
             return True
+
         return FileUtil(self.passwd_file).putdata(line, 'a')
 
     def add_group(self, group, gid, users=None):
@@ -160,27 +176,35 @@ class NixAuthentication(object):
         if isinstance(users, list):
             for username in users:
                 users_str += "%s," % (username)
+
         line = "%s:x:%s:%s\n" % (group, gid, users_str)
         if line in FileUtil(self.group_file).getdata('r'):
             return True
+
         return FileUtil(self.group_file).putdata(line, 'a')
 
     def get_user(self, wanted_user):
         """Get host or container user"""
+        LOG.info("getting user: %s", wanted_user)
         if self.passwd_file:
             return self._get_user_from_file(wanted_user)
+
         return self._get_user_from_host(wanted_user)
 
     def get_group(self, wanted_group):
         """Get host or container group"""
+        LOG.info("getting group: %s", wanted_group)
         if self.group_file:
             return self._get_group_from_file(wanted_group)
+
         return self._get_group_from_host(wanted_group)
 
     def get_home(self):
         """Get host or container home directory"""
         (r_user, dummy, dummy, dummy, r_home,
          dummy) = self.get_user(HostInfo.uid)
+        LOG.info("getting home")
         if r_user:
             return r_home
+
         return ""
