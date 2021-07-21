@@ -3,9 +3,8 @@
 
 import os
 
-from udocker.msg import Msg
+from udocker import LOG
 from udocker.utils.fileutil import FileUtil
-
 from udocker.docker import DockerLocalFileAPI
 from udocker.oci import OciLocalFileAPI
 from udocker.commonlocalfile import CommonLocalFileApi
@@ -20,17 +19,20 @@ class LocalFileAPI(CommonLocalFileApi):
     def load(self, imagefile, imagerepo=None):
         """Generic load of image tags to a file"""
         if not os.path.exists(imagefile) and imagefile != '-':
-            Msg().err("Error: image file does not exist:", imagefile)
+            LOG.error("image file does not exist: %s", imagefile)
             return False
+
         tmp_imagedir = FileUtil("load").mktmp()
         try:
             os.makedirs(tmp_imagedir)
         except (IOError, OSError):
             return False
+
         if not self._untar_saved_container(imagefile, tmp_imagedir):
-            Msg().err("Error: failed to extract container:", imagefile)
+            LOG.error("failed to extract container: %s", imagefile)
             FileUtil(tmp_imagedir).remove(recursive=True)
             return False
+
         imagetype = self._get_imagedir_type(tmp_imagedir)
         if imagetype == "Docker":
             repositories = DockerLocalFileAPI(
@@ -40,6 +42,7 @@ class LocalFileAPI(CommonLocalFileApi):
                 self.localrepo).load(tmp_imagedir, imagerepo)
         else:
             repositories = []
+
         FileUtil(tmp_imagedir).remove(recursive=True)
         return repositories
 

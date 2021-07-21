@@ -36,16 +36,16 @@ __date__ = "2021"
 
 LOG = logging.getLogger(__name__)
 ch = logging.StreamHandler()
-formout = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s: %(message)s")
+formout = logging.Formatter("%(asctime)s:%(levelname)s: %(message)s", "%Y-%m-%d %H:%M:%S")
 ch.setFormatter(formout)
 LOG.addHandler(ch)
 
 MSG = logging.getLogger("Messages")
-msgout = logging.StreamHandler(sys.stdout)
+msgstr = logging.StreamHandler(sys.stdout)
 formmsg = logging.Formatter("%(message)s")
-msgout.setFormatter(formmsg)
+msgstr.setFormatter(formmsg)
 MSG.setLevel(logging.INFO)
-MSG.addHandler(msgout)
+MSG.addHandler(msgstr)
 
 def is_genstr(objstr):
     """test if objstr is string or unicode both in py2 nd py3

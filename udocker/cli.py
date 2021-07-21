@@ -45,7 +45,6 @@ class UdockerCLI(object):
         self.localrepo = localrepo
         self.dockerioapi = DockerIoAPI(self.localrepo)
         self.localfileapi = LocalFileAPI(self.localrepo)
-        self.logger = logging.getLogger(__name__)
         if Config.conf['keystore'].startswith("/"):
             self.keystore = KeyStore(Config.conf['keystore'])
         else:

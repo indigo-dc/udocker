@@ -119,5 +119,5 @@ class UMain(object):
 
             return exit_status
 
-        LOG.error("Invalid command: %s\n", command)
+        LOG.error("invalid command: %s\n", command)
         return self.STATUS_ERROR

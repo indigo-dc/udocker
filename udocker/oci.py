@@ -3,7 +3,7 @@
 
 import os
 
-from udocker.msg import Msg
+from udocker import LOG
 from udocker.commonlocalfile import CommonLocalFileApi
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.unique import Unique
@@ -27,6 +27,7 @@ class OciLocalFileAPI(CommonLocalFileApi):
                 self.localrepo.load_json(f_path + "index.json")
         if not (structure["index"] and structure["oci-layout"]):
             return {}
+
         for fname in os.listdir(tmp_imagedir + "/blobs"):
             f_path = tmp_imagedir + "/blobs/" + fname
             if FileUtil(f_path).isdir():
@@ -40,6 +41,7 @@ class OciLocalFileAPI(CommonLocalFileApi):
                             layer_algorithm
                     structure["repolayers"][layer_id]["layer_h"] = \
                             layer_f
+
         return structure
 
     def _get_from_manifest(self, structure, imagetag):
@@ -49,10 +51,12 @@ class OciLocalFileAPI(CommonLocalFileApi):
                     structure["manifest"][imagetag]["json"]["config"]["digest"]
         except (KeyError, ValueError, TypeError):
             config_layer = ""
+
         try:
             layers = []
             for layer in structure["manifest"][imagetag]["json"]["layers"]:
                 layers.append(layer["digest"])
+
             layers.reverse()
             return (config_layer, layers)
         except (KeyError, ValueError, TypeError):
@@ -64,12 +68,15 @@ class OciLocalFileAPI(CommonLocalFileApi):
             tag = manifest["annotations"]["org.opencontainers.image.ref.name"]
         except KeyError:
             tag = Unique().imagetag()
+
         if '/' in tag and ':' in tag:
             (imagerepo, tag) = tag.split(':', 1)
         else:
             imagerepo = Unique().imagename()
+
         if self._imagerepo:
             imagerepo = self._imagerepo
+
         imagetag = imagerepo + ':' + tag
         structure["manifest"][imagetag] = dict()
         structure["manifest"][imagetag]["json"] = \
@@ -93,6 +100,7 @@ class OciLocalFileAPI(CommonLocalFileApi):
                     self.localrepo.load_json(
                         structure["repolayers"]
                         [manifest["digest"]]["layer_f"])))
+
         return loaded_repositories
 
     def _load_image_step2(self, structure, imagerepo, tag):
@@ -104,14 +112,17 @@ class OciLocalFileAPI(CommonLocalFileApi):
             json_file = structure["repolayers"][config_layer_id]["layer_f"]
             self._move_layer_to_v1repo(json_file, config_layer_id,
                                        "container.json")
+
         layer_hash_list = []
         for layer_id in layers:
-            Msg().out("Info: adding layer:", layer_id, l=Msg.INF)
+            LOG.info("adding layer: %s", layer_id)
             filename = str(structure["repolayers"][layer_id]["layer_f"])
             if not self._move_layer_to_v1repo(filename, layer_id):
-                Msg().err("Error: copying layer file", filename, l=Msg.VER)
+                LOG.error("copying layer file: %s", filename)
                 return []
+
             layer_hash_list.append(structure["repolayers"][layer_id]["layer_h"])
+
         self.localrepo.save_json("ancestry", layer_hash_list)
         return [imagetag]
 
@@ -123,6 +134,7 @@ class OciLocalFileAPI(CommonLocalFileApi):
         self._imagerepo = imagerepo
         structure = self._load_structure(tmp_imagedir)
         if not structure:
-            Msg().err("Error: failed to load image structure")
+            LOG.erro("failed to load image structure")
             return []
+
         return self._load_repositories(structure)
