@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Manipulate volume bindings host_path:container_path"""
+from udocker import LOG
 
 
 class Uvolume(object):
@@ -18,11 +19,13 @@ class Uvolume(object):
             else:
                 if not (char == p_char and char == '/'):
                     clean_path += char
+
             p_char = char
 
         if clean_path == "/":
             return clean_path
 
+        LOG.debug("removing dupl and trail slashes: %s", clean_path)
         return clean_path.rstrip('/')
 
     def split(self):
@@ -34,4 +37,6 @@ class Uvolume(object):
         except ValueError:
             host_dir = self.volume
             cont_dir = self.volume
+
+        LOG.debug("Spliting volume string")
         return (self.cleanpath(host_dir), self.cleanpath(cont_dir))
