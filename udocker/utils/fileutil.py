@@ -5,9 +5,9 @@ import os
 import sys
 import stat
 import re
+import logging
 
-from udocker import is_genstr
-from udocker.msg import Msg
+from udocker import is_genstr, LOG
 from udocker.config import Config
 from udocker.helper.unique import Unique
 from udocker.helper.hostinfo import HostInfo
@@ -29,12 +29,14 @@ class FileUtil(object):
             self.filename = "-"
             self.basename = "-"
             return
+
         try:
             self.filename = os.path.abspath(filename)
             self.basename = os.path.basename(self.filename)
         except (AttributeError, TypeError):
             self.filename = filename
             self.basename = filename
+
         self._register_prefix(self._tmpdir)
 
     def _register_prefix(self, prefix):
@@ -60,6 +62,7 @@ class FileUtil(object):
                 old_umask = os.umask(new_umask)
             except (TypeError, ValueError):
                 return False
+
             if FileUtil.orig_umask is None:
                 FileUtil.orig_umask = old_umask
         else:
@@ -67,6 +70,7 @@ class FileUtil(object):
                 os.umask(FileUtil.orig_umask)
             except (TypeError, ValueError):
                 return False
+
         return True
 
     def mktmp(self):
@@ -85,6 +89,7 @@ class FileUtil(object):
             os.makedirs(self.filename)
         except (OSError, IOError, AttributeError):
             return False
+
         return True
 
     def rmdir(self):
@@ -93,6 +98,7 @@ class FileUtil(object):
             os.rmdir(self.filename)
         except (OSError, IOError, AttributeError):
             return False
+
         return True
 
     def mktmpdir(self):
@@ -100,6 +106,7 @@ class FileUtil(object):
         dirname = self.mktmp()
         if FileUtil(dirname).mkdir():
             return dirname
+
         return None
 
     def uid(self):
@@ -114,11 +121,14 @@ class FileUtil(object):
         filename = os.path.realpath(filename)
         if os.path.isdir(filename):
             filename += '/'
+
         for safe_prefix in FileUtil.safe_prefixes:
             if filename.startswith(safe_prefix):
                 return True
+
             if filename.startswith(os.path.realpath(safe_prefix)):
                 return True
+
         return False
 
     def chown(self, uid=0, gid=0, recursive=False):
@@ -132,6 +142,7 @@ class FileUtil(object):
                 os.lchown(self.filename, uid, gid)
         except OSError:
             return False
+
         return True
 
     def rchown(self, uid=0, gid=0):
@@ -154,7 +165,7 @@ class FileUtil(object):
                 mode = (stat.S_IMODE(filestat) & mask) | filemode
                 os.chmod(filename, mode)
         except OSError:
-            Msg().err("Error: changing permissions of:", filename, l=Msg.VER)
+            LOG.error("changing permissions of: %s", filename)
             raise OSError
 
     def chmod(self, filemode=0o600, dirmode=0o700, mask=0o755, recursive=False):
@@ -165,12 +176,15 @@ class FileUtil(object):
                     for f_name in files:
                         self._chmod(dir_path + '/' + f_name,
                                     filemode, None, mask)
+
                     for f_name in dirs:
                         self._chmod(dir_path + '/' + f_name,
                                     None, dirmode, mask)
+
             self._chmod(self.filename, filemode, dirmode, mask)
         except OSError:
             return False
+
         return True
 
     def rchmod(self, filemode=0o600, dirmode=0o700, mask=0o755):
@@ -187,18 +201,22 @@ class FileUtil(object):
                     if not os.path.islink(f_path):
                         os.chmod(f_path, stat.S_IWUSR | stat.S_IRUSR)
                     os.unlink(f_path)
+
                 for f_name in dirs:
                     f_path = dir_path + '/' + f_name
                     if os.path.islink(f_path):
                         os.unlink(f_path)
                         continue
+
                     os.chmod(f_path, stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR)
                     os.rmdir(f_path)
+
             os.chmod(self.filename, stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR)
             os.rmdir(self.filename)
         except OSError:
-            Msg().err("Error: removing:", self.filename, l=Msg.VER)
+            LOG.error("removing: %s", self.filename)
             return False
+
         return True
 
     def remove(self, force=False, recursive=False):
@@ -206,44 +224,49 @@ class FileUtil(object):
         if not os.path.lexists(self.filename):
             pass
         elif self.filename.count("/") < 2:
-            Msg().err("Error: delete pathname too short: ", self.filename)
+            LOG.error("delete pathname too short: %s", self.filename)
             return False
         elif self.uid() != HostInfo.uid:
-            Msg().err("Error: delete not owner: ", self.filename)
+            LOG.error("delete not owner: %s", self.filename)
             return False
         elif (not force) and (not self._is_safe_prefix(self.filename)):
-            Msg().err("Error: delete outside of directory tree: ",
-                      self.filename)
+            LOG.error("delete outside of directory tree: %s", self.filename)
             return False
         elif os.path.isfile(self.filename) or os.path.islink(self.filename):
             try:
                 os.remove(self.filename)
             except (IOError, OSError):
-                Msg().err("Error: deleting file: ", self.filename)
+                LOG.error("deleting file: %s", self.filename)
                 return False
         elif os.path.isdir(self.filename):
             if recursive:
                 status = self._removedir()
             else:
                 status = self.rmdir()
+
             if not status:
-                Msg().err("Error: deleting directory: ", self.filename)
+                LOG.error("deleting directory: %s", self.filename)
                 return False
+
         if self.filename in dict(FileUtil.tmptrash):
             del FileUtil.tmptrash[self.filename]
+
         return True
 
     def verify_tar(self):
         """Verify a tar file: tar tvf file.tar"""
         if not os.path.isfile(self.filename):
             return False
+
         verbose = ''
-        if Msg.level >= Msg.VER:
+        if Config.conf['verbose_level'] == logging.DEBUG:
             verbose = 'v'
+
         cmd = ["tar", "t" + verbose + "f", self.filename]
-        if Uprocess().call(cmd, stderr=Msg.chlderr, stdout=Msg.chlderr,
+        if Uprocess().call(cmd, stderr=sys.stderr, stdout=sys.stderr,
                            close_fds=True):
             return False
+
         return True
 
     def tar(self, tarfile, sourcedir=None):
@@ -251,29 +274,35 @@ class FileUtil(object):
         #cmd += r" --xform 's:^\./::' "
         if sourcedir is None:
             sourcedir = self.filename
+
         verbose = ''
-        if Msg.level >= Msg.VER:
+        if Config.conf['verbose_level'] == logging.DEBUG:
             verbose = 'v'
+
         cmd = ["tar", "-C", sourcedir, "-c" + verbose, "--one-file-system",
                "-S", "--xattrs", "-f", tarfile, "."]
-        status = Uprocess().call(cmd, stderr=Msg.chlderr, close_fds=True)
+        status = Uprocess().call(cmd, stderr=sys.stderr, close_fds=True)
         if status:
-            Msg().err("Error: creating tar file:", tarfile)
+            LOG.error("creating tar file: %s", tarfile)
+
         return not status
 
     def copydir(self, destdir, sourcedir=None):
         """Copy directories"""
         if sourcedir is None:
             sourcedir = self.filename
+
         verbose = ''
-        if Msg.level >= Msg.VER:
+        if Config.conf['verbose_level'] == logging.DEBUG:
             verbose = 'v'
+
         cmd_tarc = ["tar", "-C", sourcedir, "-c" + verbose,
                     "--one-file-system", "-S", "--xattrs", "-f", "-", "."]
         cmd_tarx = ["tar", "-C", destdir, "-x" + verbose, "-f", "-"]
         status = Uprocess().pipe(cmd_tarc, cmd_tarx)
         if not status:
-            Msg().err("Error: copying:", sourcedir, " to ", destdir, l=Msg.VER)
+            LOG.error("copying %s to %s", sourcedir, destdir)
+
         return status
 
     def cleanup(self):
@@ -289,6 +318,7 @@ class FileUtil(object):
                 return True
         except (IOError, OSError, TypeError):
             pass
+
         return False
 
     def size(self):
@@ -304,7 +334,7 @@ class FileUtil(object):
         try:
             with open(self.filename, mode) as filep:
                 buf = filep.read()
-            Msg().out("Info: read buf", buf, l=Msg.DBG)
+            LOG.debug("read buf: %s", buf)
             return buf
         except (IOError, OSError, TypeError):
             return ""
@@ -325,6 +355,7 @@ class FileUtil(object):
         try:
             with open(self.filename, mode) as filep:
                 filep.write(buf)
+
             return buf
         except (IOError, OSError, TypeError):
             return ""
@@ -335,15 +366,19 @@ class FileUtil(object):
         while f_path:
             if os.path.exists(f_path):
                 return f_path
+
             (f_path, dummy) = os.path.split(f_path)
+
         return f_path
 
     def _cont2host(self, pathname, container_root, volumes=""):
         """Auxiliary translate container path to host path"""
         if not (pathname and pathname.startswith('/')):
             return ""
+
         if not volumes:
             volumes = []
+
         path = ""
         real_container_root = os.path.realpath(container_root)
         pathname = re.sub("/+", '/', os.path.normpath(pathname))
@@ -356,8 +391,10 @@ class FileUtil(object):
             elif pathname.startswith(host_path):
                 path = pathname
                 break
+
         if not path:
             path = real_container_root + '/' + pathname
+
         f_path = ""
         for d_comp in path.split('/')[1:]:
             f_path = f_path + '/' + d_comp
@@ -373,6 +410,7 @@ class FileUtil(object):
                         f_path = real_path
                 else:
                     f_path = os.path.dirname(f_path) + '/' + real_path
+
         return os.path.realpath(f_path)
 
     def cont2host(self, container_path, volumes=""):
@@ -385,19 +423,24 @@ class FileUtil(object):
         for directory in path:
             if not directory:
                 continue
+
             if directory == "." and workdir:
                 directory = workdir
             elif directory == ".." and workdir:
                 directory = workdir + "/.."
+
             if self.orig_filename.startswith("/"):
                 exec_path = self.orig_filename
             else:
                 exec_path = directory + "/" + self.orig_filename
+
             host_path = exec_path
             if rootdir:
                 host_path = self._cont2host(exec_path, rootdir, volumes)
+
             if os.path.isfile(host_path) and os.access(host_path, os.X_OK):
                 return host_path if cont2host else exec_path
+
         return ""
 
     def find_exec(self, path="", rootdir="", volumes="", workdir="",
@@ -405,14 +448,19 @@ class FileUtil(object):
         """Find an executable pathname"""
         if not path:
             path = os.getenv("PATH") + ":" + Config.conf['root_path']
+
         if rootdir:
             rootdir += "/"
+
         if is_genstr(path):
             if "=" in path:
                 path = "".join(path.split("=", 1)[1:])
+
             path = path.split(":")
+
         if not isinstance(path, (list, tuple)):
             return ""
+
         return self._find_exec(path, rootdir, volumes, workdir, cont2host)
 
     def rename(self, dest_filename):
@@ -421,6 +469,7 @@ class FileUtil(object):
             os.rename(self.filename, dest_filename)
         except (IOError, OSError):
             return False
+
         return True
 
     def _stream2file(self, dest_filename, mode="w"):
@@ -431,11 +480,13 @@ class FileUtil(object):
             fpdst = open(dest_filename, mode + "b")
         except (IOError, OSError):
             return False
+
         while True:
             copy_buffer = sys.stdin.read(1024 * 1024)
             if not copy_buffer:
                 break
             fpdst.write(copy_buffer)
+
         fpdst.close()
         return True
 
@@ -465,16 +516,19 @@ class FileUtil(object):
             fpsrc = open(self.filename, "rb")
         except (IOError, OSError):
             return False
+
         try:
             fpdst = open(dest_filename, mode + "b")
         except (IOError, OSError):
             fpsrc.close()
             return False
+
         while True:
             copy_buffer = fpsrc.read(1024 * 1024)
             if not copy_buffer:
                 break
             fpdst.write(copy_buffer)
+
         fpsrc.close()
         fpdst.close()
         return True
@@ -501,6 +555,7 @@ class FileUtil(object):
             image_path = path_prefix + "/" + image
             if os.path.exists(image_path):
                 return image_path
+
         return ""
 
     def _link_change_apply(self, new_l_path, f_path, force):
@@ -522,6 +577,7 @@ class FileUtil(object):
         l_path = os.readlink(f_path)
         if not l_path.startswith("/"):
             return False
+
         new_l_path = ""
         regexp_id = "[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+"
         recomp = re.compile("(/.*/containers/" + regexp_id + "/ROOT)(/.*)")
@@ -529,14 +585,17 @@ class FileUtil(object):
             match = recomp.match(l_path)
             if match:
                 orig_path = match.group(1)
+
         if (orig_path and l_path.startswith(orig_path) and
                 orig_path != root_path):
             new_l_path = l_path.replace(orig_path, root_path, 1)
         elif not l_path.startswith(root_path):
             new_l_path = root_path + l_path
+
         if new_l_path:
             self._link_change_apply(new_l_path, f_path, force)
             return True
+
         return False
 
     def _link_restore(self, f_path, orig_path, root_path, force):
@@ -545,6 +604,7 @@ class FileUtil(object):
         new_l_path = ""
         if not l_path.startswith("/"):
             return False
+
         regexp_id = "[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+"
         recomp = re.compile("(/.*/containers/" + regexp_id + "/ROOT)(/.*)")
         if orig_path and l_path.startswith(orig_path):
@@ -555,9 +615,11 @@ class FileUtil(object):
             match = recomp.match(l_path)
             if match:
                 new_l_path = l_path.replace(match.group(1), "", 1)
+
         if new_l_path:
             self._link_change_apply(new_l_path, f_path, force)
             return True
+
         return False
 
     def links_conv(self, force=False, to_container=True, orig_path=""):
@@ -565,17 +627,19 @@ class FileUtil(object):
         root_path = os.path.realpath(self.filename)
         links = []
         if not self._is_safe_prefix(root_path):
-            Msg().err("Error: links convertion outside of directory tree: ",
-                      root_path)
+            LOG.error("links convertion outside of dir tree: %s", root_path)
             return None
+
         for dir_path, dirs, files in os.walk(root_path):
             for f_name in files + dirs:
                 try:
                     f_path = dir_path + "/" + f_name
                     if not os.path.islink(f_path):
                         continue
+
                     if os.lstat(f_path).st_uid != HostInfo.uid:
                         continue
+
                     if to_container:
                         if self._link_set(f_path, orig_path, root_path, force):
                             links.append(f_path)
@@ -585,6 +649,7 @@ class FileUtil(object):
                             links.append(f_path)
                 except OSError:
                     continue
+
         return links
 
     def match(self):
@@ -594,7 +659,9 @@ class FileUtil(object):
         matching_files = []
         if not os.path.isdir(directory):
             return []
+
         for f_name in os.listdir(directory):
             if re.match(matching_expression, f_name):
                 matching_files.append(directory + "/" + f_name)
+
         return matching_files
