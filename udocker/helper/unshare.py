@@ -5,6 +5,7 @@ import os
 import ctypes
 import subprocess
 
+from udocker import LOG
 from udocker.msg import Msg
 from udocker.helper.hostinfo import HostInfo
 from udocker.helper.nixauth import NixAuthentication
@@ -24,15 +25,15 @@ class Unshare(object):
         try:
             _unshare = ctypes.CDLL("libc.so.6").unshare
         except OSError:
-            Msg().err("Error: in unshare: mapping libc")
+            LOG.error("in unshare: mapping libc")
             return False
 
         _unshare.restype = ctypes.c_int
         _unshare.argtypes = (ctypes.c_int, )
-
         if _unshare(flags) == -1:
-            Msg().err("Error: in unshare:", os.strerror(-1))
+            LOG.error("in unshare: %s", os.strerror(-1))
             return False
+
         return True
 
     def namespace_exec(self, method, flags=CLONE_NEWUSER):
@@ -57,7 +58,7 @@ class Unshare(object):
             os.close(pwrite2)   # notify
             (dummy, status) = os.waitpid(cpid, 0)
             if status % 256:
-                Msg().err("Error: namespace exec action failed")
+                LOG.error("namespace exec action failed")
                 return False
 
             return True
@@ -71,9 +72,7 @@ class Unshare(object):
             os.setuid(0)
             os.setgroups([0, 0, ])
         except OSError:
-            Msg().err("Error: setting ids and groups")
+            LOG.error("setting ids and groups")
             return False
 
-        # pylint: disable=protected-access
         os._exit(int(method()))
-        return True
