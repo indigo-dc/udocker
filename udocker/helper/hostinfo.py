@@ -6,7 +6,7 @@ import re
 import pwd
 import platform
 
-from udocker import is_genstr
+from udocker import is_genstr, LOG
 from udocker.utils.uprocess import Uprocess
 
 class HostInfo(object):
@@ -28,6 +28,7 @@ class HostInfo(object):
         try:
             machine = platform.machine()
             bits = platform.architecture()[0]
+            LOG.debug("machine:bits %s:%s", machine, bits)
             if machine == "x86_64":
                 if bits == "32bit":
                     arch = "i386"
@@ -42,6 +43,7 @@ class HostInfo(object):
                     arch = "arm64"
         except (NameError, AttributeError):
             pass
+
         return arch
 
     def osversion(self):
@@ -71,8 +73,10 @@ class HostInfo(object):
         for (idx, os_version) in enumerate(os_release.split('.')):
             if idx >= len(version):
                 break
+
             if int(os_version) > int(version[idx]):
                 return True
+
             if int(os_version) < int(version[idx]):
                 return False
 
@@ -82,14 +86,17 @@ class HostInfo(object):
         """Check if executable has a given cli option"""
         if not executable:
             return False
+
         arg_list = []
         if arg and is_genstr(arg):
             arg_list = [arg]
         elif isinstance(arg, list):
             arg_list = arg
+
         out = Uprocess().get_output([executable] + arg_list + ["--help"])
         if out and search_option in re.split(r"[=|\*\[\]\n,; ]+", out):
             return True
+
         return False
 
     def termsize(self):
@@ -101,4 +108,5 @@ class HostInfo(object):
                 return (int(lines), int(cols))
         except (OSError, IOError):
             pass
+
         return (24, 80)
