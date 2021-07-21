@@ -4,6 +4,7 @@
 import os
 import json
 
+from udocker import LOG
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.hostinfo import HostInfo
 
@@ -24,10 +25,12 @@ class KeyStore(object):
         if keystore_uid not in (-1, HostInfo.uid):
             raise IOError("not owner of keystore: %s" %
                           (self.keystore_file))
+ 
         keystore_dir = os.path.dirname(self.keystore_file)
         if FileUtil(keystore_dir).uid() != HostInfo.uid:
             raise IOError("keystore dir not found or not owner: %s" %
                           (keystore_dir))
+ 
         if (keystore_uid != -1 and
                 (os.stat(self.keystore_file).st_mode & 0o077)):
             raise IOError("keystore is accessible to group or others: %s" %
@@ -37,6 +40,7 @@ class KeyStore(object):
         """Read all credentials from file"""
         try:
             with open(self.keystore_file, "r") as filep:
+                LOG.info("credentials read from: %s", self.keystore_file)
                 return json.load(filep)
         except (IOError, OSError, ValueError):
             return dict()
@@ -52,6 +56,7 @@ class KeyStore(object):
         except (IOError, OSError):
             exit_status = 1
             return exit_status
+
         return exit_status
 
     def _write_all(self, auths):
@@ -63,12 +68,15 @@ class KeyStore(object):
             oldmask = os.umask(0o77)
             with open(self.keystore_file, "w") as filep:
                 json.dump(auths, filep)
+
             os.umask(oldmask)
         except (IOError, OSError):
             if oldmask is not None:
                 os.umask(oldmask)
+
             exit_status = 1
             return exit_status
+
         return exit_status
 
     def get(self, url):
@@ -79,14 +87,17 @@ class KeyStore(object):
             return self.credential["auth"]
         except KeyError:
             pass
+
         return ""
 
     def put(self, url, credential, email):
         """Put credential in keystore for given url"""
         if not credential:
             return 1
+
         auths = self._read_all()
         auths[url] = {"auth": credential, "email": email, }
+        LOG.info("url of credentials: %s", url)
         self._shred()
         return self._write_all(auths)
 
@@ -96,8 +107,10 @@ class KeyStore(object):
         auths = self._read_all()
         try:
             del auths[url]
+            LOG.info("credentials deleted")
         except KeyError:
             return 1
+
         self._shred()
         return self._write_all(auths)
 
@@ -107,6 +120,8 @@ class KeyStore(object):
         try:
             self._shred()
             os.unlink(self.keystore_file)
+            LOG.info("all credentials deleted")
         except (IOError, OSError):
             return 1
+
         return 0
