@@ -4,6 +4,7 @@
 import os
 import re
 
+from udocker import LOG
 from udocker.utils.uprocess import Uprocess
 from udocker.utils.fileutil import FileUtil
 
@@ -30,15 +31,19 @@ class OSInfo(object):
         filetype = ""
         if not filename.startswith(self._root_dir):
             filename = self._root_dir + '/' + filename
+
         if os.path.islink(filename):
             f_path = os.readlink(filename)
             if not f_path.startswith('/'):
                 f_path = os.path.dirname(filename) + '/' + f_path
+
             return self.get_filetype(f_path)
+
         if os.path.isfile(filename):
             filetype = Uprocess().get_output(["file", filename])
             if not filetype:
                 filetype = Uprocess().get_output(["readelf", "-h", filename])
+
         return filetype
 
     def arch(self):
@@ -46,16 +51,22 @@ class OSInfo(object):
         for filename in OSInfo._binarylist:
             f_path = self._root_dir + filename
             filetype = self.get_filetype(f_path)
+            LOG.info("get guest arch")
             if not filetype:
                 continue
+
             if "x86-64" in filetype.lower():
                 return "amd64"
+
             if "Intel 80386" in filetype:
                 return "i386"
+
             if "aarch64" in filetype.lower():
                 return "arm64"
+
             if " ARM" in filetype:
                 return "arm"
+
         return ""
 
     def osdistribution(self):
@@ -67,6 +78,7 @@ class OSInfo(object):
                 if match and match.group(1):
                     return (match.group(1).split(' ')[0],
                             match.group(2).split('.')[0])
+
         f_path = self._root_dir + "/etc/lsb-release"
         if os.path.exists(f_path):
             distribution = ""
@@ -76,12 +88,15 @@ class OSInfo(object):
                               osinfo, re.MULTILINE)
             if match:
                 distribution = match.group(1).split(' ')[0]
+
             match = re.search(r"DISTRIB_RELEASE=(.+)(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
                 version = match.group(1).split('.')[0]
+
             if distribution and version:
                 return (distribution, version)
+
         f_path = self._root_dir + "/etc/os-release"
         if os.path.exists(f_path):
             distribution = ""
@@ -91,16 +106,20 @@ class OSInfo(object):
                               osinfo, re.MULTILINE)
             if match:
                 distribution = match.group(1).split(' ')[0]
+
             match = re.search(r"VERSION_ID=\"?([^ \n\"\.]+).*\"?(\n|$)",
                               osinfo, re.MULTILINE)
             if match:
                 version = match.group(1).split('.')[0]
+
             if distribution and version:
                 return (distribution, version)
+
         return ("", "")
 
     def osversion(self):
         """Get guest operating system"""
         if self.osdistribution()[0]:
             return "linux"
+
         return ""
