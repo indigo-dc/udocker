@@ -4,8 +4,9 @@
 import sys
 import os
 import subprocess
+import logging
 
-from udocker.msg import Msg
+from udocker import LOG
 from udocker.config import Config
 from udocker.engine.base import ExecutionEngineCommon
 from udocker.utils.fileutil import FileUtil
@@ -59,17 +60,20 @@ class PRootEngine(ExecutionEngineCommon):
                     image_list = ["proot-arm-4_8_0", "proot-arm", "proot"]
                 else:
                     image_list = ["proot-arm", "proot"]
+
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
 
         if not os.path.exists(self.executable):
-            Msg().err("Error: proot executable not found")
+            LOG.error("proot executable not found")
             sys.exit(1)
 
         if Config.conf['proot_noseccomp'] is not None:
             self.proot_noseccomp = Config.conf['proot_noseccomp']
+
         if self.exec_mode.get_mode() == "P2":
             self.proot_noseccomp = True
+
         if self._is_seccomp_patched(self.executable):
             self.proot_newseccomp = True
 
@@ -81,16 +85,19 @@ class PRootEngine(ExecutionEngineCommon):
         """
         if "PROOT_NEW_SECCOMP" in os.environ:
             return True
+
         if ("PROOT_NO_SECCOMP" in os.environ or
                 self.proot_noseccomp or
                 HostInfo().oskernel_isgreater([4, 8, 0])):
             return False
+
         host_file = self.container_dir + "/osenv.json"
         host_info = self._is_same_osenv(host_file)
         if host_info:
             if "PROOT_NEW_SECCOMP" in host_info:
                 return True
             return False
+
         out = Uprocess().get_output([executable, "-r", "/",
                                      executable, "--help"])
         if not out:
@@ -102,6 +109,7 @@ class PRootEngine(ExecutionEngineCommon):
                 self._save_osenv(host_file,
                                       dict([("PROOT_NEW_SECCOMP", 1), ]))
                 return True
+
         self._save_osenv(host_file)
         return False
 
@@ -112,6 +120,7 @@ class PRootEngine(ExecutionEngineCommon):
         else:
             uid_map_list = \
                 ["-i", self.opt["uid"] + ":" + self.opt["gid"], ]
+
         return uid_map_list
 
     def _create_mountpoint(self, host_path, cont_path, dirs_only=False):
@@ -123,6 +132,7 @@ class PRootEngine(ExecutionEngineCommon):
         proot_vol_list = []
         for vol in self.opt["vol"]:
             proot_vol_list.extend(["-b", "%s:%s" % Uvolume(vol).split()])
+
         return proot_vol_list
 
     def _get_network_map(self):
@@ -130,8 +140,10 @@ class PRootEngine(ExecutionEngineCommon):
         proot_netmap_list = []
         for (cont_port, host_port) in list(self._get_portsmap().items()):
             proot_netmap_list.extend(["-p", "%d:%d" % (cont_port, host_port)])
+
         if self.opt["netcoop"]:
             proot_netmap_list.extend(["-n", ])
+
         return proot_netmap_list
 
     def run(self, container_id):
@@ -140,13 +152,11 @@ class PRootEngine(ExecutionEngineCommon):
           * argument: container_id or name
           * options:  many via self.opt see the help
         """
-
         # setup execution
         if not self._run_init(container_id):
             return 2
 
         self.select_proot()
-
         # seccomp and ptrace behavior change on 4.8.0 onwards
         if self.proot_noseccomp or os.getenv("PROOT_NO_SECCOMP"):
             self.opt["env"].append("PROOT_NO_SECCOMP=1")
@@ -162,8 +172,7 @@ class PRootEngine(ExecutionEngineCommon):
 
         # set environment variables
         self._run_env_set()
-
-        if Msg.level >= Msg.DBG:
+        if Config.conf['verbose_level'] == logging.DEBUG:
             proot_verbose = ["-v", "9", ]
         else:
             proot_verbose = []
@@ -184,15 +193,13 @@ class PRootEngine(ExecutionEngineCommon):
         cmd_l.extend(["-k", self._kernel, ])
         cmd_l.extend(self._get_network_map())
         cmd_l.extend(["-r", self.container_root, ])
-
         if self.opt["cwd"]:  # set current working directory
             cmd_l.extend(["-w", self.opt["cwd"], ])
-        cmd_l.extend(self.opt["cmd"])
-        Msg().out("CMD =", cmd_l, l=Msg.VER)
 
+        cmd_l.extend(self.opt["cmd"])
+        LOG.info("CMD = %s", cmd_l)
         # cleanup the environment
         self._run_env_cleanup_dict()
-
         # execute
         self._run_banner(self.opt["cmd"][0])
         status = subprocess.call(cmd_l, shell=False, close_fds=True,
