@@ -6,8 +6,7 @@ import os
 import sys
 import time
 
-from udocker import is_genstr
-from udocker.msg import Msg
+from udocker import is_genstr, LOG
 from udocker.config import Config
 from udocker.utils.uprocess import Uprocess
 from udocker.utils.fileutil import FileUtil
@@ -30,6 +29,7 @@ class ElfPatcher(object):
             os.path.realpath(self.localrepo.cd_container(container_id))
         if not self._container_dir:
             raise ValueError("invalid container id")
+
         self._container_root = self._container_dir + "/ROOT"
         self._container_ld_so_path = self._container_dir + "/ld.so.path"
         self._container_ld_so_orig = self._container_dir + "/ld.so.orig"
@@ -55,7 +55,7 @@ class ElfPatcher(object):
         f_util = FileUtil(self.localrepo.bindir)
         patchelf_exec = f_util.find_file_in_dir(image_list)
         if not os.path.exists(patchelf_exec):
-            Msg().err("Error: patchelf executable not found")
+            LOG.error("patchelf executable not found")
             sys.exit(1)
 
         return patchelf_exec
@@ -67,6 +67,7 @@ class ElfPatcher(object):
             if "#f" in arg:
                 arg = arg.replace("#f", path)
             cmd_out.append(arg)
+
         return cmd_out
 
     def _walk_fs(self, cmd, root_path, action=BIN):
@@ -118,15 +119,18 @@ class ElfPatcher(object):
                                        self.ONE_OUTPUT | self.BIN)
             if elf_loader and ".so" in elf_loader:
                 return elf_loader
+
         return ""
 
     def get_original_loader(self):
         """Get the pathname of the original ld.so"""
         if os.path.exists(self._container_ld_so_path):
             return FileUtil(self._container_ld_so_path).getdata('r').strip()
+
         elf_loader = self.guess_elf_loader()
         if elf_loader:
             FileUtil(self._container_ld_so_path).putdata(elf_loader, 'w')
+
         return elf_loader
 
     def get_container_loader(self):
@@ -134,6 +138,7 @@ class ElfPatcher(object):
         elf_loader = self.get_original_loader()
         if not elf_loader:
             return ""
+
         elf_loader = self._container_root + "/" + elf_loader
         return elf_loader if os.path.exists(elf_loader) else ""
 
@@ -142,6 +147,7 @@ class ElfPatcher(object):
         last_path = FileUtil(self._container_patch_path).getdata('r')
         if last_path and is_genstr(last_path):
             return last_path.strip()
+
         return ""
 
     def check_container_path(self):
@@ -149,6 +155,7 @@ class ElfPatcher(object):
         last_path = self.get_patch_last_path()
         if last_path and last_path != self._container_dir:
             return False
+
         return True
 
     def get_patch_last_time(self):
@@ -163,6 +170,7 @@ class ElfPatcher(object):
         """Set all executables and libs to the ld.so absolute pathname"""
         if not self.check_container_path():
             self.restore_binaries()
+
         last_time = '0'
         patchelf_exec = self.select_patchelf()
         elf_loader = self.get_container_loader()
@@ -174,10 +182,12 @@ class ElfPatcher(object):
                 last_time = str(int(time.time()))
             except ValueError:
                 pass
+
             futil_time = FileUtil(self._container_patch_time)
             futil_path = FileUtil(self._container_patch_path)
             return (futil_time.putdata(last_time, 'w') and
                     futil_path.putdata(self._container_dir, 'w'))
+
         return False
 
     def restore_binaries(self):
@@ -191,11 +201,13 @@ class ElfPatcher(object):
         else:
             cmd = [patchelf_exec, "--restore-root-prefix",
                    self._container_root, "#f"]
+
         self._walk_fs(cmd, self._container_root, self.BIN | self.LIB)
         newly_set = self.guess_elf_loader()
         if newly_set == elf_loader:
             FileUtil(self._container_patch_path).remove()
             FileUtil(self._container_patch_time).remove()
+
         return newly_set == elf_loader
 
     def patch_ld(self, output_elf=None):
@@ -233,11 +245,11 @@ class ElfPatcher(object):
         elf_loader = self.get_container_loader()
         futil_ldso = FileUtil(self._container_ld_so_orig)
         if futil_ldso.size() <= 0:
-            Msg().err("Error: original loader not found or empty")
+            LOG.error("original loader not found or empty")
             return False
 
         if not futil_ldso.copyto(elf_loader):
-            Msg().err("Error: in loader copy or file locked by other process")
+            LOG.error("in loader copy or file locked by other process")
             return False
 
         return True
@@ -250,11 +262,13 @@ class ElfPatcher(object):
         ld_data = Uprocess().get_output(cmd)
         if not ld_data:
             return []
+
         for line in ld_data.split('\n'):
             match = re.search("([^ ]+) => ([^ ]+)", line)
             if match:
                 ld_dict[self._container_root + \
                         os.path.dirname(match.group(2))] = True
+
         return list(ld_dict.keys())
 
     # pylint: disable=too-many-nested-blocks
@@ -262,6 +276,7 @@ class ElfPatcher(object):
         """search for library directories in container"""
         if root_path is None:
             root_path = self._container_root
+
         ld_list = []
         for dir_path, dummy, files in os.walk(root_path):
             for f_name in files:
@@ -269,12 +284,14 @@ class ElfPatcher(object):
                     f_path = dir_path + '/' + f_name
                     if not os.access(f_path, os.R_OK):
                         continue
+
                     if os.path.isfile(f_path):
                         if self._shlib.match(f_name):
                             if dir_path not in ld_list:
                                 ld_list.append(dir_path)
                 except OSError:
                     continue
+
         return ld_list
 
     def get_ld_libdirs(self, force=False):
@@ -284,6 +301,7 @@ class ElfPatcher(object):
             ld_str = ':'.join(ld_list)
             FileUtil(self._container_ld_libdirs).putdata(ld_str, 'w')
             return ld_list
+
         ld_str = FileUtil(self._container_ld_libdirs).getdata('r')
         return ld_str.split(':')
 
@@ -295,5 +313,6 @@ class ElfPatcher(object):
             ld_dir = self._container_root + '/' + ld_dir
             if ld_dir not in ld_list:
                 ld_list.insert(0, ld_dir)
+
         ld_list.extend(Config.conf['lib_dirs_list_append'])
         return ':'.join(ld_list)
