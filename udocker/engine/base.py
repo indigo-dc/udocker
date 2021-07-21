@@ -6,8 +6,7 @@ import sys
 import re
 import json
 
-from udocker import is_genstr
-from udocker.msg import Msg
+from udocker import is_genstr, LOG, MSG
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uenv import Uenv
@@ -82,11 +81,13 @@ class ExecutionEngineCommon(object):
                 except (ValueError, TypeError):
                     host_port = None
                     cont_port = None
+
             if host_port:
                 if by_container:
                     indexed_portmap[cont_port] = host_port
                 else:
                     indexed_portmap[host_port] = cont_port
+
         return indexed_portmap
 
     def _check_exposed_ports(self):
@@ -107,12 +108,16 @@ class ExecutionEngineCommon(object):
                     if port_number in list(mapped_ports.keys()):
                         if mapped_ports[port_number] >= 1024:
                             continue
+
                     exposes_priv = True
+
         if exposes_priv and HostInfo.uid != 0:
-            Msg().err("Error: this container exposes privileged TCP/IP ports")
+            LOG.error("this container exposes privileged TCP/IP ports")
             return False
+
         if exposes_port:
-            Msg().out("Warning: this container exposes TCP/IP ports", l=Msg.WAR)
+            LOG.warning("this container exposes TCP/IP ports")
+
         return True
 
     def _set_cpu_affinity(self):
@@ -120,6 +125,7 @@ class ExecutionEngineCommon(object):
         # find set affinity executable
         if not self.opt["cpuset"]:
             return []
+
         exec_cmd = []
         for exec_cmd in Config.conf['cpu_affinity_exec_tools']:
             exec_name = \
@@ -129,7 +135,9 @@ class ExecutionEngineCommon(object):
                 for (index, arg) in enumerate(exec_cmd):
                     if arg == "%s":
                         exec_cmd[index] = self.opt["cpuset"]
+
                 return exec_cmd
+
         self.opt["cpuset"] = ""
         return []
 
@@ -137,9 +145,11 @@ class ExecutionEngineCommon(object):
         """Create mountpoint"""
         if dirs_only and not FileUtil(host_path).isdir():
             return True
+
         if self.mountp.create(host_path, cont_path):
             self.mountp.save(cont_path)
             return True
+
         return False
 
     def _check_volumes(self):
@@ -147,28 +157,34 @@ class ExecutionEngineCommon(object):
         for vol in list(self.opt["vol"]):
             (host_path, cont_path) = Uvolume(vol).split()
             if not (host_path and host_path.startswith('/')):
-                Msg().err("Error: invalid host volume path:", host_path)
+                LOG.error("invalid host volume path: %s", host_path)
                 return False
+
             if not (cont_path and cont_path != '/' and
                     cont_path.startswith('/')):
-                Msg().err("Error: invalid container volume path:", cont_path)
+                LOG.error("invalid container volume path: %s", cont_path)
                 return False
+
             if not os.path.exists(host_path):
                 if (host_path in Config.conf['dri_list'] or
                         host_path in Config.conf['sysdirs_list']):
                     self.opt["vol"].remove(vol)
                     continue
-                Msg().err("Error: invalid host volume path:", host_path)
+
+                LOG.error("invalid host volume path: %s", host_path)
                 return False
+
             if not self._create_mountpoint(host_path, cont_path):
-                Msg().err("Error: creating mountpoint:", host_path, cont_path)
+                LOG.error("creating mountpoint: %s:%s", host_path, cont_path)
                 return False
+
         return True
 
     def _get_bindhome(self):
         """Binding of the host $HOME in to the container $HOME"""
         if self.opt["bindhome"]:
             return NixAuthentication().get_home()
+
         return ""
 
     def _is_volume(self, path):
@@ -177,6 +193,7 @@ class ExecutionEngineCommon(object):
             (host_path, cont_path) = Uvolume(vol).split()
             if host_path and host_path == Uvolume().cleanpath(path):
                 return cont_path
+
         return ""
 
     def _is_mountpoint(self, path):
@@ -185,6 +202,7 @@ class ExecutionEngineCommon(object):
             (host_path, cont_path) = Uvolume(vol).split()
             if cont_path and cont_path == Uvolume().cleanpath(path):
                 return host_path
+
         return ""
 
     def _set_volume_bindings(self):
@@ -192,13 +210,17 @@ class ExecutionEngineCommon(object):
         # predefined volume bindings --sysdirs --hostauth --dri
         if not self.opt["nosysdirs"]:
             self.opt["vol"].extend(Config.conf['sysdirs_list'])
+
         if self.opt["hostauth"]:
             self.opt["vol"].extend(self.hostauth_list)
+
         if self.opt["dri"]:
             self.opt["vol"].extend(Config.conf['dri_list'])
+
         home = self._get_bindhome()
         if home:
             self.opt["vol"].append(home)
+
         # remove directory bindings specified with --novol
         for novolume in list(self.opt["novol"]):
             found = False
@@ -206,9 +228,10 @@ class ExecutionEngineCommon(object):
                 if novolume in (vol, vol.split(':')[0]):
                     self.opt["vol"].remove(vol)
                     found = True
+
             if not found:
-                Msg().err("Warning: --novol %s not in volumes list" %
-                          novolume, l=Msg.WAR)
+                LOG.warning("--novol %s not in volumes list", novolume)
+
         return self._check_volumes()
 
     def _check_paths(self):
@@ -218,45 +241,50 @@ class ExecutionEngineCommon(object):
                 path = Config.conf['root_path']
             else:
                 path = Config.conf['user_path']
+
             self.opt["env"].append("PATH=%s" % path)
+
         # verify if the working directory is valid and fix it
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
+
         cwd_path = FileUtil(self.container_root).cont2host(self.opt["cwd"],
                                                            self.opt["vol"])
         if os.path.isdir(cwd_path):
             return True
-        Msg().err("Error: invalid working directory: ", self.opt["cwd"])
+
+        LOG.error("invalid working directory: %s", self.opt["cwd"])
         return False
 
     def _check_executable(self):
         """Check if executable exists and has execute permissions"""
         if self.opt["entryp"] and is_genstr(self.opt["entryp"]):
             self.opt["entryp"] = self.opt["entryp"].strip().split(' ')
+
         if isinstance(self.opt["entryp"], list):
-            if self.opt["cmd"]:                                     # and cmd
+            if self.opt["cmd"]:                  # and cmd
                 cmd_args = self.opt["cmd"]
                 self.opt["cmd"] = self.opt["entryp"]
                 self.opt["cmd"].extend(cmd_args)   # cmd=args entryp
             else:
                 self.opt["cmd"] = self.opt["entryp"]
+
         if not self.opt["cmd"]:
             self.opt["cmd"] = Config.conf['cmd']
-            Msg().err("Warning: no command assuming:", self.opt["cmd"],
-                      l=Msg.WAR)
+            LOG.warning("no command assuming: %s", self.opt["cmd"])
+
         exec_name = self.opt["cmd"][0]            # exec pathname without args
         if exec_name.startswith("./") or exec_name.startswith("../"):
             exec_name = self.opt["cwd"] + '/' + exec_name
 
         path = self.opt["env"].getenv("PATH")
-        # DEBUG
         exec_name = FileUtil(exec_name).find_exec(path, self.container_root,
                                                   self.opt["vol"],
                                                   self.opt["cwd"])
         if exec_name:
             return self.container_root + '/' + exec_name
-        Msg().err("Error: command not found or has no execute bit set: ",
-                  self.opt["cmd"])
+
+        LOG.error("command not found/no execute bit set: %s", self.opt["cmd"])
         return ""
 
     def _run_load_metadata(self, container_id):
@@ -273,24 +301,29 @@ class ExecutionEngineCommon(object):
                 container_structure.get_container_attr()
             if not container_dir:
                 return(None, None)
+
             # load metadata from container
             if not self.opt["nometa"]:
                 if not self.opt["user"]:
                     self.opt["user"] = \
                         container_structure.get_container_meta(
                             "User", "", container_json)
+
                 if not self.opt["cwd"]:
                     self.opt["cwd"] = \
                         container_structure.get_container_meta(
                             "WorkingDir", "", container_json)
+
                 if not self.opt["hostname"]:
                     self.opt["hostname"] = \
                         container_structure.get_container_meta(
                             "Hostname", "", container_json)
+
                 if not self.opt["domain"]:
                     self.opt["domain"] = \
                         container_structure.get_container_meta(
                             "Domainname", "", container_json)
+
                 if self.opt["entryp"] is False:
                     self.opt["entryp"] = \
                         container_structure.get_container_meta(
@@ -305,6 +338,7 @@ class ExecutionEngineCommon(object):
                     if isinstance(self.opt["entryp"], str):
                         self.opt["entryp"] = \
                             self.opt["entryp"].strip().split(' ')
+
                 self.opt["Volumes"] = \
                     container_structure.get_container_meta(
                         "Volumes", [], container_json)
@@ -314,6 +348,7 @@ class ExecutionEngineCommon(object):
                 self.opt["env"].extendif(
                     container_structure.get_container_meta(
                         "Env", [], container_json))
+
         return(container_dir, container_json)
 
     def _select_auth_files(self):
@@ -322,19 +357,22 @@ class ExecutionEngineCommon(object):
         cont_group = self.container_root + "/etc/group"
         bind_passwd = self.container_dir + FileBind.orig_dir + "/#etc#passwd"
         bind_group = self.container_dir + FileBind.orig_dir + "/#etc#group"
-        #
         if os.path.islink(cont_passwd) and os.path.isfile(bind_passwd):
             passwd = bind_passwd
         else:
             passwd = cont_passwd
+
         if os.path.islink(cont_group) and os.path.isfile(bind_group):
             group = bind_group
         else:
             group = cont_group
+
         if self._is_mountpoint("/etc/passwd"):
             passwd = self._is_mountpoint("/etc/passwd")
+
         if self._is_mountpoint("/etc/group"):
             group = self._is_mountpoint("/etc/group")
+
         return (passwd, group)
 
     def _validate_user_str(self, user):
@@ -362,6 +400,7 @@ class ExecutionEngineCommon(object):
         user_id = self._validate_user_str(user)
         if not user_id:
             return (False, user_id)
+
         search_field = user_id.get("uid", user_id.get("user", ""))
         if self.opt["hostauth"]:
             (self.opt["user"], self.opt["uid"], self.opt["gid"],
@@ -371,6 +410,7 @@ class ExecutionEngineCommon(object):
             (self.opt["user"], self.opt["uid"], self.opt["gid"],
              self.opt["gecos"], self.opt["home"], self.opt["shell"]) = \
                 container_auth.get_user(search_field)
+
         return (True, user_id)
 
     def _setup_container_user(self, user):
@@ -394,26 +434,31 @@ class ExecutionEngineCommon(object):
         container_auth = NixAuthentication(passwd, group)
         if not user:
             user = "root"
+
         (valid_user, user_id) = self._user_from_str(user,
                                                     host_auth, container_auth)
         if not valid_user:
-            Msg().err("Error: invalid syntax for user", user)
+            LOG.error("invalid syntax for user; %s", user)
             return False
+
         if (self._is_mountpoint("/etc/passwd") or
                 self._is_mountpoint("/etc/group")):
             self.opt["hostauth"] = self.opt["containerauth"] = False
             return True
+
         if self.opt["user"]:
             if self.opt["user"] != "root":
                 self.opt["uid"] = str(HostInfo.uid)
                 self.opt["gid"] = str(HostInfo.gid)
         else:
             if self.opt["hostauth"] or self.opt["containerauth"]:
-                Msg().err("Error: user not found")
+                LOG.error("user not found")
                 return False
+
             self.opt["user"] = user_id["user"] if "user" in user_id else user
             self.opt["uid"] = user_id["uid"] if "uid" in user_id else ""
             self.opt["gid"] = user_id["gid"] if "gid" in user_id else ""
+
         self._create_user(container_auth, host_auth)
         return True
 
@@ -426,29 +471,35 @@ class ExecutionEngineCommon(object):
         container_auth = NixAuthentication(passwd, group)
         if not user:
             user = HostInfo().username()
+
         (valid_user, user_id) = self._user_from_str(user,
                                                     host_auth, container_auth)
         if not valid_user:
-            Msg().err("Error: invalid syntax for user", user)
+            LOG.error("invalid syntax for user: %s", user)
             return False
+
         if self.opt["user"] == "root":
             self.opt["user"] = HostInfo().username()
             self.opt["uid"] = str(HostInfo.uid)
             self.opt["gid"] = str(HostInfo.gid)
+
         if (self._is_mountpoint("/etc/passwd") or
                 self._is_mountpoint("/etc/group")):
             self.opt["hostauth"] = self.opt["containerauth"] = False
             return True
+
         if self.opt["user"]:
             self.opt["uid"] = str(HostInfo.uid)
             self.opt["gid"] = str(HostInfo.gid)
         else:
             if self.opt["hostauth"] or self.opt["containerauth"]:
-                Msg().err("Error: user not found on host")
+                LOG.error("user not found on host")
                 return False
+
             self.opt["user"] = user_id["user"] if "user" in user_id else user
             self.opt["uid"] = user_id["uid"] if "uid" in user_id else ""
             self.opt["gid"] = user_id["gid"] if "gid" in user_id else ""
+
         self._create_user(container_auth, host_auth)
         return True
 
@@ -458,16 +509,22 @@ class ExecutionEngineCommon(object):
         """
         if not self.opt["uid"]:
             self.opt["uid"] = str(HostInfo.uid)
+
         if not self.opt["gid"]:
             self.opt["gid"] = str(HostInfo.gid)
+
         if not self.opt["user"]:
             self.opt["user"] = "udoc" + self.opt["uid"][0:4]
+
         if self.opt["bindhome"]:
             self.opt["home"] = NixAuthentication().get_home()
+
         if not self.opt["home"]:
             self.opt["home"] = '/'
+
         if not self.opt["shell"]:
             self.opt["shell"] = "/bin/sh"
+
         if not self.opt["gecos"]:
             self.opt["gecos"] = "*UDOCKER*"
 
@@ -492,10 +549,11 @@ class ExecutionEngineCommon(object):
             else:
                 FileUtil(container_auth.passwd_file).copyto(tmp_passwd)
                 FileUtil(container_auth.group_file).copyto(tmp_group)
+
             FileUtil().umask()
+
         if not (self.opt["containerauth"] or self.opt["hostauth"]):
-            Msg().out("Warning: non-existing user will be created",
-                      l=Msg.DBG)
+            LOG.warning("non-existing user will be created")
             self._fill_user()
             new_auth = NixAuthentication(tmp_passwd, tmp_group)
             new_auth.add_user(self.opt["user"], 'x',
@@ -505,26 +563,30 @@ class ExecutionEngineCommon(object):
             (group, dummy, dummy) = host_auth.get_group(self.opt["gid"])
             if not group:
                 new_auth.add_group(self.opt["user"], self.opt["gid"])
+
             for sup_gid in os.getgroups():
                 new_auth.add_group('G' + str(sup_gid), str(sup_gid),
                                    [self.opt["user"], ])
+
         if not self.opt["containerauth"]:
             self.opt["hostauth"] = True
             self.hostauth_list = (tmp_passwd + ":/etc/passwd",
                                   tmp_group + ":/etc/group")
+
         return True
 
     def _run_banner(self, cmd, char="*"):
         """Print a container startup banner"""
         if not self.opt["nobanner"]:
-            Msg().out("",
+            msgout = ("",
                       "\n", char * 78,
                       "\n", char, " " * 74, char,
                       "\n", char,
                       ("STARTING " + self.container_id).center(74, " "), char,
                       "\n", char, " " * 74, char,
                       "\n", char * 78, "\n",
-                      "executing:", os.path.basename(cmd), l=Msg.INF)
+                      "executing:", os.path.basename(cmd))
+            MSG.info(msgout)
 
     def _run_env_cleanup_dict(self):
         """Allow only to pass essential environment variables."""
@@ -533,6 +595,7 @@ class ExecutionEngineCommon(object):
             if env_var in Config.conf['invalid_host_env']:
                 del os.environ[env_var]
                 continue
+
             if not self.opt["hostenv"]:
                 if env_var not in Config.conf['valid_host_env']:
                     del os.environ[env_var]
@@ -545,12 +608,15 @@ class ExecutionEngineCommon(object):
         for (env_var, value) in list(os.environ.items()):
             if not env_var:
                 continue
+
             if   (env_var in Config.conf['invalid_host_env'] or
                   env_var in container_env):
                 continue
+
             if   ((not self.opt["hostenv"]) and
                   env_var not in Config.conf['valid_host_env']):
                 continue
+
             self.opt["env"].append("%s=%s" % (env_var, value))
 
     def _run_env_set(self):
@@ -559,7 +625,6 @@ class ExecutionEngineCommon(object):
         self.opt["env"].append("USER=" + self.opt["user"])
         self.opt["env"].append("LOGNAME=" + self.opt["user"])
         self.opt["env"].append("USERNAME=" + self.opt["user"])
-
         if str(self.opt["uid"]) == "0":
             self.opt["env"].append(r"PS1=%s# " % self.container_id[:8])
         else:
@@ -601,7 +666,6 @@ class ExecutionEngineCommon(object):
             return ""
 
         self._run_env_cmdoptions()
-
         if Config.conf['location']:               # using specific root tree
             self.container_root = Config.conf['location']
         else:
@@ -614,7 +678,6 @@ class ExecutionEngineCommon(object):
 
         # execution mode
         #self.exec_mode = ExecutionMode(self.localrepo, self.container_id)
-
         # check if exposing privileged ports
         self._check_exposed_ports()
 
@@ -624,7 +687,6 @@ class ExecutionEngineCommon(object):
 
         # setup mountpoints
         self.mountp = MountPoint(self.localrepo, self.container_id)
-
         if not self._set_volume_bindings():
             return ""
 
@@ -632,7 +694,6 @@ class ExecutionEngineCommon(object):
             return ""
 
         exec_path = self._check_executable()
-
         return exec_path
 
     def _is_same_osenv(self, filename):
@@ -648,12 +709,14 @@ class ExecutionEngineCommon(object):
         except (IOError, OSError, AttributeError, ValueError, TypeError,
                 IndexError, KeyError):
             pass
+
         return dict()
 
     def _save_osenv(self, filename, save=None):
         """Save host info for is_same_host()"""
         if save is None:
             save = dict()
+
         try:
             save["osversion"] = HostInfo().osversion()
             save["oskernel"] = HostInfo().oskernel()
@@ -664,4 +727,5 @@ class ExecutionEngineCommon(object):
         except (AttributeError, ValueError, TypeError,
                 IndexError, KeyError):
             pass
+
         return False
