@@ -7,9 +7,8 @@ import sys
 import stat
 import json
 
-from udocker import is_genstr
+from udocker import is_genstr, LOG
 from udocker.config import Config
-from udocker.msg import Msg
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.chksum import ChkSUM
 from udocker.utils.uprocess import Uprocess
@@ -41,24 +40,27 @@ class LocalRepository(object):
         self.layersdir = Config.conf['layersdir']
         self.containersdir = Config.conf['containersdir']
         self.homedir = Config.conf['homedir']
-
         if not self.bindir:
             self.bindir = self.topdir + "/bin"
+
         if not self.libdir:
             self.libdir = self.topdir + "/lib"
+
         if not self.docdir:
             self.docdir = self.topdir + "/doc"
+
         if not self.reposdir:
             self.reposdir = self.topdir + "/repos"
+
         if not self.layersdir:
             self.layersdir = self.topdir + "/layers"
+
         if not self.containersdir:
             self.containersdir = self.topdir + "/containers"
 
         self.cur_repodir = ""
         self.cur_tagdir = ""
         self.cur_containerdir = ""
-
         FileUtil(self.reposdir).register_prefix()
         FileUtil(self.layersdir).register_prefix()
         FileUtil(self.containersdir).register_prefix()
@@ -74,23 +76,31 @@ class LocalRepository(object):
         try:
             if not os.path.exists(self.topdir):
                 os.makedirs(self.topdir)
+
             if not os.path.exists(self.reposdir):
                 os.makedirs(self.reposdir)
+
             if not os.path.exists(self.layersdir):
                 os.makedirs(self.layersdir)
+
             if not os.path.exists(self.containersdir):
                 os.makedirs(self.containersdir)
+
             if not os.path.exists(self.bindir):
                 os.makedirs(self.bindir)
+
             if not os.path.exists(self.libdir):
                 os.makedirs(self.libdir)
+
             if not os.path.exists(self.docdir):
                 os.makedirs(self.docdir)
+
             if not (Config.conf['keystore'].startswith("/") or \
                     os.path.exists(self.homedir)):
                 os.makedirs(self.homedir)
         except(IOError, OSError):
             return False
+
         return True
 
     def is_repo(self):
@@ -108,10 +118,12 @@ class LocalRepository(object):
         """
         if not is_genstr(obj):
             return False
+
         match = re.match(
             "^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$", obj)
         if match:
             return True
+
         return False
 
     def protect_container(self, container_id):
@@ -148,14 +160,17 @@ class LocalRepository(object):
         container_root = self.cd_container(container_id) + "/ROOT"
         if not os.path.exists(container_root):
             return 2
+
         if not os.path.isdir(container_root):
             return 3
+
         if os.access(container_root, os.W_OK):
             return 1
+
         return 0
 
     def get_size(self, container_id):
-        """See if a container root dir is writable by this user"""
+        """Get size of the container"""
         container_root = self.cd_container(container_id) + "/ROOT"
         try:
             size, dummy = Uprocess().get_output(["du", "-s", "-m", "-x",
@@ -174,6 +189,7 @@ class LocalRepository(object):
         containers_list = []
         if not os.path.isdir(self.containersdir):
             return []
+
         for fname in os.listdir(self.containersdir):
             container_dir = self.containersdir + '/' + fname
             if os.path.isdir(container_dir):
@@ -184,13 +200,16 @@ class LocalRepository(object):
                 else:
                     reponame = filep.read()
                     filep.close()
+
                 if dir_only:
                     containers_list.append(container_dir)
                 elif not os.path.islink(container_dir):
                     names = self.get_container_name(fname)
                     if not names:
                         names = ""
+
                     containers_list.append((fname, reponame, str(names)))
+
         return containers_list
 
     def del_container(self, container_id, force=False):
@@ -202,10 +221,12 @@ class LocalRepository(object):
         if container_dir in self.get_containers_list(True):
             for name in self.get_container_name(container_id):
                 self.del_container_name(name)  # delete aliases links
+
             if force:
                 FileUtil(container_dir).rchmod(stat.S_IWUSR | stat.S_IRUSR,
-                                                stat.S_IWUSR | stat.S_IRUSR |
-                                                stat.S_IXUSR)
+                                               stat.S_IWUSR | stat.S_IRUSR |
+                                               stat.S_IXUSR)
+
             if FileUtil(container_dir).remove(recursive=True):
                 self.cur_containerdir = ""
                 return True
@@ -218,18 +239,21 @@ class LocalRepository(object):
         if os.path.exists(container_dir):
             if container_dir in self.get_containers_list(True):
                 return container_dir
+
         return ""
 
     def _symlink(self, existing_file, link_file):
         """Create relative symbolic links"""
         if os.path.exists(link_file):
             return False
+
         rel_path_to_existing = os.path.relpath(
             existing_file, os.path.dirname(link_file))
         try:
             os.symlink(rel_path_to_existing, link_file)
         except (IOError, OSError):
             return False
+
         return True
 
     def _name_is_valid(self, name):
@@ -237,6 +261,7 @@ class LocalRepository(object):
         invalid_chars = ("/", ".", " ", "[", "]")
         if name and any(x in name for x in invalid_chars):
             return False
+
         return not len(name) > 2048
 
     def set_container_name(self, container_id, name):
@@ -249,8 +274,10 @@ class LocalRepository(object):
                 linkname = os.path.realpath(self.containersdir + '/' + name)
                 if os.path.exists(linkname):
                     return False
+
                 real_container_dir = os.path.realpath(container_dir)
                 return self._symlink(real_container_dir, linkname)
+
         return False
 
     def del_container_name(self, name):
@@ -259,6 +286,7 @@ class LocalRepository(object):
             linkname = self.containersdir + '/' + name
             if os.path.islink(linkname):
                 return FileUtil(linkname).remove()
+
         return False
 
     def get_container_id(self, container_name):
@@ -267,6 +295,7 @@ class LocalRepository(object):
             pathname = self.containersdir + "/" + container_name
             if os.path.islink(pathname):
                 return os.path.basename(os.readlink(pathname))
+
             if os.path.isdir(pathname):
                 return container_name
 
@@ -276,6 +305,7 @@ class LocalRepository(object):
         """From a container_id obtain its name(s)"""
         if not os.path.isdir(self.containersdir):
             return []
+
         link_list = []
         for fname in os.listdir(self.containersdir):
             container = self.containersdir + "/" + fname
@@ -283,6 +313,7 @@ class LocalRepository(object):
                 real_container = os.readlink(container)
                 if os.path.basename(real_container) == container_id:
                     link_list.append(fname)
+
         return link_list
 
     def setup_container(self, imagerepo, tag, container_id):
@@ -290,6 +321,7 @@ class LocalRepository(object):
         container_dir = self.containersdir + "/" + str(container_id)
         if os.path.exists(container_dir):
             return ""
+
         try:
             os.makedirs(container_dir + "/ROOT")
             out_imagerepo = open(container_dir + "/imagerepo.name", 'w')
@@ -312,6 +344,7 @@ class LocalRepository(object):
                 return True
         except (IOError, OSError):
             pass
+
         return False
 
     def protect_imagerepo(self, imagerepo, tag):
@@ -335,6 +368,7 @@ class LocalRepository(object):
                     self.cur_repodir = self.reposdir + "/" + imagerepo
                     self.cur_tagdir = self.cur_repodir + "/" + tag
                     return self.cur_tagdir
+
         return ""
 
     def _find(self, filename, in_dir):
@@ -348,6 +382,7 @@ class LocalRepository(object):
                         found_list.append(f_path)  # found reference to layer
                 elif os.path.isdir(f_path):
                     found_list.extend(self._find(filename, f_path))
+
         return found_list
 
     def _inrepository(self, filename):
@@ -365,10 +400,12 @@ class LocalRepository(object):
                 layer_file = tag_dir + '/' + linkname
                 if not FileUtil(f_path).remove() and not force:
                     return False
+
                 if not self._inrepository(os.path.basename(linkname)):
                     # removing actual layers not reference by other repos
                     if not FileUtil(layer_file).remove() and not force:
                         return False
+
         return True
 
     def del_imagerepo(self, imagerepo, tag, force=False):
@@ -382,7 +419,9 @@ class LocalRepository(object):
             while imagerepo:
                 FileUtil(self.reposdir + '/' + imagerepo).rmdir()
                 imagerepo = "/".join(imagerepo.split("/")[:-1])
+
             return True
+
         return False
 
     def _get_tags(self, tag_dir):
@@ -398,6 +437,7 @@ class LocalRepository(object):
                         (tag_dir.replace(self.reposdir + '/', ""), fname))
                 elif os.path.isdir(f_path):
                     tag_list.extend(self._get_tags(f_path))
+
         return tag_list
 
     def get_imagerepos(self):
@@ -414,22 +454,28 @@ class LocalRepository(object):
                 if os.path.islink(filename):
                     size = FileUtil(filename).size()
                     layers_list.append((filename, size))
+
         return layers_list
 
     def add_image_layer(self, filename, linkname=None):
         """Add a layer to an image TAG"""
         if not self.cur_tagdir:
             return False
+
         if not os.path.exists(filename):
             return False
+
         if not os.path.exists(self.cur_tagdir):
             return False
+
         if linkname:
             linkname = self.cur_tagdir + '/' + os.path.basename(linkname)
         else:
             linkname = self.cur_tagdir + '/' + os.path.basename(filename)
+
         if os.path.islink(linkname):
             FileUtil(linkname).remove()
+
         self._symlink(filename, linkname)
         return True
 
@@ -437,6 +483,7 @@ class LocalRepository(object):
         """Create directory for an image repository"""
         if not imagerepo:
             return None
+
         directory = self.reposdir + "/" + imagerepo
         try:
             if not os.path.exists(directory):
@@ -457,6 +504,7 @@ class LocalRepository(object):
         try:
             if not os.path.exists(directory):
                 os.makedirs(directory)
+
             self.cur_tagdir = directory
             out_tag = open(directory + "/TAG", 'w')
         except (IOError, OSError):
@@ -464,6 +512,7 @@ class LocalRepository(object):
         else:
             out_tag.write(self.cur_repodir + ":" + tag)
             out_tag.close()
+
         return True
 
     def set_version(self, version):
@@ -473,10 +522,13 @@ class LocalRepository(object):
         """
         if not (self.cur_repodir and self.cur_tagdir):
             return False
+
         if not os.path.exists(self.cur_repodir):
             return False
+
         if not os.path.exists(self.cur_tagdir):
             return False
+
         directory = self.cur_tagdir
         if (os.path.exists(directory + "/v1") and version != "v1" or
                 os.path.exists(directory + "/v2") and version != "v2"):
@@ -486,13 +538,16 @@ class LocalRepository(object):
                     FileUtil(directory + "/v2").remove()
                 except (IOError, OSError):
                     pass
+
                 if os.listdir(directory):
                     return False
+
         try:
             # Create version file
             open(directory + "/" + version, 'a').close()
         except (IOError, OSError):
             return False
+
         return True
 
     def _get_image_attributes_v1(self, directory):
@@ -504,13 +559,16 @@ class LocalRepository(object):
                 layer_file = directory + '/' + layer_id + ".layer"
                 if not os.path.exists(layer_file):
                     return (None, None)
+
                 files.append(layer_file)
+
             json_file_list = [directory + "/container.json",
                               directory + '/' + layer_list[0] + ".json", ]
             for json_file in json_file_list:
                 if os.path.exists(json_file):
                     container_json = self.load_json(json_file)
                     return (container_json, files)
+
         return (None, None)
 
     def _get_image_attributes_v2_s1(self, directory, manifest):
@@ -521,12 +579,14 @@ class LocalRepository(object):
             if not os.path.exists(layer_file):
                 return (None, None)
             files.append(layer_file)
+
         try:
             json_string = manifest["history"][0]["v1Compatibility"].strip()
             container_json = json.loads(json_string)
         except (IOError, OSError, AttributeError, ValueError, TypeError,
                 IndexError, KeyError):
             return (None, files)
+
         return (container_json, files)
 
     def _get_image_attributes_v2_s2(self, directory, manifest):
@@ -536,13 +596,16 @@ class LocalRepository(object):
             layer_file = directory + '/' + layer["digest"]
             if not os.path.exists(layer_file):
                 return (None, None)
+
             files.append(layer_file)
+
         try:
             json_file = directory + '/' + manifest["config"]["digest"]
             container_json = json.loads(FileUtil(json_file).getdata('r'))
         except (IOError, OSError, AttributeError, ValueError, TypeError,
                 IndexError, KeyError):
             return (None, files)
+
         return (container_json, files)
 
     def get_image_attributes(self):
@@ -558,6 +621,7 @@ class LocalRepository(object):
             manifest = self.load_json("manifest")
             if manifest and "fsLayers" in manifest:
                 return self._get_image_attributes_v2_s1(directory, manifest)
+
             if manifest and "layers" in manifest:
                 return self._get_image_attributes_v2_s2(directory, manifest)
 
@@ -573,11 +637,15 @@ class LocalRepository(object):
         else:
             if not (self.cur_repodir and self.cur_tagdir):
                 return False
+
             if not os.path.exists(self.cur_repodir):
                 return False
+
             if not os.path.exists(self.cur_tagdir):
                 return False
+
             out_filename = self.cur_tagdir + "/" + filename
+
         outfile = None
         try:
             outfile = open(out_filename, 'w')
@@ -585,7 +653,9 @@ class LocalRepository(object):
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             if outfile:
                 outfile.close()
+
             return False
+
         outfile.close()
         return True
 
@@ -599,11 +669,15 @@ class LocalRepository(object):
         else:
             if not (self.cur_repodir and self.cur_tagdir):
                 return False
+
             if not os.path.exists(self.cur_repodir):
                 return False
+
             if not os.path.exists(self.cur_tagdir):
                 return False
+
             in_filename = self.cur_tagdir + '/' + filename
+
         json_obj = None
         infile = None
         try:
@@ -611,8 +685,10 @@ class LocalRepository(object):
             json_obj = json.load(infile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             pass
+
         if infile:
             infile.close()
+
         return json_obj
 
     def _load_structure(self, imagetagdir):
@@ -632,6 +708,7 @@ class LocalRepository(object):
                     layer_id = fname.replace(".json", "").replace(".layer", "")
                     if layer_id not in structure["repolayers"]:
                         structure["repolayers"][layer_id] = dict()
+
                     if fname.endswith("json"):
                         structure["repolayers"][layer_id]["json"] = \
                             self.load_json(f_path)
@@ -642,12 +719,11 @@ class LocalRepository(object):
                     elif ':' in fname:
                         structure["repolayers"][layer_id]["layer_f"] = f_path
                     else:
-                        Msg().out("Warning: unkwnon file in layer:", f_path,
-                                  l=Msg.WAR)
+                        LOG.warning("unkwnon file in layer: %s", f_path)
                 elif fname in ("TAG", "v1", "v2", "PROTECT", "container.json"):
                     pass
 
-                Msg().out("Warning: unkwnon file in image:", f_path, l=Msg.WAR)
+                LOG.warning("unkwnon file in image: %s", f_path)
 
         return structure
 
@@ -668,8 +744,10 @@ class LocalRepository(object):
         for layer_id in structure["repolayers"]:
             if "json" not in structure["repolayers"][layer_id]:   # v2
                 continue
+
             if "parent" not in structure["repolayers"][layer_id]["json"]:
                 continue
+
             if (my_layer_id ==
                     structure["repolayers"][layer_id]["json"]["parent"]):
                 found = self._find_top_layer_id(structure, layer_id)
@@ -711,31 +789,34 @@ class LocalRepository(object):
         layer_f = structure["repolayers"][layer_id]["layer_f"]
         if not (os.path.exists(layer_f) and
                 os.path.islink(layer_f)):
-            Msg().err("Error: layer data file symbolic link not found",
-                      layer_id)
+            LOG.error("layer data file sym link not found: %s", layer_id)
             return False
-        if not os.path.exists(self.cur_tagdir + '/' +
-                              os.readlink(layer_f)):
-            Msg().err("Error: layer data file not found")
+
+        if not os.path.exists(self.cur_tagdir + '/' + os.readlink(layer_f)):
+            LOG.error("layer data file not found")
             return False
+
         if "gzip" in OSInfo('/').get_filetype(layer_f):
             if not FileUtil(layer_f).verify_tar():
-                Msg().err("Error: layer tar verify failed:", layer_f)
+                LOG.error("layer tar verify failed: %s", layer_f)
                 return False
+
         if layer_algorithm:
             layer_f_chksum = ChkSUM().hash(layer_f, layer_algorithm)
             if layer_f_chksum and layer_f_chksum != layer_hash:
-                Msg().err("Error: layer file chksum failed:", layer_f)
+                LOG.error("layer file chksum failed: %s", layer_f)
                 return False
+
         return True
 
     def _verify_image_v1(self, structure):
         """Verify the structure of a v1 image repository"""
-        Msg().out("Info: finding top layer id", l=Msg.INF)
+        LOG.info("finding top layer id")
         top_layer_id = self._find_top_layer_id(structure)
         if not top_layer_id:
-            Msg().err("Error: finding top layer id")
+            LOG.error("finding top layer id")
             return False
+
         layers_list = self._sorted_layers(structure, top_layer_id)
         layer = iter(layers_list)
         status = True
@@ -744,11 +825,13 @@ class LocalRepository(object):
                 verify_layer = next(layer)
             else:
                 verify_layer = layer.next()
+
             if ancestry_layer != verify_layer:
-                Msg().err("Error: ancestry and layers do not match",
+                LOG.error("ancestry: %s and layers do not match: %s",
                           ancestry_layer, verify_layer)
                 status = False
                 continue
+
         return status
 
     def _verify_image_v2_s1(self, structure):
@@ -756,10 +839,11 @@ class LocalRepository(object):
         status = True
         for manifest_layer in structure["manifest"]["fsLayers"]:
             if manifest_layer["blobSum"] not in structure["repolayers"]:
-                Msg().err("Error: layer in manifest does not exist",
-                          "in repo", manifest_layer["blobSum"])
+                LOG.error("layer in manifest does not exist in repo: %s",
+                          manifest_layer["blobSum"])
                 status = False
                 continue
+
         return status
 
     def _verify_image_v2_s2(self, structure):
@@ -767,20 +851,22 @@ class LocalRepository(object):
         status = True
         for manifest_layer in structure["manifest"]["layers"]:
             if manifest_layer["digest"] not in structure["repolayers"]:
-                Msg().err("Error: layer in manifest does not exist",
-                          "in repo", manifest_layer["blobSum"])
+                LOG.error("layer in manifest does not exist in repo: %s",
+                          manifest_layer["blobSum"])
                 status = False
                 continue
+
         return status
 
     def verify_image(self):
         """Verify the structure of an image repository"""
-        Msg().out("Info: loading structure", l=Msg.INF)
+        LOG.info("loading structure")
         structure = self._load_structure(self.cur_tagdir)
         if not structure:
-            Msg().err("Error: load of image tag structure failed")
+            LOG.error("load of image tag structure failed")
             return False
-        Msg().out("Info: verifying layers", l=Msg.INF)
+
+        LOG.info("verifying layers")
         status = True
         if "ancestry" in structure and "has_json_f" in structure:
             status = self._verify_image_v1(structure)
@@ -789,15 +875,18 @@ class LocalRepository(object):
                 status = self._verify_image_v2_s1(structure)
             elif "layers" in structure["manifest"]:
                 status = self._verify_image_v2_s2(structure)
+
         for layer_id in structure["repolayers"]:
             if "layer_f" not in structure["repolayers"][layer_id]:
-                Msg().err("Error: layer file not found in structure",
-                          layer_id)
+                LOG.error("layer file not found in structure: %s", layer_id)
                 status = False
                 continue
+
             layer_status = self._verify_layer_file(structure, layer_id)
             if not layer_status:
                 status = False
                 continue
-            Msg().out("Info: layer ok:", layer_id, l=Msg.INF)
+
+            LOG.info("layer ok: %s", layer_id)
+
         return status

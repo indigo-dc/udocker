@@ -5,7 +5,6 @@ import os
 import sys
 import logging
 from udocker import LOG, MSG
-from udocker.msg import Msg
 from udocker.cmdparser import CmdParser
 from udocker.config import Config
 from udocker.container.localrepo import LocalRepository
@@ -48,9 +47,8 @@ class UMain(object):
         elif (self.cmdp.get("--quiet", "GEN_OPT") or
               self.cmdp.get("-q", "GEN_OPT")):
             Config.conf['verbose_level'] = logging.NOTSET
-        #Msg().setlevel(Config.conf['verbose_level'])
-        LOG.setLevel(Config.conf['verbose_level'])
 
+        LOG.setLevel(Config.conf['verbose_level'])
         if self.cmdp.get("--insecure", "GEN_OPT"):
             Config.conf['http_insecure'] = True
 
