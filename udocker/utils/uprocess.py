@@ -13,8 +13,8 @@ from udocker.config import Config
 class Uprocess(object):
     """Provide alternative implementations for subprocess"""
 
-    def _get_stderr(self):
-        stderror = None
+    def get_stderr(self):
+        stderror = subprocess.DEVNULL
         if Config.conf['verbose_level'] == logging.DEBUG:
             stderror = sys.stderr
 
@@ -78,10 +78,6 @@ class Uprocess(object):
 
     def get_output(self, cmd, ignore_error=False):
         """Execute a shell command and get its output"""
-        stderror = None
-        if Config.conf['verbose_level'] == logging.DEBUG:
-            stderror = sys.stderr
-
         if not cmd[0].startswith("/"):
             path = Config.conf["root_path"] + ":" + os.getenv("PATH", "")
             cmd_path = self.find_inpath(cmd[0], path)
@@ -91,7 +87,7 @@ class Uprocess(object):
         content = ""
         try:
             content = self.check_output(cmd, shell=False,
-                                        stderr=stderror,
+                                        stderr=self.get_stderr(),
                                         close_fds=True)
         except subprocess.CalledProcessError:
             if not ignore_error:
@@ -107,14 +103,11 @@ class Uprocess(object):
             cmd[0] = self.find_inpath(cmd[0], path)
 
         kwargs["shell"] = False
+        LOG.debug("call subprocess: %s", kwargs)
         return subprocess.call(cmd, **kwargs)
 
     def pipe(self, cmd1, cmd2, **kwargs):
         """Pipe two shell commands"""
-        stderror = None
-        if Config.conf['verbose_level'] == logging.DEBUG:
-            stderror = sys.stderr
-
         path = Config.conf["root_path"] + ":" + os.getenv("PATH", "")
         if not cmd1[0].startswith("/"):
             cmd1[0] = self.find_inpath(cmd1[0], path)
@@ -123,14 +116,14 @@ class Uprocess(object):
             cmd2[0] = self.find_inpath(cmd2[0], path)
 
         try:
-            proc_1 = subprocess.Popen(cmd1, stderr=stderror,
+            proc_1 = subprocess.Popen(cmd1, stderr=self.get_stderr(),
                                       shell=False,
                                       stdout=subprocess.PIPE, **kwargs)
         except (OSError, ValueError):
             return False
 
         try:
-            proc_2 = subprocess.Popen(cmd2, stderr=stderror,
+            proc_2 = subprocess.Popen(cmd2, stderr=self.get_stderr(),
                                       shell=False, stdin=proc_1.stdout)
         except (OSError, ValueError):
             proc_1.kill()
