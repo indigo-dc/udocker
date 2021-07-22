@@ -79,13 +79,17 @@ class RuncEngine(ExecutionEngineCommon):
 
     def _load_spec(self, new=False):
         """Generate runc spec file"""
+        stderror = None
+        if Config.conf['verbose_level'] == logging.DEBUG:
+            stderror = sys.stderr
+
         if FileUtil(self._container_specfile).size() != -1 and new:
             FileUtil(self._container_specfile).register_prefix()
             FileUtil(self._container_specfile).remove()
 
         if FileUtil(self._container_specfile).size() == -1:
             cmd_l = [self.executable, "spec", "--rootless", ]
-            status = subprocess.call(cmd_l, shell=False, stderr=sys.stderr,
+            status = subprocess.call(cmd_l, shell=False, stderr=stderror,
                                      close_fds=True,
                                      cwd=os.path.realpath(\
                                          self._container_specdir))

@@ -417,12 +417,16 @@ class GetURLexeCurl(GetURL):
 
     def get(self, *args, **kwargs):
         """http get implementation using the curl cli executable"""
+        stderror = None
+        if Config.conf['verbose_level'] == logging.DEBUG:
+            stderror = sys.stderr
+
         hdr = CurlHeader()
         buf = strio()
         self._set_defaults()
         cmd = self._mkcurlcmd(*args, **kwargs)
-        status = Uprocess().call(cmd, close_fds=True, stderr=sys.stderr,
-                                 stdout=sys.stderr) # call curl
+        status = Uprocess().call(cmd, close_fds=True, stderr=stderror,
+                                 stdout=stderror) # call curl
         hdr.setvalue_from_file(self._files["header_file"])
         hdr.data["X-ND-CURLSTATUS"] = status
         if status:

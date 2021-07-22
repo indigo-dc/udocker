@@ -249,8 +249,10 @@ class LocalRepository(object):
 
         rel_path_to_existing = os.path.relpath(
             existing_file, os.path.dirname(link_file))
+        LOG.debug("set name through link: %s", link_file)
         try:
             os.symlink(rel_path_to_existing, link_file)
+            LOG.debug("container name set OK")
         except (IOError, OSError):
             return False
 
@@ -276,6 +278,7 @@ class LocalRepository(object):
                     return False
 
                 real_container_dir = os.path.realpath(container_dir)
+                LOG.info("setting container name: %s", name)
                 return self._symlink(real_container_dir, linkname)
 
         return False

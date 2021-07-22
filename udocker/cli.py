@@ -1047,7 +1047,7 @@ class UdockerCLI(object):
             LOG.error("invalid container name")
             return self.STATUS_ERROR
 
-        LOG.info("image name set: %s", name)
+        LOG.info("container name set: %s", name)
         return self.STATUS_OK
 
     def do_rename(self, cmdp):

@@ -245,6 +245,10 @@ class ContainerStructure(object):
         if not (tarfiles and destdir):
             return False
 
+        stderror = None
+        if Config.conf['verbose_level'] == logging.DEBUG:
+            stderror = sys.stderr
+
         status = True
         gid = str(HostInfo.gid)
         optional_flags = ["--wildcards", "--delay-directory-restore", ]
@@ -266,7 +270,7 @@ class ContainerStructure(object):
                    "--exclude=dev/*", "--exclude=etc/udev/devices/*",
                    "--no-same-permissions", r"--exclude=.wh.*",
                    ] + optional_flags + ["-f", tarf]
-            if subprocess.call(cmd, stderr=sys.stderr, close_fds=True):
+            if subprocess.call(cmd, stderr=stderror, close_fds=True):
                 LOG.error("while extracting image layer")
                 status = False
 
@@ -282,7 +286,7 @@ class ContainerStructure(object):
                    "(", "-name", ".wh.*", "-exec", "rm", "-f",
                    "--preserve-root", "{}", ";", ")"]
 
-            if subprocess.call(cmd, stderr=sys.stderr, close_fds=True):
+            if subprocess.call(cmd, stderr=stderror, close_fds=True):
                 status = False
                 LOG.error("while modifying attributes of image layer")
 
