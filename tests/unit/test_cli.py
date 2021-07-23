@@ -5,6 +5,7 @@
 udocker unit tests: UdockerCLI
 """
 
+import logging
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.config import Config
@@ -23,14 +24,14 @@ class UdockerCLITestCase(TestCase):
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
         Config().conf['cpu_affinity_exec_tools'] = \
-            (["numactl", "-C", "%s", "--", ],
-             ["taskset", "-c", "%s", ])
+            (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
         Config().conf['valid_host_env'] = "HOME"
         Config().conf['username'] = "user"
         Config().conf['userhome'] = "/"
         Config().conf['oskernel'] = "4.8.13"
         Config().conf['location'] = ""
         Config().conf['keystore'] = "KEYSTORE"
+        Config().conf['verbose_level'] = logging.NOTSET
 
         str_local = 'udocker.container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
@@ -89,10 +90,8 @@ class UdockerCLITestCase(TestCase):
         self.assertTrue(self.local.setup.called)
 
     @patch('udocker.cli.DockerIoAPI.is_repo_name')
-    @patch('udocker.cli.Msg')
-    def test_03__check_imagespec(self, mock_msg, mock_reponame):
+    def test_03__check_imagespec(self, mock_reponame):
         """Test03 UdockerCLI()._check_imagespec()."""
-        mock_msg.level = 0
         mock_reponame.return_value = False
         udoc = UdockerCLI(self.local)
         status = udoc._check_imagespec("")
@@ -109,10 +108,8 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, ("AAA", "45"))
 
     @patch('udocker.cli.DockerIoAPI.is_repo_name')
-    @patch('udocker.cli.Msg')
-    def test_04__check_imagerepo(self, mock_msg, mock_reponame):
+    def test_04__check_imagerepo(self, mock_reponame):
         """Test04 UdockerCLI()._check_imagerepo()."""
-        mock_msg.level = 0
         mock_reponame.return_value = False
         udoc = UdockerCLI(self.local)
         status = udoc._check_imagerepo("")
@@ -126,11 +123,8 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.cli.DockerIoAPI.set_index')
     @patch('udocker.cli.DockerIoAPI.set_registry')
     @patch('udocker.cli.DockerIoAPI.set_proxy')
-    @patch('udocker.cli.Msg')
-    def test_05__set_repository(self, mock_msg, mock_proxy,
-                                mock_reg, mock_idx):
+    def test_05__set_repository(self, mock_proxy, mock_reg, mock_idx):
         """Test05 UdockerCLI()._set_repository()."""
-        mock_msg.level = 0
         regist = "registry.io"
         idxurl = "dockerhub.io"
         imgrepo = "dockerhub.io/myimg:1.2"
@@ -175,11 +169,8 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, res)
 
     @patch('udocker.cli.os.path.exists')
-    @patch('udocker.cli.Msg')
-    def test_07_do_mkrepo(self, mock_msg, mock_exists):
+    def test_07_do_mkrepo(self, mock_exists):
         """Test07 UdockerCLI().do_mkrepo()."""
-        mock_msg.level = 0
-
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -299,12 +290,10 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(mock_searchrepo.called)
 
-    @patch('udocker.cli.Msg')
     @patch('udocker.cli.LocalFileAPI.load')
     @patch.object(UdockerCLI, '_check_imagerepo')
-    def test_12_do_load(self, mock_chkimg, mock_load, mock_msg):
+    def test_12_do_load(self, mock_chkimg, mock_load):
         """Test12 UdockerCLI().do_load()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -340,13 +329,11 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_load(cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.Msg')
     @patch('udocker.cli.os.path.exists')
     @patch('udocker.cli.LocalFileAPI.save')
     @patch.object(UdockerCLI, '_check_imagespec')
-    def test_13_do_save(self, mock_chkimg, mock_save, mock_exists, mock_msg):
+    def test_13_do_save(self, mock_chkimg, mock_save, mock_exists):
         """Test13 UdockerCLI().do_save()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -392,12 +379,10 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.cli.LocalFileAPI.import_toimage')
     @patch('udocker.cli.LocalFileAPI.import_tocontainer')
     @patch('udocker.cli.LocalFileAPI.import_clone')
-    @patch('udocker.cli.Msg')
     @patch.object(UdockerCLI, '_check_imagespec')
-    def test_14_do_import(self, mock_chkimg, mock_msg, mock_impclone,
+    def test_14_do_import(self, mock_chkimg, mock_impclone,
                           mock_impcont, mock_impimg):
         """Test14 UdockerCLI().do_import()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -440,8 +425,7 @@ class UdockerCLITestCase(TestCase):
         self.assertFalse(mock_impcont.called)
         self.assertTrue(mock_impclone.called)
 
-        argv = ["udocker", "import", "--tocontainer",
-                "ipyrad.tar", "ipyrad:latest"]
+        argv = ["udocker", "import", "--tocontainer", "ip.tar", "ip:latest"]
         cmdp = CmdParser()
         cmdp.parse(argv)
         mock_chkimg.return_value = ("ipyrad", "latest")
@@ -451,11 +435,9 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(mock_impcont.called)
 
-    @patch('udocker.cli.Msg')
     @patch('udocker.cli.ContainerStructure')
-    def test_15_do_export(self, mock_cs, mock_msg):
+    def test_15_do_export(self, mock_cs):
         """Test15 UdockerCLI().do_export()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -491,8 +473,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_export(cmdp)
         self.assertEqual(status, 0)
 
-        argv = ["udocker", "export",
-                "--clone", "ipyrad:latest"]
+        argv = ["udocker", "export", "--clone", "ip:latest"]
         cmdp = CmdParser()
         cmdp.parse(argv)
         mock_cs.return_value.clone_tofile.return_value = True
@@ -502,10 +483,8 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
 
     @patch('udocker.cli.LocalFileAPI.clone_container')
-    @patch('udocker.cli.Msg')
-    def test_16_do_clone(self, mock_msg, mock_clone):
+    def test_16_do_clone(self, mock_clone):
         """Test16 UdockerCLI().do_clone()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -533,14 +512,11 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(mock_clone.called)
 
-    @patch('udocker.cli.Msg')
     @patch('udocker.cli.KeyStore.put')
     @patch('udocker.cli.DockerIoAPI.get_v2_login_token')
     @patch.object(UdockerCLI, '_set_repository')
-    def test_17_do_login(self, mock_setrepo, mock_dioalog,
-                         mock_ksput, mock_msg):
+    def test_17_do_login(self, mock_setrepo, mock_dioalog, mock_ksput):
         """Test17 UdockerCLI().do_login()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -548,8 +524,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_login(cmdp)
         self.assertEqual(status, 1)
 
-        argv = ["udocker", "login", "--username", "u1",
-                "--password", "xx"]
+        argv = ["udocker", "login", "--username", "u1", "--password", "xx"]
         cmdp = CmdParser()
         cmdp.parse(argv)
         mock_setrepo.return_value = True
@@ -562,8 +537,7 @@ class UdockerCLITestCase(TestCase):
         self.assertTrue(mock_dioalog.called)
         self.assertTrue(mock_ksput.called)
 
-        argv = ["udocker", "login", "--username", "u1",
-                "--password", "xx"]
+        argv = ["udocker", "login", "--username", "u1", "--password", "xx"]
         cmdp = CmdParser()
         cmdp.parse(argv)
         mock_setrepo.return_value = None
@@ -576,12 +550,10 @@ class UdockerCLITestCase(TestCase):
         self.assertTrue(mock_dioalog.called)
         self.assertTrue(mock_ksput.called)
 
-    @patch('udocker.cli.Msg')
     @patch('udocker.cli.KeyStore')
     @patch.object(UdockerCLI, '_set_repository')
-    def test_18_do_logout(self, mock_setrepo, mock_ks, mock_msg):
+    def test_18_do_logout(self, mock_setrepo, mock_ks):
         """Test18 UdockerCLI().do_logout()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -615,11 +587,8 @@ class UdockerCLITestCase(TestCase):
     @patch.object(UdockerCLI, '_check_imagespec')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.KeyStore.get')
-    @patch('udocker.cli.Msg')
-    def test_19_do_pull(self, mock_msg, mock_ksget, mock_dioa,
-                        mock_chkimg, mock_setrepo):
+    def test_19_do_pull(self, mock_ksget, mock_dioa, mock_chkimg, mock_setrepo):
         """Test19 UdockerCLI().do_pull()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -660,16 +629,12 @@ class UdockerCLITestCase(TestCase):
     @patch.object(UdockerCLI, '_check_imagespec')
     @patch('udocker.cli.ContainerStructure')
     @patch('udocker.cli.DockerIoAPI')
-    @patch('udocker.cli.Msg')
-    def test_20__create(self, mock_msg, mock_dioapi,
-                        mock_cstruct, mock_chkimg):
+    def test_20__create(self, mock_dioapi, mock_cstruct, mock_chkimg):
         """Test20 UdockerCLI()._create()."""
-        mock_msg.level = 0
         mock_dioapi.return_value.is_repo_name.return_value = False
         udoc = UdockerCLI(self.local)
         status = udoc._create("IMAGE:TAG")
         self.assertFalse(status)
-        self.assertTrue(mock_msg.return_value.err.called)
 
         mock_dioapi.return_value.is_repo_name.return_value = True
         mock_chkimg.return_value = ("", "TAG")
@@ -686,10 +651,8 @@ class UdockerCLITestCase(TestCase):
         self.assertTrue(status)
 
     @patch.object(UdockerCLI, '_create')
-    @patch('udocker.cli.Msg')
-    def test_21_do_create(self, mock_msg, mock_create):
+    def test_21_do_create(self, mock_create):
         """Test21 UdockerCLI().do_create()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -730,14 +693,11 @@ class UdockerCLITestCase(TestCase):
     #    """Test22 UdockerCLI()._get_run_options()"""
 
     @patch('udocker.cli.ExecutionMode')
-    @patch('udocker.cli.Msg')
     @patch.object(UdockerCLI, 'do_pull')
     @patch.object(UdockerCLI, '_create')
     @patch.object(UdockerCLI, '_check_imagespec')
-    def test_23_do_run(self, mock_chkimg, mock_create, mock_pull,
-                       mock_msg, mock_exec):
+    def test_23_do_run(self, mock_chkimg, mock_create, mock_pull, mock_exec):
         """Test23 UdockerCLI().do_run()."""
-        mock_msg.level = 0
         mock_pull.return_value = None
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
@@ -854,10 +814,8 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         exeng_patch.stop()
 
-    @patch('udocker.cli.Msg')
-    def test_26_do_rm(self, mock_msg):
+    def test_26_do_rm(self):
         """Test26 UdockerCLI().do_rm()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -915,11 +873,9 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_rm(cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.Msg')
     @patch.object(UdockerCLI, '_check_imagespec')
-    def test_27_do_rmi(self, mock_chkimg, mock_msg):
+    def test_27_do_rmi(self, mock_chkimg):
         """Test27 UdockerCLI().do_rmi()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -970,11 +926,9 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(self.local.del_imagerepo.called)
 
-    @patch('udocker.cli.Msg')
     @patch.object(UdockerCLI, '_check_imagespec')
-    def test_28_do_protect(self, mock_chkimg, mock_msg):
+    def test_28_do_protect(self, mock_chkimg):
         """Test28 UdockerCLI().do_protect()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -1036,11 +990,9 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_protect(cmdp)
         self.assertEqual(status, 1)
 
-    @patch('udocker.cli.Msg')
     @patch.object(UdockerCLI, '_check_imagespec')
-    def test_29_do_unprotect(self, mock_chkimg, mock_msg):
+    def test_29_do_unprotect(self, mock_chkimg):
         """Test29 UdockerCLI().do_unprotect()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -1102,10 +1054,8 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_unprotect(cmdp)
         self.assertEqual(status, 1)
 
-    @patch('udocker.cli.Msg')
-    def test_30_do_name(self, mock_msg):
+    def test_30_do_name(self):
         """Test30 UdockerCLI().do_name()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -1142,10 +1092,8 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_name(cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.Msg')
-    def test_31_do_rename(self, mock_msg):
+    def test_31_do_rename(self):
         """Test31 UdockerCLI().do_rename()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -1204,10 +1152,8 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(self.local.set_container_name.call_count, 1)
 
-    @patch('udocker.cli.Msg')
-    def test_32_do_rmname(self, mock_msg):
+    def test_32_do_rmname(self):
         """Test32 UdockerCLI().do_rmname()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -1244,9 +1190,7 @@ class UdockerCLITestCase(TestCase):
     @patch.object(UdockerCLI, '_check_imagespec')
     @patch('udocker.cli.json.dumps')
     @patch('udocker.cli.ContainerStructure.get_container_attr')
-    @patch('udocker.cli.Msg')
-    def test_33_do_inspect(self, mock_msg, mock_csattr, mock_jdump,
-                           mock_chkimg):
+    def test_33_do_inspect(self, mock_csattr, mock_jdump, mock_chkimg):
         """Test33 UdockerCLI().do_inspect()."""
         cont_insp = \
                 {
@@ -1294,7 +1238,6 @@ class UdockerCLITestCase(TestCase):
                     "parent": "61dc7"
                 }
 
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -1339,10 +1282,8 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
 
     @patch.object(UdockerCLI, '_check_imagespec')
-    @patch('udocker.cli.Msg')
-    def test_34_do_verify(self, mock_msg, mock_chkimg):
+    def test_34_do_verify(self, mock_chkimg):
         """Test34 UdockerCLI().do_verify()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -1376,11 +1317,9 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.cli.Unshare.namespace_exec')
     @patch('udocker.cli.MountPoint')
     @patch('udocker.cli.FileBind')
-    @patch('udocker.cli.Msg')
-    def test_35_do_setup(self, mock_msg, mock_fb, mock_mp,
-                         mock_unshr, mock_furchmod, mock_nv, mock_execm):
+    def test_35_do_setup(self, mock_fb, mock_mp, mock_unshr, mock_furchmod, 
+                         mock_nv, mock_execm):
         """Test35 UdockerCLI().do_setup()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -1413,7 +1352,6 @@ class UdockerCLITestCase(TestCase):
         cmdp.parse(argv)
         self.local.cd_container.return_value = "/ROOT/cont1"
         self.local.isprotected_container.return_value = False
-        mock_msg.level = 0
         mock_fb.return_value.restore.return_value = None
         mock_mp.return_value.restore.return_value = None
         mock_unshr.return_value = None
@@ -1436,7 +1374,6 @@ class UdockerCLITestCase(TestCase):
         cmdp.parse(argv)
         self.local.cd_container.return_value = "/ROOT/cont1"
         self.local.isprotected_container.return_value = False
-        mock_msg.level = 0
         mock_fb.return_value.restore.return_value = None
         mock_mp.return_value.restore.return_value = None
         mock_unshr.return_value = None
@@ -1457,10 +1394,8 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
 
     @patch('udocker.cli.UdockerTools')
-    @patch('udocker.cli.Msg')
-    def test_36_do_install(self, mock_msg, mock_utools):
+    def test_36_do_install(self, mock_utools):
         """Test36 UdockerCLI().do_install()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -1486,17 +1421,14 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_install(cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.Msg')
-    def test_37_do_showconf(self, mock_msg):
+    def test_37_do_showconf(self):
         """Test37 UdockerCLI().do_showconf()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
         udoc = UdockerCLI(self.local)
         status = udoc.do_showconf(cmdp)
         self.assertEqual(status, 1)
-        self.assertFalse(mock_msg.return_value.out.called)
 
         argv = ["udocker", "showconf"]
         cmdp = CmdParser()
@@ -1504,19 +1436,15 @@ class UdockerCLITestCase(TestCase):
         udoc = UdockerCLI(self.local)
         status = udoc.do_showconf(cmdp)
         self.assertEqual(status, 0)
-        self.assertTrue(mock_msg.return_value.out.called)
 
-    @patch('udocker.cli.Msg')
-    def test_38_do_version(self, mock_msg):
+    def test_38_do_version(self):
         """Test38 UdockerCLI().do_version()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
         udoc = UdockerCLI(self.local)
         status = udoc.do_version(cmdp)
         self.assertEqual(status, 1)
-        self.assertFalse(mock_msg.return_value.out.called)
 
         argv = ["udocker", "version"]
         cmdp = CmdParser()
@@ -1524,19 +1452,15 @@ class UdockerCLITestCase(TestCase):
         udoc = UdockerCLI(self.local)
         status = udoc.do_version(cmdp)
         self.assertEqual(status, 0)
-        self.assertTrue(mock_msg.return_value.out.called)
 
-    @patch('udocker.cli.Msg')
-    def test_39_do_help(self, mock_msg):
+    def test_39_do_help(self):
         """Test39 UdockerCLI().do_help()."""
-        mock_msg.level = 0
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
         cmdp.parse(argv)
         udoc = UdockerCLI(self.local)
         status = udoc.do_help(cmdp)
         self.assertEqual(status, 0)
-        self.assertTrue(mock_msg.return_value.out.called)
 
 
 if __name__ == '__main__':

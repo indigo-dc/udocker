@@ -5,7 +5,6 @@ import os
 import sys
 import string
 import json
-import logging
 from getpass import getpass
 
 from udocker import __version__, LOG, MSG
