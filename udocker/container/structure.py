@@ -194,7 +194,7 @@ class ContainerStructure(object):
         if not status:
             LOG.error("creating container clone: %s", self.container_id)
         elif not self._chk_container_root():
-            LOG.warning("check container content:", self.container_id)
+            LOG.warning("check container content: %s", self.container_id)
 
         return self.container_id
 

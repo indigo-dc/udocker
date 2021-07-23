@@ -72,7 +72,8 @@ echo "* This script tests udocker run and options *"
 echo "* and volume mount options                  *"
 echo "============================================="
 
-DEFAULT_UDIR=$HOME/.udocker
+DEFAULT_UDIR=$HOME/.udocker-tests
+export UDOCKER_DIR=${DEFAULT_UDIR}
 if [ -d ${DEFAULT_UDIR} ]
 then
   echo "${DEFAULT_UDIR} exists, will not run tests"
