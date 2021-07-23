@@ -18,7 +18,7 @@ udocker requires:
 
 * Python 3 or alternatively Python >= 2.6
 * pycurl or alternatively the curl command
-* python hashlib or alternatively the openssl command
+* python hashlib
 * tar
 * find
 * chmod
