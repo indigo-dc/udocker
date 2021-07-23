@@ -581,7 +581,6 @@ class ExecutionEngineCommon(object):
             msgout = 76*"#" + "\n"
             msgout = msgout + "|" + 74*" " + "|\n"
             msgout = msgout + "|"
-            msgout = msgout + "|" + 74*" " + "|"
             msgout = msgout + ("STARTING " + self.container_id).center(74, " ")
             msgout = msgout + "|" + "\n"
             msgout = msgout + "|" + 74*" " + "|\n"
