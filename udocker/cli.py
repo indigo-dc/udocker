@@ -631,6 +631,7 @@ class UdockerCLI(object):
                           "or wrong format")
                 return self.STATUS_ERROR
 
+            MSG.info("ContainerID=%s", container_id)
             return self.STATUS_OK
 
         return self.STATUS_ERROR
