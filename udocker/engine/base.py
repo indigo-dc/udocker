@@ -578,14 +578,12 @@ class ExecutionEngineCommon(object):
     def _run_banner(self, cmd, char="*"):
         """Print a container startup banner"""
         if not self.opt["nobanner"]:
-            msgout = ("",
-                      "\n", char * 78,
-                      "\n", char, " " * 74, char,
-                      "\n", char,
-                      ("STARTING " + self.container_id).center(74, " "), char,
-                      "\n", char, " " * 74, char,
-                      "\n", char * 78, "\n",
-                      "executing:", os.path.basename(cmd))
+            msgout = 76*"#" + "\n"
+            msgout = msgout + "|"
+            msgout = msgout + ("STARTING " + self.container_id).center(74, " ")
+            msgout = msgout + "|" + "\n"
+            msgout = msgout + 76*"#" + "\n"
+            msgout = msgout + "executing: " + os.path.basename(cmd)
             MSG.info(msgout)
 
     def _run_env_cleanup_dict(self):

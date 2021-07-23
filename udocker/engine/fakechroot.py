@@ -5,6 +5,7 @@ import os
 import sys
 import re
 import subprocess
+import logging
 
 from udocker import is_genstr, LOG
 from udocker.engine.base import ExecutionEngineCommon
@@ -278,7 +279,7 @@ class FakechrootEngine(ExecutionEngineCommon):
 
         cmd_l.extend(self._run_add_script_support(exec_path))
         cmd_l.extend(self.opt["cmd"])
-        LOG.info("CMD = %s", cmd_l)
+        LOG.debug("CMD = %s", cmd_l)
         # execute
         self._run_banner(self.opt["cmd"][0], '#')
         cwd = FileUtil(self.container_root).cont2host(self.opt["cwd"],

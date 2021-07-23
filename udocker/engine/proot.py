@@ -197,7 +197,7 @@ class PRootEngine(ExecutionEngineCommon):
             cmd_l.extend(["-w", self.opt["cwd"], ])
 
         cmd_l.extend(self.opt["cmd"])
-        LOG.info("CMD = %s", cmd_l)
+        LOG.debug("CMD = %s", cmd_l)
         # cleanup the environment
         self._run_env_cleanup_dict()
         # execute

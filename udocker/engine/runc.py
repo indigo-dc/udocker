@@ -438,7 +438,7 @@ class RuncEngine(ExecutionEngineCommon):
         cmd_l.extend(runc_debug)
         cmd_l.extend(["--root", self._container_specdir, "run"])
         cmd_l.extend(["--bundle", self._container_specdir, self.execution_id])
-        LOG.info("CMD = %s", cmd_l)
+        LOG.debug("CMD = %s", cmd_l)
         self._run_banner(self.opt["cmd"][0], '%')
         if sys.stdout.isatty():
             return self.run_pty(cmd_l)
