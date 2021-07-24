@@ -134,7 +134,7 @@ class OciLocalFileAPI(CommonLocalFileApi):
         self._imagerepo = imagerepo
         structure = self._load_structure(tmp_imagedir)
         if not structure:
-            LOG.erro("failed to load image structure")
+            LOG.error("failed to load image structure")
             return []
 
         return self._load_repositories(structure)

@@ -8,7 +8,7 @@ import grp
 from unittest import TestCase, main
 from unittest.mock import patch, mock_open
 from io import StringIO
-from udocker.helper.nixauth import NixAuthentication
+from udocker.helper.nixauth import NixAuthentication, LOG
 from udocker.config import Config
 
 BUILTINS = "builtins"
@@ -18,6 +18,7 @@ class NixAuthenticationTestCase(TestCase):
     """Test NixAuthentication() *nix authentication portably."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
 
     def tearDown(self):

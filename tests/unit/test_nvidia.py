@@ -6,13 +6,14 @@ udocker unit tests: NVIDIA mode
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.config import Config
-from udocker.engine.nvidia import NvidiaMode
+from udocker.engine.nvidia import NvidiaMode, LOG
 
 
 class NvidiaModeTestCase(TestCase):
     """Test PRootEngine() class for containers execution."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['nvi_dev_list'] = ['/dev/nvidia']
         self.cont_id = "12345a"
@@ -48,7 +49,6 @@ class NvidiaModeTestCase(TestCase):
         nvmode._files_exist(cont_dst_dir, files_list)
         self.assertTrue(mock_exists.called)
 
-    @patch('udocker.engine.nvidia.Msg')
     @patch('udocker.engine.nvidia.os.access')
     @patch('udocker.engine.nvidia.stat')
     @patch('udocker.engine.nvidia.shutil.copy2')
@@ -64,13 +64,12 @@ class NvidiaModeTestCase(TestCase):
     def test_03__copy_files(self, mock_isfile, mock_islink, mock_rm,
                             mock_dirname, mock_isdir, mock_mkdir, mock_chmod,
                             mock_readln, mock_symln, mock_copy2, mock_stat,
-                            mock_access, mock_msg):
+                            mock_access):
         """Test03 NvidiaMode._copy_files."""
         hsrc_dir = "/usr/lib"
         cdst_dir = "/hone/.udocker/cont/ROOT/usr/lib"
         flist = ["a"]
         force = False
-        mock_msg.level = 0
         mock_isfile.side_effect = [True, False]
         mock_islink.side_effect = [True, False]
         mock_rm.return_value = None
@@ -80,7 +79,6 @@ class NvidiaModeTestCase(TestCase):
         self.assertTrue(mock_isfile.called)
 
         force = True
-        mock_msg.level = 0
         mock_isfile.side_effect = [True, True]
         mock_islink.side_effect = [True, False]
         mock_dirname.side_effect = [None, None]
@@ -128,11 +126,9 @@ class NvidiaModeTestCase(TestCase):
 
     @patch.object(NvidiaMode, '_find_host_dir_ldconfig')
     @patch.object(NvidiaMode, '_find_host_dir_ldpath')
-    @patch('udocker.engine.nvidia.Msg')
-    def test_07__find_host_dir(self, mock_msg, mock_ldpath, mock_ldconf):
+    def test_07__find_host_dir(self, mock_ldpath, mock_ldconf):
         """Test07 NvidiaMode._find_host_dir."""
         res = set()
-        mock_msg.return_value.level.return_value = 0
         mock_ldpath.side_effect = [res, res]
         mock_ldconf.return_value = res
         nvmode = NvidiaMode(self.local, self.cont_id)
@@ -143,7 +139,6 @@ class NvidiaModeTestCase(TestCase):
 
         res = set()
         res.add("/lib/x86_64-linux-gnu/")
-        mock_msg.return_value.level.return_value = 0
         mock_ldpath.side_effect = [set(), set()]
         mock_ldconf.return_value = res
         nvmode = NvidiaMode(self.local, self.cont_id)
@@ -151,18 +146,15 @@ class NvidiaModeTestCase(TestCase):
         self.assertEqual(status, res)
 
     @patch('udocker.engine.nvidia.os.path.isdir')
-    @patch('udocker.engine.nvidia.Msg')
-    def test_08__find_cont_dir(self, mock_msg, mock_isdir):
+    def test_08__find_cont_dir(self, mock_isdir):
         """Test08 NvidiaMode._find_cont_dir."""
         cdir = ""
-        mock_msg.return_value.level.return_value = 0
         mock_isdir.side_effect = [False, False]
         nvmode = NvidiaMode(self.local, self.cont_id)
         status = nvmode._find_cont_dir()
         self.assertEqual(status, cdir)
 
         cdir = "/usr/lib/x86_64-linux-gnu"
-        mock_msg.return_value.level.return_value = 0
         mock_isdir.side_effect = [True, False]
         nvmode = NvidiaMode(self.local, self.cont_id)
         status = nvmode._find_cont_dir()
@@ -170,13 +162,10 @@ class NvidiaModeTestCase(TestCase):
 
     @patch.object(NvidiaMode, '_get_nvidia_libs')
     @patch.object(NvidiaMode, '_find_host_dir_ldconfig')
-    @patch('udocker.engine.nvidia.Msg')
-    def test_09__installation_exists(self, mock_msg, mock_ldconf,
-                                     mock_libs):
+    def test_09__installation_exists(self, mock_ldconf, mock_libs):
         """Test09 NvidiaMode._installation_exists."""
         host_dir = "/usr/lib"
         cont_dir = "/home/.udocker/cont/usr/lib"
-        mock_msg.return_value.level.return_value = 0
         mock_ldconf.side_effect = [set(), set(), set()]
         mock_libs.return_value = ['/lib/libnvidia.so']
         nvmode = NvidiaMode(self.local, self.cont_id)
@@ -189,16 +178,13 @@ class NvidiaModeTestCase(TestCase):
     @patch.object(NvidiaMode, '_installation_exists')
     @patch.object(NvidiaMode, '_find_cont_dir')
     @patch.object(NvidiaMode, '_find_host_dir')
-    @patch('udocker.engine.nvidia.Msg')
-    def test_10_set_mode(self, mock_msg, mock_findhdir,
+    def test_10_set_mode(self, mock_findhdir,
                          mock_findcdir, mock_instexist, mock_libs,
                          mock_cpfiles, mock_futilput):
         """Test10 NvidiaMode.set_mode()."""
-        mock_msg.return_value.level.return_value = 0
         self.mock_cdcont.return_value = ""
         nvmode = NvidiaMode(self.local, self.cont_id)
         status = nvmode.set_mode()
-        self.assertTrue(mock_msg().err.called)
         self.assertFalse(status)
 
         self.mock_cdcont.return_value = "/home/.udocker/cont"
@@ -207,7 +193,6 @@ class NvidiaModeTestCase(TestCase):
         nvmode = NvidiaMode(self.local, self.cont_id)
         nvmode.container_dir = "/" + self.cont_id
         status = nvmode.set_mode()
-        self.assertTrue(mock_msg().err.called)
         self.assertFalse(status)
 
         self.mock_cdcont.return_value = "/home/.udocker/cont"
@@ -217,7 +202,6 @@ class NvidiaModeTestCase(TestCase):
         nvmode = NvidiaMode(self.local, self.cont_id)
         nvmode.container_dir = "/" + self.cont_id
         status = nvmode.set_mode()
-        self.assertTrue(mock_msg().err.called)
         self.assertFalse(status)
 
         # TODO: need work

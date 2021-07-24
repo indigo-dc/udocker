@@ -5,23 +5,21 @@ udocker unit tests: Unshare
 
 from unittest import TestCase, main
 from unittest.mock import patch, MagicMock
-from udocker.helper.unshare import Unshare
+from udocker.helper.unshare import Unshare, LOG
 
 
 class UnshareTestCase(TestCase):
     """Test Unshare()."""
 
     def setUp(self):
-        pass
+        LOG.setLevel(100)
 
     def tearDown(self):
         pass
 
-    @patch('udocker.helper.unshare.Msg.err')
     @patch('udocker.helper.unshare.ctypes.CDLL')
-    def test_01_unshare(self, mock_cdll, mock_msg):
+    def test_01_unshare(self, mock_cdll):
         """Test01 Unshare().unshare"""
-        mock_msg.level = 0
         status = Unshare().unshare(False)
         self.assertTrue(mock_cdll.return_value.unshare.called)
         self.assertTrue(status)
@@ -36,7 +34,6 @@ class UnshareTestCase(TestCase):
     @patch('udocker.helper.unshare.os.setgroups')
     @patch('udocker.helper.unshare.os.setuid')
     @patch('udocker.helper.unshare.os.setgid')
-    @patch('udocker.helper.unshare.Msg.err')
     @patch('udocker.helper.unshare.os.waitpid')
     @patch('udocker.helper.unshare.NixAuthentication.user_in_subgid')
     @patch('udocker.helper.unshare.subprocess.call')
@@ -48,13 +45,12 @@ class UnshareTestCase(TestCase):
     @patch('udocker.helper.unshare.os.pipe')
     def test_02_namespace_exec(self, mock_pipe, mock_fork, mock_close,
                                mock_read, mock_hinfo, mock_usubuid,
-                               mock_call, mock_usubgid, mock_wait, mock_msg,
+                               mock_call, mock_usubgid, mock_wait,
                                mock_setgid, moc_setuid, mock_setgrp,
                                mock_ush, mock_exit):
         """Test02 Unshare().namespace_exec"""
 
         # cpid exists waitpid=0
-        mock_msg.level = 0
         mock_pipe.side_effect = [('rfid1', 'wfid1'), ('rfid2', 'wfid2')]
         mock_fork.return_value = 1234
         mock_close.side_effect = [None, None]
@@ -73,7 +69,6 @@ class UnshareTestCase(TestCase):
         self.assertTrue(mock_usubuid.called)
         self.assertTrue(mock_usubgid.called)
         self.assertEqual(mock_call.call_count, 2)
-        self.assertFalse(mock_msg.called)
         self.assertTrue(status)
 
         # cpid not exists

@@ -6,7 +6,7 @@ udocker unit tests: Uprocess
 import subprocess
 from unittest import TestCase, main
 from unittest.mock import patch
-from udocker.utils.uprocess import Uprocess
+from udocker.utils.uprocess import Uprocess, LOG
 from udocker.config import Config
 
 
@@ -14,6 +14,7 @@ class UprocessTestCase(TestCase):
     """Test case for the Uprocess class."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
 
     def tearDown(self):

@@ -5,13 +5,14 @@ udocker unit tests: OciLocalFileAPI
 
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
-from udocker.oci import OciLocalFileAPI
+from udocker.oci import OciLocalFileAPI, LOG
 
 
 class OciLocalFileAPITestCase(TestCase):
     """Test OciLocalFileAPI()."""
 
     def setUp(self):
+        LOG.setLevel(100)
         str_local = 'udocker.container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
         self.local = self.lrepo.start()
@@ -94,24 +95,22 @@ class OciLocalFileAPITestCase(TestCase):
     # def test_06__load_image_step2(self):
     #     """Test07 OciLocalFileAPI()._load_image_step2."""
 
-    @patch('udocker.oci.Msg.err')
     @patch.object(OciLocalFileAPI, '_load_repositories')
     @patch.object(OciLocalFileAPI, '_load_structure')
-    def test_07_load(self, mock_loadstruct, mock_loadrepo, mock_msg):
+    def test_07_load(self, mock_loadstruct, mock_loadrepo):
         """Test07 OciLocalFileAPI().load."""
         tmpdir = '/ROOT'
         imgrepo = 'somerepo'
         mock_loadstruct.return_value = {}
         status = OciLocalFileAPI(self.local).load(tmpdir, imgrepo)
-        self.assertTrue(mock_msg.called)
         self.assertEqual(status, [])
 
         tmpdir = '/ROOT'
         imgrepo = 'somerepo'
         mock_loadstruct.return_value = {'repolayers':
                                             {'f1:f2': {'layer_a': 'f1',
-                                             'layer_f': 'tmpimg/blobs/f1/f2',
-                                             'layer_h': 'f2'}},
+                                                       'layer_f': 'tmpimg/blobs/f1/f2',
+                                                       'layer_h': 'f2'}},
                                         'manifest': {},
                                         'oci-layout': 'oci_lay1',
                                         'index': 'idx1'}

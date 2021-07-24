@@ -4,14 +4,14 @@ udocker unit tests: Uenv
 """
 
 from unittest import TestCase, main
-from udocker.utils.uenv import Uenv
+from udocker.utils.uenv import Uenv, LOG
 
 
 class UenvTestCase(TestCase):
     """Test Uenv()."""
 
     def setUp(self):
-        pass
+        LOG.setLevel(100)
 
     def tearDown(self):
         pass

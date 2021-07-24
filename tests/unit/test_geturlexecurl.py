@@ -7,7 +7,7 @@ udocker unit tests: GetURLexeCurl
 
 from unittest import TestCase, main
 from unittest.mock import patch
-from udocker.utils.curl import GetURLexeCurl
+from udocker.utils.curl import GetURLexeCurl, LOG
 from udocker.config import Config
 
 
@@ -15,6 +15,7 @@ class GetURLexeCurlTestCase(TestCase):
     """GetURLexeCurl TestCase."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['timeout'] = 1
         Config().conf['ctimeout'] = 1

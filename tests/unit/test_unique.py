@@ -4,11 +4,14 @@ udocker unit tests: Unique
 """
 
 from unittest import TestCase, main
-from udocker.helper.unique import Unique
+from udocker.helper.unique import Unique, LOG
 
 
 class UniqueTestCase(TestCase):
     """Test Unique() class."""
+
+    def setUp(self):
+        LOG.setLevel(100)
 
     def test_01_init(self):
         """Test01 Unique() constructor."""

@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 from io import StringIO
 from udocker.config import Config
 from udocker.utils.curl import CurlHeader
-from udocker.tools import UdockerTools
+from udocker.tools import UdockerTools, LOG
 
 BUILTINS = "builtins"
 BOPEN = BUILTINS + '.open'
@@ -20,6 +20,7 @@ class UdockerToolsTestCase(TestCase):
     """Test UdockerTools()."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         str_local = 'udocker.container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
@@ -38,12 +39,10 @@ class UdockerToolsTestCase(TestCase):
         self.assertTrue(mock_geturl.called)
         self.assertEqual(utools.localrepo, self.local)
 
-    @patch('udocker.tools.Msg')
-    def test_02__instructions(self, mock_msg):
-        """Test02 UdockerTools()._instructions()."""
-        utools = UdockerTools(self.local)
-        utools._instructions()
-        self.assertTrue(mock_msg.return_value.out.call_count, 2)
+    # def test_02__instructions(self):
+    #     """Test02 UdockerTools()._instructions()."""
+    #     utools = UdockerTools(self.local)
+    #     utools._instructions()
 
     def test_03__version2int(self):
         """Test03 UdockerTools()._version2int()."""
@@ -283,14 +282,11 @@ class UdockerToolsTestCase(TestCase):
         status = utools._install_logic(False)
         self.assertFalse(status)
 
-    @patch('udocker.tools.Msg')
     @patch.object(UdockerTools, 'get_installinfo')
     @patch.object(UdockerTools, '_install_logic')
     @patch.object(UdockerTools, 'is_available')
-    def test_14_install(self, mock_isavail, mock_instlog,
-                        mock_getinfo, mock_msg):
+    def test_14_install(self, mock_isavail, mock_instlog, mock_getinfo):
         """Test14 UdockerTools().install()."""
-        mock_msg.level = 0
         Config.conf['autoinstall'] = True
         Config.conf['tarball'] = "udocker-1.2.7.tar.gz"
         Config.conf['tarball_release'] = "1.2.7"

@@ -5,7 +5,7 @@ udocker unit tests: MountPoint
 
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
-from udocker.utils.mountpoint import MountPoint
+from udocker.utils.mountpoint import MountPoint, LOG
 from udocker.config import Config
 
 
@@ -13,6 +13,7 @@ class MountPointTestCase(TestCase):
     """Test MountPoint()."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         self.bind_dir = "/.bind_host_files"
         self.orig_dir = "/.bind_orig_files"
@@ -39,11 +40,10 @@ class MountPointTestCase(TestCase):
         self.assertTrue(mpoint.container_root, mpoint.container_dir + "/ROOT")
         self.assertTrue(mock_setup.called)
 
-    @patch('udocker.utils.mountpoint.Msg.err')
     @patch('udocker.utils.mountpoint.FileUtil.mkdir')
     @patch('udocker.utils.mountpoint.os.path.isdir')
     @patch('udocker.utils.mountpoint.os.path.realpath')
-    def test_02_setup(self, mock_realpath, mock_isdir, mock_mkdir, mock_msg):
+    def test_02_setup(self, mock_realpath, mock_isdir, mock_mkdir):
         """Test02 MountPoint().setup()."""
         container_id = "CONTAINERID"
         mock_realpath.return_value = "/tmp"
@@ -64,7 +64,6 @@ class MountPointTestCase(TestCase):
         mock_mkdir.return_value = False
         mpoint = MountPoint(self.local, container_id)
         status = mpoint.setup()
-        self.assertTrue(mock_msg.called)
         self.assertFalse(status)
 
     @patch('udocker.utils.mountpoint.FileUtil.getvalid_path')
@@ -120,7 +119,6 @@ class MountPointTestCase(TestCase):
 
     @patch.object(MountPoint, 'delete')
     @patch.object(MountPoint, 'add')
-    @patch('udocker.utils.mountpoint.Msg.err')
     @patch('udocker.utils.mountpoint.os.path.isdir')
     @patch('udocker.utils.mountpoint.os.path.islink')
     @patch('udocker.utils.mountpoint.FileUtil.putdata')
@@ -131,8 +129,7 @@ class MountPointTestCase(TestCase):
     @patch('udocker.utils.mountpoint.os.path.realpath')
     def test_06_create(self, mock_realpath, mock_setup, mock_exists,
                        mock_isfile, mock_mkdir, mock_putdata,
-                       mock_islink, mock_isdir, mock_msg,
-                       mock_add, mock_del):
+                       mock_islink, mock_isdir, mock_add, mock_del):
         """Test06 MountPoint().create()."""
         container_id = "CONTAINERID"
         mock_realpath.return_value = "/tmp"
@@ -167,7 +164,6 @@ class MountPointTestCase(TestCase):
         mpoint = MountPoint(self.local, container_id)
         status = mpoint.create(hpath, cpath)
         self.assertTrue(mock_mkdir.called)
-        self.assertFalse(mock_msg.called)
         self.assertTrue(status)
 
         mock_exists.return_value = False
@@ -181,7 +177,6 @@ class MountPointTestCase(TestCase):
         mpoint = MountPoint(self.local, container_id)
         status = mpoint.create(hpath, cpath)
         self.assertTrue(mock_mkdir.called)
-        self.assertTrue(mock_msg.called)
         self.assertTrue(mock_del.called)
         self.assertFalse(status)
 

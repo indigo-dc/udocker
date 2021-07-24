@@ -5,13 +5,14 @@ udocker unit tests: LocalFileAPI
 
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
-from udocker.localfile import LocalFileAPI
+from udocker.localfile import LocalFileAPI, LOG
 
 
 class LocalFileAPITestCase(TestCase):
     """Test LocalFileAPI()."""
 
     def setUp(self):
+        LOG.setLevel(100)
         str_local = 'udocker.container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
         self.local = self.lrepo.start()
@@ -31,15 +32,13 @@ class LocalFileAPITestCase(TestCase):
     @patch.object(LocalFileAPI, '_untar_saved_container')
     @patch('udocker.localfile.os.makedirs')
     @patch('udocker.localfile.FileUtil.mktmp')
-    @patch('udocker.localfile.Msg.err')
     @patch('udocker.localfile.os.path.exists')
-    def test_02_load(self, mock_exists, mock_msg, mock_mktmp, mock_mkdir,
+    def test_02_load(self, mock_exists, mock_mktmp, mock_mkdir,
                      mock_untar, mock_remove, mock_imgtype, mock_dockerload,
                      mock_ociload):
         """Test02 LocalFileAPI().load."""
         mock_exists.return_value = False
         status = LocalFileAPI(self.mock_lrepo).load('imgfile')
-        self.assertTrue(mock_msg.called)
         self.assertFalse(status)
 
         mock_exists.return_value = True
@@ -51,7 +50,6 @@ class LocalFileAPITestCase(TestCase):
         self.assertTrue(mock_mktmp.called)
         self.assertTrue(mock_mkdir.called)
         self.assertTrue(mock_remove.called)
-        self.assertTrue(mock_msg.called)
         self.assertFalse(status)
 
         mock_exists.return_value = True

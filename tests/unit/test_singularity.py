@@ -6,15 +6,15 @@ udocker unit tests: SingularityEngine
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.config import Config
-from udocker.engine.singularity import SingularityEngine
+from udocker.engine.singularity import SingularityEngine, LOG
 
 
 class SingularityEngineTestCase(TestCase):
     """Test SingularityEngine() class for containers execution."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
-
         str_local = 'udocker.container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
         self.local = self.lrepo.start()
@@ -117,24 +117,18 @@ class SingularityEngineTestCase(TestCase):
         sing._make_container_directories()
         self.assertTrue(mock_mkdir.call_count, 6)
 
-    @patch('udocker.engine.singularity.Msg')
-    def test_06__run_invalid_options(self, mock_msg):
+    def test_06__run_invalid_options(self):
         """Test06 SingularityEngine()._run_invalid_options()."""
-        mock_msg.level = 0
         sing = SingularityEngine(self.local, self.xmode)
         sing.opt['netcoop'] = False
         sing.opt['portsmap'] = True
         sing._run_invalid_options()
-        self.assertTrue(mock_msg.called)
 
     @patch.object(SingularityEngine, '_has_option')
     @patch('udocker.engine.singularity.NixAuthentication')
     @patch('udocker.engine.singularity.HostInfo.username')
-    @patch('udocker.engine.singularity.Msg')
-    def test_07__run_as_root(self, mock_msg, mock_uname,
-                             mock_nixauth, mock_hasopt):
+    def test_07__run_as_root(self, mock_uname, mock_nixauth, mock_hasopt):
         """Test07 SingularityEngine()._run_as_root()."""
-        mock_msg.level = 0
         mock_uname.return_value = "u1"
         sing = SingularityEngine(self.local, self.xmode)
         sing.opt = dict()
@@ -142,7 +136,6 @@ class SingularityEngineTestCase(TestCase):
         self.assertFalse(status)
         self.assertTrue(mock_uname.called)
 
-        mock_msg.level = 0
         mock_uname.return_value = "u1"
         sing = SingularityEngine(self.local, self.xmode)
         sing.opt = dict()
@@ -151,7 +144,6 @@ class SingularityEngineTestCase(TestCase):
         self.assertFalse(status)
         self.assertTrue(mock_uname.called)
 
-        mock_msg.level = 0
         mock_uname.return_value = "u1"
         sing = SingularityEngine(self.local, self.xmode)
         sing.opt = dict()
@@ -161,7 +153,6 @@ class SingularityEngineTestCase(TestCase):
         self.assertFalse(status)
         self.assertTrue(mock_uname.called)
 
-        mock_msg.level = 0
         mock_uname.return_value = "u1"
         mock_hasopt.return_value = True
         mock_nixauth.return_value.user_in_subuid.return_value = True

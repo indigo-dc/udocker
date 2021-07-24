@@ -5,7 +5,7 @@ udocker unit tests: UMain
 
 from unittest import TestCase, main
 from unittest.mock import patch
-from udocker.umain import UMain
+from udocker.umain import UMain, LOG
 from udocker.config import Config
 
 
@@ -13,6 +13,7 @@ class UMainTestCase(TestCase):
     """Test UMain() class main udocker program."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
 
     def tearDown(self):
@@ -24,16 +25,12 @@ class UMainTestCase(TestCase):
         udoc = UMain(argv)
         self.assertEqual(udoc.argv, argv)
 
-    @patch('udocker.umain.Msg')
     @patch('udocker.umain.UdockerCLI')
     @patch('udocker.umain.LocalRepository')
     @patch('udocker.umain.os.geteuid')
-    def test_02__prepare_exec(self, mock_getuid,
-                              mock_local, mock_ucli, mock_msg):
+    def test_02__prepare_exec(self, mock_getuid, mock_local, mock_ucli):
         """Test02 UMain()._prepare_exec()."""
         argv = ["udocker", "-h"]
-        mock_msg.level = 0
-        mock_msg.VER = 4
         mock_getuid.return_value = 0
         with patch('sys.exit') as mock_exit:
             umain = UMain(argv)
@@ -41,8 +38,6 @@ class UMainTestCase(TestCase):
             self.assertTrue(mock_exit.called)
 
         argv = ["udocker", "-h", "--debug", "--insecure"]
-        mock_msg.level = 0
-        mock_msg.VER = 4
         mock_getuid.return_value = 100
         mock_local.return_value.is_repo.return_value = True
         mock_local.return_value.create_repo.return_value = None
@@ -53,11 +48,9 @@ class UMainTestCase(TestCase):
         self.assertTrue(mock_local.return_value.is_repo.called)
         self.assertTrue(mock_ucli.called)
 
-    @patch('udocker.umain.Msg')
     @patch('udocker.umain.UdockerCLI')
-    def test_03_execute(self, mock_ucli, mock_msg):
+    def test_03_execute(self, mock_ucli):
         """Test03 UMain().execute()."""
-        mock_msg.level = 0
         argv = ['udocker', '--allow-root', '-h']
         mock_ucli.return_value.do_help.return_value = 0
         umain = UMain(argv)

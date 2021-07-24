@@ -5,7 +5,7 @@ udocker unit tests: OSInfo
 
 from unittest import TestCase, main
 from unittest.mock import patch
-from udocker.helper.osinfo import OSInfo
+from udocker.helper.osinfo import OSInfo, LOG
 from udocker.config import Config
 
 
@@ -13,6 +13,7 @@ class GuestInfoTestCase(TestCase):
     """Test OSInfo() class."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         self.rootdir = "~/.udocker/container/abcd0/ROOT"
         self.file = "/bin/ls"

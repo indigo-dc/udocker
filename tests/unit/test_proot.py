@@ -6,13 +6,14 @@ udocker unit tests: PRootEngine
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.config import Config
-from udocker.engine.proot import PRootEngine
+from udocker.engine.proot import PRootEngine, LOG
 
 
 class PRootEngineTestCase(TestCase):
     """Test PRootEngine() class for containers execution."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
@@ -164,7 +165,6 @@ class PRootEngineTestCase(TestCase):
 
     @patch('udocker.engine.proot.os.environ.update')
     @patch.object(PRootEngine, '_get_network_map')
-    @patch('udocker.engine.nvidia.Msg')
     @patch('udocker.engine.proot.HostInfo.oskernel_isgreater')
     @patch.object(PRootEngine, '_run_banner')
     @patch.object(PRootEngine, '_run_env_cleanup_dict')
@@ -180,7 +180,7 @@ class PRootEngineTestCase(TestCase):
                     mock_run_env_set,
                     mock_set_cpu_aff, mock_get_vol_bind, mock_set_uid_map,
                     mock_env_cleanup_dict, mock_run_banner, mock_isgreater,
-                    mock_msg, mock_netmap, mock_envupd):
+                    mock_netmap, mock_envupd):
         """Test07 PRootEngine().run()."""
         mock_run_init.return_value = False
         prex = PRootEngine(self.local, self.xmode)
@@ -192,7 +192,6 @@ class PRootEngineTestCase(TestCase):
         mock_sel_proot.return_value = None
         mock_isgreater.return_value = "2.9.0"
         mock_run_env_set.return_value = None
-        mock_msg.level = 5
         mock_set_cpu_aff.return_value = []
         mock_get_vol_bind.return_value = ['-b', '/tmp:/tmp']
         mock_set_uid_map.return_value = ['-i', '1000:1001']

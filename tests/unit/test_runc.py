@@ -6,7 +6,7 @@ udocker unit tests: RuncEngine
 from unittest import TestCase, main
 from unittest.mock import Mock, patch, mock_open
 from udocker.config import Config
-from udocker.engine.runc import RuncEngine
+from udocker.engine.runc import RuncEngine, LOG
 
 BUILTINS = "builtins"
 BOPEN = BUILTINS + '.open'
@@ -16,6 +16,7 @@ class RuncEngineTestCase(TestCase):
     """Test RuncEngine() containers execution with runC."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
@@ -246,26 +247,21 @@ class RuncEngineTestCase(TestCase):
         self.assertFalse(mock_getuid.called)
         self.assertFalse(mock_getgid.called)
 
-    @patch('udocker.engine.runc.Msg')
-    def test_06__uid_check(self, mock_msg):
-        """Test06 RuncEngine()._uid_check()."""
-        rcex = RuncEngine(self.local, self.xmode)
-        rcex.opt = dict()
-        rcex._uid_check()
-        self.assertFalse(mock_msg.called)
+    # def test_06__uid_check(self):
+    #     """Test06 RuncEngine()._uid_check()."""
+    #     rcex = RuncEngine(self.local, self.xmode)
+    #     rcex.opt = dict()
+    #     rcex._uid_check()
 
-        rcex = RuncEngine(self.local, self.xmode)
-        rcex.opt = dict()
-        rcex.opt["user"] = "root"
-        rcex._uid_check()
-        self.assertFalse(mock_msg.called)
+    #     rcex = RuncEngine(self.local, self.xmode)
+    #     rcex.opt = dict()
+    #     rcex.opt["user"] = "root"
+    #     rcex._uid_check()
 
-        mock_msg.level = 3
-        rcex = RuncEngine(self.local, self.xmode)
-        rcex.opt = dict()
-        rcex.opt["user"] = "user01"
-        rcex._uid_check()
-        self.assertTrue(mock_msg.called)
+    #     rcex = RuncEngine(self.local, self.xmode)
+    #     rcex.opt = dict()
+    #     rcex.opt["user"] = "user01"
+    #     rcex._uid_check()
 
     def test_07__add_capabilities_spec(self):
         """Test07 RuncEngine()._add_capabilities_spec()."""
@@ -291,28 +287,22 @@ class RuncEngineTestCase(TestCase):
     @patch('udocker.engine.runc.stat.S_ISCHR')
     @patch('udocker.engine.runc.stat.S_ISBLK')
     @patch('udocker.engine.runc.os.path.exists')
-    @patch('udocker.engine.runc.Msg')
-    def test_08__add_device_spec(self, mock_msg, mock_exists,
+    def test_08__add_device_spec(self, mock_exists,
                                  mock_blk, mock_chr, mock_osmaj,
                                  mock_osmin, mock_hi):
         """Test08 RuncEngine()._add_device_spec()."""
-        mock_msg.level = 3
         mock_exists.return_value = False
         rcex = RuncEngine(self.local, self.xmode)
         status = rcex._add_device_spec("/dev/zero")
-        self.assertTrue(mock_msg.return_value.err.called)
         self.assertFalse(status)
 
-        mock_msg.level = 3
         mock_exists.return_value = True
         mock_blk.return_value = False
         mock_chr.return_value = False
         rcex = RuncEngine(self.local, self.xmode)
         status = rcex._add_device_spec("/dev/zero")
-        self.assertTrue(mock_msg.return_value.err.called)
         self.assertFalse(status)
 
-        mock_msg.level = 3
         mock_exists.return_value = True
         mock_blk.return_value = True
         mock_chr.return_value = False
@@ -457,16 +447,14 @@ class RuncEngineTestCase(TestCase):
         self.assertTrue(status)
         self.assertEqual(len(rcex._container_specjson["mounts"]), 1)
 
-    @patch('udocker.engine.runc.Msg')
     @patch('udocker.engine.runc.os.path.isfile')
     @patch('udocker.engine.runc.os.path.isdir')
     @patch.object(RuncEngine, '_add_mount_spec')
     @patch('udocker.engine.runc.FileBind')
     def test_14__add_volume_bindings(self, mock_fbind,
                                      mock_add_mount_spec,
-                                     mock_isdir, mock_isfile, mock_msg):
+                                     mock_isdir, mock_isfile):
         """Test14 RuncEngine()._add_volume_bindings()."""
-        mock_msg.level = 0
         mock_add_mount_spec.side_effect = [None, None]
         rcex = RuncEngine(self.local, self.xmode)
         rcex._filebind = mock_fbind
@@ -519,15 +507,12 @@ class RuncEngineTestCase(TestCase):
         self.assertTrue(rcex._filebind.set_file.called)
         self.assertTrue(rcex._filebind.add_file.called)
 
-    @patch('udocker.engine.runc.Msg')
-    def test_15__run_invalid_options(self, mock_msg):
-        """Test15 RuncEngine()._run_invalid_options()."""
-        mock_msg.level = 0
-        rcex = RuncEngine(self.local, self.xmode)
-        rcex.opt['netcoop'] = False
-        rcex.opt['portsmap'] = True
-        rcex._run_invalid_options()
-        self.assertTrue(mock_msg.called)
+    # def test_15__run_invalid_options(self):
+    #     """Test15 RuncEngine()._run_invalid_options()."""
+    #     rcex = RuncEngine(self.local, self.xmode)
+    #     rcex.opt['netcoop'] = False
+    #     rcex.opt['portsmap'] = True
+    #     rcex._run_invalid_options()
 
     @patch.object(RuncEngine, '_create_mountpoint')
     @patch('udocker.engine.runc.stat')

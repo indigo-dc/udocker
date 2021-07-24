@@ -5,7 +5,7 @@ udocker unit tests: LocalRepository
 
 from unittest import TestCase, main
 from unittest.mock import patch, mock_open, call
-from udocker.container.localrepo import LocalRepository
+from udocker.container.localrepo import LocalRepository, LOG
 from udocker.config import Config
 
 BUILTIN = "builtins"
@@ -19,6 +19,7 @@ class LocalRepositoryTestCase(TestCase):
     """
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['topdir'] = UDOCKER_TOPDIR
         Config().conf['bindir'] = ""

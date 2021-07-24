@@ -4,11 +4,14 @@ udocker unit tests: Uvolume
 """
 
 from unittest import TestCase, main
-from udocker.utils.uvolume import Uvolume
+from udocker.utils.uvolume import Uvolume, LOG
 
 
 class UvolumeTestCase(TestCase):
     """Test Uvolume()."""
+
+    def setUp(self):
+        LOG.setLevel(100)
 
     def test_01_init(self):
         """Test01 Uvolume() constructor"""

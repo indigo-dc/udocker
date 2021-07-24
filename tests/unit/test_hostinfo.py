@@ -8,11 +8,14 @@ udocker unit tests: HostInfo
 import pwd
 from unittest import TestCase, main
 from unittest.mock import patch
-from udocker.helper.hostinfo import HostInfo
+from udocker.helper.hostinfo import HostInfo, LOG
 
 
 class HostInfoTestCase(TestCase):
     """Test HostInfo"""
+
+    def setUp(self):
+        LOG.setLevel(100)
 
     @patch('udocker.helper.hostinfo.os.getgid')
     @patch('udocker.helper.hostinfo.os.getuid')

@@ -7,9 +7,7 @@ udocker unit tests: GetURL
 
 from unittest import TestCase, main
 from unittest.mock import patch
-from udocker.utils.curl import GetURL
-from udocker.utils.curl import GetURLpyCurl
-from udocker.utils.curl import GetURLexeCurl
+from udocker.utils.curl import GetURL, GetURLexeCurl, GetURLpyCurl, LOG
 from udocker.config import Config
 
 
@@ -17,6 +15,7 @@ class GetURLTestCase(TestCase):
     """Test GetURL() perform http operations portably."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['timeout'] = 1
         Config().conf['ctimeout'] = 1
@@ -36,11 +35,8 @@ class GetURLTestCase(TestCase):
     @patch.object(GetURLexeCurl, '_select_implementation')
     @patch.object(GetURLexeCurl, 'is_available')
     @patch.object(GetURLpyCurl, 'is_available')
-    @patch('udocker.utils.curl.Msg')
-    def test_01_init(self, mock_msg, mock_gupycurl,
-                     mock_guexecurl, mock_select):
+    def test_01_init(self, mock_gupycurl, mock_guexecurl, mock_select):
         """Test01 GetURL() constructor."""
-        mock_msg.level = 0
         mock_gupycurl.return_value = False
         mock_guexecurl.return_value = True
         geturl = GetURL()
@@ -49,14 +45,11 @@ class GetURLTestCase(TestCase):
         self.assertEqual(geturl.insecure, Config().conf['http_insecure'])
         self.assertFalse(geturl.cache_support)
 
-    @patch('udocker.utils.curl.Msg')
     @patch.object(GetURLexeCurl, 'is_available')
     @patch.object(GetURLpyCurl, 'is_available')
-    def test_02__select_implementation(self, mock_gupycurl,
-                                       mock_guexecurl, mock_msg):
+    def test_02__select_implementation(self, mock_gupycurl, mock_guexecurl):
         """Test02 GetURL()._select_implementation()."""
         Config.conf['use_curl_executable'] = ""
-        mock_msg.level = 0
         mock_gupycurl.return_value = True
         geturl = GetURL()
         geturl._select_implementation()

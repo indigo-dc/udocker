@@ -8,7 +8,7 @@ udocker unit tests: GetURLpyCurl
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from io import BytesIO as strio
-from udocker.utils.curl import GetURLpyCurl
+from udocker.utils.curl import GetURLpyCurl, LOG
 from udocker.config import Config
 
 BUILTINS = "builtins"
@@ -18,6 +18,7 @@ class GetURLpyCurlTestCase(TestCase):
     """GetURLpyCurl TestCase."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['timeout'] = 1
         Config().conf['ctimeout'] = 1
@@ -62,30 +63,22 @@ class GetURLpyCurlTestCase(TestCase):
     #     """Test03 GetURLpyCurl()._select_implementation()."""
 
     @patch.object(GetURLpyCurl, 'is_available')
-    @patch('udocker.utils.curl.Msg')
     @patch('udocker.utils.curl.pycurl.Curl')
     @patch('udocker.utils.curl.CurlHeader')
-    def test_04__set_defaults(self, mock_hdr, mock_pyc,
-                              mock_msg, mock_selinsec):
+    def test_04__set_defaults(self, mock_hdr, mock_pyc, mock_selinsec):
         """Test04 GetURLpyCurl()._set_defaults()."""
         mock_selinsec.return_value = True
-        mock_msg.level = 0
-        mock_msg.VER = 4
         geturl = GetURLpyCurl()
         geturl._set_defaults(mock_pyc, mock_hdr)
         self.assertTrue(mock_pyc.setopt.called)
 
-        # when Msg.level >= Msg.VER = 4: AND insecure
-        mock_msg.level = 5
-        mock_msg.VER = 4
+        # when insecure
         geturl = GetURLpyCurl()
         geturl._set_defaults(mock_pyc, mock_hdr)
         self.assertEqual(mock_pyc.setopt.call_count, 18)
 
         mock_selinsec.return_value = True
-        # when Msg.level < Msg.VER = 4: AND secure
-        mock_msg.level = 2
-        mock_msg.VER = 4
+        # when secure
         geturl = GetURLpyCurl()
         geturl._set_defaults(mock_pyc, mock_hdr)
         self.assertEqual(mock_pyc.setopt.call_count, 27)

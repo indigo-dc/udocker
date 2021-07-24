@@ -5,7 +5,7 @@ udocker unit tests: Keystore
 
 from unittest import TestCase, main
 from unittest.mock import patch, mock_open
-from udocker.helper.keystore import KeyStore
+from udocker.helper.keystore import KeyStore, LOG
 from udocker.config import Config
 
 BUILTINS = "builtins"
@@ -15,6 +15,7 @@ class KeyStoreTestCase(TestCase):
     """Test KeyStore() local basic credentials storage."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
 
     def tearDown(self):

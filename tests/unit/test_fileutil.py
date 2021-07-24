@@ -7,7 +7,7 @@ import sys
 import os
 from unittest import TestCase, main
 from unittest.mock import patch, mock_open
-from udocker.utils.fileutil import FileUtil
+from udocker.utils.fileutil import FileUtil, LOG
 from udocker.config import Config
 
 STDOUT = sys.stdout
@@ -42,6 +42,7 @@ class FileUtilTestCase(TestCase):
     """Test FileUtil() file manipulation methods."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf["tmpdir"] = "/tmp"
 
@@ -427,7 +428,6 @@ class FileUtilTestCase(TestCase):
 
     @patch('udocker.utils.fileutil.os.path.realpath')
     @patch('udocker.utils.fileutil.os.path.exists')
-    @patch('udocker.utils.fileutil.Msg')
     @patch('udocker.utils.fileutil.os.remove')
     @patch('udocker.utils.fileutil.os.path.islink')
     @patch('udocker.utils.fileutil.os.path.isfile')
@@ -439,10 +439,10 @@ class FileUtilTestCase(TestCase):
     @patch.object(FileUtil, '_register_prefix')
     def test_17_remove(self, mock_regpre, mock_base, mock_absp, mock_safe,
                        mock_uid, mock_isdir,
-                       mock_isfile, mock_islink, mock_remove, mock_msg,
+                       mock_isfile, mock_islink, mock_remove,
                        mock_exists, mock_realpath):
         """Test17 FileUtil.remove()."""
-        mock_msg.level = 0
+
         mock_regpre.return_value = None
         mock_base.return_value = '/filename4.txt'
         mock_absp.return_value = '/filename4.txt'
@@ -495,20 +495,17 @@ class FileUtilTestCase(TestCase):
         status = futil.remove()
         self.assertTrue(status)
 
-    @patch('udocker.utils.fileutil.Msg')
     @patch('udocker.utils.fileutil.Uprocess.call')
     @patch('udocker.utils.fileutil.os.path.isfile')
     @patch('udocker.utils.fileutil.os.path.abspath')
     @patch('udocker.utils.fileutil.os.path.basename')
     @patch.object(FileUtil, '_register_prefix')
     def test_18_verify_tar(self, mock_regpre, mock_base, mock_absp,
-                           mock_isfile, mock_call, mock_msg):
+                           mock_isfile, mock_call):
         """Test18 FileUtil.verify_tar()."""
         mock_regpre.return_value = None
         mock_base.return_value = 'filename.txt'
         mock_absp.return_value = '/tmp/filename.txt'
-        mock_msg.level = 0
-        mock_msg.VER = 4
         mock_isfile.return_value = False
         mock_call.return_value = 0
         status = FileUtil("tarball.tar").verify_tar()
@@ -524,16 +521,12 @@ class FileUtilTestCase(TestCase):
         status = FileUtil("tarball.tar").verify_tar()
         self.assertFalse(status)
 
-    @patch('udocker.utils.fileutil.Msg')
     @patch('udocker.utils.fileutil.Uprocess.call')
     @patch('udocker.utils.fileutil.os.path.abspath')
     @patch('udocker.utils.fileutil.os.path.basename')
     @patch.object(FileUtil, '_register_prefix')
-    def test_19_tar(self, mock_regpre, mock_base, mock_absp,
-                    mock_call, mock_msg):
+    def test_19_tar(self, mock_regpre, mock_base, mock_absp, mock_call):
         """Test19 FileUtil.tar()."""
-        mock_msg.level = 0
-        mock_msg.VER = 4
         mock_regpre.return_value = None
         mock_base.return_value = 'filename.txt'
         mock_absp.return_value = '/tmp/filename.txt'
@@ -986,7 +979,6 @@ class FileUtilTestCase(TestCase):
 
     @patch.object(FileUtil, '_link_restore')
     @patch.object(FileUtil, '_link_set')
-    @patch('udocker.utils.fileutil.Msg')
     @patch.object(FileUtil, '_is_safe_prefix')
     @patch('udocker.utils.fileutil.os.lstat')
     @patch('udocker.utils.fileutil.os.path.islink')
@@ -997,10 +989,9 @@ class FileUtilTestCase(TestCase):
     @patch.object(FileUtil, '_register_prefix')
     def test_41_links_conv(self, mock_regpre, mock_base, mock_absp,
                            mock_realpath, mock_walk, mock_islink,
-                           mock_lstat, mock_is_safe_prefix, mock_msg,
+                           mock_lstat, mock_is_safe_prefix,
                            mock_link_set, mock_link_restore):
         """Test41 FileUtil.links_conv()."""
-        mock_msg.level = 0
         mock_regpre.return_value = None
         mock_base.return_value = 'filename.txt'
         mock_absp.return_value = '/tmp/filename.txt'

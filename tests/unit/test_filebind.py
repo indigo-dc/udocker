@@ -5,7 +5,7 @@ udocker unit tests: FileBind
 
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
-from udocker.utils.filebind import FileBind
+from udocker.utils.filebind import FileBind, LOG
 from udocker.config import Config
 
 
@@ -13,6 +13,7 @@ class FileBindTestCase(TestCase):
     """Test FileBind()."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         self.bind_dir = "/.bind_host_files"
         self.orig_dir = "/.bind_orig_files"
@@ -41,14 +42,11 @@ class FileBindTestCase(TestCase):
             fbind.container_orig_dir, fbind.container_dir + self.orig_dir)
         self.assertIsNone(fbind.host_bind_dir)
 
-    @patch('udocker.utils.filebind.Msg')
     @patch('udocker.utils.filebind.os.path.isdir')
     @patch('udocker.utils.filebind.os.path.realpath')
     @patch('udocker.utils.filebind.FileUtil')
-    def test_02_setup(self, mock_futil, mock_realpath, mock_isdir,
-                      mock_msg):
+    def test_02_setup(self, mock_futil, mock_realpath, mock_isdir):
         """Test02 FileBind().setup()."""
-        mock_msg.level = 0
         container_id = "CONTAINERID"
         mock_realpath.return_value = "/tmp"
         mock_isdir.side_effect = [True, True]
