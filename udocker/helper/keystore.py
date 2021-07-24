@@ -25,12 +25,12 @@ class KeyStore(object):
         if keystore_uid not in (-1, HostInfo.uid):
             raise IOError("not owner of keystore: %s" %
                           (self.keystore_file))
- 
+
         keystore_dir = os.path.dirname(self.keystore_file)
         if FileUtil(keystore_dir).uid() != HostInfo.uid:
             raise IOError("keystore dir not found or not owner: %s" %
                           (keystore_dir))
- 
+
         if (keystore_uid != -1 and
                 (os.stat(self.keystore_file).st_mode & 0o077)):
             raise IOError("keystore is accessible to group or others: %s" %

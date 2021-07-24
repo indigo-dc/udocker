@@ -14,6 +14,7 @@ class Uprocess(object):
     """Provide alternative implementations for subprocess"""
 
     def get_stderr(self):
+        """get stderr, dependent of log level"""
         stderror = subprocess.DEVNULL
         if Config.conf['verbose_level'] == logging.DEBUG:
             stderror = sys.stderr
