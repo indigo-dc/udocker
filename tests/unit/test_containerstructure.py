@@ -7,7 +7,7 @@ udocker unit tests: ContainerStructure
 
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
-from udocker.container.structure import ContainerStructure
+from udocker.container.structure import ContainerStructure, LOG
 from udocker.config import Config
 
 
@@ -15,6 +15,7 @@ class ContainerStructureTestCase(TestCase):
     """Test ContainerStructure() class for containers structure."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
@@ -48,10 +49,8 @@ class ContainerStructureTestCase(TestCase):
         self.assertEqual(prex.imagerepo, "")
         self.assertEqual(prex.container_id, "123456")
 
-    @patch('udocker.container.structure.Msg')
-    def test_02_get_container_attr(self, mock_msg):
+    def test_02_get_container_attr(self):
         """Test02 ContainerStructure().get_container_attr()."""
-        mock_msg.return_value.level.return_value = 0
         Config().conf['location'] = "/"
         prex = ContainerStructure(self.local)
         (container_dir, container_json) = prex.get_container_attr()
@@ -64,7 +63,6 @@ class ContainerStructureTestCase(TestCase):
         (container_dir, container_json) = prex.get_container_attr()
         self.assertEqual(container_dir, False)
         self.assertEqual(container_json, False)
-        self.assertTrue(mock_msg.return_value.err.called)
 
         Config().conf['location'] = ""
         self.local.cd_container.return_value = "/"
@@ -73,7 +71,6 @@ class ContainerStructureTestCase(TestCase):
         (container_dir, container_json) = prex.get_container_attr()
         self.assertEqual(container_dir, False)
         self.assertEqual(container_json, False)
-        self.assertTrue(mock_msg.return_value.err.called)
 
         Config().conf['location'] = ""
         self.local.cd_container.return_value = "/"
@@ -165,10 +162,8 @@ class ContainerStructureTestCase(TestCase):
 
     @patch.object(ContainerStructure, '_untar_layers')
     @patch('udocker.container.structure.Unique.uuid')
-    @patch('udocker.container.structure.Msg')
-    def test_07_create_fromimage(self, mock_msg, mock_uuid, mock_untar):
+    def test_07_create_fromimage(self, mock_uuid, mock_untar):
         """Test07 ContainerStructure().create_fromimage()."""
-        mock_msg.return_value.level.return_value = 0
         self.local.cd_imagerepo.return_value = ""
         prex = ContainerStructure(self.local)
         status = prex.create_fromimage("imagerepo", "tag")
@@ -199,13 +194,10 @@ class ContainerStructureTestCase(TestCase):
     @patch.object(ContainerStructure, '_chk_container_root')
     @patch.object(ContainerStructure, '_untar_layers')
     @patch('udocker.container.structure.Unique.uuid')
-    @patch('udocker.container.structure.Msg')
-    def test_08_create_fromlayer(self, mock_msg, mock_uuid,
-                                 mock_untar, mock_chkcont):
+    def test_08_create_fromlayer(self, mock_uuid, mock_untar, mock_chkcont):
         """Test08 ContainerStructure().create_fromlayer()."""
         # Empty container_json
         cont_json = dict()
-        mock_msg.return_value.level.return_value = 0
         mock_uuid.return_value = "123456"
         prex = ContainerStructure(self.local)
         status = prex.create_fromlayer("imagerepo", "tag", "layer", cont_json)
@@ -249,7 +241,6 @@ class ContainerStructureTestCase(TestCase):
                 "WorkingDir": ""
             },
         }
-        mock_msg.return_value.level.return_value = 0
         mock_uuid.return_value = "123456"
         self.local.setup_container.return_value = ""
         prex = ContainerStructure(self.local)
@@ -257,7 +248,6 @@ class ContainerStructureTestCase(TestCase):
         self.assertFalse(status)
 
         # Non-empty container_json, non empty cont dir
-        mock_msg.return_value.level.return_value = 0
         mock_uuid.return_value = "123456"
         self.local.setup_container.return_value = "/ROOT"
         self.local.save_json.return_value = True
@@ -270,12 +260,9 @@ class ContainerStructureTestCase(TestCase):
     @patch.object(ContainerStructure, '_chk_container_root')
     @patch.object(ContainerStructure, '_untar_layers')
     @patch('udocker.container.structure.Unique.uuid')
-    @patch('udocker.container.structure.Msg')
-    def test_09_clone_fromfile(self, mock_msg, mock_uuid,
-                               mock_untar, mock_chkcont):
+    def test_09_clone_fromfile(self, mock_uuid, mock_untar, mock_chkcont):
         """Test09 ContainerStructure().clone_fromfile()."""
         # Empty container_dir
-        mock_msg.return_value.level.return_value = 0
         self.local.setup_container.return_value = ""
         mock_uuid.return_value = "123456"
         prex = ContainerStructure(self.local)
@@ -283,7 +270,6 @@ class ContainerStructureTestCase(TestCase):
         self.assertFalse(status)
 
         # Non-empty container_dir
-        mock_msg.return_value.level.return_value = 0
         self.local.setup_container.return_value = "/ROOT"
         mock_uuid.return_value = "123456"
         mock_untar.return_value = True
@@ -328,13 +314,9 @@ class ContainerStructureTestCase(TestCase):
     @patch('udocker.container.structure.HostInfo')
     @patch('udocker.container.structure.subprocess.call')
     @patch.object(ContainerStructure, '_apply_whiteouts')
-    @patch('udocker.container.structure.Msg')
-    def test_11__untar_layers(self, mock_msg, mock_appwhite, mock_call,
-                              mock_hinfo):
+    def test_11__untar_layers(self, mock_appwhite, mock_call, mock_hinfo):
         """Test11 ContainerStructure()._untar_layers()."""
-        mock_msg.level = 0
         tarfiles = ["a.tar", "b.tar", ]
-        mock_msg.VER = 3
         mock_hinfo.gid = "1000"
         mock_hinfo.return_value.cmd_has_option.return_value = False
         mock_appwhite.side_effect = [None, None]
@@ -345,9 +327,7 @@ class ContainerStructureTestCase(TestCase):
         self.assertTrue(mock_call.call_count, 2)
         self.assertTrue(mock_appwhite.call_count, 2)
 
-        mock_msg.level = 0
         tarfiles = ["a.tar", "b.tar", ]
-        mock_msg.VER = 3
         mock_hinfo.gid = "1000"
         mock_hinfo.return_value.cmd_has_option.return_value = False
         mock_appwhite.side_effect = [None, None]
@@ -359,11 +339,9 @@ class ContainerStructureTestCase(TestCase):
         self.assertTrue(mock_appwhite.call_count, 2)
 
     @patch('udocker.container.structure.FileUtil.tar')
-    @patch('udocker.container.structure.Msg')
-    def test_12_export_tofile(self, mock_msg, mock_futar):
+    def test_12_export_tofile(self, mock_futar):
         """Test12 ContainerStructure().export_tofile()."""
         # Empty container dir
-        mock_msg.return_value.level.return_value = 0
         self.local.cd_container.return_value = ""
         mock_futar.return_value = False
         prex = ContainerStructure(self.local)
@@ -371,7 +349,6 @@ class ContainerStructureTestCase(TestCase):
         self.assertFalse(status)
 
         # Non-empty container dir
-        mock_msg.return_value.level.return_value = 0
         self.local.cd_container.return_value = "/ROOT"
         mock_futar.return_value = True
         prex = ContainerStructure(self.local, "123456")
@@ -379,11 +356,9 @@ class ContainerStructureTestCase(TestCase):
         self.assertEqual(status, "123456")
 
     @patch('udocker.container.structure.FileUtil.tar')
-    @patch('udocker.container.structure.Msg')
-    def test_13_clone_tofile(self, mock_msg, mock_futar):
+    def test_13_clone_tofile(self, mock_futar):
         """Test13 ContainerStructure().clone_tofile()."""
         # Empty container dir
-        mock_msg.return_value.level.return_value = 0
         self.local.cd_container.return_value = ""
         mock_futar.return_value = False
         prex = ContainerStructure(self.local)
@@ -391,7 +366,6 @@ class ContainerStructureTestCase(TestCase):
         self.assertFalse(status)
 
         # Non-empty container dir
-        mock_msg.return_value.level.return_value = 0
         self.local.cd_container.return_value = "/ROOT"
         mock_futar.return_value = True
         prex = ContainerStructure(self.local, "123456")
@@ -401,12 +375,9 @@ class ContainerStructureTestCase(TestCase):
     @patch.object(ContainerStructure, '_chk_container_root')
     @patch('udocker.container.structure.FileUtil.copydir')
     @patch('udocker.container.structure.Unique.uuid')
-    @patch('udocker.container.structure.Msg')
-    def test_14_clone(self, mock_msg, mock_uuid,
-                      mock_fucpd, mock_chkcont):
+    def test_14_clone(self, mock_uuid, mock_fucpd, mock_chkcont):
         """Test14 ContainerStructure().clone()."""
         # Empty source container_dir
-        mock_msg.return_value.level.return_value = 0
         self.local.cd_container.return_value = ""
         mock_uuid.return_value = "123456"
         prex = ContainerStructure(self.local)
@@ -414,7 +385,6 @@ class ContainerStructureTestCase(TestCase):
         self.assertFalse(status)
 
         # Non-empty source container_dir
-        mock_msg.return_value.level.return_value = 0
         self.local.cd_container.return_value = "/ROOT/src"
         self.local.setup_container.return_value = "/ROOT/dst"
         mock_uuid.return_value = "123456"
@@ -424,7 +394,6 @@ class ContainerStructureTestCase(TestCase):
         status = prex.clone()
         self.assertFalse(status)
 
-        mock_msg.return_value.level.return_value = 0
         self.local.cd_container.return_value = "/ROOT/src"
         self.local.setup_container.return_value = "/ROOT/dst"
         mock_uuid.return_value = "123456"
