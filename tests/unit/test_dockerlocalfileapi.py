@@ -5,7 +5,7 @@ udocker unit tests: DockerLocalFileAPI
 
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
-from udocker.docker import DockerLocalFileAPI
+from udocker.docker import DockerLocalFileAPI, LOG
 from udocker.config import Config
 
 
@@ -13,6 +13,7 @@ class DockerLocalFileAPITestCase(TestCase):
     """Test DockerLocalFileAPI() manipulate Docker images."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         str_local = 'udocker.container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
@@ -144,18 +145,16 @@ class DockerLocalFileAPITestCase(TestCase):
         status = dlocapi._get_from_manifest(struc, imgtag)
         self.assertEqual(status, ("conf", ["l2", "l1"]))
 
-    @patch('udocker.docker.Msg')
     @patch('udocker.docker.CommonLocalFileApi._move_layer_to_v1repo')
     @patch.object(DockerLocalFileAPI, '_sorted_layers')
     @patch.object(DockerLocalFileAPI, '_find_top_layer_id')
     @patch.object(DockerLocalFileAPI, '_get_from_manifest')
     def test_06__load_image_step2(self, mock_manif, mock_findtop,
-                                  mock_sort, mock_mvlayer, mock_msg):
+                                  mock_sort, mock_mvlayer):
         """Test06 DockerLocalFileAPI()._load_image_step2()."""
         struc = dict()
         imgrepo = "img1"
         tag = "tag1"
-        mock_msg.level = 0
         mock_manif.return_value = ("", [])
         mock_findtop.return_value = ""
         mock_sort.return_value = list()
@@ -206,16 +205,13 @@ class DockerLocalFileAPITestCase(TestCase):
         status = dlocapi._load_repositories(structure)
         self.assertEqual(status, ["image:tag"])
 
-    @patch('udocker.docker.Msg')
     @patch.object(DockerLocalFileAPI, '_load_repositories')
     @patch.object(DockerLocalFileAPI, '_load_structure')
     @patch('udocker.docker.CommonLocalFileApi._load_image')
     @patch('udocker.docker.Unique')
-    def test_08_load(self, mock_unique, mock_loadimg,
-                     mock_lstruct, mock_lrepo, mock_msg):
+    def test_08_load(self, mock_unique, mock_loadimg, mock_lstruct, mock_lrepo):
         """Test08 DockerLocalFileAPI().load()."""
         tmp_imgdir = "/tmp/img1"
-        mock_msg.level = 0
         mock_lstruct.return_value = dict()
         dlocapi = DockerLocalFileAPI(self.local)
         status = dlocapi.load(tmp_imgdir)
@@ -323,18 +319,16 @@ class DockerLocalFileAPITestCase(TestCase):
         status = dlocapi._save_image(imgrepo, tag, struc, tmp_imgdir)
         self.assertTrue(status)
 
-    @patch('udocker.docker.Msg')
     @patch.object(DockerLocalFileAPI, '_save_image')
     @patch('udocker.docker.FileUtil.remove')
     @patch('udocker.docker.FileUtil.tar')
     @patch('udocker.docker.os.makedirs')
     @patch('udocker.docker.FileUtil.mktmp')
     def test_10_save(self, mock_mktmp, mock_mkdir, mock_tar,
-                     mock_rm, mock_svimg, mock_msg):
+                     mock_rm, mock_svimg):
         """Test10 DockerLocalFileAPI().save()."""
         imglist = list()
         imgfile = ""
-        mock_msg.level = 0
         mock_mktmp.return_value = "/tmp/img1"
         mock_mkdir.return_value = None
         mock_rm.return_value = None
