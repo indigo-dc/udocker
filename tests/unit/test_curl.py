@@ -8,20 +8,18 @@ udocker unit tests: CurlHeader
 from unittest import TestCase, main
 from unittest.mock import patch
 from io import StringIO
-from udocker.utils.curl import CurlHeader
+from udocker.utils.curl import CurlHeader, LOG
 from udocker.utils.curl import GetURL
 from udocker.utils.curl import GetURLpyCurl
 from udocker.utils.curl import GetURLexeCurl
 from udocker.config import Config
-
-BUILTINS = "builtins"
 
 
 class CurlHeaderTestCase(TestCase):
     """Test CurlHeader() http header parser."""
 
     def setUp(self):
-        pass
+        LOG.setLevel(100)
 
     def tearDown(self):
         pass
@@ -62,9 +60,8 @@ class CurlHeaderTestCase(TestCase):
     def test_03_setvalue_from_file(self, mock_write):
         """Test03 CurlHeader().setvalue_from_file()."""
         fakedata = StringIO('XXXX')
-        with patch(BUILTINS + '.open') as mopen:
-            mopen.return_value.__iter__ = (
-                lambda self: iter(fakedata.readline, ''))
+        with patch('builtins.open') as mopen:
+            mopen.return_value = fakedata
             curl_header = CurlHeader()
             self.assertTrue(curl_header.setvalue_from_file("filename"))
             self.assertTrue(mock_write.called_with('XXXX'))
@@ -81,6 +78,7 @@ class GetURLTestCase(TestCase):
     """Test GetURL() perform http operations portably."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['timeout'] = 1
         Config().conf['ctimeout'] = 1
@@ -100,11 +98,8 @@ class GetURLTestCase(TestCase):
     @patch.object(GetURLexeCurl, '_select_implementation')
     @patch.object(GetURLexeCurl, 'is_available')
     @patch.object(GetURLpyCurl, 'is_available')
-    @patch('udocker.utils.curl.Msg')
-    def test_01_init(self, mock_msg, mock_gupycurl,
-                     mock_guexecurl, mock_select):
+    def test_01_init(self, mock_gupycurl, mock_guexecurl, mock_select):
         """Test01 GetURL() constructor."""
-        mock_msg.level = 0
         mock_gupycurl.return_value = False
         mock_guexecurl.return_value = True
         geturl = GetURL()
@@ -113,13 +108,10 @@ class GetURLTestCase(TestCase):
         self.assertEqual(geturl.insecure, Config().conf['http_insecure'])
         self.assertFalse(geturl.cache_support)
 
-    @patch('udocker.utils.curl.Msg')
     @patch.object(GetURLexeCurl, 'is_available')
     @patch.object(GetURLpyCurl, 'is_available')
-    def test_02__select_implementation(self, mock_gupycurl,
-                                       mock_guexecurl, mock_msg):
+    def test_02__select_implementation(self, mock_gupycurl, mock_guexecurl):
         """Test02 GetURL()._select_implementation()."""
-        mock_msg.level = 0
         mock_gupycurl.return_value = True
         geturl = GetURL()
         geturl._select_implementation()
@@ -188,14 +180,18 @@ class GetURLTestCase(TestCase):
         status = geturl.post("http://host", {"DATA": 1, })
         self.assertEqual(status, "http://host")
 
-    # def test_08_get_status_code(self):
-    #     """Test08 GetURL().get_status_code()."""
+    def test_08_get_status_code(self):
+        """Test08 GetURL().get_status_code()."""
+        stat_line = "HTTP/1.1 200 OK"
+        status = GetURL().get_status_code(stat_line)
+        self.assertEqual(status, 200)
 
 
 class GetURLpyCurlTestCase(TestCase):
     """GetURLpyCurl TestCase."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['timeout'] = 1
         Config().conf['ctimeout'] = 1
@@ -214,11 +210,9 @@ class GetURLpyCurlTestCase(TestCase):
     # def test_01_init(self):
     #     """Test01 GetURLpyCurl() constructor."""
 
-    @patch('udocker.utils.curl.Msg')
     @patch.object(GetURLpyCurl, 'is_available')
-    def test_02_is_available(self, mock_gupycurl, mock_msg):
+    def test_02_is_available(self, mock_gupycurl):
         """Test02 GetURLpyCurl()._is_available()."""
-        mock_msg.level = 0
         mock_gupycurl.return_value = True
         geturl = GetURLpyCurl()
         geturl.is_available()
@@ -232,39 +226,30 @@ class GetURLpyCurlTestCase(TestCase):
     #     """Test03 GetURLpyCurl()._select_implementation()."""
 
     @patch.object(GetURLpyCurl, 'is_available')
-    @patch('udocker.utils.curl.Msg')
     @patch('udocker.utils.curl.pycurl')
     @patch('udocker.utils.curl.CurlHeader')
-    def test_04__set_defaults(self, mock_hdr, mock_pyc,
-                              mock_msg, mock_selinsec):
+    def test_04__set_defaults(self, mock_hdr, mock_pyc, mock_selinsec):
         """Test04 GetURLpyCurl()._set_defaults()."""
         mock_selinsec.return_value = True
-        mock_msg.level = 0
-        mock_msg.VER = 4
         geturl = GetURLpyCurl()
         geturl._set_defaults(mock_pyc, mock_hdr)
         self.assertTrue(mock_pyc.setopt.called)
 
-        # when Msg.level >= Msg.VER = 4: AND insecure
-        mock_msg.level = 5
-        mock_msg.VER = 4
+        # when insecure
         geturl = GetURLpyCurl()
         geturl._set_defaults(mock_pyc, mock_hdr)
         self.assertEqual(mock_pyc.setopt.call_count, 18)
 
+        # when secure
         mock_selinsec.return_value = True
-        # when Msg.level < Msg.VER = 4: AND secure
-        mock_msg.level = 2
-        mock_msg.VER = 4
         geturl = GetURLpyCurl()
         geturl._set_defaults(mock_pyc, mock_hdr)
         self.assertEqual(mock_pyc.setopt.call_count, 27)
 
     # @patch.object(GetURLpyCurl, 'is_available')
-    # @patch('udocker.utils.curl.Msg')
     # @patch('udocker.utils.curl.pycurl')
     # @patch('udocker.utils.curl.CurlHeader')
-    # def test_05__mkpycurl(self, mock_hdr, mock_pyc, mock_msg, mock_sel):
+    # def test_05__mkpycurl(self, mock_hdr, mock_pyc, mock_sel):
     #     """Test05 GetURLpyCurl()._mkpycurl()."""
     #     mock_sel.return_value = True
     #     geturl = GetURLpyCurl()
@@ -284,6 +269,7 @@ class GetURLexeCurlTestCase(TestCase):
     """GetURLexeCurl TestCase."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['timeout'] = 1
         Config().conf['ctimeout'] = 1
@@ -307,11 +293,9 @@ class GetURLexeCurlTestCase(TestCase):
         geturl = GetURLexeCurl()
         self.assertIsNone(geturl._files)
 
-    @patch('udocker.utils.curl.Msg')
     @patch('udocker.utils.curl.FileUtil.find_exec')
-    def test_02_is_available(self, mock_findexec, mock_msg):
+    def test_02_is_available(self, mock_findexec):
         """Test02 GetURLexeCurl()._is_available()."""
-        mock_msg.level = 0
         mock_findexec.return_value = "/tmp"
         geturl = GetURLexeCurl()
         self.assertTrue(geturl.is_available())
@@ -323,24 +307,16 @@ class GetURLexeCurlTestCase(TestCase):
     # def test_03__select_implementation(self):
     #     """Test03 GetURLexeCurl()._select_implementation()."""
 
-    # @patch('udocker.utils.curl.Msg')
-    # def test_04__set_defaults(self, mock_msg):
+    # def test_04__set_defaults(self):
     #     """Test04 GetURLexeCurl()._set_defaults()"""
-    #     mock_msg.return_value.level = 0
-    #     mock_msg.VER = 4
     #     geturl = GetURLexeCurl()
     #     geturl._set_defaults()
     #     self.assertEqual(geturl._opts["insecure"], "")
 
-    #     mock_msg.return_value.level = 0
-    #     mock_msg.VER = 4
     #     geturl = GetURLexeCurl()
     #     geturl.insecure = True
     #     geturl._set_defaults()
     #     self.assertEqual(geturl._opts["insecure"], "-k")
-
-    #     mock_msg.return_value.level = 5
-    #     mock_msg.VER = 4
     #     geturl = GetURLexeCurl()
     #     geturl._set_defaults()
     #     self.assertEqual(geturl._opts["verbose"], "-v")
