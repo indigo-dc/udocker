@@ -2,55 +2,39 @@
 """
 udocker unit tests: ChkSUM
 """
-
 from unittest import TestCase, main
-from unittest.mock import patch, Mock, mock_open
+from unittest.mock import patch, mock_open
 from io import BytesIO as strio
-from udocker.utils.chksum import ChkSUM
-
-BUILTINS = "builtins"
-
+from udocker.utils.chksum import ChkSUM, LOG
 
 class ChkSUMTestCase(TestCase):
     """Test ChkSUM()."""
-
     def setUp(self):
-        pass
+        LOG.setLevel(100)
 
-    def tearDown(self):
-        pass
 
-    # def test_01__init(self):
-    #     """Test01 ChkSUM() constructor."""
-    #     ChkSUM()
+    def test_01_hash(self):
+        """Test01 ChkSUM().hash."""
+        file_data = strio(b'qwertyui\n')
+        sha256sum = ("42e6d97f00bff046ae2dea5c6db5"
+                     "6d866ae749fb7dc05319e08e5fbee31d851c")
+        cksum = ChkSUM()
+        with patch('builtins.open', mock_open()) as mopen:
+            mopen.return_value = file_data
+            status = cksum.hash("filename", "sha256")
+            self.assertEqual(status, sha256sum)
 
-    # def test_02_sha256(self):
-    #     """Test02 ChkSUM().sha256."""
-
-    # def test_03_sha512(self):
-    #     """Test03 ChkSUM().sha512."""
-
-    # def test_04_hash(self):
-    #     """Test04 ChkSUM().hash."""
-    #     sha256sum = (
-    #       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-    #     cksum = ChkSUM()
-    #     file_data = strio('qwerty')
-    #     with patch(BUILTINS + '.open', mock_open()) as mopen:
-    #         mopen.return_value.__iter__ = (
-    #             lambda self: iter(file_data.readline, ''))
-    #         status = cksum.hash("filename", "sha256")
-    #         self.assertEqual(status, sha256sum)
-    #     sha512sum = ("cf83e1357eefb8bdf1542850d66d8007d620e4050b"
-    #                  "5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff831"
-    #                  "8d2877eec2f63b931bd47417a81a538327af927da3e")
-    #     cksum = ChkSUM()
-    #     file_data = strio('qwerty')
-    #     with patch(BUILTINS + '.open', mock_open()) as mopen:
-    #         mopen.return_value.__iter__ = (
-    #             lambda self: iter(file_data.readline, ''))
-    #         status = cksum.hash("filename", "sha512")
-    #         self.assertEqual(status, sha512sum)
+        file_data = strio(b'qwertyui\n')
+        sha512sum =("2a260f37d0e522ecb43d93f23bf"
+                    "bbe88846da321f9eb1a9b552b74"
+                    "d1fe356ef20506b06f1ab639e0e"
+                    "0b028e85404e0f6eee3deba3f7a"
+                    "2367de54af8a079ba823")
+        cksum = ChkSUM()
+        with patch('builtins.open', mock_open()) as mopen:
+            mopen.return_value = file_data
+            status = cksum.hash("filename", "sha512")
+            self.assertEqual(status, sha512sum)
 
 
 if __name__ == '__main__':

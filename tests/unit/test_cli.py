@@ -10,7 +10,7 @@ from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.config import Config
 from udocker.cmdparser import CmdParser
-from udocker.cli import UdockerCLI
+from udocker.cli import UdockerCLI, LOG
 
 BUILTIN = "builtins"
 BOPEN = BUILTIN + '.open'
@@ -20,6 +20,7 @@ class UdockerCLITestCase(TestCase):
     """Test UdockerTestCase() command line interface."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
