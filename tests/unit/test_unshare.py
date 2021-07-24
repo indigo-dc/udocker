@@ -83,7 +83,7 @@ class UnshareTestCase(TestCase):
         mock_setgrp.return_value = None
         mock_exit.return_value = 1
         status = Unshare().namespace_exec(mock_method)
-        self.assertTrue(status)
+        self.assertFalse(status)
 
 
 if __name__ == '__main__':

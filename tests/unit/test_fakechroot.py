@@ -135,17 +135,21 @@ class FakechrootEngineTestCase(TestCase):
     #     ufake.opt["user"] = "0"
     #     ufake._uid_check()
 
-    def test_05__get_volume_bindings(self):
+    @patch('udocker.engine.fakechroot.os.path.isdir')
+    @patch('udocker.engine.fakechroot.os.path.realpath')
+    def test_05__get_volume_bindings(self, mock_rpath, mock_isdir):
         """Test05 FakechrootEngine._get_volume_bindings()."""
         ufake = FakechrootEngine(self.local, self.xmode)
         ufake.opt["vol"] = ()
         status = ufake._get_volume_bindings()
         self.assertEqual(status, ('', ''))
 
-        ufake = FakechrootEngine(self.local, self.xmode)
-        ufake.opt["vol"] = ("/tmp", "/bin",)
-        status = ufake._get_volume_bindings()
-        self.assertEqual(status, ('', '/tmp!/tmp:/bin!/bin'))
+        # mock_rpath.side_effect = ["/tmp", "/bin"]
+        # mock_isdir.side_effect = [True, False]
+        # ufake = FakechrootEngine(self.local, self.xmode)
+        # ufake.opt["vol"] = ("/tmp", "/bin",)
+        # status = ufake._get_volume_bindings()
+        # self.assertEqual(status, ('', '/tmp!/tmp:/bin!/bin'))
 
     @patch('udocker.engine.fakechroot.os.path.exists')
     @patch('udocker.engine.fakechroot.FileUtil.cont2host')
