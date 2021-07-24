@@ -7,7 +7,7 @@ udocker unit tests: Config
 
 from unittest import TestCase, main
 from unittest.mock import patch
-from udocker.config import Config
+from udocker.config import Config, LOG
 
 BUILTINS = "builtins"
 
@@ -17,6 +17,7 @@ class ConfigTestCase(TestCase):
 
     def test_01_init(self):
         """Test01 Config() constructor."""
+        LOG.setLevel(100)
         config = Config()
         self.assertIsInstance(config.conf['verbose_level'], int)
         self.assertIsInstance(config.conf['topdir'], str)
@@ -50,9 +51,9 @@ class ConfigTestCase(TestCase):
         cfile = "/home/udocker.conf"
         mock_exists.side_effect = [False, False, True]
         mock_cpread.return_value = None
-        mock_cpitems.return_value = [("verbose_level", 5)]
+        mock_cpitems.return_value = [("verbose_level", 50)]
         Config()._file_override(cfile)
-        self.assertEqual(Config.conf['verbose_level'], 5)
+        self.assertEqual(Config.conf['verbose_level'], 50)
 
     @patch('udocker.config.os.getenv')
     def test_03__env_override(self, mock_env):
@@ -60,9 +61,9 @@ class ConfigTestCase(TestCase):
         # Order of getenv:
         # UDOCKER_LOGLEVEL, UDOCKER_DIR, UDOCKER_BIN, UDOCKER_LIB,
         # UDOCKER_REPOS, UDOCKER_LAYERS
-        mock_env.return_value = "5"
+        mock_env.return_value = "50"
         Config()._env_override()
-        self.assertEqual(Config.conf['verbose_level'], 5)
+        self.assertEqual(Config.conf['verbose_level'], 50)
 
     @patch.object(Config, '_env_override')
     @patch.object(Config, '_file_override')
@@ -75,14 +76,6 @@ class ConfigTestCase(TestCase):
         self.assertTrue(mock_fileover.called)
         self.assertTrue(mock_envover.called)
 
-    @patch.object(Config, '_file_override')
-    @patch('udocker.config.Config')
-    def test_05_container(self, mock_conf, mock_fileover):
-        """Test05 Config.container()."""
-        mock_conf.return_value.conf["topdir"] = "/.udocker"
-        config = Config()
-        config.container()
-        self.assertTrue(mock_fileover.called)
 
 if __name__ == '__main__':
     main()
