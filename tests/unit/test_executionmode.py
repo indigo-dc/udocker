@@ -5,7 +5,7 @@ udocker unit tests: ExecutionMode
 
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
-from udocker.engine.execmode import ExecutionMode
+from udocker.engine.execmode import ExecutionMode, LOG
 from udocker.engine.proot import PRootEngine
 from udocker.engine.runc import RuncEngine
 from udocker.engine.fakechroot import FakechrootEngine
@@ -17,6 +17,7 @@ class ExecutionModeTestCase(TestCase):
     """Test ExecutionMode()."""
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
@@ -73,7 +74,6 @@ class ExecutionModeTestCase(TestCase):
         status = uexm.get_mode()
         self.assertEqual(status, "F3")
 
-    @patch('udocker.engine.execmode.Msg')
     @patch('udocker.engine.execmode.os.path')
     @patch('udocker.engine.execmode.FileUtil.putdata')
     @patch('udocker.engine.execmode.FileBind.setup')
@@ -87,10 +87,8 @@ class ExecutionModeTestCase(TestCase):
     @patch.object(ExecutionMode, 'get_mode')
     def test_03_set_mode(self, mock_getmode, mock_elfp, mock_fbind,
                          mock_futil, mock_getdata, mock_restore, mock_links,
-                         mock_getld, mock_fbset, mock_putdata, mock_path,
-                         mock_msg):
+                         mock_getld, mock_fbset, mock_putdata, mock_path):
         """Test03 ExecutionMode().set_mode."""
-        mock_msg.level = 0
         mock_getmode.side_effect = \
             ["", "P1", "R1", "R1", "F4", "P1", "F3", "P2", "P2", "F4", "F4"]
         mock_getdata.return_value = "F3"

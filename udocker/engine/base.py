@@ -575,7 +575,7 @@ class ExecutionEngineCommon(object):
 
         return True
 
-    def _run_banner(self, cmd, char="*"):
+    def _run_banner(self, cmd):
         """Print a container startup banner"""
         if not self.opt["nobanner"]:
             msgout = 76*"#" + "\n"

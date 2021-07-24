@@ -281,7 +281,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         cmd_l.extend(self.opt["cmd"])
         LOG.debug("CMD = %s", cmd_l)
         # execute
-        self._run_banner(self.opt["cmd"][0], '#')
+        self._run_banner(self.opt["cmd"][0])
         cwd = FileUtil(self.container_root).cont2host(self.opt["cwd"],
                                                       self.opt["vol"])
         status = subprocess.call(cmd_l, shell=False, close_fds=True, cwd=cwd)

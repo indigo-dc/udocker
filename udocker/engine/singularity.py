@@ -189,7 +189,7 @@ class SingularityEngine(ExecutionEngineCommon):
         cmd_l.extend(self.opt["cmd"])
         LOG.debug("CMD = %s", cmd_l)
         self._run_env_cleanup_dict()
-        self._run_banner(self.opt["cmd"][0], '/')   # execute
+        self._run_banner(self.opt["cmd"][0])   # execute
         status = subprocess.call(cmd_l, shell=False, close_fds=True, \
             env=os.environ.update(self._singularity_env_get()))
         return status

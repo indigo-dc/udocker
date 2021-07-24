@@ -5,7 +5,7 @@ udocker unit tests: ExecutionEngineCommon
 
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
-from udocker.engine.base import ExecutionEngineCommon
+from udocker.engine.base import ExecutionEngineCommon, LOG
 from udocker.utils.uenv import Uenv
 from udocker.config import Config
 
@@ -16,6 +16,7 @@ class ExecutionEngineCommonTestCase(TestCase):
     """
 
     def setUp(self):
+        LOG.setLevel(100)
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
@@ -82,12 +83,10 @@ class ExecutionEngineCommonTestCase(TestCase):
         status = ex_eng._get_portsmap()
         self.assertEqual(status, {1024: 1024, 2048: 2048})
 
-    @patch('udocker.engine.base.Msg')
     @patch('udocker.engine.base.HostInfo')
     @patch.object(ExecutionEngineCommon, '_get_portsmap')
-    def test_04__check_exposed_ports(self, mock_getports, mock_hinfo, mock_msg):
+    def test_04__check_exposed_ports(self, mock_getports, mock_hinfo):
         """Test04 ExecutionEngineCommon()._check_exposed_ports()."""
-        mock_msg.level = 0
         mock_getports.return_value = {22: 22, 2048: 2048}
         mock_hinfo.uid = 1000
         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
@@ -154,14 +153,12 @@ class ExecutionEngineCommonTestCase(TestCase):
         status = ex_eng._create_mountpoint(hpath, cpath, True)
         self.assertFalse(status)
 
-    @patch('udocker.engine.base.Msg')
     @patch.object(ExecutionEngineCommon, '_create_mountpoint')
     @patch('udocker.engine.base.os.path.exists')
     @patch('udocker.engine.base.Uvolume.split')
     def test_07__check_volumes(self, mock_uvolsplit, mock_exists,
-                               mock_crmpoint, mock_msg):
+                               mock_crmpoint):
         """Test07 ExecutionEngineCommon()._check_volumes()."""
-        mock_msg.level = 0
         mock_uvolsplit.return_value = ("HOSTDIR", "CONTDIR")
         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
         ex_eng.opt["vol"] = list()
@@ -292,16 +289,13 @@ class ExecutionEngineCommonTestCase(TestCase):
         status = ex_eng._set_volume_bindings()
         self.assertTrue(status)
 
-    @patch('udocker.engine.base.Msg')
     @patch('udocker.engine.base.Uenv')
     @patch('udocker.engine.base.os.path.isdir')
     @patch('udocker.engine.base.FileUtil.cont2host')
-    def test_12__check_paths(self, mock_fuc2h, mock_isdir, mock_uenv,
-                             mock_msg):
+    def test_12__check_paths(self, mock_fuc2h, mock_isdir, mock_uenv):
         """Test12 ExecutionEngineCommon()._check_paths()."""
         Config.conf['root_path'] = "/sbin"
         Config.conf['user_path'] = "/bin"
-        mock_msg.level = 0
         mock_fuc2h.return_value = "/container/bin"
         mock_isdir.return_value = False
         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
@@ -329,13 +323,11 @@ class ExecutionEngineCommonTestCase(TestCase):
         self.assertTrue(mock_fuc2h.called)
         self.assertTrue(mock_isdir.called)
 
-    @patch('udocker.engine.base.Msg')
     @patch('udocker.engine.base.FileUtil.find_exec')
     @patch('udocker.engine.base.Uenv')
-    def test_13__check_executable(self, mock_uenv, mock_fufindexe, mock_msg):
+    def test_13__check_executable(self, mock_uenv, mock_fufindexe):
         """Test13 ExecutionEngineCommon()._check_executable()."""
         Config.conf['cmd'] = "/bin/ls"
-        mock_msg.level = 0
         mock_fufindexe.return_value = ""
         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
         ex_eng.opt["env"] = mock_uenv
@@ -513,7 +505,6 @@ class ExecutionEngineCommonTestCase(TestCase):
         self.assertEqual(status, (True, res))
         auth = nixauth.stop()
 
-    @patch('udocker.engine.base.Msg')
     @patch('udocker.engine.base.HostInfo')
     @patch('udocker.engine.base.NixAuthentication')
     @patch.object(ExecutionEngineCommon, '_create_user')
@@ -522,10 +513,9 @@ class ExecutionEngineCommonTestCase(TestCase):
     @patch.object(ExecutionEngineCommon, '_select_auth_files')
     def test_18__setup_container_user(self, mock_selauth, mock_ustr,
                                       mock_ismpoint, mock_cruser, mock_auth,
-                                      mock_hinfo, mock_msg):
+                                      mock_hinfo):
         """Test18 ExecutionEngineCommon()._setup_container_user()."""
         user = "invuser"
-        mock_msg.level = 0
         mock_selauth.return_value = ("/etc/passwd", "/etc/group")
         mock_ustr.return_value = (False, {"uid": "100", "gid": "50"})
         mock_auth.side_effect = [None, None]
@@ -578,7 +568,6 @@ class ExecutionEngineCommonTestCase(TestCase):
         self.assertTrue(status)
         self.assertTrue(mock_cruser.called)
 
-    @patch('udocker.engine.base.Msg')
     @patch('udocker.engine.base.HostInfo')
     @patch('udocker.engine.base.NixAuthentication')
     @patch.object(ExecutionEngineCommon, '_create_user')
@@ -587,10 +576,9 @@ class ExecutionEngineCommonTestCase(TestCase):
     @patch.object(ExecutionEngineCommon, '_select_auth_files')
     def test_19__set_cont_user_noroot(self, mock_selauth, mock_ustr,
                                       mock_ismpoint, mock_cruser, mock_auth,
-                                      mock_hinfo, mock_msg):
+                                      mock_hinfo):
         """Test19 ExecutionEngineCommon()._setup_container_user_noroot()."""
         user = "invuser"
-        mock_msg.level = 0
         mock_selauth.return_value = ("/etc/passwd", "/etc/group")
         mock_ustr.return_value = (False, {"uid": "100", "gid": "50"})
         mock_auth.side_effect = [None, None]
@@ -720,15 +708,13 @@ class ExecutionEngineCommonTestCase(TestCase):
         self.assertTrue(ex_eng.opt["hostauth"])
         self.assertEqual(ex_eng.hostauth_list, res)
 
-    @patch('udocker.engine.base.Msg')
     @patch('udocker.engine.base.os.path.basename')
-    def test_22__run_banner(self, mock_base, mock_msg):
+    def test_22__run_banner(self, mock_base):
         """Test22 ExecutionEngineCommon()._run_banner()."""
         mock_base.return_value = "ls"
         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
         ex_eng._run_banner("/bin/bash")
         ex_eng.container_id = "CONTAINERID"
-        self.assertTrue(mock_msg.called)
         self.assertTrue(mock_base.called_once_with("/bin/bash"))
 
     @patch('udocker.engine.base.os.environ.copy')
