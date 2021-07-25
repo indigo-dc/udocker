@@ -36,8 +36,7 @@ class ExecutionMode(object):
         self.container_orig_root = self.container_dir + "/root.path"
         self.exec_engine = None
         self.force_mode = None
-        self.valid_modes = ("P1", "P2", "F1", "F2", "F3", "F4", "R1",
-                            "R2", "R3", "S1")
+        self.valid_modes = ("P1", "P2", "F1", "F2", "F3", "F4", "R1", "R2", "R3", "S1")
 
     def get_mode(self):
         """Get execution mode"""
@@ -89,15 +88,12 @@ class ExecutionMode(object):
             if force or prev_xmode in ("F3", "F4"):
                 status = elfpatcher.restore_binaries()
 
-            if force or prev_xmode in ('P1', 'P2', 'F1', 'R1',
-                                       'R2', 'R3', 'S1'):
+            if force or prev_xmode in ('P1', 'P2', 'F1', 'R1', 'R2', 'R3', 'S1'):
                 status = elfpatcher.patch_ld()
 
         elif xmode in ("F3", "F4"):
-            if force or prev_xmode in ('P1', 'P2', 'F1', 'F2',
-                                       'R1', 'R2', 'R3', 'S1'):
-                status = (elfpatcher.patch_ld() and
-                          elfpatcher.patch_binaries())
+            if force or prev_xmode in ('P1', 'P2', 'F1', 'F2', 'R1', 'R2', 'R3', 'S1'):
+                status = (elfpatcher.patch_ld() and elfpatcher.patch_binaries())
             elif prev_xmode in ("F3", "F4"):
                 status = True
 
@@ -123,16 +119,12 @@ class ExecutionMode(object):
         """get execution engine instance"""
         xmode = self.get_mode()
         if xmode.startswith("P"):
-            self.exec_engine = \
-                PRootEngine(self.localrepo, self)
+            self.exec_engine = PRootEngine(self.localrepo, self)
         elif xmode.startswith("F"):
-            self.exec_engine = \
-                FakechrootEngine(self.localrepo, self)
+            self.exec_engine = FakechrootEngine(self.localrepo, self)
         elif xmode.startswith("R"):
-            self.exec_engine = \
-                RuncEngine(self.localrepo, self)
+            self.exec_engine = RuncEngine(self.localrepo, self)
         elif xmode.startswith("S"):
-            self.exec_engine = \
-                SingularityEngine(self.localrepo, self)
+            self.exec_engine = SingularityEngine(self.localrepo, self)
 
         return self.exec_engine

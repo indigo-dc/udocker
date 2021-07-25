@@ -78,16 +78,14 @@ class PRootEngine(ExecutionEngineCommon):
             self.proot_newseccomp = True
 
     def _is_seccomp_patched(self, executable):
-        """Check if kernel has ptrace/seccomp fixes added
-           on 4.8.0.
+        """Check if kernel has ptrace/seccomp fixes added on 4.8.0.
            Only required for kernels below 4.8.0 to check
            if the patch has been backported e.g CentOS 7
         """
         if "PROOT_NEW_SECCOMP" in os.environ:
             return True
 
-        if ("PROOT_NO_SECCOMP" in os.environ or
-                self.proot_noseccomp or
+        if ("PROOT_NO_SECCOMP" in os.environ or self.proot_noseccomp or
                 HostInfo().oskernel_isgreater([4, 8, 0])):
             return False
 
@@ -96,18 +94,16 @@ class PRootEngine(ExecutionEngineCommon):
         if host_info:
             if "PROOT_NEW_SECCOMP" in host_info:
                 return True
+
             return False
 
-        out = Uprocess().get_output([executable, "-r", "/",
-                                     executable, "--help"])
+        out = Uprocess().get_output([executable, "-r", "/", executable, "--help"])
         if not out:
             os.environ["PROOT_NEW_SECCOMP"] = "1"
-            out = Uprocess().get_output([executable, "-r", "/",
-                                         executable, "--help"])
+            out = Uprocess().get_output([executable, "-r", "/", executable, "--help"])
             del os.environ["PROOT_NEW_SECCOMP"]
             if out:
-                self._save_osenv(host_file,
-                                      dict([("PROOT_NEW_SECCOMP", 1), ]))
+                self._save_osenv(host_file, dict([("PROOT_NEW_SECCOMP", 1), ]))
                 return True
 
         self._save_osenv(host_file)
@@ -118,8 +114,7 @@ class PRootEngine(ExecutionEngineCommon):
         if self.opt["uid"] == "0":
             uid_map_list = ["-0", ]
         else:
-            uid_map_list = \
-                ["-i", self.opt["uid"] + ":" + self.opt["gid"], ]
+            uid_map_list = ["-i", self.opt["uid"] + ":" + self.opt["gid"], ]
 
         return uid_map_list
 
@@ -177,8 +172,7 @@ class PRootEngine(ExecutionEngineCommon):
         else:
             proot_verbose = []
 
-        if (Config.conf['proot_killonexit'] and
-                self._has_option("--kill-on-exit")):
+        if (Config.conf['proot_killonexit'] and self._has_option("--kill-on-exit")):
             proot_kill_on_exit = ["--kill-on-exit", ]
         else:
             proot_kill_on_exit = []

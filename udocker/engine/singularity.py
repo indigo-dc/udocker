@@ -73,16 +73,13 @@ class SingularityEngine(ExecutionEngineCommon):
             vol_list.extend(["-B", "%s:%s" % (host_path, cont_path), ])
 
         if not home_is_binded:
-            vol_list.extend(["--home", "%s/root:%s" %
-                             (self.container_root, "/root"), ])
+            vol_list.extend(["--home", "%s/root:%s" % (self.container_root, "/root"), ])
 
         if not tmp_is_binded:
-            vol_list.extend(["-B", "%s/tmp:/tmp" %
-                             (self.container_root), ])
+            vol_list.extend(["-B", "%s/tmp:/tmp" % (self.container_root), ])
 
         if not vartmp_is_binded:
-            vol_list.extend(["-B", "%s/var/tmp:/var/tmp" %
-                             (self.container_root), ])
+            vol_list.extend(["-B", "%s/var/tmp:/var/tmp" % (self.container_root), ])
 
         return vol_list
 
@@ -108,12 +105,10 @@ class SingularityEngine(ExecutionEngineCommon):
     def _run_invalid_options(self):
         """check -p --publish -P --publish-all --net-coop"""
         if self.opt["portsmap"]:
-            LOG.warning("this execution mode does not support "
-                        "-p --publish")
+            LOG.warning("this execution mode does not support -p --publish")
 
         if self.opt["netcoop"]:
-            LOG.warning("Warning: this execution mode does not support "
-                        "-P --netcoop --publish-all")
+            LOG.warning("Warning: this exec mode does not support -P --netcoop --publish-all")
 
     def _run_as_root(self):
         """Set configure running as normal user or as root via --fakeroot
@@ -142,15 +137,10 @@ class SingularityEngine(ExecutionEngineCommon):
           * argument: container_id or name
           * options:  many via self.opt see the help
         """
-        if os.path.isdir(
-                FileBind(self.localrepo, container_id).container_orig_dir):
+        if os.path.isdir(FileBind(self.localrepo, container_id).container_orig_dir):
             FileBind(self.localrepo, container_id).restore() # legacy 1.1.3
 
-        Config.conf['sysdirs_list'] = (
-            # "/dev", "/proc", "/sys",
-            "/etc/resolv.conf", "/etc/host.conf",
-            "/lib/modules",
-        )
+        Config.conf['sysdirs_list'] = ("/etc/resolv.conf", "/etc/host.conf", "/lib/modules",)
         exec_path = self._run_init(container_id)  # setup execution
         if not exec_path:
             return 2
@@ -192,4 +182,5 @@ class SingularityEngine(ExecutionEngineCommon):
         self._run_banner(self.opt["cmd"][0])   # execute
         status = subprocess.call(cmd_l, shell=False, close_fds=True, \
             env=os.environ.update(self._singularity_env_get()))
+
         return status

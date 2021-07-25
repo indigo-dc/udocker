@@ -25,8 +25,7 @@ class ElfPatcher(object):
 
     def __init__(self, localrepo, container_id):
         self.localrepo = localrepo
-        self._container_dir = \
-            os.path.realpath(self.localrepo.cd_container(container_id))
+        self._container_dir = os.path.realpath(self.localrepo.cd_container(container_id))
         if not self._container_dir:
             raise ValueError("invalid container id")
 
@@ -66,6 +65,7 @@ class ElfPatcher(object):
         for arg in cmd:
             if "#f" in arg:
                 arg = arg.replace("#f", path)
+ 
             cmd_out.append(arg)
 
         return cmd_out
@@ -183,10 +183,9 @@ class ElfPatcher(object):
             except ValueError:
                 pass
 
-            futil_time = FileUtil(self._container_patch_time)
-            futil_path = FileUtil(self._container_patch_path)
-            return (futil_time.putdata(last_time, 'w') and
-                    futil_path.putdata(self._container_dir, 'w'))
+            futil_time = FileUtil(self._container_patch_time).putdata(last_time, 'w')
+            futil_path = FileUtil(self._container_patch_path).putdata(self._container_dir, 'w')
+            return (futil_time and futil_path)
 
         return False
 
@@ -196,11 +195,9 @@ class ElfPatcher(object):
         elf_loader = self.get_original_loader()
         last_path = self.get_patch_last_path()
         if last_path:
-            cmd = [patchelf_exec, "--restore-root-prefix",
-                   last_path + "/ROOT", "#f"]
+            cmd = [patchelf_exec, "--restore-root-prefix", last_path + "/ROOT", "#f"]
         else:
-            cmd = [patchelf_exec, "--restore-root-prefix",
-                   self._container_root, "#f"]
+            cmd = [patchelf_exec, "--restore-root-prefix", self._container_root, "#f"]
 
         self._walk_fs(cmd, self._container_root, self.BIN | self.LIB)
         newly_set = self.guess_elf_loader()
@@ -230,8 +227,7 @@ class ElfPatcher(object):
         etc = "\x00/etc/ld.so".encode()
         lib = "\x00/lib".encode()
         usr = "\x00/usr".encode()
-        ld_data = ld_data.replace(etc, nul_etc).\
-            replace(lib, nul_lib).replace(usr, nul_usr)
+        ld_data = ld_data.replace(etc, nul_etc).replace(lib, nul_lib).replace(usr, nul_usr)
         ld_library_path_orig = "\x00LD_LIBRARY_PATH\x00".encode()
         ld_library_path_new = "\x00LD_LIBRARY_REAL\x00".encode()
         ld_data = ld_data.replace(ld_library_path_orig, ld_library_path_new)
@@ -266,8 +262,7 @@ class ElfPatcher(object):
         for line in ld_data.split('\n'):
             match = re.search("([^ ]+) => ([^ ]+)", line)
             if match:
-                ld_dict[self._container_root + \
-                        os.path.dirname(match.group(2))] = True
+                ld_dict[self._container_root + os.path.dirname(match.group(2))] = True
 
         return list(ld_dict.keys())
 

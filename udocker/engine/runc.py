@@ -56,8 +56,7 @@ class RuncEngine(ExecutionEngineCommon):
                 eng = ["crun", "runc"]
 
             if arch == "amd64":
-                image_list = [eng[0]+"-x86_64", eng[0],
-                              eng[1]+"-x86_64", eng[1]]
+                image_list = [eng[0]+"-x86_64", eng[0], eng[1]+"-x86_64", eng[1]]
             elif arch == "i386":
                 image_list = [eng[0]+"-x86", eng[0], eng[1]+"-x86", eng[1]]
             elif arch == "arm64":
@@ -89,10 +88,8 @@ class RuncEngine(ExecutionEngineCommon):
 
         if FileUtil(self._container_specfile).size() == -1:
             cmd_l = [self.executable, "spec", "--rootless", ]
-            status = subprocess.call(cmd_l, shell=False, stderr=stderror,
-                                     close_fds=True,
-                                     cwd=os.path.realpath(\
-                                         self._container_specdir))
+            status = subprocess.call(cmd_l, shell=False, stderr=stderror, close_fds=True,
+                                     cwd=os.path.realpath(self._container_specdir))
             if status:
                 return False
 
@@ -119,6 +116,7 @@ class RuncEngine(ExecutionEngineCommon):
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             if outfile:
                 outfile.close()
+ 
             return False
 
         outfile.close()
@@ -156,16 +154,16 @@ class RuncEngine(ExecutionEngineCommon):
                 if "hostID" in idmap:
                     idmap["hostID"] = HostInfo.uid
         else:
-            json_obj["linux"]["uidMappings"] = [ \
-                    {"containerID": 0, "hostID": HostInfo.uid, "size":1, }, ]
+            json_obj["linux"]["uidMappings"] = [{"containerID": 0,
+                                                 "hostID": HostInfo.uid, "size":1, }, ]
 
         if "gidMappings" in json_obj["linux"]:
             for idmap in json_obj["linux"]["gidMappings"]:
                 if "hostID" in idmap:
                     idmap["hostID"] = HostInfo.gid
         else:
-            json_obj["linux"]["gidMappings"] = [ \
-                    {"containerID": 0, "hostID": HostInfo.gid, "size":1, }, ]
+            json_obj["linux"]["gidMappings"] = [{"containerID": 0, "hostID": HostInfo.gid,
+                                                 "size":1, }, ]
 
     def _del_namespace_spec(self, namespace):
         """Remove a namespace"""
@@ -177,8 +175,7 @@ class RuncEngine(ExecutionEngineCommon):
 
     def _uid_check(self):
         """Check the uid_map string for container run command"""
-        if ("user" in self.opt and self.opt["user"] != "0" and
-                self.opt["user"] != "root"):
+        if ("user" in self.opt and self.opt["user"] != "0" and self.opt["user"] != "root"):
             LOG.warning("this engine only supports execution as root")
 
     def _add_capabilities_spec(self):
@@ -252,17 +249,14 @@ class RuncEngine(ExecutionEngineCommon):
                     if dev_name not in added_devices:
                         self._add_device_spec(dev_name)
 
-    def _add_mount_spec(self, host_source, cont_dest, rwmode=False,
-                        fstype="none", options=None):
+    def _add_mount_spec(self, host_source, cont_dest, rwmode=False, fstype="none", options=None):
         """Add one mount point"""
         if rwmode:
             mode = "rw"
         else:
             mode = "ro"
 
-        mount = {"destination": cont_dest,
-                 "type": fstype,
-                 "source": host_source,
+        mount = {"destination": cont_dest, "type": fstype, "source": host_source,
                  "options": ["rbind", "nosuid", "nodev", mode, ], }
 
         if options is not None:
@@ -279,8 +273,7 @@ class RuncEngine(ExecutionEngineCommon):
     def _sel_mount_spec(self, host_source, cont_dest):
         """Select mount point"""
         for (index, mount) in enumerate(self._container_specjson["mounts"]):
-            if (mount["destination"] == cont_dest and
-                    mount["source"] == host_source):
+            if (mount["destination"] == cont_dest and mount["source"] == host_source):
                 return index
 
         return None
@@ -325,8 +318,7 @@ class RuncEngine(ExecutionEngineCommon):
                         host_dir + ":" + cont_dir not in self.hostauth_list and
                         os.path.dirname(cont_dir) not in
                         Config.conf['mountpoint_prefixes']):
-                    LOG.error("engine does not support file mounting: %s",
-                              host_dir)
+                    LOG.error("engine does not support file mounting: %s", host_dir)
                 else:
                     self._filebind.set_file(host_dir, cont_dir)
                     self._filebind.add_file(host_dir, cont_dir)
@@ -337,8 +329,7 @@ class RuncEngine(ExecutionEngineCommon):
             LOG.warning("this execution mode does not support -p --publish")
 
         if self.opt["netcoop"]:
-            LOG.warning("this exec mode does not support -P "
-                        "--netcoop --publish-all")
+            LOG.warning("this exec mode does not support -P --netcoop --publish-all")
 
     def _proot_overlay(self, proot_mode="P2"):
         """Execute proot within runc"""
@@ -363,14 +354,12 @@ class RuncEngine(ExecutionEngineCommon):
 
         host_executable = preng.executable
         cont_executable = "/.udocker/bin/" + os.path.basename(host_executable)
-        self._create_mountpoint(host_executable, cont_executable,
-                                dirs_only=False)
+        self._create_mountpoint(host_executable, cont_executable, dirs_only=False)
         self._filebind.set_file(host_executable, cont_executable)
         self._filebind.add_file(host_executable, cont_executable)
         mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
         FileUtil(self._filebind.get_path(cont_executable)).chmod(mode)
-        self._container_specjson["process"]["args"] = \
-                [cont_executable, "-0"] + self.opt["cmd"]
+        self._container_specjson["process"]["args"] = [cont_executable, "-0"] + self.opt["cmd"]
         return True
 
     def run(self, container_id):
@@ -379,10 +368,7 @@ class RuncEngine(ExecutionEngineCommon):
           * argument: container_id or name
           * options:  many via self.opt see the help
         """
-        Config.conf['sysdirs_list'] = (
-            "/etc/resolv.conf", "/etc/host.conf",
-            # "/etc/passwd", "/etc/group",
-        )
+        Config.conf['sysdirs_list'] = ("/etc/resolv.conf", "/etc/host.conf",)
         # setup execution
         if not self._run_init(container_id):
             return 2
@@ -396,8 +382,7 @@ class RuncEngine(ExecutionEngineCommon):
                 self._container_specdir = FileUtil("SPECDIR").mktmpdir()
                 FileUtil(self._container_specdir).register_prefix()
 
-            self._container_specfile = \
-                    self._container_specdir + '/' + self._container_specfile
+            self._container_specfile = self._container_specdir + '/' + self._container_specfile
 
         self._filebind = FileBind(self.localrepo, container_id)
         self._filebind.setup()
@@ -410,8 +395,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._run_env_cleanup_list()  # if not --hostenv clean the environment
         self._run_env_set()    # set environment variables
         self._set_spec()
-        if (Config.conf['runc_nomqueue'] or
-                (Config.conf['runc_nomqueue'] is None and not
+        if (Config.conf['runc_nomqueue'] or (Config.conf['runc_nomqueue'] is None and not
                  HostInfo().oskernel_isgreater([4, 8, 0]))):
             self._del_mount_spec("mqueue", "/dev/mqueue")
 
@@ -426,8 +410,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._save_spec()
         if Config.conf['verbose_level'] == logging.DEBUG:
             runc_debug = ["--debug", ]
-            LOG.debug(json.dumps(self._container_specjson,
-                                 indent=4, sort_keys=True))
+            LOG.debug(json.dumps(self._container_specjson, indent=4, sort_keys=True))
         else:
             runc_debug = []
 
@@ -454,17 +437,14 @@ class RuncEngine(ExecutionEngineCommon):
     def run_nopty(self, cmd_l):
         """runc without a terminal"""
         (pmaster, pslave) = os.openpty()
-        status = subprocess.Popen(cmd_l, shell=False, close_fds=True,
-                                  stdout=pslave, stderr=pslave)
+        status = subprocess.Popen(cmd_l, shell=False, close_fds=True, stdout=pslave, stderr=pslave)
         os.close(pslave)
         while True:
             status.poll()
             if status.returncode is not None:
                 break
 
-            readable, dummy, exception = \
-                select.select([pmaster, ], [], [pmaster, ], 5)
-
+            readable, dummy, exception = select.select([pmaster, ], [], [pmaster, ], 5)
             if exception:
                 break
 

@@ -49,8 +49,7 @@ class NvidiaMode(object):
                     except OSError:
                         LOG.error("deleting nvidia file %s", dstname)
                 else:
-                    LOG.info("nvidia file already exists %s, "
-                            "use --force to overwrite", dstname)
+                    LOG.info("nvidia file already exists %s, use --force to overwrite", dstname)
                     return False
 
             srcdir = os.path.dirname(srcname)
@@ -58,8 +57,7 @@ class NvidiaMode(object):
             if not os.path.isdir(dstdir):
                 try:
                     os.makedirs(dstdir)
-                    os.chmod(dstdir, stat.S_IMODE(os.stat(srcdir).st_mode) |
-                             stat.S_IRWXU)
+                    os.chmod(dstdir, stat.S_IMODE(os.stat(srcdir).st_mode) | stat.S_IRWXU)
                 except OSError:
                     LOG.error("creating nvidia dir %s", dstdir)
 
@@ -71,8 +69,7 @@ class NvidiaMode(object):
                 shutil.copy2(srcname, dstname)
                 LOG.info("is file %s to %s", srcname, dstname)
                 try:
-                    mask = stat.S_IMODE(os.stat(srcname).st_mode) | \
-                                        stat.S_IWUSR | stat.S_IRUSR
+                    mask = stat.S_IMODE(os.stat(srcname).st_mode) | stat.S_IWUSR | stat.S_IRUSR
                     if os.access(srcname, os.X_OK):
                         mask = mask | stat.S_IXUSR
                     os.chmod(dstname, mask)
@@ -173,8 +170,7 @@ class NvidiaMode(object):
             LOG.error("destination dir for nvidia libs not found")
             return False
 
-        if (not force) and self._installation_exists(nvi_host_dir_list,
-                                                     nvi_cont_dir):
+        if (not force) and self._installation_exists(nvi_host_dir_list, nvi_cont_dir):
             LOG.error("nvidia install already exists, --force to overwrite")
             return False
 
@@ -183,8 +179,7 @@ class NvidiaMode(object):
             self._copy_files(nvi_host_dir, nvi_cont_dir, lib_list, force)
 
         self._copy_files('/etc', '/etc', Config.conf['nvi_etc_list'], force)
-        self._copy_files('/usr/bin', '/usr/bin', Config.conf['nvi_bin_list'],
-                         force)
+        self._copy_files('/usr/bin', '/usr/bin', Config.conf['nvi_bin_list'], force)
         FileUtil(self._container_nvidia_set).putdata("", 'w')
         LOG.info("nvidia mode set")
         return True

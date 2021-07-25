@@ -85,8 +85,7 @@ class FakechrootEngine(ExecutionEngineCommon):
 
     def _uid_check(self):
         """Check the uid_map string for container run command"""
-        if ("user" in self.opt and (self.opt["user"] == '0' or
-                                    self.opt["user"] == "root")):
+        if ("user" in self.opt and (self.opt["user"] == '0' or self.opt["user"] == "root")):
             LOG.warning("this engine does not support execution as root")
 
     def _get_volume_bindings(self):
@@ -100,11 +99,9 @@ class FakechrootEngine(ExecutionEngineCommon):
                 continue
 
             real_host_path = os.path.realpath(host_path)
-            if (host_path == cont_path and
-                    Config.conf['fakechroot_expand_symlinks'] is False):
+            if (host_path == cont_path and Config.conf['fakechroot_expand_symlinks'] is False):
                 host_volumes_list.append(host_path)
-            elif (host_path == cont_path and
-                  host_path in Config.conf['sysdirs_list']):
+            elif (host_path == cont_path and host_path in Config.conf['sysdirs_list']):
                 host_volumes_list.append(host_path)
             elif host_path == cont_path and not os.path.isdir(real_host_path):
                 host_volumes_list.append(host_path)
@@ -125,8 +122,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         """
         file_list = []
         for c_path in Config.conf['access_files']:
-            h_file = FileUtil(self.container_root).cont2host(c_path,
-                                                             self.opt["vol"])
+            h_file = FileUtil(self.container_root).cont2host(c_path, self.opt["vol"])
             if h_file and os.path.exists(h_file):
                 file_list.append(c_path)
 
@@ -138,8 +134,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         self._fakechroot_so = self.select_fakechroot_so()
         access_filesok = self._get_access_filesok()
         self.opt["env"].append("PWD=" + self.opt["cwd"])
-        self.opt["env"].append("FAKECHROOT_BASE=" +
-                               os.path.realpath(self.container_root))
+        self.opt["env"].append("FAKECHROOT_BASE=" + os.path.realpath(self.container_root))
         self.opt["env"].append("LD_PRELOAD=" + self._fakechroot_so)
         if Config.conf['fakechroot_expand_symlinks'] is None:
             self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" + \
@@ -149,8 +144,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                     str(Config.conf['fakechroot_expand_symlinks']).lower())
 
         if not self._is_volume("/tmp"):
-            self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" +
-                                   Config.conf['tmpdir'])
+            self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" + Config.conf['tmpdir'])
 
         if host_volumes:
             self.opt["env"].append("FAKECHROOT_EXCLUDE_PATH=" + host_volumes)
@@ -163,8 +157,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             self.opt["env"].append("LD_DEBUG=libs:files")
 
         if access_filesok:
-            self.opt["env"].append("FAKECHROOT_ACCESS_FILESOK=" +
-                                   access_filesok)
+            self.opt["env"].append("FAKECHROOT_ACCESS_FILESOK=" + access_filesok)
 
         # execution mode
         ld_library_real = self._elfpatcher.get_ld_library_path()
@@ -189,8 +182,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             self.opt["env"].append("LD_LIBRARY_PATH=" + ld_library_real)
             patchelf_exec = self._elfpatcher.select_patchelf()
             if patchelf_exec:
-                self.opt["env"].append("FAKECHROOT_PATCH_PATCHELF=" +
-                                       patchelf_exec)
+                self.opt["env"].append("FAKECHROOT_PATCH_PATCHELF=" + patchelf_exec)
                 self.opt["env"].append("FAKECHROOT_PATCH_ELFLOADER=" +
                                        self._elfpatcher.get_container_loader())
                 self.opt["env"].append("FAKECHROOT_PATCH_LAST_TIME=" +
@@ -202,25 +194,21 @@ class FakechrootEngine(ExecutionEngineCommon):
             LOG.warning("this execution mode does not support -p --publish")
 
         if self.opt["netcoop"]:
-            LOG.warning("this execution mode does not support -P --netcoop"
-                        "--publish-all")
+            LOG.warning("this execution mode does not support -P --netcoop --publish-all")
 
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non binary executables (scripts)"""
         filetype = OSInfo(self.container_root).get_filetype(exec_path)
-        if "ELF" in filetype and ("static" in filetype or
-                                  "dynamic" in filetype):
+        if "ELF" in filetype and ("static" in filetype or "dynamic" in filetype):
             self.opt["cmd"][0] = exec_path
             return []
 
-        env_exec = FileUtil("env").find_exec("/bin:/usr/bin",
-                                             self.container_root)
+        env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
         if  env_exec:
             return [self.container_root + '/' + env_exec, ]
 
         relc_path = exec_path.split(self.container_root, 1)[-1]
-        real_path = FileUtil(self.container_root).cont2host(relc_path,
-                                                            self.opt["vol"])
+        real_path = FileUtil(self.container_root).cont2host(relc_path, self.opt["vol"])
         hashbang = FileUtil(real_path).get1stline()
         match = re.match("#! *([^ ]+)(.*)", hashbang)
         if match and not match.group(1).startswith('/'):
@@ -234,8 +222,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             self.opt["cmd"][0] = exec_path.split(self.container_root, 1)[-1]
             return interpreter
 
-        sh_exec = FileUtil("sh").find_exec(self.opt["env"].getenv("PATH"),
-                                           self.container_root)
+        sh_exec = FileUtil("sh").find_exec(self.opt["env"].getenv("PATH"), self.container_root)
         if sh_exec:
             return [self.container_root + '/' + sh_exec, ]
 
@@ -282,7 +269,6 @@ class FakechrootEngine(ExecutionEngineCommon):
         LOG.debug("CMD = %s", cmd_l)
         # execute
         self._run_banner(self.opt["cmd"][0])
-        cwd = FileUtil(self.container_root).cont2host(self.opt["cwd"],
-                                                      self.opt["vol"])
+        cwd = FileUtil(self.container_root).cont2host(self.opt["cwd"], self.opt["vol"])
         status = subprocess.call(cmd_l, shell=False, close_fds=True, cwd=cwd)
         return status

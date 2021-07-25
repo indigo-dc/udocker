@@ -128,8 +128,7 @@ class ExecutionEngineCommon(object):
 
         exec_cmd = []
         for exec_cmd in Config.conf['cpu_affinity_exec_tools']:
-            exec_name = \
-                FileUtil(exec_cmd[0]).find_exec()
+            exec_name = FileUtil(exec_cmd[0]).find_exec()
             if exec_name:
                 exec_cmd[0] = exec_name
                 for (index, arg) in enumerate(exec_cmd):
@@ -160,14 +159,14 @@ class ExecutionEngineCommon(object):
                 LOG.error("invalid host volume path: %s", host_path)
                 return False
 
-            if not (cont_path and cont_path != '/' and
-                    cont_path.startswith('/')):
+            if not (cont_path and cont_path != '/' and cont_path.startswith('/')):
                 LOG.error("invalid container volume path: %s", cont_path)
                 return False
 
             if not os.path.exists(host_path):
-                if (host_path in Config.conf['dri_list'] or
-                        host_path in Config.conf['sysdirs_list']):
+                dril = Config.conf['dri_list']
+                sysl = Config.conf['sysdirs_list']
+                if (host_path in dril or host_path in sysl):
                     self.opt["vol"].remove(vol)
                     continue
 
@@ -248,8 +247,7 @@ class ExecutionEngineCommon(object):
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
 
-        cwd_path = FileUtil(self.container_root).cont2host(self.opt["cwd"],
-                                                           self.opt["vol"])
+        cwd_path = FileUtil(self.container_root).cont2host(self.opt["cwd"], self.opt["vol"])
         if os.path.isdir(cwd_path):
             return True
 
@@ -279,8 +277,7 @@ class ExecutionEngineCommon(object):
 
         path = self.opt["env"].getenv("PATH")
         exec_name = FileUtil(exec_name).find_exec(path, self.container_root,
-                                                  self.opt["vol"],
-                                                  self.opt["cwd"])
+                                                  self.opt["vol"], self.opt["cwd"])
         if exec_name:
             return self.container_root + '/' + exec_name
 
@@ -292,64 +289,44 @@ class ExecutionEngineCommon(object):
         # get container metadata unless we are dealing with a simple directory
         # tree in which case we don't have metadata
         if Config.conf['location']:
-            container_dir = ""
-            container_json = []
+            cont_dir = ""
+            cont_json = []
         else:
-            container_structure = \
-                ContainerStructure(self.localrepo, container_id)
-            (container_dir, container_json) = \
-                container_structure.get_container_attr()
-            if not container_dir:
+            cstruc = ContainerStructure(self.localrepo, container_id)
+            (cont_dir, cont_json) = cstruc.get_container_attr()
+            if not cont_dir:
                 return(None, None)
 
             # load metadata from container
             if not self.opt["nometa"]:
                 if not self.opt["user"]:
-                    self.opt["user"] = \
-                        container_structure.get_container_meta(
-                            "User", "", container_json)
+                    self.opt["user"] = cstruc.get_container_meta("User", "", cont_json)
 
                 if not self.opt["cwd"]:
-                    self.opt["cwd"] = \
-                        container_structure.get_container_meta(
-                            "WorkingDir", "", container_json)
+                    self.opt["cwd"] = cstruc.get_container_meta("WorkingDir", "", cont_json)
 
                 if not self.opt["hostname"]:
-                    self.opt["hostname"] = \
-                        container_structure.get_container_meta(
-                            "Hostname", "", container_json)
+                    self.opt["hostname"] = cstruc.get_container_meta("Hostname", "", cont_json)
 
                 if not self.opt["domain"]:
-                    self.opt["domain"] = \
-                        container_structure.get_container_meta(
-                            "Domainname", "", container_json)
+                    self.opt["domain"] = cstruc.get_container_meta("Domainname", "", cont_json)
 
                 if self.opt["entryp"] is False:
-                    self.opt["entryp"] = \
-                        container_structure.get_container_meta(
-                            "Entrypoint", [], container_json)
+                    self.opt["entryp"] = cstruc.get_container_meta("Entrypoint", [], cont_json)
                     if not self.opt["cmd"]:
-                        self.opt["cmd"] = \
-                            container_structure.get_container_meta(
-                                "Cmd", [], container_json)
+                        self.opt["cmd"] = cstruc.get_container_meta("Cmd", [], cont_json)
                 elif not self.opt["entryp"]:
                     self.opt["entryp"] = []
                 else:
                     if isinstance(self.opt["entryp"], str):
-                        self.opt["entryp"] = \
-                            self.opt["entryp"].strip().split(' ')
+                        self.opt["entryp"] = self.opt["entryp"].strip().split(' ')
 
-                self.opt["Volumes"] = \
-                    container_structure.get_container_meta(
-                        "Volumes", [], container_json)
-                self.opt["portsexp"].extend(
-                    container_structure.get_container_meta(
-                        "ExposedPorts", [], container_json))
-                self.opt["env"].extendif(
-                    container_structure.get_container_meta(
-                        "Env", [], container_json))
+                self.opt["Volumes"] = cstruc.get_container_meta("Volumes", [], cont_json)
+                self.opt["portsexp"].extend(cstruc.get_container_meta("ExposedPorts", [],
+                                                                      cont_json))
+                self.opt["env"].extendif(cstruc.get_container_meta("Env", [], cont_json))
 
-        return(container_dir, container_json)
+        return(cont_dir, cont_json)
 
     def _select_auth_files(self):
         """Select authentication files to use /etc/passwd /etc/group"""
@@ -435,14 +412,12 @@ class ExecutionEngineCommon(object):
         if not user:
             user = "root"
 
-        (valid_user, user_id) = self._user_from_str(user,
-                                                    host_auth, container_auth)
+        (valid_user, user_id) = self._user_from_str(user, host_auth, container_auth)
         if not valid_user:
             LOG.error("invalid syntax for user; %s", user)
             return False
 
-        if (self._is_mountpoint("/etc/passwd") or
-                self._is_mountpoint("/etc/group")):
+        if (self._is_mountpoint("/etc/passwd") or self._is_mountpoint("/etc/group")):
             self.opt["hostauth"] = self.opt["containerauth"] = False
             return True
 
@@ -472,8 +447,7 @@ class ExecutionEngineCommon(object):
         if not user:
             user = HostInfo().username()
 
-        (valid_user, user_id) = self._user_from_str(user,
-                                                    host_auth, container_auth)
+        (valid_user, user_id) = self._user_from_str(user, host_auth, container_auth)
         if not valid_user:
             LOG.error("invalid syntax for user: %s", user)
             return False
@@ -483,8 +457,7 @@ class ExecutionEngineCommon(object):
             self.opt["uid"] = str(HostInfo.uid)
             self.opt["gid"] = str(HostInfo.gid)
 
-        if (self._is_mountpoint("/etc/passwd") or
-                self._is_mountpoint("/etc/group")):
+        if (self._is_mountpoint("/etc/passwd") or self._is_mountpoint("/etc/group")):
             self.opt["hostauth"] = self.opt["containerauth"] = False
             return True
 
@@ -556,22 +529,18 @@ class ExecutionEngineCommon(object):
             LOG.warning("non-existing user will be created")
             self._fill_user()
             new_auth = NixAuthentication(tmp_passwd, tmp_group)
-            new_auth.add_user(self.opt["user"], 'x',
-                              self.opt["uid"], self.opt["gid"],
-                              self.opt["gecos"], self.opt["home"],
-                              self.opt["shell"])
+            new_auth.add_user(self.opt["user"], 'x', self.opt["uid"], self.opt["gid"],
+                              self.opt["gecos"], self.opt["home"], self.opt["shell"])
             (group, dummy, dummy) = host_auth.get_group(self.opt["gid"])
             if not group:
                 new_auth.add_group(self.opt["user"], self.opt["gid"])
 
             for sup_gid in os.getgroups():
-                new_auth.add_group('G' + str(sup_gid), str(sup_gid),
-                                   [self.opt["user"], ])
+                new_auth.add_group('G' + str(sup_gid), str(sup_gid), [self.opt["user"], ])
 
         if not self.opt["containerauth"]:
             self.opt["hostauth"] = True
-            self.hostauth_list = (tmp_passwd + ":/etc/passwd",
-                                  tmp_group + ":/etc/group")
+            self.hostauth_list = (tmp_passwd + ":/etc/passwd", tmp_group + ":/etc/group")
 
         return True
 
@@ -610,12 +579,10 @@ class ExecutionEngineCommon(object):
             if not env_var:
                 continue
 
-            if   (env_var in Config.conf['invalid_host_env'] or
-                  env_var in container_env):
+            if (env_var in Config.conf['invalid_host_env'] or env_var in container_env):
                 continue
 
-            if   ((not self.opt["hostenv"]) and
-                  env_var not in Config.conf['valid_host_env']):
+            if ((not self.opt["hostenv"]) and env_var not in Config.conf['valid_host_env']):
                 continue
 
             self.opt["env"].append("%s=%s" % (env_var, value))
@@ -635,8 +602,7 @@ class ExecutionEngineCommon(object):
         self.opt["env"].append("container_ruser=" + HostInfo().username())
         self.opt["env"].append("container_root=" + self.container_root)
         self.opt["env"].append("container_uuid=" + self.container_id)
-        self.opt["env"].append("container_execmode=" +
-                               self.exec_mode.get_mode())
+        self.opt["env"].append("container_execmode=" + self.exec_mode.get_mode())
         cont_name = self.container_names
         # if Python 3
         if sys.version_info[0] >= 3:
@@ -658,8 +624,7 @@ class ExecutionEngineCommon(object):
         To be called by the run() method of the actual ExecutionEngine
         """
         try:
-            (container_dir, dummy) = \
-                self._run_load_metadata(container_id)
+            (container_dir, dummy) = self._run_load_metadata(container_id)
         except (ValueError, TypeError):
             return ""
 
@@ -704,11 +669,9 @@ class ExecutionEngineCommon(object):
             if (saved["osversion"] == HostInfo().osversion() and
                     saved["oskernel"] == HostInfo().oskernel() and
                     saved["arch"] == HostInfo().arch() and
-                    saved["osdistribution"] == \
-                        str(HostInfo().osdistribution())):
+                    saved["osdistribution"] == str(HostInfo().osdistribution())):
                 return saved
-        except (IOError, OSError, AttributeError, ValueError, TypeError,
-                IndexError, KeyError):
+        except (IOError, OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
             pass
 
         return dict()
@@ -725,8 +688,7 @@ class ExecutionEngineCommon(object):
             save["osdistribution"] = str(HostInfo().osdistribution())
             if FileUtil(filename).putdata(json.dumps(save)):
                 return True
-        except (AttributeError, ValueError, TypeError,
-                IndexError, KeyError):
+        except (AttributeError, ValueError, TypeError, IndexError, KeyError):
             pass
 
         return False
