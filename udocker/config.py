@@ -31,23 +31,17 @@ class Config(object):
     # udocker installation tarball the release is the minimum requirement
     # the actual tarball used in the installation can have a higher version
     conf['tarball_release'] = "1.2.8"
-    conf['tarball'] = (
-        "https://download.ncg.ingrid.pt/"
-        "webdav/udocker/udocker-englib-1.2.8.tar.gz"
-        " "
-        "https://raw.githubusercontent.com"
-        "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.8.tar.gz"
-    )
-    conf['installinfo'] = [
-        "https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
+    conf['tarball'] = ("https://download.ncg.ingrid.pt/webdav/udocker/udocker-englib-1.2.8.tar.gz"
+                       " "
+                       "https://raw.githubusercontent.com"
+                       "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.8.tar.gz")
+    conf['installinfo'] = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages"]
     conf['installretry'] = 3
     conf['autoinstall'] = True
     conf['config'] = "udocker.conf"
     conf['keystore'] = "keystore"
     conf['tmpdir'] = os.getenv("TMPDIR", "/tmp")    # for tmp files only
-    conf['meta_json'] = (
-        "https://download.ncg.ingrid.pt/webdav/udocker/metadata.json"
-    )
+    conf['meta_json'] = ("https://download.ncg.ingrid.pt/webdav/udocker/metadata.json")
 
     # defaults for container execution
     conf['cmd'] = ["/bin/bash", "-i"]  # Comand to execute
@@ -57,18 +51,11 @@ class Config(object):
     conf['user_path'] = "/usr/local/bin:/usr/bin:/bin"
 
     # directories to be mapped in containers with: run --sysdirs
-    conf['sysdirs_list'] = ("/dev", "/proc", "/sys",
-                            "/etc/resolv.conf", "/etc/host.conf",
-                            "/lib/modules", )
-
-    # POSSIBLE DEPRECATED
-    # directories to be mapped in containers with: run --hostauth
-    # conf['hostauth_list'] = ("/etc/passwd", "/etc/group",
-    #                               "/etc/shadow", "/etc/gshadow", )
+    conf['sysdirs_list'] = ("/dev", "/proc", "/sys", "/etc/resolv.conf",
+                            "/etc/host.conf", "/lib/modules", )
 
     # directories for DRI (direct rendering)
-    conf['dri_list'] = ("/usr/lib64/dri", "/lib64/dri",
-                        "/usr/lib/dri", "/lib/dri", )
+    conf['dri_list'] = ("/usr/lib64/dri", "/lib64/dri", "/usr/lib/dri", "/lib/dri", )
 
     # allowed file mountpoints for runC, these files can be copied in
     conf['mountpoint_prefixes'] = ("/etc", )
@@ -94,18 +81,14 @@ class Config(object):
     conf['lib_dirs_list_x86_64'] = ("/usr/lib/x86_64-linux-gnu", "/usr/lib64",)
 
     # fakechroot sharable library directories
-    conf['lib_dirs_list_essential'] = ("/lib/x86_64-linux-gnu",
-                                       "/usr/lib/x86_64-linux-gnu",
-                                       "/lib64", "/usr/lib64", "/lib",
-                                       "/usr/lib", )
+    conf['lib_dirs_list_essential'] = ("/lib/x86_64-linux-gnu", "/usr/lib/x86_64-linux-gnu",
+                                       "/lib64", "/usr/lib64", "/lib", "/usr/lib", )
     conf['lib_dirs_list_append'] = (".", )
 
     # fakechroot access files, used to circunvent openmpi init issues
-    conf['access_files'] = ("/sys/class/infiniband", "/dev/open-mx",
-                            "/dev/myri0", "/dev/myri1", "/dev/myri2",
-                            "/dev/myri3", "/dev/myri4", "/dev/myri5",
-                            "/dev/myri6", "/dev/myri7", "/dev/myri8",
-                            "/dev/myri9", "/dev/ipath", "/dev/kgni0",
+    conf['access_files'] = ("/sys/class/infiniband", "/dev/open-mx", "/dev/myri0", "/dev/myri1",
+                            "/dev/myri2", "/dev/myri3", "/dev/myri4", "/dev/myri5", "/dev/myri6",
+                            "/dev/myri7", "/dev/myri8", "/dev/myri9", "/dev/ipath", "/dev/kgni0",
                             "/dev/mic/scif", "/dev/scif", )
 
     # Force the use of specific executables
@@ -131,8 +114,7 @@ class Config(object):
     conf['invalid_host_env'] = ("VTE_VERSION", )
 
     # CPU affinity executables to use with: run --cpuset-cpus="1,2,3-4"
-    conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
-                                       ["taskset", "-c", "%s", ])
+    conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
 
     # Containers execution defaults
     conf['location'] = ""      # run container in this location
@@ -154,28 +136,20 @@ class Config(object):
 
     # registries table
     conf['docker_registries'] = {"docker.io": [conf['dockerio_registry_url'],
-                                               conf['dockerio_index_url']],
-                                }
+                                               conf['dockerio_index_url']], }
 
     # nvidia files
-    conf['nvi_etc_list'] = ['vulkan/icd.d/nvidia_icd.json',
-                            'OpenCL/vendors/nvidia.icd']
+    conf['nvi_etc_list'] = ['vulkan/icd.d/nvidia_icd.json', 'OpenCL/vendors/nvidia.icd']
 
-    conf['nvi_bin_list'] = ['nvidia-bug-report.sh',
-                            'nvidia-cuda-mps-control',
-                            'nvidia-cuda-mps-server',
-                            'nvidia-debugdump', 'nvidia-installer',
-                            'nvidia-persistenced', 'nvidia-settings',
-                            'nvidia-smi', 'nvidia-uninstall',
-                            'nvidia-xconfig']
+    conf['nvi_bin_list'] = ['nvidia-bug-report.sh', 'nvidia-cuda-mps-control',
+                            'nvidia-cuda-mps-server','nvidia-debugdump', 'nvidia-installer',
+                            'nvidia-persistenced', 'nvidia-settings', 'nvidia-smi',
+                            'nvidia-uninstall', 'nvidia-xconfig']
 
-    conf['nvi_lib_list'] = ['libOpenCL.', 'libcuda.', 'libnvcuvid.',
-                            'libnvidia-cfg.', 'libnvidia-compiler.',
-                            'libnvidia-encode.',
-                            'libnvidia-fatbinaryloader.',
-                            'libnvidia-fbc.', 'libnvidia-ifr.',
-                            'libnvidia-ml.', 'libnvidia-opencl.',
-                            'libnvidia-ptxjitcompiler.',
+    conf['nvi_lib_list'] = ['libOpenCL.', 'libcuda.', 'libnvcuvid.', 'libnvidia-cfg.',
+                            'libnvidia-compiler.', 'libnvidia-encode.',
+                            'libnvidia-fatbinaryloader.', 'libnvidia-fbc.', 'libnvidia-ifr.',
+                            'libnvidia-ml.', 'libnvidia-opencl.', 'libnvidia-ptxjitcompiler.',
                             'libnvidia-tls.', 'tls/libnvidia-tls.']
 
     conf['nvi_dev_list'] = ['/dev/nvidia', ]
@@ -214,41 +188,33 @@ class Config(object):
 
     def _env_override(self):
         """Override config with environment"""
-        Config.conf['verbose_level'] = \
-            int(os.getenv("UDOCKER_LOGLEVEL", Config.conf['verbose_level']))
+        Config.conf['verbose_level'] = int(os.getenv("UDOCKER_LOGLEVEL",
+                                           Config.conf['verbose_level']))
         Config.conf['topdir'] = os.getenv("UDOCKER_DIR", Config.conf['topdir'])
         Config.conf['bindir'] = os.getenv("UDOCKER_BIN", Config.conf['bindir'])
         Config.conf['libdir'] = os.getenv("UDOCKER_LIB", Config.conf['libdir'])
         Config.conf['docdir'] = os.getenv("UDOCKER_DOC", Config.conf['docdir'])
-        Config.conf['reposdir'] = \
-            os.getenv("UDOCKER_REPOS", Config.conf['reposdir'])
-        Config.conf['layersdir'] = \
-            os.getenv("UDOCKER_LAYERS", Config.conf['layersdir'])
-        Config.conf['containersdir'] = \
-            os.getenv("UDOCKER_CONTAINERS", Config.conf['containersdir'])
-        Config.conf['dockerio_index_url'] = \
-            os.getenv("UDOCKER_INDEX", Config.conf['dockerio_index_url'])
-        Config.conf['dockerio_registry_url'] = \
-            os.getenv("UDOCKER_REGISTRY", Config.conf['dockerio_registry_url'])
-        Config.conf['tarball'] = \
-            os.getenv("UDOCKER_TARBALL", Config.conf['tarball'])
-        Config.conf['default_execution_mode'] = \
-            os.getenv("UDOCKER_DEFAULT_EXECUTION_MODE",
-                      Config.conf['default_execution_mode'])
-        Config.conf['fakechroot_so'] = \
-            os.getenv("UDOCKER_FAKECHROOT_SO", Config.conf['fakechroot_so'])
+        Config.conf['reposdir'] = os.getenv("UDOCKER_REPOS", Config.conf['reposdir'])
+        Config.conf['layersdir'] = os.getenv("UDOCKER_LAYERS", Config.conf['layersdir'])
+        Config.conf['containersdir'] = os.getenv("UDOCKER_CONTAINERS",
+                                                 Config.conf['containersdir'])
+        Config.conf['dockerio_index_url'] = os.getenv("UDOCKER_INDEX",
+                                                      Config.conf['dockerio_index_url'])
+        Config.conf['dockerio_registry_url'] = os.getenv("UDOCKER_REGISTRY",
+                                                         Config.conf['dockerio_registry_url'])
+        Config.conf['tarball'] = os.getenv("UDOCKER_TARBALL", Config.conf['tarball'])
+        Config.conf['default_execution_mode'] = os.getenv("UDOCKER_DEFAULT_EXECUTION_MODE",
+                                                          Config.conf['default_execution_mode'])
+        Config.conf['fakechroot_so'] = os.getenv("UDOCKER_FAKECHROOT_SO",
+                                                 Config.conf['fakechroot_so'])
         Config.conf['tmpdir'] = os.getenv("UDOCKER_TMP", Config.conf['tmpdir'])
-        Config.conf['keystore'] = \
-            os.getenv("UDOCKER_KEYSTORE", Config.conf['keystore'])
-        Config.conf['use_curl_executable'] = \
-            os.getenv("UDOCKER_USE_CURL_EXECUTABLE",
-                      Config.conf['use_curl_executable'])
-        Config.conf['use_proot_executable'] = \
-            os.getenv("UDOCKER_USE_PROOT_EXECUTABLE",
-                      Config.conf['use_proot_executable'])
-        Config.conf['use_runc_executable'] = \
-            os.getenv("UDOCKER_USE_RUNC_EXECUTABLE",
-                      Config.conf['use_runc_executable'])
+        Config.conf['keystore'] = os.getenv("UDOCKER_KEYSTORE", Config.conf['keystore'])
+        Config.conf['use_curl_executable'] = os.getenv("UDOCKER_USE_CURL_EXECUTABLE",
+                                                       Config.conf['use_curl_executable'])
+        Config.conf['use_proot_executable'] = os.getenv("UDOCKER_USE_PROOT_EXECUTABLE",
+                                                        Config.conf['use_proot_executable'])
+        Config.conf['use_runc_executable'] = os.getenv("UDOCKER_USE_RUNC_EXECUTABLE",
+                                                       Config.conf['use_runc_executable'])
         Config.conf['use_singularity_executable'] = \
             os.getenv("UDOCKER_USE_SINGULARITY_EXECUTABLE",
                       Config.conf['use_singularity_executable'])

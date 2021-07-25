@@ -35,11 +35,9 @@ class LocalFileAPI(CommonLocalFileApi):
 
         imagetype = self._get_imagedir_type(tmp_imagedir)
         if imagetype == "Docker":
-            repositories = DockerLocalFileAPI(
-                self.localrepo).load(tmp_imagedir, imagerepo)
+            repositories = DockerLocalFileAPI(self.localrepo).load(tmp_imagedir, imagerepo)
         elif imagetype == "OCI":
-            repositories = OciLocalFileAPI(
-                self.localrepo).load(tmp_imagedir, imagerepo)
+            repositories = OciLocalFileAPI(self.localrepo).load(tmp_imagedir, imagerepo)
         else:
             repositories = []
 
@@ -48,5 +46,4 @@ class LocalFileAPI(CommonLocalFileApi):
 
     def save(self, imagetag_list, imagefile):
         """Generic save of image tags to a file"""
-        return DockerLocalFileAPI(self.localrepo).save(
-            imagetag_list, imagefile)
+        return DockerLocalFileAPI(self.localrepo).save(imagetag_list, imagefile)

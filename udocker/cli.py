@@ -47,8 +47,7 @@ class UdockerCLI(object):
         if Config.conf['keystore'].startswith("/"):
             self.keystore = KeyStore(Config.conf['keystore'])
         else:
-            self.keystore = KeyStore(self.localrepo.homedir + "/" +
-                                     Config.conf['keystore'])
+            self.keystore = KeyStore(self.localrepo.homedir + "/" + Config.conf['keystore'])
 
     def _cdrepo(self, cmdp):
         """Select the top directory of a local repository"""
@@ -74,8 +73,7 @@ class UdockerCLI(object):
             imagerepo = imagespec
             tag = "latest"
 
-        if not (imagerepo and tag and
-                self.dockerioapi.is_repo_name(imagespec)):
+        if not (imagerepo and tag and self.dockerioapi.is_repo_name(imagespec)):
             LOG.error("must specify image:tag or repository/image:tag")
             return(None, None)
 
@@ -86,15 +84,13 @@ class UdockerCLI(object):
         if (not imagerepo) and def_imagerepo:
             imagerepo = def_imagerepo
 
-        if not (imagerepo and
-                self.dockerioapi.is_repo_name(imagerepo)):
+        if not (imagerepo and self.dockerioapi.is_repo_name(imagerepo)):
             LOG.error("enter image or repository/image without tag")
             return None
 
         return imagerepo
 
-    def _set_repository(self, registry_url, index_url=None,
-                        imagerepo=None, http_proxy=None):
+    def _set_repository(self, registry_url, index_url=None, imagerepo=None, http_proxy=None):
         """Select docker respository"""
         transport = "https:"
         if http_proxy:
@@ -127,10 +123,8 @@ class UdockerCLI(object):
 
             if "." in hostname:
                 try:
-                    self.dockerioapi.set_registry( \
-                            Config.conf['docker_registries'][hostname][0])
-                    self.dockerioapi.set_index( \
-                            Config.conf['docker_registries'][hostname][1])
+                    self.dockerioapi.set_registry(Config.conf['docker_registries'][hostname][0])
+                    self.dockerioapi.set_index(Config.conf['docker_registries'][hostname][1])
                 except (KeyError, NameError, TypeError):
                     self.dockerioapi.set_registry(transport + "//" + hostname)
                     self.dockerioapi.set_index(transport + "//" + hostname)
@@ -229,8 +223,7 @@ class UdockerCLI(object):
         while True:
             lines = term_lines
             while lines > 0:
-                repo_list = \
-                        self.dockerioapi.search_get_page(expression, term_lines)
+                repo_list = self.dockerioapi.search_get_page(expression, term_lines)
                 if not repo_list:
                     return self.STATUS_OK
 
@@ -418,13 +411,10 @@ class UdockerCLI(object):
 
         if to_container or clone:
             if clone:
-                container_id = self.localfileapi.import_clone(
-                    tarfile, name)
+                container_id = self.localfileapi.import_clone(tarfile, name)
             else:
-                (imagerepo, tag) = self._check_imagespec(imagespec,
-                                                         "IMPORTED:unknown")
-                container_id = self.localfileapi.import_tocontainer(
-                    tarfile, imagerepo, tag, name)
+                (imagerepo, tag) = self._check_imagespec(imagespec, "IMPORTED:unknown")
+                container_id = self.localfileapi.import_tocontainer(tarfile, imagerepo, tag, name)
 
             if container_id:
                 LOG.info("container ID: %s", container_id)
@@ -434,8 +424,7 @@ class UdockerCLI(object):
             if not imagerepo:
                 return self.STATUS_ERROR
 
-            if self.localfileapi.import_toimage(tarfile, imagerepo, tag,
-                                                move_tarball):
+            if self.localfileapi.import_toimage(tarfile, imagerepo, tag, move_tarball):
                 return self.STATUS_OK
 
         LOG.error("importing")
@@ -533,8 +522,7 @@ class UdockerCLI(object):
             LOG.warning("password in uppercase. Caps Lock ?")
 
         v2_auth_token = self.dockerioapi.get_v2_login_token(username, password)
-        if self.keystore.put(self.dockerioapi.registry_url,
-                             v2_auth_token, "") == 0:
+        if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, "") == 0:
             return self.STATUS_OK
 
         LOG.error("invalid credentials")
@@ -624,10 +612,8 @@ class UdockerCLI(object):
         container_id = self._create(imagespec)
         if container_id:
             LOG.info("container ID: %s", container_id)
-            if name and not self.localrepo.set_container_name(container_id,
-                                                              name):
-                LOG.error("invalid container name may already exist "
-                          "or wrong format")
+            if name and not self.localrepo.set_container_name(container_id, name):
+                LOG.error("invalid container name may already exist or wrong format")
                 return self.STATUS_ERROR
 
             MSG.info("ContainerID=%s", container_id)
@@ -739,8 +725,7 @@ class UdockerCLI(object):
         for option, cmdp_args in list(cmd_options.items()):
             last_value = None
             for cmdp_fl in cmdp_args["fl"]:
-                option_value = cmdp.get(cmdp_fl, cmdp_args["p2"],
-                                        cmdp_args["p3"])
+                option_value = cmdp.get(cmdp_fl, cmdp_args["p2"], cmdp_args["p3"])
                 if not exec_engine:
                     continue
 
@@ -856,8 +841,7 @@ class UdockerCLI(object):
         images_list = self.localrepo.get_imagerepos()
         MSG.info("REPOSITORY")
         for (imagerepo, tag) in images_list:
-            prot = (".", "P")[
-                self.localrepo.isprotected_imagerepo(imagerepo, tag)]
+            prot = (".", "P")[self.localrepo.isprotected_imagerepo(imagerepo, tag)]
             msgout = "%-60.60s %c" % (imagerepo + ":" + tag, prot)
             MSG.info(msgout)
             if verbose:
@@ -870,9 +854,8 @@ class UdockerCLI(object):
                         if not file_size and size:
                             file_size = 1
 
-                        MSG.info("    %s (%d MB)",
-                                layer_name.replace(imagerepo_dir, ""),
-                                file_size)
+                        lname_rep = layer_name.replace(imagerepo_dir, "")
+                        MSG.info("    %s (%d MB)", lname_rep, file_size)
 
         return self.STATUS_OK
 
@@ -907,12 +890,9 @@ class UdockerCLI(object):
             container_id = line[0]
             exec_mode = ExecutionMode(self.localrepo, container_id)
             line[3] = exec_mode.get_mode() if print_mode else ""
-            line[1] = ('.', 'P')[
-                self.localrepo.isprotected_container(container_id)]
-            line[2] = ('R', 'W', 'N', 'D')[
-                self.localrepo.iswriteable_container(container_id)]
-            line[4] = self.localrepo.get_size(container_id) \
-                    if print_size else ""
+            line[1] = ('.', 'P')[self.localrepo.isprotected_container(container_id)]
+            line[2] = ('R', 'W', 'N', 'D')[self.localrepo.iswriteable_container(container_id)]
+            line[4] = self.localrepo.get_size(container_id) if print_size else ""
             msgout = fmt % tuple(line)
             MSG.info(msgout)
 
@@ -1215,8 +1195,7 @@ class UdockerCLI(object):
             LOG.info("tools purged and installed")
 
         if fixperm:
-            Unshare().namespace_exec(lambda: FileUtil(container_dir +
-                                                      "/ROOT").rchown())
+            Unshare().namespace_exec(lambda: FileUtil(container_dir + "/ROOT").rchown())
             FileUtil(container_dir + "/ROOT").rchmod()
             LOG.info("fixed permissions in container: %s", container_dir)
 

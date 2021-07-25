@@ -72,14 +72,12 @@ class CmdParser(object):
 
         if opt_where in ("CMD_OPT", "GEN_OPT"):
             if opt_name.startswith('P'):
-                return (self._get_param(opt_name,
-                                        self._argv_split[opt_where],
+                return (self._get_param(opt_name, self._argv_split[opt_where],
                                         self._argv_consumed_options[opt_where],
                                         self._argv_consumed_params[opt_where]))
 
             if opt_name.startswith('-'):
-                return (self._get_option(opt_name,
-                                         self._argv_split[opt_where],
+                return (self._get_option(opt_name, self._argv_split[opt_where],
                                          self._argv_consumed_options[opt_where],
                                          opt_multiple))
 
@@ -99,10 +97,8 @@ class CmdParser(object):
                         self._argv_consumed_options[opt_where].append(pos)
                         if pos + 1 == len(opt_list):
                             break   # error -x without argument at end of line
-                        if (pos < len(opt_list) and
-                                not opt_list[pos+1].startswith('-')):
-                            self._argv_consumed_options[opt_where].\
-                                append(pos + 1)
+                        if (pos < len(opt_list) and not opt_list[pos+1].startswith('-')):
+                            self._argv_consumed_options[opt_where].append(pos + 1)
                 elif opt_list[pos] == opt_name:
                     self._argv_consumed_options[opt_where].append(pos)
             pos += 1
@@ -118,18 +114,15 @@ class CmdParser(object):
         while pos < list_len:
             opt_arg = None
             if ((not opt_list[pos].startswith('-')) and
-                    (pos < 1 or (pos not in consumed and not
-                                 opt_list[pos-1].endswith('=')))):
+                    (pos < 1 or (pos not in consumed and not opt_list[pos-1].endswith('=')))):
                 break        # end of options and start of arguments
 
             if opt_name.endswith('='):
                 if opt_list[pos].startswith(opt_name):
                     opt_arg = opt_list[pos].split('=', 1)[1].strip()
-                elif (opt_list[pos] == opt_name[:-1] and
-                      pos + 1 == list_len):
+                elif (opt_list[pos] == opt_name[:-1] and pos + 1 == list_len):
                     break    # error --arg at end of line
-                elif (opt_list[pos] == opt_name[:-1] and
-                      not opt_list[pos + 1].startswith('-')):
+                elif (opt_list[pos] == opt_name[:-1] and not opt_list[pos + 1].startswith('-')):
                     consumed.append(pos)
                     pos += 1
                     opt_arg = opt_list[pos]
@@ -166,8 +159,7 @@ class CmdParser(object):
             if opt_list[pos] == "-":
                 skip_opts = False
 
-            if not (skip_opts and
-                    (opt_list[pos].startswith('-') or pos in consumed)):
+            if not (skip_opts and (opt_list[pos].startswith('-') or pos in consumed)):
                 skip_opts = False
                 param_num += 1
                 if opt_name[1:] == str(param_num):
@@ -180,6 +172,7 @@ class CmdParser(object):
                 elif opt_name[1] == '+' and param_num > 0:
                     consumed_params.append(pos)
                     all_args.append(opt_list[pos])
+
             pos += 1
 
         if opt_name[1] == '*':

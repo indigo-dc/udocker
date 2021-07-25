@@ -55,8 +55,7 @@ class CommonLocalFileApi(object):
             cd_imagerepo = imagerepo
 
         if self.localrepo.cd_imagerepo(cd_imagerepo, tag):
-            LOG.error("repository: %s and tag: %s already exist",
-                      cd_imagerepo, tag)
+            LOG.error("repository: %s and tag: %s already exist", cd_imagerepo, tag)
             return []
 
         self.localrepo.setup_imagerepo(cd_imagerepo)
@@ -80,10 +79,9 @@ class CommonLocalFileApi(object):
             stderror = sys.stderr
             verbose = "v"
 
-        cmd = ["tar", "-C", destdir, "-x" + verbose,
-               "--delay-directory-restore", "--one-file-system",
-               "--no-same-owner", "--no-same-permissions", "--overwrite",
-               "-f", tarfile]
+        cmd = ["tar", "-C", destdir, "-x" + verbose, "--delay-directory-restore",
+               "--one-file-system", "--no-same-owner", "--no-same-permissions",
+               "--overwrite", "-f", tarfile]
 
         status = Uprocess().call(cmd, stderr=stderror, close_fds=True)
         return not status
@@ -96,14 +94,14 @@ class CommonLocalFileApi(object):
         container_json = dict()
         container_json["id"] = layer_id
         container_json["comment"] = comment
-        container_json["created"] = \
-            time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z")
+        container_json["created"] = time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z")
         container_json["architecture"] = HostInfo().arch()
         container_json["os"] = HostInfo().osversion()
         layer_file = self.localrepo.layersdir + '/' + layer_id + ".layer"
         container_json["size"] = FileUtil(layer_file).size()
         if container_json["size"] == -1:
             container_json["size"] = 0
+
         container_json["container_config"] = {
             "Hostname": "",
             "Domainname": "",
@@ -217,14 +215,13 @@ class CommonLocalFileApi(object):
 
         if container_name:
             if self.localrepo.get_container_id(container_name):
-                LOG.error("container name already exists: %s",
-                          container_name)
+                LOG.error("container name already exists: %s", container_name)
                 return False
 
         layer_id = Unique().layer_v1()
         container_json = self.create_container_meta(layer_id)
-        container_id = ContainerStructure(self.localrepo).create_fromlayer(
-            imagerepo, tag, tarfile, container_json)
+        cstruct = ContainerStructure(self.localrepo)
+        container_id = cstruct.create_fromlayer(imagerepo, tag, tarfile, container_json)
         if container_name:
             self.localrepo.set_container_name(container_id, container_name)
 
@@ -241,12 +238,10 @@ class CommonLocalFileApi(object):
 
         if container_name:
             if self.localrepo.get_container_id(container_name):
-                LOG.error("container name already exists: %s",
-                          container_name)
+                LOG.error("container name already exists: %s", container_name)
                 return False
 
-        container_id = ContainerStructure(self.localrepo).clone_fromfile(
-            tarfile)
+        container_id = ContainerStructure(self.localrepo).clone_fromfile(tarfile)
         if container_name:
             self.localrepo.set_container_name(container_id, container_name)
 
@@ -259,12 +254,10 @@ class CommonLocalFileApi(object):
         """
         if container_name:
             if self.localrepo.get_container_id(container_name):
-                LOG.error("container name already exists: %s",
-                          container_name)
+                LOG.error("container name already exists: %s", container_name)
                 return False
 
-        dest_container_id = ContainerStructure(self.localrepo,
-                                               container_id).clone()
+        dest_container_id = ContainerStructure(self.localrepo, container_id).clone()
         if container_name:
             self.localrepo.set_container_name(dest_container_id,
                                               container_name)

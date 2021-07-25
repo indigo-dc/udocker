@@ -28,7 +28,6 @@ sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 
 def main():
     """Program start and exception handling"""
-
     exit_status = 0
     try:
         exit_status = UMain(sys.argv).execute()

@@ -41,11 +41,9 @@ class UMain(object):
         else:
             Config().getconf()
 
-        if (self.cmdp.get("--debug", "GEN_OPT") or
-                self.cmdp.get("-D", "GEN_OPT")):
+        if (self.cmdp.get("--debug", "GEN_OPT") or self.cmdp.get("-D", "GEN_OPT")):
             Config.conf['verbose_level'] = logging.DEBUG
-        elif (self.cmdp.get("--quiet", "GEN_OPT") or
-              self.cmdp.get("-q", "GEN_OPT")):
+        elif (self.cmdp.get("--quiet", "GEN_OPT") or self.cmdp.get("-q", "GEN_OPT")):
             Config.conf['verbose_level'] = logging.NOTSET
 
         LOG.setLevel(Config.conf['verbose_level'])
@@ -55,6 +53,7 @@ class UMain(object):
         topdir = self.cmdp.get("--repo=", "GEN_OPT")
         if topdir:  # override repo root tree
             Config.conf['topdir'] = topdir
+
         self.local = LocalRepository()
         if not self.local.is_repo():
             if topdir:
@@ -91,13 +90,11 @@ class UMain(object):
             "delete_metadata": self.cli.do_delete_metadata
         }
 
-        if ((len(self.argv) == 1) or
-                self.cmdp.get("-h", "GEN_OPT") or
-                self.cmdp.get("--help", "GEN_OPT")):
+        larg = len(self.argv)
+        if ((larg == 1) or self.cmdp.get("-h", "GEN_OPT") or self.cmdp.get("--help", "GEN_OPT")):
             return self.cli.do_help(self.cmdp)
 
-        if (self.cmdp.get("-V", "GEN_OPT") or
-                self.cmdp.get("--version", "GEN_OPT")):
+        if (self.cmdp.get("-V", "GEN_OPT") or self.cmdp.get("--version", "GEN_OPT")):
             return self.cli.do_version(self.cmdp)
 
         command = self.cmdp.get("", "CMD")
@@ -105,14 +102,16 @@ class UMain(object):
             if self.cmdp.get("--help", "CMD_OPT"):
                 MSG.info(cmds[command].__doc__)
                 return self.STATUS_OK
+
             if command in ["version", "showconf", "avail"]:
                 return cmds[command](self.cmdp)
+
             if command != "install":
                 self.cli.do_install(None)
+
             exit_status = cmds[command](self.cmdp)  # executes command
             if self.cmdp.missing_options():
-                LOG.error("Syntax error at: %s",
-                          " ".join(self.cmdp.missing_options()))
+                LOG.error("Syntax error at: %s", " ".join(self.cmdp.missing_options()))
                 return self.STATUS_ERROR
 
             return exit_status

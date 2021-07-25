@@ -70,11 +70,10 @@ class UdockerTools(object):
            by default under $HOME/.udocker
 
         """
-        msg = "udocker command line interface version: " + __version__ + \
-              "\nrequires udockertools tarball release: " + \
-              self._tarball_release
+        msgout = "udocker command line interface version: " + __version__
+        msgout = msgout + "\nrequires udockertools tarball release: " + self._tarball_release
         MSG.info(self._instructions.__doc__)
-        MSG.info(msg)
+        MSG.info(msgout)
 
     def _version2int(self, version):
         """Convert version string to integer"""
@@ -199,9 +198,7 @@ class UdockerTools(object):
                     LOG.debug("extracting %s", tar_in.name)
                     tfile.extract(tar_in, self.localrepo.bindir)
 
-            FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR |
-                                                   stat.S_IWUSR |
-                                                   stat.S_IXUSR)
+            FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
             FileUtil(self.localrepo.libdir).rchmod()
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/lib/"):
@@ -328,9 +325,10 @@ class UdockerTools(object):
                     MSG.info("URLs:")
                     for url in module["urls"]:
                         MSG.info("                %s", url)
+
                     MSG.info("Documentation:")
                     for url in module["docs_url"]:
                         MSG.info("                %s", url)
-        except (KeyError, AttributeError, ValueError,
-                OSError, IOError):
+
+        except (KeyError, AttributeError, ValueError, OSError, IOError):
             LOG.error("reading file")
