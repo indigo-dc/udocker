@@ -60,14 +60,13 @@ class ContainerStructure(object):
             elif (is_genstr(container_json[confidx][param]) and
                   (isinstance(default, (list, tuple)))):
                 return container_json[confidx][param].strip().split()
-            elif (is_genstr(default) and (
-                    isinstance(container_json[confidx][param], (list, tuple)))):
+            elif (is_genstr(default) and
+                  (isinstance(container_json[confidx][param], (list, tuple)))):
                 return " ".join(container_json[confidx][param])
-            elif (is_genstr(default) and (
-                    isinstance(container_json[confidx][param], dict))):
+            elif (is_genstr(default) and (isinstance(container_json[confidx][param], dict))):
                 return self._dict_to_str(container_json[confidx][param])
-            elif (isinstance(default, list) and (
-                    isinstance(container_json[confidx][param], dict))):
+            elif (isinstance(default, list) and
+                  (isinstance(container_json[confidx][param], dict))):
                 return self._dict_to_list(container_json[confidx][param])
             else:
                 return container_json[confidx][param]
@@ -133,14 +132,13 @@ class ContainerStructure(object):
         if not self.container_id:
             self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
 
-        container_dir = self.localrepo.setup_container(
-            self.imagerepo, self.tag, self.container_id)
+        container_dir = self.localrepo.setup_container(self.imagerepo, self.tag,
+                                                       self.container_id)
         if not container_dir:
             LOG.error("create container: setting up container")
             return False
 
-        self.localrepo.save_json(
-            container_dir + "/container.json", container_json)
+        self.localrepo.save_json(container_dir + "/container.json", container_json)
         status = self._untar_layers(layer_files, container_dir + "/ROOT")
         if not status:
             LOG.error("creating container: %s", self.container_id)
@@ -161,8 +159,8 @@ class ContainerStructure(object):
             LOG.error("create container: getting json")
             return False
 
-        container_dir = self.localrepo.setup_container(
-            self.imagerepo, self.tag, self.container_id)
+        container_dir = self.localrepo.setup_container(self.imagerepo, self.tag,
+                                                       self.container_id)
         if not container_dir:
             LOG.error("create container: setting up")
             return False
@@ -184,8 +182,7 @@ class ContainerStructure(object):
         if not self.container_id:
             self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
 
-        container_dir = self.localrepo.setup_container(
-            "CLONING", "inprogress", self.container_id)
+        container_dir = self.localrepo.setup_container("CLONING", "inprogress", self.container_id)
         if not container_dir:
             LOG.error("create container: setting up")
             return False
@@ -226,13 +223,11 @@ class ContainerStructure(object):
                         continue
 
                     for f_name in os.listdir(destdir + '/' + wh_dirname):
-                        rm_filename = destdir + '/' \
-                            + wh_dirname + '/' + f_name
+                        rm_filename = destdir + '/' + wh_dirname + '/' + f_name
                         FileUtil(rm_filename).remove(recursive=True)
                 elif wh_basename.startswith(".wh."):
-                    rm_filename = destdir + '/' \
-                        + wh_dirname + '/' \
-                        + wh_basename.replace(".wh.", "", 1)
+                    whbaserep = wh_basename.replace(".wh.", "", 1)
+                    rm_filename = destdir + '/' + wh_dirname + '/' + whbaserep
                     FileUtil(rm_filename).remove(recursive=True)
 
         return
@@ -274,17 +269,12 @@ class ContainerStructure(object):
                 LOG.error("while extracting image layer")
                 status = False
 
-            cmd = ["find", destdir,
-                   "(", "-type", "d", "!", "-perm", "-u=x", "-exec",
-                   "chmod", "u+x", "{}", ";", ")", ",",
-                   "(", "!", "-perm", "-u=w", "-exec", "chmod",
-                   "u+w", "{}", ";", ")", ",",
-                   "(", "!", "-perm", "-u=r", "-exec", "chmod",
-                   "u+r", "{}", ";", ")", ",",
-                   "(", "!", "-gid", gid, "-exec", "chgrp", gid,
-                   "{}", ";", ")", ",",
-                   "(", "-name", ".wh.*", "-exec", "rm", "-f",
-                   "--preserve-root", "{}", ";", ")"]
+            cmd = ["find", destdir, "(", "-type", "d", "!", "-perm", "-u=x", "-exec",
+                   "chmod", "u+x", "{}", ";", ")", ",", "(", "!", "-perm", "-u=w",
+                   "-exec", "chmod", "u+w", "{}", ";", ")", ",", "(", "!", "-perm",
+                   "-u=r", "-exec", "chmod", "u+r", "{}", ";", ")", ",", "(", "!", "-gid",
+                   gid, "-exec", "chgrp", gid, "{}", ";", ")", ",", "(", "-name", ".wh.*",
+                   "-exec", "rm", "-f", "--preserve-root", "{}", ";", ")"]
 
             if subprocess.call(cmd, stderr=stderror, close_fds=True):
                 status = False
@@ -330,8 +320,8 @@ class ContainerStructure(object):
             return False
 
         dest_container_id = Unique().uuid(os.path.basename(self.imagerepo))
-        dest_container_dir = self.localrepo.setup_container(
-            "CLONING", "inprogress", dest_container_id)
+        dest_container_dir = self.localrepo.setup_container("CLONING", "inprogress",
+                                                            dest_container_id)
         if not dest_container_dir:
             LOG.error("create destination container: setting up")
             return False

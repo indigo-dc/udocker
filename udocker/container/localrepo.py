@@ -95,8 +95,7 @@ class LocalRepository(object):
             if not os.path.exists(self.docdir):
                 os.makedirs(self.docdir)
 
-            if not (Config.conf['keystore'].startswith("/") or \
-                    os.path.exists(self.homedir)):
+            if not (Config.conf['keystore'].startswith("/") or os.path.exists(self.homedir)):
                 os.makedirs(self.homedir)
         except(IOError, OSError):
             return False
@@ -119,8 +118,7 @@ class LocalRepository(object):
         if not is_genstr(obj):
             return False
 
-        match = re.match(
-            "^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$", obj)
+        match = re.match("^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$", obj)
         if match:
             return True
 
@@ -173,8 +171,7 @@ class LocalRepository(object):
         """Get size of the container"""
         container_root = self.cd_container(container_id) + "/ROOT"
         try:
-            size, dummy = Uprocess().get_output(["du", "-s", "-m", "-x",
-                                                 container_root]).split()
+            size, dummy = Uprocess().get_output(["du", "-s", "-m", "-x", container_root]).split()
             return int(size)
         except (ValueError, NameError, AttributeError):
             return -1
@@ -224,8 +221,7 @@ class LocalRepository(object):
 
             if force:
                 FileUtil(container_dir).rchmod(stat.S_IWUSR | stat.S_IRUSR,
-                                               stat.S_IWUSR | stat.S_IRUSR |
-                                               stat.S_IXUSR)
+                                               stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR)
 
             if FileUtil(container_dir).remove(recursive=True):
                 self.cur_containerdir = ""
@@ -247,8 +243,7 @@ class LocalRepository(object):
         if os.path.exists(link_file):
             return False
 
-        rel_path_to_existing = os.path.relpath(
-            existing_file, os.path.dirname(link_file))
+        rel_path_to_existing = os.path.relpath(existing_file, os.path.dirname(link_file))
         LOG.debug("set name through link: %s", link_file)
         try:
             os.symlink(rel_path_to_existing, link_file)
@@ -414,9 +409,8 @@ class LocalRepository(object):
     def del_imagerepo(self, imagerepo, tag, force=False):
         """Delete an image repository and its layers"""
         tag_dir = self.cd_imagerepo(imagerepo, tag)
-        if (tag_dir and
-                self._remove_layers(tag_dir, force) and
-                FileUtil(tag_dir).remove(recursive=True)):
+        futilrm = FileUtil(tag_dir).remove(recursive=True)
+        if (tag_dir and self._remove_layers(tag_dir, force) and futilrm):
             self.cur_repodir = ""
             self.cur_tagdir = ""
             while imagerepo:
@@ -436,8 +430,7 @@ class LocalRepository(object):
             for fname in os.listdir(tag_dir):
                 f_path = tag_dir + '/' + fname
                 if self._is_tag(f_path):
-                    tag_list.append(
-                        (tag_dir.replace(self.reposdir + '/', ""), fname))
+                    tag_list.append((tag_dir.replace(self.reposdir + '/', ""), fname))
                 elif os.path.isdir(f_path):
                     tag_list.extend(self._get_tags(f_path))
 
@@ -581,13 +574,13 @@ class LocalRepository(object):
             layer_file = directory + '/' + layer["blobSum"]
             if not os.path.exists(layer_file):
                 return (None, None)
+
             files.append(layer_file)
 
         try:
             json_string = manifest["history"][0]["v1Compatibility"].strip()
             container_json = json.loads(json_string)
-        except (IOError, OSError, AttributeError, ValueError, TypeError,
-                IndexError, KeyError):
+        except (IOError, OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
             return (None, files)
 
         return (container_json, files)
@@ -605,8 +598,7 @@ class LocalRepository(object):
         try:
             json_file = directory + '/' + manifest["config"]["digest"]
             container_json = json.loads(FileUtil(json_file).getdata('r'))
-        except (IOError, OSError, AttributeError, ValueError, TypeError,
-                IndexError, KeyError):
+        except (IOError, OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
             return (None, files)
 
         return (container_json, files)
@@ -713,8 +705,7 @@ class LocalRepository(object):
                         structure["repolayers"][layer_id] = dict()
 
                     if fname.endswith("json"):
-                        structure["repolayers"][layer_id]["json"] = \
-                            self.load_json(f_path)
+                        structure["repolayers"][layer_id]["json"] = self.load_json(f_path)
                         structure["repolayers"][layer_id]["json_f"] = f_path
                         structure["has_json_f"] = True
                     elif fname.endswith("layer"):
@@ -751,8 +742,7 @@ class LocalRepository(object):
             if "parent" not in structure["repolayers"][layer_id]["json"]:
                 continue
 
-            if (my_layer_id ==
-                    structure["repolayers"][layer_id]["json"]["parent"]):
+            if (my_layer_id == structure["repolayers"][layer_id]["json"]["parent"]):
                 found = self._find_top_layer_id(structure, layer_id)
                 break
 
@@ -790,8 +780,7 @@ class LocalRepository(object):
         """Verify layer file in repository"""
         (layer_algorithm, layer_hash) = self._split_layer_id(layer_id)
         layer_f = structure["repolayers"][layer_id]["layer_f"]
-        if not (os.path.exists(layer_f) and
-                os.path.islink(layer_f)):
+        if not (os.path.exists(layer_f) and os.path.islink(layer_f)):
             LOG.error("layer data file sym link not found: %s", layer_id)
             return False
 
@@ -830,8 +819,7 @@ class LocalRepository(object):
                 verify_layer = layer.next()
 
             if ancestry_layer != verify_layer:
-                LOG.error("ancestry: %s and layers do not match: %s",
-                          ancestry_layer, verify_layer)
+                LOG.error("ancestry: %s and layers not match: %s", ancestry_layer, verify_layer)
                 status = False
                 continue
 
@@ -842,8 +830,7 @@ class LocalRepository(object):
         status = True
         for manifest_layer in structure["manifest"]["fsLayers"]:
             if manifest_layer["blobSum"] not in structure["repolayers"]:
-                LOG.error("layer in manifest does not exist in repo: %s",
-                          manifest_layer["blobSum"])
+                LOG.error("layer in manifest not exist in repo: %s", manifest_layer["blobSum"])
                 status = False
                 continue
 
@@ -854,8 +841,7 @@ class LocalRepository(object):
         status = True
         for manifest_layer in structure["manifest"]["layers"]:
             if manifest_layer["digest"] not in structure["repolayers"]:
-                LOG.error("layer in manifest does not exist in repo: %s",
-                          manifest_layer["blobSum"])
+                LOG.error("layer in manifest not exist in repo: %s", manifest_layer["blobSum"])
                 status = False
                 continue
 
