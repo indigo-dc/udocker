@@ -29,8 +29,7 @@ class Unique(object):
 
     def _rnd(self, size):
         """Generate a random string"""
-        return "".join(
-            random.sample(self.string_set * 64 + string.digits * 64, size))
+        return "".join(random.sample(self.string_set * 64 + string.digits * 64, size))
 
     def uuid(self, name):
         """Get an ID"""
@@ -40,8 +39,7 @@ class Unique(object):
         try:
             return str(uuid.uuid3(uuid.uuid4(), str(name) + str(time.time())))
         except (NameError, AttributeError):
-            return (("%s-%s-%s-%s-%s") %
-                    (self._rnd(8), self._rnd(4), self._rnd(4),
+            return (("%s-%s-%s-%s-%s") % (self._rnd(8), self._rnd(4), self._rnd(4),
                      self._rnd(4), self._rnd(12)))
 
     def imagename(self):
@@ -62,8 +60,6 @@ class Unique(object):
         """Get a filename"""
         prefix = self.def_name + '-' + str(os.getpid()) + '-'
         try:
-            return (prefix +
-                    str(uuid.uuid3(uuid.uuid4(), str(time.time()))) +
-                    '-' + str(filename))
+            return (prefix + str(uuid.uuid3(uuid.uuid4(), str(time.time()))) + '-' + str(filename))
         except (NameError, AttributeError):
             return prefix + self.uuid(filename) + '-' + str(filename)

@@ -76,8 +76,7 @@ class FileUtil(object):
     def mktmp(self):
         """Generate a temporary filename"""
         while True:
-            tmp_file = self._tmpdir + '/' + \
-                Unique().filename(self.basename)
+            tmp_file = self._tmpdir + '/' + Unique().filename(self.basename)
             if not os.path.exists(tmp_file):
                 FileUtil.tmptrash[tmp_file] = True
                 self.filename = tmp_file
@@ -174,12 +173,10 @@ class FileUtil(object):
             if recursive:
                 for dir_path, dirs, files in os.walk(self.filename):
                     for f_name in files:
-                        self._chmod(dir_path + '/' + f_name,
-                                    filemode, None, mask)
+                        self._chmod(dir_path + '/' + f_name, filemode, None, mask)
 
                     for f_name in dirs:
-                        self._chmod(dir_path + '/' + f_name,
-                                    None, dirmode, mask)
+                        self._chmod(dir_path + '/' + f_name, None, dirmode, mask)
 
             self._chmod(self.filename, filemode, dirmode, mask)
         except OSError:
@@ -194,12 +191,12 @@ class FileUtil(object):
     def _removedir(self):
         """Delete directory recursively"""
         try:
-            for dir_path, dirs, files in os.walk(self.filename, topdown=False,
-                                                 followlinks=False):
+            for dir_path, dirs, files in os.walk(self.filename, topdown=False, followlinks=False):
                 for f_name in files:
                     f_path = dir_path + '/' + f_name
                     if not os.path.islink(f_path):
                         os.chmod(f_path, stat.S_IWUSR | stat.S_IRUSR)
+
                     os.unlink(f_path)
 
                 for f_name in dirs:
@@ -264,8 +261,7 @@ class FileUtil(object):
 
         cmd = ["tar", "t" + verbose + "f", self.filename]
         stderror = Uprocess().get_stderr()
-        if Uprocess().call(cmd, stderr=stderror, stdout=stderror,
-                           close_fds=True):
+        if Uprocess().call(cmd, stderr=stderror, stdout=stderror, close_fds=True):
             return False
 
         return True
@@ -336,6 +332,7 @@ class FileUtil(object):
         try:
             with open(self.filename, mode) as filep:
                 buf = filep.read()
+
             LOG.debug("read buf: %s", buf)
             return buf
         except (IOError, OSError, TypeError):
@@ -445,8 +442,7 @@ class FileUtil(object):
 
         return ""
 
-    def find_exec(self, path="", rootdir="", volumes="", workdir="",
-                  cont2host=False):
+    def find_exec(self, path="", rootdir="", volumes="", workdir="", cont2host=False):
         """Find an executable pathname"""
         if not path:
             path = os.getenv("PATH") + ":" + Config.conf['root_path']
@@ -487,6 +483,7 @@ class FileUtil(object):
             copy_buffer = sys.stdin.read(1024 * 1024)
             if not copy_buffer:
                 break
+
             fpdst.write(copy_buffer)
 
         fpdst.close()
@@ -505,6 +502,7 @@ class FileUtil(object):
             copy_buffer = fpsrc.read(1024 * 1024)
             if not copy_buffer:
                 break
+
             sys.stdout.write(copy_buffer)
 
         fpsrc.close()
@@ -529,6 +527,7 @@ class FileUtil(object):
             copy_buffer = fpsrc.read(1024 * 1024)
             if not copy_buffer:
                 break
+
             fpdst.write(copy_buffer)
 
         fpsrc.close()
@@ -564,12 +563,10 @@ class FileUtil(object):
         """Actually apply the link convertion"""
         p_path = os.path.realpath(os.path.dirname(f_path))
         if force and not os.access(p_path, os.W_OK):
-            os.chmod(p_path,
-                     stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
+            os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
             os.remove(f_path)
             os.symlink(new_l_path, f_path)
-            os.chmod(p_path,
-                     stat.S_IMODE(os.stat(p_path).st_mode) & ~stat.S_IWUSR)
+            os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) & ~stat.S_IWUSR)
         else:
             os.remove(f_path)
             os.symlink(new_l_path, f_path)
@@ -588,8 +585,7 @@ class FileUtil(object):
             if match:
                 orig_path = match.group(1)
 
-        if (orig_path and l_path.startswith(orig_path) and
-                orig_path != root_path):
+        if (orig_path and l_path.startswith(orig_path) and orig_path != root_path):
             new_l_path = l_path.replace(orig_path, root_path, 1)
         elif not l_path.startswith(root_path):
             new_l_path = root_path + l_path
@@ -646,8 +642,7 @@ class FileUtil(object):
                         if self._link_set(f_path, orig_path, root_path, force):
                             links.append(f_path)
                     else:
-                        if self._link_restore(f_path, orig_path,
-                                              root_path, force):
+                        if self._link_restore(f_path, orig_path, root_path, force):
                             links.append(f_path)
                 except OSError:
                     continue

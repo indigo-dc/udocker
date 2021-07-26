@@ -115,8 +115,8 @@ class ElfPatcher(object):
         patchelf_exec = self.select_patchelf()
         cmd = [patchelf_exec, "-q", "--print-interpreter", "#f"]
         for d_name in ("/bin", "/usr/bin", "/lib64"):
-            elf_loader = self._walk_fs(cmd, self._container_root + d_name,
-                                       self.ONE_OUTPUT | self.BIN)
+            controot = self._container_root + d_name
+            elf_loader = self._walk_fs(cmd, controot, self.ONE_OUTPUT | self.BIN)
             if elf_loader and ".so" in elf_loader:
                 return elf_loader
 
@@ -252,8 +252,7 @@ class ElfPatcher(object):
 
     def _get_ld_config(self):
         """Get get directories from container ld.so.cache"""
-        cmd = ["ldconfig", "-p", "-C", "%s/%s" % \
-               (self._container_root, Config.conf['ld_so_cache']), ]
+        cmd = ["ldconfig", "-p", "-C", "%s/%s" % (self._container_root, Config.conf['ld_so_cache'])]
         ld_dict = dict()
         ld_data = Uprocess().get_output(cmd)
         if not ld_data:

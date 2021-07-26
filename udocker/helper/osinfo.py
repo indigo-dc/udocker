@@ -12,16 +12,10 @@ from udocker.utils.fileutil import FileUtil
 class OSInfo(object):
     """Get os information from a directory tree"""
 
-    _binarylist = ["/lib64/ld-linux-x86-64.so",
-                   "/lib64/ld-linux-x86-64.so.2",
-                   "/lib64/ld-linux-x86-64.so.3",
-                   "/bin/bash", "/bin/sh", "/bin/zsh",
-                   "/bin/csh", "/bin/tcsh", "/bin/ash",
-                   "/bin/ls", "/bin/busybox",
-                   "/system/bin/sh", "/system/bin/ls",
-                   "/lib/ld-linux.so",
-                   "/lib/ld-linux.so.2",
-                  ]
+    _binarylist = ["/lib64/ld-linux-x86-64.so", "/lib64/ld-linux-x86-64.so.2",
+                   "/lib64/ld-linux-x86-64.so.3", "/bin/bash", "/bin/sh", "/bin/zsh", "/bin/csh",
+                   "/bin/tcsh", "/bin/ash", "/bin/ls", "/bin/busybox", "/system/bin/sh",
+                   "/system/bin/ls", "/lib/ld-linux.so", "/lib/ld-linux.so.2"]
 
     def __init__(self, root_dir):
         self._root_dir = root_dir
@@ -76,21 +70,18 @@ class OSInfo(object):
                 osinfo = FileUtil(f_path).getdata('r')
                 match = re.match(r"([^=]+) release (\d+)", osinfo)
                 if match and match.group(1):
-                    return (match.group(1).split(' ')[0],
-                            match.group(2).split('.')[0])
+                    return (match.group(1).split(' ')[0], match.group(2).split('.')[0])
 
         f_path = self._root_dir + "/etc/lsb-release"
         if os.path.exists(f_path):
             distribution = ""
             version = ""
             osinfo = FileUtil(f_path).getdata('r')
-            match = re.search(r"DISTRIB_ID=(.+)(\n|$)",
-                              osinfo, re.MULTILINE)
+            match = re.search(r"DISTRIB_ID=(.+)(\n|$)", osinfo, re.MULTILINE)
             if match:
                 distribution = match.group(1).split(' ')[0]
 
-            match = re.search(r"DISTRIB_RELEASE=(.+)(\n|$)",
-                              osinfo, re.MULTILINE)
+            match = re.search(r"DISTRIB_RELEASE=(.+)(\n|$)", osinfo, re.MULTILINE)
             if match:
                 version = match.group(1).split('.')[0]
 
@@ -102,13 +93,11 @@ class OSInfo(object):
             distribution = ""
             version = ""
             osinfo = FileUtil(f_path).getdata('r')
-            match = re.search(r"NAME=\"?([^ \n\"\.]+).*\"?(\n|$)",
-                              osinfo, re.MULTILINE)
+            match = re.search(r"NAME=\"?([^ \n\"\.]+).*\"?(\n|$)", osinfo, re.MULTILINE)
             if match:
                 distribution = match.group(1).split(' ')[0]
 
-            match = re.search(r"VERSION_ID=\"?([^ \n\"\.]+).*\"?(\n|$)",
-                              osinfo, re.MULTILINE)
+            match = re.search(r"VERSION_ID=\"?([^ \n\"\.]+).*\"?(\n|$)", osinfo, re.MULTILINE)
             if match:
                 version = match.group(1).split('.')[0]
 

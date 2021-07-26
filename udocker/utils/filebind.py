@@ -2,7 +2,6 @@
 """File bind inside containers"""
 
 import os
-
 from udocker import LOG
 from udocker.utils.fileutil import FileUtil
 
@@ -18,8 +17,7 @@ class FileBind(object):
     def __init__(self, localrepo, container_id):
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = container_id         # Container id
-        self.container_dir = \
-            os.path.realpath(self.localrepo.cd_container(container_id))
+        self.container_dir = os.path.realpath(self.localrepo.cd_container(container_id))
         self.container_root = self.container_dir + "/ROOT"
         self.container_bind_dir = self.container_root + self.bind_dir
         self.container_orig_dir = self.container_dir + self.orig_dir

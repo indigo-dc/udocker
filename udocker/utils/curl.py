@@ -51,9 +51,7 @@ class CurlHeader(object):
                 self.data[key] = pair[1].strip()
         elif pair[0].startswith("HTTP/"):
             self.data["X-ND-HTTPSTATUS"] = buff.strip()
-        elif (self.sizeonly and
-              pair[0].strip() == "" and
-              "location" not in self.data):
+        elif (self.sizeonly and pair[0].strip() == "" and "location" not in self.data):
             return -1
 
         return None
@@ -276,8 +274,7 @@ class GetURLpyCurl(GetURL):
         pyc = pycurl.Curl()
         self._set_defaults(pyc, hdr)
         try:
-            (output_file, filep) = \
-                    self._mkpycurl(pyc, hdr, buf, *args, **kwargs)
+            (output_file, filep) = self._mkpycurl(pyc, hdr, buf, *args, **kwargs)
             LOG.debug("curl url: %s", self._url)
             LOG.debug("curl arg: %s", kwargs)
             pyc.perform()     # call pyculr
@@ -306,8 +303,7 @@ class GetURLpyCurl(GetURL):
                 kwargs["resume"] = False
                 (hdr, buf) = self.get(self._url, **kwargs)
             elif status_code != 200:
-                LOG.error("%s in download: %s", self._url,
-                          str(hdr.data["X-ND-HTTPSTATUS"]))
+                LOG.error("%s in download: %s", self._url, str(hdr.data["X-ND-HTTPSTATUS"]))
                 FileUtil(output_file).remove()
 
         return (hdr, buf)
@@ -362,13 +358,11 @@ class GetURLexeCurl(GetURL):
             self._opts["follow"] = ["-L"]
 
         if "post" in kwargs:
-            self._opts["post"] = ["-X", "POST", "-H",
-                                  "Content-Type: application/json"]
+            self._opts["post"] = ["-X", "POST", "-H", "Content-Type: application/json"]
             self._opts["post"] += ["-d", json.dumps(kwargs["post"])]
 
         if "ctimeout" in kwargs:
-            self._opts["ctimeout"] = ["--connect-timeout",
-                                      str(kwargs["ctimeout"])]
+            self._opts["ctimeout"] = ["--connect-timeout", str(kwargs["ctimeout"])]
 
         if "timeout" in kwargs:
             self._opts["timeout"] = ["-m", str(kwargs["timeout"])]
@@ -409,8 +403,7 @@ class GetURLexeCurl(GetURL):
         for opt in self._opts.values():
             cmd += opt
 
-        cmd.extend(["-D", self._files["header_file"], "-o",
-                    self._files["output_file"], "--stderr",
+        cmd.extend(["-D", self._files["header_file"], "-o", self._files["output_file"], "--stderr",
                     self._files["error_file"], self._files["url"]])
 
         return cmd
@@ -425,13 +418,11 @@ class GetURLexeCurl(GetURL):
         buf = strio()
         self._set_defaults()
         cmd = self._mkcurlcmd(*args, **kwargs)
-        status = Uprocess().call(cmd, close_fds=True, stderr=stderror,
-                                 stdout=stderror) # call curl
+        status = Uprocess().call(cmd, close_fds=True, stderr=stderror, stdout=stderror) # call curl
         hdr.setvalue_from_file(self._files["header_file"])
         hdr.data["X-ND-CURLSTATUS"] = status
         if status:
-            LOG.error("in download: %s",
-                      str(FileUtil(self._files["error_file"]).getdata('r')))
+            LOG.error("in download: %s", str(FileUtil(self._files["error_file"]).getdata('r')))
             FileUtil(self._files["output_file"]).remove()
             return (hdr, buf)
 
@@ -463,6 +454,7 @@ class GetURLexeCurl(GetURL):
                 buf = strio(open(self._files["output_file"], 'rb').read())
             except(IOError, OSError):
                 LOG.error("reading curl output file to buffer")
+
             FileUtil(self._files["output_file"]).remove()
 
         FileUtil(self._files["error_file"]).remove()

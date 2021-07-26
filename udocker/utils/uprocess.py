@@ -87,9 +87,7 @@ class Uprocess(object):
 
         content = ""
         try:
-            content = self.check_output(cmd, shell=False,
-                                        stderr=self.get_stderr(),
-                                        close_fds=True)
+            content = self.check_output(cmd, shell=False, stderr=self.get_stderr(), close_fds=True)
         except subprocess.CalledProcessError:
             if not ignore_error:
                 return None
@@ -117,8 +115,7 @@ class Uprocess(object):
             cmd2[0] = self.find_inpath(cmd2[0], path)
 
         try:
-            proc_1 = subprocess.Popen(cmd1, stderr=self.get_stderr(),
-                                      shell=False,
+            proc_1 = subprocess.Popen(cmd1, stderr=self.get_stderr(), shell=False,
                                       stdout=subprocess.PIPE, **kwargs)
         except (OSError, ValueError):
             return False

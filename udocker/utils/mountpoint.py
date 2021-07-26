@@ -17,8 +17,7 @@ class MountPoint(object):
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = container_id         # Container id
         self.mountpoints = dict()
-        self.container_dir = \
-            os.path.realpath(self.localrepo.cd_container(container_id))
+        self.container_dir = os.path.realpath(self.localrepo.cd_container(container_id))
         self.container_root = self.container_dir + "/ROOT"
         self.mountpoints_orig_dir = self.container_dir + self.orig_dir
         self.setup()
@@ -37,8 +36,7 @@ class MountPoint(object):
         mountpoint = self.container_root + '/' + cont_path
         orig_mpath = FileUtil(mountpoint).getvalid_path()
         if orig_mpath:
-            self.mountpoints[cont_path] = \
-                orig_mpath.replace(self.container_root, "", 1)
+            self.mountpoints[cont_path] = orig_mpath.replace(self.container_root, "", 1)
 
         if not self.mountpoints[cont_path]:
             self.mountpoints[cont_path] = "/"
@@ -71,30 +69,28 @@ class MountPoint(object):
         for cont_path in dict(self.mountpoints):
             self.delete(cont_path)
 
-    def create(self, host_path, cont_path):
+    def create(self, h_path, c_path):
         """Create mountpoint"""
         status = True
-        mountpoint = self.container_root + '/' + cont_path
+        mountpoint = self.container_root + '/' + c_path
         if os.path.exists(mountpoint):
-            if (stat.S_IFMT(os.stat(mountpoint).st_mode) ==
-                    stat.S_IFMT(os.stat(host_path).st_mode)):
+            if (stat.S_IFMT(os.stat(mountpoint).st_mode) == stat.S_IFMT(os.stat(h_path).st_mode)):
                 return True
 
-            LOG.error("host and container volume paths not same type: %s and %s",
-                      host_path, cont_path)
+            LOG.error("host and container volume paths not same type: %s and %s", h_path, c_path)
             return False
 
-        self.add(cont_path)
-        if os.path.isfile(host_path):
+        self.add(c_path)
+        if os.path.isfile(h_path):
             FileUtil(os.path.dirname(mountpoint)).mkdir()
             FileUtil(mountpoint).putdata("", "w")
             status = os.path.isfile(mountpoint) or os.path.islink(mountpoint)
-        elif os.path.isdir(host_path):
+        elif os.path.isdir(h_path):
             status = FileUtil(mountpoint).mkdir()
 
         if not status:
-            LOG.error("creating container mountpoint: %s", cont_path)
-            self.delete(cont_path)
+            LOG.error("creating container mountpoint: %s", c_path)
+            self.delete(c_path)
             return False
 
         return True

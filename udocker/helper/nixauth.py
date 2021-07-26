@@ -18,8 +18,7 @@ class NixAuthentication(object):
     system authentication databases are used.
     """
 
-    def __init__(self, passwd_file=None, group_file=None,
-                 subuid_file=None, subgid_file=None):
+    def __init__(self, passwd_file=None, group_file=None, subuid_file=None, subgid_file=None):
         self.passwd_file = passwd_file
         self.group_file = group_file
         self.subuid_file = subuid_file
@@ -34,11 +33,9 @@ class NixAuthentication(object):
         """get user information from the host /etc/sub*"""
         subid_list = []
         if self.passwd_file:
-            (user, dummy, dummy, dummy, dummy, dummy) = \
-                    self._get_user_from_file(wanted_user)
+            (user, dummy, dummy, dummy, dummy, dummy) = self._get_user_from_file(wanted_user)
         else:
-            (user, dummy, dummy, dummy, dummy, dummy) = \
-                    self._get_user_from_host(wanted_user)
+            (user, dummy, dummy, dummy, dummy, dummy) = self._get_user_from_host(wanted_user)
 
         try:
             insub = open(sub_file)
@@ -69,8 +66,7 @@ class NixAuthentication(object):
     def _get_user_from_host(self, wanted_user):
         """get user information from the host /etc/passwd"""
         wanted_uid = ""
-        if (isinstance(wanted_user, int) or
-                re.match("^\\d+$", wanted_user)):
+        if (isinstance(wanted_user, int) or re.match("^\\d+$", wanted_user)):
             wanted_uid = str(wanted_user)
             wanted_user = ""
 
@@ -79,6 +75,7 @@ class NixAuthentication(object):
                 usr = pwd.getpwuid(int(wanted_uid))
             except (IOError, OSError, KeyError):
                 return ("", "", "", "", "", "")
+
             return (str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
                     str(usr.pw_gecos), usr.pw_dir, usr.pw_shell)
 
@@ -86,14 +83,14 @@ class NixAuthentication(object):
             usr = pwd.getpwnam(wanted_user)
         except (IOError, OSError, KeyError):
             return ("", "", "", "", "", "")
+
         return (str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
                 str(usr.pw_gecos), usr.pw_dir, usr.pw_shell)
 
     def _get_group_from_host(self, wanted_group):
         """get group information from the host /etc/group"""
         wanted_gid = ""
-        if (isinstance(wanted_group, int) or
-                re.match("^\\d+$", wanted_group)):
+        if (isinstance(wanted_group, int) or re.match("^\\d+$", wanted_group)):
             wanted_gid = str(wanted_group)
             wanted_group = ""
 
@@ -102,19 +99,20 @@ class NixAuthentication(object):
                 hgr = grp.getgrgid(int(wanted_gid))
             except (IOError, OSError, KeyError):
                 return ("", "", "")
+
             return (str(hgr.gr_name), str(hgr.gr_gid), str(hgr.gr_mem))
 
         try:
             hgr = grp.getgrnam(wanted_group)
         except (IOError, OSError, KeyError):
             return ("", "", "")
+
         return (str(hgr.gr_name), str(hgr.gr_gid), str(hgr.gr_mem))
 
     def _get_user_from_file(self, wanted_user):
         """Get user from a passwd file"""
         wanted_uid = ""
-        if (isinstance(wanted_user, int) or
-                re.match("^\\d+$", wanted_user)):
+        if (isinstance(wanted_user, int) or re.match("^\\d+$", wanted_user)):
             wanted_uid = str(wanted_user)
             wanted_user = ""
 
@@ -124,8 +122,7 @@ class NixAuthentication(object):
             return ("", "", "", "", "", "")
         else:
             for line in inpasswd:
-                (user, dummy, uid, gid, gecos, home,
-                 shell) = line.strip().split(':')
+                (user, dummy, uid, gid, gecos, home, shell) = line.strip().split(':')
 
                 if wanted_user and user == wanted_user:
                     return (user, uid, gid, gecos, home, shell)
@@ -139,8 +136,7 @@ class NixAuthentication(object):
     def _get_group_from_file(self, wanted_group):
         """Get group from a group file"""
         wanted_gid = ""
-        if (isinstance(wanted_group, int) or
-                re.match("^\\d+$", wanted_group)):
+        if (isinstance(wanted_group, int) or re.match("^\\d+$", wanted_group)):
             wanted_gid = str(wanted_group)
             wanted_group = ""
 
@@ -160,11 +156,9 @@ class NixAuthentication(object):
             ingroup.close()
             return ("", "", "")
 
-    def add_user(self, user, passw, uid, gid, gecos,
-                 home, shell):
+    def add_user(self, user, passw, uid, gid, gecos, home, shell):
         """Add a *nix user to a /etc/passwd file"""
-        line = "%s:%s:%s:%s:%s:%s:%s\n" % \
-                (user, passw, uid, gid, gecos, home, shell)
+        line = "%s:%s:%s:%s:%s:%s:%s\n" % (user, passw, uid, gid, gecos, home, shell)
         if line in FileUtil(self.passwd_file).getdata('r'):
             return True
 
@@ -201,8 +195,7 @@ class NixAuthentication(object):
 
     def get_home(self):
         """Get host or container home directory"""
-        (r_user, dummy, dummy, dummy, r_home,
-         dummy) = self.get_user(HostInfo.uid)
+        (r_user, dummy, dummy, dummy, r_home, dummy) = self.get_user(HostInfo.uid)
         LOG.info("getting home")
         if r_user:
             return r_home
