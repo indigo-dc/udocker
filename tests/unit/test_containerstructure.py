@@ -19,9 +19,8 @@ class ContainerStructureTestCase(TestCase):
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
-        Config().conf['cpu_affinity_exec_tools'] = \
-            (["numactl", "-C", "%s", "--", ],
-             ["taskset", "-c", "%s", ])
+        Config().conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
+                                                    ["taskset", "-c", "%s", ])
         Config().conf['valid_host_env'] = "HOME"
         Config().conf['username'] = "user"
         Config().conf['userhome'] = "/"
@@ -153,8 +152,7 @@ class ContainerStructureTestCase(TestCase):
         self.assertEqual(status, 0)
 
         self.local.cd_container.return_value = "/ROOT"
-        mock_exists.side_effect = [True, True, False, True,
-                                   True, False, False, False,
+        mock_exists.side_effect = [True, True, False, True, True, False, False, False,
                                    True, False, True, True, False]
         prex = ContainerStructure(self.local)
         status = prex._chk_container_root()
@@ -285,8 +283,7 @@ class ContainerStructureTestCase(TestCase):
     @patch('udocker.container.structure.Uprocess.get_output')
     @patch('udocker.container.structure.HostInfo.cmd_has_option')
     @patch('udocker.container.structure.FileUtil.remove')
-    def test_10__apply_whiteouts(self, mock_furm, mock_hinfocmd,
-                                 mock_uprocget, mock_base, mock_dir,
+    def test_10__apply_whiteouts(self, mock_furm, mock_hinfocmd, mock_uprocget, mock_base, mock_dir,
                                  mock_isdir, mock_lsdir):
         """Test10 ContainerStructure()._apply_whiteouts()."""
         mock_hinfocmd.return_value = False

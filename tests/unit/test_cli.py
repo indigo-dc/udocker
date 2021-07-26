@@ -4,10 +4,6 @@
 """
 udocker unit tests: UdockerCLI
 """
-import sys
-sys.path.append('.')
-sys.path.append('../')
-
 import logging
 from unittest import TestCase, main
 from unittest.mock import Mock, patch

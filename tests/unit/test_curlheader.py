@@ -30,12 +30,11 @@ class CurlHeaderTestCase(TestCase):
 
     def test_02_write(self):
         """Test02 CurlHeader().write()."""
-        buff = ["HTTP/1.1 200 OK",
-                "Content-Type: application/octet-stream",
-                "Content-Length: 32", ]
+        buff = ["HTTP/1.1 200 OK", "Content-Type: application/octet-stream", "Content-Length: 32"]
         curl_header = CurlHeader()
         for line in buff:
             curl_header.write(line)
+
         status = curl_header.data["content-type"]
         self.assertEqual(status, "application/octet-stream")
         status = curl_header.data["X-ND-HTTPSTATUS"]
@@ -44,6 +43,7 @@ class CurlHeaderTestCase(TestCase):
         curl_header = CurlHeader()
         for line in buff:
             curl_header.write(line)
+
         buff_out = curl_header.getvalue()
         self.assertTrue("HTTP/1.1 200 OK" in buff_out)
 

@@ -373,6 +373,7 @@ class GetURLexeCurl(GetURL):
             self._opts["proxy"] = ["--proxy", self.http_proxy]
 
         if "header" in kwargs:
+            self._opts["header"] = list()
             for header_item in kwargs["header"]:
                 if str(header_item).startswith("Authorization: Bearer"):
                     if "Signature=" in self._files["url"]:
@@ -406,6 +407,7 @@ class GetURLexeCurl(GetURL):
         cmd.extend(["-D", self._files["header_file"], "-o", self._files["output_file"], "--stderr",
                     self._files["error_file"], self._files["url"]])
 
+        LOG.info("curl cmd: %s", cmd)
         return cmd
 
     def get(self, *args, **kwargs):
