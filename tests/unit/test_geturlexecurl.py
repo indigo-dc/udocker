@@ -108,6 +108,7 @@ class GetURLexeCurlTestCase(TestCase):
         self.assertTrue(mock_jdump.called)
         self.assertEqual(status, res)
 
+    ## Needs works
     def test_06_get(self):
         """Test06 GetURLexeCurl().get()."""
         geturl = GetURLexeCurl()

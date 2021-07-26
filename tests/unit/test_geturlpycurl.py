@@ -48,17 +48,6 @@ class GetURLpyCurlTestCase(TestCase):
         self.assertTrue(geturl.is_available())
         self.assertTrue(mock_pycurl.called)
 
-        # mock_pycurl.side_effect = (NameError, AttributeError)
-        # geturl = GetURLpyCurl()
-        # with self.assertRaises(NameError, AttributeError):
-        #     status = geturl.is_available()
-        #     self.assertTrue(mock_pycurl.called)
-        #     self.assertFalse(geturl.is_available())
-
-        # mock_pycurl.return_value = None
-        # geturl = GetURLpyCurl()
-        # self.assertFalse(geturl.is_available())
-
     # def test_03__select_implementation(self):
     #     """Test03 GetURLpyCurl()._select_implementation()."""
 
@@ -118,6 +107,7 @@ class GetURLpyCurlTestCase(TestCase):
         curlhdr = curl_patch.stop()
         pycurl = pyc_patch.stop()
 
+    ## Needs works
     @patch.object(GetURLpyCurl, 'is_available')
     def test_06_get(self, mock_sel):
         """Test06 GetURLpyCurl().get() generic get."""
