@@ -217,6 +217,8 @@ class UdockerCLI(object):
         term_lines, dummy = HostInfo().termsize()
         term_lines -= 2
         fmt = "%-55.80s %8.8s %-70.70s %5.5s"
+        LOG.debug("terminal size: %d", term_lines)
+        LOG.debug("search expression: %s", expression)
         if no_trunc:
             fmt = "%-55s %8s %-70s %5s"
 
@@ -1242,31 +1244,31 @@ class UdockerCLI(object):
 
         return self.STATUS_ERROR
 
-    def do_install2(self, cmdp):
-        """
-        install2: install modules
-        install2 [options] module1 module2
-        --force                    :force reinstall
-        --upgrade                  :upgrade modules
-        --purge                    :remove modules (be careful)
-        """
-        if cmdp is not None:
-            force = cmdp.get("--force")
-            purge = cmdp.get("--purge")
-            if cmdp.missing_options():  # syntax error
-                return self.STATUS_ERROR
-        else:
-            force = False
-            purge = False
+    # def do_install2(self, cmdp):
+    #     """
+    #     install2: install modules
+    #     install2 [options] module1 module2
+    #     --force                    :force reinstall
+    #     --upgrade                  :upgrade modules
+    #     --purge                    :remove modules (be careful)
+    #     """
+    #     if cmdp is not None:
+    #         force = cmdp.get("--force")
+    #         purge = cmdp.get("--purge")
+    #         if cmdp.missing_options():  # syntax error
+    #             return self.STATUS_ERROR
+    #     else:
+    #         force = False
+    #         purge = False
 
-        utools = UdockerTools(self.localrepo)
-        if purge:
-            utools.purge()
+    #     utools = UdockerTools(self.localrepo)
+    #     if purge:
+    #         utools.purge()
 
-        if utools.install(force):
-            return self.STATUS_OK
+    #     if utools.install(force):
+    #         return self.STATUS_OK
 
-        return self.STATUS_ERROR
+    #     return self.STATUS_ERROR
 
     def do_showconf(self, cmdp):
         """
@@ -1284,15 +1286,15 @@ class UdockerCLI(object):
         MSG.info(80*"_")
         return self.STATUS_OK
 
-    def do_showinst(self, cmdp):
-        """
-        showinst: Show installed modules and versions
-        """
-        cmdp.get("avail", "CMD")
-        if cmdp.missing_options():  # syntax error
-            return self.STATUS_ERROR
+    # def do_showinst(self, cmdp):
+    #     """
+    #     showinst: Show installed modules and versions
+    #     """
+    #     cmdp.get("avail", "CMD")
+    #     if cmdp.missing_options():  # syntax error
+    #         return self.STATUS_ERROR
 
-        return self.STATUS_OK
+    #     return self.STATUS_OK
 
     def do_avail(self, cmdp):
         """
@@ -1302,27 +1304,27 @@ class UdockerCLI(object):
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
-        utools = UdockerTools(self.localrepo)
-        utools.show_metadata()
-        return self.STATUS_OK
+    #     utools = UdockerTools(self.localrepo)
+    #     utools.show_metadata()
+    #     return self.STATUS_OK
 
-    def do_download(self, cmdp):
-        return self.STATUS_OK
+    # def do_download(self, cmdp):
+    #     return self.STATUS_OK
 
-    def do_download_all(self, cmdp):
-        return self.STATUS_OK
+    # def do_download_all(self, cmdp):
+    #     return self.STATUS_OK
 
-    def do_verifymod(self, cmdp):
-        """
-        verifymod: Verify modules, checksums
-        """
-        return self.STATUS_OK
+    # def do_verifymod(self, cmdp):
+    #     """
+    #     verifymod: Verify modules, checksums
+    #     """
+    #     return self.STATUS_OK
 
-    def do_delete_metadata(self, cmdp):
-        """
-        delete_metadata: Delete metadata.json
-        """
-        return self.STATUS_OK
+    # def do_delete_metadata(self, cmdp):
+    #     """
+    #     delete_metadata: Delete metadata.json
+    #     """
+    #     return self.STATUS_OK
 
     def do_version(self, cmdp):
         """

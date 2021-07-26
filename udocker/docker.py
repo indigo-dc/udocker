@@ -622,6 +622,7 @@ class DockerIoAPI(object):
             if repo_list["page"] == repo_list["num_pages"]:
                 self.search_ended = True
 
+            LOG.debug(repo_list)
             return repo_list
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             self.search_ended = True
@@ -650,6 +651,7 @@ class DockerIoAPI(object):
             if repo_list["count"] == self.search_page:
                 self.search_ended = True
 
+            LOG.debug(repo_list)
             return repo_list
         except (IOError, OSError, AttributeError, KeyError, ValueError, TypeError):
             self.search_ended = True

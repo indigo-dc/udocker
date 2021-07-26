@@ -4,6 +4,9 @@
 """
 udocker unit tests: UdockerCLI
 """
+import sys
+sys.path.append('.')
+sys.path.append('../')
 
 import logging
 from unittest import TestCase, main
@@ -24,8 +27,8 @@ class UdockerCLITestCase(TestCase):
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
-        Config().conf['cpu_affinity_exec_tools'] = \
-            (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
+        Config().conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
+                                                    ["taskset", "-c", "%s", ])
         Config().conf['valid_host_env'] = "HOME"
         Config().conf['username'] = "user"
         Config().conf['userhome'] = "/"
@@ -207,26 +210,26 @@ class UdockerCLITestCase(TestCase):
     # def test_08__search_print_lines(self):
     #     """Test08 UdockerCLI()._search_print_lines()."""
 
-    # @patch('udocker.cli.DockerIoAPI.search_get_page')
-    # @patch('udocker.cli.HostInfo.termsize')
-    # def test_09__search_repositories(self, mock_termsz, mock_doiasearch):
-    #     """Test09 UdockerCLI()._search_repositories()."""
-    #     repo_list = [{"count": 1, "next": "", "previous": "",
-    #                   "results": [
-    #                       {
-    #                           "repo_name": "lipcomputing/ipyrad",
-    #                           "short_description": "Docker to run ipyrad",
-    #                           "star_count": 0,
-    #                           "pull_count": 188,
-    #                           "repo_owner": "",
-    #                           "is_automated": True,
-    #                           "is_official": False
-    #                       }]}]
-    #     mock_termsz.return_value = (40, "")
-    #     mock_doiasearch.return_value = repo_list
-    #     udoc = UdockerCLI(self.local)
-    #     status = udoc._search_repositories("ipyrad")
-    #     self.assertEqual(status, 0)
+    @patch('udocker.cli.DockerIoAPI.search_get_page')
+    @patch('udocker.cli.HostInfo.termsize')
+    def test_09__search_repositories(self, mock_termsz, mock_doiasearch):
+        """Test09 UdockerCLI()._search_repositories()."""
+        repo_list = {"count": 1, "next": "", "previous": "",
+                     "results": [
+                         {
+                             "repo_name": "lipcomputing/ipyrad",
+                             "short_description": "Docker to run ipyrad",
+                             "star_count": 0,
+                             "pull_count": 188,
+                             "repo_owner": "",
+                             "is_automated": True,
+                             "is_official": False
+                          }]}
+        mock_termsz.return_value = (3, "")
+        mock_doiasearch.side_effect = [repo_list, []]
+        udoc = UdockerCLI(self.local)
+        status = udoc._search_repositories("ipyrad", False)
+        self.assertEqual(status, 0)
 
     @patch('udocker.cli.DockerIoAPI.get_tags')
     def test_10__list_tags(self, mock_gettags):
@@ -248,9 +251,8 @@ class UdockerCLITestCase(TestCase):
     @patch.object(UdockerCLI, '_list_tags')
     @patch.object(UdockerCLI, '_split_imagespec')
     @patch.object(UdockerCLI, '_set_repository')
-    def test_11_do_search(self, mock_setrepo, mock_split, mock_listtags,
-                          mock_searchrepo, mock_doiasearch, mock_doiasetv2,
-                          mock_ksget):
+    def test_11_do_search(self, mock_setrepo, mock_split, mock_listtags, mock_searchrepo,
+                          mock_doiasearch, mock_doiasetv2, mock_ksget):
         """Test11 UdockerCLI().do_search()."""
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
@@ -381,8 +383,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.cli.LocalFileAPI.import_tocontainer')
     @patch('udocker.cli.LocalFileAPI.import_clone')
     @patch.object(UdockerCLI, '_check_imagespec')
-    def test_14_do_import(self, mock_chkimg, mock_impclone,
-                          mock_impcont, mock_impimg):
+    def test_14_do_import(self, mock_chkimg, mock_impclone, mock_impcont, mock_impimg):
         """Test14 UdockerCLI().do_import()."""
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
@@ -1318,8 +1319,7 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.cli.Unshare.namespace_exec')
     @patch('udocker.cli.MountPoint')
     @patch('udocker.cli.FileBind')
-    def test_35_do_setup(self, mock_fb, mock_mp, mock_unshr, mock_furchmod, 
-                         mock_nv, mock_execm):
+    def test_35_do_setup(self, mock_fb, mock_mp, mock_unshr, mock_furchmod, mock_nv, mock_execm):
         """Test35 UdockerCLI().do_setup()."""
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
@@ -1347,8 +1347,7 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 1)
         self.assertTrue(self.local.isprotected_container.called)
 
-        argv = ["udocker", "setup", "--execmode=P2",
-                "--purge", "--fixperm", "--nvidia", "mycont"]
+        argv = ["udocker", "setup", "--execmode=P2", "--purge", "--fixperm", "--nvidia", "mycont"]
         cmdp = CmdParser()
         cmdp.parse(argv)
         self.local.cd_container.return_value = "/ROOT/cont1"
@@ -1369,8 +1368,7 @@ class UdockerCLITestCase(TestCase):
         self.assertTrue(mock_nv.return_value.set_mode.called)
         self.assertTrue(mock_execm.return_value.set_mode.called)
 
-        argv = ["udocker", "setup", "--execmode=P2",
-                "--purge", "--fixperm", "--nvidia", "mycont"]
+        argv = ["udocker", "setup", "--execmode=P2", "--purge", "--fixperm", "--nvidia", "mycont"]
         cmdp = CmdParser()
         cmdp.parse(argv)
         self.local.cd_container.return_value = "/ROOT/cont1"
