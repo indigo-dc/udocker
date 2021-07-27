@@ -416,8 +416,7 @@ class FileUtil(object):
         """Translate container relative path to host path"""
         return self._cont2host(container_path, self.orig_filename, volumes)
 
-    def _find_exec(self, path, rootdir="", volumes="", workdir="",
-                   cont2host=False):
+    def _find_exec(self, path, rootdir="", volumes="", workdir="", cont2host=False):
         """Find file in a path set such as PATH=/usr/bin:/bin"""
         for directory in path:
             if not directory:
