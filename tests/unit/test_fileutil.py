@@ -4,9 +4,6 @@ udocker unit tests: FileUtil
 """
 
 import sys
-# sys.path.append('.')
-# sys.path.append('../')
-
 import os
 from unittest import TestCase, main
 from unittest.mock import patch, mock_open
