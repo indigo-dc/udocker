@@ -33,10 +33,8 @@ class DockerIoAPITestCase(TestCase):
         """Test01 DockerIoAPI() constructor"""
         mock_geturl.return_value = None
         doia = DockerIoAPI(self.local)
-        self.assertEqual(doia.index_url,
-                         Config.conf['dockerio_index_url'])
-        self.assertEqual(doia.registry_url,
-                         Config.conf['dockerio_registry_url'])
+        self.assertEqual(doia.index_url, Config.conf['dockerio_index_url'])
+        self.assertEqual(doia.registry_url, Config.conf['dockerio_registry_url'])
         self.assertEqual(doia.v1_auth_header, "")
         self.assertEqual(doia.v2_auth_header, "")
         self.assertEqual(doia.v2_auth_token, "")
@@ -126,8 +124,7 @@ class DockerIoAPITestCase(TestCase):
     @patch('udocker.docker.FileUtil.size')
     @patch('udocker.docker.GetURL.get_content_length')
     @patch('udocker.docker.ChkSUM.hash')
-    def test_07__get_file(self, mock_hash, mock_getlength,
-                          mock_fusize, mock_status, mock_geturl):
+    def test_07__get_file(self, mock_hash, mock_getlength, mock_fusize, mock_status, mock_geturl):
         """Test07 DockerIoAPI()._get_file()."""
         cks = "af98ca7807fd3859c5bd876004fa7e960cecebddb342de1bc7f3b0e6f7dab415"
         url = "http://some1.org/file1"
@@ -591,8 +588,7 @@ class DockerIoAPITestCase(TestCase):
     @patch.object(DockerIoAPI, '_get_v1_id_from_tags')
     @patch.object(DockerIoAPI, 'get_v1_image_tags')
     @patch.object(DockerIoAPI, 'get_v1_repo')
-    def test_31_get_v1(self, mock_dgv1repo, mock_v1imgtag,
-                       mock_v1idtag, mock_v1idimg, mock_v1ances,
+    def test_31_get_v1(self, mock_dgv1repo, mock_v1imgtag, mock_v1idtag, mock_v1idimg, mock_v1ances,
                        mock_v1layer, mock_status):
         """Test31 DockerIoAPI().get_v1"""
         imgarr = [{"id": "1234567890"}]
