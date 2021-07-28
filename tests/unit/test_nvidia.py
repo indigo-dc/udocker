@@ -2,7 +2,6 @@
 """
 udocker unit tests: NVIDIA mode
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.config import Config
@@ -61,10 +60,9 @@ class NvidiaModeTestCase(TestCase):
     @patch('udocker.engine.nvidia.os.remove')
     @patch('udocker.engine.nvidia.os.path.islink')
     @patch('udocker.engine.nvidia.os.path.isfile')
-    def test_03__copy_files(self, mock_isfile, mock_islink, mock_rm,
-                            mock_dirname, mock_isdir, mock_mkdir, mock_chmod,
-                            mock_readln, mock_symln, mock_copy2, mock_stat,
-                            mock_access):
+    def test_03__copy_files(self, mock_isfile, mock_islink, mock_rm, mock_dirname, mock_isdir,
+                            mock_mkdir, mock_chmod, mock_readln, mock_symln, mock_copy2,
+                            mock_stat, mock_access):
         """Test03 NvidiaMode._copy_files."""
         hsrc_dir = "/usr/lib"
         cdst_dir = "/hone/.udocker/cont/ROOT/usr/lib"
@@ -107,22 +105,33 @@ class NvidiaModeTestCase(TestCase):
         status = nvmode._get_nvidia_libs(host_dir)
         self.assertEqual(status, Config.conf['nvi_lib_list'])
 
-    # @patch('udocker.engine.nvidia.os.path.realpath')
-    # @patch('udocker.engine.nvidia.Uprocess.get_output')
-    # def test_05__find_host_dir_ldconfig(self, mock_uproc, mock_realp):
-    #     """Test05 NvidiaMode._find_host_dir_ldconfig."""
-    #     res_set = set()
-    #     mock_uproc.return_value = \
-    #       "libnvidia-cfg.so.1 (libc6,x86-64) => \
-    #       /lib/x86_64-linux-gnu/libnvidia-cfg.so.1"
-    #     mock_realp.return_value = "/lib/x86_64-linux-gnu/libnvidia-cfg.so.1"
-    #     res_set.add("/lib/x86_64-linux-gnu/")
-    #     nvmode = NvidiaMode(self.local, self.cont_id)
-    #     status = nvmode._find_host_dir_ldconfig()
-    #     self.assertEqual(status, res_set)
+    @patch('udocker.engine.nvidia.os.path.dirname')
+    @patch('udocker.engine.nvidia.os.path.realpath')
+    @patch('udocker.engine.nvidia.Uprocess.get_output')
+    def test_05__find_host_dir_ldconfig(self, mock_uproc, mock_realp, mock_dname):
+        """Test05 NvidiaMode._find_host_dir_ldconfig."""
+        res_set = set()
+        mock_uproc.return_value = (
+            "	libnvidia-cfg.so (libc6,x86-64) => "
+            "/usr/lib/x86_64-linux-gnu/libnvidia-cfg.so\n"
+            "	libcuda.so (libc6,x86-64) => "
+            "/usr/lib/x86_64-linux-gnu/libcuda.so\n")
+        mock_realp.return_value = "/lib/x86_64-linux-gnu"
+        mock_dname.return_value = "/lib/x86_64-linux-gnu"
+        res_set.add("/lib/x86_64-linux-gnu/")
+        nvmode = NvidiaMode(self.local, self.cont_id)
+        status = nvmode._find_host_dir_ldconfig()
+        self.assertEqual(status, res_set)
 
-    # def test_06__find_host_dir_ldpath(self):
-    #     """Test06 NvidiaMode._find_host_dir_ldpath."""
+    @patch('udocker.engine.nvidia.glob.glob')
+    @patch('udocker.engine.nvidia.os.path.realpath')
+    def test_06__find_host_dir_ldpath(self, mock_realp, mock_glob):
+        """Test06 NvidiaMode._find_host_dir_ldpath."""
+        mock_realp.return_value = "/lib/x86_64-linux-gnu"
+        mock_glob.return_value = ["/lib/x86_64-linux-gnu"]
+        nvmode = NvidiaMode(self.local, self.cont_id)
+        status = nvmode._find_host_dir_ldpath("/usr/lib:/lib/x86_64-linux-gnu")
+        self.assertEqual(status, {"/lib/x86_64-linux-gnu/"})
 
     @patch.object(NvidiaMode, '_find_host_dir_ldconfig')
     @patch.object(NvidiaMode, '_find_host_dir_ldpath')
@@ -172,14 +181,18 @@ class NvidiaModeTestCase(TestCase):
         status = nvmode._installation_exists(host_dir, cont_dir)
         self.assertFalse(status)
 
+        mock_libs.side_effect = OSError("fail")
+        nvmode = NvidiaMode(self.local, self.cont_id)
+        status = nvmode._installation_exists(host_dir, cont_dir)
+        self.assertTrue(status)
+
     @patch('udocker.engine.nvidia.FileUtil.putdata')
     @patch.object(NvidiaMode, '_copy_files')
     @patch.object(NvidiaMode, '_get_nvidia_libs')
     @patch.object(NvidiaMode, '_installation_exists')
     @patch.object(NvidiaMode, '_find_cont_dir')
     @patch.object(NvidiaMode, '_find_host_dir')
-    def test_10_set_mode(self, mock_findhdir,
-                         mock_findcdir, mock_instexist, mock_libs,
+    def test_10_set_mode(self, mock_findhdir, mock_findcdir, mock_instexist, mock_libs,
                          mock_cpfiles, mock_futilput):
         """Test10 NvidiaMode.set_mode()."""
         self.mock_cdcont.return_value = ""

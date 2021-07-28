@@ -101,8 +101,7 @@ class NvidiaMode(object):
                 for lib in self._nvidia_main_libs:
                     match = re.search(regexp % (lib, arch), line)
                     if match:
-                        dir_list.add(os.path.realpath(
-                            os.path.dirname(match.group(1))) + '/')
+                        dir_list.add(os.path.realpath(os.path.dirname(match.group(1))) + '/')
 
         LOG.debug("list nvidia libs via ldconfig: %s", dir_list)
         return dir_list
