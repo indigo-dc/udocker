@@ -2,7 +2,6 @@
 """
 udocker unit tests: PRootEngine
 """
-
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.config import Config
@@ -17,8 +16,8 @@ class PRootEngineTestCase(TestCase):
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
-        Config().conf['cpu_affinity_exec_tools'] = \
-            (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
+        Config().conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
+                                                    ["taskset", "-c", "%s", ])
         Config().conf['valid_host_env'] = "HOME"
         Config().conf['username'] = "user"
         Config().conf['userhome'] = "/"
@@ -53,8 +52,7 @@ class PRootEngineTestCase(TestCase):
     @patch('udocker.engine.proot.HostInfo.oskernel_isgreater')
     @patch('udocker.engine.proot.FileUtil.find_file_in_dir')
     @patch('udocker.helper.elfpatcher.os.path.exists')
-    def test_02_select_proot(self, mock_exists, mock_fimage,
-                             mock_isgreater, mock_issecomp):
+    def test_02_select_proot(self, mock_exists, mock_fimage, mock_isgreater, mock_issecomp):
         """Test02 PRootEngine().select_proot()."""
         Config().conf['arch'] = "amd64"
         Config().conf['proot_noseccomp'] = None
@@ -110,6 +108,60 @@ class PRootEngineTestCase(TestCase):
         prex = PRootEngine(self.local, self.xmode)
         prex.select_proot()
         self.assertTrue(prex.proot_noseccomp)
+
+    @patch('udocker.engine.proot.ExecutionEngineCommon._save_osenv')
+    @patch('udocker.engine.proot.Uprocess.get_output')
+    @patch('udocker.engine.proot.ExecutionEngineCommon._is_same_osenv')
+    @patch('udocker.engine.proot.HostInfo.oskernel_isgreater')
+    @patch('udocker.engine.proot.os.environ')
+    def test_03__is_seccomp_patched(self, mock_env, mock_isgrt, mock_sameenv, mock_out, mock_save):
+        """Test03 PRootEngine()._is_seccomp_patched()."""
+        mock_env.return_value = {"PROOT_NEW_SECCOMP": "/bin/sec", }
+        prex = PRootEngine(self.local, self.xmode)
+        status = prex._is_seccomp_patched("/bin/sec")
+        self.assertFalse(status)
+
+        Config().conf['proot_noseccomp'] = True
+        mock_env.return_value = {"PROOT_NEW_SECCOMP": "/bin/sec", }
+        mock_isgrt.return_value = True
+        prex = PRootEngine(self.local, self.xmode)
+        status = prex._is_seccomp_patched("/bin/sec")
+        self.assertFalse(status)
+
+        Config().conf['proot_noseccomp'] = None
+        mock_env.return_value = dict()
+        mock_isgrt.return_value = False
+        mock_sameenv.return_value = {"PROOT_NEW_SECCOMP": "/bin/sec", }
+        prex = PRootEngine(self.local, self.xmode)
+        status = prex._is_seccomp_patched("/bin/sec")
+        self.assertTrue(status)
+
+        Config().conf['proot_noseccomp'] = None
+        mock_env.return_value = dict()
+        mock_isgrt.return_value = False
+        mock_sameenv.return_value = dict()
+        prex = PRootEngine(self.local, self.xmode)
+        status = prex._is_seccomp_patched("/bin/sec")
+        self.assertFalse(status)
+
+        Config().conf['proot_noseccomp'] = None
+        mock_env.return_value = dict()
+        mock_isgrt.return_value = False
+        mock_sameenv.return_value = None
+        mock_out.side_effect = [False, True]
+        prex = PRootEngine(self.local, self.xmode)
+        status = prex._is_seccomp_patched("/bin/sec")
+        self.assertTrue(status)
+
+        Config().conf['proot_noseccomp'] = None
+        mock_env.return_value = dict()
+        mock_isgrt.return_value = False
+        mock_sameenv.return_value = None
+        mock_out.side_effect = [True, False]
+        mock_save.return_value = None
+        prex = PRootEngine(self.local, self.xmode)
+        status = prex._is_seccomp_patched("/bin/sec")
+        self.assertFalse(status)
 
     def test_03__set_uid_map(self):
         """Test03 PRootEngine()._set_uid_map()."""
@@ -176,11 +228,9 @@ class PRootEngineTestCase(TestCase):
     @patch('udocker.engine.proot.os.getenv')
     @patch('udocker.engine.proot.subprocess.call')
     @patch('udocker.engine.proot.ExecutionEngineCommon._run_init')
-    def test_07_run(self, mock_run_init, mock_call, mock_getenv, mock_sel_proot,
-                    mock_run_env_set,
-                    mock_set_cpu_aff, mock_get_vol_bind, mock_set_uid_map,
-                    mock_env_cleanup_dict, mock_run_banner, mock_isgreater,
-                    mock_netmap, mock_envupd):
+    def test_07_run(self, mock_run_init, mock_call, mock_getenv, mock_sel_proot, mock_run_env_set,
+                    mock_set_cpu_aff, mock_get_vol_bind, mock_set_uid_map, mock_env_cleanup_dict,
+                    mock_run_banner, mock_isgreater, mock_netmap, mock_envupd):
         """Test07 PRootEngine().run()."""
         mock_run_init.return_value = False
         prex = PRootEngine(self.local, self.xmode)
@@ -203,6 +253,7 @@ class PRootEngineTestCase(TestCase):
         mock_envupd.return_value = None
         prex = PRootEngine(self.local, self.xmode)
         prex.opt["kernel"] = "5.4.0"
+        prex.opt["cmd"] = ["/bin/ls"]
         status = prex.run("CONTAINERID")
         self.assertEqual(status, 5)
         self.assertTrue(mock_run_init.called)
