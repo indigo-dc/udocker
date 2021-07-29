@@ -20,8 +20,8 @@ class ExecutionEngineCommonTestCase(TestCase):
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
-        Config().conf['cpu_affinity_exec_tools'] = \
-            (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
+        Config().conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
+                                                    ["taskset", "-c", "%s", ])
         Config().conf['location'] = ""
         Config().conf['uid'] = 1000
         Config().conf['sysdirs_list'] = ["/", ]
@@ -156,8 +156,7 @@ class ExecutionEngineCommonTestCase(TestCase):
     @patch.object(ExecutionEngineCommon, '_create_mountpoint')
     @patch('udocker.engine.base.os.path.exists')
     @patch('udocker.engine.base.Uvolume.split')
-    def test_07__check_volumes(self, mock_uvolsplit, mock_exists,
-                               mock_crmpoint):
+    def test_07__check_volumes(self, mock_uvolsplit, mock_exists, mock_crmpoint):
         """Test07 ExecutionEngineCommon()._check_volumes()."""
         mock_uvolsplit.return_value = ("HOSTDIR", "CONTDIR")
         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
@@ -396,8 +395,7 @@ class ExecutionEngineCommonTestCase(TestCase):
     @patch('udocker.engine.base.os.path.islink')
     @patch('udocker.engine.base.FileBind')
     @patch.object(ExecutionEngineCommon, '_is_mountpoint')
-    def test_15__select_auth_files(self, mock_ismpoint, mock_fbind, mock_islink,
-                                   mock_isfile):
+    def test_15__select_auth_files(self, mock_ismpoint, mock_fbind, mock_islink, mock_isfile):
         """Test15 ExecutionEngineCommon()._select_auth_files()."""
         resp = "/fbdir/#etc#passwd"
         resg = "/fbdir/#etc#group"
@@ -469,8 +467,7 @@ class ExecutionEngineCommonTestCase(TestCase):
         auth.return_value = mock_auth
         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
         ex_eng.opt["hostauth"] = True
-        auth.get_user.return_value = ("user1", "1000", "1000", "usr",
-                                      "/home/user", "/bin/bash")
+        auth.get_user.return_value = ("user1", "1000", "1000", "usr", "/home/user", "/bin/bash")
         status = ex_eng._user_from_str(userstr, host_auth=auth)
         self.assertEqual(status, (True, res))
         auth = nixauth.stop()
@@ -484,8 +481,7 @@ class ExecutionEngineCommonTestCase(TestCase):
         auth.return_value = mock_auth
         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
         ex_eng.opt["hostauth"] = False
-        auth.get_user.return_value = ("user1", "1000", "1000", "usr",
-                                      "/home/user", "/bin/bash")
+        auth.get_user.return_value = ("user1", "1000", "1000", "usr", "/home/user", "/bin/bash")
         status = ex_eng._user_from_str(userstr, container_auth=auth)
         self.assertEqual(status, (True, res))
         auth = nixauth.stop()
@@ -499,8 +495,7 @@ class ExecutionEngineCommonTestCase(TestCase):
         auth.return_value = mock_auth
         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
         ex_eng.opt["hostauth"] = True
-        auth.get_user.return_value = ("user1", "1000", "1000", "usr",
-                                      "/home/user", "/bin/bash")
+        auth.get_user.return_value = ("user1", "1000", "1000", "usr", "/home/user", "/bin/bash")
         status = ex_eng._user_from_str(userstr, host_auth=auth)
         self.assertEqual(status, (True, res))
         auth = nixauth.stop()
@@ -511,9 +506,8 @@ class ExecutionEngineCommonTestCase(TestCase):
     @patch.object(ExecutionEngineCommon, '_is_mountpoint')
     @patch.object(ExecutionEngineCommon, '_user_from_str')
     @patch.object(ExecutionEngineCommon, '_select_auth_files')
-    def test_18__setup_container_user(self, mock_selauth, mock_ustr,
-                                      mock_ismpoint, mock_cruser, mock_auth,
-                                      mock_hinfo):
+    def test_18__setup_container_user(self, mock_selauth, mock_ustr, mock_ismpoint, mock_cruser,
+                                      mock_auth, mock_hinfo):
         """Test18 ExecutionEngineCommon()._setup_container_user()."""
         user = "invuser"
         mock_selauth.return_value = ("/etc/passwd", "/etc/group")
@@ -574,9 +568,8 @@ class ExecutionEngineCommonTestCase(TestCase):
     @patch.object(ExecutionEngineCommon, '_is_mountpoint')
     @patch.object(ExecutionEngineCommon, '_user_from_str')
     @patch.object(ExecutionEngineCommon, '_select_auth_files')
-    def test_19__set_cont_user_noroot(self, mock_selauth, mock_ustr,
-                                      mock_ismpoint, mock_cruser, mock_auth,
-                                      mock_hinfo):
+    def test_19__set_cont_user_noroot(self, mock_selauth, mock_ustr, mock_ismpoint, mock_cruser,
+                                      mock_auth, mock_hinfo):
         """Test19 ExecutionEngineCommon()._setup_container_user_noroot()."""
         user = "invuser"
         mock_selauth.return_value = ("/etc/passwd", "/etc/group")
@@ -779,10 +772,8 @@ class ExecutionEngineCommonTestCase(TestCase):
     @patch.object(ExecutionEngineCommon, '_setup_container_user')
     @patch.object(ExecutionEngineCommon, '_run_env_cmdoptions')
     @patch.object(ExecutionEngineCommon, '_run_load_metadata')
-    def test_27__run_init(self, mock_loadmeta, mock_envcmd,
-                          mock_setupuser,
-                          mock_chkpaths, mock_chkexec, mock_setvol,
-                          mock_chkports, mock_mpoint):
+    def test_27__run_init(self, mock_loadmeta, mock_envcmd, mock_setupuser, mock_chkpaths,
+                          mock_chkexec, mock_setvol, mock_chkports, mock_mpoint):
         """Test27 ExecutionEngineCommon()._run_init()."""
         # mock_getcname.return_value = "cname"
         Config.conf['location'] = ""
@@ -848,6 +839,40 @@ class ExecutionEngineCommonTestCase(TestCase):
         status = ex_eng._run_init("2717add4-e6f6-397c-9019-74fa67be439f")
         self.assertEqual(status, "/bin/ls")
         self.assertTrue(mock_chkexec.called)
+
+    @patch('udocker.engine.base.HostInfo')
+    @patch('udocker.engine.base.json.loads')
+    @patch('udocker.engine.base.FileUtil.getdata')
+    def test_28__is_same_osenv(self, mock_getdata, mock_jload, mock_hinfo):
+        """Test28 ExecutionEngineCommon()._is_same_osenv()."""
+        mock_getdata.return_value = dict()
+        mock_jload.return_value = dict()
+        ex_eng = ExecutionEngineCommon(self.local, self.xmode)
+        status = ex_eng._is_same_osenv("somefile")
+        self.assertEqual(status, dict())
+
+        mock_getdata.return_value = {"osversion": "linux", "oskernel": "3.2.1", "arch": "amd64"}
+        mock_jload.return_value = {"osversion": "linux", "oskernel": "3.2.1", "arch": "amd64"}
+        mock_hinfo.return_value.osversion.return_value = "linux"
+        mock_hinfo.return_value.oskernel.return_value = "3.2.1"
+        mock_hinfo.return_value.arch.return_value = "amd64"
+        ex_eng = ExecutionEngineCommon(self.local, self.xmode)
+        status = ex_eng._is_same_osenv("somefile")
+        self.assertEqual(status, {"osversion": "linux", "oskernel": "3.2.1", "arch": "amd64"})
+
+    @patch('udocker.engine.base.HostInfo')
+    @patch('udocker.engine.base.json.dumps')
+    @patch('udocker.engine.base.FileUtil.putdata')
+    def test_29__save_osenv(self, mock_putdata, mock_jdump, mock_hinfo):
+        """Test29 ExecutionEngineCommon()._save_osenv()."""
+        mock_putdata.return_value = {"osversion": "linux", "oskernel": "3.2.1", "arch": "amd64"}
+        mock_jdump.return_value = {"osversion": "linux", "oskernel": "3.2.1", "arch": "amd64"}
+        mock_hinfo.return_value.osversion.return_value = "linux"
+        mock_hinfo.return_value.oskernel.return_value = "3.2.1"
+        mock_hinfo.return_value.arch.return_value = "amd64"
+        ex_eng = ExecutionEngineCommon(self.local, self.xmode)
+        status = ex_eng._save_osenv("somefile")
+        self.assertTrue(status)
 
 
 if __name__ == '__main__':

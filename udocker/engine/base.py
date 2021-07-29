@@ -668,8 +668,7 @@ class ExecutionEngineCommon(object):
             saved = json.loads(FileUtil(filename).getdata())
             if (saved["osversion"] == HostInfo().osversion() and
                     saved["oskernel"] == HostInfo().oskernel() and
-                    saved["arch"] == HostInfo().arch() and
-                    saved["osdistribution"] == str(HostInfo().osdistribution())):
+                    saved["arch"] == HostInfo().arch()):
                 return saved
         except (IOError, OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
             pass
@@ -685,7 +684,6 @@ class ExecutionEngineCommon(object):
             save["osversion"] = HostInfo().osversion()
             save["oskernel"] = HostInfo().oskernel()
             save["arch"] = HostInfo().arch()
-            save["osdistribution"] = str(HostInfo().osdistribution())
             if FileUtil(filename).putdata(json.dumps(save)):
                 return True
         except (AttributeError, ValueError, TypeError, IndexError, KeyError):
