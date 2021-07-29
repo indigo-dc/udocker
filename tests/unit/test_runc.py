@@ -20,8 +20,8 @@ class RuncEngineTestCase(TestCase):
         Config().getconf()
         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
         Config().conf['cmd'] = "/bin/bash"
-        Config().conf['cpu_affinity_exec_tools'] = \
-            (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
+        Config().conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
+                                                    ["taskset", "-c", "%s", ])
         Config().conf['runc_capabilities'] = [
             "CAP_KILL", "CAP_NET_BIND_SERVICE", "CAP_CHOWN", "CAP_DAC_OVERRIDE",
             "CAP_FOWNER", "CAP_FSETID", "CAP_KILL", "CAP_SETGID", "CAP_SETUID",
@@ -59,8 +59,7 @@ class RuncEngineTestCase(TestCase):
     @patch('udocker.engine.runc.HostInfo.arch')
     @patch('udocker.engine.runc.FileUtil.find_file_in_dir')
     @patch('udocker.engine.runc.FileUtil.find_exec')
-    def test_02_select_runc(self, mock_findexe, mock_find,
-                            mock_arch, mock_exists):
+    def test_02_select_runc(self, mock_findexe, mock_find, mock_arch, mock_exists):
         """Test02 RuncEngine().select_runc()."""
         Config.conf['use_runc_executable'] = ""
         mock_findexe.return_value = "/bin/runc-arm"
@@ -93,11 +92,10 @@ class RuncEngineTestCase(TestCase):
     @patch('udocker.engine.runc.FileUtil.size')
     @patch('udocker.engine.runc.subprocess.call')
     @patch('udocker.engine.runc.os.path.realpath')
-    def test_03__load_spec(self, mock_realpath, mock_call, mock_size,
-                           mock_rm, mock_reg, mock_jload):
+    def test_03__load_spec(self, mock_rpath, mock_call, mock_size, mock_rm, mock_reg, mock_jload):
         """Test03 RuncEngine()._load_spec()."""
         mock_size.side_effect = [-1, -1]
-        mock_realpath.return_value = "/container/ROOT"
+        mock_rpath.return_value = "/container/ROOT"
         mock_call.return_value = 1
         mock_rm.return_value = None
         mock_reg.return_value = None
@@ -106,7 +104,7 @@ class RuncEngineTestCase(TestCase):
         self.assertFalse(mock_rm.called)
         self.assertFalse(mock_reg.called)
         self.assertTrue(mock_call.called)
-        self.assertTrue(mock_realpath.called)
+        self.assertTrue(mock_rpath.called)
         self.assertFalse(status)
 
         jload = {"container": "cxxx", "parent": "dyyy",
@@ -116,7 +114,7 @@ class RuncEngineTestCase(TestCase):
                  "Image": "sha256:aa"
                 }
         mock_size.side_effect = [100, 100]
-        mock_realpath.return_value = "/container/ROOT"
+        mock_rpath.return_value = "/container/ROOT"
         mock_call.return_value = 0
         mock_rm.return_value = None
         mock_reg.return_value = None
@@ -145,12 +143,16 @@ class RuncEngineTestCase(TestCase):
             self.assertTrue(mopen.called)
             self.assertTrue(status)
 
+        mock_jdump.side_effect = OSError("fail")
+        rcex = RuncEngine(self.local, self.xmode)
+        status = rcex._save_spec()
+        self.assertFalse(status)
+
     @patch('udocker.engine.runc.os.getgid')
     @patch('udocker.engine.runc.os.getuid')
     @patch('udocker.engine.runc.platform.node')
     @patch('udocker.engine.runc.os.path.realpath')
-    def test_05__set_spec(self, mock_realpath, mock_node,
-                          mock_getuid, mock_getgid):
+    def test_05__set_spec(self, mock_realpath, mock_node, mock_getuid, mock_getgid):
         """Test05 RuncEngine()._set_spec()."""
         # rcex.opt["hostname"] has nodename
         mock_realpath.return_value = "/.udocker/containers/aaaaaa/ROOT"
@@ -247,8 +249,16 @@ class RuncEngineTestCase(TestCase):
         self.assertFalse(mock_getuid.called)
         self.assertFalse(mock_getgid.called)
 
-    # def test_06__uid_check(self):
-    #     """Test06 RuncEngine()._uid_check()."""
+    def test_06__set_id_mappings(self):
+        """Test06 RuncEngine()._set_id_mappings()."""
+        pass
+
+    def test_07__del_namespace_spec(self):
+        """Test07 RuncEngine()._del_namespace_spec()."""
+        pass
+
+    # def test_08__uid_check(self):
+    #     """Test08 RuncEngine()._uid_check()."""
     #     rcex = RuncEngine(self.local, self.xmode)
     #     rcex.opt = dict()
     #     rcex._uid_check()
@@ -263,16 +273,14 @@ class RuncEngineTestCase(TestCase):
     #     rcex.opt["user"] = "user01"
     #     rcex._uid_check()
 
-    def test_07__add_capabilities_spec(self):
-        """Test07 RuncEngine()._add_capabilities_spec()."""
+    def test_09__add_capabilities_spec(self):
+        """Test09 RuncEngine()._add_capabilities_spec()."""
         rcex = RuncEngine(self.local, self.xmode)
         Config.conf['runc_capabilities'] = ""
         self.assertEqual(rcex._add_capabilities_spec(), None)
 
         rcex = RuncEngine(self.local, self.xmode)
-        Config.conf['runc_capabilities'] = ["CAP_KILL",
-                                            "CAP_NET_BIND_SERVICE",
-                                            "CAP_CHOWN"]
+        Config.conf['runc_capabilities'] = ["CAP_KILL", "CAP_NET_BIND_SERVICE", "CAP_CHOWN"]
         rcex._container_specjson = dict()
         rcex._container_specjson["process"] = dict()
         rcex._container_specjson["process"]["capabilities"] = dict()
@@ -287,10 +295,9 @@ class RuncEngineTestCase(TestCase):
     @patch('udocker.engine.runc.stat.S_ISCHR')
     @patch('udocker.engine.runc.stat.S_ISBLK')
     @patch('udocker.engine.runc.os.path.exists')
-    def test_08__add_device_spec(self, mock_exists,
-                                 mock_blk, mock_chr, mock_osmaj,
+    def test_10__add_device_spec(self, mock_exists, mock_blk, mock_chr, mock_osmaj,
                                  mock_osmin, mock_hi):
-        """Test08 RuncEngine()._add_device_spec()."""
+        """Test10 RuncEngine()._add_device_spec()."""
         mock_exists.return_value = False
         rcex = RuncEngine(self.local, self.xmode)
         status = rcex._add_device_spec("/dev/zero")
@@ -321,8 +328,8 @@ class RuncEngineTestCase(TestCase):
 
     @patch('udocker.engine.runc.NvidiaMode')
     @patch.object(RuncEngine, '_add_device_spec')
-    def test_09__add_devices(self, mock_adddecspec, mock_nv):
-        """Test09 RuncEngine()._add_devices()."""
+    def test_11__add_devices(self, mock_adddecspec, mock_nv):
+        """Test11 RuncEngine()._add_devices()."""
         mock_adddecspec.side_effect = [True, True, True]
         mock_nv.return_value.get_mode.return_value = True
         mock_nv.return_value.get_devices.return_value = ['/dev/nvidia', ]
@@ -334,8 +341,8 @@ class RuncEngineTestCase(TestCase):
         self.assertTrue(mock_nv.return_value.get_mode.called)
         self.assertTrue(mock_nv.return_value.get_devices.called)
 
-    def test_10__add_mount_spec(self):
-        """Test10 RuncEngine()._add_mount_spec()."""
+    def test_12__add_mount_spec(self):
+        """Test12 RuncEngine()._add_mount_spec()."""
         rcex = RuncEngine(self.local, self.xmode)
         rcex._container_specjson = dict()
         rcex._container_specjson["mounts"] = []
@@ -355,8 +362,8 @@ class RuncEngineTestCase(TestCase):
         self.assertEqual(mount["source"], "/HOSTDIR")
         self.assertIn("rw", mount["options"])
 
-    def test_11__del_mount_spec(self):
-        """Test11 RuncEngine()._del_mount_spec()."""
+    def test_13__del_mount_spec(self):
+        """Test13 RuncEngine()._del_mount_spec()."""
         rcex = RuncEngine(self.local, self.xmode)
         rcex._container_specjson = dict()
         rcex._container_specjson["mounts"] = []
@@ -396,8 +403,8 @@ class RuncEngineTestCase(TestCase):
         rcex._del_mount_spec("/HOSTDIR", "/CONTDIR")
         self.assertEqual(len(rcex._container_specjson["mounts"]), 1)
 
-    def test_12__sel_mount_spec(self):
-        """Test12 RuncEngine()._sel_mount_spec()."""
+    def test_14__sel_mount_spec(self):
+        """Test14 RuncEngine()._sel_mount_spec()."""
         rcex = RuncEngine(self.local, self.xmode)
         rcex._container_specjson = dict()
         rcex._container_specjson["mounts"] = []
@@ -425,8 +432,8 @@ class RuncEngineTestCase(TestCase):
         self.assertEqual(status, 0)
 
     @patch.object(RuncEngine, '_sel_mount_spec')
-    def test_13__mod_mount_spec(self, mock_selmount):
-        """Test13 RuncEngine()._mod_mount_spec()."""
+    def test_15__mod_mount_spec(self, mock_selmount):
+        """Test15 RuncEngine()._mod_mount_spec()."""
         optnew = {"options": ["a", "su"]}
         mock_selmount.return_value = None
         rcex = RuncEngine(self.local, self.xmode)
@@ -451,20 +458,18 @@ class RuncEngineTestCase(TestCase):
     @patch('udocker.engine.runc.os.path.isdir')
     @patch.object(RuncEngine, '_add_mount_spec')
     @patch('udocker.engine.runc.FileBind')
-    def test_14__add_volume_bindings(self, mock_fbind,
-                                     mock_add_mount_spec,
-                                     mock_isdir, mock_isfile):
-        """Test14 RuncEngine()._add_volume_bindings()."""
-        mock_add_mount_spec.side_effect = [None, None]
+    def test_16__add_volume_bindings(self, mock_fbind, mock_add_mnt_spec, mock_isdir, mock_isfile):
+        """Test16 RuncEngine()._add_volume_bindings()."""
+        mock_add_mnt_spec.side_effect = [None, None]
         rcex = RuncEngine(self.local, self.xmode)
         rcex._filebind = mock_fbind
         rcex._filebind.start.return_value = ("/HOSTDIR", "/CONTDIR")
         rcex.opt["vol"] = list()
         rcex._add_volume_bindings()
-        self.assertTrue(mock_add_mount_spec.called)
+        self.assertTrue(mock_add_mnt_spec.called)
         self.assertFalse(mock_isdir.called)
 
-        mock_add_mount_spec.side_effect = [None, None]
+        mock_add_mnt_spec.side_effect = [None, None]
         mock_isdir.return_value = False
         mock_isfile.return_value = False
         rcex = RuncEngine(self.local, self.xmode)
@@ -476,7 +481,7 @@ class RuncEngineTestCase(TestCase):
         self.assertTrue(mock_isdir.called)
         self.assertTrue(mock_isfile.called)
 
-        mock_add_mount_spec.side_effect = [None, None]
+        mock_add_mnt_spec.side_effect = [None, None]
         mock_isdir.return_value = True
         mock_isfile.return_value = False
         rcex = RuncEngine(self.local, self.xmode)
@@ -487,9 +492,9 @@ class RuncEngineTestCase(TestCase):
         rcex._add_volume_bindings()
         self.assertTrue(mock_isdir.called)
         self.assertTrue(mock_isfile.called)
-        self.assertTrue(mock_add_mount_spec.call_count, 2)
+        self.assertTrue(mock_add_mnt_spec.call_count, 2)
 
-        mock_add_mount_spec.side_effect = [None, None]
+        mock_add_mnt_spec.side_effect = [None, None]
         mock_isdir.return_value = False
         mock_isfile.return_value = True
         rcex = RuncEngine(self.local, self.xmode)
@@ -503,12 +508,12 @@ class RuncEngineTestCase(TestCase):
         rcex._add_volume_bindings()
         self.assertTrue(mock_isdir.called)
         self.assertTrue(mock_isfile.called)
-        self.assertTrue(mock_add_mount_spec.call_count, 1)
+        self.assertTrue(mock_add_mnt_spec.call_count, 1)
         self.assertTrue(rcex._filebind.set_file.called)
         self.assertTrue(rcex._filebind.add_file.called)
 
-    # def test_15__run_invalid_options(self):
-    #     """Test15 RuncEngine()._run_invalid_options()."""
+    # def test_17__run_invalid_options(self):
+    #     """Test17 RuncEngine()._run_invalid_options()."""
     #     rcex = RuncEngine(self.local, self.xmode)
     #     rcex.opt['netcoop'] = False
     #     rcex.opt['portsmap'] = True
@@ -520,9 +525,9 @@ class RuncEngineTestCase(TestCase):
     @patch('udocker.engine.runc.FileBind')
     @patch('udocker.engine.runc.os.path.basename')
     @patch('udocker.engine.runc.PRootEngine')
-    def test_16__proot_overlay(self, mock_proot, mock_base, mock_fbind,
+    def test_18__proot_overlay(self, mock_proot, mock_base, mock_fbind,
                                mock_chmod, mock_stat, mock_crmpoint):
-        """Test16 RuncEngine()._proot_overlay()."""
+        """Test18 RuncEngine()._proot_overlay()."""
         self.xmode.get_mode.return_value = "R1"
         rcex = RuncEngine(self.local, self.xmode)
         status = rcex._proot_overlay("P2")
@@ -576,16 +581,12 @@ class RuncEngineTestCase(TestCase):
     @patch.object(RuncEngine, '_load_spec')
     @patch.object(RuncEngine, 'select_runc')
     @patch.object(RuncEngine, '_run_init')
-    def test_17_run(self, mock_run_init, mock_sel_runc,
-                    mock_load_spec, mock_run_env_cleanup_list,
-                    mock_uid_check, mock_addspecs, mock_modms,
-                    mock_env_set, mock_prooto, mock_savespec,
-                    mock_set_spec, mock_add_bindings, mock_add_dev,
-                    mock_run_banner, mock_del_mount_spec, mock_inv_opt,
-                    mock_pty, mock_nopty, mock_delmnt, mock_delns,
-                    mock_setid,
-                    mock_unique, mock_fbind):
-        """Test17 RuncEngine().run()."""
+    def test_19_run(self, mock_run_init, mock_sel_runc, mock_load_spec, mock_run_env_cleanup_list,
+                    mock_uid_check, mock_addspecs, mock_modms, mock_env_set, mock_prooto,
+                    mock_savespec, mock_set_spec, mock_add_bindings, mock_add_dev, mock_run_banner,
+                    mock_del_mount_spec, mock_inv_opt, mock_pty, mock_nopty, mock_delmnt,
+                    mock_delns, mock_setid, mock_unique, mock_fbind):
+        """Test19 RuncEngine().run()."""
         mock_run_init.return_value = False
         mock_delmnt.return_value = None
         mock_delns.return_value = None
@@ -639,6 +640,7 @@ class RuncEngineTestCase(TestCase):
         mock_delns.return_value = None
         mock_setid.return_value = None
         rcex = RuncEngine(self.local, self.xmode)
+        rcex.opt["cmd"] = ["/bin/ls"]
         rcex.container_dir = "/container/ROOT"
         rcex._filebind = mock_fbind
         rcex._filebind.setup.return_value = None
@@ -647,8 +649,8 @@ class RuncEngineTestCase(TestCase):
 
     @patch('udocker.engine.runc.FileBind')
     @patch('udocker.engine.runc.subprocess.call')
-    def test_18_run_pty(self, mock_call, mock_fbind):
-        """Test18 RuncEngine().run_pty()."""
+    def test_20_run_pty(self, mock_call, mock_fbind):
+        """Test20 RuncEngine().run_pty()."""
         mock_call.return_value = 0
         rcex = RuncEngine(self.local, self.xmode)
         rcex.container_dir = "/container/ROOT"
@@ -657,8 +659,8 @@ class RuncEngineTestCase(TestCase):
         status = rcex.run_pty("CONTAINERID")
         self.assertEqual(status, 0)
 
-    # def test_19_run_nopty(self):
-    #     """Test19 RuncEngine().run_nopty()."""
+    # def test_21_run_nopty(self):
+    #     """Test21 RuncEngine().run_nopty()."""
     #     pass
 
 
