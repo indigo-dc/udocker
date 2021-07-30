@@ -249,29 +249,30 @@ class RuncEngineTestCase(TestCase):
         self.assertFalse(mock_getuid.called)
         self.assertFalse(mock_getgid.called)
 
-    def test_06__set_id_mappings(self):
+    @patch('udocker.engine.runc.HostInfo')
+    def test_06__set_id_mappings(self, mock_hinfo):
         """Test06 RuncEngine()._set_id_mappings()."""
-        pass
+        mock_hinfo.return_value.uid = 1001
+        mock_hinfo.return_value.gid = 1001
+        rcex = RuncEngine(self.local, self.xmode)
+        rcex._container_specjson = {"linux":
+                                      {"uidMappings": [{"containerID": 0, "hostID": 1001}],
+                                       "gidMappings": [{"containerID": 0, "hostID": 1001}]}
+                                    }
+        rcex._set_id_mappings()
+        self.assertTrue(mock_hinfo.return_value.called_count, 2)
 
-    def test_07__del_namespace_spec(self):
-        """Test07 RuncEngine()._del_namespace_spec()."""
-        pass
+    # def test_07__del_namespace_spec(self):
+    #     """Test07 RuncEngine()._del_namespace_spec()."""
 
-    # def test_08__uid_check(self):
-    #     """Test08 RuncEngine()._uid_check()."""
-    #     rcex = RuncEngine(self.local, self.xmode)
-    #     rcex.opt = dict()
-    #     rcex._uid_check()
-
-    #     rcex = RuncEngine(self.local, self.xmode)
-    #     rcex.opt = dict()
-    #     rcex.opt["user"] = "root"
-    #     rcex._uid_check()
-
-    #     rcex = RuncEngine(self.local, self.xmode)
-    #     rcex.opt = dict()
-    #     rcex.opt["user"] = "user01"
-    #     rcex._uid_check()
+    @patch('udocker.engine.runc.LOG')
+    def test_08__uid_check(self, mock_log):
+        """Test08 RuncEngine()._uid_check()."""
+        rcex = RuncEngine(self.local, self.xmode)
+        rcex.opt = dict()
+        rcex.opt["user"] = "root"
+        rcex._uid_check()
+        self.assertFalse(mock_log.return_value.warning.called)
 
     def test_09__add_capabilities_spec(self):
         """Test09 RuncEngine()._add_capabilities_spec()."""
@@ -512,12 +513,20 @@ class RuncEngineTestCase(TestCase):
         self.assertTrue(rcex._filebind.set_file.called)
         self.assertTrue(rcex._filebind.add_file.called)
 
-    # def test_17__run_invalid_options(self):
-    #     """Test17 RuncEngine()._run_invalid_options()."""
-    #     rcex = RuncEngine(self.local, self.xmode)
-    #     rcex.opt['netcoop'] = False
-    #     rcex.opt['portsmap'] = True
-    #     rcex._run_invalid_options()
+    @patch('udocker.engine.runc.LOG.warning')
+    def test_17__run_invalid_options(self, mock_warn):
+        """Test17 RuncEngine()._run_invalid_options()."""
+        rcex = RuncEngine(self.local, self.xmode)
+        rcex.opt['netcoop'] = False
+        rcex.opt['portsmap'] = True
+        rcex._run_invalid_options()
+        self.assertTrue(mock_warn.called)
+
+        rcex = RuncEngine(self.local, self.xmode)
+        rcex.opt['netcoop'] = True
+        rcex.opt['portsmap'] = True
+        rcex._run_invalid_options()
+        self.assertTrue(mock_warn.called_count, 2)
 
     @patch.object(RuncEngine, '_create_mountpoint')
     @patch('udocker.engine.runc.stat')
