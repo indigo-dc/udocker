@@ -41,8 +41,7 @@ class SingularityEngineTestCase(TestCase):
     @patch('udocker.engine.singularity.HostInfo.arch')
     @patch('udocker.engine.singularity.FileUtil.find_file_in_dir')
     @patch('udocker.engine.singularity.FileUtil.find_exec')
-    def test_02_select_singularity(self, mock_findexe, mock_find,
-                                   mock_arch, mock_exists):
+    def test_02_select_singularity(self, mock_findexe, mock_find, mock_arch, mock_exists):
         """Test02 SingularityEngine().select_singularity()."""
         Config.conf['use_singularity_executable'] = ""
         mock_findexe.return_value = "/bin/runc-arm"
@@ -117,12 +116,14 @@ class SingularityEngineTestCase(TestCase):
         sing._make_container_directories()
         self.assertTrue(mock_mkdir.call_count, 6)
 
-    def test_06__run_invalid_options(self):
+    @patch('udocker.engine.singularity.LOG.warning')
+    def test_06__run_invalid_options(self, mock_warn):
         """Test06 SingularityEngine()._run_invalid_options()."""
         sing = SingularityEngine(self.local, self.xmode)
-        sing.opt['netcoop'] = False
+        sing.opt['netcoop'] = True
         sing.opt['portsmap'] = True
         sing._run_invalid_options()
+        self.assertTrue(mock_warn.call_count, 2)
 
     @patch.object(SingularityEngine, '_has_option')
     @patch('udocker.engine.singularity.NixAuthentication')
@@ -180,9 +181,8 @@ class SingularityEngineTestCase(TestCase):
     @patch('udocker.engine.singularity.Unique.uuid')
     @patch('udocker.engine.singularity.FileBind')
     @patch('udocker.engine.singularity.os.path.isdir')
-    def test_08_run(self, mock_isdir, mock_fbind, mock_uuid, mock_call,
-                    mock_rinit, mock_rinvopt, mock_mkcontdir,
-                    mock_selsing, mock_runroot, mock_renvset, mock_getvolbind,
+    def test_08_run(self, mock_isdir, mock_fbind, mock_uuid, mock_call, mock_rinit, mock_rinvopt,
+                    mock_mkcontdir, mock_selsing, mock_runroot, mock_renvset, mock_getvolbind,
                     mock_renvclean, mock_rbann):
         """Test08 SingularityEngine().run()."""
         mock_isdir.return_value = True
