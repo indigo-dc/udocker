@@ -23,18 +23,14 @@ class KeyStore(object):
         """Verify the keystore file and directory"""
         keystore_uid = FileUtil(self.keystore_file).uid()
         if keystore_uid not in (-1, HostInfo.uid):
-            raise IOError("not owner of keystore: %s" %
-                          (self.keystore_file))
+            raise IOError("not owner of keystore: %s" % (self.keystore_file))
 
         keystore_dir = os.path.dirname(self.keystore_file)
         if FileUtil(keystore_dir).uid() != HostInfo.uid:
-            raise IOError("keystore dir not found or not owner: %s" %
-                          (keystore_dir))
+            raise IOError("keystore dir not found or not owner: %s" % (keystore_dir))
 
-        if (keystore_uid != -1 and
-                (os.stat(self.keystore_file).st_mode & 0o077)):
-            raise IOError("keystore is accessible to group or others: %s" %
-                          (self.keystore_file))
+        if (keystore_uid != -1 and (os.stat(self.keystore_file).st_mode & 0o077)):
+            raise IOError("keystore is accessible to group or others: %s" % (self.keystore_file))
 
     def _read_all(self):
         """Read all credentials from file"""

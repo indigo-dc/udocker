@@ -27,17 +27,21 @@ class KeyStoreTestCase(TestCase):
         status = kstore.keystore_file
         self.assertEqual(status, "filename")
 
-    # @patch('udocker.helper.keystore.os.path.dirname')
-    # @patch('udocker.helper.keystore.HostInfo')
-    # @patch('udocker.helper.keystore.FileUtil')
-    # def test_02__verify_keystore(self, mock_futil, mock_hinfo, mock_pdir):
-    #     """Test02 KeyStore()._verify_keystore()."""
-    #     mock_futil.return_value.uid.return_value = 1000
-    #     mock_hinfo.return_value.uid.return_value = 1000
-    #     mock_pdir.return_value = "somedir/filename"
-    #     kstore = KeyStore("filename")
-    #     kstore._verify_keystore()
-    #     self.assertTrue(mock_futil.uid.called)
+    @patch('udocker.helper.keystore.os.path.dirname')
+    @patch('udocker.helper.keystore.HostInfo')
+    @patch('udocker.helper.keystore.FileUtil')
+    def test_02__verify_keystore(self, mock_futil, mock_hinfo, mock_pdir):
+        """Test02 KeyStore()._verify_keystore()."""
+        mock_futil.return_value.uid.return_value = 1001
+        mock_hinfo.return_value.uid.return_value = 0
+        kstore = KeyStore("filename")
+        self.assertRaises(IOError, kstore._verify_keystore)
+
+        mock_futil.return_value.uid.side_effect = [1001, 1000]
+        mock_hinfo.return_value.uid.return_value = 1001
+        mock_pdir.return_value = "somedir/filename"
+        kstore = KeyStore("filename")
+        self.assertRaises(IOError, kstore._verify_keystore)
 
     @patch('udocker.helper.keystore.json.load')
     def test_03__read_all(self, mock_jload):
@@ -69,6 +73,11 @@ class KeyStoreTestCase(TestCase):
             status = kstore._shred()
             self.assertEqual(status, 0)
 
+        mock_size.side_effect = IOError("fail")
+        kstore = KeyStore("filename")
+        status = kstore._shred()
+        self.assertEqual(status, 1)
+
     @patch.object(KeyStore, '_verify_keystore')
     @patch('udocker.helper.keystore.json.dump')
     @patch('udocker.helper.keystore.os.umask')
@@ -85,6 +94,11 @@ class KeyStoreTestCase(TestCase):
             kstore = KeyStore("filename")
             status = kstore._write_all(credentials)
             self.assertEqual(status, 1)
+
+        mock_umask.side_effect = IOError("fail")
+        kstore = KeyStore("filename")
+        status = kstore._write_all(credentials)
+        self.assertEqual(status, 1)
 
     @patch.object(KeyStore, '_read_all')
     def test_06_get(self, mock_readall):
@@ -122,8 +136,7 @@ class KeyStoreTestCase(TestCase):
     @patch.object(KeyStore, '_shred')
     @patch.object(KeyStore, '_write_all')
     @patch.object(KeyStore, '_read_all')
-    def test_08_delete(self, mock_readall, mock_writeall, mock_shred,
-                       mock_verks):
+    def test_08_delete(self, mock_readall, mock_writeall, mock_shred, mock_verks):
         """Test08 KeyStore().delete()."""
         url = u'https://xxx'
         email = u'user@domain'
