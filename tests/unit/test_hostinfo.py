@@ -22,13 +22,16 @@ class HostInfoTestCase(TestCase):
     @patch('udocker.helper.hostinfo.pwd.getpwuid')
     def test_01_username(self, mock_getpwuid, mock_uid, mock_gid):
         """Test01 HostInfo().username."""
-        usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr",
-                                 "/root", "/bin/bash"])
+        usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr", "/root", "/bin/bash"])
         mock_uid.return_value = 0
         mock_gid.return_value = 0
         mock_getpwuid.return_value = usr
         name = HostInfo().username()
         self.assertEqual(name, usr.pw_name)
+
+        mock_getpwuid.side_effect = KeyError("fail")
+        name = HostInfo().username()
+        self.assertEqual(name, "")
 
     @patch('udocker.helper.hostinfo.platform.architecture')
     @patch('udocker.helper.hostinfo.platform.machine')
@@ -61,12 +64,20 @@ class HostInfoTestCase(TestCase):
         result = HostInfo().osversion()
         self.assertEqual(result, "linux")
 
+        mock_sys.side_effect = NameError("fail")
+        status = HostInfo().osversion()
+        self.assertEqual(status, "")
+
     @patch('udocker.helper.hostinfo.platform.release')
     def test_04_oskernel(self, mock_rel):
         """Test04 HostInfo().oskernel."""
         mock_rel.return_value = "3.2.1"
         result = HostInfo().oskernel()
         self.assertEqual(result, "3.2.1")
+
+        mock_rel.side_effect = NameError("fail")
+        status = HostInfo().oskernel()
+        self.assertEqual(status, "6.1.1")
 
     @patch.object(HostInfo, 'oskernel')
     def test_05_oskernel_isgreater(self, mock_kernel):
