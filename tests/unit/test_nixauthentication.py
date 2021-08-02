@@ -41,56 +41,54 @@ class NixAuthenticationTestCase(TestCase):
     @patch.object(NixAuthentication, '_get_user_from_file')
     def test_03_user_in_subuid(self, mock_file, mock_host):
         """Test03 NixAuthentication().user_in_subuid."""
-        mock_host.return_value = ("user", "1000", "1000", "usr",
-                                  "/home/user", "/bin/bash")
+        mock_host.return_value = ("user", "1000", "1000", "usr", "/home/user", "/bin/bash")
         auth = NixAuthentication()
         auth.subuid_file = "/etc/subuid"
         subuid_line = StringIO('user:100000:65536')
         with patch(BUILTINS + '.open') as mopen:
-            mopen.return_value.__iter__ = (
-                lambda self: iter(subuid_line.readline, ''))
+            mopen.return_value.__iter__ = (lambda self: iter(subuid_line.readline, ''))
             listuser = auth.user_in_subuid("user")
             self.assertEqual(listuser, [("100000", "65536")])
             self.assertTrue(mock_host.called)
 
-        mock_file.return_value = ("user", "1000", "1000", "usr",
-                                  "/home/user", "/bin/bash")
+        mock_file.return_value = ("user", "1000", "1000", "usr", "/home/user", "/bin/bash")
         auth = NixAuthentication()
         auth.passwd_file = "/etc/passwd"
         auth.subuid_file = "/etc/subuid"
         subuid_line = StringIO('user:100000:65536')
         with patch(BUILTINS + '.open') as mopen:
-            mopen.return_value.__iter__ = (
-                lambda self: iter(subuid_line.readline, ''))
+            mopen.return_value.__iter__ = (lambda self: iter(subuid_line.readline, ''))
             listuser = auth.user_in_subuid("user")
             self.assertEqual(listuser, [("100000", "65536")])
             self.assertTrue(mock_file.called)
+
+        mock_open.side_effect = OSError("fail")
+        auth = NixAuthentication()
+        auth.passwd_file = "/etc/passwd"
+        listuser = auth.user_in_subuid("user")
+        self.assertEqual(listuser, list())
 
     @patch.object(NixAuthentication, '_get_user_from_host')
     @patch.object(NixAuthentication, '_get_user_from_file')
     def test_04_user_in_subgid(self, mock_file, mock_host):
         """Test04 NixAuthentication().user_in_subgid."""
-        mock_host.return_value = ("user", "1000", "1000", "usr",
-                                  "/home/user", "/bin/bash")
+        mock_host.return_value = ("user", "1000", "1000", "usr", "/home/user", "/bin/bash")
         auth = NixAuthentication()
         auth.subuid_file = "/etc/subgid"
         subgid_line = StringIO('user:100000:65536')
         with patch(BUILTINS + '.open') as mopen:
-            mopen.return_value.__iter__ = (
-                lambda self: iter(subgid_line.readline, ''))
+            mopen.return_value.__iter__ = (lambda self: iter(subgid_line.readline, ''))
             listuser = auth.user_in_subgid("user")
             self.assertEqual(listuser, [("100000", "65536")])
             self.assertTrue(mock_host.called)
 
-        mock_file.return_value = ("user", "1000", "1000", "usr",
-                                  "/home/user", "/bin/bash")
+        mock_file.return_value = ("user", "1000", "1000", "usr", "/home/user", "/bin/bash")
         auth = NixAuthentication()
         auth.passwd_file = "/etc/passwd"
         auth.subgid_file = "/etc/subgid"
         subgid_line = StringIO('user:100000:65536')
         with patch(BUILTINS + '.open') as mopen:
-            mopen.return_value.__iter__ = (
-                lambda self: iter(subgid_line.readline, ''))
+            mopen.return_value.__iter__ = (lambda self: iter(subgid_line.readline, ''))
             listuser = auth.user_in_subgid("user")
             self.assertEqual(listuser, [("100000", "65536")])
             self.assertTrue(mock_file.called)
@@ -99,8 +97,7 @@ class NixAuthenticationTestCase(TestCase):
     @patch('udocker.helper.nixauth.pwd.getpwuid')
     def test_05__get_user_from_host(self, mock_getpwuid, mock_getpwnam):
         """Test05 NixAuthentication()._get_user_from_host()."""
-        usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr",
-                                 "/root", "/bin/bash"])
+        usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr", "/root", "/bin/bash"])
         mock_getpwuid.return_value = usr
         auth = NixAuthentication()
         (name, uid, gid, gecos, _dir, shell) = auth._get_user_from_host(0)
@@ -120,7 +117,14 @@ class NixAuthenticationTestCase(TestCase):
         self.assertEqual(gecos, usr.pw_gecos)
         self.assertEqual(_dir, usr.pw_dir)
 
-    # TODO: (mdavid) review test
+        mock_getpwuid.side_effect = IOError("fail")
+        auth = NixAuthentication()
+        self.assertEqual(auth._get_user_from_host(0), ("", "", "", "", "", ""))
+
+        mock_getpwnam.side_effect = IOError("fail")
+        auth = NixAuthentication()
+        self.assertEqual(auth._get_user_from_host("root"), ("", "", "", "", "", ""))
+
     @patch('udocker.helper.nixauth.grp.getgrnam')
     @patch('udocker.helper.nixauth.grp.getgrgid')
     def test_06__get_group_from_host(self, mock_grgid, mock_grname):
@@ -140,16 +144,22 @@ class NixAuthenticationTestCase(TestCase):
         self.assertEqual(gid, str(hgr.gr_gid))
         self.assertEqual(mem, hgr.gr_mem)
 
+        mock_grgid.side_effect = IOError("fail")
+        auth = NixAuthentication()
+        self.assertEqual(auth._get_group_from_host(0), ("", "", ""))
+
+        mock_grname.side_effect = IOError("fail")
+        auth = NixAuthentication()
+        self.assertEqual(auth._get_group_from_host("root"), ("", "", ""))
+
     def test_07__get_user_from_file(self):
         """Test07 NixAuthentication()._get_user_from_file()."""
         auth = NixAuthentication()
         auth.passwd_file = "passwd"
         passwd_line = StringIO('root:x:0:0:root:/root:/bin/bash')
         with patch(BUILTINS + '.open') as mopen:
-            mopen.return_value.__iter__ = (
-                lambda self: iter(passwd_line.readline, ''))
-            (name, uid, gid,
-             gecos, _dir, shell) = auth._get_user_from_file("root")
+            mopen.return_value.__iter__ = (lambda self: iter(passwd_line.readline, ''))
+            (name, uid, gid, gecos, _dir, shell) = auth._get_user_from_file("root")
             self.assertEqual(name, "root")
             self.assertEqual(uid, "0")
             self.assertEqual(gid, "0")
@@ -160,16 +170,19 @@ class NixAuthenticationTestCase(TestCase):
         passwd_line = StringIO('root:x:0:0:root:/root:/bin/bash')
         auth = NixAuthentication()
         with patch(BUILTINS + '.open') as mopen:
-            mopen.return_value.__iter__ = (
-                lambda self: iter(passwd_line.readline, ''))
-            (name, uid, gid,
-             gecos, _dir, shell) = auth._get_user_from_file(0)
+            mopen.return_value.__iter__ = (lambda self: iter(passwd_line.readline, ''))
+            (name, uid, gid, gecos, _dir, shell) = auth._get_user_from_file(0)
             self.assertEqual(name, "root")
             self.assertEqual(uid, "0")
             self.assertEqual(gid, "0")
             self.assertEqual(gecos, "root")
             self.assertEqual(_dir, "/root")
             self.assertEqual(shell, "/bin/bash")
+
+        mock_open.side_effect = OSError("fail")
+        auth = NixAuthentication()
+        auth.passwd_file = ""
+        self.assertEqual(auth._get_user_from_file(0), ("", "", "", "", "", ""))
 
     def test_08__get_group_from_file(self):
         """Test08 NixAuthentication()._get_group_from_file()."""
@@ -177,8 +190,7 @@ class NixAuthenticationTestCase(TestCase):
         auth.passwd_file = "passwd"
         group_line = StringIO('root:x:0:a,b,c')
         with patch(BUILTINS + '.open') as mopen:
-            mopen.return_value.__iter__ = (
-                lambda self: iter(group_line.readline, ''))
+            mopen.return_value.__iter__ = (lambda self: iter(group_line.readline, ''))
             (name, gid, mem) = auth._get_group_from_file("root")
             self.assertEqual(name, "root")
             self.assertEqual(gid, "0")
@@ -187,27 +199,46 @@ class NixAuthenticationTestCase(TestCase):
         group_line = StringIO('root:x:0:a,b,c')
         auth = NixAuthentication()
         with patch(BUILTINS + '.open') as mopen:
-            mopen.return_value.__iter__ = (
-                lambda self: iter(group_line.readline, ''))
+            mopen.return_value.__iter__ = (lambda self: iter(group_line.readline, ''))
             (name, gid, mem) = auth._get_group_from_file(0)
             self.assertEqual(name, "root")
             self.assertEqual(gid, "0")
             self.assertEqual(mem, "a,b,c")
 
-    def test_09_add_user(self):
-        """Test09 NixAuthentication().add_user()."""
+        mock_open.side_effect = IOError("fail")
         auth = NixAuthentication()
-        with patch(BUILTINS + '.open', mock_open()):
-            status = auth.add_user("root", "pw", 0, 0, "gecos",
-                                   "/home", "/bin/bash")
-            self.assertTrue(status)
+        auth.group_file = ""
+        self.assertEqual(auth._get_group_from_file(0), ("", "", ""))
 
-    def test_10_add_group(self):
-        """Test10 NixAuthentication().add_group()."""
+    @patch('udocker.helper.nixauth.FileUtil.getdata')
+    @patch('udocker.helper.nixauth.FileUtil.putdata')
+    def test_09_add_user(self, mock_put, mock_get):
+        """Test09 NixAuthentication().add_user()."""
+        mock_get.return_value = ("root", "pw", 0, 0, "gecos", "/home", "/bin/bash")
         auth = NixAuthentication()
-        with patch(BUILTINS + '.open', mock_open()):
-            status = auth.add_group("root", 0)
-            self.assertTrue(status)
+        status = auth.add_user("root", "pw", 0, 0, "gecos", "/home", "/bin/bash")
+        self.assertTrue(status)
+
+        mock_get.return_value = ("user", "ug", 1000, 1000, "g1", "/home/user", "/bin/bash")
+        mock_put.return_value = ("root", "pw", 0, 0, "gecos", "/home", "/bin/bash")
+        auth = NixAuthentication()
+        status = auth.add_user("root", "pw", 0, 0, "gecos", "/home", "/bin/bash")
+        self.assertEqual(status, ("root", "pw", 0, 0, "gecos", "/home", "/bin/bash"))
+
+    @patch('udocker.helper.nixauth.FileUtil.getdata')
+    @patch('udocker.helper.nixauth.FileUtil.putdata')
+    def test_10_add_group(self, mock_put, mock_get):
+        """Test10 NixAuthentication().add_group()."""
+        mock_get.return_value = ("root", 0, ['root'])
+        auth = NixAuthentication()
+        status = auth.add_group("root", 0, ['root'])
+        self.assertTrue(status)
+
+        mock_get.return_value = ("user", 1000, ['user'])
+        mock_put.return_value = ("root", 0, ['root'])
+        auth = NixAuthentication()
+        status = auth.add_group("root", 0, ['root'])
+        self.assertEqual(status, ("root", 0, ['root']))
 
     @patch.object(NixAuthentication, '_get_user_from_host')
     @patch.object(NixAuthentication, '_get_user_from_file')
@@ -245,14 +276,21 @@ class NixAuthenticationTestCase(TestCase):
         self.assertFalse(mock_host.called)
         self.assertTrue(mock_file.called)
 
+    @patch('udocker.helper.nixauth.HostInfo')
     @patch.object(NixAuthentication, 'get_user')
-    def test_13_get_home(self, mock_user):
+    def test_13_get_home(self, mock_user, mock_hinfo):
         """Test13 NixAuthentication().get_home()."""
-        mock_user.return_value = ('root', '0', '0', 'root',
-                                  '/root', '/bin/bash')
+        mock_user.return_value = ('root', '0', '0', 'root', '/root', '/bin/bash')
+        mock_hinfo.uid = 0
         auth = NixAuthentication()
         status = auth.get_home()
         self.assertEqual(status, '/root')
+
+        mock_user.return_value = ('', '', '', '', '', '')
+        mock_hinfo.uid = None
+        auth = NixAuthentication()
+        status = auth.get_home()
+        self.assertEqual(status, '')
 
 
 if __name__ == '__main__':
