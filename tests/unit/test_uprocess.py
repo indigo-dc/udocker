@@ -50,15 +50,25 @@ class UprocessTestCase(TestCase):
         mock_popen.return_value.communicate.return_value = ("OUTPUT", None)
         mock_popen.return_value.poll.return_value = 1
         uproc = Uprocess()
-        self.assertRaises(subprocess.CalledProcessError,
-                          uproc._check_output, "CMD")
+        self.assertRaises(subprocess.CalledProcessError, uproc._check_output, "CMD")
 
+    @patch.object(Uprocess, '_check_output')
+    @patch('udocker.utils.uprocess.sys')
     @patch('udocker.utils.uprocess.subprocess.check_output')
-    def test_03_check_output(self, mock_subp_chkout):
+    def test_03_check_output(self, mock_subp_chkout, mock_sys, mock_chkout):
         """Test03 Uprocess().check_output()."""
+        mock_sys.version_info = [3]
+        mock_subp_chkout.return_value = b"cmd"
         uproc = Uprocess()
-        uproc.check_output("CMD")
+        status = uproc.check_output("CMD")
         self.assertTrue(mock_subp_chkout.called)
+        self.assertEqual(status, "cmd")
+
+        mock_sys.version_info = [1]
+        mock_chkout.side_effect = OSError("fail")
+        uproc = Uprocess()
+        status = uproc.check_output()
+        self.assertEqual(status, "")
 
     @patch('udocker.utils.uprocess.Uprocess.check_output')
     def test_04_get_output(self, mock_uproc_chkout):
