@@ -27,21 +27,37 @@ class GuestInfoTestCase(TestCase):
         ginfo = OSInfo(self.rootdir)
         self.assertIsInstance(ginfo._binarylist, list)
 
+    @patch('udocker.helper.osinfo.os.path.dirname')
+    @patch('udocker.helper.osinfo.os.readlink')
+    @patch('udocker.helper.osinfo.os.path.islink')
     @patch('udocker.helper.osinfo.Uprocess.get_output')
     @patch('udocker.helper.osinfo.os.path.isfile')
-    def test_02_get_filetype(self, mock_isfile, mock_getout):
+    def test_02_get_filetype(self, mock_isfile, mock_getout, mock_islnk, mock_rlnk, mock_dir):
         """Test02 OSInfo.get_filetype(filename)"""
         # full filepath exists
         ftype = "/bin/ls: yyy, x86-64, xxx"
         mock_isfile.return_value = True
+        mock_islnk.return_value = False
         mock_getout.return_value = ftype
         ginfo = OSInfo(self.rootdir)
-        status = ginfo.get_filetype(self.file)
+        status = ginfo.get_filetype("bin/ls")
         self.assertEqual(status, ftype)
+
+        # link exists
+        # ftype = "/lib/x86_64-linux-gnu/ld-2.31.so: yyy, x86-64, xxx"
+        # mock_isfile.side_effect = [False, True]
+        # mock_getout.return_value = ftype
+        # mock_islnk.side_effect = [True, False]
+        # mock_rlnk.return_value = "ls"
+        # mock_dir.return_value = "/bin/ls"
+        # ginfo = OSInfo(self.rootdir)
+        # status = ginfo.get_filetype("/usr/lib64/ld-linux-x86-64.so.2")
+        # self.assertEqual(status, ftype)
 
         # file does not exist
         nofile = "ddd: cannot open"
         mock_isfile.return_value = False
+        mock_islnk.return_value = False
         mock_getout.return_value = nofile
         ginfo = OSInfo(self.rootdir)
         status = ginfo.get_filetype(nofile)
@@ -103,6 +119,28 @@ class GuestInfoTestCase(TestCase):
         ginfo = OSInfo(self.rootdir)
         status = ginfo.osdistribution()
         self.assertEqual(status, osdist)
+
+        osdata = ("NAME=\"Ubuntu\"\n"
+                  "VERSION=\"20.04.2 LTS (Focal Fossa)\"\n"
+                  "ID=ubuntu\n"
+                  "ID_LIKE=debian\n"
+                  "PRETTY_NAME=\"Ubuntu 20.04.2 LTS\"\n"
+                  "VERSION_ID=\"20.04\"\n"
+                  "VERSION_CODENAME=focal\n"
+                  "UBUNTU_CODENAME=focal")
+        mock_match.return_value = ["/etc/os-release"]
+        osdist = ("Ubuntu", "20")
+        mock_exists.return_value = True
+        mock_gdata.return_value = osdata
+        ginfo = OSInfo(self.rootdir)
+        status = ginfo.osdistribution()
+        self.assertEqual(status, osdist)
+
+        mock_match.return_value = [""]
+        mock_exists.return_value = False
+        ginfo = OSInfo(self.rootdir)
+        status = ginfo.osdistribution()
+        self.assertEqual(status, ("", ""))
 
     @patch.object(OSInfo, 'osdistribution')
     def test_05_osversion(self, mock_osdist):
