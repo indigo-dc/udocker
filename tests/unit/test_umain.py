@@ -37,6 +37,15 @@ class UMainTestCase(TestCase):
             umain._prepare_exec()
             self.assertTrue(mock_exit.called)
 
+        argv = ["udocker", "--repo=ud"]
+        mock_getuid.return_value = 1000
+        mock_local.return_value.is_repo.return_value = False
+        mock_local.return_value.create_repo.return_value = None
+        with patch('sys.exit') as mock_exit:
+            umain = UMain(argv)
+            umain._prepare_exec()
+            self.assertTrue(mock_exit.called)
+
         argv = ["udocker", "-h", "--debug", "--insecure"]
         mock_getuid.return_value = 100
         mock_local.return_value.is_repo.return_value = True
@@ -48,10 +57,13 @@ class UMainTestCase(TestCase):
         self.assertTrue(mock_local.return_value.is_repo.called)
         self.assertTrue(mock_ucli.called)
 
+    @patch('udocker.umain.LocalRepository')
     @patch('udocker.umain.UdockerCLI')
-    def test_03_execute(self, mock_ucli):
+    def test_03_execute(self, mock_ucli, mock_local):
         """Test03 UMain().execute()."""
         argv = ['udocker', '--allow-root', '-h']
+        mock_local.return_value.is_repo.return_value = True
+        mock_local.return_value.create_repo.return_value = None
         mock_ucli.return_value.do_help.return_value = 0
         umain = UMain(argv)
         status = umain.execute()
@@ -59,13 +71,35 @@ class UMainTestCase(TestCase):
         self.assertEqual(status, 0)
 
         argv = ['udocker', '--allow-root', '--version']
+        mock_local.return_value.is_repo.return_value = True
+        mock_local.return_value.create_repo.return_value = None
         mock_ucli.return_value.do_version.return_value = 0
         umain = UMain(argv)
         status = umain.execute()
         self.assertTrue(mock_ucli.return_value.do_version.called)
         self.assertEqual(status, 0)
 
+        argv = ['udocker', '--allow-root', '--config=udocker.conf']
+        mock_local.return_value.is_repo.return_value = True
+        mock_local.return_value.create_repo.return_value = None
+        mock_ucli.return_value.do_version.return_value = 0
+        umain = UMain(argv)
+        status = umain.execute()
+        self.assertTrue(mock_ucli.return_value.do_version.called)
+        self.assertEqual(status, 1)
+
         argv = ['udocker', '--allow-root', 'install']
+        mock_local.return_value.is_repo.return_value = True
+        mock_local.return_value.create_repo.return_value = None
+        mock_ucli.return_value.do_install.return_value = 0
+        umain = UMain(argv)
+        status = umain.execute()
+        self.assertTrue(mock_ucli.return_value.do_install.called)
+        self.assertEqual(status, 0)
+
+        argv = ['udocker', '--allow-root', '-q', 'install']
+        mock_local.return_value.is_repo.return_value = True
+        mock_local.return_value.create_repo.return_value = None
         mock_ucli.return_value.do_install.return_value = 0
         umain = UMain(argv)
         status = umain.execute()
@@ -73,6 +107,8 @@ class UMainTestCase(TestCase):
         self.assertEqual(status, 0)
 
         argv = ['udocker', '--allow-root', 'showconf']
+        mock_local.return_value.is_repo.return_value = True
+        mock_local.return_value.create_repo.return_value = None
         mock_ucli.return_value.do_showconf.return_value = 0
         umain = UMain(argv)
         status = umain.execute()
@@ -80,6 +116,8 @@ class UMainTestCase(TestCase):
         self.assertEqual(status, 0)
 
         argv = ['udocker', '--allow-root', 'rm']
+        mock_local.return_value.is_repo.return_value = True
+        mock_local.return_value.create_repo.return_value = None
         mock_ucli.return_value.do_rm.return_value = 0
         umain = UMain(argv)
         status = umain.execute()
@@ -87,6 +125,8 @@ class UMainTestCase(TestCase):
         self.assertEqual(status, 0)
 
         argv = ['udocker', '--allow-root', 'faking']
+        mock_local.return_value.is_repo.return_value = True
+        mock_local.return_value.create_repo.return_value = None
         umain = UMain(argv)
         status = umain.execute()
         self.assertEqual(status, 1)
