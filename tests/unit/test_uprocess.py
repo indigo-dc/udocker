@@ -77,15 +77,21 @@ class UprocessTestCase(TestCase):
         uproc = Uprocess()
         self.assertEqual("OUTPUT", uproc.get_output("CMD"))
 
-        # uproc = Uprocess()
-        # self.assertRaises(subprocess.CalledProcessError,
-        #                   uproc.get_output("/bin/false"))
+    @patch.object(Uprocess, 'find_inpath')
+    @patch('udocker.utils.uprocess.subprocess.call')
+    def test_05_call(self, mock_subcall, mock_find):
+        """Test05 Uprocess().call()."""
+        mock_find.return_value = '/bin/ls'
+        mock_subcall.return_value = 0
+        uproc = Uprocess()
+        status = uproc.call('/bin/ls')
+        self.assertEqual(status, 0)
 
-    # def test_05_call(self, mock_popen):
-    #     """Test05 Uprocess().call()."""
-
-    # def test_06_pipe(self, mock_popen):
-    #     """Test06 Uprocess().pipe()."""
+    @patch.object(Uprocess, 'find_inpath')
+    @patch('udocker.utils.uprocess.subprocess.Popen')
+    def test_06_pipe(self, mock_popen, mock_find):
+        """Test06 Uprocess().pipe()."""
+        mock_find.side_effect = ["/bin/ls", "/usr/bin/grep"]
 
 
 if __name__ == '__main__':
