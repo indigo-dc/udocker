@@ -65,6 +65,10 @@ class FileUtilTestCase(TestCase):
         self.assertEqual(futil.filename, '-')
         self.assertEqual(futil.basename, '-')
 
+        mock_absp.side_effect = AttributeError("fail")
+        futil = FileUtil('filename.txt')
+        self.assertEqual(futil.filename, 'filename.txt')
+
     @patch('udocker.utils.fileutil.os.path.isdir')
     @patch('udocker.utils.fileutil.os.path.realpath')
     @patch('udocker.utils.fileutil.os.path.abspath')
@@ -131,6 +135,16 @@ class FileUtilTestCase(TestCase):
         status = futil.umask(1)
         self.assertTrue(status)
         self.assertEqual(FileUtil.orig_umask, 0)
+
+        mock_umask.side_effect = TypeError("fail")
+        futil = FileUtil("somedir")
+        status = futil.umask(1)
+        self.assertFalse(status)
+
+        mock_umask.side_effect = TypeError("fail")
+        futil = FileUtil("somedir")
+        status = futil.umask()
+        self.assertFalse(status)
 
     @patch('udocker.utils.fileutil.os.path.abspath')
     @patch('udocker.utils.fileutil.os.path.basename')
