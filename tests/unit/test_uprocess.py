@@ -87,11 +87,11 @@ class UprocessTestCase(TestCase):
         status = uproc.call('/bin/ls')
         self.assertEqual(status, 0)
 
-    @patch.object(Uprocess, 'find_inpath')
-    @patch('udocker.utils.uprocess.subprocess.Popen')
-    def test_06_pipe(self, mock_popen, mock_find):
-        """Test06 Uprocess().pipe()."""
-        mock_find.side_effect = ["/bin/ls", "/usr/bin/grep"]
+    # @patch.object(Uprocess, 'find_inpath')
+    # @patch('udocker.utils.uprocess.subprocess.Popen')
+    # def test_06_pipe(self, mock_popen, mock_find):
+    #     """Test06 Uprocess().pipe()."""
+    #     mock_find.side_effect = ["/bin/ls", "/usr/bin/grep"]
 
 
 if __name__ == '__main__':
