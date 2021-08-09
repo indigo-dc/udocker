@@ -2,12 +2,9 @@
 """
 udocker unit tests: Unique
 """
+
 from unittest import TestCase, main
 from udocker.helper.unique import Unique
-try:
-    from unittest.mock import Mock, patch
-except ImportError:
-    from mock import Mock, patch
 
 
 class UniqueTestCase(TestCase):

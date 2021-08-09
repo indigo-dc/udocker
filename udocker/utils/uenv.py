@@ -102,7 +102,7 @@ class Uenv(object):
                 self.appendif(envstr)
         elif isinstance(envlist, (dict)):
             for key in envlist.keys():
-                if key not in self.env: 
+                if key not in self.env:
                     self.env[key] = envlist[key]
         return self
 

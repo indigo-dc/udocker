@@ -55,10 +55,12 @@ class CmdParser(object):
             if (pos not in self._argv_consumed_options['GEN_OPT'] and
                     pos not in self._argv_consumed_params['GEN_OPT']):
                 all_opt.append(self._argv_split['GEN_OPT'][pos])
+
         for pos in range(len(self._argv_split['CMD_OPT'])):
             if (pos not in self._argv_consumed_options['CMD_OPT'] and
                     pos not in self._argv_consumed_params['CMD_OPT']):
                 all_opt.append(self._argv_split['CMD_OPT'][pos])
+
         return all_opt
 
     def get(self, opt_name, opt_where="CMD_OPT", opt_multiple=False):
@@ -67,17 +69,20 @@ class CmdParser(object):
         """
         if opt_where == "CMD":
             return self._argv_split["CMD"]
-        elif opt_where in ("CMD_OPT", "GEN_OPT"):
+
+        if opt_where in ("CMD_OPT", "GEN_OPT"):
             if opt_name.startswith('P'):
                 return (self._get_param(opt_name,
                                         self._argv_split[opt_where],
                                         self._argv_consumed_options[opt_where],
                                         self._argv_consumed_params[opt_where]))
-            elif opt_name.startswith('-'):
+
+            if opt_name.startswith('-'):
                 return (self._get_option(opt_name,
                                          self._argv_split[opt_where],
                                          self._argv_consumed_options[opt_where],
                                          opt_multiple))
+
         return None
 
     def declare_options(self, opts_string, opt_where="CMD_OPT"):
@@ -160,6 +165,7 @@ class CmdParser(object):
         while pos < len(opt_list):
             if opt_list[pos] == "-":
                 skip_opts = False
+
             if not (skip_opts and
                     (opt_list[pos].startswith('-') or pos in consumed)):
                 skip_opts = False
@@ -167,15 +173,19 @@ class CmdParser(object):
                 if opt_name[1:] == str(param_num):
                     consumed_params.append(pos)
                     return opt_list[pos]
-                elif opt_name[1] == '*':
+
+                if opt_name[1] == '*':
                     consumed_params.append(pos)
                     all_args.append(opt_list[pos])
                 elif opt_name[1] == '+' and param_num > 0:
                     consumed_params.append(pos)
                     all_args.append(opt_list[pos])
             pos += 1
+
         if opt_name[1] == '*':
             return all_args
-        elif opt_name[1] == '+':
+
+        if opt_name[1] == '+':
             return all_args[1:]
+
         return None

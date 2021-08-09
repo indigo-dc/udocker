@@ -3,16 +3,10 @@
 udocker unit tests: FileBind
 """
 
-import sys
 from unittest import TestCase, main
+from unittest.mock import Mock, patch
 from udocker.utils.filebind import FileBind
 from udocker.config import Config
-try:
-    from unittest.mock import Mock, MagicMock, patch, mock_open
-except ImportError:
-    from mock import Mock, MagicMock, patch, mock_open
-
-sys.path.append('.')
 
 
 class FileBindTestCase(TestCase):

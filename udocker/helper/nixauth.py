@@ -67,6 +67,7 @@ class NixAuthentication(object):
                 re.match("^\\d+$", wanted_user)):
             wanted_uid = str(wanted_user)
             wanted_user = ""
+
         if wanted_uid:
             try:
                 usr = pwd.getpwuid(int(wanted_uid))
@@ -74,13 +75,12 @@ class NixAuthentication(object):
                 return ("", "", "", "", "", "")
             return (str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
                     str(usr.pw_gecos), usr.pw_dir, usr.pw_shell)
-        else:
-            try:
-                usr = pwd.getpwnam(wanted_user)
-            except (IOError, OSError, KeyError):
-                return ("", "", "", "", "", "")
-            return (str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
-                    str(usr.pw_gecos), usr.pw_dir, usr.pw_shell)
+        try:
+            usr = pwd.getpwnam(wanted_user)
+        except (IOError, OSError, KeyError):
+            return ("", "", "", "", "", "")
+        return (str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
+                str(usr.pw_gecos), usr.pw_dir, usr.pw_shell)
 
     def _get_group_from_host(self, wanted_group):
         """get group information from the host /etc/group"""
@@ -95,12 +95,12 @@ class NixAuthentication(object):
             except (IOError, OSError, KeyError):
                 return ("", "", "")
             return (str(hgr.gr_name), str(hgr.gr_gid), str(hgr.gr_mem))
-        else:
-            try:
-                hgr = grp.getgrnam(wanted_group)
-            except (IOError, OSError, KeyError):
-                return ("", "", "")
-            return (str(hgr.gr_name), str(hgr.gr_gid), str(hgr.gr_mem))
+
+        try:
+            hgr = grp.getgrnam(wanted_group)
+        except (IOError, OSError, KeyError):
+            return ("", "", "")
+        return (str(hgr.gr_name), str(hgr.gr_gid), str(hgr.gr_mem))
 
     def _get_user_from_file(self, wanted_user):
         """Get user from a passwd file"""

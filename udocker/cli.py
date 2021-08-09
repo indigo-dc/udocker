@@ -57,10 +57,12 @@ class UdockerCLI(object):
         topdir = cmdp.get("P1")
         if cmdp.missing_options():               # syntax error
             return False
+
         if not FileUtil(topdir).isdir():
-            Msg().out("Warning: localrepo directory is invalid: ", topdir,
-                      l=Msg.WAR)
+            Msg().out("Warning: localrepo directory is invalid: ",
+                      topdir, l=Msg.WAR)
             return False
+
         self.localrepo.setup(topdir)
         return True
 
@@ -68,25 +70,30 @@ class UdockerCLI(object):
         """Check image:tag syntax"""
         if (not imagespec) and def_imagespec:
             imagespec = def_imagespec
+
         try:
             (imagerepo, tag) = imagespec.rsplit(":", 1)
         except (ValueError, AttributeError):
             imagerepo = imagespec
             tag = "latest"
+
         if not (imagerepo and tag and
                 self.dockerioapi.is_repo_name(imagespec)):
             Msg().err("Error: must specify image:tag or repository/image:tag")
             return(None, None)
+
         return imagerepo, tag
 
     def _check_imagerepo(self, imagerepo, def_imagerepo=None):
         """Check image repository syntax"""
         if (not imagerepo) and def_imagerepo:
             imagerepo = def_imagerepo
+
         if not (imagerepo and
                 self.dockerioapi.is_repo_name(imagerepo)):
             Msg().err("Error: enter image or repository/image without tag")
             return None
+
         return imagerepo
 
     def _set_repository(self, registry_url, index_url=None,
@@ -95,18 +102,21 @@ class UdockerCLI(object):
         transport = "https:"
         if http_proxy:
             self.dockerioapi.set_proxy(http_proxy)
+
         if registry_url:
             if "://" not in registry_url:
                 registry_url = "https://" + registry_url
             self.dockerioapi.set_registry(registry_url)
             if not index_url:
                 self.dockerioapi.set_index("")
+
         if index_url:
             if "://" not in index_url:
                 index_url = "https://" + index_url
             self.dockerioapi.set_index(index_url)
             if not registry_url:
                 self.dockerioapi.set_registry("")
+
         if not (registry_url or index_url):
             try:
                 if "://" in imagerepo:
@@ -124,6 +134,7 @@ class UdockerCLI(object):
                 except (KeyError, NameError, TypeError):
                     self.dockerioapi.set_registry(transport + "//" + hostname)
                     self.dockerioapi.set_index(transport + "//" + hostname)
+
         return True
 
     def _split_imagespec(self, imagerepo):
@@ -266,8 +277,8 @@ class UdockerCLI(object):
         self.dockerioapi.set_v2_login_token(v2_auth_token)
         if list_tags:
             return self._list_tags(expression)
-        else:
-            return self._search_repositories(expression, pause, no_trunc)
+
+        return self._search_repositories(expression, pause, no_trunc)
 
     def do_load(self, cmdp):
         """
@@ -714,6 +725,7 @@ class UdockerCLI(object):
         --device=/dev/xxx          :pass device to container (R1 mode only)
         --location=<container-dir> :use container outside the repository
         --nobanner                 :don't print a startup banner
+        --entrypoint               :override the container metadata entrypoint
 
         Only available in Rn execution modes:
         --device=/dev/xxx          :pass device to container (R1 mode only)
@@ -916,13 +928,13 @@ class UdockerCLI(object):
                 Msg().err("Error: protect container failed")
                 return self.STATUS_ERROR
             return self.STATUS_OK
-        else:
-            (imagerepo, tag) = self._check_imagespec(arg)
-            if imagerepo:
-                if self.localrepo.protect_imagerepo(imagerepo, tag):
-                    return self.STATUS_OK
-            Msg().err("Error: protect image failed")
 
+        (imagerepo, tag) = self._check_imagespec(arg)
+        if imagerepo:
+            if self.localrepo.protect_imagerepo(imagerepo, tag):
+                return self.STATUS_OK
+
+        Msg().err("Error: protect image failed")
         return self.STATUS_ERROR
 
     def do_unprotect(self, cmdp):
@@ -939,13 +951,13 @@ class UdockerCLI(object):
                 Msg().err("Error: unprotect container failed")
                 return self.STATUS_ERROR
             return self.STATUS_OK
-        else:
-            (imagerepo, tag) = self._check_imagespec(arg)
-            if imagerepo:
-                if self.localrepo.unprotect_imagerepo(imagerepo, tag):
-                    return self.STATUS_OK
-            Msg().err("Error: unprotect image failed")
 
+        (imagerepo, tag) = self._check_imagespec(arg)
+        if imagerepo:
+            if self.localrepo.unprotect_imagerepo(imagerepo, tag):
+                return self.STATUS_OK
+
+        Msg().err("Error: unprotect image failed")
         return self.STATUS_ERROR
 
     def do_name(self, cmdp):
@@ -1056,14 +1068,15 @@ class UdockerCLI(object):
         (imagerepo, tag) = self._check_imagespec(cmdp.get("P1"))
         if (not imagerepo) or cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
-        else:
-            Msg().out("Info: verifying: %s:%s" % (imagerepo, tag), l=Msg.INF)
-            if not self.localrepo.cd_imagerepo(imagerepo, tag):
-                Msg().err("Error: selecting image and tag")
-                return self.STATUS_ERROR
-            elif self.localrepo.verify_image():
-                Msg().out("Info: image Ok", l=Msg.INF)
-                return self.STATUS_OK
+
+        Msg().out("Info: verifying: %s:%s" % (imagerepo, tag), l=Msg.INF)
+        if not self.localrepo.cd_imagerepo(imagerepo, tag):
+            Msg().err("Error: selecting image and tag")
+            return self.STATUS_ERROR
+
+        if self.localrepo.verify_image():
+            Msg().out("Info: image Ok", l=Msg.INF)
+            return self.STATUS_OK
 
         Msg().err("Error: image verification failure")
         return self.STATUS_ERROR
@@ -1104,31 +1117,39 @@ class UdockerCLI(object):
         fixperm = cmdp.get("--fixperm")
         if cmdp.missing_options():               # syntax error
             return self.STATUS_ERROR
+
         container_dir = self.localrepo.cd_container(container_id)
         if not container_dir:
             Msg().err("Error: invalid container id")
             return self.STATUS_ERROR
-        elif xmode and self.localrepo.isprotected_container(container_id):
+
+        if xmode and self.localrepo.isprotected_container(container_id):
             Msg().err("Error: container is protected")
             return self.STATUS_ERROR
+
         if purge:
             FileBind(self.localrepo, container_id).restore(force)
             MountPoint(self.localrepo, container_id).restore()
+
         if fixperm:
             Unshare().namespace_exec(lambda: FileUtil(container_dir +
                                                       "/ROOT").rchown())
             FileUtil(container_dir + "/ROOT").rchmod()
+
         nvidia_mode = NvidiaMode(self.localrepo, container_id)
         if nvidia:
             nvidia_mode.set_mode(force)
+
         exec_mode = ExecutionMode(self.localrepo, container_id)
         if xmode:
             if exec_mode.set_mode(xmode.upper(), force):
                 return self.STATUS_OK
             return self.STATUS_ERROR
+
         if xmode or not (xmode or force or nvidia or purge or fixperm):
             Msg().out("execmode: %s" % (exec_mode.get_mode()))
             Msg().out("nvidiamode: %s" % (nvidia_mode.get_mode()))
+
         return self.STATUS_OK
 
     def do_install(self, cmdp):
@@ -1153,6 +1174,7 @@ class UdockerCLI(object):
 
         if utools.install(force):
             return self.STATUS_OK
+
         return self.STATUS_ERROR
 
     def do_showconf(self, cmdp):
@@ -1162,10 +1184,12 @@ class UdockerCLI(object):
         cmdp.get("showconf", "CMD")
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
+
         Msg().out(80*"-")
         Msg().out("\t\tConfiguration options")
         for varopt in Config.conf:
             Msg().out(varopt, '=', Config.conf[varopt])
+
         Msg().out(80*"-")
         return self.STATUS_OK
 
@@ -1175,6 +1199,7 @@ class UdockerCLI(object):
         """
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
+
         try:
             Msg().out("%s %s" % ("version:", __version__))
             Msg().out("%s %s" % ("tarball:", Config.conf['tarball']))

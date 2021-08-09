@@ -4,11 +4,8 @@ udocker unit tests: LocalFileAPI
 """
 
 from unittest import TestCase, main
+from unittest.mock import patch, Mock
 from udocker.localfile import LocalFileAPI
-try:
-    from unittest.mock import patch, Mock
-except ImportError:
-    from mock import patch, Mock
 
 
 class LocalFileAPITestCase(TestCase):

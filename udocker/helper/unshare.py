@@ -44,35 +44,36 @@ class Unshare(object):
             os.close(pwrite1)
             os.read(pread1, 1)  # wait
             user = HostInfo().username()
-
             newidmap = ["newuidmap", str(cpid), "0", str(HostInfo.uid), "1"]
             for (subid, subcount) in NixAuthentication().user_in_subuid(user):
                 newidmap.extend(["1", subid, subcount])
-            subprocess.call(newidmap)
 
+            subprocess.call(newidmap)
             newidmap = ["newgidmap", str(cpid), "0", str(HostInfo.uid), "1"]
             for (subid, subcount) in NixAuthentication().user_in_subgid(user):
                 newidmap.extend(["1", subid, subcount])
+
             subprocess.call(newidmap)
             os.close(pwrite2)   # notify
-
             (dummy, status) = os.waitpid(cpid, 0)
             if status % 256:
                 Msg().err("Error: namespace exec action failed")
                 return False
+
             return True
-        else:
-            self.unshare(flags)
-            os.close(pwrite2)
-            os.close(pwrite1)   # notify
-            os.read(pread2, 1)  # wait
-            try:
-                os.setgid(0)
-                os.setuid(0)
-                os.setgroups([0, 0, ])
-            except OSError:
-                Msg().err("Error: setting ids and groups")
-                return False
-            # pylint: disable=protected-access
-            os._exit(int(method()))
-        return False
+
+        self.unshare(flags)
+        os.close(pwrite2)
+        os.close(pwrite1)   # notify
+        os.read(pread2, 1)  # wait
+        try:
+            os.setgid(0)
+            os.setuid(0)
+            os.setgroups([0, 0, ])
+        except OSError:
+            Msg().err("Error: setting ids and groups")
+            return False
+
+        # pylint: disable=protected-access
+        os._exit(int(method()))
+        return True

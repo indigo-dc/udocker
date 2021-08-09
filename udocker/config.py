@@ -18,8 +18,8 @@ class Config(object):
     """
     conf = dict()
     conf['verbose_level'] = 3
-    conf['topdir'] = os.path.expanduser("~") + "/.udocker"
-    conf['homedir'] = conf['topdir']
+    conf['homedir'] = os.path.expanduser("~") + "/.udocker"
+    conf['topdir'] = conf['homedir']
     conf['bindir'] = None
     conf['libdir'] = None
     conf['docdir'] = None
@@ -31,7 +31,8 @@ class Config(object):
     # the actual tarball used in the installation can have a higher version
     conf['tarball_release'] = "1.2.8"
     conf['tarball'] = (
-        "https://download.ncg.ingrid.pt/webdav/udocker/udocker-englib-1.2.8.tar.gz"
+        "https://download.ncg.ingrid.pt/"
+        "webdav/udocker/udocker-englib-1.2.8.tar.gz"
         " "
         "https://raw.githubusercontent.com"
         "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.8.tar.gz"
@@ -147,7 +148,8 @@ class Config(object):
     # docker hub index
     conf['dockerio_index_url'] = "https://hub.docker.com"
     # docker hub registry
-    conf['dockerio_registry_url'] = "https://registry.hub.docker.com"
+    #conf['dockerio_registry_url'] = "https://registry.hub.docker.com"
+    conf['dockerio_registry_url'] = "https://registry-1.docker.io"
     # private repository v2
     # conf['dockerio_registry_url'] = "http://localhost:5000"
 
@@ -179,42 +181,37 @@ class Config(object):
 
     conf['nvi_dev_list'] = ['/dev/nvidia', ]
 
+    def _conf_file_read(self, cfpath, ignore_keys=None):
+        """
+        Read config file
+        """
+        Msg().out('Info: using config file: ', cfpath)
+        cfnparser = ConfigParser()
+        cfnparser.read(cfpath)
+        for (key, val) in cfnparser.items('DEFAULT'):
+            if ignore_keys and key in ignore_keys:
+                continue
+            if val is not None:
+                Config.conf[key] = val
+
     def _file_override(self, user_cfile, ignore_keys=None):
         """
         Override values from config file
         """
-        cfpath = '/etc/' + Config.conf['config']
-        if os.path.exists(cfpath):
-            Msg().out('Info: using config file: %s', cfpath)
-            cfnparser = ConfigParser()
-            cfnparser.read(cfpath)
-            for (key, val) in cfnparser.items('DEFAULT'):
-                if ignore_keys and key in ignore_keys:
-                    continue
-                if val is not None:
-                    Config.conf[key] = val
+        if os.path.exists('/etc/' + Config.conf['config']):
+            self._conf_file_read('/etc/' + Config.conf['config'], ignore_keys)
 
-        cfpath = Config.conf['homedir'] + Config.conf['config']
+        cfpath = Config.conf['homedir'] + '/' + Config.conf['config']
         if os.path.exists(cfpath):
-            Msg().out('Info: using config file: %s', cfpath)
-            cfnparser = ConfigParser()
-            cfnparser.read(cfpath)
-            for (key, val) in cfnparser.items('DEFAULT'):
-                if ignore_keys and key in ignore_keys:
-                    continue
-                if val is not None:
-                    Config.conf[key] = val
+            self._conf_file_read(cfpath, ignore_keys)
 
-        cfpath = user_cfile
-        if os.path.exists(cfpath):
-            Msg().out('Info: using config file: %s', cfpath)
-            cfnparser = ConfigParser()
-            cfnparser.read(cfpath)
-            for (key, val) in cfnparser.items('DEFAULT'):
-                if ignore_keys and key in ignore_keys:
-                    continue
-                if val is not None:
-                    Config.conf[key] = val
+        if Config.conf['topdir'] != Config.conf['homedir']:
+            cfpath = Config.conf['topdir'] + '/'  + Config.conf['config']
+            if os.path.exists(cfpath):
+                self._conf_file_read(cfpath, ignore_keys)
+
+        if os.path.exists(user_cfile):
+            self._conf_file_read(user_cfile, ignore_keys)
 
     def _env_override(self):
         """Override config with environment"""
@@ -260,27 +257,13 @@ class Config(object):
         Config.conf['fakechroot_expand_symlinks'] = \
             os.getenv("UDOCKER_FAKECHROOT_EXPAND_SYMLINKS",
                       str(Config.conf['fakechroot_expand_symlinks'])).lower()
-        os.environ["PROOT_TMP_DIR"] = os.getenv("PROOT_TMP_DIR", Config.conf['tmpdir'])
-        # try:
-        #     Config.fakechroot_expand_symlinks = {
-        #         "false": False, "true": True,
-        #         "none": None, }[fakechroot_expand_symlinks]
-        # except (KeyError, ValueError):
-        #     Msg().err("Error: in UDOCKER_FAKECHROOT_EXPAND_SYMLINKS")
-
+        os.environ["PROOT_TMP_DIR"] = os.getenv("PROOT_TMP_DIR",
+                                                Config.conf['tmpdir'])
 
     def getconf(self, user_cfile="u.conf"):
         """Return all configuration variables"""
-        # osinfo = OSInfo(Config.conf, "")
-        # Config.conf['uid'] = os.getuid()
-        # Config.conf['gid'] = os.getgid()
-        # Config.conf['username'] = pwd.getpwuid(Config.conf['uid']).pw_name
-        # Config.conf['oskernel'] = platform.release()
-        # Config.conf['arch'] = osinfo.arch()
-        # Config.conf['osversion'] = osinfo.osversion()
-        # Config.conf['osdistribution'] = osinfo.osdistribution()
-        self._file_override(user_cfile)   # Override with variables in conf file
-        self._env_override()    # Override with variables in environment
+        self._file_override(user_cfile) # Override with variables in conf file
+        self._env_override()          # Override with variables in environment
 
     def container(self, user_cfile="u.conf"):
         """

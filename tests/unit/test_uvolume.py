@@ -3,15 +3,8 @@
 udocker unit tests: Uvolume
 """
 
-import sys
 from unittest import TestCase, main
 from udocker.utils.uvolume import Uvolume
-try:
-    from unittest.mock import Mock, MagicMock, patch, mock_open
-except ImportError:
-    from mock import Mock, MagicMock, patch, mock_open
-
-sys.path.append('.')
 
 
 class UvolumeTestCase(TestCase):

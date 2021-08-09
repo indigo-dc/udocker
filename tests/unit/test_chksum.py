@@ -3,23 +3,12 @@
 udocker unit tests: ChkSUM
 """
 
-import sys
 from unittest import TestCase, main
+from unittest.mock import patch, Mock, mock_open
+from io import BytesIO as strio
 from udocker.utils.chksum import ChkSUM
-try:
-    from unittest.mock import patch, Mock, mock_open
-except ImportError:
-    from mock import patch, Mock, mock_open
 
-try:
-    from StringIO import StringIO as strio
-except ImportError:
-    from io import BytesIO as strio
-
-if sys.version_info[0] >= 3:
-    BUILTINS = "builtins"
-else:
-    BUILTINS = "__builtin__"
+BUILTINS = "builtins"
 
 
 class ChkSUMTestCase(TestCase):
@@ -83,7 +72,7 @@ class ChkSUMTestCase(TestCase):
     # def test_10_hash(self):
     #     """Test10 ChkSUM().hash."""
     #     sha256sum = (
-    #         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+    #       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
     #     cksum = ChkSUM()
     #     file_data = strio('qwerty')
     #     with patch(BUILTINS + '.open', mock_open()) as mopen:

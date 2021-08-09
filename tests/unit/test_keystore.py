@@ -2,19 +2,13 @@
 """
 udocker unit tests: Keystore
 """
-import sys
+
 from unittest import TestCase, main
+from unittest.mock import patch, mock_open
 from udocker.helper.keystore import KeyStore
 from udocker.config import Config
-try:
-    from unittest.mock import patch, mock_open
-except ImportError:
-    from mock import patch, mock_open
 
-if sys.version_info[0] >= 3:
-    BUILTINS = "builtins"
-else:
-    BUILTINS = "__builtin__"
+BUILTINS = "builtins"
 
 
 class KeyStoreTestCase(TestCase):
@@ -136,6 +130,7 @@ class KeyStoreTestCase(TestCase):
         credentials = {url: {u'email': email, u'auth': auth}}
         mock_readall.return_value = credentials
         mock_writeall.return_value = 0
+        mock_shred.return_value = 0
         mock_verks.return_value = None
         kstore = KeyStore("filename")
         status = kstore.delete(url)

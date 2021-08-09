@@ -55,7 +55,8 @@ class RuncEngine(ExecutionEngineCommon):
                 eng = ["crun", "runc"]
 
             if arch == "amd64":
-                image_list = [eng[0]+"-x86_64", eng[0], eng[1]+"-x86_64", eng[1]]
+                image_list = [eng[0]+"-x86_64", eng[0],
+                              eng[1]+"-x86_64", eng[1]]
             elif arch == "i386":
                 image_list = [eng[0]+"-x86", eng[0], eng[1]+"-x86", eng[1]]
             elif arch == "arm64":
@@ -322,18 +323,22 @@ class RuncEngine(ExecutionEngineCommon):
         xmode = self.exec_mode.get_mode()
         if xmode not in ("R2", "R3"):
             return False
-        else:
-            preng = PRootEngine(self.localrepo, self.exec_mode)
-            preng.exec_mode.force_mode = proot_mode
-            preng.select_proot()
+
+        preng = PRootEngine(self.localrepo, self.exec_mode)
+        preng.exec_mode.force_mode = proot_mode
+        preng.select_proot()
         if preng.proot_noseccomp or os.getenv("PROOT_NO_SECCOMP"):
             env_noseccomp = "PROOT_NO_SECCOMP=1"
-        elif xmode == "R2":
+
+        if xmode == "R2":
             env_noseccomp = ""
-        elif xmode == "R3":
+
+        if xmode == "R3":
             env_noseccomp = "PROOT_NO_SECCOMP=1"
+
         if env_noseccomp:
             self._container_specjson["process"]["env"].append(env_noseccomp)
+
         host_executable = preng.executable
         cont_executable = "/.udocker/bin/" + os.path.basename(host_executable)
         self._create_mountpoint(host_executable, cont_executable,
