@@ -172,12 +172,12 @@ The focus has been put on sustainability and interoperability. The code structur
 was redesigned moving from the Python 2 monolithic code to a new Python 3 modular 
 implementation. New features and improvements were added to support a wider range 
 of Linux distributions and environments. To this end the execution engines now 
-support crun for namespace based execution with cgroups v2 and a port of Fakechroot 
-to support MUSL libc. The existing execution engines were also enhanced to address 
+support *crun* for namespace based execution with cgroups v2 and a port of *Fakechroot*
+to support *MUSL* libc. The existing execution engines were also enhanced to address 
 the shortcomings present in the proof of concept and improve interoperability for 
 execution across a wider range of distributions, kernels and better supporting the 
 functionalities required for containers execution. Support for multiple architectures 
-was added and binaries for ARM and x86 are now provided for PRoot based execution, 
+was added and binaries for ARM and x86 are now provided for *PRoot* based execution, 
 further binaries can be easily added as needed. Support for accelerated computing 
 was implemented by introducing the capability to setup containers to use NVIDIA GPUs 
 according to the host environment and across the several execution engines. The 
