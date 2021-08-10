@@ -85,7 +85,6 @@ class UMain(object):
             "setup": self.cli.do_setup, "install": self.cli.do_install,
             "install2": self.cli.do_install2, "showinst": self.cli.do_showinst,
             "avail": self.cli.do_avail, "download": self.cli.do_download,
-            "download_all": self.cli.do_download_all,
             "verifymod": self.cli.do_verifymod,
             "delete_metadata": self.cli.do_delete_metadata
         }

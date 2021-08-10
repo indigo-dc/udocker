@@ -1311,9 +1311,6 @@ class UdockerCLI(object):
     def do_download(self, cmdp):
         return self.STATUS_OK
 
-    def do_download_all(self, cmdp):
-        return self.STATUS_OK
-
     def do_verifymod(self, cmdp):
         """
         verifymod: Verify modules, checksums
