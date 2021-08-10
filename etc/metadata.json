@@ -54,7 +54,7 @@
         "dependencies": ["udocker"],
         "digit_signature": "",
         "urls": [
-            "https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/proot-arm64-4.8.0"
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/proot-arm64-4_8_0"
         ],
         "docs_url": [
             "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/proot_docs.tgz"
@@ -99,7 +99,7 @@
         "dependencies": ["udocker"],
         "digit_signature": "",
         "urls": [
-            "https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/proot-x86-4.8.0"
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/proot-x86-4_8_0"
         ],
         "docs_url": [
             "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/proot_docs.tgz"
@@ -114,10 +114,53 @@
         "dependencies": ["udocker"],
         "digit_signature": "",
         "urls": [
-            "https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/proot-x86_64-4.8.0"
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/proot-x86_64-4_8_0"
         ],
         "docs_url": [
             "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/proot_docs.tgz"
         ]
+    },
+    {
+        "module": "runc",
+        "version": "1.0.0-rc5",
+        "arch": "amd64",
+        "os_ver": "",
+        "kernel_ver": "",
+        "dependencies": ["udocker"],
+        "digit_signature": "",
+        "urls": [
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/runc-x86_64"
+        ],
+        "docs_url": [
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/runc_docs.tgz"
+        ]
+    },
+    {
+        "module": "crun",
+        "version": "0.17.5-ac41-dirty",
+        "arch": "amd64",
+        "os_ver": "",
+        "kernel_ver": "",
+        "dependencies": ["udocker"],
+        "digit_signature": "",
+        "urls": [
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/crun-x86_64"
+        ],
+        "docs_url": [
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/runc_docs.tgz"
+        ]
+    },
+    {
+        "module": "patchelf",
+        "version": "0.9",
+        "arch": "amd64",
+        "os_ver": "",
+        "kernel_ver": "",
+        "dependencies": ["udocker"],
+        "digit_signature": "",
+        "urls": [
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/patchelf-x86_64"
+        ],
+        "docs_url": []
     }
 ]
