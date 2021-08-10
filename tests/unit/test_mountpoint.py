@@ -179,12 +179,14 @@ class MountPointTestCase(TestCase):
         self.assertTrue(mock_del.called)
         self.assertFalse(status)
 
+    @patch('udocker.utils.mountpoint.os.path.realpath')
     @patch('udocker.utils.mountpoint.os.symlink')
     @patch('udocker.utils.mountpoint.os.path.exists')
-    def test_07_save(self, mock_exists, mock_syml):
+    def test_07_save(self, mock_exists, mock_syml, mock_realpath):
         """Test07 MountPoint().save()."""
         container_id = "CONTAINERID"
         cpath = 'cont_path'
+        mock_realpath.return_value = "/tmp"
         mpoint = MountPoint(self.local, container_id)
         mpoint.mountpoints = {'some_path': '/cont/bin'}
         status = mpoint.save(cpath)
@@ -192,6 +194,7 @@ class MountPointTestCase(TestCase):
 
         mock_exists.return_value = False
         mock_syml.return_value = None
+        mock_realpath.return_value = "/tmp"
         mpoint = MountPoint(self.local, container_id)
         mpoint.mountpoints = {'cont_path': '/cont/bin'}
         status = mpoint.save(cpath)
@@ -199,6 +202,7 @@ class MountPointTestCase(TestCase):
         self.assertTrue(mock_exists.called)
         self.assertTrue(mock_syml.called)
 
+        mock_realpath.return_value = "/tmp"
         mock_exists.side_effect = IOError("fail")
         mpoint = MountPoint(self.local, container_id)
         mpoint.mountpoints = {'cont_path': '/cont/bin'}
