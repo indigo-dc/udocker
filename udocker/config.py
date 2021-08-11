@@ -41,7 +41,14 @@ class Config(object):
     conf['config'] = "udocker.conf"
     conf['keystore'] = "keystore"
     conf['tmpdir'] = os.getenv("TMPDIR", "/tmp")    # for tmp files only
-    conf['meta_json'] = ("https://download.ncg.ingrid.pt/webdav/udocker/metadata.json")
+
+    # new conf options and commands for install
+    base_url = ["https://download.ncg.ingrid.pt/webdav/udocker/engines/",
+                "https://github.com/LIP-Computing/udocker_tools/raw/main/"]
+
+    conf['meta_json'] = list()
+    for url in base_url:
+        conf['meta_json'].append(url + "metadata.json")
 
     # defaults for container execution
     conf['cmd'] = ["/bin/bash", "-i"]  # Comand to execute
