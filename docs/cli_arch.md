@@ -28,8 +28,9 @@ udocker_setup |GENERAL_OPTIONS| COMMAND |SPEC_OPTIONS and ARGS|
   * `<module>`               positional args 1 or more
 * `show`       show installed modules, versions, URLS for download
 * `avail`      show available modules in the catalog
+  * (DEFAULT no options or args) downloads metadata.json if it doesn't exist already in `topdir`
   * `--force`                Force download of metadata.json
-* `download`   download tarball, so it can be installed offline
+* `download`   download tarball modules, so it can be installed offline
   * (DEFAULT no options or args) download udocker and all modules to udocker_install directory
   * With config file or setting environment variables will download to custom directory
   * `--from=<url>|<dir>`     URL or local directory with modules
@@ -47,5 +48,3 @@ udocker_setup |GENERAL_OPTIONS| COMMAND |SPEC_OPTIONS and ARGS|
   * `<module>`               positional args 1 or more
 * `delete_metadata`  delete cached metadata
   * `--prefix=<directory>`   destination download directory
-
-## Configuration options and environment variables

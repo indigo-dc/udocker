@@ -30,6 +30,11 @@ udocker loads the following configuration files if they are present:
 3. `$UDOCKER_DIR/udocker.conf` (if different from the above): overrides the options set in 2.
 4. Configuration file set with the general CLI option `--config=`: overrides the options set in 3.
 
+## Configuration options and environment variables
+
+All configuration options are show in the following table together with the corresponding
+environment variable:
+
 ## 3. Environment variables
 
 * `UDOCKER_DIR`: root directory of udocker usually $HOME/.udocker
