@@ -308,8 +308,9 @@ class UdockerTools(object):
         """Show available modules and versions"""
         fileout = Config.conf['topdir'] + "/" + "metadata.json"
         for urlmeta in self._get_mirrors(self._metajson):
+            mjson = fileout
             if force or not os.path.isfile(fileout):
-                LOG.info("metadata json of modules: %s", urlmeta)
+                LOG.info("url metadata json of modules: %s", urlmeta)
                 mjson = self._get_file(urlmeta, fileout)
 
             LOG.info("metadata json: %s", mjson)
