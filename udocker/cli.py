@@ -1300,12 +1300,16 @@ class UdockerCLI(object):
         """
         avail: Show available modules and versions
         """
-        cmdp.get("avail", "CMD")
+        if cmdp is not None:
+            force = cmdp.get("--force")
+        else:
+            force = False
+
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
         utools = UdockerTools(self.localrepo)
-        utools.show_metadata()
+        utools.show_metadata(force)
         return self.STATUS_OK
 
     def do_download(self, cmdp):

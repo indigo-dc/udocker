@@ -224,7 +224,7 @@ class UdockerTools(object):
     def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
         if is_genstr(mirrors):
-            mirrors = mirrors.split(' ')
+            mirrors = mirrors.split('\n')
 
         try:
             random.shuffle(mirrors)
@@ -304,31 +304,40 @@ class UdockerTools(object):
         LOG.error("installation of udockertools failed")
         return False
 
-    def show_metadata(self):
+    def show_metadata(self, force):
         """Show available modules and versions"""
         fileout = Config.conf['topdir'] + "/" + "metadata.json"
-        for url in self._get_mirrors(self._metajson):
-            LOG.info("metadata json of modules: %s", url)
-            mjson = self._get_file(url, fileout)
+        for urlmeta in self._get_mirrors(self._metajson):
+            if force or not os.path.isfile(fileout):
+                LOG.info("metadata json of modules: %s", urlmeta)
+                mjson = self._get_file(urlmeta, fileout)
 
-        try:
-            with open(mjson, 'r') as filep:
-                metadict = json.load(filep)
-                for module in metadict:
-                    MSG.info(120*"_")
-                    MSG.info("Module:         %s", module["module"])
-                    MSG.info("Version:        %s", module["version"])
-                    MSG.info("Architecture:   %s", module["arch"])
-                    MSG.info("OS version:     %s", module["os_ver"])
-                    MSG.info("Kernel version: %s", module["kernel_ver"])
-                    MSG.info("Dependencies:   %s", module["dependencies"])
-                    MSG.info("URLs:")
-                    for url in module["urls"]:
-                        MSG.info("                %s", url)
+            LOG.info("metadata json: %s", mjson)
+            try:
+                with open(mjson, 'r') as filep:
+                    metadict = json.load(filep)
+                    for module in metadict:
+                        MSG.info(120*"_")
+                        MSG.info("Module:         %s", module["module"])
+                        MSG.info("Filename:       %s", module["fname"])
+                        MSG.info("Version:        %s", module["version"])
+                        MSG.info("Architecture:   %s", module["arch"])
+                        MSG.info("Operating Sys:  %s", module["os"])
+                        MSG.info("OS version:     %s", module["os_ver"])
+                        MSG.info("Kernel version: %s", module["kernel_ver"])
+                        MSG.info("SHA256 sum:     %s", module["sha256sum"])
+                        MSG.info("URLs:")
+                        for url in module["urls"]:
+                            MSG.info("                %s", url)
 
-                    MSG.info("Documentation:")
-                    for url in module["docs_url"]:
-                        MSG.info("                %s", url)
+                        MSG.info("Documentation:")
+                        for url in module["docs_url"]:
+                            MSG.info("                %s", url)
 
-        except (KeyError, AttributeError, ValueError, OSError, IOError):
-            LOG.error("reading file")
+                return True
+
+            except (KeyError, AttributeError, ValueError, OSError, IOError):
+                LOG.error("reading file: %s", mjson)
+                continue
+
+        return False
