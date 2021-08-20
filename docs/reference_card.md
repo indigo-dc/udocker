@@ -35,6 +35,10 @@ udocker loads the following configuration files if they are present:
 All configuration options are show in the following table together with the corresponding
 environment variable:
 
+| Option | Env variable   | Default | Description
+|:-------|:---------------|:--------|:-----------
+| `topdir` | `UDOCKER_DIR` | `$HOME/.udocker` | root directory of udocker
+
 ## 3. Environment variables
 
 * `UDOCKER_DIR`: root directory of udocker usually $HOME/.udocker

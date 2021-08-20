@@ -19,8 +19,9 @@ class Config(object):
     """
     conf = dict()
     conf['verbose_level'] = logging.INFO
-    conf['homedir'] = os.path.expanduser("~") + "/.udocker"
-    conf['topdir'] = conf['homedir']
+    conf['homedir'] = os.path.expanduser("~") + "/.udocker"  # dir with keystore file
+    conf['topdir'] = conf['homedir']       # dir with images and containers
+    conf['installdir'] = conf['homedir']   # dir with exec engines bin and lib
     conf['bindir'] = None
     conf['libdir'] = None
     conf['docdir'] = None

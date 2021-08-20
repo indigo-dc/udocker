@@ -304,8 +304,8 @@ class UdockerTools(object):
         LOG.error("installation of udockertools failed")
         return False
 
-    def show_metadata(self, force):
-        """Show available modules and versions"""
+    def _get_metadata(self, force):
+        """Download metadata file with modules and versions and output json"""
         fileout = Config.conf['topdir'] + "/" + "metadata.json"
         for urlmeta in self._get_mirrors(self._metajson):
             mjson = fileout
@@ -317,28 +317,37 @@ class UdockerTools(object):
             try:
                 with open(mjson, 'r') as filep:
                     metadict = json.load(filep)
-                    for module in metadict:
-                        MSG.info(120*"_")
-                        MSG.info("Module:         %s", module["module"])
-                        MSG.info("Filename:       %s", module["fname"])
-                        MSG.info("Version:        %s", module["version"])
-                        MSG.info("Architecture:   %s", module["arch"])
-                        MSG.info("Operating Sys:  %s", module["os"])
-                        MSG.info("OS version:     %s", module["os_ver"])
-                        MSG.info("Kernel version: %s", module["kernel_ver"])
-                        MSG.info("SHA256 sum:     %s", module["sha256sum"])
-                        MSG.info("URLs:")
-                        for url in module["urls"]:
-                            MSG.info("                %s", url)
 
-                        MSG.info("Documentation:")
-                        for url in module["docs_url"]:
-                            MSG.info("                %s", url)
-
-                return True
+                return metadict
 
             except (KeyError, AttributeError, ValueError, OSError, IOError):
                 LOG.error("reading file: %s", mjson)
                 continue
 
-        return False
+        return list()
+
+    def show_metadata(self, force):
+        """Show available modules and versions"""
+        metadict = self._get_metadata(force)
+        if not metadict:
+            return False
+
+        for module in metadict:
+            MSG.info(120*"_")
+            MSG.info("Module:         %s", module["module"])
+            MSG.info("Filename:       %s", module["fname"])
+            MSG.info("Version:        %s", module["version"])
+            MSG.info("Architecture:   %s", module["arch"])
+            MSG.info("Operating Sys:  %s", module["os"])
+            MSG.info("OS version:     %s", module["os_ver"])
+            MSG.info("Kernel version: %s", module["kernel_ver"])
+            MSG.info("SHA256 sum:     %s", module["sha256sum"])
+            MSG.info("URLs:")
+            for url in module["urls"]:
+                MSG.info("                %s", url)
+
+            MSG.info("Documentation:")
+            for url in module["docs_url"]:
+                MSG.info("                %s", url)
+
+        return True

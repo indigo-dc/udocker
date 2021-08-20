@@ -1313,6 +1313,12 @@ class UdockerCLI(object):
         return self.STATUS_OK
 
     def do_download(self, cmdp):
+        """
+        download: download modules
+        download [options] module1 module2
+        --from=<url>|<dir>         :URL or local directory with modules
+        --prefix=<directory>       :destination download directory
+        """
         return self.STATUS_OK
 
     def do_verifymod(self, cmdp):
