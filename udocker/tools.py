@@ -326,6 +326,14 @@ class UdockerTools(object):
 
         return list()
 
+    def get_tarfilenames(self, list_tar):
+        """Get list of tarballs to download
+        Check for default files based on the host OS and arch
+        or download from the list list_tar"""
+        force = True
+        metadict = self._get_metadata(force)
+        list_downl = list()
+
     def show_metadata(self, force):
         """Show available modules and versions"""
         metadict = self._get_metadata(force)

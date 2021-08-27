@@ -1319,6 +1319,16 @@ class UdockerCLI(object):
         --from=<url>|<dir>         :URL or local directory with modules
         --prefix=<directory>       :destination download directory
         """
+        dst_dir = os.path.expanduser("~") + "/udocker/tar"  # Default dest dir for tarballs
+        if os.getenv("VIRTUAL_ENV"):
+            dst_dir = os.getenv("VIRTUAL_ENV") + "/tar"
+
+        chk_dir = cmdp.get("--prefix=")
+        if chk_dir:
+            dst_dir = chk_dir
+
+        ## Get list of files to download
+        ## Download that list
         return self.STATUS_OK
 
     def do_verifymod(self, cmdp):
