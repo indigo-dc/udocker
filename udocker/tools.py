@@ -11,6 +11,7 @@ from udocker import is_genstr, __version__, LOG, MSG
 from udocker.config import Config
 from udocker.utils.curl import GetURL
 from udocker.utils.fileutil import FileUtil
+from udocker.helper.osinfo import OSInfo
 
 def _str(data):
     """Safe str for Python 3 and Python 2"""
@@ -326,13 +327,49 @@ class UdockerTools(object):
 
         return list()
 
-    def get_tarfilenames(self, list_tar):
-        """Get list of tarballs to download
+    def _match_mod(self, mod, arch, os_dist, os_ver, metadict):
+        """matches a given module mod in the metadict metadata dictionary
+        according to arch, os_dist and os_ver
+        return the urls for the matched module"""
+        for module in metadict:
+            if (module['arch'] == arch) and (module['module'] == mod):
+                if (module['os'] == os_dist) or (module['os'] == ''):
+                    if (module['os_ver'] == os_ver) or (module['os_ver'] == ''):
+                        LOG.debug('matched module: %s', module)
+                        return module['urls'] 
+
+        return list()
+
+    def select_tarnames(self, list_uid):
+        """Get list of tarballs URL to download
         Check for default files based on the host OS and arch
-        or download from the list list_tar"""
+        or download from the list of uids in list_uid"""
         force = True
         metadict = self._get_metadata(force)
         list_downl = list()
+        if list_uid:
+            LOG.debug('list of uids: %s', list_uid)
+            for uid in list_uid:
+                for module in metadict:
+                    if module['uid'] == uid:
+                        LOG.debug('adding module urls: %s', module['urls'])
+                        list_downl.append(module['urls'])
+                        break
+        else:
+            LOG.debug('list of uids not given')
+            osinfo = OSInfo('/')
+            arch =osinfo.arch()
+            (os_dist, os_ver) = osinfo.osdistribution()
+            default_mod = ['proot', 'libfakechroot']
+            for mod in default_mod:
+                url_mod = self._match_mod(mod, arch, os_dist, os_ver, metadict)
+                LOG.debug('download mod: %s, arch: %s, dist: %s, version: %s',
+                          mod, arch, os_dist, os_ver)
+                LOG.debug('adding module urls: %s', url_mod)
+                list_downl.append(url_mod)
+
+        LOG.info('list of modules to download: %s', list_downl)
+        return list_downl
 
     def show_metadata(self, force):
         """Show available modules and versions"""

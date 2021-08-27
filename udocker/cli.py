@@ -1315,10 +1315,11 @@ class UdockerCLI(object):
     def do_download(self, cmdp):
         """
         download: download modules
-        download [options] module1 module2
+        download [options] uid_module1 uid_module2
         --from=<url>|<dir>         :URL or local directory with modules
         --prefix=<directory>       :destination download directory
         """
+        list_uid = list()
         dst_dir = os.path.expanduser("~") + "/udocker/tar"  # Default dest dir for tarballs
         if os.getenv("VIRTUAL_ENV"):
             dst_dir = os.getenv("VIRTUAL_ENV") + "/tar"
@@ -1328,6 +1329,10 @@ class UdockerCLI(object):
             dst_dir = chk_dir
 
         ## Get list of files to download
+        utools = UdockerTools(self.localrepo)
+        list_tarurl = utools.select_tarnames(list_uid)
+        LOG.info('the list of tar urls: %s', list_tarurl)
+
         ## Download that list
         return self.STATUS_OK
 
