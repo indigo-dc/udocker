@@ -1364,7 +1364,7 @@ provided by Termux which is adapted to the Termux Android environment.
 
 ```bash
 export UDOCKER_USE_PROOT_EXECUTABLE=$(which proot)
-udocker run ubuntu:18.04
+udocker run arm64v8/fedora:35
 ```
 
 ### 11.2. Google Colab
