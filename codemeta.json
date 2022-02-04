@@ -86,7 +86,7 @@
         }
     ],
     "contIntegration": "https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/master/",
-    "buildInstructions": "https://https://github.com/indigo-dc/udocker/blob/master/docs/installation_manual.md#3-source-code-and-build"
+    "buildInstructions": "https://https://github.com/indigo-dc/udocker/blob/master/docs/installation_manual.md#3-source-code-and-build",
     "referencePublication": "https://doi.org/10.1016/j.cpc.2018.05.021",
     "readme": "https://github.com/indigo-dc/udocker/blob/master/README.md"
 }
