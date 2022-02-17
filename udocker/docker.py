@@ -47,7 +47,7 @@ class DockerIoAPI(object):
 
     def is_repo_name(self, imagerepo):
         """Check if name matches authorized characters for a docker repo"""
-        if imagerepo and re.match("^[a-zA-Z0-9][a-zA-Z0-9-_./:]+$", imagerepo):
+        if imagerepo and re.match("^[a-zA-Z0-9][a-zA-Z0-9-_./:@]+$", imagerepo):
             return True
         return False
 

@@ -71,11 +71,16 @@ class UdockerCLI(object):
         if (not imagespec) and def_imagespec:
             imagespec = def_imagespec
 
-        try:
-            (imagerepo, tag) = imagespec.rsplit(":", 1)
-        except (ValueError, AttributeError):
-            imagerepo = imagespec
-            tag = "latest"
+        if "@sha256:" in imagespec:
+            (imagerepo, tag) = imagespec.rsplit("@sha256:", 1)
+            tag = "sha256:" + tag
+        else:
+            try:
+                (imagerepo, tag) = imagespec.rsplit(":", 1)
+                print("imagespec", imagespec, imagerepo, tag)
+            except (ValueError, AttributeError):
+                imagerepo = imagespec
+                tag = "latest"
 
         if not (imagerepo and tag and
                 self.dockerioapi.is_repo_name(imagespec)):
@@ -760,7 +765,10 @@ class UdockerCLI(object):
                 (imagerepo, tag) = self._check_imagespec(container_or_image)
                 if (imagerepo and
                         self.localrepo.cd_imagerepo(imagerepo, tag)):
-                    container_id = self._create(imagerepo + ":" + tag)
+                    if tag.startswith("sha256:"):
+                        container_id = self._create(imagerepo + "@" + tag)
+                    else:
+                        container_id = self._create(imagerepo + ":" + tag)
                 if not container_id:
                     self.do_pull(cmdp)
                     if self.localrepo.cd_imagerepo(imagerepo, tag):
@@ -802,7 +810,10 @@ class UdockerCLI(object):
         for (imagerepo, tag) in images_list:
             prot = (".", "P")[
                 self.localrepo.isprotected_imagerepo(imagerepo, tag)]
-            Msg().out("%-60.60s %c" % (imagerepo + ":" + tag, prot))
+            if tag.startswith("sha256:"):
+                Msg().out("%-60.60s %c" % (imagerepo + "@" + tag, prot))
+            else:
+                Msg().out("%-60.60s %c" % (imagerepo + ":" + tag, prot))
             if verbose:
                 imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
                 Msg().out("  %s" % (imagerepo_dir))
