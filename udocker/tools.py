@@ -379,6 +379,7 @@ class UdockerTools(object):
 
         for module in metadict:
             MSG.info(120*"_")
+            MSG.info("UID:            %s", module["uid"])
             MSG.info("Module:         %s", module["module"])
             MSG.info("Filename:       %s", module["fname"])
             MSG.info("Version:        %s", module["version"])
