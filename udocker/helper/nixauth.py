@@ -38,7 +38,7 @@ class NixAuthentication(object):
             (user, dum1, dum2, dum3, dum4, dum5) = \
                     self._get_user_from_host(wanted_user)
         try:
-            insub = open(sub_file)
+            insub = open(sub_file, encoding='utf-8')
         except (IOError, OSError):
             return []
         else:
@@ -110,7 +110,7 @@ class NixAuthentication(object):
             wanted_uid = str(wanted_user)
             wanted_user = ""
         try:
-            inpasswd = open(self.passwd_file)
+            inpasswd = open(self.passwd_file, encoding='utf-8')
         except (IOError, OSError):
             return ("", "", "", "", "", "")
         else:
@@ -132,7 +132,7 @@ class NixAuthentication(object):
             wanted_gid = str(wanted_group)
             wanted_group = ""
         try:
-            ingroup = open(self.group_file)
+            ingroup = open(self.group_file, encoding='utf-8')
         except (IOError, OSError):
             return ("", "", "")
         else:

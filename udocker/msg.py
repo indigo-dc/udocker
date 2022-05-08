@@ -34,7 +34,7 @@ class Msg(object):
             Msg.level = new_level
         try:
             if Msg.nullfp is None:
-                Msg.nullfp = open('/dev/null', 'w')
+                Msg.nullfp = open('/dev/null', 'w', encoding='utf-8')
         except (IOError, OSError):
             Msg.chlderr = sys.stderr
             Msg.chldout = sys.stdout

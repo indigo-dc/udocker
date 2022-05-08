@@ -62,7 +62,7 @@ class CurlHeader(object):
         version.
         """
         try:
-            infile = open(in_filename, 'r')
+            infile = open(in_filename, 'r', encoding='utf-8')
         except (IOError, OSError):
             return False
         for line in infile:
