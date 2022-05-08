@@ -59,7 +59,7 @@ class Uenv(object):
 
     def __init__(self, thisenv=None):
         """Init Uenv instance"""
-        self.env = dict()
+        self.env = {}
         if thisenv and not self.add(thisenv):
             raise ValueError('invalid environment')
 

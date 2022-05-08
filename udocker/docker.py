@@ -139,7 +139,7 @@ class DockerIoAPI(object):
 
     def _split_fields(self, buf):
         """Split  fields, used in the web authentication"""
-        all_fields = dict()
+        all_fields = {}
         for field in buf.split(','):
             pair = field.split('=', 1)
             if len(pair) == 2:
@@ -628,8 +628,8 @@ class DockerLocalFileAPI(CommonLocalFileApi):
     def _load_structure(self, tmp_imagedir):
         """Load the structure of a Docker image"""
         structure = {}
-        structure["repolayers"] = dict()
-        structure["repoconfigs"] = dict()
+        structure["repolayers"] = {}
+        structure["repoconfigs"] = {}
         for fname in os.listdir(tmp_imagedir):
             f_path = tmp_imagedir + '/' + fname
             if fname == "repositories":
@@ -639,14 +639,14 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                 structure["manifest"] = \
                         self.localrepo.load_json(f_path)
             elif len(fname) >= 69 and fname.endswith(".json"):
-                structure["repoconfigs"][fname] = dict()
+                structure["repoconfigs"][fname] = {}
                 structure["repoconfigs"][fname]["json"] = \
                         self.localrepo.load_json(f_path)
                 structure["repoconfigs"][fname]["json_f"] = \
                         f_path
             elif len(fname) >= 64 and FileUtil(f_path).isdir():
                 layer_id = fname
-                structure["repolayers"][layer_id] = dict()
+                structure["repolayers"][layer_id] = {}
                 for layer_f in os.listdir(f_path):
                     layer_f_path = f_path + '/' + layer_f
                     if layer_f == "VERSION":
@@ -789,12 +789,12 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             return False
         config_layer_file = str(ChkSUM().sha256(json_file)) + ".json"
         FileUtil(json_file).rename(tmp_imagedir + '/' + config_layer_file)
-        manifest_item = dict()
+        manifest_item = {}
         manifest_item["Config"] = config_layer_file
         manifest_item["RepoTags"] = [imagerepo + ':' + tag, ]
         manifest_item["Layers"] = []
         if imagerepo not in structure["repositories"]:
-            structure["repositories"][imagerepo] = dict()
+            structure["repositories"][imagerepo] = {}
         parent_layer_id = ""
         for layer_f in layer_files:
             try:
@@ -832,9 +832,9 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             os.makedirs(tmp_imagedir)
         except (IOError, OSError):
             return False
-        structure = dict()
+        structure = {}
         structure["manifest"] = []
-        structure["repositories"] = dict()
+        structure["repositories"] = {}
         status = False
         for (imagerepo, tag) in imagetag_list:
             status = self._save_image(imagerepo, tag, structure, tmp_imagedir)

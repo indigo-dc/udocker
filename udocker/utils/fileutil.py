@@ -18,7 +18,7 @@ from udocker.utils.uvolume import Uvolume
 class FileUtil(object):
     """Some utilities to manipulate files"""
 
-    tmptrash = dict()
+    tmptrash = {}
     safe_prefixes = []
     orig_umask = None
 

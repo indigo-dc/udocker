@@ -84,7 +84,7 @@ class SingularityEngine(ExecutionEngineCommon):
         """Build environment string with user specified environment in
         the form SINGULARITYENV_var=value
         """
-        singularityenv = dict()
+        singularityenv = {}
         for (key, val) in self.opt["env"]:
             singularityenv['SINGULARITYENV_%s' % key] = val
         return singularityenv

@@ -15,9 +15,9 @@ class CmdParser(object):
     def __init__(self):
         """constructor parses the user command line"""
         self._argv = ""
-        self._argv_split = dict()
-        self._argv_consumed_options = dict()
-        self._argv_consumed_params = dict()
+        self._argv_split = {}
+        self._argv_consumed_options = {}
+        self._argv_consumed_params = {}
         self._argv_split['CMD'] = ""
         self._argv_split['GEN_OPT'] = []
         self._argv_split['CMD_OPT'] = []

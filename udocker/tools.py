@@ -39,7 +39,7 @@ class UdockerTools(object):
         self._installinfo = Config.conf['installinfo']  # URL or file
         self._tarball_release = Config.conf['tarball_release']
         self._installretry = Config.conf['installretry']
-        self._install_json = dict()
+        self._install_json = {}
         self.curl = GetURL()
 
     def _instructions(self):

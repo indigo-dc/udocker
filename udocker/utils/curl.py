@@ -35,7 +35,7 @@ class CurlHeader(object):
 
     def __init__(self):
         self.sizeonly = False
-        self.data = dict()
+        self.data = {}
         self.data["X-ND-HTTPSTATUS"] = ""
         self.data["X-ND-CURLSTATUS"] = ""
 

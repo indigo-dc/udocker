@@ -94,7 +94,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         """Get the volume bindings string for fakechroot run"""
         host_volumes_list = []
         map_volumes_list = []
-        map_volumes_dict = dict()
+        map_volumes_dict = {}
         for vol in self.opt["vol"]:
             (host_path, cont_path) = Uvolume(vol).split()
             if not (host_path and cont_path):

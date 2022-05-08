@@ -618,7 +618,7 @@ class LocalRepository(object):
     def _load_structure(self, imagetagdir):
         """Scan the repository structure of a given image tag"""
         structure = {}
-        structure["repolayers"] = dict()
+        structure["repolayers"] = {}
         if FileUtil(imagetagdir).isdir():
             for fname in os.listdir(imagetagdir):
                 f_path = imagetagdir + '/' + fname
@@ -631,7 +631,7 @@ class LocalRepository(object):
                 if len(fname) >= 64:
                     layer_id = fname.replace(".json", "").replace(".layer", "")
                     if layer_id not in structure["repolayers"]:
-                        structure["repolayers"][layer_id] = dict()
+                        structure["repolayers"][layer_id] = {}
                     if fname.endswith("json"):
                         structure["repolayers"][layer_id]["json"] = \
                             self.load_json(f_path)

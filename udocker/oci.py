@@ -18,8 +18,8 @@ class OciLocalFileAPI(CommonLocalFileApi):
     def _load_structure(self, tmp_imagedir):
         """Load OCI image structure"""
         structure = {}
-        structure["repolayers"] = dict()
-        structure["manifest"] = dict()
+        structure["repolayers"] = {}
+        structure["manifest"] = {}
         f_path = tmp_imagedir + '/'
         structure["oci-layout"] = \
                 self.localrepo.load_json(f_path + "oci-layout")
@@ -33,7 +33,7 @@ class OciLocalFileAPI(CommonLocalFileApi):
                 layer_algorithm = fname
                 for layer_f in os.listdir(f_path):
                     layer_id = layer_algorithm + ':' + layer_f
-                    structure["repolayers"][layer_id] = dict()
+                    structure["repolayers"][layer_id] = {}
                     structure["repolayers"][layer_id]["layer_f"] = \
                             f_path + '/' + layer_f
                     structure["repolayers"][layer_id]["layer_a"] = \
@@ -71,7 +71,7 @@ class OciLocalFileAPI(CommonLocalFileApi):
         if self._imagerepo:
             imagerepo = self._imagerepo
         imagetag = imagerepo + ':' + tag
-        structure["manifest"][imagetag] = dict()
+        structure["manifest"][imagetag] = {}
         structure["manifest"][imagetag]["json"] = \
                 self.localrepo.load_json(structure["repolayers"]\
                 [manifest["digest"]]["layer_f"])

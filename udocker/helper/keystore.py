@@ -16,7 +16,7 @@ class KeyStore(object):
     def __init__(self, keystore_file):
         """Initialize keystone"""
         self.keystore_file = keystore_file
-        self.credential = dict()
+        self.credential = {}
 
     def _verify_keystore(self):
         """Verify the keystore file and directory"""
@@ -39,7 +39,7 @@ class KeyStore(object):
             with open(self.keystore_file, "r") as filep:
                 return json.load(filep)
         except (IOError, OSError, ValueError):
-            return dict()
+            return {}
 
     def _shred(self):
         """Shred file content"""
