@@ -502,7 +502,7 @@ class ExecutionEngineCommon(object):
                               self.opt["uid"], self.opt["gid"],
                               self.opt["gecos"], self.opt["home"],
                               self.opt["shell"])
-            (group, dummy, dummy) = host_auth.get_group(self.opt["gid"])
+            (group, dum1, dum2) = host_auth.get_group(self.opt["gid"])
             if not group:
                 new_auth.add_group(self.opt["user"], self.opt["gid"])
             for sup_gid in os.getgroups():

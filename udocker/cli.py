@@ -271,7 +271,7 @@ class UdockerCLI(object):
         if cmdp.missing_options():               # syntax error
             return self.STATUS_ERROR
         self._set_repository(registry_url, index_url, expression, http_proxy)
-        (dummy, dummy, expression, dummy) = self._split_imagespec(expression)
+        (dum1, dum2, expression, dum3) = self._split_imagespec(expression)
         self.dockerioapi.search_init(pause)
         v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
         self.dockerioapi.set_v2_login_token(v2_auth_token)
