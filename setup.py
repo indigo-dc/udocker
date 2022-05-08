@@ -74,6 +74,5 @@ setup(
     test_suite='tests',
     tests_require=TEST_REQUIREMENTS,
     url='https://github.com/indigo-dc/udocker',
-    use_2to3=True,
     zip_safe=False,
 )
