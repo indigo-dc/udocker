@@ -42,7 +42,7 @@ class ElfPatcher(object):
     def select_patchelf(self):
         """Set patchelf executable"""
         arch = HostInfo().arch()
-        image_list = list()
+        image_list = []
         if arch == "amd64":
             image_list = ["patchelf-x86_64", "patchelf"]
         elif arch == "i386":
