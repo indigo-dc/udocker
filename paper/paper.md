@@ -408,7 +408,7 @@ situation the installation may include just the executables and libraries
 or a combination that may also include pre-defined images or even created
 containers that are ready to be executed. The steps and implications of 
 using a shared installation and in particular of using readonly locations 
-have been addressed and are also documented in the installation manual.
+have been addressed.
 
 The software quality assurance for udocker was improved. The *Jenkins
 Pipeline Library* [@JEPL] was adopted to describe the quality assurance
