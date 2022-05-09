@@ -575,11 +575,11 @@ class DockerIoAPI(object):
         if not expression:
             expression = '*'
         if expression and official is None:
-            url = url + "/v2/search/repositories?query={expression}"
+            url = url + f"/v2/search/repositories?query={expression}"
         elif expression and official is True:
-            url = url + "/v2/search/repositories?query={expression}&is_official=true"
+            url = url + f"/v2/search/repositories?query={expression}&is_official=true"
         elif expression and official is False:
-            url = url + "/v2/search/repositories?query={expression}&is_official=false"
+            url = url + f"/v2/search/repositories?query={expression}&is_official=false"
         else:
             return []
         url += f"&page_size={str(lines)}"

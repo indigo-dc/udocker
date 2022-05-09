@@ -232,7 +232,7 @@ result
 
 rm -f ${TAR_IMAGE} > /dev/null 2>&1
 echo "Download a docker tar img file ${TAR_IMAGE_URL}"
-wget ${TAR_IMAGE_URL}
+wget --no-check-certificate ${TAR_IMAGE_URL}
 echo "------------------------------------------------------------>"
 
 STRING="T034: udocker load -i ${TAR_IMAGE}"
@@ -257,7 +257,7 @@ result
 
 rm -f ${TAR_CONT} > /dev/null 2>&1
 echo "Download a docker tar container file ${TAR_CONT_URL}"
-wget ${TAR_CONT_URL}
+wget --no-check-certificate ${TAR_CONT_URL}
 echo "------------------------------------------------------------>"
 
 STRING="T039: udocker import ${TAR_CONT} mycentos1:latest"
