@@ -1187,7 +1187,7 @@ class UdockerCLI(object):
 
         Msg().out(80*"-")
         Msg().out("\t\tConfiguration options")
-        for key, value in Config.conf:
+        for (key, value) in Config.conf.items():
             Msg().out(key, '=', value)
 
         Msg().out(80*"-")

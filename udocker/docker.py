@@ -276,7 +276,7 @@ class DockerIoAPI(object):
             auth_fields = self._split_fields(auth_data)
             if "realm" in auth_fields:
                 auth_url = auth_fields["realm"] + '?'
-                for field, value in auth_fields:
+                for (field, value) in auth_fields.items():
                     if field != "realm":
                         auth_url += field + '=' + value + '&'
                 header = []
