@@ -114,7 +114,7 @@ class NvidiaMode(object):
         if library_path:
             for libdir in library_path.split(':'):
                 for lib in self._nvidia_main_libs:
-                    if glob.glob(libdir + "/%s*" % lib):
+                    if glob.glob(libdir + f"/{lib}*"):
                         dir_list.add(os.path.realpath(libdir) + '/')
         Msg().out("Info: List nvidia libs via path", dir_list, l=Msg.DBG)
         return dir_list

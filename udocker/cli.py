@@ -805,7 +805,7 @@ class UdockerCLI(object):
             Msg().out("%-60.60s %c" % (imagerepo + ":" + tag, prot))
             if verbose:
                 imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
-                Msg().out("  %s" % (imagerepo_dir))
+                Msg().out(f"  {imagerepo_dir}")
                 layers_list = self.localrepo.get_layers(imagerepo, tag)
                 if layers_list:
                     for (layer_name, size) in layers_list:
@@ -1019,7 +1019,7 @@ class UdockerCLI(object):
             Msg().err("Error: removing container name")
             return self.STATUS_ERROR
 
-        Msg().out("Info: container name: %s removed." % name)
+        Msg().out(f"Info: container name: {name} removed.")
         return self.STATUS_OK
 
     def do_inspect(self, cmdp):
@@ -1069,7 +1069,7 @@ class UdockerCLI(object):
         if (not imagerepo) or cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
-        Msg().out("Info: verifying: %s:%s" % (imagerepo, tag), l=Msg.INF)
+        Msg().out(f"Info: verifying: {imagerepo}:{tag}", l=Msg.INF)
         if not self.localrepo.cd_imagerepo(imagerepo, tag):
             Msg().err("Error: selecting image and tag")
             return self.STATUS_ERROR
@@ -1147,8 +1147,8 @@ class UdockerCLI(object):
             return self.STATUS_ERROR
 
         if xmode or not (xmode or force or nvidia or purge or fixperm):
-            Msg().out("execmode: %s" % (exec_mode.get_mode()))
-            Msg().out("nvidiamode: %s" % (nvidia_mode.get_mode()))
+            Msg().out(f"execmode: {exec_mode.get_mode()}")
+            Msg().out(f"nvidiamode: {nvidia_mode.get_mode()}")
 
         return self.STATUS_OK
 
@@ -1187,8 +1187,8 @@ class UdockerCLI(object):
 
         Msg().out(80*"-")
         Msg().out("\t\tConfiguration options")
-        for varopt in Config.conf:
-            Msg().out(varopt, '=', Config.conf[varopt])
+        for key, value in Config.conf:
+            Msg().out(key, '=', value)
 
         Msg().out(80*"-")
         return self.STATUS_OK
@@ -1201,10 +1201,9 @@ class UdockerCLI(object):
             return self.STATUS_ERROR
 
         try:
-            Msg().out("%s %s" % ("version:", __version__))
-            Msg().out("%s %s" % ("tarball:", Config.conf['tarball']))
-            Msg().out("%s %s" % \
-                ("tarball_release:", Config.conf['tarball_release']))
+            Msg().out(f"version: {__version__}")
+            Msg().out(f"tarball: {Config.conf['tarball']}")
+            Msg().out(f"tarball_release: {Config.conf['tarball_release']}")
         except NameError:
             return self.STATUS_ERROR
 

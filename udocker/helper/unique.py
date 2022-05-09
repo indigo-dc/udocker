@@ -37,9 +37,7 @@ class Unique(object):
         try:
             return str(uuid.uuid3(uuid.uuid4(), str(name) + str(time.time())))
         except (NameError, AttributeError):
-            return (("%s-%s-%s-%s-%s") %
-                    (self._rnd(8), self._rnd(4), self._rnd(4),
-                     self._rnd(4), self._rnd(12)))
+            return f"{self._rnd(8)}-{self._rnd(4)}-{self._rnd(4)}-{self._rnd(4)}-{self._rnd(12)}"
 
     def imagename(self):
         """Get a container image name"""

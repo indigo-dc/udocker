@@ -136,7 +136,7 @@ class RuncEngine(ExecutionEngineCommon):
 
         json_obj["process"]["env"] = []
         for (env_key, env_val) in self.opt["env"]:
-            json_obj["process"]["env"].append("%s=%s" % (env_key, env_val))
+            json_obj["process"]["env"].append(f"{env_key}={env_val}")
 
         json_obj["process"]["args"] = self.opt["cmd"]
         return json_obj

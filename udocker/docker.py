@@ -276,9 +276,9 @@ class DockerIoAPI(object):
             auth_fields = self._split_fields(auth_data)
             if "realm" in auth_fields:
                 auth_url = auth_fields["realm"] + '?'
-                for field in auth_fields:
+                for field, value in auth_fields:
                     if field != "realm":
-                        auth_url += field + '=' + auth_fields[field] + '&'
+                        auth_url += field + '=' + value + '&'
                 header = []
                 if self.v2_auth_token:
                     header = [f"Authorization: Basic {self.v2_auth_token}"]
@@ -415,7 +415,7 @@ class DockerIoAPI(object):
                 Msg().err("Error: setting localrepo v2 tag and version")
                 return []
             self.localrepo.save_json("manifest", manifest)
-            Msg().out("Info: v2 layers: %s" % (imagerepo), l=Msg.DBG)
+            Msg().out(f"Info: v2 layers: {imagerepo}", l=Msg.DBG)
             if "fsLayers" in manifest:
                 files = self.get_v2_layers_all(imagerepo,
                                                manifest["fsLayers"])
@@ -458,7 +458,7 @@ class DockerIoAPI(object):
 
     def get_v1(self, imagerepo, tag):
         """Pull container with v1 API"""
-        Msg().out("Info: v1 image id: %s" % (imagerepo), l=Msg.DBG)
+        Msg().out(f"Info: v1 image id: {imagerepo}", l=Msg.DBG)
         (hdr_data, images_array) = self.get_v1_repo(imagerepo)
         status = self.curl.get_status_code(hdr_data["X-ND-HTTPSTATUS"])
         if status == 401 or not images_array:
@@ -513,7 +513,7 @@ class DockerIoAPI(object):
             except (KeyError, NameError, TypeError):
                 registry_url = registry
                 if "://" not in registry:
-                    registry_url = "https://%s" % registry
+                    registry_url = f"https://{registry}"
                 index_url = registry_url
             if registry_url:
                 self.registry_url = registry_url
@@ -523,8 +523,7 @@ class DockerIoAPI(object):
 
     def get(self, imagerepo, tag):
         """Pull a docker image from a v2 registry or v1 index"""
-        Msg().out("Info: get imagerepo: %s tag: %s" % (imagerepo, tag),
-                  l=Msg.DBG)
+        Msg().out(f"Info: get imagerepo: {imagerepo} tag: {tag}", l=Msg.DBG)
         (imagerepo, remoterepo) = self._parse_imagerepo(imagerepo)
         if self.localrepo.cd_imagerepo(imagerepo, tag):
             new_repo = False
@@ -556,10 +555,10 @@ class DockerIoAPI(object):
     def search_get_page_v1(self, expression, url):
         """Get search results from Docker Hub using v1 API"""
         if expression:
-            url = url + "/v1/search?q=%s" % expression
+            url = url + f"/v1/search?q={expression}"
         else:
             url = url + "/v1/search?"
-        url += "&page=%s" % str(self.search_page)
+        url += f"&page={str(self.search_page)}"
         (dummy, buf) = self._get_url(url)
         try:
             repo_list = json.loads(buf.getvalue())
@@ -576,21 +575,16 @@ class DockerIoAPI(object):
         if not expression:
             expression = '*'
         if expression and official is None:
-            url = url + \
-                    "/v2/search/repositories?query=%s" % (expression)
+            url = url + "/v2/search/repositories?query={expression}"
         elif expression and official is True:
-            url = url + \
-                    "/v2/search/repositories?query=%s&is_official=%s" \
-                    % (expression, "true")
+            url = url + "/v2/search/repositories?query={expression}&is_official=true"
         elif expression and official is False:
-            url = url + \
-                    "/v2/search/repositories?query=%s&is_official=%s" \
-                    % (expression, "false")
+            url = url + "/v2/search/repositories?query={expression}&is_official=false"
         else:
             return []
-        url += "&page_size=%d" % (lines)
+        url += f"&page_size={str(lines)}"
         if self.search_page != 1:
-            url += "&page=%d" % (self.search_page)
+            url += f"&page={str(self.search_page)}"
         (dummy, buf) = self._get_url(url)
         try:
             repo_list = json.loads(buf.getvalue())
@@ -737,8 +731,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             for layer_item in ("json_f", "layer_f"):
                 filename = str(structure["repolayers"][layer_id][layer_item])
                 if not self._move_layer_to_v1repo(filename, layer_id):
-                    Msg().err("Error: copying %s file %s"
-                              % (layer_item[:-2], filename), l=Msg.VER)
+                    Msg().err(f"Error: copying {layer_item[:-2]} file {filename}", l=Msg.VER)
                     return []
         self.localrepo.save_json("ancestry", layers)
         if self._imagerepo:

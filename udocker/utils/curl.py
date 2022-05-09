@@ -237,7 +237,7 @@ class GetURLpyCurl(GetURL):
             try:
                 filep = open(output_file, openflags)
             except(IOError, OSError):
-                Msg().err("Error: opening download file: %s" % output_file)
+                Msg().err(f"Error: opening download file: {output_file}")
                 raise
             pyc.setopt(pyc.WRITEDATA, filep)
         else:
@@ -385,8 +385,8 @@ class GetURLexeCurl(GetURL):
         hdr.setvalue_from_file(self._files["header_file"])
         hdr.data["X-ND-CURLSTATUS"] = status
         if status:
-            Msg().err("Error: in download: %s"
-                      % str(FileUtil(self._files["error_file"]).getdata('r')))
+            err_down = str(FileUtil(self._files["error_file"]).getdata('r'))
+            Msg().err(f"Error: in download: {err_down}")
             FileUtil(self._files["output_file"]).remove()
             return (hdr, buf)
         status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])

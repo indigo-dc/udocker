@@ -76,14 +76,14 @@ class ContainerStructure(object):
         """Convert dict to str"""
         out_str = ""
         for (key, val) in in_dict.items():
-            out_str += "%s:%s " % (str(key), str(val))
+            out_str += f"{str(key)}:{str(val)} "
         return out_str
 
     def _dict_to_list(self, in_dict):
         """Convert dict to list"""
         out_list = []
         for (key, val) in in_dict.items():
-            out_list.append("%s:%s" % (str(key), str(val)))
+            out_list.append(f"{str(key)}:{str(val)}")
         return out_list
 
     def _chk_container_root(self, container_id=None):
