@@ -64,8 +64,8 @@ class DockerIoAPI(object):
             kwargs["FOLLOW"] = 3
         kwargs["RETRY"] -= 1
         (hdr, buf) = self.curl.get(*args, **kwargs)
-        Msg().out("Info: header: %s" % (hdr.data), l=Msg.DBG)
-        Msg().out("Info: buffer: %s" % (buf.getvalue()), l=Msg.DBG)
+        Msg().out(f"Info: header: {hdr.data}", l=Msg.DBG)
+        Msg().out(f"Info: buffer: {buf.getvalue()}", l=Msg.DBG)
         status_code = self.curl.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if status_code == 200:
             return (hdr, buf)
@@ -281,7 +281,7 @@ class DockerIoAPI(object):
                         auth_url += field + '=' + auth_fields[field] + '&'
                 header = []
                 if self.v2_auth_token:
-                    header = ["Authorization: Basic %s" % (self.v2_auth_token)]
+                    header = [f"Authorization: Basic {self.v2_auth_token}"]
                 (dummy, auth_buf) = self._get_url(auth_url, header=header,
                                                   RETRY=retry)
                 if sys.version_info[0] >= 3:
@@ -299,7 +299,7 @@ class DockerIoAPI(object):
                     self.v2_auth_header = auth_header
         # PR #126
         elif 'BASIC' in bearer or 'Basic' in bearer:
-            auth_header = "Authorization: Basic %s" %(self.v2_auth_token)
+            auth_header = f"Authorization: Basic {self.v2_auth_token}"
             self.v2_auth_header = auth_header
         return auth_header
 
@@ -309,8 +309,7 @@ class DockerIoAPI(object):
             return ""
         try:
             self.v2_auth_token = \
-                base64.b64encode(("%s:%s" % \
-                    (username, password)).encode("utf-8")).decode("ascii")
+                base64.b64encode((f"{username}:{password}").encode("utf-8")).decode("ascii")
         except (KeyError, AttributeError, TypeError, ValueError, NameError):
             self.v2_auth_token = ""
         return self.v2_auth_token
