@@ -1,4 +1,5 @@
-[![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc/udocker/master)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/master/)
+[![PyPI version](https://badge.fury.io/py/udocker.svg)](https://badge.fury.io/py/udocker)
+[![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc%2Fudocker%2Fmaster)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/master/)
 
 ![logo](docs/logo-small.png)
 
