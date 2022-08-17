@@ -93,7 +93,7 @@ class RuncEngine(ExecutionEngineCommon):
         json_obj = None
         infile = None
         try:
-            infile = open(self._container_specfile, 'r')
+            infile = open(self._container_specfile, 'r', encoding='utf-8')
             json_obj = json.load(infile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             json_obj = None
@@ -108,7 +108,7 @@ class RuncEngine(ExecutionEngineCommon):
         """Save spec file"""
         outfile = None
         try:
-            outfile = open(self._container_specfile, 'w')
+            outfile = open(self._container_specfile, 'w', encoding='utf-8')
             json.dump(self._container_specjson, outfile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             if outfile:
@@ -136,7 +136,7 @@ class RuncEngine(ExecutionEngineCommon):
 
         json_obj["process"]["env"] = []
         for (env_key, env_val) in self.opt["env"]:
-            json_obj["process"]["env"].append("%s=%s" % (env_key, env_val))
+            json_obj["process"]["env"].append(f"{env_key}={env_val}")
 
         json_obj["process"]["args"] = self.opt["cmd"]
         return json_obj

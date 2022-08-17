@@ -39,7 +39,7 @@ class UdockerTools(object):
         self._installinfo = Config.conf['installinfo']  # URL or file
         self._tarball_release = Config.conf['tarball_release']
         self._installretry = Config.conf['installretry']
-        self._install_json = dict()
+        self._install_json = {}
         self.curl = GetURL()
 
     def _instructions(self):
@@ -225,7 +225,7 @@ class UdockerTools(object):
         for url in self._get_mirrors(self._installinfo):
             infofile = self._get_file(url)
             try:
-                with open(infofile, 'r') as filep:
+                with open(infofile, 'r', encoding='utf-8') as filep:
                     self._install_json = json.load(filep)
                 for msg in self._install_json["messages"]:
                     Msg().out("Info:", msg)

@@ -59,7 +59,7 @@ class Uenv(object):
 
     def __init__(self, thisenv=None):
         """Init Uenv instance"""
-        self.env = dict()
+        self.env = {}
         if thisenv and not self.add(thisenv):
             raise ValueError('invalid environment')
 
@@ -123,7 +123,7 @@ class Uenv(object):
 
     def setenv(self, key, val):
         """Set variable name"""
-        return self.append('%s=%s' % (key, val))
+        return self.append(f'{key}={val}')
 
     def unsetenv(self, key):
         """Delete variable by name"""
@@ -137,7 +137,7 @@ class Uenv(object):
         """Get list with environment variables"""
         env_list = []
         for (key, val) in self.env.items():
-            env_list.append('%s=%s' % (key, val))
+            env_list.append(f'{key}={val}')
         return env_list
 
     def dict(self):

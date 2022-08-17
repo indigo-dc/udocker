@@ -26,7 +26,7 @@ class ExecutionEngineCommon(object):
     """
 
     # Metadata defaults
-    opt = dict()                     # Run options
+    opt = {}                     # Run options
     opt["nometa"] = False            # Don't load metadata
     opt["nosysdirs"] = False         # Bind host dirs
     opt["dri"] = False               # Directories needed for DRI
@@ -69,7 +69,7 @@ class ExecutionEngineCommon(object):
 
     def _get_portsmap(self, by_container=True):
         """List of TCP/IP ports mapped indexed by container port"""
-        indexed_portmap = dict()
+        indexed_portmap = {}
         for portmap in self.opt["portsmap"]:
             pmap = portmap.split(":")
             try:
@@ -207,8 +207,7 @@ class ExecutionEngineCommon(object):
                     self.opt["vol"].remove(vol)
                     found = True
             if not found:
-                Msg().err("Warning: --novol %s not in volumes list" %
-                          novolume, l=Msg.WAR)
+                Msg().err(f"Warning: --novol {novolume} not in volumes list", l=Msg.WAR)
         return self._check_volumes()
 
     def _check_paths(self):
@@ -218,7 +217,7 @@ class ExecutionEngineCommon(object):
                 path = Config.conf['root_path']
             else:
                 path = Config.conf['user_path']
-            self.opt["env"].append("PATH=%s" % path)
+            self.opt["env"].append(f"PATH={path}")
         # verify if the working directory is valid and fix it
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
@@ -339,7 +338,7 @@ class ExecutionEngineCommon(object):
 
     def _validate_user_str(self, user):
         """Parse string with uid:gid or username"""
-        user_id = dict()
+        user_id = {}
         if not is_genstr(user):
             return user_id
 
@@ -502,7 +501,7 @@ class ExecutionEngineCommon(object):
                               self.opt["uid"], self.opt["gid"],
                               self.opt["gecos"], self.opt["home"],
                               self.opt["shell"])
-            (group, dummy, dummy) = host_auth.get_group(self.opt["gid"])
+            (group, dum1, dum2) = host_auth.get_group(self.opt["gid"])
             if not group:
                 new_auth.add_group(self.opt["user"], self.opt["gid"])
             for sup_gid in os.getgroups():
@@ -551,7 +550,7 @@ class ExecutionEngineCommon(object):
             if   ((not self.opt["hostenv"]) and
                   env_var not in Config.conf['valid_host_env']):
                 continue
-            self.opt["env"].append("%s=%s" % (env_var, value))
+            self.opt["env"].append(f"{env_var}={value}")
 
     def _run_env_set(self):
         """Environment variables to set"""
@@ -648,12 +647,12 @@ class ExecutionEngineCommon(object):
         except (IOError, OSError, AttributeError, ValueError, TypeError,
                 IndexError, KeyError):
             pass
-        return dict()
+        return {}
 
     def _save_osenv(self, filename, save=None):
         """Save host info for is_same_host()"""
         if save is None:
-            save = dict()
+            save = {}
         try:
             save["osversion"] = HostInfo().osversion()
             save["oskernel"] = HostInfo().oskernel()

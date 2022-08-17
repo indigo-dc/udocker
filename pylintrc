@@ -73,7 +73,12 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=E0602,W0707,W0212,R0205,R0201,R1732,R1725,R0801,protected-access,too-many-lines
+#disable=E0602,W0707,W0212,R0205,R0201,R1732,R1725,R0801,protected-access,too-many-lines
+
+# Aditional disable pylint warning and refactoring issues
+# if later to be soved comment this line, uncomment previous line
+disable=E0602,W0707,W0212,R0205,R0201,R1732,R1725,R0801,protected-access,too-many-lines,C0209,W4701,W1514,C0201
+
 
 [REPORTS]
 
@@ -245,7 +250,7 @@ notes=FIXME,XXX,TODO
 [FORMAT]
 
 # Maximum number of characters on a single line.
-max-line-length=80
+max-line-length=100
 
 # Regexp for a line that is allowed to be longer than the limit.
 ignore-long-lines=^\s*(# )?<?https?://\S+>?$

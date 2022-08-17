@@ -14,7 +14,7 @@ class ChkSUM(object):
     """Checksumming for files"""
 
     def __init__(self):
-        self._algorithms = dict()
+        self._algorithms = {}
         try:
             dummy = hashlib.sha256()
             self._algorithms["sha256"] = self._hashlib_sha256

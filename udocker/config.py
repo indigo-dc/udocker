@@ -16,7 +16,7 @@ class Config(object):
     to these values should be made via a configuration file read via
     Config.init() and that can reside in ~/.udocker/udocker.conf
     """
-    conf = dict()
+    conf = {}
     conf['verbose_level'] = 3
     conf['homedir'] = os.path.expanduser("~") + "/.udocker"
     conf['topdir'] = conf['homedir']

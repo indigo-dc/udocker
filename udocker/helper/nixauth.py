@@ -32,13 +32,13 @@ class NixAuthentication(object):
         """get user information from the host /etc/sub*"""
         subid_list = []
         if self.passwd_file:
-            (user, dummy, dummy, dummy, dummy, dummy) = \
+            (user, dum1, dum2, dum3, dum4, dum5) = \
                     self._get_user_from_file(wanted_user)
         else:
-            (user, dummy, dummy, dummy, dummy, dummy) = \
+            (user, dum1, dum2, dum3, dum4, dum5) = \
                     self._get_user_from_host(wanted_user)
         try:
-            insub = open(sub_file)
+            insub = open(sub_file, encoding='utf-8')
         except (IOError, OSError):
             return []
         else:
@@ -110,7 +110,7 @@ class NixAuthentication(object):
             wanted_uid = str(wanted_user)
             wanted_user = ""
         try:
-            inpasswd = open(self.passwd_file)
+            inpasswd = open(self.passwd_file, encoding='utf-8')
         except (IOError, OSError):
             return ("", "", "", "", "", "")
         else:
@@ -132,7 +132,7 @@ class NixAuthentication(object):
             wanted_gid = str(wanted_group)
             wanted_group = ""
         try:
-            ingroup = open(self.group_file)
+            ingroup = open(self.group_file, encoding='utf-8')
         except (IOError, OSError):
             return ("", "", "")
         else:
@@ -148,8 +148,7 @@ class NixAuthentication(object):
     def add_user(self, user, passw, uid, gid, gecos,
                  home, shell):
         """Add a *nix user to a /etc/passwd file"""
-        line = "%s:%s:%s:%s:%s:%s:%s\n" % \
-                (user, passw, uid, gid, gecos, home, shell)
+        line = f"{user}:{passw}:{uid}:{gid}:{gecos}:{home}:{shell}\n"
         if line in FileUtil(self.passwd_file).getdata('r'):
             return True
         return FileUtil(self.passwd_file).putdata(line, 'a')
@@ -159,8 +158,8 @@ class NixAuthentication(object):
         users_str = ""
         if isinstance(users, list):
             for username in users:
-                users_str += "%s," % (username)
-        line = "%s:x:%s:%s\n" % (group, gid, users_str)
+                users_str += f"{username},"
+        line = f"{group}:x:{gid}:{users_str}\n"
         if line in FileUtil(self.group_file).getdata('r'):
             return True
         return FileUtil(self.group_file).putdata(line, 'a')
@@ -179,8 +178,7 @@ class NixAuthentication(object):
 
     def get_home(self):
         """Get host or container home directory"""
-        (r_user, dummy, dummy, dummy, r_home,
-         dummy) = self.get_user(HostInfo.uid)
+        (r_user, dum1, dum2, dum3, r_home, dum4) = self.get_user(HostInfo.uid)
         if r_user:
             return r_home
         return ""

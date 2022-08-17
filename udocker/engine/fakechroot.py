@@ -54,21 +54,21 @@ class FakechrootEngine(ExecutionEngineCommon):
                 version = version.split(".")[0]
 
             if arch == "amd64":
-                image_list = ["%s-%s-%s-x86_64.so" % (lib, distro, version),
-                              "%s-%s-x86_64.so" % (lib, distro),
-                              "%s-x86_64.so" % (lib), deflib]
+                image_list = [f"{lib}-{distro}-{version}-x86_64.so",
+                              f"{lib}-{distro}-x86_64.so",
+                              f"{lib}-x86_64.so", deflib]
             elif arch == "i386":
-                image_list = ["%s-%s-%s-x86.so" % (lib, distro, version),
-                              "%s-%s-x86.so" % (lib, distro),
-                              "%s-x86.so" % (lib), deflib]
+                image_list = [f"{lib}-{distro}-{version}-x86.so",
+                              f"{lib}-{distro}-x86.so",
+                              f"{lib}-x86.so", deflib]
             elif arch == "arm64":
-                image_list = ["%s-%s-%s-arm64.so" % (lib, distro, version),
-                              "%s-%s-arm64.so" % (lib, distro),
-                              "%s-arm64.so" % (lib), deflib]
+                image_list = [f"{lib}-{distro}-{version}-arm64.so",
+                              f"{lib}-{distro}-arm64.so",
+                              f"{lib}-arm64.so", deflib]
             elif arch == "arm":
-                image_list = ["%s-%s-%s-arm.so" % (lib, distro, version),
-                              "%s-%s-arm.so" % (lib, distro),
-                              "%s-arm.so" % (lib), deflib]
+                image_list = [f"{lib}-{distro}-{version}-arm.so",
+                              f"{lib}-{distro}-arm.so",
+                              f"{lib}-arm.so", deflib]
 
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
@@ -94,7 +94,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         """Get the volume bindings string for fakechroot run"""
         host_volumes_list = []
         map_volumes_list = []
-        map_volumes_dict = dict()
+        map_volumes_dict = {}
         for vol in self.opt["vol"]:
             (host_path, cont_path) = Uvolume(vol).split()
             if not (host_path and cont_path):

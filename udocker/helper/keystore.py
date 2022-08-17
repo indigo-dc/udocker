@@ -16,30 +16,26 @@ class KeyStore(object):
     def __init__(self, keystore_file):
         """Initialize keystone"""
         self.keystore_file = keystore_file
-        self.credential = dict()
+        self.credential = {}
 
     def _verify_keystore(self):
         """Verify the keystore file and directory"""
         keystore_uid = FileUtil(self.keystore_file).uid()
         if keystore_uid not in (-1, HostInfo.uid):
-            raise IOError("not owner of keystore: %s" %
-                          (self.keystore_file))
+            raise IOError(f"not owner of keystore: {self.keystore_file}")
         keystore_dir = os.path.dirname(self.keystore_file)
         if FileUtil(keystore_dir).uid() != HostInfo.uid:
-            raise IOError("keystore dir not found or not owner: %s" %
-                          (keystore_dir))
-        if (keystore_uid != -1 and
-                (os.stat(self.keystore_file).st_mode & 0o077)):
-            raise IOError("keystore is accessible to group or others: %s" %
-                          (self.keystore_file))
+            raise IOError(f"keystore dir not found or not owner: {keystore_dir}")
+        if (keystore_uid != -1 and (os.stat(self.keystore_file).st_mode & 0o077)):
+            raise IOError(f"keystore is accessible to group or others: {self.keystore_file}")
 
     def _read_all(self):
         """Read all credentials from file"""
         try:
-            with open(self.keystore_file, "r") as filep:
+            with open(self.keystore_file, "r", encoding='utf-8') as filep:
                 return json.load(filep)
         except (IOError, OSError, ValueError):
-            return dict()
+            return {}
 
     def _shred(self):
         """Shred file content"""
@@ -61,7 +57,7 @@ class KeyStore(object):
         oldmask = None
         try:
             oldmask = os.umask(0o77)
-            with open(self.keystore_file, "w") as filep:
+            with open(self.keystore_file, "w", encoding='utf-8') as filep:
                 json.dump(auths, filep)
             os.umask(oldmask)
         except (IOError, OSError):

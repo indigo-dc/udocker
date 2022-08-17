@@ -86,7 +86,7 @@ class CommonLocalFileApi(object):
         A file for import is a tarball of a directory tree, does not contain
         metadata. This method creates minimal metadata.
         """
-        container_json = dict()
+        container_json = {}
         container_json["id"] = layer_id
         container_json["comment"] = comment
         container_json["created"] = \
