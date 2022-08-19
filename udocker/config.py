@@ -17,7 +17,7 @@ class Config(object):
     to these values should be made via a configuration file read via
     Config.init() and that can reside in ~/.udocker/udocker.conf
     """
-    conf = dict()
+    conf = {}
     conf['verbose_level'] = logging.INFO
     conf['homedir'] = os.path.expanduser("~") + "/.udocker"  # dir with keystore file
     conf['topdir'] = conf['homedir']       # dir with images and containers
