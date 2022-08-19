@@ -140,7 +140,8 @@ class LocalRepository:
         """Set the protection mark in a container or image tag"""
         try:
             # touch create version file
-            open(directory + "/PROTECT", 'w', encoding='utf-8').close()
+            with open(directory + "/PROTECT", 'w', encoding='utf-8'):
+                pass
             return True
         except (OSError):
             return False
@@ -180,8 +181,7 @@ class LocalRepository:
         """Get a list of all containers in the local repo
         dir_only: is optional and indicates
                   if True a summary list of container_ids and names
-                  if False  an extended listing containing further
-                  container information
+                  if False  an extended listing containing further container information
         """
         containers_list = []
         if not os.path.isdir(self.containersdir):
@@ -190,9 +190,9 @@ class LocalRepository:
         for fname in os.listdir(self.containersdir):
             container_dir = self.containersdir + '/' + fname
             if os.path.isdir(container_dir):
+                #TODO: (mdavid) )redo this part
                 try:
-                    filep = open(container_dir + "/imagerepo.name", 'r',
-                                 encoding='utf-8')
+                    filep = open(container_dir + "/imagerepo.name", 'r', encoding='utf-8')
                 except (OSError):
                     reponame = ""
                 else:
@@ -321,10 +321,10 @@ class LocalRepository:
         if os.path.exists(container_dir):
             return ""
 
+        #TODO: (mdavid) )redo this part
         try:
             os.makedirs(container_dir + "/ROOT")
-            out_imagerepo = open(container_dir + "/imagerepo.name", 'w',
-                                 encoding='utf-8')
+            out_imagerepo = open(container_dir + "/imagerepo.name", 'w', encoding='utf-8')
         except (OSError):
             return None
         else:
@@ -499,6 +499,7 @@ class LocalRepository:
         to be invoked after setup_imagerepo()
         """
         directory = self.cur_repodir + "/" + tag
+        #TODO: (mdavid) )redo this part
         try:
             if not os.path.exists(directory):
                 os.makedirs(directory)
@@ -542,7 +543,8 @@ class LocalRepository:
 
         try:
             # Create version file
-            open(directory + "/" + version, 'a', encoding='utf-8').close()
+            with open(directory + "/" + version, 'a', encoding='utf-8'):
+                pass
         except (OSError):
             return False
 
@@ -644,6 +646,7 @@ class LocalRepository:
             out_filename = self.cur_tagdir + "/" + filename
 
         outfile = None
+        #TODO: (mdavid) )redo this part
         try:
             outfile = open(out_filename, 'w', encoding='utf-8')
             json.dump(data, outfile)
@@ -677,6 +680,7 @@ class LocalRepository:
 
         json_obj = None
         infile = None
+        #TODO: (mdavid) )redo this part
         try:
             infile = open(in_filename, 'r', encoding='utf-8')
             json_obj = json.load(infile)

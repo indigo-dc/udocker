@@ -95,6 +95,7 @@ class RuncEngine(ExecutionEngineCommon):
 
         json_obj = None
         infile = None
+        #TODO: (mdavid) )redo this part
         try:
             infile = open(self._container_specfile, 'r', encoding='utf-8')
             json_obj = json.load(infile)
@@ -110,6 +111,7 @@ class RuncEngine(ExecutionEngineCommon):
     def _save_spec(self):
         """Save spec file"""
         outfile = None
+        #TODO: (mdavid) )redo this part
         try:
             outfile = open(self._container_specfile, 'w', encoding='utf-8')
             json.dump(self._container_specjson, outfile)

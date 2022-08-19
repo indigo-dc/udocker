@@ -94,20 +94,26 @@ enable=
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
 
-disable=
-    attribute-defined-outside-init,
-    invalid-name,
-    missing-docstring,
-    protected-access,
-    too-few-public-methods,
+#disable=
+#    attribute-defined-outside-init,
+#    invalid-name,
+#    missing-docstring,
+#    protected-access,
+#    too-few-public-methods,
     # handled by black
-    format,
+#    format,
     # We anticipate #3512 where it will become optional
-    fixme,
-    cyclic-import,
-    W0612,
+#    fixme,
+#    cyclic-import,
+#    W0612,
 
 #disable=E0602,W0707,W0212,R0205,R0201,R1732,R1725,R0801,protected-access,too-many-lines,C0209,W4701,W1514,C0201
+
+disable=
+    fixme,
+    too-few-public-methods,
+    W0612,
+    R1732,
 
 
 [REPORTS]

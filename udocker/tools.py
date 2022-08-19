@@ -165,6 +165,7 @@ class UdockerTools:
         if not tmpdir:
             return (False, "")
 
+        #TODO: (mdavid) )redo this part
         try:
             tfile = tarfile.open(tarball_file, "r:gz")
             for tar_in in tfile.getmembers():
@@ -189,6 +190,7 @@ class UdockerTools:
 
         FileUtil(self.localrepo.topdir).chmod()
         self.localrepo.create_repo()
+        #TODO: (mdavid) )redo this part
         try:
             tfile = tarfile.open(tarball_file, "r:gz")
             FileUtil(self.localrepo.bindir).rchmod()

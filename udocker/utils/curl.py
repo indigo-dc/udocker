@@ -56,6 +56,7 @@ class CurlHeader:
         Alternative to write() to be used with the curl executable
         version.
         """
+        #TODO: (mdavid) )redo this part
         try:
             infile = open(in_filename, 'r', encoding='utf-8')
         except (OSError):
@@ -247,6 +248,7 @@ class GetURLpyCurl(GetURL):
                 pyc.setopt(pyc.RESUME_FROM, FileUtil(output_file).size())
                 openflags = "ab"
 
+            #TODO: (mdavid) )redo this part
             try:
                 filep = open(output_file, openflags)
             except(OSError):
@@ -446,6 +448,7 @@ class GetURLexeCurl(GetURL):
             else:  # OK downloaded
                 os.rename(self._files["output_file"], kwargs["ofile"])
 
+        #TODO: (mdavid) )redo this part
         if "ofile" not in kwargs:
             try:
                 buf = strio(open(self._files["output_file"], 'rb').read())
