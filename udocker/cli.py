@@ -462,9 +462,8 @@ class UdockerCLI:
         if clone:
             if cstruct.clone_tofile(tarfile):
                 return self.STATUS_OK
-        else:
-            if cstruct.export_tofile(tarfile):
-                return self.STATUS_OK
+        elif cstruct.export_tofile(tarfile):
+            return self.STATUS_OK
 
         LOG.error("exporting")
         return self.STATUS_ERROR
@@ -1276,8 +1275,9 @@ class UdockerCLI:
 
         MSG.info(80*"_")
         MSG.info("\t\tConfiguration options")
-        for varopt in Config.conf:
-            MSG.info("%s = %s", varopt, Config.conf[varopt])
+        for (var, value) in Config.conf.items():
+            msgout = f'{var} = {value}'
+            MSG.info(msgout)
 
         MSG.info(80*"_")
         return self.STATUS_OK

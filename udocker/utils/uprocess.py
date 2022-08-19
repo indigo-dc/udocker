@@ -15,6 +15,7 @@ class Uprocess:
 
     def get_stderr(self):
         """get stderr, dependent of log level"""
+        # TODO: (mdavid) refactor stderror changes type
         stderror = subprocess.DEVNULL
         if Config.conf['verbose_level'] == logging.DEBUG:
             stderror = sys.stderr

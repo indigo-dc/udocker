@@ -85,7 +85,7 @@ class UdockerTools:
             except (TypeError, ValueError):
                 pass
 
-            factor = factor / 1000
+            factor = int(factor / 1000)
 
         return int(version_int)
 

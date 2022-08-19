@@ -104,10 +104,12 @@ class ExecutionEngineCommon:
                 pass
             else:
                 if port_number < 1024:
-                    if port_number in list(mapped_ports.keys()):
-                        if mapped_ports[port_number] >= 1024:
+                    # if port_number in list(mapped_ports.keys()):
+                    #     if mapped_ports[port_number] >= 1024:
+                    #         continue
+                    for (mports, mportd) in mapped_ports.items():
+                        if mports >= 1024:
                             continue
-
                     exposes_priv = True
 
         if exposes_priv and HostInfo.uid != 0:
@@ -289,43 +291,41 @@ class ExecutionEngineCommon:
         # tree in which case we don't have metadata
         if Config.conf['location']:
             cont_dir = ""
-            cont_json = []
+            cntjson = []
         else:
             cstruc = ContainerStructure(self.localrepo, container_id)
-            (cont_dir, cont_json) = cstruc.get_container_attr()
+            (cont_dir, cntjson) = cstruc.get_container_attr()
             if not cont_dir:
                 return(None, None)
 
             # load metadata from container
             if not self.opt["nometa"]:
                 if not self.opt["user"]:
-                    self.opt["user"] = cstruc.get_container_meta("User", "", cont_json)
+                    self.opt["user"] = cstruc.get_container_meta("User", "", cntjson)
 
                 if not self.opt["cwd"]:
-                    self.opt["cwd"] = cstruc.get_container_meta("WorkingDir", "", cont_json)
+                    self.opt["cwd"] = cstruc.get_container_meta("WorkingDir", "", cntjson)
 
                 if not self.opt["hostname"]:
-                    self.opt["hostname"] = cstruc.get_container_meta("Hostname", "", cont_json)
+                    self.opt["hostname"] = cstruc.get_container_meta("Hostname", "", cntjson)
 
                 if not self.opt["domain"]:
-                    self.opt["domain"] = cstruc.get_container_meta("Domainname", "", cont_json)
+                    self.opt["domain"] = cstruc.get_container_meta("Domainname", "", cntjson)
 
                 if self.opt["entryp"] is False:
-                    self.opt["entryp"] = cstruc.get_container_meta("Entrypoint", [], cont_json)
+                    self.opt["entryp"] = cstruc.get_container_meta("Entrypoint", [], cntjson)
                     if not self.opt["cmd"]:
-                        self.opt["cmd"] = cstruc.get_container_meta("Cmd", [], cont_json)
+                        self.opt["cmd"] = cstruc.get_container_meta("Cmd", [], cntjson)
                 elif not self.opt["entryp"]:
                     self.opt["entryp"] = []
-                else:
-                    if isinstance(self.opt["entryp"], str):
-                        self.opt["entryp"] = self.opt["entryp"].strip().split(' ')
+                elif isinstance(self.opt["entryp"], str):
+                    self.opt["entryp"] = self.opt["entryp"].strip().split(' ')
 
-                self.opt["Volumes"] = cstruc.get_container_meta("Volumes", [], cont_json)
-                self.opt["portsexp"].extend(cstruc.get_container_meta("ExposedPorts", [],
-                                                                      cont_json))
-                self.opt["env"].extendif(cstruc.get_container_meta("Env", [], cont_json))
+                self.opt["Volumes"] = cstruc.get_container_meta("Volumes", [], cntjson)
+                self.opt["portsexp"].extend(cstruc.get_container_meta("ExposedPorts", [], cntjson))
+                self.opt["env"].extendif(cstruc.get_container_meta("Env", [], cntjson))
 
-        return(cont_dir, cont_json)
+        return(cont_dir, cntjson)
 
     def _select_auth_files(self):
         """Select authentication files to use /etc/passwd /etc/group"""

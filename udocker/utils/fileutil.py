@@ -165,7 +165,6 @@ class FileUtil:
                 os.chmod(filename, mode)
         except OSError:
             LOG.error("changing permissions of: %s", filename)
-            raise OSError
 
     def chmod(self, filemode=0o600, dirmode=0o700, mask=0o755, recursive=False):
         """chmod directory recursively"""
@@ -644,9 +643,8 @@ class FileUtil:
                     if to_container:
                         if self._link_set(f_path, orig_path, root_path, force):
                             links.append(f_path)
-                    else:
-                        if self._link_restore(f_path, orig_path, root_path, force):
-                            links.append(f_path)
+                    elif self._link_restore(f_path, orig_path, root_path, force):
+                        links.append(f_path)
                 except OSError:
                     continue
 

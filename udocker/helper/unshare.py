@@ -2,6 +2,7 @@
 """Basic unshare for udocker maintenance"""
 
 import os
+import sys
 import ctypes
 import subprocess
 
@@ -74,4 +75,4 @@ class Unshare:
             LOG.error("setting ids and groups")
             return False
 
-        os._exit(int(method()))
+        sys.exit(int(method()))

@@ -65,7 +65,7 @@ class ElfPatcher:
         for arg in cmd:
             if "#f" in arg:
                 arg = arg.replace("#f", path)
- 
+
             cmd_out.append(arg)
 
         return cmd_out

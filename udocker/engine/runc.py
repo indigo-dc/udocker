@@ -118,7 +118,7 @@ class RuncEngine(ExecutionEngineCommon):
         except (OSError, AttributeError, ValueError, TypeError):
             if outfile:
                 outfile.close()
- 
+
             return False
 
         outfile.close()

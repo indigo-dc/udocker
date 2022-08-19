@@ -278,7 +278,6 @@ class GetURLpyCurl(GetURL):
         except OSError:
             return (None, None)
         except pycurl.error as error:
-            # pylint: disable=unbalanced-tuple-unpacking
             errno, errstr = error.args
             hdr.data["X-ND-CURLSTATUS"] = errno
             if not hdr.data["X-ND-HTTPSTATUS"]:

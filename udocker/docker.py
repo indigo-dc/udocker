@@ -308,8 +308,8 @@ class DockerIoAPI:
                 auth_url = auth_fields["realm"] + '?'
                 for (field, value) in auth_fields.items():
                     if field != "realm":
-                        auth_url += field + '=' + auth_fields[field] + '&'
- 
+                        auth_url += field + '=' + value + '&'
+
                 header = []
                 if self.v2_auth_token:
                     header = [f'Authorization: Basic {self.v2_auth_token}']
