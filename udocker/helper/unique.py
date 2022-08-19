@@ -4,16 +4,8 @@
 import os
 import time
 import string
-
-try:
-    import random
-except ImportError:
-    pass
-
-try:
-    import uuid
-except ImportError:
-    pass
+import random
+import uuid
 
 from udocker import LOG
 
