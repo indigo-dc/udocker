@@ -32,7 +32,7 @@ __credits__ = ["PRoot http://proot.me",
               ]
 __license__ = "Licensed under the Apache License, Version 2.0"
 __version__ = "1.4.0"
-__date__ = "2021"
+__date__ = "2022"
 
 LOG = logging.getLogger(__name__)
 ch = logging.StreamHandler()

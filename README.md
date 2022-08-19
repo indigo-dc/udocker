@@ -3,23 +3,19 @@
 
 ![logo](docs/logo-small.png)
 
-udocker is a basic user tool to execute simple docker containers in user
-space without requiring root privileges. Enables download and execution
-of docker containers by non-privileged users in Linux systems where
-docker is not available. It can be used to pull and execute docker
-containers in Linux batch systems and interactive clusters that are
-managed by other entities such as grid infrastructures or externally
-managed batch or interactive systems.
+udocker is a basic user tool to execute simple docker containers in user space without requiring
+root privileges. Enables download and execution of docker containers by non-privileged users in
+Linux systems where docker is not available. It can be used to pull and execute docker containers in
+Linux batch systems and interactive clusters that are managed by other entities such as grid
+infrastructures or externally managed batch or interactive systems.
 
-udocker does not require any type of privileges nor the deployment of
-services by system administrators. It can be downloaded and executed
-entirely by the end user. The limited root functionality provided by
-some of the udocker execution modes is either simulated or provided
-via user namespaces.
+udocker does not require any type of privileges nor the deployment of services by system
+administrators. It can be downloaded and executed entirely by the end user. The limited root
+functionality provided by some of the udocker execution modes is either simulated or provided via
+user namespaces.
 
-udocker is a wrapper around several tools and libraries to mimic a
-subset of the docker capabilities including pulling images and running
-containers with minimal functionality.
+udocker is a wrapper around several tools and libraries to mimic a subset of the docker capabilities
+including pulling images and running containers with minimal functionality.
 
 ## Documentation
 
@@ -33,17 +29,14 @@ The full documentation is available at:
 
 ## How does it work
 
-udocker is written in Python, it has a minimal set of dependencies so
-that can be executed in a wide range of Linux systems.
+udocker is written in Python, it has a minimal set of dependencies so that can be executed in a wide
+range of Linux systems. udocker does not make use of docker nor requires its presence.
 
-udocker does not make use of docker nor requires its presence.
-
-udocker "executes" the containers by simply providing a chroot like
-environment over the extracted container. The current implementation
-supports different methods to mimic chroot thus enabling execution of
-containers under a chroot like environment without requiring privileges.
-udocker transparently supports several methods to execute the containers
-based on external tools and libraries such as:
+udocker "executes" the containers by simply providing a chroot like environment over the extracted
+container. The current implementation supports different methods to mimic chroot thus enabling
+execution of containers under a chroot like environment without requiring privileges. udocker
+transparently supports several methods to execute the containers based on external tools and
+libraries such as:
 
 * PRoot
 * Fakechroot
@@ -51,12 +44,11 @@ based on external tools and libraries such as:
 * crun
 * Singularity
 
-With the exception of Singularity the tools and libraries to support
-execution are downloaded and deployed by udocker during the installation
-process. This installation is performed in the user home directory
-and does not require privileges. The udocker related files such as
-libraries, executables, documentation, licenses, container images and
-extracted directory trees are placed by default under `$HOME/.udocker`.
+With the exception of Singularity the tools and libraries to support execution are downloaded and
+deployed by udocker during the installation process. This installation is performed in the user home
+directory and does not require privileges. The udocker related files such as libraries, executables,
+documentation, licenses, container images and extracted directory trees are placed by default under
+`$HOME/.udocker`.
 
 ## Advantages
 
@@ -65,25 +57,21 @@ extracted directory trees are placed by default under `$HOME/.udocker`.
 * Does not require privileges for execution
 * Does not require compilation, just transfer the Python code
 * Encapsulates several tools and execution methods
-* Includes the required tools already statically compiled to work
-  across systems
+* Includes the required tools already statically compiled to work across systems
 * Provides a docker like command line interface
 * Supports a subset of docker commands:
-  search, pull, import, export, load, save, login, logout, create and run
+  * search, pull, import, export, load, save, login, logout, create and run
 * Understands docker container metadata
 * Allows loading of docker and OCI containers
 * Supports NVIDIA GPGPU applications
-* Can execute in systems and environments where Linux namespaces
-  support is unavailable
-* Runs both on new and older Linux distributions including:
-  CentOS 6, CentOS 7, CentOS 8, Ubuntu 14, Ubuntu 16, Ubuntu 18, Ubuntu 20,
-  Ubuntu 21, Alpine, Fedora, etc
+* Can execute in systems and environments where Linux namespaces support is unavailable
+* Runs both on new and older Linux distributions including: CentOS 7, CentOS 8, Ubuntu 18.04,
+  Ubuntu 20.04, Ubuntu 22.04, Alpine, Fedora, etc
 
-## Python 2 and Python 3
+## Support Python 3
 
-Since v1.3.0 (or the development v1.2.x), udocker supports Python 2.6, 2.7 and
-Python >= 3.6. The original udocker v1.1.x for Python 2 only is still available
-[here](https://github.com/indigo-dc/udocker/tree/v1.1.8).
+Since v1.5.0 (or the development v1.4.x), udocker supports Python >= 3.6. The original udocker
+v1.1.x for Python 2 only is still available [here](https://github.com/indigo-dc/udocker/tree/v1.1.8).
 
 ## Syntax
 
@@ -166,38 +154,34 @@ udocker pull    quay.io/biocontainers/scikit-bio:0.2.3--np112py35_0
 udocker images
 ```
 
-Create a container from a pulled image, assign a name to the created
-container and run it. A created container can be run multiple times
-until it is explicitely removed.
+Create a container from a pulled image, assign a name to the created container and run it. A created
+container can be run multiple times until it is explicitly removed.
 
 ```bash
 udocker create --name=myfed  fedora:29
 udocker run  myfed  cat /etc/redhat-release
 ```
 
-The three steps of pulling, creating and running can be also achieved 
-in a single command, however this will be much slower for multiple
-invocations of the same container, as a new container will be created
-for each invocation. This approach will also consume more storage space.
-The following example creates a new container for each invocation.
+The three steps of pulling, creating and running can be also achieved in a single command, however
+this will be much slower for multiple invocations of the same container, as a new container will be
+created for each invocation. This approach will also consume more storage space. The following
+example creates a new container for each invocation.
 
 ```bash
 udocker run  fedora:29  cat /etc/redhat-release
 ```
 
-Execute mounting the host /home/u457 into the container directory /home/cuser.
-Notice that you can "mount" any host directory inside the container.
-Depending on the execution mode the "mount" is implemented differently and
-may have restrictions.
+Execute mounting the host /home/u457 into the container directory /home/cuser. Notice that you can
+"mount" any host directory inside the container. Depending on the execution mode the "mount" is
+implemented differently and may have restrictions.
 
 ```bash
 udocker run -v /home/u457:/home/cuser -w /home/user myfed  /bin/bash
 udocker run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
 ```
 
-Place a script in your host /tmp and execute it in the container. Notice
-that the behavior of `--entrypoint` changed from the previous versions
-for better compatibility with docker.
+Place a script in your host /tmp and execute it in the container. Notice that the behavior of
+`--entrypoint` changed from the previous versions for better compatibility with docker.
 
 ```bash
 udocker run  -v /tmp  --entrypoint="" myfed  /bin/bash -c 'cd /tmp; ./myscript.sh'
@@ -205,9 +189,8 @@ udocker run  -v /tmp  --entrypoint="" myfed  /bin/bash -c 'cd /tmp; ./myscript.s
 udocker run  -v /tmp  --entrypoint=/bin/bash  myfed  -c 'cd /tmp; ./myscript.sh'
 ```
 
-Execute mounting the host /var, /proc, /sys and /tmp in the same container
-directories. Notice that the content of these container directories will
-be obfuscated.
+Execute mounting the host /var, /proc, /sys and /tmp in the same container directories. Notice that
+the content of these container directories will be obfuscated.
 
 ```bash
 udocker run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
@@ -255,8 +238,7 @@ Change execution engine to runc.
 udocker setup  --execmode=R1  myfed
 ```
 
-Change execution engine to Singularity. Requires the availability of
-Singularity in the host system.
+Change execution engine to Singularity. Requires the availability of Singularity in the host system.
 
 ```bash
 ./udocker setup  --execmode=S1  myfed
@@ -271,41 +253,36 @@ udocker run  --user=root myfed  yum install -y firefox pulseaudio gnash-plugin
 
 ## Security
 
-By default udocker via PRoot offers the emulation of the root user. This
-emulation mimics a real root user (e.g getuid will return 0). This is just
-an emulation no root privileges are involved. This feature makes possible
-the execution of some tools that do not require actual privileges but which
-refuse to work if the username or id are not root or 0. This enables for
-instance software installation using rpm, yum or dnf inside the container.
+By default udocker via PRoot offers the emulation of the root user. This emulation mimics a real
+root user (e.g getuid will return 0). This is just an emulation no root privileges are involved.
+This feature makes possible the execution of some tools that do not require actual privileges but
+which refuse to work if the username or id are not root or 0. This enables for instance software
+installation using rpm, yum or dnf inside the container.
 
-udocker does not offer robust isolation features such as the ones offered
-by docker. Therefore if the containers content is not trusted then these
-containers should not be executed with udocker as they will run inside the
-user environment. For this reason udocker should not be run by privileged
+udocker does not offer robust isolation features such as the ones offered by docker. Therefore if
+the containers content is not trusted then these containers should not be executed with udocker as
+they will run inside the user environment. For this reason udocker should not be run by privileged
 users.
 
-Container images and filesystems will be unpacked and stored in the user
-home directory under `$HOME/.udocker` or other location of choice. Therefore
-the containers data will be subjected to the same filesystem protections as
-other files owned by the user. If the containers have sensitive information
-the files and directories should be adequately protected by the user.
+Container images and filesystems will be unpacked and stored in the user home directory under
+`$HOME/.udocker` or other location of choice. Therefore the containers data will be subjected to the
+same filesystem protections as other files owned by the user. If the containers have sensitive
+information the files and directories should be adequately protected by the user.
 
-udocker does not require privileges and runs under the identity of the user
-invoking it. Users can downloaded udocker and execute it without requiring
-system administrators intervention.
+udocker does not require privileges and runs under the identity of the user invoking it. Users can
+downloaded udocker and execute it without requiring system administrators intervention.
 
-udocker also provides execution with runc, crun and Singularity, these modes
-make use of rootless namespaces and enable a normal user to execute as root
-with the limitations that apply to user namespaces and to these tools.
+udocker also provides execution with runc, crun and Singularity, these modes make use of rootless
+namespaces and enable a normal user to execute as root with the limitations that apply to user
+namespaces and to these tools.
 
-When executed by normal unprivileged users, udocker limits privilege
-escalation issues since it does not use or require system privileges.
+When executed by normal unprivileged users, udocker limits privilege escalation issues since it does
+not use or require system privileges.
 
 ## General Limitations
 
-Since root privileges are not involved any operation that really
-requires such privileges will not be possible. The following  are
-examples of operations that are not possible:
+Since root privileges are not involved any operation that really requires such privileges will not
+be possible. The following are examples of operations that are not possible:
 
 * accessing host protected devices and files
 * listening on TCP/IP privileged ports (range below 1024)
@@ -314,56 +291,47 @@ examples of operations that are not possible:
 * change the system time
 * changing routing tables, firewall rules, or network interfaces
 
-If the containers require such privilege capabilities then docker
-should be used instead.
+If the containers require such privilege capabilities then docker should be used instead.
 
-udocker is not meant to create containers. Creation of containers
-is better performed using docker and dockerfiles.
+udocker is not meant to create containers. Creation of containers is better performed using docker
+and dockerfiles.
 
-udocker does not provide all the docker features, and is not intended
-as a docker replacement.
+udocker does not provide all the docker features, and is not intended as a docker replacement.
 
-udocker is mainly oriented at providing a run-time environment for
-containers execution in user space. udocker is particularly suited to
-run user applications encapsulated in docker containers.
+udocker is mainly oriented at providing a run-time environment for containers execution in user
+space. udocker is particularly suited to run user applications encapsulated in docker containers.
 
-Debugging inside of udocker with the PRoot engine will not work due to
-the way PRoot implements the chroot environment
+Debugging inside of udocker with the PRoot engine will not work due to the way PRoot implements the
+chroot environment
 
 ## Execution mode specific limitations
 
-udocker offers multiple execution modes leveraging several external tools
-such as PRoot (P mode), Fakechroot (F mode), runC (R mode), crun (R mode)
-and Singularity (S mode).
+udocker offers multiple execution modes leveraging several external tools such as PRoot (P mode),
+Fakechroot (F mode), runC (R mode), crun (R mode) and Singularity (S mode).
 
-When using execution Fakechroot modes such as F2, F3 and F4 the created
-containers cannot be moved across hosts. In this case convert back to a Pn
-mode before transfer.
-This is not needed if the hosts are part of an homogeneous cluster where
-the mount points and directory structure is the same. This limitation
-applies whenever the absolute realpath to the container directory changes.
+When using execution Fakechroot modes such as F2, F3 and F4 the created containers cannot be moved
+across hosts. In this case convert back to a Pn mode before transfer. This is not needed if the
+hosts are part of an homogeneous cluster where the mount points and directory structure is the same.
+This limitation applies whenever the absolute real path to the container directory changes.
 
-The default accelerated mode of PRoot (mode P1) may exhibit problems in Linux
-kernels above 4.0 due to kernel changes and upstream issues, in this case use
-mode P2 or any of the other execution modes.
+The default accelerated mode of PRoot (mode P1) may exhibit problems in Linux kernels above 4.0 due
+to kernel changes and upstream issues, in this case use mode P2 or any of the other execution modes.
 
 ```bash
 ./udocker setup  --execmode=P2  my-container-id
 ```
 
-The Fakechroot modes (Fn modes) require shared libraries compiled against
-the libc shipped with the container. udocker provides these libraries for
-several Linux distributions, these shared libraries are installed by
-udocker under:
+The Fakechroot modes (Fn modes) require shared libraries compiled against the libc shipped with the
+container. udocker provides these libraries for several Linux distributions, these shared libraries
+are installed by udocker under:
 
 ```bash
 $HOME/.udocker/lib/libfakechroot-*
 ```
 
-The runc and crun modes (R modes) require a kernel with user namespaces enabled.
-
-The singularity mode (S mode) requires the availability of Singularity in
-the host system. Singularity is not shipped with udocker.
+The runc and crun modes (R modes) require a kernel with user namespaces enabled. The singularity
+mode (S mode) requires the availability of Singularity in the host system. Singularity is not
+shipped with udocker.
 
 ## Metadata generation
 
@@ -396,18 +364,16 @@ See: [Citing](CITING.md)
 
 When citing udocker please use the following:
 
-* Jorge Gomes, Emanuele Bagnaschi, Isabel Campos, Mario David,
-Luís Alves, João Martins, João Pina, Alvaro López-García, Pablo Orviz,
-Enabling rootless Linux Containers in multi-user environments: The udocker
-tool, Computer Physics Communications, Available online 6 June 2018,
-ISSN 0010-4655, <https://doi.org/10.1016/j.cpc.2018.05.021>
+* Jorge Gomes, Emanuele Bagnaschi, Isabel Campos, Mario David, Luís Alves, João Martins, João Pina,
+Alvaro López-García, Pablo Orviz, Enabling rootless Linux Containers in multi-user environments:
+The udocker tool, Computer Physics Communications, Available online 6 June 2018, ISSN 0010-4655,
+<https://doi.org/10.1016/j.cpc.2018.05.021>
 
 ## Licensing
 
-Redistribution, commercial use and code changes must regard all licenses
-shipped with udocker. These include the [udocker license](LICENSE) and the
-individual licences of the external tools and libraries packaged for use
-with udocker. For further information see the
+Redistribution, commercial use and code changes must regard all licenses shipped with udocker. These
+include the [udocker license](LICENSE) and the individual licenses of the external tools and
+libraries packaged for use with udocker. For further information see the
 [software licenses section](https://indigo-dc.github.io/udocker/installation_manual.html#62-software-licenses)
 of the installation manual.
 
@@ -429,11 +395,10 @@ of the installation manual.
 * INCD [https://www.incd.pt](https://www.incd.pt/?lang=en)
 
 
-This work was performed in the framework of the H2020 project INDIGO-Datacloud
-(RIA 653549) and further developed with co-funding by the projects EOSC-hub
-(Horizon 2020) under Grant number 777536 and DEEP-Hybrid-DataCloud
-(Horizon 2020) under Grant number 777435. Software Quality Assurance is
-performed with the support of by the project EOSC-Synergy (Horizon 2020).
-The authors wish to acknowleadge the support of INCD-Infraestrutura Nacional de
+This work was performed in the framework of the H2020 project INDIGO-Datacloud (RIA 653549) and
+further developed with co-funding by the projects EOSC-hub (Horizon 2020) under Grant number 777536
+and DEEP-Hybrid-DataCloud (Horizon 2020) under Grant number 777435. Software Quality Assurance is
+performed with the support of by the project EOSC-Synergy (Horizon 2020). The authors wish to
+acknowledge the support of INCD-Infraestrutura Nacional de
 Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER
 under the project number 22153-01/SAICT/2016).
