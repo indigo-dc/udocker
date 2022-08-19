@@ -4,7 +4,7 @@ import hashlib
 from udocker import LOG
 
 
-class ChkSUM(object):
+class ChkSUM:
     """Checksumming for files"""
 
     def __init__(self):

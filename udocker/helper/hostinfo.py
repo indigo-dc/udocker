@@ -9,7 +9,7 @@ import platform
 from udocker import LOG
 from udocker.utils.uprocess import Uprocess
 
-class HostInfo(object):
+class HostInfo:
     """Get information from the host system"""
 
     uid = os.getuid()

@@ -29,7 +29,7 @@ def get_pair(envstr):
     return (key, val)
 
 
-class UenvIterator(object):
+class UenvIterator:
     """Uenv Iterator class"""
 
     def __init__(self, uenv):
@@ -51,7 +51,7 @@ class UenvIterator(object):
     next = __next__ # Python 2
 
 
-class Uenv(object):
+class Uenv:
     """Class to store environment variables"""
 
     def __init__(self, thisenv=None):

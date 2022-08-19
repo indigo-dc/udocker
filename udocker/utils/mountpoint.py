@@ -8,7 +8,7 @@ from udocker import LOG
 from udocker.utils.fileutil import FileUtil
 
 
-class MountPoint(object):
+class MountPoint:
     """Create, store and reset container mountpoints"""
 
     orig_dir = "/.mountpoints"

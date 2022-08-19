@@ -9,7 +9,7 @@ from udocker.utils.fileutil import FileUtil
 from udocker.helper.hostinfo import HostInfo
 
 
-class KeyStore(object):
+class KeyStore:
     """Basic storage for authentication tokens to be used
     with dockerhub and private repositories
     """

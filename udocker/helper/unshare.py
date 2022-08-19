@@ -9,7 +9,7 @@ from udocker import LOG
 from udocker.helper.hostinfo import HostInfo
 from udocker.helper.nixauth import NixAuthentication
 
-class Unshare(object):
+class Unshare:
     """Place a process in a namespace"""
 
     CLONE_NEWNS = 0x20000

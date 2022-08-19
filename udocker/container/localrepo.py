@@ -15,7 +15,7 @@ from udocker.utils.uprocess import Uprocess
 from udocker.helper.osinfo import OSInfo
 
 
-class LocalRepository(object):
+class LocalRepository:
     """Implements a basic repository for images and containers.
     The repository will be usually in the user home directory.
     The repository has a simple directory structure:

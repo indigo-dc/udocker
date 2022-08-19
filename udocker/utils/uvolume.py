@@ -3,7 +3,7 @@
 from udocker import LOG
 
 
-class Uvolume(object):
+class Uvolume:
     """Manipulate volumes"""
 
     def __init__(self, volume=""):

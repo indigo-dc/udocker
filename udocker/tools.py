@@ -22,7 +22,7 @@ def _str(data):
     return data
 
 
-class UdockerTools(object):
+class UdockerTools:
     """Download and setup of the udocker supporting tools
     Includes: proot and alternative python modules, these
     are downloaded to facilitate the installation by the

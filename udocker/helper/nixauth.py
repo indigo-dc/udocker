@@ -10,7 +10,7 @@ from udocker.utils.fileutil import FileUtil
 from udocker.helper.hostinfo import HostInfo
 
 
-class NixAuthentication(object):
+class NixAuthentication:
     """Provides abstraction and useful methods to manage
     passwd and group based authentication, both for the
     host system and for the container.

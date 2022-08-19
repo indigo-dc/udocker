@@ -13,7 +13,7 @@ from udocker.utils.fileutil import FileUtil
 from udocker.helper.hostinfo import HostInfo
 
 
-class ElfPatcher(object):
+class ElfPatcher:
     """Patch container executables"""
 
     BIN = 1

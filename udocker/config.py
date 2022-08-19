@@ -7,7 +7,7 @@ from configparser import ConfigParser
 from udocker import LOG
 
 
-class Config(object):
+class Config:
     """Default configuration values for the whole application. Changes
     to these values should be made via a configuration file read via
     Config.init() and that can reside in ~/.udocker/udocker.conf

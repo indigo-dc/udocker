@@ -15,7 +15,7 @@ from udocker.utils.chksum import ChkSUM
 from udocker.helper.unique import Unique
 
 
-class DockerIoAPI(object):
+class DockerIoAPI:
     """Class to encapsulate the access to the Docker Hub service
     Allows to search and download images from Docker Hub
     """

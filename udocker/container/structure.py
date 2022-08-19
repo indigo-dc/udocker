@@ -14,7 +14,7 @@ from udocker.helper.unique import Unique
 from udocker.helper.hostinfo import HostInfo
 
 
-class ContainerStructure(object):
+class ContainerStructure:
     """Docker container structure.
     Creation of a container filesystem from a repository image.
     Creation of a container filesystem from a layer tar file.

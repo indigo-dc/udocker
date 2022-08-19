@@ -25,7 +25,7 @@ BUILTIN = "builtins"
 GET_INPUT = input
 
 
-class UdockerCLI(object):
+class UdockerCLI:
     """Implements most of the command line interface.
     These methods correspond directly to the commands that can
     be invoked via the command line interface.

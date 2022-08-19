@@ -14,7 +14,7 @@ from udocker.engine.runc import RuncEngine
 from udocker.engine.singularity import SingularityEngine
 
 
-class ExecutionMode(object):
+class ExecutionMode:
     """Generic execution engine class to encapsulate the specific
     execution engines and their execution modes.
     P1: proot with seccomp

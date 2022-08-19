@@ -19,7 +19,7 @@ except ImportError:
 
 
 
-class CurlHeader(object):
+class CurlHeader:
     """An http header parser to be used with PyCurl
     Allows to retrieve the header fields and the status.
     Allows to obtain just the header by stopping the
@@ -76,7 +76,7 @@ class CurlHeader(object):
         return str(self.data)
 
 
-class GetURL(object):
+class GetURL:
     """File downloader using PyCurl or a curl cli executable"""
 
     def __init__(self):

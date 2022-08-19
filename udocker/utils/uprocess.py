@@ -10,7 +10,7 @@ from udocker import LOG
 from udocker.config import Config
 
 
-class Uprocess(object):
+class Uprocess:
     """Provide alternative implementations for subprocess"""
 
     def get_stderr(self):

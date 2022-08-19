@@ -16,7 +16,7 @@ from udocker.engine.execmode import ExecutionMode
 from udocker.config import Config
 
 
-class CommonLocalFileApi(object):
+class CommonLocalFileApi:
     """Common methods for Docker and OCI files"""
 
     def __init__(self, localrepo):

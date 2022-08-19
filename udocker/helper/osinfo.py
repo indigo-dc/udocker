@@ -9,7 +9,7 @@ from udocker.utils.uprocess import Uprocess
 from udocker.utils.fileutil import FileUtil
 
 
-class OSInfo(object):
+class OSInfo:
     """Get os information from a directory tree"""
 
     _binarylist = ["/lib64/ld-linux-x86-64.so", "/lib64/ld-linux-x86-64.so.2",

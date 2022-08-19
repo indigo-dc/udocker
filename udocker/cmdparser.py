@@ -4,7 +4,7 @@
 import string
 
 
-class CmdParser(object):
+class CmdParser:
     """Implements a simple command line parser.
     Divides the command into parameters and options
     that can be queried for presence and value.

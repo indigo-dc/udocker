@@ -18,7 +18,7 @@ except ImportError:
 from udocker import LOG
 
 
-class Unique(object):
+class Unique:
     """Produce unique identifiers for container names, temporary
     file names and other purposes. If module uuid does not exist
     it tries to use as last option the random generator.

@@ -13,7 +13,7 @@ from udocker.utils.fileutil import FileUtil
 from udocker.utils.uprocess import Uprocess
 
 
-class NvidiaMode(object):
+class NvidiaMode:
     """nvidia-docker like functionality for udocker.
     Make nvidia host libraries available within udocker, this is achieved
     by copy them into the container so that the execution modes that need

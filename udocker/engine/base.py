@@ -17,7 +17,7 @@ from udocker.utils.filebind import FileBind
 from udocker.utils.mountpoint import MountPoint
 
 
-class ExecutionEngineCommon(object):
+class ExecutionEngineCommon:
     """Docker container execution engine parent class
     Provides the container execution methods that are common to
     the execution drivers.

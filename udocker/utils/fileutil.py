@@ -15,7 +15,7 @@ from udocker.utils.uprocess import Uprocess
 from udocker.utils.uvolume import Uvolume
 
 
-class FileUtil(object):
+class FileUtil:
     """Some utilities to manipulate files"""
 
     tmptrash = {}

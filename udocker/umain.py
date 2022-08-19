@@ -11,7 +11,7 @@ from udocker.container.localrepo import LocalRepository
 from udocker.cli import UdockerCLI
 
 
-class UMain(object):
+class UMain:
     """These methods correspond directly to the commands that can
     be invoked via the command line interface.
     """
