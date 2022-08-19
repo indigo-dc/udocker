@@ -70,16 +70,16 @@ class SingularityEngine(ExecutionEngineCommon):
                 elif host_path == "/var/tmp" and cont_path in ("", "/var/tmp"):
                     vartmp_is_binded = True
 
-            vol_list.extend(["-B", "%s:%s" % (host_path, cont_path), ])
+            vol_list.extend(["-B", f"{host_path}:{cont_path}", ])
 
         if not home_is_binded:
-            vol_list.extend(["--home", "%s/root:%s" % (self.container_root, "/root"), ])
+            vol_list.extend(["--home", f"{self.container_root}/root:/root", ])
 
         if not tmp_is_binded:
-            vol_list.extend(["-B", "%s/tmp:/tmp" % (self.container_root), ])
+            vol_list.extend(["-B", f"{self.container_root}/tmp:/tmp", ])
 
         if not vartmp_is_binded:
-            vol_list.extend(["-B", "%s/var/tmp:/var/tmp" % (self.container_root), ])
+            vol_list.extend(["-B", f"{self.container_root}/var/tmp:/var/tmp", ])
 
         return vol_list
 
@@ -87,9 +87,9 @@ class SingularityEngine(ExecutionEngineCommon):
         """Build environment string with user specified environment in
         the form SINGULARITYENV_var=value
         """
-        singularityenv = dict()
+        singularityenv = {}
         for (key, val) in self.opt["env"]:
-            singularityenv['SINGULARITYENV_%s' % key] = val
+            singularityenv[f'SINGULARITYENV_{key}'] = val
 
         return singularityenv
 

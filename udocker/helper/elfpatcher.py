@@ -41,7 +41,7 @@ class ElfPatcher(object):
     def select_patchelf(self):
         """Set patchelf executable"""
         arch = HostInfo().arch()
-        image_list = list()
+        image_list = []
         if arch == "amd64":
             image_list = ["patchelf-x86_64", "patchelf"]
         elif arch == "i386":
@@ -252,8 +252,8 @@ class ElfPatcher(object):
 
     def _get_ld_config(self):
         """Get get directories from container ld.so.cache"""
-        cmd = ["ldconfig", "-p", "-C", "%s/%s" % (self._container_root, Config.conf['ld_so_cache'])]
-        ld_dict = dict()
+        cmd = ["ldconfig", "-p", "-C", f"{self._container_root}/{Config.conf['ld_so_cache']}", ]
+        ld_dict = {}
         ld_data = Uprocess().get_output(cmd)
         if not ld_data:
             return []

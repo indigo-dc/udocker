@@ -1,5 +1,12 @@
 # Changelog
 
+## udocker (1.3.2)
+
+* fix missing f (format) for string
+* fix bugs with dict .items()
+* solving several pylint issues
+* remove use2to3, fix issue #358
+
 ## udocker (1.3.1)
 
 * Add --entrypoint to run --help

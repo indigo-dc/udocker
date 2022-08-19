@@ -161,7 +161,7 @@ class DockerIoAPI(object):
 
     def _split_fields(self, buf):
         """Split  fields, used in the web authentication"""
-        all_fields = dict()
+        all_fields = {}
         for field in buf.split(','):
             pair = field.split('=', 1)
             if len(pair) == 2:
@@ -307,7 +307,7 @@ class DockerIoAPI(object):
             auth_fields = self._split_fields(auth_data)
             if "realm" in auth_fields:
                 auth_url = auth_fields["realm"] + '?'
-                for field in auth_fields:
+                for (field, value) in auth_fields.items():
                     if field != "realm":
                         auth_url += field + '=' + auth_fields[field] + '&'
  
@@ -331,7 +331,7 @@ class DockerIoAPI(object):
                     self.v2_auth_header = auth_header
         # PR #126
         elif 'BASIC' in bearer or 'Basic' in bearer:
-            auth_header = "Authorization: Basic %s" %(self.v2_auth_token)
+            auth_header = f"Authorization: Basic {self.v2_auth_token}"
             self.v2_auth_header = auth_header
 
         return auth_header
@@ -341,8 +341,8 @@ class DockerIoAPI(object):
         if not (username and password):
             return ""
         try:
-            userpass = "%s:%s" % (username, password)
-            self.v2_auth_token = base64.b64encode(userpass.encode("utf-8")).decode("ascii")
+            self.v2_auth_token = \
+                base64.b64encode((f"{username}:{password}").encode("utf-8")).decode("ascii")
         except (KeyError, AttributeError, TypeError, ValueError, NameError):
             self.v2_auth_token = ""
         return self.v2_auth_token
@@ -561,8 +561,7 @@ class DockerIoAPI(object):
             except (KeyError, NameError, TypeError):
                 registry_url = registry
                 if "://" not in registry:
-                    registry_url = "https://%s" % registry
-
+                    registry_url = f"https://{registry}"
                 index_url = registry_url
 
             if registry_url:
@@ -611,7 +610,7 @@ class DockerIoAPI(object):
     def search_get_page_v1(self, expression, url):
         """Get search results from Docker Hub using v1 API"""
         if expression:
-            url = url + "/v1/search?q=%s" % expression
+            url = url + f"/v1/search?q={expression}"
         else:
             url = url + "/v1/search?"
 
@@ -633,18 +632,17 @@ class DockerIoAPI(object):
         if not expression:
             expression = '*'
         if expression and official is None:
-            url = url + "/v2/search/repositories?query=%s" % (expression)
+            url = url + f"/v2/search/repositories?query={expression}"
         elif expression and official is True:
-            url = url + "/v2/search/repositories?query=%s&is_official=%s" % (expression, "true")
+            url = url + f"/v2/search/repositories?query={expression}&is_official=true"
         elif expression and official is False:
-            url = url + "/v2/search/repositories?query=%s&is_official=%s" % (expression, "false")
+            url = url + f"/v2/search/repositories?query={expression}&is_official=false"
         else:
             return []
 
-        url += "&page_size=%d" % (lines)
+        url += f"&page_size={str(lines)}"
         if self.search_page != 1:
-            url += "&page=%d" % (self.search_page)
-
+            url += f"&page={str(self.search_page)}"
         (dummy, buf) = self._get_url(url)
         try:
             repo_list = json.loads(buf.getvalue())
@@ -687,8 +685,8 @@ class DockerLocalFileAPI(CommonLocalFileApi):
     def _load_structure(self, tmp_imagedir):
         """Load the structure of a Docker image"""
         structure = {}
-        structure["repolayers"] = dict()
-        structure["repoconfigs"] = dict()
+        structure["repolayers"] = {}
+        structure["repoconfigs"] = {}
         for fname in os.listdir(tmp_imagedir):
             f_path = tmp_imagedir + '/' + fname
             if fname == "repositories":
@@ -696,12 +694,12 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             elif fname == "manifest.json":
                 structure["manifest"] = self.localrepo.load_json(f_path)
             elif len(fname) >= 69 and fname.endswith(".json"):
-                structure["repoconfigs"][fname] = dict()
+                structure["repoconfigs"][fname] = {}
                 structure["repoconfigs"][fname]["json"] = self.localrepo.load_json(f_path)
                 structure["repoconfigs"][fname]["json_f"] = f_path
             elif len(fname) >= 64 and FileUtil(f_path).isdir():
                 layer_id = fname
-                structure["repolayers"][layer_id] = dict()
+                structure["repolayers"][layer_id] = {}
                 for layer_f in os.listdir(f_path):
                     layer_f_path = f_path + '/' + layer_f
                     if layer_f == "VERSION":
@@ -850,13 +848,12 @@ class DockerLocalFileAPI(CommonLocalFileApi):
 
         config_layer_file = str(ChkSUM().sha256(json_file)) + ".json"
         FileUtil(json_file).rename(tmp_imagedir + '/' + config_layer_file)
-        manifest_item = dict()
+        manifest_item = {}
         manifest_item["Config"] = config_layer_file
         manifest_item["RepoTags"] = [imagerepo + ':' + tag, ]
         manifest_item["Layers"] = []
         if imagerepo not in structure["repositories"]:
-            structure["repositories"][imagerepo] = dict()
-
+            structure["repositories"][imagerepo] = {}
         parent_layer_id = ""
         for layer_f in layer_files:
             try:
@@ -898,9 +895,9 @@ class DockerLocalFileAPI(CommonLocalFileApi):
         except (IOError, OSError):
             return False
 
-        structure = dict()
+        structure = {}
         structure["manifest"] = []
-        structure["repositories"] = dict()
+        structure["repositories"] = {}
         status = False
         for (imagerepo, tag) in imagetag_list:
             status = self._save_image(imagerepo, tag, structure, tmp_imagedir)

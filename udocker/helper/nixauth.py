@@ -38,7 +38,7 @@ class NixAuthentication(object):
             (user, dum1, dum2, dum3, dum4, dum5) = self._get_user_from_host(wanted_user)
 
         try:
-            insub = open(sub_file)
+            insub = open(sub_file, encoding='utf-8')
         except (IOError, OSError):
             return []
         else:
@@ -117,7 +117,7 @@ class NixAuthentication(object):
             wanted_user = ""
 
         try:
-            inpasswd = open(self.passwd_file)
+            inpasswd = open(self.passwd_file, encoding='utf-8')
         except (IOError, OSError):
             return ("", "", "", "", "", "")
         else:
@@ -141,7 +141,7 @@ class NixAuthentication(object):
             wanted_group = ""
 
         try:
-            ingroup = open(self.group_file)
+            ingroup = open(self.group_file, encoding='utf-8')
         except (IOError, OSError):
             return ("", "", "")
         else:
@@ -158,7 +158,7 @@ class NixAuthentication(object):
 
     def add_user(self, user, passw, uid, gid, gecos, home, shell):
         """Add a *nix user to a /etc/passwd file"""
-        line = "%s:%s:%s:%s:%s:%s:%s\n" % (user, passw, uid, gid, gecos, home, shell)
+        line = f"{user}:{passw}:{uid}:{gid}:{gecos}:{home}:{shell}\n"
         if line in FileUtil(self.passwd_file).getdata('r'):
             return True
 
@@ -169,9 +169,9 @@ class NixAuthentication(object):
         users_str = ""
         if isinstance(users, list):
             for username in users:
-                users_str += "%s," % (username)
+                users_str += f"{username},"
 
-        line = "%s:x:%s:%s\n" % (group, gid, users_str)
+        line = f"{group}:x:{gid}:{users_str}\n"
         if line in FileUtil(self.group_file).getdata('r'):
             return True
 

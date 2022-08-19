@@ -140,7 +140,7 @@ class LocalRepository(object):
         """Set the protection mark in a container or image tag"""
         try:
             # touch create version file
-            open(directory + "/PROTECT", 'w').close()
+            open(directory + "/PROTECT", 'w', encoding='utf-8').close()
             return True
         except (IOError, OSError):
             return False
@@ -191,7 +191,8 @@ class LocalRepository(object):
             container_dir = self.containersdir + '/' + fname
             if os.path.isdir(container_dir):
                 try:
-                    filep = open(container_dir + "/imagerepo.name", 'r')
+                    filep = open(container_dir + "/imagerepo.name", 'r',
+                                 encoding='utf-8')
                 except (IOError, OSError):
                     reponame = ""
                 else:
@@ -322,7 +323,8 @@ class LocalRepository(object):
 
         try:
             os.makedirs(container_dir + "/ROOT")
-            out_imagerepo = open(container_dir + "/imagerepo.name", 'w')
+            out_imagerepo = open(container_dir + "/imagerepo.name", 'w',
+                                 encoding='utf-8')
         except (IOError, OSError):
             return None
         else:
@@ -502,7 +504,7 @@ class LocalRepository(object):
                 os.makedirs(directory)
 
             self.cur_tagdir = directory
-            out_tag = open(directory + "/TAG", 'w')
+            out_tag = open(directory + "/TAG", 'w', encoding='utf-8')
         except (IOError, OSError):
             return False
         else:
@@ -540,7 +542,7 @@ class LocalRepository(object):
 
         try:
             # Create version file
-            open(directory + "/" + version, 'a').close()
+            open(directory + "/" + version, 'a', encoding='utf-8').close()
         except (IOError, OSError):
             return False
 
@@ -643,7 +645,7 @@ class LocalRepository(object):
 
         outfile = None
         try:
-            outfile = open(out_filename, 'w')
+            outfile = open(out_filename, 'w', encoding='utf-8')
             json.dump(data, outfile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             if outfile:
@@ -676,7 +678,7 @@ class LocalRepository(object):
         json_obj = None
         infile = None
         try:
-            infile = open(in_filename, 'r')
+            infile = open(in_filename, 'r', encoding='utf-8')
             json_obj = json.load(infile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             pass
@@ -689,7 +691,7 @@ class LocalRepository(object):
     def _load_structure(self, imagetagdir):
         """Scan the repository structure of a given image tag"""
         structure = {}
-        structure["repolayers"] = dict()
+        structure["repolayers"] = {}
         if FileUtil(imagetagdir).isdir():
             for fname in os.listdir(imagetagdir):
                 f_path = imagetagdir + '/' + fname
@@ -702,7 +704,7 @@ class LocalRepository(object):
                 if len(fname) >= 64:
                     layer_id = fname.replace(".json", "").replace(".layer", "")
                     if layer_id not in structure["repolayers"]:
-                        structure["repolayers"][layer_id] = dict()
+                        structure["repolayers"][layer_id] = {}
 
                     if fname.endswith("json"):
                         structure["repolayers"][layer_id]["json"] = self.load_json(f_path)

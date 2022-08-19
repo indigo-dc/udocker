@@ -583,7 +583,7 @@ class LocalRepositoryTestCase(TestCase):
             lrepo.protect_imagerepo("IMAGE", "TAG")
             self.assertTrue(mopen.called)
             protect = lrepo.reposdir + "/IMAGE/TAG/PROTECT"
-            self.assertEqual(mopen.call_args, call(protect, 'w'))
+            self.assertEqual(mopen.call_args, call(protect, 'w', encoding='utf-8'))
 
     @patch('udocker.container.localrepo.FileUtil')
     @patch.object(LocalRepository, '_unprotect')

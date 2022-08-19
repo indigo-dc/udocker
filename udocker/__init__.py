@@ -23,7 +23,7 @@ limitations under the License.
 import sys
 import logging
 __author__ = "udocker@lip.pt"
-__copyright__ = "Copyright 2016 - 2021, LIP"
+__copyright__ = "Copyright 2016 - 2022, LIP"
 __credits__ = ["PRoot http://proot.me",
                "runC https://runc.io",
                "crun https://github.com/containers/crun",

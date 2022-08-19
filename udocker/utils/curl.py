@@ -35,7 +35,7 @@ class CurlHeader(object):
 
     def __init__(self):
         self.sizeonly = False
-        self.data = dict()
+        self.data = {}
         self.data["X-ND-HTTPSTATUS"] = ""
         self.data["X-ND-CURLSTATUS"] = ""
 
@@ -62,7 +62,7 @@ class CurlHeader(object):
         version.
         """
         try:
-            infile = open(in_filename, 'r')
+            infile = open(in_filename, 'r', encoding='utf-8')
         except (IOError, OSError):
             return False
 
