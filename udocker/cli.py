@@ -1313,7 +1313,7 @@ class UdockerCLI:
         --from=<url>|<dir>         :URL or local directory with modules
         --prefix=<directory>       :destination download directory
         """
-        list_uid = list()
+        list_uid = []
         dst_dir = os.path.expanduser("~") + "/udocker/tar"  # Default dest dir for tarballs
         if os.getenv("VIRTUAL_ENV"):
             dst_dir = os.getenv("VIRTUAL_ENV") + "/tar"

@@ -324,7 +324,7 @@ class UdockerTools:
                 LOG.error("reading file: %s", mjson)
                 continue
 
-        return list()
+        return []
 
     def _match_mod(self, mod, arch, os_dist, os_ver, metadict):
         """matches a given module mod in the metadict metadata dictionary
@@ -337,7 +337,7 @@ class UdockerTools:
                         LOG.debug('matched module: %s', module)
                         return module['urls'] 
 
-        return list()
+        return []
 
     def select_tarnames(self, list_uid):
         """Get list of tarballs URL to download
@@ -345,7 +345,7 @@ class UdockerTools:
         or download from the list of uids in list_uid"""
         force = True
         metadict = self._get_metadata(force)
-        list_downl = list()
+        list_downl = []
         if list_uid:
             LOG.debug('list of uids: %s', list_uid)
             for uid in list_uid:

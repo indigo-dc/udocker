@@ -368,7 +368,7 @@ class GetURLexeCurl(GetURL):
             self._opts["proxy"] = ["--proxy", self.http_proxy]
 
         if "header" in kwargs:
-            self._opts["header"] = list()
+            self._opts["header"] = []
             for header_item in kwargs["header"]:
                 if str(header_item).startswith("Authorization: Bearer"):
                     if "Signature=" in self._files["url"]:

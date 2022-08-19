@@ -29,7 +29,7 @@ class Config:
     conf['tarball_release'] = "1.2.8"
     base_tarurl = ["https://download.ncg.ingrid.pt/webdav/udocker/",
                    "https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/"]
-    conf['tarball'] = list()
+    conf['tarball'] = []
     for url in base_tarurl:
         conf['tarball'].append(url + "udocker-englib-1.2.8.tar.gz")
 
@@ -44,7 +44,7 @@ class Config:
     base_url = ["https://download.ncg.ingrid.pt/webdav/udocker/engines/",
                 "https://github.com/LIP-Computing/udocker_tools/raw/main/"]
 
-    conf['meta_json'] = list()
+    conf['meta_json'] = []
     for url in base_url:
         conf['meta_json'].append(url + "metadata.json")
 
