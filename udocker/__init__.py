@@ -46,16 +46,3 @@ formmsg = logging.Formatter("%(message)s")
 msgstr.setFormatter(formmsg)
 MSG.setLevel(logging.INFO)
 MSG.addHandler(msgstr)
-
-def is_genstr(objstr):
-    """test if objstr is string or unicode both in py2 nd py3
-    unicode type has been removed in py3
-    :param objstr: object to test if string or unicode
-    :return (bool) is_gstr if it is string or unicode or not
-    """
-    is_gstr = False
-    if sys.version_info[0] >= 3:
-        is_gstr = isinstance(objstr, str)
-    else:
-        is_gstr = isinstance(objstr, (str, unicode))
-    return is_gstr

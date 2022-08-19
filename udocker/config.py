@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
 """Configurations options and treatment/overrinding"""
 import os
-import sys
 import logging
-from udocker import LOG
 
-# if Python 3
-if sys.version_info[0] >= 3:
-    from configparser import ConfigParser
-else:
-    from ConfigParser import ConfigParser
+from configparser import ConfigParser
+from udocker import LOG
 
 
 class Config(object):

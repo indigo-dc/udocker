@@ -6,7 +6,7 @@ import re
 import pwd
 import platform
 
-from udocker import is_genstr, LOG
+from udocker import LOG
 from udocker.utils.uprocess import Uprocess
 
 class HostInfo(object):
@@ -88,7 +88,7 @@ class HostInfo(object):
             return False
 
         arg_list = []
-        if arg and is_genstr(arg):
+        if arg and isinstance(arg, str):
             arg_list = [arg]
         elif isinstance(arg, list):
             arg_list = arg

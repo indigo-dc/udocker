@@ -2,24 +2,23 @@
 """Tools for udocker"""
 
 import os
-import sys
 import tarfile
 import random
 import json
 import stat
-from udocker import is_genstr, __version__, LOG, MSG
+from udocker import __version__, LOG, MSG
 from udocker.config import Config
 from udocker.utils.curl import GetURL
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.osinfo import OSInfo
 
 def _str(data):
-    """Safe str for Python 3 and Python 2"""
-    if sys.version_info[0] >= 3:
-        try:
-            return data.decode()
-        except (UnicodeDecodeError, AttributeError):
-            pass
+    """Safe str for Python 3"""
+    try:
+        return data.decode()
+    except (UnicodeDecodeError, AttributeError):
+        pass
+
     return data
 
 
@@ -224,7 +223,7 @@ class UdockerTools(object):
 
     def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
-        if is_genstr(mirrors):
+        if isinstance(mirrors, str):
             mirrors = mirrors.split('\n')
 
         try:

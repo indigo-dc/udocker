@@ -6,7 +6,7 @@ import sys
 import subprocess
 import logging
 
-from udocker import is_genstr, LOG
+from udocker import LOG
 from udocker.config import Config
 
 
@@ -28,7 +28,7 @@ class Uprocess(object):
 
         basename = os.path.basename(filename)
         LOG.debug("find file in path: %s", basename)
-        if is_genstr(path):
+        if isinstance(path, str):
             if "=" in path:
                 path = "".join(path.split("=", 1)[1:])
 
@@ -61,17 +61,8 @@ class Uprocess(object):
     def check_output(self, *popenargs, **kwargs):
         """Select check_output implementation"""
         try:
-            # if Python 3
-            if sys.version_info[0] >= 3:
-                output = subprocess.check_output(*popenargs, **kwargs)
-                chk_out = output.decode()
-            # if Python >= 2.7
-            elif sys.version_info[0] >= 2 and sys.version_info[1] >= 7:
-                chk_out = subprocess.check_output(*popenargs, **kwargs)
-            # if Python < 2.7
-            else:
-                chk_out = self._check_output(*popenargs, **kwargs)
-
+            output = subprocess.check_output(*popenargs, **kwargs)
+            chk_out = output.decode()
         except OSError:
             return ""
 

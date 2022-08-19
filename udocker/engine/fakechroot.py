@@ -7,7 +7,7 @@ import re
 import subprocess
 import logging
 
-from udocker import is_genstr, LOG
+from udocker import LOG
 from udocker.engine.base import ExecutionEngineCommon
 from udocker.helper.osinfo import OSInfo
 from udocker.config import Config
@@ -35,7 +35,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         if Config.conf['fakechroot_so']:
             if isinstance(Config.conf['fakechroot_so'], list):
                 image_list = Config.conf['fakechroot_so']
-            elif is_genstr(Config.conf['fakechroot_so']):
+            elif isinstance(Config.conf['fakechroot_so'], str):
                 image_list = [Config.conf['fakechroot_so'], ]
 
             if "/" in Config.conf['fakechroot_so']:

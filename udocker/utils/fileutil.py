@@ -7,7 +7,7 @@ import stat
 import re
 import logging
 
-from udocker import is_genstr, LOG
+from udocker import LOG
 from udocker.config import Config
 from udocker.helper.unique import Unique
 from udocker.helper.hostinfo import HostInfo
@@ -449,7 +449,7 @@ class FileUtil(object):
         if rootdir:
             rootdir += "/"
 
-        if is_genstr(path):
+        if isinstance(path, str):
             if "=" in path:
                 path = "".join(path.split("=", 1)[1:])
 

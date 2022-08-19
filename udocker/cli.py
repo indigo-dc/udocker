@@ -2,7 +2,6 @@
 """udocker Command Line Interface implementation"""
 
 import os
-import sys
 import string
 import json
 from getpass import getpass
@@ -22,13 +21,8 @@ from udocker.utils.fileutil import FileUtil
 from udocker.utils.filebind import FileBind
 from udocker.utils.mountpoint import MountPoint
 
-# if Python 3
-if sys.version_info[0] >= 3:
-    BUILTIN = "builtins"
-    GET_INPUT = input
-else:
-    BUILTIN = "__builtin__"
-    GET_INPUT = raw_input
+BUILTIN = "builtins"
+GET_INPUT = input
 
 
 class UdockerCLI(object):

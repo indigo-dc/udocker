@@ -2,7 +2,6 @@
 """Docker API integration"""
 
 import os
-import sys
 import re
 import base64
 import json
@@ -316,11 +315,7 @@ class DockerIoAPI(object):
                     header = ["Authorization: Basic %s" % (self.v2_auth_token)]
 
                 (dummy, auth_buf) = self._get_url(auth_url, header=header, RETRY=retry)
-                if sys.version_info[0] >= 3:
-                    token_buf = auth_buf.getvalue().decode()
-                else:
-                    token_buf = auth_buf.getvalue()
-
+                token_buf = auth_buf.getvalue().decode()
                 if token_buf and "token" in token_buf:
                     try:
                         auth_token = json.loads(token_buf)
@@ -722,11 +717,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             return ""
 
         if not my_layer_id:
-            # if Python 3 TypeError: 'dict_keys' object is not subscriptable
-            if sys.version_info[0] >= 3:
-                my_layer_id = list(structure["repolayers"].keys())[0]
-            else:
-                my_layer_id = structure["repolayers"].keys()[0]
+            my_layer_id = list(structure["repolayers"].keys())[0]
 
         found = ""
         for layer_id in structure["repolayers"]:

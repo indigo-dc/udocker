@@ -7,7 +7,7 @@ import sys
 import stat
 import json
 
-from udocker import is_genstr, LOG
+from udocker import LOG
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.chksum import ChkSUM
@@ -115,7 +115,7 @@ class LocalRepository(object):
         """Verify if the provided object matches the format of a
         local container id.
         """
-        if not is_genstr(obj):
+        if not isinstance(obj, str):
             return False
 
         match = re.match("^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$", obj)
@@ -731,10 +731,7 @@ class LocalRepository(object):
             return ""
 
         if not my_layer_id:
-            if sys.version_info[0] >= 3:
-                my_layer_id = list(structure["repolayers"].keys())[0]
-            else:
-                my_layer_id = structure["repolayers"].keys()[0]
+            my_layer_id = list(structure["repolayers"].keys())[0]
 
         found = ""
         for layer_id in structure["repolayers"]:
@@ -815,10 +812,7 @@ class LocalRepository(object):
         layer = iter(layers_list)
         status = True
         for ancestry_layer in structure["ancestry"]:
-            if sys.version_info[0] >= 3:
-                verify_layer = next(layer)
-            else:
-                verify_layer = layer.next()
+            verify_layer = next(layer)
 
             if ancestry_layer != verify_layer:
                 LOG.error("ancestry: %s and layers not match: %s", ancestry_layer, verify_layer)

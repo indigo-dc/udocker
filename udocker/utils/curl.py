@@ -6,7 +6,8 @@ import sys
 import json
 import logging
 
-from udocker import is_genstr, LOG
+from io import BytesIO as strio
+from udocker import LOG
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uprocess import Uprocess
@@ -16,12 +17,6 @@ try:
 except ImportError:
     pass
 
-# if Python 3
-# pylint: disable=import-error
-if sys.version_info[0] >= 3:
-    from io import BytesIO as strio
-else:
-    from StringIO import StringIO as strio
 
 
 class CurlHeader(object):
@@ -398,7 +393,7 @@ class GetURLexeCurl(GetURL):
                 self._opts["resume"] = ["-C", "-"]
 
         cmd = ["curl"]
-        if self._curl_exec and is_genstr(self._curl_exec):
+        if self._curl_exec and isinstance(self._curl_exec, str):
             cmd = [self._curl_exec]
 
         for opt in self._opts.values():

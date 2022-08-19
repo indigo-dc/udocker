@@ -450,10 +450,7 @@ class RuncEngine(ExecutionEngineCommon):
 
             if readable:
                 try:
-                    if sys.version_info[0] >= 3:
-                        sys.stdout.write(os.read(pmaster, 1).decode())
-                    else:
-                        sys.stdout.write(os.read(pmaster, 1))
+                    sys.stdout.write(os.read(pmaster, 1).decode())
                 except OSError:
                     break
 
