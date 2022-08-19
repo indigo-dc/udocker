@@ -18,7 +18,7 @@ class ChkSUM:
                     algorithm.update(chunk)
 
             return algorithm.hexdigest()
-        except (OSError):
+        except OSError:
             return ""
 
     def sha256(self, filename):

@@ -723,7 +723,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
         for layer_id in structure["repolayers"]:
             if "parent" not in structure["repolayers"][layer_id]["json"]:
                 continue
-            if (my_layer_id == structure["repolayers"][layer_id]["json"]["parent"]):
+            if my_layer_id == structure["repolayers"][layer_id]["json"]["parent"]:
                 found = self._find_top_layer_id(structure, layer_id)
                 break
 
@@ -883,7 +883,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
         tmp_imagedir = FileUtil("save").mktmp()
         try:
             os.makedirs(tmp_imagedir)
-        except (OSError):
+        except OSError:
             return False
 
         structure = {}

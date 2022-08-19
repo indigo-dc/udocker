@@ -112,7 +112,7 @@ class FileUtil:
         """Get the file owner user id"""
         try:
             return os.lstat(self.filename).st_uid
-        except (OSError):
+        except OSError:
             return -1
 
     def _is_safe_prefix(self, filename):
@@ -232,7 +232,7 @@ class FileUtil:
         elif os.path.isfile(self.filename) or os.path.islink(self.filename):
             try:
                 os.remove(self.filename)
-            except (OSError):
+            except OSError:
                 LOG.error("deleting file: %s", self.filename)
                 return False
         elif os.path.isdir(self.filename):
@@ -465,7 +465,7 @@ class FileUtil:
         """Rename/move file"""
         try:
             os.rename(self.filename, dest_filename)
-        except (OSError):
+        except OSError:
             return False
 
         return True
@@ -477,7 +477,7 @@ class FileUtil:
         #TODO: (mdavid) refactor this part
         try:
             fpdst = open(dest_filename, mode + "b")
-        except (OSError):
+        except OSError:
             return False
 
         while True:
@@ -497,7 +497,7 @@ class FileUtil:
         #TODO: (mdavid) refactor this part
         try:
             fpsrc = open(self.filename, "rb")
-        except (OSError):
+        except OSError:
             return False
 
         while True:
@@ -517,12 +517,12 @@ class FileUtil:
         #TODO: (mdavid) refactor this part
         try:
             fpsrc = open(self.filename, "rb")
-        except (OSError):
+        except OSError:
             return False
 
         try:
             fpdst = open(dest_filename, mode + "b")
-        except (OSError):
+        except OSError:
             fpsrc.close()
             return False
 

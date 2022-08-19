@@ -337,7 +337,7 @@ class UdockerTools:
                 if (module['os'] == os_dist) or (module['os'] == ''):
                     if (module['os_ver'] == os_ver) or (module['os_ver'] == ''):
                         LOG.debug('matched module: %s', module)
-                        return module['urls'] 
+                        return module['urls']
 
         return []
 

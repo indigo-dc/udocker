@@ -49,7 +49,7 @@ class KeyStore:
             size = FileUtil(self.keystore_file).size()
             with open(self.keystore_file, "rb+") as filep:
                 filep.write(b" " * size)
-        except (OSError):
+        except OSError:
             exit_status = 1
             return exit_status
 
@@ -66,7 +66,7 @@ class KeyStore:
                 json.dump(auths, filep)
 
             os.umask(oldmask)
-        except (OSError):
+        except OSError:
             if oldmask is not None:
                 os.umask(oldmask)
 
@@ -117,7 +117,7 @@ class KeyStore:
             self._shred()
             os.unlink(self.keystore_file)
             LOG.info("all credentials deleted")
-        except (OSError):
+        except OSError:
             return 1
 
         return 0

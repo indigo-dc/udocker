@@ -106,7 +106,7 @@ class HostInfo:
                 cmd = ['stty', 'size']
                 lines, cols = Uprocess().check_output(cmd, stdin=tty).split()
                 return (int(lines), int(cols))
-        except (OSError):
+        except OSError:
             pass
 
         return (24, 80)

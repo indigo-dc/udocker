@@ -40,7 +40,7 @@ class NixAuthentication:
         #TODO: (mdavid) )redo this part
         try:
             insub = open(sub_file, encoding='utf-8')
-        except (OSError):
+        except OSError:
             return []
         else:
             for line in insub:
@@ -120,7 +120,7 @@ class NixAuthentication:
         #TODO: (mdavid) )redo this part
         try:
             inpasswd = open(self.passwd_file, encoding='utf-8')
-        except (OSError):
+        except OSError:
             return ("", "", "", "", "", "")
         else:
             for line in inpasswd:
@@ -145,7 +145,7 @@ class NixAuthentication:
         #TODO: (mdavid) )redo this part
         try:
             ingroup = open(self.group_file, encoding='utf-8')
-        except (OSError):
+        except OSError:
             return ("", "", "")
         else:
             for line in ingroup:

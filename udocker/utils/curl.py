@@ -59,7 +59,7 @@ class CurlHeader:
         #TODO: (mdavid) )redo this part
         try:
             infile = open(in_filename, 'r', encoding='utf-8')
-        except (OSError):
+        except OSError:
             return False
 
         for line in infile:
@@ -251,7 +251,7 @@ class GetURLpyCurl(GetURL):
             #TODO: (mdavid) )redo this part
             try:
                 filep = open(output_file, openflags)
-            except(OSError):
+            except OSError:
                 LOG.error("opening download file: %s", output_file)
                 raise
 
@@ -275,7 +275,7 @@ class GetURLpyCurl(GetURL):
             LOG.debug("curl url: %s", self._url)
             LOG.debug("curl arg: %s", kwargs)
             pyc.perform()     # call pyculr
-        except(OSError):
+        except OSError:
             return (None, None)
         except pycurl.error as error:
             # pylint: disable=unbalanced-tuple-unpacking
@@ -452,7 +452,7 @@ class GetURLexeCurl(GetURL):
         if "ofile" not in kwargs:
             try:
                 buf = strio(open(self._files["output_file"], 'rb').read())
-            except(OSError):
+            except OSError:
                 LOG.error("reading curl output file to buffer")
 
             FileUtil(self._files["output_file"]).remove()

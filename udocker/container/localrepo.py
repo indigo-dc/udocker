@@ -97,7 +97,7 @@ class LocalRepository:
 
             if not (Config.conf['keystore'].startswith("/") or os.path.exists(self.homedir)):
                 os.makedirs(self.homedir)
-        except(OSError):
+        except OSError:
             return False
 
         return True
@@ -143,7 +143,7 @@ class LocalRepository:
             with open(directory + "/PROTECT", 'w', encoding='utf-8'):
                 pass
             return True
-        except (OSError):
+        except OSError:
             return False
 
     def _unprotect(self, directory):
@@ -193,7 +193,7 @@ class LocalRepository:
                 #TODO: (mdavid) )redo this part
                 try:
                     filep = open(container_dir + "/imagerepo.name", 'r', encoding='utf-8')
-                except (OSError):
+                except OSError:
                     reponame = ""
                 else:
                     reponame = filep.read()
@@ -249,7 +249,7 @@ class LocalRepository:
         try:
             os.symlink(rel_path_to_existing, link_file)
             LOG.debug("container name set OK")
-        except (OSError):
+        except OSError:
             return False
 
         return True
@@ -325,7 +325,7 @@ class LocalRepository:
         try:
             os.makedirs(container_dir + "/ROOT")
             out_imagerepo = open(container_dir + "/imagerepo.name", 'w', encoding='utf-8')
-        except (OSError):
+        except OSError:
             return None
         else:
             out_imagerepo.write(imagerepo + ":" + tag)
@@ -342,7 +342,7 @@ class LocalRepository:
         try:
             if os.path.isfile(tag_dir + "/TAG"):
                 return True
-        except (OSError):
+        except OSError:
             pass
 
         return False
@@ -491,7 +491,7 @@ class LocalRepository:
 
             self.cur_repodir = directory
             return False
-        except (OSError):
+        except OSError:
             return None
 
     def setup_tag(self, tag):
@@ -506,7 +506,7 @@ class LocalRepository:
 
             self.cur_tagdir = directory
             out_tag = open(directory + "/TAG", 'w', encoding='utf-8')
-        except (OSError):
+        except OSError:
             return False
         else:
             out_tag.write(self.cur_repodir + ":" + tag)
@@ -535,7 +535,7 @@ class LocalRepository:
                 try:
                     FileUtil(directory + "/v1").remove()
                     FileUtil(directory + "/v2").remove()
-                except (OSError):
+                except OSError:
                     pass
 
                 if os.listdir(directory):
@@ -545,7 +545,7 @@ class LocalRepository:
             # Create version file
             with open(directory + "/" + version, 'a', encoding='utf-8'):
                 pass
-        except (OSError):
+        except OSError:
             return False
 
         return True
@@ -745,7 +745,7 @@ class LocalRepository:
             if "parent" not in structure["repolayers"][layer_id]["json"]:
                 continue
 
-            if (my_layer_id == structure["repolayers"][layer_id]["json"]["parent"]):
+            if my_layer_id == structure["repolayers"][layer_id]["json"]["parent"]:
                 found = self._find_top_layer_id(structure, layer_id)
                 break
 
