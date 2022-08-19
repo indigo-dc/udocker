@@ -29,7 +29,7 @@ class RuncEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, localrepo, exec_mode):
-        super(RuncEngine, self).__init__(localrepo, exec_mode)
+        super().__init__(localrepo, exec_mode)
         self.executable = None                   # runc
         self._container_specjson = None
         self._container_specfile = None

@@ -94,7 +94,7 @@ class ExecutionMode:
         elif xmode in {"F3", "F4"}:
             if force or prev_xmode in {'P1', 'P2', 'F1', 'F2', 'R1', 'R2', 'R3', 'S1'}:
                 status = (elfpatcher.patch_ld() and elfpatcher.patch_binaries())
-            elif prev_xmode in ("F3", "F4"):
+            elif prev_xmode in {"F3", "F4"}:
                 status = True
 
         if xmode[0] in {"P", "R", "S"}:

@@ -23,7 +23,7 @@ class SingularityEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, localrepo, exec_mode):
-        super(SingularityEngine, self).__init__(localrepo, exec_mode)
+        super().__init__(localrepo, exec_mode)
         self.executable = None                   # singularity
         self.execution_id = None
 

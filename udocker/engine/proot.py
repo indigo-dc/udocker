@@ -24,7 +24,7 @@ class PRootEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, localrepo, exec_mode):
-        super(PRootEngine, self).__init__(localrepo, exec_mode)
+        super().__init__(localrepo, exec_mode)
         self.executable = None                   # PRoot
         self.proot_noseccomp = False             # No seccomp mode
         self.proot_newseccomp = False            # New seccomp mode

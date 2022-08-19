@@ -24,7 +24,7 @@ class FakechrootEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, localrepo, exec_mode):
-        super(FakechrootEngine, self).__init__(localrepo, exec_mode)
+        super().__init__(localrepo, exec_mode)
         self._fakechroot_so = ""
         self._elfpatcher = None
         self._recommend_expand_symlinks = False
