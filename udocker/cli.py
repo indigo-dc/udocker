@@ -838,11 +838,13 @@ class UdockerCLI:
         MSG.info("REPOSITORY")
         for (imagerepo, tag) in images_list:
             prot = (".", "P")[self.localrepo.isprotected_imagerepo(imagerepo, tag)]
-            msgout = "%-60.60s %c" % (imagerepo + ":" + tag, prot)
+            ## msgout = "%-60.60s %c" % (imagerepo + ":" + tag, prot)  <- old %format
+            msgout = f'{imagerepo : >120}:{tag : >40} {prot}'
             MSG.info(msgout)
             if verbose:
                 imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
-                MSG.info("  %s", imagerepo_dir)
+                msgout = f'{imagerepo_dir : >4}'
+                MSG.info(msgout)
                 layers_list = self.localrepo.get_layers(imagerepo, tag)
                 if layers_list:
                     for (layer_name, size) in layers_list:

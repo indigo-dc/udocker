@@ -126,7 +126,8 @@ class PRootEngine(ExecutionEngineCommon):
         """Get the volume bindings string for container run command"""
         proot_vol_list = []
         for vol in self.opt["vol"]:
-            proot_vol_list.extend(["-b", "%s:%s" % Uvolume(vol).split()])
+            (vols, vold) = Uvolume(vol).split()
+            proot_vol_list.extend(["-b", f'{vols}:{vold}'])
 
         return proot_vol_list
 
@@ -134,7 +135,7 @@ class PRootEngine(ExecutionEngineCommon):
         """Get mapping of TCP/IP ports"""
         proot_netmap_list = []
         for (cont_port, host_port) in list(self._get_portsmap().items()):
-            proot_netmap_list.extend(["-p", "%d:%d" % (cont_port, host_port)])
+            proot_netmap_list.extend(["-p", f'{cont_port}:{host_port}'])
 
         if self.opt["netcoop"]:
             proot_netmap_list.extend(["-n", ])

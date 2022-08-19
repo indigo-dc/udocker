@@ -312,7 +312,7 @@ class DockerIoAPI:
  
                 header = []
                 if self.v2_auth_token:
-                    header = ["Authorization: Basic %s" % (self.v2_auth_token)]
+                    header = [f'Authorization: Basic {self.v2_auth_token}']
 
                 (dummy, auth_buf) = self._get_url(auth_url, header=header, RETRY=retry)
                 token_buf = auth_buf.getvalue().decode()
@@ -609,7 +609,7 @@ class DockerIoAPI:
         else:
             url = url + "/v1/search?"
 
-        url += "&page=%s" % str(self.search_page)
+        url += f'&page={str(self.search_page)}'
         (dummy, buf) = self._get_url(url)
         try:
             repo_list = json.loads(buf.getvalue())
