@@ -97,7 +97,7 @@ class LocalRepository:
 
             if not (Config.conf['keystore'].startswith("/") or os.path.exists(self.homedir)):
                 os.makedirs(self.homedir)
-        except(IOError, OSError):
+        except(OSError):
             return False
 
         return True
@@ -142,7 +142,7 @@ class LocalRepository:
             # touch create version file
             open(directory + "/PROTECT", 'w', encoding='utf-8').close()
             return True
-        except (IOError, OSError):
+        except (OSError):
             return False
 
     def _unprotect(self, directory):
@@ -193,7 +193,7 @@ class LocalRepository:
                 try:
                     filep = open(container_dir + "/imagerepo.name", 'r',
                                  encoding='utf-8')
-                except (IOError, OSError):
+                except (OSError):
                     reponame = ""
                 else:
                     reponame = filep.read()
@@ -249,7 +249,7 @@ class LocalRepository:
         try:
             os.symlink(rel_path_to_existing, link_file)
             LOG.debug("container name set OK")
-        except (IOError, OSError):
+        except (OSError):
             return False
 
         return True
@@ -325,7 +325,7 @@ class LocalRepository:
             os.makedirs(container_dir + "/ROOT")
             out_imagerepo = open(container_dir + "/imagerepo.name", 'w',
                                  encoding='utf-8')
-        except (IOError, OSError):
+        except (OSError):
             return None
         else:
             out_imagerepo.write(imagerepo + ":" + tag)
@@ -342,7 +342,7 @@ class LocalRepository:
         try:
             if os.path.isfile(tag_dir + "/TAG"):
                 return True
-        except (IOError, OSError):
+        except (OSError):
             pass
 
         return False
@@ -491,7 +491,7 @@ class LocalRepository:
 
             self.cur_repodir = directory
             return False
-        except (IOError, OSError):
+        except (OSError):
             return None
 
     def setup_tag(self, tag):
@@ -505,7 +505,7 @@ class LocalRepository:
 
             self.cur_tagdir = directory
             out_tag = open(directory + "/TAG", 'w', encoding='utf-8')
-        except (IOError, OSError):
+        except (OSError):
             return False
         else:
             out_tag.write(self.cur_repodir + ":" + tag)
@@ -534,7 +534,7 @@ class LocalRepository:
                 try:
                     FileUtil(directory + "/v1").remove()
                     FileUtil(directory + "/v2").remove()
-                except (IOError, OSError):
+                except (OSError):
                     pass
 
                 if os.listdir(directory):
@@ -543,7 +543,7 @@ class LocalRepository:
         try:
             # Create version file
             open(directory + "/" + version, 'a', encoding='utf-8').close()
-        except (IOError, OSError):
+        except (OSError):
             return False
 
         return True
@@ -582,7 +582,7 @@ class LocalRepository:
         try:
             json_string = manifest["history"][0]["v1Compatibility"].strip()
             container_json = json.loads(json_string)
-        except (IOError, OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
+        except (OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
             return (None, files)
 
         return (container_json, files)
@@ -600,7 +600,7 @@ class LocalRepository:
         try:
             json_file = directory + '/' + manifest["config"]["digest"]
             container_json = json.loads(FileUtil(json_file).getdata('r'))
-        except (IOError, OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
+        except (OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
             return (None, files)
 
         return (container_json, files)
@@ -647,7 +647,7 @@ class LocalRepository:
         try:
             outfile = open(out_filename, 'w', encoding='utf-8')
             json.dump(data, outfile)
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             if outfile:
                 outfile.close()
 
@@ -680,7 +680,7 @@ class LocalRepository:
         try:
             infile = open(in_filename, 'r', encoding='utf-8')
             json_obj = json.load(infile)
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             pass
 
         if infile:

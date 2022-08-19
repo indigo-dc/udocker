@@ -73,7 +73,7 @@ class NvidiaMode:
                     if os.access(srcname, os.X_OK):
                         mask = mask | stat.S_IXUSR
                     os.chmod(dstname, mask)
-                except (IOError, OSError) as error:
+                except (OSError) as error:
                     LOG.error("change mask of nvidia file: %s", error)
             else:
                 LOG.warning("nvidia file in config not found: %s", srcname)

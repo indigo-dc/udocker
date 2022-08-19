@@ -245,7 +245,7 @@ class UdockerTools:
                 for msg in self._install_json["messages"]:
                     MSG.info(msg)
 
-            except (KeyError, AttributeError, ValueError, OSError, IOError):
+            except (KeyError, AttributeError, ValueError, OSError):
                 LOG.info("no messages: %s %s", infofile, url)
 
             return self._install_json
@@ -320,7 +320,7 @@ class UdockerTools:
 
                 return metadict
 
-            except (KeyError, AttributeError, ValueError, OSError, IOError):
+            except (KeyError, AttributeError, ValueError, OSError):
                 LOG.error("reading file: %s", mjson)
                 continue
 

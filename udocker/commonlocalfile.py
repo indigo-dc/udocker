@@ -37,7 +37,7 @@ class CommonLocalFileApi:
 
         try:
             os.rename(filepath, target_file)
-        except(IOError, OSError):
+        except(OSError):
             if not FileUtil(filepath).copyto(target_file):
                 return False
 
@@ -186,7 +186,7 @@ class CommonLocalFileApi:
         if move_tarball:
             try:
                 os.rename(tarfile, layer_file)
-            except(IOError, OSError):
+            except(OSError):
                 pass
 
         if not os.path.exists(layer_file):

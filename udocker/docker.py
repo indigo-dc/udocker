@@ -204,7 +204,7 @@ class DockerIoAPI:
         try:
             self.v1_auth_header = "Authorization: Token " + hdr.data["x-docker-token"]
             return hdr.data, json.loads(buf.getvalue())
-        except (IOError, OSError, AttributeError, ValueError, TypeError, KeyError):
+        except (OSError, AttributeError, ValueError, TypeError, KeyError):
             self.v1_auth_header = ""
             return hdr.data, []
 
@@ -234,7 +234,7 @@ class DockerIoAPI:
                 return tags
 
             return json.loads(buf.getvalue())
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             return []
 
     def get_v1_image_tag(self, endpoint, imagerepo, tag):
@@ -244,7 +244,7 @@ class DockerIoAPI:
         (hdr, buf) = self._get_url(url)
         try:
             return (hdr.data, json.loads(buf.getvalue()))
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             return (hdr.data, [])
 
     def get_v1_image_ancestry(self, endpoint, image_id):
@@ -254,7 +254,7 @@ class DockerIoAPI:
         (hdr, buf) = self._get_url(url)
         try:
             return (hdr.data, json.loads(buf.getvalue()))
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             return (hdr.data, [])
 
     def get_v1_image_json(self, endpoint, layer_id):
@@ -319,7 +319,7 @@ class DockerIoAPI:
                 if token_buf and "token" in token_buf:
                     try:
                         auth_token = json.loads(token_buf)
-                    except (IOError, OSError, AttributeError, ValueError, TypeError):
+                    except (OSError, AttributeError, ValueError, TypeError):
                         return auth_header
 
                     auth_header = "Authorization: Bearer " + auth_token["token"]
@@ -387,7 +387,7 @@ class DockerIoAPI:
                 return tags
 
             return json.loads(buf.getvalue())
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             return []
 
     def get_v2_image_manifest(self, imagerepo, tag):
@@ -399,7 +399,7 @@ class DockerIoAPI:
         (hdr, buf) = self._get_url(url)
         try:
             return (hdr.data, json.loads(buf.getvalue()))
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             return (hdr.data, [])
 
     def get_v2_image_layer(self, imagerepo, layer_id):
@@ -618,7 +618,7 @@ class DockerIoAPI:
 
             LOG.debug(repo_list)
             return repo_list
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             self.search_ended = True
             return []
 
@@ -646,7 +646,7 @@ class DockerIoAPI:
 
             LOG.debug(repo_list)
             return repo_list
-        except (IOError, OSError, AttributeError, KeyError, ValueError, TypeError):
+        except (OSError, AttributeError, KeyError, ValueError, TypeError):
             self.search_ended = True
             return []
 
@@ -883,7 +883,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
         tmp_imagedir = FileUtil("save").mktmp()
         try:
             os.makedirs(tmp_imagedir)
-        except (IOError, OSError):
+        except (OSError):
             return False
 
         structure = {}

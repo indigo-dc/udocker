@@ -98,7 +98,7 @@ class RuncEngine(ExecutionEngineCommon):
         try:
             infile = open(self._container_specfile, 'r', encoding='utf-8')
             json_obj = json.load(infile)
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             json_obj = None
 
         if infile:
@@ -113,7 +113,7 @@ class RuncEngine(ExecutionEngineCommon):
         try:
             outfile = open(self._container_specfile, 'w', encoding='utf-8')
             json.dump(self._container_specjson, outfile)
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             if outfile:
                 outfile.close()
  

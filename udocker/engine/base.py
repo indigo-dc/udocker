@@ -664,7 +664,7 @@ class ExecutionEngineCommon:
                     saved["oskernel"] == HostInfo().oskernel() and
                     saved["arch"] == HostInfo().arch()):
                 return saved
-        except (IOError, OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
+        except (OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
             pass
 
         return {}

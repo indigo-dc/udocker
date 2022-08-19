@@ -1110,7 +1110,7 @@ class UdockerCLI:
                 msgout = json.dumps(container_json, sort_keys=True,
                                     indent=4, separators=(',', ': '))
                 MSG.info(msgout)
-            except (IOError, OSError, AttributeError, ValueError, TypeError):
+            except (OSError, AttributeError, ValueError, TypeError):
                 MSG.info(container_json)
 
             return self.STATUS_OK

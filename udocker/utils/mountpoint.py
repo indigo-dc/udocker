@@ -106,7 +106,7 @@ class MountPoint:
         try:
             if not os.path.exists(curr_mountpoint):
                 os.symlink(orig_mountpoint, curr_mountpoint)
-        except (IOError, OSError):
+        except (OSError):
             return False
 
         return True

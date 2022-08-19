@@ -86,7 +86,7 @@ class FileUtil:
         """Create directory"""
         try:
             os.makedirs(self.filename)
-        except (OSError, IOError, AttributeError):
+        except (OSError, AttributeError):
             return False
 
         return True
@@ -95,7 +95,7 @@ class FileUtil:
         """Remove an empty directory"""
         try:
             os.rmdir(self.filename)
-        except (OSError, IOError, AttributeError):
+        except (OSError, AttributeError):
             return False
 
         return True
@@ -112,7 +112,7 @@ class FileUtil:
         """Get the file owner user id"""
         try:
             return os.lstat(self.filename).st_uid
-        except (IOError, OSError):
+        except (OSError):
             return -1
 
     def _is_safe_prefix(self, filename):
@@ -232,7 +232,7 @@ class FileUtil:
         elif os.path.isfile(self.filename) or os.path.islink(self.filename):
             try:
                 os.remove(self.filename)
-            except (IOError, OSError):
+            except (OSError):
                 LOG.error("deleting file: %s", self.filename)
                 return False
         elif os.path.isdir(self.filename):
@@ -314,7 +314,7 @@ class FileUtil:
         try:
             if os.path.isdir(self.filename):
                 return True
-        except (IOError, OSError, TypeError):
+        except (OSError, TypeError):
             pass
 
         return False
@@ -324,7 +324,7 @@ class FileUtil:
         try:
             fstat = os.stat(self.filename)
             return fstat.st_size
-        except (IOError, OSError, TypeError):
+        except (OSError, TypeError):
             return -1
 
     def getdata(self, mode="rb"):
@@ -335,14 +335,14 @@ class FileUtil:
 
             LOG.debug("read buf: %s", buf)
             return buf
-        except (IOError, OSError, TypeError):
+        except (OSError, TypeError):
             return ""
 
     def get1stline(self, mode="rb"):
         """Read file 1st line to a buffer"""
         try:
             filep = open(self.filename, mode)
-        except (IOError, OSError, TypeError):
+        except (OSError, TypeError):
             return ""
         else:
             buf = filep.readline().strip()
@@ -356,7 +356,7 @@ class FileUtil:
                 filep.write(buf)
 
             return buf
-        except (IOError, OSError, TypeError):
+        except (OSError, TypeError):
             return ""
 
     def getvalid_path(self):
@@ -464,7 +464,7 @@ class FileUtil:
         """Rename/move file"""
         try:
             os.rename(self.filename, dest_filename)
-        except (IOError, OSError):
+        except (OSError):
             return False
 
         return True
@@ -475,7 +475,7 @@ class FileUtil:
         """
         try:
             fpdst = open(dest_filename, mode + "b")
-        except (IOError, OSError):
+        except (OSError):
             return False
 
         while True:
@@ -494,7 +494,7 @@ class FileUtil:
         """
         try:
             fpsrc = open(self.filename, "rb")
-        except (IOError, OSError):
+        except (OSError):
             return False
 
         while True:
@@ -513,12 +513,12 @@ class FileUtil:
         """
         try:
             fpsrc = open(self.filename, "rb")
-        except (IOError, OSError):
+        except (OSError):
             return False
 
         try:
             fpdst = open(dest_filename, mode + "b")
-        except (IOError, OSError):
+        except (OSError):
             fpsrc.close()
             return False
 

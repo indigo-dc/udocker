@@ -25,7 +25,7 @@ class LocalFileAPI(CommonLocalFileApi):
         tmp_imagedir = FileUtil("load").mktmp()
         try:
             os.makedirs(tmp_imagedir)
-        except (IOError, OSError):
+        except (OSError):
             return False
 
         if not self._untar_saved_container(imagefile, tmp_imagedir):
