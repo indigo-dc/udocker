@@ -259,7 +259,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         cmd_l = self._set_cpu_affinity()
         cmd_l.extend(["env", "-i", ])
         cmd_l.extend(self.opt["env"].list())
-        if xmode in ("F1", "F2"):
+        if xmode in {"F1", "F2"}:
             container_loader = self._elfpatcher.get_container_loader()
             if container_loader:
                 cmd_l.append(container_loader)

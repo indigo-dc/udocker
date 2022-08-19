@@ -716,7 +716,7 @@ class LocalRepository:
                         structure["repolayers"][layer_id]["layer_f"] = f_path
                     else:
                         LOG.warning("unknown file in layer: %s", f_path)
-                elif fname in ("TAG", "v1", "v2", "PROTECT", "container.json"):
+                elif fname in {"TAG", "v1", "v2", "PROTECT", "container.json"}:
                     pass
 
                 LOG.warning("unknown file in image: %s", f_path)

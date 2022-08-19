@@ -236,7 +236,7 @@ class UdockerCLI:
                 self._search_print_lines(repo_list, print_lines, fmt)
 
             if pause and not self.dockerioapi.search_ended:
-                if GET_INPUT("[return or q to quit]") in ('q', 'Q', 'e', 'E'):
+                if GET_INPUT("[return or q to quit]") in {'q', 'Q', 'e', 'E'}:
                     return self.STATUS_OK
 
     def _list_tags(self, expression):

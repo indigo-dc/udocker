@@ -70,7 +70,7 @@ class CmdParser:
         if opt_where == "CMD":
             return self._argv_split["CMD"]
 
-        if opt_where in ("CMD_OPT", "GEN_OPT"):
+        if opt_where in {"CMD_OPT", "GEN_OPT"}:
             if opt_name.startswith('P'):
                 return (self._get_param(opt_name, self._argv_split[opt_where],
                                         self._argv_consumed_options[opt_where],

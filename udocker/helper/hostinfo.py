@@ -34,7 +34,7 @@ class HostInfo:
                     arch = "i386"
                 else:
                     arch = "amd64"
-            elif machine in ("i386", "i486", "i586", "i686"):
+            elif machine in {"i386", "i486", "i586", "i686"}:
                 arch = "i386"
             elif machine.startswith("arm") or machine.startswith("aarch"):
                 if bits == "32bit":
