@@ -56,16 +56,17 @@ class UprocessTestCase(TestCase):
     @patch('udocker.utils.uprocess.subprocess.check_output')
     def test_03_check_output(self, mock_subp_chkout, mock_chkout):
         """Test03 Uprocess().check_output()."""
+        mock_subp_chkout.return_value = b""
+        mock_chkout.side_effect = OSError("fail")
+        uproc = Uprocess()
+        status = uproc.check_output()
+        self.assertEqual(status, "")
+
         mock_subp_chkout.return_value = b"cmd"
         uproc = Uprocess()
         status = uproc.check_output("CMD")
         self.assertTrue(mock_subp_chkout.called)
         self.assertEqual(status, "cmd")
-
-        mock_chkout.side_effect = OSError("fail")
-        uproc = Uprocess()
-        status = uproc.check_output()
-        self.assertEqual(status, "")
 
     @patch('udocker.utils.uprocess.Uprocess.check_output')
     def test_04_get_output(self, mock_uproc_chkout):

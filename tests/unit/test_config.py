@@ -30,7 +30,7 @@ class ConfigTestCase(TestCase):
         self.assertIsInstance(config.conf['config'], str)
         self.assertIsInstance(config.conf['keystore'], str)
         self.assertIsInstance(config.conf['tmpdir'], str)
-        self.assertIsInstance(config.conf['tarball'], str)
+        self.assertIsInstance(config.conf['tarball'], list)
         self.assertIsInstance(config.conf['sysdirs_list'], tuple)
         self.assertIsInstance(config.conf['dri_list'], tuple)
         self.assertIsInstance(config.conf['location'], str)
