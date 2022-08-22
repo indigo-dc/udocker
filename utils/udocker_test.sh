@@ -228,7 +228,7 @@ STRING="T032: udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
 udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}; return=$?
 result
 
-STRING="T033: udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
+STRING="T033: UDOCKER_DIR=${TEST_UDIR} udocker verify ${DOCKER_IMG}"
 UDOCKER_DIR=${TEST_UDIR} udocker verify ${DOCKER_IMG}; return=$?
 result
 

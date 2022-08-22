@@ -410,8 +410,8 @@ class LocalRepository:
     def del_imagerepo(self, imagerepo, tag, force=False):
         """Delete an image repository and its layers"""
         tag_dir = self.cd_imagerepo(imagerepo, tag)
-        futilrm = FileUtil(tag_dir).remove(recursive=True)
-        if (tag_dir and self._remove_layers(tag_dir, force) and futilrm):
+        if (tag_dir and self._remove_layers(tag_dir, force) and
+                FileUtil(tag_dir).remove(recursive=True)):
             self.cur_repodir = ""
             self.cur_tagdir = ""
             while imagerepo:
