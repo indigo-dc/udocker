@@ -8,6 +8,9 @@ from unittest.mock import patch, mock_open, call
 from udocker.container.localrepo import LocalRepository, LOG
 from udocker.config import Config
 
+import collections
+collections.Callable = collections.abc.Callable
+
 BUILTIN = "builtins"
 BOPEN = BUILTIN + '.open'
 UDOCKER_TOPDIR = "/home/u1/.udocker"
