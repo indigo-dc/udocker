@@ -838,7 +838,7 @@ class UdockerCLI:
         for (imagerepo, tag) in images_list:
             prot = (".", "P")[self.localrepo.isprotected_imagerepo(imagerepo, tag)]
             ## msgout = "%-60.60s %c" % (imagerepo + ":" + tag, prot)  <- old %format
-            msgout = f'{imagerepo : >120}:{tag : >40} {prot}'
+            msgout = f'{imagerepo}:{tag}    {prot}'
             MSG.info(msgout)
             if verbose:
                 imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
@@ -852,7 +852,8 @@ class UdockerCLI:
                             file_size = 1
 
                         lname_rep = layer_name.replace(imagerepo_dir, "")
-                        MSG.info("    %s (%d MB)", lname_rep, file_size)
+                        msgout = f'    {lname_rep}  ({int(file_size)} MB)'
+                        MSG.info(msgout)
 
         return self.STATUS_OK
 
