@@ -701,10 +701,10 @@ class LocalRepository:
                 if fname == "ancestry":
                     structure["ancestry"] = self.load_json(f_path)
 
-                if fname == "manifest":
+                elif fname == "manifest":
                     structure["manifest"] = self.load_json(f_path)
 
-                if len(fname) >= 64:
+                elif len(fname) >= 64:
                     layer_id = fname.replace(".json", "").replace(".layer", "")
                     if layer_id not in structure["repolayers"]:
                         structure["repolayers"][layer_id] = {}
@@ -719,10 +719,12 @@ class LocalRepository:
                         structure["repolayers"][layer_id]["layer_f"] = f_path
                     else:
                         LOG.warning("unknown file in layer: %s", f_path)
+
                 elif fname in {"TAG", "v1", "v2", "PROTECT", "container.json"}:
                     pass
 
-                LOG.warning("unknown file in image: %s", f_path)
+                else:
+                    LOG.warning("unknown file in image: %s", f_path)
 
         return structure
 

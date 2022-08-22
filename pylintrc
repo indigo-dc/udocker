@@ -121,6 +121,7 @@ disable=
     R0204,
     I1101,
     R0801,
+    C0413,
 
 [REPORTS]
 
