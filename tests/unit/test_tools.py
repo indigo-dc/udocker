@@ -3,6 +3,9 @@
 udocker unit tests: UdockerTools
 """
 
+import sys
+sys.path.append('/home/david/git-repos/indigodc/udocker')
+
 import tarfile
 from tarfile import TarInfo
 from unittest import TestCase, main
@@ -336,20 +339,24 @@ class UdockerToolsTestCase(TestCase):
         self.assertFalse(status)
 
     @patch('udocker.tools.json.load')
-    @patch('udocker.tools.MSG')
     @patch('udocker.tools.LOG')
+    @patch('udocker.tools.os.path.isfile')
     @patch.object(UdockerTools, '_get_file')
     @patch.object(UdockerTools, '_get_mirrors')
-    def test_15_show_metadata(self, mock_mirr, mock_file, mock_log, mock_msg, mock_jload):
-        """Test15 UdockerTools().show_metadata()."""
+    def test_15__get_metadata(self, mock_mirr, mock_file, mock_isfile, mock_log, mock_jload):
+        """Test15 UdockerTools()._get_metadata()."""
         mjson = [{
             "module": "proot",
             "version": "5.1.0",
             "arch": "arm",
-            "os_ver": "",
+            "os": "Centos",
+            "os_ver": "7",
             "kernel_ver": "4.7.0",
             "dependencies": ["udocker"],
             "digit_signature": "",
+            "uid": "12345",
+            "fname": "proot-arm",
+            "sha256sum": "1234567",
             "urls": [
                 "https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/proot-arm"
             ],
@@ -360,19 +367,149 @@ class UdockerToolsTestCase(TestCase):
         mock_mirr.return_value = "https://download.ncg.ingrid.pt/webdav/udocker/metadata.json"
         mock_file.return_value = "metadata.json"
         mock_jload.return_value = mjson
+        mock_isfile.return_value = False
         fjson_line = StringIO(str(mjson))
         with patch(BOPEN) as mopen:
             mopen.return_value = fjson_line
             utools = UdockerTools(self.local)
-            utools.show_metadata()
-            self.assertTrue(mock_msg.info.called)
+            status = utools._get_metadata(False)
             self.assertTrue(mock_log.info.called)
             self.assertFalse(mock_log.error.called)
 
         mock_jload.side_effect = KeyError("fail")
         utools = UdockerTools(self.local)
-        utools.show_metadata()
+        status = utools._get_metadata(False)
         self.assertTrue(mock_log.error.called)
+
+    @patch('udocker.tools.LOG')
+    def test_16__match_mod(self, mock_log):
+        """Test16 UdockerTools()._match_mod()."""
+        mjson = [{
+            "module": "proot",
+            "version": "5.1.0",
+            "arch": "arm",
+            "os": "Centos",
+            "os_ver": "7",
+            "kernel_ver": "4.7.0",
+            "dependencies": ["udocker"],
+            "digit_signature": "",
+            "uid": "12345",
+            "fname": "proot-arm",
+            "sha256sum": "1234567",
+            "urls": [
+                "https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/proot-arm"
+            ],
+            "docs_url": [
+                "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/proot_docs.tgz"
+            ]
+        }]
+        utools = UdockerTools(self.local)
+        status = utools._match_mod("runc", "x86_64", "Ubuntu", "16.04", mjson)
+        self.assertFalse(mock_log.debug.called)
+        self.assertEqual(status, [])
+
+        utools = UdockerTools(self.local)
+        status = utools._match_mod("proot", "arm", "Centos", "7", mjson)
+        self.assertTrue(mock_log.debug.called)
+        self.assertEqual(status, mjson[0]["urls"])
+
+    @patch('udocker.tools.LOG')
+    @patch('udocker.tools.OSInfo')
+    @patch.object(UdockerTools, '_match_mod')
+    @patch.object(UdockerTools, '_get_metadata')
+    def test_17_select_tarnames(self, mock_meta, mock_match, mock_osinfo, mock_log):
+        """Test17 UdockerTools().select_tarnames()."""
+        mjson = [{
+            "module": "proot",
+            "version": "5.1.0",
+            "arch": "arm",
+            "os": "Centos",
+            "os_ver": "7",
+            "kernel_ver": "4.7.0",
+            "dependencies": ["udocker"],
+            "digit_signature": "",
+            "uid": "12345",
+            "fname": "proot-arm",
+            "sha256sum": "1234567",
+            "urls": [
+                "https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/proot-arm"
+            ],
+            "docs_url": [
+                "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/proot_docs.tgz"
+            ]
+        },
+        {
+            "module": "libfakechroot",
+            "version": "4.3.0",
+            "arch": "arm",
+            "os": "Centos",
+            "os_ver": "7",
+            "kernel_ver": "4.7.0",
+            "dependencies": ["udocker"],
+            "digit_signature": "",
+            "uid": "542433",
+            "fname": "libfakechroot-arm.so",
+            "sha256sum": "7483r932",
+            "urls": [
+                "https://download.ncg.ingrid.pt/webdav/udocker/engines/lib/libfakechroot-arm.so"
+            ],
+            "docs_url": [
+                "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/proot_docs.tgz"
+            ]
+        }]
+        res = ["https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/proot-arm",
+               "https://download.ncg.ingrid.pt/webdav/udocker/engines/lib/libfakechroot-arm.so"]
+        mock_meta.return_value = mjson
+        utools = UdockerTools(self.local)
+        status = utools.select_tarnames(["12345"])
+        self.assertTrue(mock_log.debug.called)
+        self.assertEqual(status, [["https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/proot-arm"]])
+
+        mock_meta.return_value = mjson
+        mock_match.return_value = mjson[0]["urls"]
+        mock_osinfo.return_value.arch.return_value = "amd64"
+        mock_osinfo.return_value.osdistribution.return_value = ("linux", "4.8.1")
+        utools = UdockerTools(self.local)
+        status = utools.select_tarnames([])
+        self.assertTrue(mock_log.debug.called)
+        self.assertTrue(mock_osinfo.return_value.arch.called)
+        self.assertTrue(mock_osinfo.return_value.osdistribution.called)
+#        self.assertEqual(status, [res])
+
+    @patch('udocker.tools.MSG')
+    @patch.object(UdockerTools, '_get_metadata')
+    def test_18_show_metadata(self, mock_meta, mock_msg):
+        """Test18 UdockerTools().show_metadata()."""
+        mjson = [{
+            "module": "proot",
+            "version": "5.1.0",
+            "arch": "arm",
+            "os": "Centos",
+            "os_ver": "7",
+            "kernel_ver": "4.7.0",
+            "dependencies": ["udocker"],
+            "digit_signature": "",
+            "uid": "12345",
+            "fname": "proot-arm",
+            "sha256sum": "1234567",
+            "urls": [
+                "https://download.ncg.ingrid.pt/webdav/udocker/engines/bin/proot-arm"
+            ],
+            "docs_url": [
+                "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/proot_docs.tgz"
+            ]
+        }]
+        mock_meta.return_value = mjson
+        utools = UdockerTools(self.local)
+        status = utools.show_metadata(False)
+        self.assertTrue(status)
+        self.assertTrue(mock_msg.info.called)
+
+        mock_meta.return_value = []
+        utools = UdockerTools(self.local)
+        status = utools.show_metadata(False)
+        self.assertFalse(status)
+        self.assertTrue(mock_msg.info.called)
 
 
 if __name__ == '__main__':
