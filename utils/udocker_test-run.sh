@@ -80,20 +80,26 @@ then
   exit 1
 fi
 
+echo "|______________________________________________________________________________|"
 udocker rm c7
 udocker rm ub18
 udocker rm jv
+
+echo "|______________________________________________________________________________|"
 udocker rmi centos:7
 udocker rmi ubuntu:18.04
 udocker rmi java
 
+echo "|______________________________________________________________________________|"
 udocker pull centos:7; return=$?
 udocker pull ubuntu:18.04; return=$?
-udocker pull java; return=$?
+udocker pull openjdk; return=$?
+
+echo "|______________________________________________________________________________|"
 udocker images; return=$?
 udocker create --name=c7 centos:7; return=$?
 udocker create --name=ub18 ubuntu:18.04; return=$?
-udocker create --name=jv java; return=$?
+udocker create --name=jv openjdk; return=$?
 udocker ps; return=$?
 
 echo "===================="
