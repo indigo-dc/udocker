@@ -646,7 +646,7 @@ class FileUtilTestCase(TestCase):
 
         mock_open.side_effect = OSError("fail")
         status = FileUtil("somefile").getdata()
-        self.assertEqual(status, b"")
+        self.assertEqual(status, b'')
 
     @patch('udocker.utils.fileutil.os.path.abspath')
     @patch('udocker.utils.fileutil.os.path.basename')
@@ -662,7 +662,7 @@ class FileUtilTestCase(TestCase):
 
         mock_open.side_effect = OSError("fail")
         status = FileUtil("somefile").get1stline()
-        self.assertEqual(status, b"")
+        self.assertEqual(status, b'')
 
     @patch('udocker.utils.fileutil.os.path.abspath')
     @patch('udocker.utils.fileutil.os.path.basename')

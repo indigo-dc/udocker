@@ -6,10 +6,10 @@ import re
 import pwd
 import platform
 
-from udocker import is_genstr, LOG
+from udocker import LOG
 from udocker.utils.uprocess import Uprocess
 
-class HostInfo(object):
+class HostInfo:
     """Get information from the host system"""
 
     uid = os.getuid()
@@ -34,7 +34,7 @@ class HostInfo(object):
                     arch = "i386"
                 else:
                     arch = "amd64"
-            elif machine in ("i386", "i486", "i586", "i686"):
+            elif machine in {"i386", "i486", "i586", "i686"}:
                 arch = "i386"
             elif machine.startswith("arm") or machine.startswith("aarch"):
                 if bits == "32bit":
@@ -88,7 +88,7 @@ class HostInfo(object):
             return False
 
         arg_list = []
-        if arg and is_genstr(arg):
+        if arg and isinstance(arg, str):
             arg_list = [arg]
         elif isinstance(arg, list):
             arg_list = arg
@@ -106,7 +106,7 @@ class HostInfo(object):
                 cmd = ['stty', 'size']
                 lines, cols = Uprocess().check_output(cmd, stdin=tty).split()
                 return (int(lines), int(cols))
-        except (OSError, IOError):
+        except OSError:
             pass
 
         return (24, 80)

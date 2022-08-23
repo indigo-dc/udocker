@@ -6,14 +6,14 @@ import os
 import sys
 import time
 
-from udocker import is_genstr, LOG
+from udocker import LOG
 from udocker.config import Config
 from udocker.utils.uprocess import Uprocess
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.hostinfo import HostInfo
 
 
-class ElfPatcher(object):
+class ElfPatcher:
     """Patch container executables"""
 
     BIN = 1
@@ -65,7 +65,7 @@ class ElfPatcher(object):
         for arg in cmd:
             if "#f" in arg:
                 arg = arg.replace("#f", path)
- 
+
             cmd_out.append(arg)
 
         return cmd_out
@@ -145,7 +145,7 @@ class ElfPatcher(object):
     def get_patch_last_path(self):
         """get last host pathname to the patched container"""
         last_path = FileUtil(self._container_patch_path).getdata('r')
-        if last_path and is_genstr(last_path):
+        if last_path and isinstance(last_path, str):
             return last_path.strip()
 
         return ""

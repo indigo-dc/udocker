@@ -70,7 +70,7 @@ function result
       print_fail; echo "    $STRING"
       FAILED_TESTS+=("$STRING")
   fi
-  echo "------------------------------------------------------------>"
+  echo "|______________________________________________________________________________|"
 }
 
 function result_inv
@@ -82,7 +82,7 @@ function result_inv
       print_fail; echo "    $STRING"
       FAILED_TESTS+=("$STRING")
   fi
-  echo "------------------------------------------------------------>"
+  echo "|______________________________________________________________________________|"
 }
 
 echo "================================================="
@@ -228,7 +228,7 @@ STRING="T032: udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
 udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}; return=$?
 result
 
-STRING="T033: udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
+STRING="T033: UDOCKER_DIR=${TEST_UDIR} udocker verify ${DOCKER_IMG}"
 UDOCKER_DIR=${TEST_UDIR} udocker verify ${DOCKER_IMG}; return=$?
 result
 

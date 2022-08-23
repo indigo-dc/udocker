@@ -2,7 +2,6 @@
 """udocker Command Line Interface implementation"""
 
 import os
-import sys
 import string
 import json
 from getpass import getpass
@@ -22,16 +21,11 @@ from udocker.utils.fileutil import FileUtil
 from udocker.utils.filebind import FileBind
 from udocker.utils.mountpoint import MountPoint
 
-# if Python 3
-if sys.version_info[0] >= 3:
-    BUILTIN = "builtins"
-    GET_INPUT = input
-else:
-    BUILTIN = "__builtin__"
-    GET_INPUT = raw_input
+BUILTIN = "builtins"
+GET_INPUT = input
 
 
-class UdockerCLI(object):
+class UdockerCLI:
     """Implements most of the command line interface.
     These methods correspond directly to the commands that can
     be invoked via the command line interface.
@@ -242,7 +236,7 @@ class UdockerCLI(object):
                 self._search_print_lines(repo_list, print_lines, fmt)
 
             if pause and not self.dockerioapi.search_ended:
-                if GET_INPUT("[return or q to quit]") in ('q', 'Q', 'e', 'E'):
+                if GET_INPUT("[return or q to quit]") in {'q', 'Q', 'e', 'E'}:
                     return self.STATUS_OK
 
     def _list_tags(self, expression):
@@ -468,9 +462,8 @@ class UdockerCLI(object):
         if clone:
             if cstruct.clone_tofile(tarfile):
                 return self.STATUS_OK
-        else:
-            if cstruct.export_tofile(tarfile):
-                return self.STATUS_OK
+        elif cstruct.export_tofile(tarfile):
+            return self.STATUS_OK
 
         LOG.error("exporting")
         return self.STATUS_ERROR
@@ -844,11 +837,13 @@ class UdockerCLI(object):
         MSG.info("REPOSITORY")
         for (imagerepo, tag) in images_list:
             prot = (".", "P")[self.localrepo.isprotected_imagerepo(imagerepo, tag)]
-            msgout = "%-60.60s %c" % (imagerepo + ":" + tag, prot)
+            ## msgout = "%-60.60s %c" % (imagerepo + ":" + tag, prot)  <- old %format
+            msgout = f'{imagerepo}:{tag}    {prot}'
             MSG.info(msgout)
             if verbose:
                 imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
-                MSG.info("  %s", imagerepo_dir)
+                msgout = f'{imagerepo_dir : >4}'
+                MSG.info(msgout)
                 layers_list = self.localrepo.get_layers(imagerepo, tag)
                 if layers_list:
                     for (layer_name, size) in layers_list:
@@ -857,7 +852,8 @@ class UdockerCLI(object):
                             file_size = 1
 
                         lname_rep = layer_name.replace(imagerepo_dir, "")
-                        MSG.info("    %s (%d MB)", lname_rep, file_size)
+                        msgout = f'    {lname_rep}  ({int(file_size)} MB)'
+                        MSG.info(msgout)
 
         return self.STATUS_OK
 
@@ -1116,7 +1112,7 @@ class UdockerCLI(object):
                 msgout = json.dumps(container_json, sort_keys=True,
                                     indent=4, separators=(',', ': '))
                 MSG.info(msgout)
-            except (IOError, OSError, AttributeError, ValueError, TypeError):
+            except (OSError, AttributeError, ValueError, TypeError):
                 MSG.info(container_json)
 
             return self.STATUS_OK
@@ -1280,8 +1276,9 @@ class UdockerCLI(object):
 
         MSG.info(80*"_")
         MSG.info("\t\tConfiguration options")
-        for varopt in Config.conf:
-            MSG.info("%s = %s", varopt, Config.conf[varopt])
+        for (var, value) in Config.conf.items():
+            msgout = f'{var} = {value}'
+            MSG.info(msgout)
 
         MSG.info(80*"_")
         return self.STATUS_OK
@@ -1319,7 +1316,7 @@ class UdockerCLI(object):
         --from=<url>|<dir>         :URL or local directory with modules
         --prefix=<directory>       :destination download directory
         """
-        list_uid = list()
+        list_uid = []
         dst_dir = os.path.expanduser("~") + "/udocker/tar"  # Default dest dir for tarballs
         if os.getenv("VIRTUAL_ENV"):
             dst_dir = os.getenv("VIRTUAL_ENV") + "/tar"

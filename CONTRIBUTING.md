@@ -11,16 +11,15 @@ and testing.
 ## Ground Rules
 
 We aim at having portability, udocker is meant to be executed both
-on older distributions (such as CentOS 6) and newer, so beware of
+on older distributions (such as CentOS 7) and newer, so beware of
 which python features you use and whether they are supported in
 older distributions.
 
-The current Python 2 version of udocker is meant to be very easily moved
+The current Python 3 version of udocker is meant to be very easily moved
 between hosts, and submitted to batch systems, that's why we have everything
 in a single Python script.
 
-Development work on a Python 3 version is ongoing in branch devel3
-This version supports Python 2 and Python 3 and is modular.
+This version supports Python 3 and is modular.
 
 ## Repositories
 
@@ -40,7 +39,6 @@ Other issues and or feature enhancements can be communicated on GitHub
 
 ## Code contributions
 
-* Perform pull requests against the devel3 branch for the python 3 based version: <https://github.com/indigo-dc/udocker/tree/devel3>
-* Perform pull requests against the devel branch for maintenance of the old python 2 based version <https://github.com/indigo-dc/udocker/tree/devel>
+* Perform pull requests against the dev-v1.4 branch: <https://github.com/indigo-dc/udocker/tree/dev-v1.4>
 * Please check you Python code with pylint.
 * For new features please also provide unit tests.

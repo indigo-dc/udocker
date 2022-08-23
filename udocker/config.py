@@ -1,18 +1,13 @@
 # -*- coding: utf-8 -*-
 """Configurations options and treatment/overrinding"""
 import os
-import sys
 import logging
+
+from configparser import ConfigParser
 from udocker import LOG
 
-# if Python 3
-if sys.version_info[0] >= 3:
-    from configparser import ConfigParser
-else:
-    from ConfigParser import ConfigParser
 
-
-class Config(object):
+class Config:
     """Default configuration values for the whole application. Changes
     to these values should be made via a configuration file read via
     Config.init() and that can reside in ~/.udocker/udocker.conf
@@ -34,7 +29,7 @@ class Config(object):
     conf['tarball_release'] = "1.2.8"
     base_tarurl = ["https://download.ncg.ingrid.pt/webdav/udocker/",
                    "https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/"]
-    conf['tarball'] = list()
+    conf['tarball'] = []
     for url in base_tarurl:
         conf['tarball'].append(url + "udocker-englib-1.2.8.tar.gz")
 
@@ -49,7 +44,7 @@ class Config(object):
     base_url = ["https://download.ncg.ingrid.pt/webdav/udocker/engines/",
                 "https://github.com/LIP-Computing/udocker_tools/raw/main/"]
 
-    conf['meta_json'] = list()
+    conf['meta_json'] = []
     for url in base_url:
         conf['meta_json'].append(url + "metadata.json")
 

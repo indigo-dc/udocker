@@ -2,7 +2,6 @@
 """Docker API integration"""
 
 import os
-import sys
 import re
 import base64
 import json
@@ -16,7 +15,7 @@ from udocker.utils.chksum import ChkSUM
 from udocker.helper.unique import Unique
 
 
-class DockerIoAPI(object):
+class DockerIoAPI:
     """Class to encapsulate the access to the Docker Hub service
     Allows to search and download images from Docker Hub
     """
@@ -205,7 +204,7 @@ class DockerIoAPI(object):
         try:
             self.v1_auth_header = "Authorization: Token " + hdr.data["x-docker-token"]
             return hdr.data, json.loads(buf.getvalue())
-        except (IOError, OSError, AttributeError, ValueError, TypeError, KeyError):
+        except (OSError, AttributeError, ValueError, TypeError, KeyError):
             self.v1_auth_header = ""
             return hdr.data, []
 
@@ -235,7 +234,7 @@ class DockerIoAPI(object):
                 return tags
 
             return json.loads(buf.getvalue())
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             return []
 
     def get_v1_image_tag(self, endpoint, imagerepo, tag):
@@ -245,7 +244,7 @@ class DockerIoAPI(object):
         (hdr, buf) = self._get_url(url)
         try:
             return (hdr.data, json.loads(buf.getvalue()))
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             return (hdr.data, [])
 
     def get_v1_image_ancestry(self, endpoint, image_id):
@@ -255,7 +254,7 @@ class DockerIoAPI(object):
         (hdr, buf) = self._get_url(url)
         try:
             return (hdr.data, json.loads(buf.getvalue()))
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             return (hdr.data, [])
 
     def get_v1_image_json(self, endpoint, layer_id):
@@ -309,22 +308,18 @@ class DockerIoAPI(object):
                 auth_url = auth_fields["realm"] + '?'
                 for (field, value) in auth_fields.items():
                     if field != "realm":
-                        auth_url += field + '=' + auth_fields[field] + '&'
- 
+                        auth_url += field + '=' + value + '&'
+
                 header = []
                 if self.v2_auth_token:
-                    header = ["Authorization: Basic %s" % (self.v2_auth_token)]
+                    header = [f'Authorization: Basic {self.v2_auth_token}']
 
                 (dummy, auth_buf) = self._get_url(auth_url, header=header, RETRY=retry)
-                if sys.version_info[0] >= 3:
-                    token_buf = auth_buf.getvalue().decode()
-                else:
-                    token_buf = auth_buf.getvalue()
-
+                token_buf = auth_buf.getvalue().decode()
                 if token_buf and "token" in token_buf:
                     try:
                         auth_token = json.loads(token_buf)
-                    except (IOError, OSError, AttributeError, ValueError, TypeError):
+                    except (OSError, AttributeError, ValueError, TypeError):
                         return auth_header
 
                     auth_header = "Authorization: Bearer " + auth_token["token"]
@@ -392,7 +387,7 @@ class DockerIoAPI(object):
                 return tags
 
             return json.loads(buf.getvalue())
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             return []
 
     def get_v2_image_manifest(self, imagerepo, tag):
@@ -404,7 +399,7 @@ class DockerIoAPI(object):
         (hdr, buf) = self._get_url(url)
         try:
             return (hdr.data, json.loads(buf.getvalue()))
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             return (hdr.data, [])
 
     def get_v2_image_layer(self, imagerepo, layer_id):
@@ -614,7 +609,7 @@ class DockerIoAPI(object):
         else:
             url = url + "/v1/search?"
 
-        url += "&page=%s" % str(self.search_page)
+        url += f'&page={str(self.search_page)}'
         (dummy, buf) = self._get_url(url)
         try:
             repo_list = json.loads(buf.getvalue())
@@ -623,7 +618,7 @@ class DockerIoAPI(object):
 
             LOG.debug(repo_list)
             return repo_list
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             self.search_ended = True
             return []
 
@@ -651,7 +646,7 @@ class DockerIoAPI(object):
 
             LOG.debug(repo_list)
             return repo_list
-        except (IOError, OSError, AttributeError, KeyError, ValueError, TypeError):
+        except (OSError, AttributeError, KeyError, ValueError, TypeError):
             self.search_ended = True
             return []
 
@@ -722,17 +717,13 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             return ""
 
         if not my_layer_id:
-            # if Python 3 TypeError: 'dict_keys' object is not subscriptable
-            if sys.version_info[0] >= 3:
-                my_layer_id = list(structure["repolayers"].keys())[0]
-            else:
-                my_layer_id = structure["repolayers"].keys()[0]
+            my_layer_id = list(structure["repolayers"].keys())[0]
 
         found = ""
         for layer_id in structure["repolayers"]:
             if "parent" not in structure["repolayers"][layer_id]["json"]:
                 continue
-            if (my_layer_id == structure["repolayers"][layer_id]["json"]["parent"]):
+            if my_layer_id == structure["repolayers"][layer_id]["json"]["parent"]:
                 found = self._find_top_layer_id(structure, layer_id)
                 break
 
@@ -892,7 +883,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
         tmp_imagedir = FileUtil("save").mktmp()
         try:
             os.makedirs(tmp_imagedir)
-        except (IOError, OSError):
+        except OSError:
             return False
 
         structure = {}

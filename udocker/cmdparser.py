@@ -4,7 +4,7 @@
 import string
 
 
-class CmdParser(object):
+class CmdParser:
     """Implements a simple command line parser.
     Divides the command into parameters and options
     that can be queried for presence and value.
@@ -70,7 +70,7 @@ class CmdParser(object):
         if opt_where == "CMD":
             return self._argv_split["CMD"]
 
-        if opt_where in ("CMD_OPT", "GEN_OPT"):
+        if opt_where in {"CMD_OPT", "GEN_OPT"}:
             if opt_name.startswith('P'):
                 return (self._get_param(opt_name, self._argv_split[opt_where],
                                         self._argv_consumed_options[opt_where],

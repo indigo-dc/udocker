@@ -7,7 +7,7 @@ import stat
 import re
 import logging
 
-from udocker import is_genstr, LOG
+from udocker import LOG
 from udocker.config import Config
 from udocker.helper.unique import Unique
 from udocker.helper.hostinfo import HostInfo
@@ -15,7 +15,7 @@ from udocker.utils.uprocess import Uprocess
 from udocker.utils.uvolume import Uvolume
 
 
-class FileUtil(object):
+class FileUtil:
     """Some utilities to manipulate files"""
 
     tmptrash = {}
@@ -86,7 +86,7 @@ class FileUtil(object):
         """Create directory"""
         try:
             os.makedirs(self.filename)
-        except (OSError, IOError, AttributeError):
+        except (OSError, AttributeError):
             return False
 
         return True
@@ -95,7 +95,7 @@ class FileUtil(object):
         """Remove an empty directory"""
         try:
             os.rmdir(self.filename)
-        except (OSError, IOError, AttributeError):
+        except (OSError, AttributeError):
             return False
 
         return True
@@ -112,7 +112,7 @@ class FileUtil(object):
         """Get the file owner user id"""
         try:
             return os.lstat(self.filename).st_uid
-        except (IOError, OSError):
+        except OSError:
             return -1
 
     def _is_safe_prefix(self, filename):
@@ -165,7 +165,6 @@ class FileUtil(object):
                 os.chmod(filename, mode)
         except OSError:
             LOG.error("changing permissions of: %s", filename)
-            raise OSError
 
     def chmod(self, filemode=0o600, dirmode=0o700, mask=0o755, recursive=False):
         """chmod directory recursively"""
@@ -232,7 +231,7 @@ class FileUtil(object):
         elif os.path.isfile(self.filename) or os.path.islink(self.filename):
             try:
                 os.remove(self.filename)
-            except (IOError, OSError):
+            except OSError:
                 LOG.error("deleting file: %s", self.filename)
                 return False
         elif os.path.isdir(self.filename):
@@ -314,7 +313,7 @@ class FileUtil(object):
         try:
             if os.path.isdir(self.filename):
                 return True
-        except (IOError, OSError, TypeError):
+        except (OSError, TypeError):
             pass
 
         return False
@@ -324,7 +323,7 @@ class FileUtil(object):
         try:
             fstat = os.stat(self.filename)
             return fstat.st_size
-        except (IOError, OSError, TypeError):
+        except (OSError, TypeError):
             return -1
 
     def getdata(self, mode="rb"):
@@ -335,14 +334,15 @@ class FileUtil(object):
 
             LOG.debug("read buf: %s", buf)
             return buf
-        except (IOError, OSError, TypeError):
+        except (OSError, TypeError):
             return ""
 
     def get1stline(self, mode="rb"):
         """Read file 1st line to a buffer"""
+        #TODO: (mdavid) refactor this part
         try:
             filep = open(self.filename, mode)
-        except (IOError, OSError, TypeError):
+        except (OSError, TypeError):
             return ""
         else:
             buf = filep.readline().strip()
@@ -356,7 +356,7 @@ class FileUtil(object):
                 filep.write(buf)
 
             return buf
-        except (IOError, OSError, TypeError):
+        except (OSError, TypeError):
             return ""
 
     def getvalid_path(self):
@@ -449,7 +449,7 @@ class FileUtil(object):
         if rootdir:
             rootdir += "/"
 
-        if is_genstr(path):
+        if isinstance(path, str):
             if "=" in path:
                 path = "".join(path.split("=", 1)[1:])
 
@@ -464,7 +464,7 @@ class FileUtil(object):
         """Rename/move file"""
         try:
             os.rename(self.filename, dest_filename)
-        except (IOError, OSError):
+        except OSError:
             return False
 
         return True
@@ -473,9 +473,10 @@ class FileUtil(object):
         """Copy from stdin to another file. We avoid shutil to have
         the fewest possible dependencies on other Python modules.
         """
+        #TODO: (mdavid) refactor this part
         try:
             fpdst = open(dest_filename, mode + "b")
-        except (IOError, OSError):
+        except OSError:
             return False
 
         while True:
@@ -492,9 +493,10 @@ class FileUtil(object):
         """Copy self.filename to stdout. We avoid shutil to have
         the fewest possible dependencies on other Python modules.
         """
+        #TODO: (mdavid) refactor this part
         try:
             fpsrc = open(self.filename, "rb")
-        except (IOError, OSError):
+        except OSError:
             return False
 
         while True:
@@ -511,14 +513,15 @@ class FileUtil(object):
         """Copy self.filename to another file. We avoid shutil to have
         the fewest possible dependencies on other Python modules.
         """
+        #TODO: (mdavid) refactor this part
         try:
             fpsrc = open(self.filename, "rb")
-        except (IOError, OSError):
+        except OSError:
             return False
 
         try:
             fpdst = open(dest_filename, mode + "b")
-        except (IOError, OSError):
+        except OSError:
             fpsrc.close()
             return False
 
@@ -640,9 +643,8 @@ class FileUtil(object):
                     if to_container:
                         if self._link_set(f_path, orig_path, root_path, force):
                             links.append(f_path)
-                    else:
-                        if self._link_restore(f_path, orig_path, root_path, force):
-                            links.append(f_path)
+                    elif self._link_restore(f_path, orig_path, root_path, force):
+                        links.append(f_path)
                 except OSError:
                     continue
 

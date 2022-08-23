@@ -29,7 +29,7 @@ class RuncEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, localrepo, exec_mode):
-        super(RuncEngine, self).__init__(localrepo, exec_mode)
+        super().__init__(localrepo, exec_mode)
         self.executable = None                   # runc
         self._container_specjson = None
         self._container_specfile = None
@@ -95,10 +95,11 @@ class RuncEngine(ExecutionEngineCommon):
 
         json_obj = None
         infile = None
+        #TODO: (mdavid) )redo this part
         try:
             infile = open(self._container_specfile, 'r', encoding='utf-8')
             json_obj = json.load(infile)
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             json_obj = None
 
         if infile:
@@ -110,13 +111,14 @@ class RuncEngine(ExecutionEngineCommon):
     def _save_spec(self):
         """Save spec file"""
         outfile = None
+        #TODO: (mdavid) )redo this part
         try:
             outfile = open(self._container_specfile, 'w', encoding='utf-8')
             json.dump(self._container_specjson, outfile)
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             if outfile:
                 outfile.close()
- 
+
             return False
 
         outfile.close()
@@ -450,10 +452,7 @@ class RuncEngine(ExecutionEngineCommon):
 
             if readable:
                 try:
-                    if sys.version_info[0] >= 3:
-                        sys.stdout.write(os.read(pmaster, 1).decode())
-                    else:
-                        sys.stdout.write(os.read(pmaster, 1))
+                    sys.stdout.write(os.read(pmaster, 1).decode())
                 except OSError:
                     break
 

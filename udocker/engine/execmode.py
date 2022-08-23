@@ -14,7 +14,7 @@ from udocker.engine.runc import RuncEngine
 from udocker.engine.singularity import SingularityEngine
 
 
-class ExecutionMode(object):
+class ExecutionMode:
     """Generic execution engine class to encapsulate the specific
     execution engines and their execution modes.
     P1: proot with seccomp
@@ -65,39 +65,39 @@ class ExecutionMode(object):
         if not (force or xmode != prev_xmode):
             return True
 
-        if prev_xmode[0] in ('R', 'S') and xmode[0] != 'R':
+        if prev_xmode[0] in {'R', 'S'} and xmode[0] != 'R':
             filebind.restore()
 
         if xmode[0] == 'F':
-            if force or prev_xmode[0] in ("P", "R", "S"):
+            if force or prev_xmode[0] in {"P", "R", "S"}:
                 futil_cont = FileUtil(self.container_root)
                 status = (futil_cont.links_conv(force, True, orig_path)
                           and elfpatcher.get_ld_libdirs(force))
 
-        if xmode in ('P1', 'P2', 'F1', 'R1', 'R2', 'R3', 'S1'):
-            if prev_xmode in ('P1', 'P2', 'F1', 'R1', 'R2', 'R3', 'S1'):
+        if xmode in {'P1', 'P2', 'F1', 'R1', 'R2', 'R3', 'S1'}:
+            if prev_xmode in {'P1', 'P2', 'F1', 'R1', 'R2', 'R3', 'S1'}:
                 status = True
-            elif force or prev_xmode in ("F2", "F3", "F4"):
+            elif force or prev_xmode in {"F2", "F3", "F4"}:
                 status = ((elfpatcher.restore_ld() or force) and
                           elfpatcher.restore_binaries())
 
             if xmode[0] == 'R':
                 filebind.setup()
 
-        elif xmode in ("F2", ):
-            if force or prev_xmode in ("F3", "F4"):
+        elif xmode in {"F2", }:
+            if force or prev_xmode in {"F3", "F4"}:
                 status = elfpatcher.restore_binaries()
 
-            if force or prev_xmode in ('P1', 'P2', 'F1', 'R1', 'R2', 'R3', 'S1'):
+            if force or prev_xmode in {'P1', 'P2', 'F1', 'R1', 'R2', 'R3', 'S1'}:
                 status = elfpatcher.patch_ld()
 
-        elif xmode in ("F3", "F4"):
-            if force or prev_xmode in ('P1', 'P2', 'F1', 'F2', 'R1', 'R2', 'R3', 'S1'):
+        elif xmode in {"F3", "F4"}:
+            if force or prev_xmode in {'P1', 'P2', 'F1', 'F2', 'R1', 'R2', 'R3', 'S1'}:
                 status = (elfpatcher.patch_ld() and elfpatcher.patch_binaries())
-            elif prev_xmode in ("F3", "F4"):
+            elif prev_xmode in {"F3", "F4"}:
                 status = True
 
-        if xmode[0] in ("P", "R", "S"):
+        if xmode[0] in {"P", "R", "S"}:
             if force or (status and prev_xmode.startswith("F")):
                 futil = FileUtil(self.container_root)
                 status = futil.links_conv(force, False, orig_path)

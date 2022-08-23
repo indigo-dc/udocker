@@ -24,7 +24,7 @@ class PRootEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, localrepo, exec_mode):
-        super(PRootEngine, self).__init__(localrepo, exec_mode)
+        super().__init__(localrepo, exec_mode)
         self.executable = None                   # PRoot
         self.proot_noseccomp = False             # No seccomp mode
         self.proot_newseccomp = False            # New seccomp mode
@@ -126,7 +126,8 @@ class PRootEngine(ExecutionEngineCommon):
         """Get the volume bindings string for container run command"""
         proot_vol_list = []
         for vol in self.opt["vol"]:
-            proot_vol_list.extend(["-b", "%s:%s" % Uvolume(vol).split()])
+            (vols, vold) = Uvolume(vol).split()
+            proot_vol_list.extend(["-b", f'{vols}:{vold}'])
 
         return proot_vol_list
 
@@ -134,7 +135,7 @@ class PRootEngine(ExecutionEngineCommon):
         """Get mapping of TCP/IP ports"""
         proot_netmap_list = []
         for (cont_port, host_port) in list(self._get_portsmap().items()):
-            proot_netmap_list.extend(["-p", "%d:%d" % (cont_port, host_port)])
+            proot_netmap_list.extend(["-p", f'{cont_port}:{host_port}'])
 
         if self.opt["netcoop"]:
             proot_netmap_list.extend(["-n", ])

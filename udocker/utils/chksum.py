@@ -4,7 +4,7 @@ import hashlib
 from udocker import LOG
 
 
-class ChkSUM(object):
+class ChkSUM:
     """Checksumming for files"""
 
     def __init__(self):
@@ -18,7 +18,7 @@ class ChkSUM(object):
                     algorithm.update(chunk)
 
             return algorithm.hexdigest()
-        except (IOError, OSError):
+        except OSError:
             return ""
 
     def sha256(self, filename):

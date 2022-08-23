@@ -15,10 +15,10 @@ pipeline {
             when {
               anyOf {
                 branch 'master'
-                branch 'devel*'
+                branch 'dev*'
                 buildingTag()
                 changeRequest target: 'master'
-                changeRequest target: 'devel3'
+                changeRequest target: 'dev-v1.4'
               }
             }
             steps {

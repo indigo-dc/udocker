@@ -2,11 +2,10 @@
 """Superclass for the execution engines"""
 
 import os
-import sys
 import re
 import json
 
-from udocker import is_genstr, LOG, MSG
+from udocker import LOG, MSG
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uenv import Uenv
@@ -18,7 +17,7 @@ from udocker.utils.filebind import FileBind
 from udocker.utils.mountpoint import MountPoint
 
 
-class ExecutionEngineCommon(object):
+class ExecutionEngineCommon:
     """Docker container execution engine parent class
     Provides the container execution methods that are common to
     the execution drivers.
@@ -105,10 +104,12 @@ class ExecutionEngineCommon(object):
                 pass
             else:
                 if port_number < 1024:
-                    if port_number in list(mapped_ports.keys()):
-                        if mapped_ports[port_number] >= 1024:
+                    # if port_number in list(mapped_ports.keys()):
+                    #     if mapped_ports[port_number] >= 1024:
+                    #         continue
+                    for (mports, mportd) in mapped_ports.items():
+                        if mports >= 1024:
                             continue
-
                     exposes_priv = True
 
         if exposes_priv and HostInfo.uid != 0:
@@ -256,7 +257,7 @@ class ExecutionEngineCommon(object):
 
     def _check_executable(self):
         """Check if executable exists and has execute permissions"""
-        if self.opt["entryp"] and is_genstr(self.opt["entryp"]):
+        if self.opt["entryp"] and isinstance(self.opt["entryp"], str):
             self.opt["entryp"] = self.opt["entryp"].strip().split(' ')
 
         if isinstance(self.opt["entryp"], list):
@@ -290,43 +291,41 @@ class ExecutionEngineCommon(object):
         # tree in which case we don't have metadata
         if Config.conf['location']:
             cont_dir = ""
-            cont_json = []
+            cntjson = []
         else:
             cstruc = ContainerStructure(self.localrepo, container_id)
-            (cont_dir, cont_json) = cstruc.get_container_attr()
+            (cont_dir, cntjson) = cstruc.get_container_attr()
             if not cont_dir:
                 return(None, None)
 
             # load metadata from container
             if not self.opt["nometa"]:
                 if not self.opt["user"]:
-                    self.opt["user"] = cstruc.get_container_meta("User", "", cont_json)
+                    self.opt["user"] = cstruc.get_container_meta("User", "", cntjson)
 
                 if not self.opt["cwd"]:
-                    self.opt["cwd"] = cstruc.get_container_meta("WorkingDir", "", cont_json)
+                    self.opt["cwd"] = cstruc.get_container_meta("WorkingDir", "", cntjson)
 
                 if not self.opt["hostname"]:
-                    self.opt["hostname"] = cstruc.get_container_meta("Hostname", "", cont_json)
+                    self.opt["hostname"] = cstruc.get_container_meta("Hostname", "", cntjson)
 
                 if not self.opt["domain"]:
-                    self.opt["domain"] = cstruc.get_container_meta("Domainname", "", cont_json)
+                    self.opt["domain"] = cstruc.get_container_meta("Domainname", "", cntjson)
 
                 if self.opt["entryp"] is False:
-                    self.opt["entryp"] = cstruc.get_container_meta("Entrypoint", [], cont_json)
+                    self.opt["entryp"] = cstruc.get_container_meta("Entrypoint", [], cntjson)
                     if not self.opt["cmd"]:
-                        self.opt["cmd"] = cstruc.get_container_meta("Cmd", [], cont_json)
+                        self.opt["cmd"] = cstruc.get_container_meta("Cmd", [], cntjson)
                 elif not self.opt["entryp"]:
                     self.opt["entryp"] = []
-                else:
-                    if isinstance(self.opt["entryp"], str):
-                        self.opt["entryp"] = self.opt["entryp"].strip().split(' ')
+                elif isinstance(self.opt["entryp"], str):
+                    self.opt["entryp"] = self.opt["entryp"].strip().split(' ')
 
-                self.opt["Volumes"] = cstruc.get_container_meta("Volumes", [], cont_json)
-                self.opt["portsexp"].extend(cstruc.get_container_meta("ExposedPorts", [],
-                                                                      cont_json))
-                self.opt["env"].extendif(cstruc.get_container_meta("Env", [], cont_json))
+                self.opt["Volumes"] = cstruc.get_container_meta("Volumes", [], cntjson)
+                self.opt["portsexp"].extend(cstruc.get_container_meta("ExposedPorts", [], cntjson))
+                self.opt["env"].extendif(cstruc.get_container_meta("Env", [], cntjson))
 
-        return(cont_dir, cont_json)
+        return(cont_dir, cntjson)
 
     def _select_auth_files(self):
         """Select authentication files to use /etc/passwd /etc/group"""
@@ -355,7 +354,7 @@ class ExecutionEngineCommon(object):
     def _validate_user_str(self, user):
         """Parse string with uid:gid or username"""
         user_id = {}
-        if not is_genstr(user):
+        if not isinstance(user, str):
             return user_id
 
         if re.match("^[a-zA-Z_][a-zA-Z0-9_-]*$", user):
@@ -594,9 +593,9 @@ class ExecutionEngineCommon(object):
         self.opt["env"].append("LOGNAME=" + self.opt["user"])
         self.opt["env"].append("USERNAME=" + self.opt["user"])
         if str(self.opt["uid"]) == "0":
-            self.opt["env"].append(r"PS1=%s# " % self.container_id[:8])
+            self.opt["env"].append(fr'PS1={self.container_id[:8]} # ')
         else:
-            self.opt["env"].append(r"PS1=%s\$ " % self.container_id[:8])
+            self.opt["env"].append(fr'PS1={self.container_id[:8]} \$ ')
 
         self.opt["env"].append("SHLVL=0")
         self.opt["env"].append("container_ruser=" + HostInfo().username())
@@ -604,12 +603,7 @@ class ExecutionEngineCommon(object):
         self.opt["env"].append("container_uuid=" + self.container_id)
         self.opt["env"].append("container_execmode=" + self.exec_mode.get_mode())
         cont_name = self.container_names
-        # if Python 3
-        if sys.version_info[0] >= 3:
-            names = str(cont_name).translate(str.maketrans('', '', " '\"[]"))
-        else:
-            names = str(cont_name).translate(None, " '\"[]")
-
+        names = str(cont_name).translate(str.maketrans('', '', " '\"[]"))
         self.opt["env"].append("container_names=" + names)
 
     def _run_env_cmdoptions(self):
@@ -670,7 +664,7 @@ class ExecutionEngineCommon(object):
                     saved["oskernel"] == HostInfo().oskernel() and
                     saved["arch"] == HostInfo().arch()):
                 return saved
-        except (IOError, OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
+        except (OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
             pass
 
         return {}

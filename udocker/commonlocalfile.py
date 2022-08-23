@@ -16,7 +16,7 @@ from udocker.engine.execmode import ExecutionMode
 from udocker.config import Config
 
 
-class CommonLocalFileApi(object):
+class CommonLocalFileApi:
     """Common methods for Docker and OCI files"""
 
     def __init__(self, localrepo):
@@ -37,7 +37,7 @@ class CommonLocalFileApi(object):
 
         try:
             os.rename(filepath, target_file)
-        except(IOError, OSError):
+        except OSError:
             if not FileUtil(filepath).copyto(target_file):
                 return False
 
@@ -186,7 +186,7 @@ class CommonLocalFileApi(object):
         if move_tarball:
             try:
                 os.rename(tarfile, layer_file)
-            except(IOError, OSError):
+            except OSError:
                 pass
 
         if not os.path.exists(layer_file):

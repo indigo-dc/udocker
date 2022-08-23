@@ -6,7 +6,8 @@ import sys
 import json
 import logging
 
-from udocker import is_genstr, LOG
+from io import BytesIO as strio
+from udocker import LOG
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uprocess import Uprocess
@@ -16,15 +17,9 @@ try:
 except ImportError:
     pass
 
-# if Python 3
-# pylint: disable=import-error
-if sys.version_info[0] >= 3:
-    from io import BytesIO as strio
-else:
-    from StringIO import StringIO as strio
 
 
-class CurlHeader(object):
+class CurlHeader:
     """An http header parser to be used with PyCurl
     Allows to retrieve the header fields and the status.
     Allows to obtain just the header by stopping the
@@ -61,9 +56,10 @@ class CurlHeader(object):
         Alternative to write() to be used with the curl executable
         version.
         """
+        #TODO: (mdavid) )redo this part
         try:
             infile = open(in_filename, 'r', encoding='utf-8')
-        except (IOError, OSError):
+        except OSError:
             return False
 
         for line in infile:
@@ -81,7 +77,7 @@ class CurlHeader(object):
         return str(self.data)
 
 
-class GetURL(object):
+class GetURL:
     """File downloader using PyCurl or a curl cli executable"""
 
     def __init__(self):
@@ -252,9 +248,10 @@ class GetURLpyCurl(GetURL):
                 pyc.setopt(pyc.RESUME_FROM, FileUtil(output_file).size())
                 openflags = "ab"
 
+            #TODO: (mdavid) )redo this part
             try:
                 filep = open(output_file, openflags)
-            except(IOError, OSError):
+            except OSError:
                 LOG.error("opening download file: %s", output_file)
                 raise
 
@@ -278,10 +275,9 @@ class GetURLpyCurl(GetURL):
             LOG.debug("curl url: %s", self._url)
             LOG.debug("curl arg: %s", kwargs)
             pyc.perform()     # call pyculr
-        except(IOError, OSError):
+        except OSError:
             return (None, None)
         except pycurl.error as error:
-            # pylint: disable=unbalanced-tuple-unpacking
             errno, errstr = error.args
             hdr.data["X-ND-CURLSTATUS"] = errno
             if not hdr.data["X-ND-HTTPSTATUS"]:
@@ -373,7 +369,7 @@ class GetURLexeCurl(GetURL):
             self._opts["proxy"] = ["--proxy", self.http_proxy]
 
         if "header" in kwargs:
-            self._opts["header"] = list()
+            self._opts["header"] = []
             for header_item in kwargs["header"]:
                 if str(header_item).startswith("Authorization: Bearer"):
                     if "Signature=" in self._files["url"]:
@@ -398,7 +394,7 @@ class GetURLexeCurl(GetURL):
                 self._opts["resume"] = ["-C", "-"]
 
         cmd = ["curl"]
-        if self._curl_exec and is_genstr(self._curl_exec):
+        if self._curl_exec and isinstance(self._curl_exec, str):
             cmd = [self._curl_exec]
 
         for opt in self._opts.values():
@@ -451,10 +447,11 @@ class GetURLexeCurl(GetURL):
             else:  # OK downloaded
                 os.rename(self._files["output_file"], kwargs["ofile"])
 
+        #TODO: (mdavid) )redo this part
         if "ofile" not in kwargs:
             try:
                 buf = strio(open(self._files["output_file"], 'rb').read())
-            except(IOError, OSError):
+            except OSError:
                 LOG.error("reading curl output file to buffer")
 
             FileUtil(self._files["output_file"]).remove()

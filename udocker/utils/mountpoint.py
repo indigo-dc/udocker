@@ -8,7 +8,7 @@ from udocker import LOG
 from udocker.utils.fileutil import FileUtil
 
 
-class MountPoint(object):
+class MountPoint:
     """Create, store and reset container mountpoints"""
 
     orig_dir = "/.mountpoints"
@@ -74,7 +74,7 @@ class MountPoint(object):
         status = True
         mountpoint = self.container_root + '/' + c_path
         if os.path.exists(mountpoint):
-            if (stat.S_IFMT(os.stat(mountpoint).st_mode) == stat.S_IFMT(os.stat(h_path).st_mode)):
+            if stat.S_IFMT(os.stat(mountpoint).st_mode) == stat.S_IFMT(os.stat(h_path).st_mode):
                 return True
 
             LOG.error("host and container volume paths not same type: %s and %s", h_path, c_path)
@@ -106,7 +106,7 @@ class MountPoint(object):
         try:
             if not os.path.exists(curr_mountpoint):
                 os.symlink(orig_mountpoint, curr_mountpoint)
-        except (IOError, OSError):
+        except OSError:
             return False
 
         return True

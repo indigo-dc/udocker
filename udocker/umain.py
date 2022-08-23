@@ -11,7 +11,7 @@ from udocker.container.localrepo import LocalRepository
 from udocker.cli import UdockerCLI
 
 
-class UMain(object):
+class UMain:
     """These methods correspond directly to the commands that can
     be invoked via the command line interface.
     """
@@ -102,7 +102,7 @@ class UMain(object):
                 MSG.info(cmds[command].__doc__)
                 return self.STATUS_OK
 
-            if command in ["version", "showconf", "avail"]:
+            if command in {"version", "showconf", "avail"}:
                 return cmds[command](self.cmdp)
 
             if command != "install":

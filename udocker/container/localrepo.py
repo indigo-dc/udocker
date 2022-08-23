@@ -3,11 +3,10 @@
 
 import os
 import re
-import sys
 import stat
 import json
 
-from udocker import is_genstr, LOG
+from udocker import LOG
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.chksum import ChkSUM
@@ -15,7 +14,7 @@ from udocker.utils.uprocess import Uprocess
 from udocker.helper.osinfo import OSInfo
 
 
-class LocalRepository(object):
+class LocalRepository:
     """Implements a basic repository for images and containers.
     The repository will be usually in the user home directory.
     The repository has a simple directory structure:
@@ -97,7 +96,7 @@ class LocalRepository(object):
 
             if not (Config.conf['keystore'].startswith("/") or os.path.exists(self.homedir)):
                 os.makedirs(self.homedir)
-        except(IOError, OSError):
+        except OSError:
             return False
 
         return True
@@ -115,7 +114,7 @@ class LocalRepository(object):
         """Verify if the provided object matches the format of a
         local container id.
         """
-        if not is_genstr(obj):
+        if not isinstance(obj, str):
             return False
 
         match = re.match("^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$", obj)
@@ -140,9 +139,10 @@ class LocalRepository(object):
         """Set the protection mark in a container or image tag"""
         try:
             # touch create version file
-            open(directory + "/PROTECT", 'w', encoding='utf-8').close()
+            with open(directory + "/PROTECT", 'w', encoding='utf-8'):
+                pass
             return True
-        except (IOError, OSError):
+        except OSError:
             return False
 
     def _unprotect(self, directory):
@@ -180,8 +180,7 @@ class LocalRepository(object):
         """Get a list of all containers in the local repo
         dir_only: is optional and indicates
                   if True a summary list of container_ids and names
-                  if False  an extended listing containing further
-                  container information
+                  if False  an extended listing containing further container information
         """
         containers_list = []
         if not os.path.isdir(self.containersdir):
@@ -190,10 +189,10 @@ class LocalRepository(object):
         for fname in os.listdir(self.containersdir):
             container_dir = self.containersdir + '/' + fname
             if os.path.isdir(container_dir):
+                #TODO: (mdavid) )redo this part
                 try:
-                    filep = open(container_dir + "/imagerepo.name", 'r',
-                                 encoding='utf-8')
-                except (IOError, OSError):
+                    filep = open(container_dir + "/imagerepo.name", 'r', encoding='utf-8')
+                except OSError:
                     reponame = ""
                 else:
                     reponame = filep.read()
@@ -249,7 +248,7 @@ class LocalRepository(object):
         try:
             os.symlink(rel_path_to_existing, link_file)
             LOG.debug("container name set OK")
-        except (IOError, OSError):
+        except OSError:
             return False
 
         return True
@@ -321,11 +320,11 @@ class LocalRepository(object):
         if os.path.exists(container_dir):
             return ""
 
+        #TODO: (mdavid) )redo this part
         try:
             os.makedirs(container_dir + "/ROOT")
-            out_imagerepo = open(container_dir + "/imagerepo.name", 'w',
-                                 encoding='utf-8')
-        except (IOError, OSError):
+            out_imagerepo = open(container_dir + "/imagerepo.name", 'w', encoding='utf-8')
+        except OSError:
             return None
         else:
             out_imagerepo.write(imagerepo + ":" + tag)
@@ -342,7 +341,7 @@ class LocalRepository(object):
         try:
             if os.path.isfile(tag_dir + "/TAG"):
                 return True
-        except (IOError, OSError):
+        except OSError:
             pass
 
         return False
@@ -411,8 +410,8 @@ class LocalRepository(object):
     def del_imagerepo(self, imagerepo, tag, force=False):
         """Delete an image repository and its layers"""
         tag_dir = self.cd_imagerepo(imagerepo, tag)
-        futilrm = FileUtil(tag_dir).remove(recursive=True)
-        if (tag_dir and self._remove_layers(tag_dir, force) and futilrm):
+        if (tag_dir and self._remove_layers(tag_dir, force) and
+                FileUtil(tag_dir).remove(recursive=True)):
             self.cur_repodir = ""
             self.cur_tagdir = ""
             while imagerepo:
@@ -491,7 +490,7 @@ class LocalRepository(object):
 
             self.cur_repodir = directory
             return False
-        except (IOError, OSError):
+        except OSError:
             return None
 
     def setup_tag(self, tag):
@@ -499,13 +498,14 @@ class LocalRepository(object):
         to be invoked after setup_imagerepo()
         """
         directory = self.cur_repodir + "/" + tag
+        #TODO: (mdavid) )redo this part
         try:
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
             self.cur_tagdir = directory
             out_tag = open(directory + "/TAG", 'w', encoding='utf-8')
-        except (IOError, OSError):
+        except OSError:
             return False
         else:
             out_tag.write(self.cur_repodir + ":" + tag)
@@ -534,7 +534,7 @@ class LocalRepository(object):
                 try:
                     FileUtil(directory + "/v1").remove()
                     FileUtil(directory + "/v2").remove()
-                except (IOError, OSError):
+                except OSError:
                     pass
 
                 if os.listdir(directory):
@@ -542,8 +542,9 @@ class LocalRepository(object):
 
         try:
             # Create version file
-            open(directory + "/" + version, 'a', encoding='utf-8').close()
-        except (IOError, OSError):
+            with open(directory + "/" + version, 'a', encoding='utf-8'):
+                pass
+        except OSError:
             return False
 
         return True
@@ -582,7 +583,7 @@ class LocalRepository(object):
         try:
             json_string = manifest["history"][0]["v1Compatibility"].strip()
             container_json = json.loads(json_string)
-        except (IOError, OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
+        except (OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
             return (None, files)
 
         return (container_json, files)
@@ -600,7 +601,7 @@ class LocalRepository(object):
         try:
             json_file = directory + '/' + manifest["config"]["digest"]
             container_json = json.loads(FileUtil(json_file).getdata('r'))
-        except (IOError, OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
+        except (OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
             return (None, files)
 
         return (container_json, files)
@@ -644,10 +645,11 @@ class LocalRepository(object):
             out_filename = self.cur_tagdir + "/" + filename
 
         outfile = None
+        #TODO: (mdavid) )redo this part
         try:
             outfile = open(out_filename, 'w', encoding='utf-8')
             json.dump(data, outfile)
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             if outfile:
                 outfile.close()
 
@@ -677,10 +679,11 @@ class LocalRepository(object):
 
         json_obj = None
         infile = None
+        #TODO: (mdavid) )redo this part
         try:
             infile = open(in_filename, 'r', encoding='utf-8')
             json_obj = json.load(infile)
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
+        except (OSError, AttributeError, ValueError, TypeError):
             pass
 
         if infile:
@@ -698,10 +701,10 @@ class LocalRepository(object):
                 if fname == "ancestry":
                     structure["ancestry"] = self.load_json(f_path)
 
-                if fname == "manifest":
+                elif fname == "manifest":
                     structure["manifest"] = self.load_json(f_path)
 
-                if len(fname) >= 64:
+                elif len(fname) >= 64:
                     layer_id = fname.replace(".json", "").replace(".layer", "")
                     if layer_id not in structure["repolayers"]:
                         structure["repolayers"][layer_id] = {}
@@ -716,10 +719,12 @@ class LocalRepository(object):
                         structure["repolayers"][layer_id]["layer_f"] = f_path
                     else:
                         LOG.warning("unknown file in layer: %s", f_path)
-                elif fname in ("TAG", "v1", "v2", "PROTECT", "container.json"):
+
+                elif fname in {"TAG", "v1", "v2", "PROTECT", "container.json"}:
                     pass
 
-                LOG.warning("unknown file in image: %s", f_path)
+                else:
+                    LOG.warning("unknown file in image: %s", f_path)
 
         return structure
 
@@ -731,10 +736,7 @@ class LocalRepository(object):
             return ""
 
         if not my_layer_id:
-            if sys.version_info[0] >= 3:
-                my_layer_id = list(structure["repolayers"].keys())[0]
-            else:
-                my_layer_id = structure["repolayers"].keys()[0]
+            my_layer_id = list(structure["repolayers"].keys())[0]
 
         found = ""
         for layer_id in structure["repolayers"]:
@@ -744,7 +746,7 @@ class LocalRepository(object):
             if "parent" not in structure["repolayers"][layer_id]["json"]:
                 continue
 
-            if (my_layer_id == structure["repolayers"][layer_id]["json"]["parent"]):
+            if my_layer_id == structure["repolayers"][layer_id]["json"]["parent"]:
                 found = self._find_top_layer_id(structure, layer_id)
                 break
 
@@ -815,10 +817,7 @@ class LocalRepository(object):
         layer = iter(layers_list)
         status = True
         for ancestry_layer in structure["ancestry"]:
-            if sys.version_info[0] >= 3:
-                verify_layer = next(layer)
-            else:
-                verify_layer = layer.next()
+            verify_layer = next(layer)
 
             if ancestry_layer != verify_layer:
                 LOG.error("ancestry: %s and layers not match: %s", ancestry_layer, verify_layer)

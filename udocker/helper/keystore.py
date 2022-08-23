@@ -9,7 +9,7 @@ from udocker.utils.fileutil import FileUtil
 from udocker.helper.hostinfo import HostInfo
 
 
-class KeyStore(object):
+class KeyStore:
     """Basic storage for authentication tokens to be used
     with dockerhub and private repositories
     """
@@ -23,14 +23,14 @@ class KeyStore(object):
         """Verify the keystore file and directory"""
         keystore_uid = FileUtil(self.keystore_file).uid()
         if keystore_uid not in (-1, HostInfo.uid):
-            raise IOError(f"not owner of keystore: {self.keystore_file}")
+            raise OSError(f"not owner of keystore: {self.keystore_file}")
 
         keystore_dir = os.path.dirname(self.keystore_file)
         if FileUtil(keystore_dir).uid() != HostInfo.uid:
-            raise IOError(f"keystore dir not found or not owner: {keystore_dir}")
+            raise OSError(f"keystore dir not found or not owner: {keystore_dir}")
 
         if (keystore_uid != -1 and (os.stat(self.keystore_file).st_mode & 0o077)):
-            raise IOError(f"keystore is accessible to group or others: {self.keystore_file}")
+            raise OSError(f"keystore is accessible to group or others: {self.keystore_file}")
 
     def _read_all(self):
         """Read all credentials from file"""
@@ -38,7 +38,7 @@ class KeyStore(object):
             with open(self.keystore_file, "r", encoding='utf-8') as filep:
                 LOG.info("credentials read from: %s", self.keystore_file)
                 return json.load(filep)
-        except (IOError, OSError, ValueError):
+        except (OSError, ValueError):
             return {}
 
     def _shred(self):
@@ -49,7 +49,7 @@ class KeyStore(object):
             size = FileUtil(self.keystore_file).size()
             with open(self.keystore_file, "rb+") as filep:
                 filep.write(b" " * size)
-        except (IOError, OSError):
+        except OSError:
             exit_status = 1
             return exit_status
 
@@ -66,7 +66,7 @@ class KeyStore(object):
                 json.dump(auths, filep)
 
             os.umask(oldmask)
-        except (IOError, OSError):
+        except OSError:
             if oldmask is not None:
                 os.umask(oldmask)
 
@@ -117,7 +117,7 @@ class KeyStore(object):
             self._shred()
             os.unlink(self.keystore_file)
             LOG.info("all credentials deleted")
-        except (IOError, OSError):
+        except OSError:
             return 1
 
         return 0

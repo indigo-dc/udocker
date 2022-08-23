@@ -23,7 +23,7 @@ class SingularityEngine(ExecutionEngineCommon):
     """
 
     def __init__(self, localrepo, exec_mode):
-        super(SingularityEngine, self).__init__(localrepo, exec_mode)
+        super().__init__(localrepo, exec_mode)
         self.executable = None                   # singularity
         self.execution_id = None
 
@@ -63,11 +63,11 @@ class SingularityEngine(ExecutionEngineCommon):
         for vol in self.opt["vol"]:
             (host_path, cont_path) = Uvolume(vol).split()
             if os.path.isdir(host_path):
-                if host_path == home_dir and cont_path in ("", host_path):
+                if host_path == home_dir and cont_path in {"", host_path}:
                     home_is_binded = True
-                elif host_path == "/tmp" and cont_path in ("", "/tmp"):
+                elif host_path == "/tmp" and cont_path in {"", "/tmp"}:
                     tmp_is_binded = True
-                elif host_path == "/var/tmp" and cont_path in ("", "/var/tmp"):
+                elif host_path == "/var/tmp" and cont_path in {"", "/var/tmp"}:
                     vartmp_is_binded = True
 
             vol_list.extend(["-B", f"{host_path}:{cont_path}", ])

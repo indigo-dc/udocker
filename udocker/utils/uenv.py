@@ -2,14 +2,13 @@
 """Object classes to store Nix environment"""
 
 import os
-import sys
 import string
 
-from udocker import is_genstr, LOG
+from udocker import LOG
 
 def get_pair(envstr):
     """Split env=var into key and val"""
-    if not (is_genstr(envstr) and envstr):
+    if not (isinstance(envstr, str) and envstr):
         return ("", "")
 
     if '=' in envstr:
@@ -30,17 +29,13 @@ def get_pair(envstr):
     return (key, val)
 
 
-class UenvIterator(object):
+class UenvIterator:
     """Uenv Iterator class"""
 
     def __init__(self, uenv):
         """Init Uenv iterator"""
         self._uenv = uenv
-        if sys.version_info[0] >= 3:
-            self._keys = list(uenv.env.keys())
-        else:
-            self._keys = uenv.env.keys()
-
+        self._keys = list(uenv.env.keys())
         self._index = 0
 
     def __next__(self):
@@ -56,7 +51,7 @@ class UenvIterator(object):
     next = __next__ # Python 2
 
 
-class Uenv(object):
+class Uenv:
     """Class to store environment variables"""
 
     def __init__(self, thisenv=None):

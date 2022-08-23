@@ -13,7 +13,7 @@ from udocker.utils.fileutil import FileUtil
 from udocker.utils.uprocess import Uprocess
 
 
-class NvidiaMode(object):
+class NvidiaMode:
     """nvidia-docker like functionality for udocker.
     Make nvidia host libraries available within udocker, this is achieved
     by copy them into the container so that the execution modes that need
@@ -73,7 +73,7 @@ class NvidiaMode(object):
                     if os.access(srcname, os.X_OK):
                         mask = mask | stat.S_IXUSR
                     os.chmod(dstname, mask)
-                except (IOError, OSError) as error:
+                except (OSError) as error:
                     LOG.error("change mask of nvidia file: %s", error)
             else:
                 LOG.warning("nvidia file in config not found: %s", srcname)

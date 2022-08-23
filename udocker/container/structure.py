@@ -6,7 +6,7 @@ import sys
 import subprocess
 import logging
 
-from udocker import is_genstr, LOG
+from udocker import LOG
 from udocker.config import Config
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uprocess import Uprocess
@@ -14,7 +14,7 @@ from udocker.helper.unique import Unique
 from udocker.helper.hostinfo import HostInfo
 
 
-class ContainerStructure(object):
+class ContainerStructure:
     """Docker container structure.
     Creation of a container filesystem from a repository image.
     Creation of a container filesystem from a layer tar file.
@@ -31,7 +31,7 @@ class ContainerStructure(object):
         """Get container directory and JSON metadata by id or name"""
         if Config.conf['location']:
             container_dir = ""
-            container_json = []
+            cntjson = []
         else:
             container_dir = self.localrepo.cd_container(self.container_id)
             if not container_dir:
@@ -39,37 +39,34 @@ class ContainerStructure(object):
                 return(False, False)
 
             fjson = container_dir + "/container.json"
-            container_json = self.localrepo.load_json(fjson)
-            if not container_json:
+            cntjson = self.localrepo.load_json(fjson)
+            if not cntjson:
                 LOG.error("invalid container json metadata")
                 return(False, False)
 
-        return(container_dir, container_json)
+        return(container_dir, cntjson)
 
-    def get_container_meta(self, param, default, container_json):
+    def get_container_meta(self, param, default, cntjson):
         """Get the container metadata from the container"""
-        confidx = ""
-        if "config" in container_json:
-            confidx = "config"
-        elif "container_config" in container_json:
-            confidx = "container_config"
+        cidx = ""
+        if "config" in cntjson:
+            cidx = "config"
+        elif "container_config" in cntjson:
+            cidx = "container_config"
 
-        if container_json[confidx]  and param in container_json[confidx]:
-            if container_json[confidx][param] is None:
+        if cntjson[cidx]  and param in cntjson[cidx]:
+            if cntjson[cidx][param] is None:
                 pass
-            elif (is_genstr(container_json[confidx][param]) and
-                  (isinstance(default, (list, tuple)))):
-                return container_json[confidx][param].strip().split()
-            elif (is_genstr(default) and
-                  (isinstance(container_json[confidx][param], (list, tuple)))):
-                return " ".join(container_json[confidx][param])
-            elif (is_genstr(default) and (isinstance(container_json[confidx][param], dict))):
-                return self._dict_to_str(container_json[confidx][param])
-            elif (isinstance(default, list) and
-                  (isinstance(container_json[confidx][param], dict))):
-                return self._dict_to_list(container_json[confidx][param])
+            elif (isinstance(cntjson[cidx][param], str) and (isinstance(default, (list, tuple)))):
+                return cntjson[cidx][param].strip().split()
+            elif (isinstance(default, str) and (isinstance(cntjson[cidx][param], (list, tuple)))):
+                return " ".join(cntjson[cidx][param])
+            elif (isinstance(default, str) and (isinstance(cntjson[cidx][param], dict))):
+                return self._dict_to_str(cntjson[cidx][param])
+            elif (isinstance(default, list) and (isinstance(cntjson[cidx][param], dict))):
+                return self._dict_to_list(cntjson[cidx][param])
             else:
-                return container_json[confidx][param]
+                return cntjson[cidx][param]
 
         return default
 
@@ -124,8 +121,8 @@ class ContainerStructure(object):
             LOG.error("create container: imagerepo is invalid")
             return False
 
-        (container_json, layer_files) = self.localrepo.get_image_attributes()
-        if not container_json:
+        (cntjson, layer_files) = self.localrepo.get_image_attributes()
+        if not cntjson:
             LOG.error("create container: getting layers or json")
             return False
 
@@ -138,7 +135,7 @@ class ContainerStructure(object):
             LOG.error("create container: setting up container")
             return False
 
-        self.localrepo.save_json(container_dir + "/container.json", container_json)
+        self.localrepo.save_json(container_dir + "/container.json", cntjson)
         status = self._untar_layers(layer_files, container_dir + "/ROOT")
         if not status:
             LOG.error("creating container: %s", self.container_id)
@@ -147,7 +144,7 @@ class ContainerStructure(object):
 
         return self.container_id
 
-    def create_fromlayer(self, imagerepo, tag, layer_file, container_json):
+    def create_fromlayer(self, imagerepo, tag, layer_file, cntjson):
         """Create a container from a layer file exported by Docker.
         """
         self.imagerepo = imagerepo
@@ -155,7 +152,7 @@ class ContainerStructure(object):
         if not self.container_id:
             self.container_id = Unique().uuid(os.path.basename(self.imagerepo))
 
-        if not container_json:
+        if not cntjson:
             LOG.error("create container: getting json")
             return False
 
@@ -166,7 +163,7 @@ class ContainerStructure(object):
             return False
 
         fjson = container_dir + "/container.json"
-        self.localrepo.save_json(fjson, container_json)
+        self.localrepo.save_json(fjson, cntjson)
         status = self._untar_layers([layer_file, ], container_dir + "/ROOT")
         if not status:
             LOG.error("creating container: %s", self.container_id)

@@ -94,21 +94,34 @@ enable=
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
 
-disable=
-    attribute-defined-outside-init,
-    invalid-name,
-    missing-docstring,
-    protected-access,
-    too-few-public-methods,
+#disable=
+#    attribute-defined-outside-init,
+#    invalid-name,
+#    missing-docstring,
+#    protected-access,
+#    too-few-public-methods,
     # handled by black
-    format,
+#    format,
     # We anticipate #3512 where it will become optional
-    fixme,
-    cyclic-import,
-    W0612,
+#    fixme,
+#    cyclic-import,
+#    W0612,
 
 #disable=E0602,W0707,W0212,R0205,R0201,R1732,R1725,R0801,protected-access,too-many-lines,C0209,W4701,W1514,C0201
 
+disable=
+    fixme,
+    too-few-public-methods,
+    W0612,
+    R1732,
+    W1514,
+    W0613,
+    W4701,
+    C2801,
+    R0204,
+    I1101,
+    R0801,
+    C0413,
 
 [REPORTS]
 
@@ -422,7 +435,7 @@ max-spelling-suggestions=2
 max-args=10
 
 # Maximum number of locals for function / method body
-max-locals=25
+max-locals=40
 
 # Maximum number of return / yield for function / method body
 max-returns=11
@@ -446,7 +459,7 @@ max-attributes=11
 min-public-methods=2
 
 # Maximum number of public methods for a class (see R0904).
-max-public-methods=25
+max-public-methods=40
 
 # Maximum number of boolean expressions in an if statement (see R0916).
 max-bool-expr=5

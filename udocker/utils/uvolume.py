@@ -3,7 +3,7 @@
 from udocker import LOG
 
 
-class Uvolume(object):
+class Uvolume:
     """Manipulate volumes"""
 
     def __init__(self, volume=""):
@@ -16,9 +16,8 @@ class Uvolume(object):
         for char in str(path):
             if not clean_path:
                 clean_path = char
-            else:
-                if not (char == p_char and char == '/'):
-                    clean_path += char
+            elif not (char == p_char and char == '/'):
+                clean_path += char
 
             p_char = char
 

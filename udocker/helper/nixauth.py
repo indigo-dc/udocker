@@ -10,7 +10,7 @@ from udocker.utils.fileutil import FileUtil
 from udocker.helper.hostinfo import HostInfo
 
 
-class NixAuthentication(object):
+class NixAuthentication:
     """Provides abstraction and useful methods to manage
     passwd and group based authentication, both for the
     host system and for the container.
@@ -37,9 +37,10 @@ class NixAuthentication(object):
         else:
             (user, dum1, dum2, dum3, dum4, dum5) = self._get_user_from_host(wanted_user)
 
+        #TODO: (mdavid) )redo this part
         try:
             insub = open(sub_file, encoding='utf-8')
-        except (IOError, OSError):
+        except OSError:
             return []
         else:
             for line in insub:
@@ -73,7 +74,7 @@ class NixAuthentication(object):
         if wanted_uid:
             try:
                 usr = pwd.getpwuid(int(wanted_uid))
-            except (IOError, OSError, KeyError):
+            except (OSError, KeyError):
                 return ("", "", "", "", "", "")
 
             return (str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
@@ -81,7 +82,7 @@ class NixAuthentication(object):
 
         try:
             usr = pwd.getpwnam(wanted_user)
-        except (IOError, OSError, KeyError):
+        except (OSError, KeyError):
             return ("", "", "", "", "", "")
 
         return (str(usr.pw_name), str(usr.pw_uid), str(usr.pw_gid),
@@ -97,14 +98,14 @@ class NixAuthentication(object):
         if wanted_gid:
             try:
                 hgr = grp.getgrgid(int(wanted_gid))
-            except (IOError, OSError, KeyError):
+            except (OSError, KeyError):
                 return ("", "", "")
 
             return (str(hgr.gr_name), str(hgr.gr_gid), str(hgr.gr_mem))
 
         try:
             hgr = grp.getgrnam(wanted_group)
-        except (IOError, OSError, KeyError):
+        except (OSError, KeyError):
             return ("", "", "")
 
         return (str(hgr.gr_name), str(hgr.gr_gid), str(hgr.gr_mem))
@@ -116,9 +117,10 @@ class NixAuthentication(object):
             wanted_uid = str(wanted_user)
             wanted_user = ""
 
+        #TODO: (mdavid) )redo this part
         try:
             inpasswd = open(self.passwd_file, encoding='utf-8')
-        except (IOError, OSError):
+        except OSError:
             return ("", "", "", "", "", "")
         else:
             for line in inpasswd:
@@ -140,9 +142,10 @@ class NixAuthentication(object):
             wanted_gid = str(wanted_group)
             wanted_group = ""
 
+        #TODO: (mdavid) )redo this part
         try:
             ingroup = open(self.group_file, encoding='utf-8')
-        except (IOError, OSError):
+        except OSError:
             return ("", "", "")
         else:
             for line in ingroup:

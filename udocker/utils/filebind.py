@@ -6,7 +6,7 @@ from udocker import LOG
 from udocker.utils.fileutil import FileUtil
 
 
-class FileBind(object):
+class FileBind:
     """Alternative method to allow host files to be visible inside
     a container when binding of files is not possible such as when
     using rootless namespaces.

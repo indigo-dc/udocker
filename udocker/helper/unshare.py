@@ -2,6 +2,7 @@
 """Basic unshare for udocker maintenance"""
 
 import os
+import sys
 import ctypes
 import subprocess
 
@@ -9,7 +10,7 @@ from udocker import LOG
 from udocker.helper.hostinfo import HostInfo
 from udocker.helper.nixauth import NixAuthentication
 
-class Unshare(object):
+class Unshare:
     """Place a process in a namespace"""
 
     CLONE_NEWNS = 0x20000
@@ -74,4 +75,4 @@ class Unshare(object):
             LOG.error("setting ids and groups")
             return False
 
-        os._exit(int(method()))
+        sys.exit(int(method()))

@@ -2,28 +2,27 @@
 """Tools for udocker"""
 
 import os
-import sys
 import tarfile
 import random
 import json
 import stat
-from udocker import is_genstr, __version__, LOG, MSG
+from udocker import __version__, LOG, MSG
 from udocker.config import Config
 from udocker.utils.curl import GetURL
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.osinfo import OSInfo
 
 def _str(data):
-    """Safe str for Python 3 and Python 2"""
-    if sys.version_info[0] >= 3:
-        try:
-            return data.decode()
-        except (UnicodeDecodeError, AttributeError):
-            pass
+    """Safe str for Python 3"""
+    try:
+        return data.decode()
+    except (UnicodeDecodeError, AttributeError):
+        pass
+
     return data
 
 
-class UdockerTools(object):
+class UdockerTools:
     """Download and setup of the udocker supporting tools
     Includes: proot and alternative python modules, these
     are downloaded to facilitate the installation by the
@@ -86,7 +85,7 @@ class UdockerTools(object):
             except (TypeError, ValueError):
                 pass
 
-            factor = factor / 1000
+            factor = int(factor / 1000)
 
         return int(version_int)
 
@@ -166,6 +165,7 @@ class UdockerTools(object):
         if not tmpdir:
             return (False, "")
 
+        #TODO: (mdavid) )redo this part
         try:
             tfile = tarfile.open(tarball_file, "r:gz")
             for tar_in in tfile.getmembers():
@@ -190,6 +190,7 @@ class UdockerTools(object):
 
         FileUtil(self.localrepo.topdir).chmod()
         self.localrepo.create_repo()
+        #TODO: (mdavid) )redo this part
         try:
             tfile = tarfile.open(tarball_file, "r:gz")
             FileUtil(self.localrepo.bindir).rchmod()
@@ -224,7 +225,7 @@ class UdockerTools(object):
 
     def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
-        if is_genstr(mirrors):
+        if isinstance(mirrors, str):
             mirrors = mirrors.split('\n')
 
         try:
@@ -246,7 +247,7 @@ class UdockerTools(object):
                 for msg in self._install_json["messages"]:
                     MSG.info(msg)
 
-            except (KeyError, AttributeError, ValueError, OSError, IOError):
+            except (KeyError, AttributeError, ValueError, OSError):
                 LOG.info("no messages: %s %s", infofile, url)
 
             return self._install_json
@@ -321,11 +322,11 @@ class UdockerTools(object):
 
                 return metadict
 
-            except (KeyError, AttributeError, ValueError, OSError, IOError):
+            except (KeyError, AttributeError, ValueError, OSError):
                 LOG.error("reading file: %s", mjson)
                 continue
 
-        return list()
+        return []
 
     def _match_mod(self, mod, arch, os_dist, os_ver, metadict):
         """matches a given module mod in the metadict metadata dictionary
@@ -336,9 +337,9 @@ class UdockerTools(object):
                 if (module['os'] == os_dist) or (module['os'] == ''):
                     if (module['os_ver'] == os_ver) or (module['os_ver'] == ''):
                         LOG.debug('matched module: %s', module)
-                        return module['urls'] 
+                        return module['urls']
 
-        return list()
+        return []
 
     def select_tarnames(self, list_uid):
         """Get list of tarballs URL to download
@@ -346,7 +347,7 @@ class UdockerTools(object):
         or download from the list of uids in list_uid"""
         force = True
         metadict = self._get_metadata(force)
-        list_downl = list()
+        list_downl = []
         if list_uid:
             LOG.debug('list of uids: %s', list_uid)
             for uid in list_uid:
