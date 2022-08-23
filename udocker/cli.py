@@ -802,7 +802,7 @@ class UdockerCLI(object):
         for (imagerepo, tag) in images_list:
             prot = (".", "P")[
                 self.localrepo.isprotected_imagerepo(imagerepo, tag)]
-            Msg().out("%-60.60s %c" % (imagerepo + ":" + tag, prot))
+            Msg().out("%s    %c" % (imagerepo + ":" + tag, prot))
             if verbose:
                 imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
                 Msg().out(f"  {imagerepo_dir}")

@@ -2,8 +2,9 @@
 
 ## udocker (1.3.3)
 
-* fix and improve udocker high level tests
+* image list does not truncate long names
 * fix conditional warning in verify image
+* fix and improve udocker high level tests
 
 ## udocker (1.3.2)
 
