@@ -1,5 +1,10 @@
 # Changelog
 
+## udocker (1.3.3)
+
+* fix and improve udocker high level tests
+
+
 ## udocker (1.3.2)
 
 * fix missing f (format) for string
