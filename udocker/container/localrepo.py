@@ -649,7 +649,8 @@ class LocalRepository(object):
                 elif fname in ("TAG", "v1", "v2", "PROTECT", "container.json"):
                     pass
 
-                Msg().out("Warning: unkwnon file in image:", f_path, l=Msg.WAR)
+                else:
+                    Msg().out("Warning: unkwnon file in image:", f_path, l=Msg.WAR)
 
         return structure
 

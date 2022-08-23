@@ -6,7 +6,7 @@
     "@type": "SoftwareSourceCode",
     "identifier": "udocker",
     "name": "udocker",
-    "version": "1.3.2",
+    "version": "1.3.3",
     "description": "A basic user tool to execute simple docker containers in batch or interactive systems without root privileges",
     "license": "Apache Software License 2.0, OSI Approved :: Apache Software License",
     "author": [

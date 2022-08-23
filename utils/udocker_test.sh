@@ -32,7 +32,7 @@ THIS_SCRIPT_NAME=$( basename "$0" )
 
 # Variables for the tests
 declare -a FAILED_TESTS
-DEFAULT_UDIR=$HOME/.udocker
+DEFAULT_UDIR=$HOME/.udocker-tests
 TEST_UDIR=$HOME/.udocker-test-h45y7k9X
 TAR_IMAGE="centos7.tar"
 TAR_CONT="centos7-cont.tar"
@@ -40,6 +40,7 @@ TAR_IMAGE_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_IMAGE}"
 TAR_CONT_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_CONT}"
 DOCKER_IMG="ubuntu:18.04"
 CONT="ubuntu"
+export UDOCKER_DIR=${DEFAULT_UDIR}
 
 function print_ok
 {
@@ -69,7 +70,7 @@ function result
       print_fail; echo "    $STRING"
       FAILED_TESTS+=("$STRING")
   fi
-  echo "------------------------------------------------------------>"
+  echo "|______________________________________________________________________________|"
 }
 
 function result_inv
@@ -81,7 +82,7 @@ function result_inv
       print_fail; echo "    $STRING"
       FAILED_TESTS+=("$STRING")
   fi
-  echo "------------------------------------------------------------>"
+  echo "|______________________________________________________________________________|"
 }
 
 echo "================================================="
@@ -226,14 +227,14 @@ STRING="T032: udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
 udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}; return=$?
 result
 
-STRING="T033: udocker --repo=${TEST_UDIR} verify ${DOCKER_IMG}"
+STRING="T033: UDOCKER_DIR=${TEST_UDIR} udocker verify ${DOCKER_IMG}"
 UDOCKER_DIR=${TEST_UDIR} udocker verify ${DOCKER_IMG}; return=$?
 result
 
 rm -f ${TAR_IMAGE} > /dev/null 2>&1
 echo "Download a docker tar img file ${TAR_IMAGE_URL}"
 wget --no-check-certificate ${TAR_IMAGE_URL}
-echo "------------------------------------------------------------>"
+echo "|______________________________________________________________________________|"
 
 STRING="T034: udocker load -i ${TAR_IMAGE}"
 udocker load -i ${TAR_IMAGE}; return=$?
@@ -258,7 +259,7 @@ result
 rm -f ${TAR_CONT} > /dev/null 2>&1
 echo "Download a docker tar container file ${TAR_CONT_URL}"
 wget --no-check-certificate ${TAR_CONT_URL}
-echo "------------------------------------------------------------>"
+echo "|______________________________________________________________________________|"
 
 STRING="T039: udocker import ${TAR_CONT} mycentos1:latest"
 udocker import ${TAR_CONT} mycentos1:latest; return=$?
@@ -296,7 +297,7 @@ udocker rm clone_cont
 udocker rm myclone
 udocker rmi mycentos1
 udocker rmi centos:7
-echo "------------------------------------------------------------>"
+echo "|______________________________________________________________________________|"
 
 # Report failed tests
 if [ "${#FAILED_TESTS[*]}" -le 0 ]

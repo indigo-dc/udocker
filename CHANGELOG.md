@@ -1,5 +1,11 @@
 # Changelog
 
+## udocker (1.3.3)
+
+* image list does not truncate long names - solve #349
+* fix conditional warning in verify image
+* fix and improve udocker high level tests
+
 ## udocker (1.3.2)
 
 * fix missing f (format) for string
