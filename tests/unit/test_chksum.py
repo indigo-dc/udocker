@@ -6,6 +6,8 @@ from unittest import TestCase, main
 from unittest.mock import patch, mock_open
 from io import BytesIO as strio
 from udocker.utils.chksum import ChkSUM, LOG
+import collections
+collections.Callable = collections.abc.Callable
 
 class ChkSUMTestCase(TestCase):
     """Test ChkSUM()."""

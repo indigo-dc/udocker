@@ -5,6 +5,8 @@ udocker unit tests: Uenv
 
 from unittest import TestCase, main
 from udocker.utils.uenv import Uenv, LOG
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class UenvTestCase(TestCase):

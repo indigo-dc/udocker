@@ -8,6 +8,8 @@ from unittest import TestCase, main
 from unittest.mock import patch
 from udocker.utils.uprocess import Uprocess, LOG
 from udocker.config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class UprocessTestCase(TestCase):

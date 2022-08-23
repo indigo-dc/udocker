@@ -7,6 +7,8 @@ from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.utils.mountpoint import MountPoint, LOG
 from udocker.config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class MountPointTestCase(TestCase):

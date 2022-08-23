@@ -7,6 +7,8 @@ from unittest import TestCase, main
 from unittest.mock import Mock, patch, mock_open
 from udocker.config import Config
 from udocker.engine.runc import RuncEngine, LOG
+import collections
+collections.Callable = collections.abc.Callable
 
 BUILTINS = "builtins"
 BOPEN = BUILTINS + '.open'

@@ -5,6 +5,8 @@ udocker unit tests: Unique
 
 from unittest import TestCase, main
 from udocker.helper.unique import Unique, LOG
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class UniqueTestCase(TestCase):

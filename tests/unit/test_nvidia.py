@@ -6,6 +6,8 @@ from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.config import Config
 from udocker.engine.nvidia import NvidiaMode, LOG
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class NvidiaModeTestCase(TestCase):

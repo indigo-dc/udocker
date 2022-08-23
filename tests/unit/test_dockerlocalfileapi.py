@@ -7,6 +7,8 @@ from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.docker import DockerLocalFileAPI, LOG
 from udocker.config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class DockerLocalFileAPITestCase(TestCase):

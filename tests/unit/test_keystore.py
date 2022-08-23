@@ -7,6 +7,8 @@ from unittest import TestCase, main
 from unittest.mock import patch, mock_open
 from udocker.helper.keystore import KeyStore, LOG
 from udocker.config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 BUILTINS = "builtins"
 

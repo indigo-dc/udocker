@@ -10,6 +10,8 @@ from unittest.mock import Mock, patch
 from udocker.config import Config
 from udocker.cmdparser import CmdParser
 from udocker.cli import UdockerCLI, LOG
+import collections
+collections.Callable = collections.abc.Callable
 
 BUILTIN = "builtins"
 BOPEN = BUILTIN + '.open'

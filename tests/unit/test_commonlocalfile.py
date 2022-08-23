@@ -6,6 +6,8 @@ udocker unit tests: CommonLocalFileApi
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.commonlocalfile import CommonLocalFileApi, LOG
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class CommonLocalFileApiTestCase(TestCase):

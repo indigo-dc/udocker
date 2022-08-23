@@ -7,7 +7,6 @@ from unittest import TestCase, main
 from unittest.mock import patch, mock_open, call
 from udocker.container.localrepo import LocalRepository, LOG
 from udocker.config import Config
-
 import collections
 collections.Callable = collections.abc.Callable
 

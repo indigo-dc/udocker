@@ -8,6 +8,8 @@ udocker unit tests: Config
 from unittest import TestCase, main
 from unittest.mock import patch
 from udocker.config import Config, LOG
+import collections
+collections.Callable = collections.abc.Callable
 
 BUILTINS = "builtins"
 

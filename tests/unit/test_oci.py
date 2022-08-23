@@ -6,6 +6,8 @@ udocker unit tests: OciLocalFileAPI
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.oci import OciLocalFileAPI, LOG
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class OciLocalFileAPITestCase(TestCase):
@@ -27,7 +29,7 @@ class OciLocalFileAPITestCase(TestCase):
 
     @patch('udocker.oci.FileUtil.isdir')
     @patch('udocker.oci.os.listdir')
-    @patch('udocker.container.localrepo.LocalRepository.load_json',autospec=True)
+    @patch('udocker.container.localrepo.LocalRepository.load_json')
     def test_02__load_structure(self, mock_ljson, mock_oslist, mock_isdir):
         """Test02 OciLocalFileAPI()._load_structure."""
         mock_ljson.side_effect = [[], []]

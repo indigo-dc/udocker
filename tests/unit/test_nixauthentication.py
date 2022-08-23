@@ -10,6 +10,8 @@ from unittest.mock import patch, mock_open
 from io import StringIO
 from udocker.helper.nixauth import NixAuthentication, LOG
 from udocker.config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 BUILTINS = "builtins"
 

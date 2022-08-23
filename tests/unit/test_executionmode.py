@@ -11,6 +11,8 @@ from udocker.engine.runc import RuncEngine
 from udocker.engine.fakechroot import FakechrootEngine
 from udocker.engine.singularity import SingularityEngine
 from udocker.config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class ExecutionModeTestCase(TestCase):

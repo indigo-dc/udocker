@@ -9,6 +9,8 @@ from unittest import TestCase, main
 from unittest.mock import patch
 from io import StringIO
 from udocker.utils.curl import CurlHeader, LOG
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class CurlHeaderTestCase(TestCase):

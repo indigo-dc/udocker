@@ -7,6 +7,8 @@ udocker unit tests: CmdParser
 
 from unittest import TestCase, main
 from udocker.cmdparser import CmdParser
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class CmdParserTestCase(TestCase):
