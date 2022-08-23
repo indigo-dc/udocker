@@ -3,7 +3,7 @@
 ## udocker (1.3.3)
 
 * fix and improve udocker high level tests
-
+* fix conditional warning in verify image
 
 ## udocker (1.3.2)
 
