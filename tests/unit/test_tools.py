@@ -3,9 +3,6 @@
 udocker unit tests: UdockerTools
 """
 
-import sys
-sys.path.append('/home/david/git-repos/indigodc/udocker')
-
 import tarfile
 from tarfile import TarInfo
 from unittest import TestCase, main
