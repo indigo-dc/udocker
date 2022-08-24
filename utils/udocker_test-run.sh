@@ -80,20 +80,26 @@ then
   exit 1
 fi
 
+echo "|______________________________________________________________________________|"
 udocker rm c7
 udocker rm ub18
 udocker rm jv
+
+echo "|______________________________________________________________________________|"
 udocker rmi centos:7
 udocker rmi ubuntu:18.04
 udocker rmi java
 
+echo "|______________________________________________________________________________|"
 udocker pull centos:7; return=$?
 udocker pull ubuntu:18.04; return=$?
-udocker pull java; return=$?
+udocker pull openjdk; return=$?
+
+echo "|______________________________________________________________________________|"
 udocker images; return=$?
 udocker create --name=c7 centos:7; return=$?
 udocker create --name=ub18 ubuntu:18.04; return=$?
-udocker create --name=jv java; return=$?
+udocker create --name=jv openjdk; return=$?
 udocker ps; return=$?
 
 echo "===================="
@@ -101,212 +107,212 @@ echo "* Test udocker run *"
 echo "===================="
 
 echo "===================================== execmode = P1"
-STRING="T006: udocker setup jv"
+STRING="T001: udocker setup jv == execmode = P1"
 udocker setup jv; return=$?
 result
 
-STRING="T007: udocker run jv java -version"
-udocker run jv java -version; return=$?
+STRING="T002: udocker run jv java -version == execmode = P1"
+udocker run --env="LANG=C" jv java -version; return=$?
 result
 
-STRING="T008: udocker setup c7"
+STRING="T003: udocker setup c7 == execmode = P1"
 udocker setup c7; return=$?
 result
 
-STRING="T009: udocker run c7 env|sort"
-udocker run c7 env; return=$?
+STRING="T004: udocker run c7 ls --version == execmode = P1"
+udocker run c7 ls --version; return=$?
 result
 
-STRING="T010: udocker setup ub18"
+STRING="T005: udocker setup ub18 == execmode = P1"
 udocker setup ub18; return=$?
 result
 
-STRING="T011: udocker run ub18 env|sort"
-udocker run ub18 env; return=$?
+STRING="T006: udocker run ub18 ls --version == execmode = P1"
+udocker run ub18 ls --version; return=$?
 result
 
 echo "===================================== execmode = P2"
-STRING="T006: udocker setup --execmode=P2 jv"
+STRING="T007: udocker setup --execmode=P2 jv == execmode = P2"
 udocker setup --execmode=P2 jv; return=$?
 result
 
-STRING="T007: udocker run jv java -version"
-udocker run jv java -version; return=$?
+STRING="T008: udocker run jv java -version == execmode = P2"
+udocker run --env="LANG=C" jv java -version; return=$?
 result
 
-STRING="T012: udocker setup --execmode=P2 c7"
+STRING="T009: udocker setup --execmode=P2 c7 == execmode = P2"
 udocker setup --execmode=P2 c7; return=$?
 result
 
-STRING="T013: udocker run c7 env|sort"
-udocker run c7 env; return=$?
+STRING="T010: udocker run c7 ls --version == execmode = P2"
+udocker run c7 ls --version; return=$?
 result
 
-STRING="T014: udocker setup --execmode=P2 ub18"
+STRING="T011: udocker setup --execmode=P2 ub18 == execmode = P2"
 udocker setup --execmode=P2 ub18; return=$?
 result
 
-STRING="T015: udocker run ub18 env|sort"
-udocker run ub18 env; return=$?
+STRING="T012: udocker run ub18 ls --version == execmode = P2"
+udocker run ub18 ls --version; return=$?
 result
 
 echo "===================================== execmode = F1"
-STRING="T016: udocker setup --execmode=F1 c7"
+STRING="T013: udocker setup --execmode=F1 c7 == execmode = F1"
 udocker setup --execmode=F1 c7; return=$?
 result
 
-STRING="T017: udocker run c7 env|sort"
-udocker run c7 env; return=$?
+STRING="T014: udocker run c7 ls --version == execmode = F1"
+udocker run c7 ls --version; return=$?
 result
 
-STRING="T018: udocker setup --execmode=F1 ub18"
+STRING="T015: udocker setup --execmode=F1 ub18 == execmode = F1"
 udocker setup --execmode=F1 ub18; return=$?
 result
 
-STRING="T019: udocker run ub18 env|sort"
-udocker run ub18 env; return=$?
+STRING="T016: udocker run ub18 ls --version == execmode = F1"
+udocker run ub18 ls --version; return=$?
 result
 
 echo "===================================== execmode = F2"
-STRING="T016: udocker setup --execmode=F2 c7"
+STRING="T017: udocker setup --execmode=F2 c7 == execmode = F2"
 udocker setup --execmode=F2 c7; return=$?
 result
 
-STRING="T017: udocker run c7 env|sort"
-udocker run c7 env; return=$?
+STRING="T018: udocker run c7 ls --version == execmode = F2"
+udocker run c7 ls --version; return=$?
 result
 
-STRING="T018: udocker setup --execmode=F2 ub18"
+STRING="T019: udocker setup --execmode=F2 ub18 == execmode = F2"
 udocker setup --execmode=F2 ub18; return=$?
 result
 
-STRING="T019: udocker run ub18 env|sort"
-udocker run ub18 env; return=$?
+STRING="T020: udocker run ub18 ls --version == execmode = F2"
+udocker run ub18 ls --version; return=$?
 result
 
 echo "===================================== execmode = F3"
-STRING="T006: udocker setup --execmode=F3 jv"
+STRING="T021: udocker setup --execmode=F3 jv == execmode = F3"
 udocker setup --execmode=F3 jv; return=$?
 result
 
-STRING="T007: udocker run jv java -version"
+STRING="T022: udocker run jv java -version == execmode = F3"
 udocker run --env="LANG=C" jv java -version; return=$?
 result
 
-STRING="T016: udocker setup --execmode=F3 c7"
+STRING="T023: udocker setup --execmode=F3 c7 == execmode = F3"
 udocker setup --execmode=F3 c7; return=$?
 result
 
-STRING="T017: udocker run c7 env|sort"
-udocker run c7 env; return=$?
+STRING="T024: udocker run c7 ls --version == execmode = F3"
+udocker run c7 ls --version; return=$?
 result
 
-STRING="T018: udocker setup --execmode=F3 ub18"
+STRING="T025: udocker setup --execmode=F3 ub18 == execmode = F3"
 udocker setup --execmode=F3 ub18; return=$?
 result
 
-STRING="T019: udocker run ub18 env|sort"
-udocker run ub18 env; return=$?
+STRING="T026: udocker run ub18 ls --version == execmode = F3"
+udocker run ub18 ls --version; return=$?
 result
 
 echo "===================================== execmode = F4"
-STRING="T006: udocker setup --execmode=F4 jv"
+STRING="T027: udocker setup --execmode=F4 jv == execmode = F4"
 udocker setup --execmode=F4 jv; return=$?
 result
 
-STRING="T007: udocker run jv java -version"
+STRING="T028: udocker run jv java -version == execmode = F4"
 udocker run --env="LANG=C" jv java -version; return=$?
 result
 
-STRING="T016: udocker setup --execmode=F4 c7"
+STRING="T029: udocker setup --execmode=F4 c7 == execmode = F4"
 udocker setup --execmode=F4 c7; return=$?
 result
 
-STRING="T017: udocker run c7 env|sort"
-udocker run c7 env; return=$?
+STRING="T030: udocker run c7 ls --version == execmode = F4"
+udocker run c7 ls --version; return=$?
 result
 
-STRING="T018: udocker setup --execmode=F4 ub18"
+STRING="T031: udocker setup --execmode=F4 ub18 == execmode = F4"
 udocker setup --execmode=F4 ub18; return=$?
 result
 
-STRING="T019: udocker run ub18 env|sort"
-udocker run ub18 env; return=$?
+STRING="T032: udocker run ub18 ls --version == execmode = F4"
+udocker run ub18 ls --version; return=$?
 result
 
 echo "===================================== execmode = R1"
-STRING="T006: udocker setup --execmode=R1 jv"
+STRING="T033: udocker setup --execmode=R1 jv == execmode = R1"
 udocker setup --execmode=R1 jv; return=$?
 result
 
-STRING="T007: udocker run jv java -version"
-udocker run jv java -version; return=$?
+STRING="T034: udocker run jv java -version == execmode = R1"
+udocker run --env="LANG=C" jv java -version; return=$?
 result
 
-STRING="T020: udocker setup --execmode=R1 c7"
+STRING="T035: udocker setup --execmode=R1 c7 == execmode = R1"
 udocker setup --execmode=R1 c7; return=$?
 result
 
-STRING="T021: udocker run c7 env|sort"
-udocker run c7 env; return=$?
+STRING="T036: udocker run c7 ls --version == execmode = R1"
+udocker run c7 ls --version; return=$?
 result
 
-STRING="T022: udocker setup --execmode=R1 ub18"
+STRING="T037: udocker setup --execmode=R1 ub18 == execmode = R1"
 udocker setup --execmode=R1 ub18; return=$?
 result
 
-STRING="T023: udocker run ub18 env|sort"
-udocker run ub18 env; return=$?
+STRING="T038: udocker run ub18 ls --version == execmode = R1"
+udocker run ub18 ls --version; return=$?
 result
 
 echo "===================================== execmode = R2"
-STRING="T006: udocker setup --execmode=R2 jv"
+STRING="T039: udocker setup --execmode=R2 jv == execmode = R2"
 udocker setup --execmode=R2 jv; return=$?
 result
 
-STRING="T007: udocker run jv java -version"
-udocker run jv java -version; return=$?
+STRING="T040: udocker run jv java -version == execmode = R2"
+udocker run --env="LANG=C" jv java -version; return=$?
 result
 
-STRING="T024: udocker setup --execmode=R2 c7"
+STRING="T041: udocker setup --execmode=R2 c7 == execmode = R2"
 udocker setup --execmode=R2 c7; return=$?
 result
 
-STRING="T025: udocker run c7 env|sort"
-udocker run c7 env; return=$?
+STRING="T042: udocker run c7 ls --version == execmode = R2"
+udocker run c7 ls --version; return=$?
 result
 
-STRING="T026: udocker setup --execmode=R2 ub18"
+STRING="T043: udocker setup --execmode=R2 ub18 == execmode = R2"
 udocker setup --execmode=R2 ub18; return=$?
 result
 
-STRING="T027: udocker run ub18 env|sort"
-udocker run ub18 env; return=$?
+STRING="T044: udocker run ub18 ls --version == execmode = R2"
+udocker run ub18 ls --version; return=$?
 result
 
 echo "===================================== execmode = R3"
-STRING="T006: udocker setup --execmode=R3 jv"
+STRING="T045: udocker setup --execmode=R3 jv == execmode = R3"
 udocker setup --execmode=R3 jv; return=$?
 result
 
-STRING="T007: udocker run jv java -version"
-udocker run jv java -version; return=$?
+STRING="T046: udocker run jv java -version == execmode = R3"
+udocker run --env="LANG=C" jv java -version; return=$?
 result
 
-STRING="T028: udocker setup --execmode=R3 c7"
+STRING="T047: udocker setup --execmode=R3 c7 == execmode = R3"
 udocker setup --execmode=R3 c7; return=$?
 result
 
-STRING="T029: udocker run c7 env|sort"
-udocker run c7 env; return=$?
+STRING="T048: udocker run c7 ls --version == execmode = R3"
+udocker run c7 ls --version; return=$?
 result
 
-STRING="T030: udocker setup --execmode=R3 ub18"
+STRING="T049: udocker setup --execmode=R3 ub18 == execmode = R3"
 udocker setup --execmode=R3 ub18; return=$?
 result
 
-STRING="T031: udocker run ub18 env|sort"
-udocker run ub18 env; return=$?
+STRING="T050: udocker run ub18 ls --version == execmode = R3"
+udocker run ub18 ls --version; return=$?
 result
 
 # Report failed tests
