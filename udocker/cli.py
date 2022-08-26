@@ -1240,6 +1240,25 @@ class UdockerCLI:
 
         return self.STATUS_ERROR
 
+    def do_showconf(self, cmdp):
+        """
+        showconf: Print all configuration options
+        """
+        cmdp.get("showconf", "CMD")
+        if cmdp.missing_options():  # syntax error
+            return self.STATUS_ERROR
+
+        MSG.info(80*"_")
+        MSG.info("\t\tConfiguration options")
+        for (var, value) in Config.conf.items():
+            msgout = f'{var} = {value}'
+            MSG.info(msgout)
+
+        MSG.info(80*"_")
+        return self.STATUS_OK
+
+############ Here are the new commands of the CLI
+
     def do_install2(self, cmdp):
         """
         install2: install modules
@@ -1266,34 +1285,16 @@ class UdockerCLI:
 
         return self.STATUS_ERROR
 
-    def do_showconf(self, cmdp):
-        """
-        showconf: Print all configuration options
-        """
-        cmdp.get("showconf", "CMD")
-        if cmdp.missing_options():  # syntax error
-            return self.STATUS_ERROR
-
-        MSG.info(80*"_")
-        MSG.info("\t\tConfiguration options")
-        for (var, value) in Config.conf.items():
-            msgout = f'{var} = {value}'
-            MSG.info(msgout)
-
-        MSG.info(80*"_")
-        return self.STATUS_OK
-
-    def do_showinst(self, cmdp):
+    def do_showmod(self, cmdp):
         """
         showinst: Show installed modules and versions
         """
-        cmdp.get("avail", "CMD")
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
         return self.STATUS_OK
 
-    def do_avail(self, cmdp):
+    def do_availmod(self, cmdp):
         """
         avail: Show available modules and versions
         """
@@ -1309,7 +1310,7 @@ class UdockerCLI:
         utools.show_metadata(force)
         return self.STATUS_OK
 
-    def do_download(self, cmdp):
+    def do_downloadmod(self, cmdp):
         """
         download: download modules
         download [options] uid_module1 uid_module2
@@ -1333,17 +1334,31 @@ class UdockerCLI:
         ## Download that list
         return self.STATUS_OK
 
+    def do_upgrademod(self, cmdp):
+        """
+        upgrademod: Upgrade modules
+        """
+        return self.STATUS_OK
+
     def do_verifymod(self, cmdp):
         """
         verifymod: Verify modules, checksums
         """
         return self.STATUS_OK
 
-    def do_delete_metadata(self, cmdp):
+    def do_deletemod(self, cmdp):
         """
-        delete_metadata: Delete metadata.json
+        deletemod: Delete modules
         """
         return self.STATUS_OK
+
+    def do_deletemeta(self, cmdp):
+        """
+        deletemeta: Delete metadata.json
+        """
+        return self.STATUS_OK
+
+################################ END new commands
 
     def do_version(self, cmdp):
         """
