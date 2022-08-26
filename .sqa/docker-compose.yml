@@ -29,7 +29,7 @@ services:
     working_dir: /sqaaas-build
   qc.met_jumpy-burgundy-fossa:
     build:
-      context: ./github.com/EOSC-synergy/sqaaas-tooling/Qc.Met/checkCitable
+      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Met/checkCitable
       dockerfile: Dockerfile
     command: sleep 6000000
     volumes:
