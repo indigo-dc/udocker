@@ -1285,15 +1285,6 @@ class UdockerCLI:
 
         return self.STATUS_ERROR
 
-    def do_showmod(self, cmdp):
-        """
-        showinst: Show installed modules and versions
-        """
-        if cmdp.missing_options():  # syntax error
-            return self.STATUS_ERROR
-
-        return self.STATUS_OK
-
     def do_availmod(self, cmdp):
         """
         avail: Show available modules and versions
@@ -1308,6 +1299,18 @@ class UdockerCLI:
 
         utools = UdockerTools(self.localrepo)
         utools.show_metadata(force)
+        return self.STATUS_OK
+
+    def do_deletemeta(self, cmdp):
+        """
+        deletemeta: Delete metadata.json
+        """
+        return self.STATUS_OK
+
+    def do_deletemod(self, cmdp):
+        """
+        deletemod: Delete modules
+        """
         return self.STATUS_OK
 
     def do_downloadmod(self, cmdp):
@@ -1334,6 +1337,15 @@ class UdockerCLI:
         ## Download that list
         return self.STATUS_OK
 
+    def do_showmod(self, cmdp):
+        """
+        showinst: Show installed modules and versions
+        """
+        if cmdp.missing_options():  # syntax error
+            return self.STATUS_ERROR
+
+        return self.STATUS_OK
+
     def do_upgrademod(self, cmdp):
         """
         upgrademod: Upgrade modules
@@ -1346,17 +1358,6 @@ class UdockerCLI:
         """
         return self.STATUS_OK
 
-    def do_deletemod(self, cmdp):
-        """
-        deletemod: Delete modules
-        """
-        return self.STATUS_OK
-
-    def do_deletemeta(self, cmdp):
-        """
-        deletemeta: Delete metadata.json
-        """
-        return self.STATUS_OK
 
 ################################ END new commands
 
