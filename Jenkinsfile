@@ -1,29 +1,19 @@
-@Library(['github.com/indigo-dc/jenkins-pipeline-library@release/2.1.0']) _
+@Library(['github.com/indigo-dc/jenkins-pipeline-library@2.1.1']) _
 
 def projectConfig
 
 pipeline {
-    agent { label 'udocker' }
-
-    options {
-        lock('udocker')
-        throttle(['StandaloneByNode'])
-    }
+    agent any
 
     stages {
-        stage('SQA baseline dynamic stages') {
-            when {
-              anyOf {
-                branch 'master'
-                branch 'dev*'
-                buildingTag()
-                changeRequest target: 'master'
-                changeRequest target: 'dev-v1.4'
-              }
-            }
+        stage('SQA baseline criterion: QC.Acc & QC.Doc & QC.Lic & QC.Met & QC.Sec & QC.Sty & QC.Uni & QC.Ver') {
             steps {
                 script {
-                    projectConfig = pipelineConfig()
+                    projectConfig = pipelineConfig(
+                        configFile: '.sqa/config.yml',
+                        scmConfigs: [ localBranch: true ],
+                        validatorDockerImage: 'eoscsynergy/jpl-validator:2.4.0'
+                    )
                     buildStages(projectConfig)
                 }
             }
