@@ -1,5 +1,9 @@
 # Changelog
 
+## udocker (1.3.4)
+
+* fix 2 unit tests
+
 ## udocker (1.3.3)
 
 * image list does not truncate long names - solve #349
