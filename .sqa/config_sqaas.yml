@@ -12,51 +12,51 @@ sqa_criteria:
       this_repo:
         commands:
         - git rev-parse --is-inside-work-tree
-        container: qc.acc_udocker
+        container: qc.acc_lumpy-orange-bird
   QC.Doc:
     repos:
       this_repo:
         commands:
         - mdl .
-        container: qc.doc_udocker
+        container: qc.doc_freaky-lemon-crab
   QC.Lic:
     repos:
       this_repo:
         commands:
         - licensee detect . --json
-        container: qc.lic_udocker
+        container: qc.lic_gimpy-cornflower-iguana
   QC.Met:
     repos:
       this_repo:
         commands:
         - checkCitable
-        container: qc.met01_udocker
+        container: qc.met_jumpy-burgundy-fossa
       this_repo__2:
         commands:
         - cat codemeta.json
-        container: qc.met02_udocker
+        container: qc.met_snippy-apricot-worm
   QC.Sec:
     repos:
       this_repo:
         commands:
-        - bandit -f html -o bandit.html udocker
-        container: qc.sec_udocker
+        - bandit -f json --quiet  --confidence-level medium --recursive .
+        container: qc.sec_shaggy-russet-budgerigar
   QC.Sty:
     repos:
       this_repo:
         commands:
-        - pylint --rcfile=pylintrc udocker
-        container: qc.sty_udocker
+        - tox -c tox.ini -e pylint
+        container: qc.sty_wimpy-eggplant-wrasse
   QC.Uni:
     repos:
       this_repo:
         commands:
-        - nosetests -v --with-xcoverage --cover-package=udocker tests/unit/
-        container: qc.uni_udocker
+        - tox -c tox.ini -e unit_tests
+        container: qc.uni_beady-copper-capuchin
   QC.Ver:
     repos:
       this_repo:
         commands:
         - get_git_tags.py
-        container: qc.ver_udocker
+        container: qc.ver_jumpy-azure-fousek
 timeout: 1800

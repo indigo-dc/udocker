@@ -1,70 +1,80 @@
 services:
-  qc.acc_udocker:
-    image: udockercicd
+  qc.acc_lumpy-orange-bird:
+    command: sleep 6000000
+    image: bitnami/git:2.34.1
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+  qc.doc_freaky-lemon-crab:
+    build:
+      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Doc/markdownlint
+      dockerfile: Dockerfile
     command: sleep 6000000
     volumes:
     - source: ./
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
-  qc.doc_udocker:
-    image: udockercicd
+  qc.lic_gimpy-cornflower-iguana:
+    build:
+      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Lic/licensee
+      dockerfile: Dockerfile
     command: sleep 6000000
     volumes:
     - source: ./
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
-  qc.lic_udocker:
-    image: udockercicd
+  qc.met_jumpy-burgundy-fossa:
+    build:
+      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Met/checkCitable
+      dockerfile: Dockerfile
     command: sleep 6000000
     volumes:
     - source: ./
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
-  qc.met01_udocker:
-    image: udockercicd
+  qc.met_snippy-apricot-worm:
+    command: sleep 6000000
+    image: alpine:3.15.0
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+  qc.sec_shaggy-russet-budgerigar:
+    build:
+      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Sec/bandit
+      dockerfile: Dockerfile
     command: sleep 6000000
     volumes:
     - source: ./
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
-  qc.met02_udocker:
-    image: udockercicd
+  qc.sty_wimpy-eggplant-wrasse:
     command: sleep 6000000
+    image: painless/tox@sha256:4f31b329507f9ab658e3c36c5252ad063cabe3d978d6836e0ba322ccb79af060
     volumes:
     - source: ./
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
-  qc.sec_udocker:
-    image: udockercicd
+  qc.uni_beady-copper-capuchin:
     command: sleep 6000000
+    image: painless/tox@sha256:4f31b329507f9ab658e3c36c5252ad063cabe3d978d6836e0ba322ccb79af060
     volumes:
     - source: ./
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
-  qc.sty_udocker:
-    image: udockercicd
-    command: sleep 6000000
-    volumes:
-    - source: ./
-      target: /sqaaas-build
-      type: bind
-    working_dir: /sqaaas-build
-  qc.uni_udocker:
-    image: udockercicd
-    command: sleep 6000000
-    volumes:
-    - source: ./
-      target: /sqaaas-build
-      type: bind
-    working_dir: /sqaaas-build
-  qc.ver_udocker:
-    image: udockercicd
+  qc.ver_jumpy-azure-fousek:
+    build:
+      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Ver
+      dockerfile: Dockerfile
     command: sleep 6000000
     volumes:
     - source: ./
