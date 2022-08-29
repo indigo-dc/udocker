@@ -51,7 +51,7 @@ sqa_criteria:
     repos:
       this_repo:
         commands:
-        - nosetests -v --with-xcoverage --cover-package=udocker tests/unit/
+        - nosetests -v --with-xcoverage --cover-package=udocker tests/unit/test*.py
         container: qc.uni_udocker
   QC.Ver:
     repos:
