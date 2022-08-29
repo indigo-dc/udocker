@@ -20,7 +20,8 @@ Run CI/CD test of the pipeline:
 docker-compose -f .sqa/docker-compose.yml --project-directory . exec qc.acc_udocker \
     git config --global --add safe.directory /sqaaas-build;  git rev-parse --is-inside-work-tree
 
-docker-compose -f .sqa/docker-compose.yml --project-directory . exec qc.doc_udocker mdl .
+docker-compose -f .sqa/docker-compose.yml --project-directory . exec qc.doc_udocker \
+    mdl -r ~MD013,~MD029 .
 
 docker-compose -f .sqa/docker-compose.yml --project-directory . exec qc.lic_udocker \
     licensee detect .

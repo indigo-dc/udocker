@@ -1,6 +1,6 @@
 services:
   qc.acc_udocker:
-    image: udockercicd
+    image: indigodatacloud/udockercicd:1.0
     command: sleep 6000000
     volumes:
     - source: ./
@@ -8,7 +8,7 @@ services:
       type: bind
     working_dir: /sqaaas-build
   qc.doc_udocker:
-    image: udockercicd
+    image: indigodatacloud/udockercicd:1.0
     command: sleep 6000000
     volumes:
     - source: ./
@@ -16,7 +16,7 @@ services:
       type: bind
     working_dir: /sqaaas-build
   qc.lic_udocker:
-    image: udockercicd
+    image: indigodatacloud/udockercicd:1.0
     command: sleep 6000000
     volumes:
     - source: ./
@@ -24,7 +24,7 @@ services:
       type: bind
     working_dir: /sqaaas-build
   qc.met01_udocker:
-    image: udockercicd
+    image: indigodatacloud/udockercicd:1.0
     command: sleep 6000000
     volumes:
     - source: ./
@@ -32,7 +32,7 @@ services:
       type: bind
     working_dir: /sqaaas-build
   qc.met02_udocker:
-    image: udockercicd
+    image: indigodatacloud/udockercicd:1.0
     command: sleep 6000000
     volumes:
     - source: ./
@@ -40,7 +40,7 @@ services:
       type: bind
     working_dir: /sqaaas-build
   qc.sec_udocker:
-    image: udockercicd
+    image: indigodatacloud/udockercicd:1.0
     command: sleep 6000000
     volumes:
     - source: ./
@@ -48,7 +48,7 @@ services:
       type: bind
     working_dir: /sqaaas-build
   qc.sty_udocker:
-    image: udockercicd
+    image: indigodatacloud/udockercicd:1.0
     command: sleep 6000000
     volumes:
     - source: ./
@@ -56,7 +56,7 @@ services:
       type: bind
     working_dir: /sqaaas-build
   qc.uni_udocker:
-    image: udockercicd
+    image: indigodatacloud/udockercicd:1.0
     command: sleep 6000000
     volumes:
     - source: ./
@@ -64,7 +64,7 @@ services:
       type: bind
     working_dir: /sqaaas-build
   qc.ver_udocker:
-    image: udockercicd
+    image: indigodatacloud/udockercicd:1.0
     command: sleep 6000000
     volumes:
     - source: ./
