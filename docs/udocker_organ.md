@@ -19,8 +19,6 @@ dir = .
   * class DockerIoAPI(object):
   * class DockerLocalFileAPI(object):
 
-
-
 ## Directory utils
 
 dir = utils/

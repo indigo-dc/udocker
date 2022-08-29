@@ -62,7 +62,7 @@ To install the latest stable code from the github `master` branch:
 
 ```bash
 git clone --depth=1 https://github.com/indigo-dc/udocker.git
-(cd udocker/udocker; ln -s maincmd.py udocker)  
+(cd udocker/udocker; ln -s maincmd.py udocker)
 export PATH=`pwd`/udocker/udocker:$PATH
 ```
 
@@ -70,7 +70,7 @@ Alternatively, install the latest development code from the github `devel3` bran
 
 ```bash
 git clone -b devel3 --depth=1 https://github.com/indigo-dc/udocker.git
-(cd udocker/udocker; ln -s maincmd.py udocker)  
+(cd udocker/udocker; ln -s maincmd.py udocker)
 export PATH=`pwd`/udocker/udocker:$PATH
 ```
 
@@ -176,7 +176,7 @@ With the default configuration, udocker creates files and subdirectories under
 * `containers`: created containers.
 * `keystore.github`: authentication to access repositories (created on demand).
 
-Both installed files, as well as the containers to be downloaded or created  
+Both installed files, as well as the containers to be downloaded or created
 with udocker, will be installed by default under `$HOME/.udocker`.
 
 A default configuration file is available at
@@ -275,7 +275,6 @@ The **P** modes need a modified PRoot that includes fixes and enhancements to wo
 udocker. The **R** modes use the original runc and crun software with small changes for
 static compilation. The following table highlights the repositories used by udocker
 containing the modified source code and the original repositories.
-
 
 | Mode  | Engine           | Repository used by udocker                                 | Original repository
 |-------|:-----------------|:-----------------------------------------------------------|:-----------------------------------------
@@ -578,18 +577,18 @@ trees in the `containers` subdirectory.
 
 ## 9. Quality assurance
 
-The udocker software quality assurance follows the Common Software 
-Quality Assurance Baseline Criteria for Research Projects 
+The udocker software quality assurance follows the Common Software
+Quality Assurance Baseline Criteria for Research Projects
 DOI: <http://hdl.handle.net/10261/160086.> available at
 <https://indigo-dc.github.io/sqa-baseline/>.
 
-udocker uses the Jenkins Pipeline Library 
+udocker uses the Jenkins Pipeline Library
 <https://github.com/indigo-dc/jenkins-pipeline-library>
 to implement Jenkins CI/CD pipelines for quality assurance.
 
 ### 9.1. Functional and integration tests
 
-High level functional and integration tests used for quality assurance are available 
+High level functional and integration tests used for quality assurance are available
 in <https://github.com/indigo-dc/udocker/tree/master/utils>.
 These tests are also suitable to be executed by end-users to verify the installation.
 After cloning the udocker repository with `git` the `bash` scripts
@@ -610,6 +609,7 @@ a clean environment. In this case proceed as follows:
 4. restore the original `.udocker` directory as in `mv $HOME/.udocker.ORIG $HOME/.udocker`
 
 ### 9.2. Unit and security tests
+
 The unit tests used in the software quality assurance pipelines are available at
 <https://github.com/indigo-dc/udocker/tree/master/tests/unit>.
 The tests can be executed after creating a virtualenv and installing the development
@@ -637,4 +637,3 @@ Other tests configured in `tox.ini`, can be executed as well, such as linting
 pylint --rcfile=pylintrc --disable=R,C udocker
 bandit -r udocker -f html -o bandit.html
 ```
-

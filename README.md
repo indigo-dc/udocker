@@ -1,3 +1,5 @@
+# ___________________________________________________
+
 [![PyPI version](https://badge.fury.io/py/udocker.svg)](https://badge.fury.io/py/udocker)
 [![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc%2Fudocker%2Fmaster)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/master/)
 
@@ -86,7 +88,7 @@ v1.1.x for Python 2 only is still available [here](https://github.com/indigo-dc/
           ps -m -s                      :List created containers
           name <container_id> <name>    :Give name to container
           rmname <name>                 :Delete name from container
-          rename <name> <new_name>      :Change container name 
+          rename <name> <new_name>      :Change container name
           clone <container_id>          :Duplicate container
           rm <container-id>             :Delete container
           rmi <repo/image:tag>          :Delete image
@@ -365,9 +367,9 @@ See: [Citing](CITING.md)
 When citing udocker please use the following:
 
 * Jorge Gomes, Emanuele Bagnaschi, Isabel Campos, Mario David, Luís Alves, João Martins, João Pina,
-Alvaro López-García, Pablo Orviz, Enabling rootless Linux Containers in multi-user environments:
-The udocker tool, Computer Physics Communications, Available online 6 June 2018, ISSN 0010-4655,
-<https://doi.org/10.1016/j.cpc.2018.05.021>
+  Alvaro López-García, Pablo Orviz, Enabling rootless Linux Containers in multi-user environments:
+  The udocker tool, Computer Physics Communications, Available online 6 June 2018, ISSN 0010-4655,
+  <https://doi.org/10.1016/j.cpc.2018.05.021>
 
 ## Licensing
 
@@ -393,7 +395,6 @@ of the installation manual.
 * EOSC-Synergy <https://www.eosc-synergy.eu/>
 * LIP [https://www.lip.pt](https://www.lip.pt/?section=home&page=homepage&lang=en)
 * INCD [https://www.incd.pt](https://www.incd.pt/?lang=en)
-
 
 This work was performed in the framework of the H2020 project INDIGO-Datacloud (RIA 653549) and
 further developed with co-funding by the projects EOSC-hub (Horizon 2020) under Grant number 777536

@@ -17,7 +17,7 @@ sqa_criteria:
     repos:
       this_repo:
         commands:
-        - mdl .
+        - mdl -r ~MD013,~MD029.
         container: qc.doc_udocker
   QC.Lic:
     repos:
