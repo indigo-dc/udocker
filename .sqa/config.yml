@@ -29,7 +29,7 @@ sqa_criteria:
     repos:
       this_repo:
         commands:
-        - checkCitable
+        - python /usr/bin/checkCitable.py https://github.com/indigo-dc/udocker
         container: qc.met01_udocker
       this_repo__2:
         commands:
@@ -57,6 +57,6 @@ sqa_criteria:
     repos:
       this_repo:
         commands:
-        - get_git_tags.py
+        - python /usr/bin/get_git_tags.py --repo-path .
         container: qc.ver_udocker
 timeout: 1800
