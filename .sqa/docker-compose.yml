@@ -7,6 +7,8 @@ services:
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
+    environment:
+    - LOCAL_UID=$(id -u $USER)
   qc.doc_udocker:
     image: indigodatacloud/udockercicd:1.0
     command: sleep 6000000
