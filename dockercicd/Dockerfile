@@ -40,4 +40,5 @@ RUN gem install mdl licensee
 
 COPY checkCitable.py /usr/bin/checkCitable.py
 COPY get_git_tags.py /usr/bin/get_git_tags.py
-RUN chmod +x /usr/bin/get_git_tags.py /usr/bin/checkCitable.py
+RUN chmod +x /usr/bin/get_git_tags.py /usr/bin/checkCitable.py && \
+    git config --global --add safe.directory /sqaaas-build
