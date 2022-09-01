@@ -42,4 +42,5 @@ COPY checkCitable.py /usr/bin/checkCitable.py
 COPY get_git_tags.py /usr/bin/get_git_tags.py
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh /usr/bin/get_git_tags.py /usr/bin/checkCitable.py
-ENTRYPOINT ["/entrypoint.sh"]
+
+#ENTRYPOINT ["/entrypoint.sh"]
