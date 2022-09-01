@@ -1,0 +1,9 @@
+FROM bitnami/git
+LABEL maintainer='Mario David <mariojmdavid@gmail.com>'
+
+
+ARG UID
+ARG GID
+ARG UNAME
+RUN groupadd -g ${GID} -o ${UNAME}
+RUN useradd -m -u ${UID} -g ${GID} -o -s /bin/bash ${UNAME}

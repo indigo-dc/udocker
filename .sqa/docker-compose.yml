@@ -1,73 +1,12 @@
 services:
   qc.acc_udocker:
-    image: indigodatacloud/udockercicd:1.1
-    command: sleep 6000000
-    volumes:
-    - source: ./
-      target: /sqaaas-build
-      type: bind
-    working_dir: /sqaaas-build
-    environment:
-    - LOCAL_UID=$UID
-    - LOCAL_GID=$GID
-  qc.doc_udocker:
-    image: indigodatacloud/udockercicd:1.1
-    command: sleep 6000000
-    volumes:
-    - source: ./
-      target: /sqaaas-build
-      type: bind
-    working_dir: /sqaaas-build
-  qc.lic_udocker:
-    image: indigodatacloud/udockercicd:1.1
-    command: sleep 6000000
-    volumes:
-    - source: ./
-      target: /sqaaas-build
-      type: bind
-    working_dir: /sqaaas-build
-  qc.met01_udocker:
-    image: indigodatacloud/udockercicd:1.1
-    command: sleep 6000000
-    volumes:
-    - source: ./
-      target: /sqaaas-build
-      type: bind
-    working_dir: /sqaaas-build
-  qc.met02_udocker:
-    image: indigodatacloud/udockercicd:1.1
-    command: sleep 6000000
-    volumes:
-    - source: ./
-      target: /sqaaas-build
-      type: bind
-    working_dir: /sqaaas-build
-  qc.sec_udocker:
-    image: indigodatacloud/udockercicd:1.1
-    command: sleep 6000000
-    volumes:
-    - source: ./
-      target: /sqaaas-build
-      type: bind
-    working_dir: /sqaaas-build
-  qc.sty_udocker:
-    image: indigodatacloud/udockercicd:1.1
-    command: sleep 6000000
-    volumes:
-    - source: ./
-      target: /sqaaas-build
-      type: bind
-    working_dir: /sqaaas-build
-  qc.uni_udocker:
-    image: indigodatacloud/udockercicd:1.1
-    command: sleep 6000000
-    volumes:
-    - source: ./
-      target: /sqaaas-build
-      type: bind
-    working_dir: /sqaaas-build
-  qc.ver_udocker:
-    image: indigodatacloud/udockercicd:1.1
+    build:
+      context: ./dockercicd
+      dockerfile: Dockerfile_git
+      args:
+        UID: "$(id -u)"
+        GID: "$(id -g)"
+        UNAME: jenkis
     command: sleep 6000000
     volumes:
     - source: ./
