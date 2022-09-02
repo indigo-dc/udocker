@@ -4,27 +4,33 @@ config:
     github.com/EOSC-synergy/sqaaas-tooling:
       branch: 1.7.0_no_kubectl
       repo: https://github.com/EOSC-synergy/sqaaas-tooling
+
 environment:
   JPL_DOCKERFORCEBUILD: enabled
+
 sqa_criteria:
+
   QC.Acc:
     repos:
       this_repo:
         commands:
         - git rev-parse --is-inside-work-tree
         container: qc.acc_udocker
+
   QC.Doc:
     repos:
       this_repo:
         commands:
         - mdl -r ~MD013,~MD029 .
         container: qc.doc_udocker
+
   QC.Lic:
     repos:
       this_repo:
         commands:
         - licensee detect . --json
         container: qc.lic_udocker
+
   # QC.Met:
   #   repos:
   #     this_repo:
@@ -35,28 +41,33 @@ sqa_criteria:
   #       commands:
   #       - cat codemeta.json
   #       container: qc.met02_udocker
+
   QC.Sec:
     repos:
       this_repo:
         commands:
         - bandit -f html -o bandit.html -r udocker
         container: qc.sec_udocker
+
   QC.Sty:
     repos:
       this_repo:
         commands:
         - pylint --rcfile=pylintrc udocker
         container: qc.sty_udocker
+
   QC.Uni:
     repos:
       this_repo:
         commands:
         - nosetests -v --with-xcoverage --cover-package=udocker tests/unit/test*.py
         container: qc.uni_udocker
-  QC.Ver:
-    repos:
-      this_repo:
-        commands:
-        - python /usr/bin/get_git_tags.py --repo-path .
-        container: qc.ver_udocker
+
+  # QC.Ver:
+  #   repos:
+  #     this_repo:
+  #       commands:
+  #       - python /usr/bin/get_git_tags.py --repo-path .
+  #       container: qc.ver_udocker
+
 timeout: 1800
