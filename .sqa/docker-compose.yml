@@ -1,16 +1,19 @@
 services:
   qc.acc_udocker:
+    # image: bitnami/git
     build:
       context: ./dockercicd
       dockerfile: Dockerfile_git
-      args:
-        UID: "$(id -u)"
-        GID: "$(id -g)"
-        UNAME: jenkis
     command: sleep 6000000
     volumes:
     - source: ./
       target: /sqaaas-build
       type: bind
+    # - source: /etc/passwd
+    #   target: /etc/passwd
+    #   type: bind
+    # - source: /etc/group
+    #   target: /etc/group
+    #   type: bind
     working_dir: /sqaaas-build
 version: '3.7'
