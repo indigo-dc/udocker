@@ -1,0 +1,7 @@
+FROM python:3
+LABEL maintainer='Mario David <mariojmdavid@gmail.com>'
+
+COPY get_git_tags.py /usr/bin
+RUN chmod +x /usr/bin/get_git_tags.py && \
+    pip install GitPython && \
+    git config --global --add safe.directory '*'

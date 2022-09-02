@@ -63,4 +63,15 @@ services:
       type: bind
     working_dir: /sqaaas-build
 
+  qc.ver_udocker:
+    build:
+      context: ./dockercicd
+      dockerfile: Dockerfile_gittags
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
 version: '3.7'
