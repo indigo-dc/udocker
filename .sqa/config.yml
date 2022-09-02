@@ -25,21 +25,21 @@ sqa_criteria:
         commands:
         - licensee detect . --json
         container: qc.lic_udocker
-  QC.Met:
-    repos:
-      this_repo:
-        commands:
-        - python /usr/bin/checkCitable.py https://github.com/indigo-dc/udocker
-        container: qc.met01_udocker
-      this_repo__2:
-        commands:
-        - cat codemeta.json
-        container: qc.met02_udocker
+  # QC.Met:
+  #   repos:
+  #     this_repo:
+  #       commands:
+  #       - python /usr/bin/checkCitable.py https://github.com/indigo-dc/udocker
+  #       container: qc.met01_udocker
+  #     this_repo__2:
+  #       commands:
+  #       - cat codemeta.json
+  #       container: qc.met02_udocker
   QC.Sec:
     repos:
       this_repo:
         commands:
-        - bandit -f html -o bandit.html udocker
+        - bandit -f html -o bandit.html -r udocker
         container: qc.sec_udocker
   QC.Sty:
     repos:

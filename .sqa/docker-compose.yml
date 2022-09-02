@@ -24,12 +24,22 @@ services:
     build:
       context: ./dockercicd
       dockerfile: Dockerfile_licensee
-    # image: lic_test
     command: sleep 6000000
     user: "1000:1000"
     volumes:
     - source: ./
       target: /sqaaas-build/
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.sec_udocker:
+    build:
+      context: ./dockercicd
+      dockerfile: Dockerfile_bandit
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
 
