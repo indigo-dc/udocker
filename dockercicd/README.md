@@ -24,7 +24,7 @@ docker-compose -f .sqa/docker-compose.yml --project-directory . exec qc.doc_udoc
     mdl -r ~MD013,~MD029 .
 
 docker-compose -f .sqa/docker-compose.yml --project-directory . exec qc.lic_udocker \
-    licensee detect .
+    licensee detect --json .
 
 docker-compose -f .sqa/docker-compose.yml --project-directory . exec qc.met01_udocker \
     python /usr/bin/checkCitable.py https://github.com/indigo-dc/udocker
