@@ -80,8 +80,9 @@ extracted directory trees are placed by default under `$HOME/.udocker`.
 
 ## Python 2 and Python 3
 
-Since v1.3.0 (or the development v1.2.x), udocker supports Python 2.6, 2.7 and
-Python >= 3.6. The original udocker v1.1.x for Python 2 only is still available
+Since v1.3.0, udocker supports Python 2.6, 2.7 and Python >= 3.6. 
+The original udocker v1.1.x for Python 2 is no longer maintained 
+but is still available
 [here](https://github.com/indigo-dc/udocker/tree/v1.1.8).
 
 ## Syntax
