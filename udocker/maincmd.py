@@ -23,7 +23,6 @@ import sys
 import copy
 
 for spath in copy.deepcopy(sys.path):
-    sys.path.append(spath)
     sys.path.append(spath + "/udocker")
 sys.path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../')
 
