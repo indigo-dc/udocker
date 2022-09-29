@@ -5,10 +5,21 @@
 udocker unit tests: CurlHeader
 """
 
+import os
+import sys
+
+new_sys_path = []
+for ppath in sys.path:
+    new_sys_path.append(ppath)
+    new_sys_path.append(ppath + "/udocker")
+
+new_sys_path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../')
+sys.path = new_sys_path
+
 from unittest import TestCase, main
 from unittest.mock import patch
 from io import StringIO
-from udocker.utils.curl import CurlHeader
+from utils.curl import CurlHeader
 import collections
 collections.Callable = collections.abc.Callable
 
