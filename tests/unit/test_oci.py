@@ -6,6 +6,8 @@ udocker unit tests: OciLocalFileAPI
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.oci import OciLocalFileAPI
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class OciLocalFileAPITestCase(TestCase):

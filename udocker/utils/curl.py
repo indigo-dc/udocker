@@ -16,8 +16,6 @@ try:
 except ImportError:
     pass
 
-# if Python 3
-# pylint: disable=import-error
 if sys.version_info[0] >= 3:
     from io import BytesIO as strio
 else:
@@ -262,7 +260,6 @@ class GetURLpyCurl(GetURL):
         except(IOError, OSError):
             return (None, None)
         except pycurl.error as error:
-            # pylint: disable=unbalanced-tuple-unpacking
             errno, errstr = error.args
             hdr.data["X-ND-CURLSTATUS"] = errno
             if not hdr.data["X-ND-HTTPSTATUS"]:

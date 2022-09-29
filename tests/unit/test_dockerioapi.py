@@ -8,6 +8,8 @@ from unittest.mock import patch, Mock
 from io import BytesIO as strio
 from udocker.docker import DockerIoAPI
 from udocker.config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class DockerIoAPITestCase(TestCase):

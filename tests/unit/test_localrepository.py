@@ -7,6 +7,8 @@ from unittest import TestCase, main
 from unittest.mock import patch, mock_open, call
 from udocker.container.localrepo import LocalRepository
 from udocker.config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 BUILTIN = "builtins"
 BOPEN = BUILTIN + '.open'

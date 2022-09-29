@@ -7,6 +7,8 @@ from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.config import Config
 from udocker.engine.fakechroot import FakechrootEngine
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class FakechrootEngineTestCase(TestCase):

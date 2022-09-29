@@ -11,6 +11,8 @@ from udocker.utils.curl import GetURL
 from udocker.utils.curl import GetURLpyCurl
 from udocker.utils.curl import GetURLexeCurl
 from udocker.config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class GetURLTestCase(TestCase):

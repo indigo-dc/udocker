@@ -11,6 +11,8 @@ from io import StringIO
 from udocker.config import Config
 from udocker.utils.curl import CurlHeader
 from udocker.tools import UdockerTools
+import collections
+collections.Callable = collections.abc.Callable
 
 BUILTINS = "builtins"
 BOPEN = BUILTINS + '.open'

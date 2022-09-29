@@ -9,6 +9,8 @@ import pwd
 from unittest import TestCase, main
 from unittest.mock import patch
 from udocker.helper.hostinfo import HostInfo
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class HostInfoTestCase(TestCase):

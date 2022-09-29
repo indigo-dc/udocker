@@ -7,6 +7,8 @@ from unittest import TestCase, main
 from unittest.mock import patch
 from udocker.umain import UMain
 from udocker.config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class UMainTestCase(TestCase):

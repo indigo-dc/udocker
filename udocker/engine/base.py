@@ -292,27 +292,21 @@ class ExecutionEngineCommon(object):
                             "Domainname", "", container_json)
                 if self.opt["entryp"] is False:
                     self.opt["entryp"] = \
-                        container_structure.get_container_meta(
-                            "Entrypoint", [], container_json)
+                        container_structure.get_container_meta("Entrypoint", [], container_json)
                     if not self.opt["cmd"]:
                         self.opt["cmd"] = \
-                            container_structure.get_container_meta(
-                                "Cmd", [], container_json)
+                            container_structure.get_container_meta("Cmd", [], container_json)
                 elif not self.opt["entryp"]:
                     self.opt["entryp"] = []
-                else:
-                    if isinstance(self.opt["entryp"], str):
-                        self.opt["entryp"] = \
-                            self.opt["entryp"].strip().split(' ')
+                elif isinstance(self.opt["entryp"], str):
+                    self.opt["entryp"] = self.opt["entryp"].strip().split(' ')
+
                 self.opt["Volumes"] = \
-                    container_structure.get_container_meta(
-                        "Volumes", [], container_json)
+                    container_structure.get_container_meta("Volumes", [], container_json)
                 self.opt["portsexp"].extend(
-                    container_structure.get_container_meta(
-                        "ExposedPorts", [], container_json))
+                    container_structure.get_container_meta("ExposedPorts", [], container_json))
                 self.opt["env"].extendif(
-                    container_structure.get_container_meta(
-                        "Env", [], container_json))
+                    container_structure.get_container_meta("Env", [], container_json))
         return(container_dir, container_json)
 
     def _select_auth_files(self):
