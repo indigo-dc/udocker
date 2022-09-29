@@ -569,14 +569,15 @@ class UdockerCLI(object):
         name = cmdp.get("--name=")
         if cmdp.missing_options():               # syntax error
             return self.STATUS_ERROR
-
+        if name and self.localrepo.get_container_id(name):
+            Msg().err("Error: container name already exists")
+            return self.STATUS_ERROR
         container_id = self._create(imagespec)
         if container_id:
             Msg().out(container_id)
             if name and not self.localrepo.set_container_name(container_id,
                                                               name):
-                Msg().err("Error: invalid container name may already exist "
-                          "or wrong format")
+                Msg().err("Error: invalid container name or wrong name format")
                 return self.STATUS_ERROR
             return self.STATUS_OK
         return self.STATUS_ERROR
