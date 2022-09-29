@@ -439,7 +439,7 @@ class RuncEngine(ExecutionEngineCommon):
     def run_nopty(self, cmd_l):
         """runc without a terminal"""
         (pmaster, pslave) = os.openpty()
-        status = subprocess.Popen(cmd_l, shell=False, close_fds=True,
+        status = subprocess.Popen(cmd_l, shell=False, close_fds=False,
                                   stdout=pslave, stderr=pslave)
         os.close(pslave)
         while True:

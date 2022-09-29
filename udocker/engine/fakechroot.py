@@ -283,5 +283,5 @@ class FakechrootEngine(ExecutionEngineCommon):
         self._run_banner(self.opt["cmd"][0], '#')
         cwd = FileUtil(self.container_root).cont2host(self.opt["cwd"],
                                                       self.opt["vol"])
-        status = subprocess.call(cmd_l, shell=False, close_fds=True, cwd=cwd)
+        status = subprocess.call(cmd_l, shell=False, close_fds=False, cwd=cwd)
         return status

@@ -195,6 +195,6 @@ class PRootEngine(ExecutionEngineCommon):
 
         # execute
         self._run_banner(self.opt["cmd"][0])
-        status = subprocess.call(cmd_l, shell=False, close_fds=True,
+        status = subprocess.call(cmd_l, shell=False, close_fds=False,
                                  env=os.environ.update(self.opt["env"].dict()))
         return status
