@@ -5,8 +5,19 @@
 udocker unit tests: CmdParser
 """
 
+import os
+import sys
+
+new_sys_path = []
+for ppath in sys.path:
+    new_sys_path.append(ppath)
+    new_sys_path.append(ppath + "/udocker")
+
+new_sys_path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../')
+sys.path = new_sys_path
+
 from unittest import TestCase, main
-from udocker.cmdparser import CmdParser
+from cmdparser import CmdParser
 import collections
 collections.Callable = collections.abc.Callable
 
