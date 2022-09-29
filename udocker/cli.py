@@ -451,10 +451,13 @@ class UdockerCLI(object):
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
         container_id = self.localrepo.get_container_id(container_id)
-        Msg().out("Info: cloning container id:", container_id, l=Msg.DBG)
         if not container_id:
             Msg().err("Error: invalid container id", container_id)
             return self.STATUS_ERROR
+        if name and self.localrepo.get_container_id(name):
+            Msg().err("Error: container name already exists")
+            return self.STATUS_ERROR
+        Msg().out("Info: cloning container id:", container_id, l=Msg.DBG)
         clone_id = self.localfileapi.clone_container(container_id, name)
         if clone_id:
             Msg().out(clone_id)

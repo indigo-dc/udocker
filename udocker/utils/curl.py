@@ -62,7 +62,7 @@ class CurlHeader(object):
         version.
         """
         try:
-            infile = open(in_filename, 'r', encoding='utf-8')
+            infile = open(in_filename, 'r')
         except (IOError, OSError):
             return False
         for line in infile:
@@ -386,7 +386,7 @@ class GetURLexeCurl(GetURL):
         hdr.data["X-ND-CURLSTATUS"] = status
         if status:
             err_down = str(FileUtil(self._files["error_file"]).getdata('r'))
-            Msg().err("Error: in download: %s" err_down)
+            Msg().err("Error: in download: %s", err_down)
             FileUtil(self._files["output_file"]).remove()
             return (hdr, buf)
         status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])

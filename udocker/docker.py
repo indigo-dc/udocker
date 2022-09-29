@@ -179,7 +179,7 @@ class DockerIoAPI(object):
         try:
             self.v1_auth_header = "Authorization: Token " + \
                 hdr.data["x-docker-token"]
-            return hdr.data, json.loads(buf.getvalue())
+            return hdr.data, json.loads(buf.getvalue().decode())
         except (IOError, OSError, AttributeError,
                 ValueError, TypeError, KeyError):
             self.v1_auth_header = ""
@@ -204,11 +204,11 @@ class DockerIoAPI(object):
         tags = []
         try:
             if tags_only:
-                for tag in json.loads(buf.getvalue()):
+                for tag in json.loads(buf.getvalue().decode()):
                     tags.append(tag["name"])
                 return tags
 
-            return json.loads(buf.getvalue())
+            return json.loads(buf.getvalue().decode())
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return []
 
@@ -218,7 +218,7 @@ class DockerIoAPI(object):
         Msg().out("Info: tags url", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return (hdr.data, json.loads(buf.getvalue()))
+            return (hdr.data, json.loads(buf.getvalue()).decode())
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return (hdr.data, [])
 
@@ -228,7 +228,7 @@ class DockerIoAPI(object):
         Msg().out("Info: ancestry url", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return (hdr.data, json.loads(buf.getvalue()))
+            return (hdr.data, json.loads(buf.getvalue().decode()))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return (hdr.data, [])
 
@@ -284,10 +284,7 @@ class DockerIoAPI(object):
                     header = ["Authorization: Basic %s" % self.v2_auth_token]
                 (dummy, auth_buf) = self._get_url(auth_url, header=header,
                                                   RETRY=retry)
-                if sys.version_info[0] >= 3:
-                    token_buf = auth_buf.getvalue().decode()
-                else:
-                    token_buf = auth_buf.getvalue()
+                token_buf = auth_buf.getvalue().decode()
                 if token_buf and "token" in token_buf:
                     try:
                         auth_token = json.loads(token_buf)
@@ -350,11 +347,11 @@ class DockerIoAPI(object):
         tags = []
         try:
             if tags_only:
-                for tag in json.loads(buf.getvalue())["tags"]:
+                for tag in json.loads(buf.getvalue().decode())["tags"]:
                     tags.append(tag)
                 return tags
 
-            return json.loads(buf.getvalue())
+            return json.loads(buf.getvalue().decode())
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return []
 
@@ -367,7 +364,7 @@ class DockerIoAPI(object):
         Msg().out("Info: manifest url", url, l=Msg.DBG)
         (hdr, buf) = self._get_url(url)
         try:
-            return (hdr.data, json.loads(buf.getvalue()))
+            return (hdr.data, json.loads(buf.getvalue().decode()))
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return (hdr.data, [])
 
@@ -561,7 +558,7 @@ class DockerIoAPI(object):
         url += "&page=%s" % str(self.search_page)
         (dummy, buf) = self._get_url(url)
         try:
-            repo_list = json.loads(buf.getvalue())
+            repo_list = json.loads(buf.getvalue().decode())
             if repo_list["page"] == repo_list["num_pages"]:
                 self.search_ended = True
             return repo_list
@@ -587,7 +584,7 @@ class DockerIoAPI(object):
             url += "&page=%d" % (self.search_page)
         (dummy, buf) = self._get_url(url)
         try:
-            repo_list = json.loads(buf.getvalue())
+            repo_list = json.loads(buf.getvalue().decode())
             if repo_list["count"] == self.search_page:
                 self.search_ended = True
             return repo_list
@@ -654,7 +651,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                         structure["repolayers"][layer_id]["layer_f"] = \
                                 layer_f_path
                     else:
-                        Msg().out("Info: warning: unkwnon file in layer:",
+                        Msg().out("Info: warning: unknown file in layer:",
                                   f_path, l=Msg.WAR)
         return structure
 
