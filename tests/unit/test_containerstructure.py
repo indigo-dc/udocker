@@ -5,10 +5,22 @@
 udocker unit tests: ContainerStructure
 """
 
+
+import os
+import sys
+
+new_sys_path = []
+for ppath in sys.path:
+    new_sys_path.append(ppath)
+    new_sys_path.append(ppath + "/udocker")
+
+new_sys_path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../')
+sys.path = new_sys_path
+
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
-from udocker.container.structure import ContainerStructure
-from udocker.config import Config
+from container.structure import ContainerStructure
+from config import Config
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -50,7 +62,7 @@ class ContainerStructureTestCase(TestCase):
         self.assertEqual(prex.imagerepo, "")
         self.assertEqual(prex.container_id, "123456")
 
-    @patch('udocker.container.structure.Msg')
+    @patch('container.structure.Msg')
     def test_02_get_container_attr(self, mock_msg):
         """Test02 ContainerStructure().get_container_attr()."""
         mock_msg.return_value.level.return_value = 0
@@ -149,7 +161,7 @@ class ContainerStructureTestCase(TestCase):
         status = prex._dict_to_list({'A': 1, 'B': 2})
         self.assertEqual(sorted(status), sorted(["A:1", "B:2"]))
 
-    @patch('udocker.container.structure.os.path.exists')
+    @patch('container.structure.os.path.exists')
     def test_06__chk_container_root(self, mock_exists):
         """Test06 ContainerStructure()._chk_container_root()."""
         self.local.cd_container.return_value = ""
@@ -166,8 +178,8 @@ class ContainerStructureTestCase(TestCase):
         self.assertEqual(status, 7)
 
     @patch.object(ContainerStructure, '_untar_layers')
-    @patch('udocker.container.structure.Unique.uuid')
-    @patch('udocker.container.structure.Msg')
+    @patch('container.structure.Unique.uuid')
+    @patch('container.structure.Msg')
     def test_07_create_fromimage(self, mock_msg, mock_uuid, mock_untar):
         """Test07 ContainerStructure().create_fromimage()."""
         mock_msg.return_value.level.return_value = 0
@@ -200,8 +212,8 @@ class ContainerStructureTestCase(TestCase):
 
     @patch.object(ContainerStructure, '_chk_container_root')
     @patch.object(ContainerStructure, '_untar_layers')
-    @patch('udocker.container.structure.Unique.uuid')
-    @patch('udocker.container.structure.Msg')
+    @patch('container.structure.Unique.uuid')
+    @patch('container.structure.Msg')
     def test_08_create_fromlayer(self, mock_msg, mock_uuid,
                                  mock_untar, mock_chkcont):
         """Test08 ContainerStructure().create_fromlayer()."""
@@ -271,8 +283,8 @@ class ContainerStructureTestCase(TestCase):
 
     @patch.object(ContainerStructure, '_chk_container_root')
     @patch.object(ContainerStructure, '_untar_layers')
-    @patch('udocker.container.structure.Unique.uuid')
-    @patch('udocker.container.structure.Msg')
+    @patch('container.structure.Unique.uuid')
+    @patch('container.structure.Msg')
     def test_09_clone_fromfile(self, mock_msg, mock_uuid,
                                mock_untar, mock_chkcont):
         """Test09 ContainerStructure().clone_fromfile()."""
@@ -294,13 +306,13 @@ class ContainerStructureTestCase(TestCase):
         status = prex.clone_fromfile("clone_file")
         self.assertEqual(status, "123456")
 
-    @patch('udocker.container.structure.os.listdir')
-    @patch('udocker.container.structure.os.path.isdir')
-    @patch('udocker.container.structure.os.path.dirname')
-    @patch('udocker.container.structure.os.path.basename')
-    @patch('udocker.container.structure.Uprocess.get_output')
-    @patch('udocker.container.structure.HostInfo.cmd_has_option')
-    @patch('udocker.container.structure.FileUtil.remove')
+    @patch('container.structure.os.listdir')
+    @patch('container.structure.os.path.isdir')
+    @patch('container.structure.os.path.dirname')
+    @patch('container.structure.os.path.basename')
+    @patch('container.structure.Uprocess.get_output')
+    @patch('container.structure.HostInfo.cmd_has_option')
+    @patch('container.structure.FileUtil.remove')
     def test_10__apply_whiteouts(self, mock_furm, mock_hinfocmd,
                                  mock_uprocget, mock_base, mock_dir,
                                  mock_isdir, mock_lsdir):
@@ -327,10 +339,10 @@ class ContainerStructureTestCase(TestCase):
         self.assertTrue(mock_dir.called)
         self.assertTrue(mock_furm.called)
 
-    @patch('udocker.container.structure.HostInfo')
-    @patch('udocker.container.structure.subprocess.call')
+    @patch('container.structure.HostInfo')
+    @patch('container.structure.subprocess.call')
     @patch.object(ContainerStructure, '_apply_whiteouts')
-    @patch('udocker.container.structure.Msg')
+    @patch('container.structure.Msg')
     def test_11__untar_layers(self, mock_msg, mock_appwhite, mock_call,
                               mock_hinfo):
         """Test11 ContainerStructure()._untar_layers()."""
@@ -360,8 +372,8 @@ class ContainerStructureTestCase(TestCase):
         self.assertTrue(mock_call.call_count, 2)
         self.assertTrue(mock_appwhite.call_count, 2)
 
-    @patch('udocker.container.structure.FileUtil.tar')
-    @patch('udocker.container.structure.Msg')
+    @patch('container.structure.FileUtil.tar')
+    @patch('container.structure.Msg')
     def test_12_export_tofile(self, mock_msg, mock_futar):
         """Test12 ContainerStructure().export_tofile()."""
         # Empty container dir
@@ -380,8 +392,8 @@ class ContainerStructureTestCase(TestCase):
         status = prex.export_tofile("clone_file")
         self.assertEqual(status, "123456")
 
-    @patch('udocker.container.structure.FileUtil.tar')
-    @patch('udocker.container.structure.Msg')
+    @patch('container.structure.FileUtil.tar')
+    @patch('container.structure.Msg')
     def test_13_clone_tofile(self, mock_msg, mock_futar):
         """Test13 ContainerStructure().clone_tofile()."""
         # Empty container dir
@@ -401,9 +413,9 @@ class ContainerStructureTestCase(TestCase):
         self.assertEqual(status, "123456")
 
     @patch.object(ContainerStructure, '_chk_container_root')
-    @patch('udocker.container.structure.FileUtil.copydir')
-    @patch('udocker.container.structure.Unique.uuid')
-    @patch('udocker.container.structure.Msg')
+    @patch('container.structure.FileUtil.copydir')
+    @patch('container.structure.Unique.uuid')
+    @patch('container.structure.Msg')
     def test_14_clone(self, mock_msg, mock_uuid,
                       mock_fucpd, mock_chkcont):
         """Test14 ContainerStructure().clone()."""

@@ -5,7 +5,13 @@ udocker unit tests: ChkSUM
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../../udocker/')
+new_sys_path = []
+for ppath in sys.path:
+    new_sys_path.append(ppath)
+    new_sys_path.append(ppath + "/udocker")
+
+new_sys_path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../')
+sys.path = new_sys_path
 
 from unittest import TestCase, main
 from unittest.mock import patch
@@ -28,8 +34,8 @@ class ChkSUMTestCase(TestCase):
     def tearDown(self):
         pass
 
-    @patch('udocker.utils.chksum.hashlib.sha512')
-    @patch('udocker.utils.chksum.hashlib.sha256')
+    @patch('utils.chksum.hashlib.sha512')
+    @patch('utils.chksum.hashlib.sha256')
     @patch.object(ChkSUM, '_openssl_sha512', autospec=True)
     @patch.object(ChkSUM, '_hashlib_sha512', autospec=True)
     @patch.object(ChkSUM, '_openssl_sha256', autospec=True)

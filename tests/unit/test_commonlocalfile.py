@@ -3,9 +3,20 @@
 udocker unit tests: CommonLocalFileApi
 """
 
+import os
+import sys
+
+new_sys_path = []
+for ppath in sys.path:
+    new_sys_path.append(ppath)
+    new_sys_path.append(ppath + "/udocker")
+
+new_sys_path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../')
+sys.path = new_sys_path
+
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
-from udocker.commonlocalfile import CommonLocalFileApi
+from commonlocalfile import CommonLocalFileApi
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -28,8 +39,8 @@ class CommonLocalFileApiTestCase(TestCase):
         clfapi = CommonLocalFileApi(self.local)
         self.assertEqual(clfapi.localrepo, self.local)
 
-    @patch('udocker.commonlocalfile.FileUtil.copyto')
-    @patch('udocker.commonlocalfile.os.rename')
+    @patch('commonlocalfile.FileUtil.copyto')
+    @patch('commonlocalfile.os.rename')
     def test_02__move_layer_to_v1repo(self, mock_rename, mock_copy):
         """Test02 CommonLocalFileApi()._move_layer_to_v1repo()."""
         layer_id = "xxx"
@@ -66,7 +77,7 @@ class CommonLocalFileApiTestCase(TestCase):
     # def test_03__load_image_step2(self):
     #     """Test03 CommonLocalFileApi()._load_image_step2()."""
 
-    @patch('udocker.commonlocalfile.Msg')
+    @patch('commonlocalfile.Msg')
     def test_04__load_image(self, mock_msg):
         """Test04 CommonLocalFileApi()._load_image()."""
         mock_msg.level = 0
@@ -101,7 +112,7 @@ class CommonLocalFileApiTestCase(TestCase):
         status = clfapi._load_image(structure, imagerepo, tag)
         self.assertEqual(status, None)
 
-    @patch('udocker.commonlocalfile.Uprocess.call')
+    @patch('commonlocalfile.Uprocess.call')
     def test_05__untar_saved_container(self, mock_ucall):
         """Test05 CommonLocalFileApi()._untar_saved_container()."""
         tarfile = "file.tar"
@@ -116,9 +127,9 @@ class CommonLocalFileApiTestCase(TestCase):
         status = clfapi._untar_saved_container(tarfile, destdir)
         self.assertTrue(status)
 
-    @patch('udocker.commonlocalfile.FileUtil.size')
-    @patch('udocker.commonlocalfile.HostInfo.osversion')
-    @patch('udocker.commonlocalfile.HostInfo.arch')
+    @patch('commonlocalfile.FileUtil.size')
+    @patch('commonlocalfile.HostInfo.osversion')
+    @patch('commonlocalfile.HostInfo.arch')
     def test_06_create_container_meta(self, mock_arch, mock_version,
                                       mock_size):
         """Test06 CommonLocalFileApi().create_container_meta()."""
@@ -135,11 +146,11 @@ class CommonLocalFileApiTestCase(TestCase):
         self.assertTrue(mock_version.called)
         self.assertTrue(mock_size.called)
 
-    @patch('udocker.commonlocalfile.Msg')
-    @patch('udocker.commonlocalfile.os.rename')
-    @patch('udocker.commonlocalfile.FileUtil.copyto')
-    @patch('udocker.commonlocalfile.Unique.layer_v1')
-    @patch('udocker.commonlocalfile.os.path.exists')
+    @patch('commonlocalfile.Msg')
+    @patch('commonlocalfile.os.rename')
+    @patch('commonlocalfile.FileUtil.copyto')
+    @patch('commonlocalfile.Unique.layer_v1')
+    @patch('commonlocalfile.os.path.exists')
     def test_07_import_toimage(self, mock_exists, mock_layerv1,
                                mock_copy, mock_rename, mock_msg):
         """Test07 CommonLocalFileApi().import_toimage()."""
@@ -219,10 +230,10 @@ class CommonLocalFileApiTestCase(TestCase):
         self.assertEqual(status, "12345")
         self.assertTrue(mock_layerv1.called)
 
-    @patch('udocker.commonlocalfile.Msg')
-    @patch('udocker.commonlocalfile.ContainerStructure.create_fromlayer')
-    @patch('udocker.commonlocalfile.Unique.layer_v1')
-    @patch('udocker.commonlocalfile.os.path.exists')
+    @patch('commonlocalfile.Msg')
+    @patch('commonlocalfile.ContainerStructure.create_fromlayer')
+    @patch('commonlocalfile.Unique.layer_v1')
+    @patch('commonlocalfile.os.path.exists')
     def test_08_import_tocontainer(self, mock_exists, mock_layerv1,
                                    mock_create, mock_msg):
         """Test08 CommonLocalFileApi().import_tocontainer()."""
@@ -268,9 +279,9 @@ class CommonLocalFileApiTestCase(TestCase):
         self.assertTrue(mock_create.called)
         self.assertEqual(status, "345")
 
-    @patch('udocker.commonlocalfile.Msg')
-    @patch('udocker.commonlocalfile.ContainerStructure.clone_fromfile')
-    @patch('udocker.commonlocalfile.os.path.exists')
+    @patch('commonlocalfile.Msg')
+    @patch('commonlocalfile.ContainerStructure.clone_fromfile')
+    @patch('commonlocalfile.os.path.exists')
     def test_09_import_clone(self, mock_exists, mock_clone, mock_msg):
         """Test09 CommonLocalFileApi().import_clone()."""
         tarfile = ""
@@ -304,10 +315,10 @@ class CommonLocalFileApiTestCase(TestCase):
         self.assertTrue(mock_clone.called)
         self.assertEqual(status, "345")
 
-    @patch('udocker.commonlocalfile.Msg')
-    @patch('udocker.commonlocalfile.ExecutionMode.set_mode')
-    @patch('udocker.commonlocalfile.ExecutionMode.get_mode')
-    @patch('udocker.commonlocalfile.ContainerStructure.clone')
+    @patch('commonlocalfile.Msg')
+    @patch('commonlocalfile.ExecutionMode.set_mode')
+    @patch('commonlocalfile.ExecutionMode.get_mode')
+    @patch('commonlocalfile.ContainerStructure.clone')
     def test_10_clone_container(self, mock_clone,
                                 mock_exget, mock_exset, mock_msg):
         """Test10 CommonLocalFileApi().clone_container()."""
@@ -351,7 +362,7 @@ class CommonLocalFileApiTestCase(TestCase):
         self.assertTrue(mock_clone.called)
         self.assertEqual(status, "345")
 
-    @patch('udocker.commonlocalfile.os.path.exists')
+    @patch('commonlocalfile.os.path.exists')
     def test_11__get_imagedir_type(self, mock_exists):
         """Test11 CommonLocalFileApi()._get_imagedir_type()."""
         tmp_imagedir = "/home/.udocker/images/myimg"
