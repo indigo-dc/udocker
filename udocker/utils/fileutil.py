@@ -153,9 +153,8 @@ class FileUtil(object):
             elif filemode:
                 mode = (stat.S_IMODE(filestat) & mask) | filemode
                 os.chmod(filename, mode)
-        except OSError as exc:
+        except OSError:
             Msg().err("Error: changing permissions of:", filename, l=Msg.VER)
-            raise OSError from exc
 
     def chmod(self, filemode=0o600, dirmode=0o700, mask=0o755, recursive=False):
         """chmod directory recursively"""
