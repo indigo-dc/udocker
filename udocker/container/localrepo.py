@@ -720,7 +720,8 @@ class LocalRepository:
                     else:
                         LOG.warning("unknown file in layer: %s", f_path)
 
-                elif fname in {"TAG", "v1", "v2", "PROTECT", "container.json"}:
+                elif fname in {"TAG", "v1", "v2", "PROTECT", "container.json",
+                               "ancestry", "manifest"}:
                     pass
 
                 else:
@@ -861,7 +862,10 @@ class LocalRepository:
         if "ancestry" in structure and "has_json_f" in structure:
             status = self._verify_image_v1(structure)
         elif "manifest" in structure:
-            if "fsLayers" in structure["manifest"]:
+            if not structure["manifest"]:
+                LOG.error("manifest is empty")
+                status = False
+            elif "fsLayers" in structure["manifest"]:
                 status = self._verify_image_v2_s1(structure)
             elif "layers" in structure["manifest"]:
                 status = self._verify_image_v2_s2(structure)

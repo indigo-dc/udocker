@@ -73,7 +73,8 @@ documentation, licenses, container images and extracted directory trees are plac
 ## Support Python 3
 
 Since v1.5.0 (or the development v1.4.x), udocker supports Python >= 3.6. The original udocker
-v1.1.x for Python 2 only is still available [here](https://github.com/indigo-dc/udocker/tree/v1.1.8).
+v1.1.x for Python 2 is no longer maintained but is still available
+[here](https://github.com/indigo-dc/udocker/tree/v1.1.8).
 
 ## Syntax
 

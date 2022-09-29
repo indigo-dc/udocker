@@ -480,11 +480,15 @@ class UdockerCLI:
             return self.STATUS_ERROR
 
         container_id = self.localrepo.get_container_id(container_id)
-        LOG.debug("cloning container id: %s", container_id)
         if not container_id:
             LOG.error("invalid container id: %s", container_id)
             return self.STATUS_ERROR
 
+        if name and self.localrepo.get_container_id(name):
+            LOG.error("container name already exists")
+            return self.STATUS_ERROR
+
+        LOG.debug("cloning container id: %s", container_id)
         clone_id = self.localfileapi.clone_container(container_id, name)
         if clone_id:
             LOG.info("clone ID: %s", clone_id)
@@ -598,18 +602,26 @@ class UdockerCLI:
         create: extract image layers and create a container
         create [options]  <repo/image:tag>
         --name=<container-name>    :set or change the name of the container
+        --force                    :allow create even if name already exists
         """
         imagespec = cmdp.get("P1")
         name = cmdp.get("--name=")
+        force = cmdp.get("--force")
         if cmdp.missing_options():               # syntax error
             return self.STATUS_ERROR
+
+        if not force:
+            if name and self.localrepo.get_container_id(name):
+                LOG.error("container name already exists")
+                return self.STATUS_ERROR
 
         container_id = self._create(imagespec)
         if container_id:
             LOG.info("container ID: %s", container_id)
             if name and not self.localrepo.set_container_name(container_id, name):
-                LOG.error("invalid container name may already exist or wrong format")
-                return self.STATUS_ERROR
+                if not force:
+                    LOG.error("invalid container name or wrong format")
+                    return self.STATUS_ERROR
 
             MSG.info("ContainerID=%s", container_id)
             return self.STATUS_OK

@@ -311,6 +311,7 @@ An easier to remember name can also be given with `--name`.
 Options:
 
 * `--name=NAME` give a name to the extracted container.
+* `--force` force the container creation even if NAME exists
 
 Examples:
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## udocker (1.3.5)
+
+* fix python backwards compatibility issues
+* fix image verification incorrectly reported errors
+* fix image search returning empty results
+* fix issue with logical links in the udocker executable path
+* verify if container name exists before creation or cloning
+* add --force option to create and clone to allow creation
+  of container even if the intended name given by --name exists
+* prevent closing of file descriptors upon engine invocation
+* improved pmi interoperability
+
+## udocker (1.3.4)
+
+* fix 2 unit tests
+
 ## udocker (1.3.3)
 
 * image list does not truncate long names - solve #349

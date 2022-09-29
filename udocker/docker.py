@@ -70,7 +70,7 @@ class DockerIoAPI:
         kwargs["RETRY"] -= 1
         (hdr, buf) = self.curl.get(*args, **kwargs)
         LOG.debug("header: %s", (hdr.data))
-        LOG.debug("buffer: %s", (buf.getvalue()))
+        LOG.debug("buffer: %s", (buf.getvalue().decode()))
         status_code = self.curl.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if status_code == 200:
             return (hdr, buf)
@@ -203,7 +203,7 @@ class DockerIoAPI:
         (hdr, buf) = self._get_url(url, header=["X-Docker-Token: true"])
         try:
             self.v1_auth_header = "Authorization: Token " + hdr.data["x-docker-token"]
-            return hdr.data, json.loads(buf.getvalue())
+            return hdr.data, json.loads(buf.getvalue().decode())
         except (OSError, AttributeError, ValueError, TypeError, KeyError):
             self.v1_auth_header = ""
             return hdr.data, []
@@ -229,11 +229,11 @@ class DockerIoAPI:
         tags = []
         try:
             if tags_only:
-                for tag in json.loads(buf.getvalue()):
+                for tag in json.loads(buf.getvalue().decode()):
                     tags.append(tag["name"])
                 return tags
 
-            return json.loads(buf.getvalue())
+            return json.loads(buf.getvalue().decode())
         except (OSError, AttributeError, ValueError, TypeError):
             return []
 
@@ -243,7 +243,7 @@ class DockerIoAPI:
         LOG.debug("tags url: %s", url)
         (hdr, buf) = self._get_url(url)
         try:
-            return (hdr.data, json.loads(buf.getvalue()))
+            return (hdr.data, json.loads(buf.getvalue().decode()))
         except (OSError, AttributeError, ValueError, TypeError):
             return (hdr.data, [])
 
@@ -253,7 +253,7 @@ class DockerIoAPI:
         LOG.debug("ancestry url: %s", url)
         (hdr, buf) = self._get_url(url)
         try:
-            return (hdr.data, json.loads(buf.getvalue()))
+            return (hdr.data, json.loads(buf.getvalue().decode()))
         except (OSError, AttributeError, ValueError, TypeError):
             return (hdr.data, [])
 
@@ -381,12 +381,12 @@ class DockerIoAPI:
         tags = []
         try:
             if tags_only:
-                for tag in json.loads(buf.getvalue())["tags"]:
+                for tag in json.loads(buf.getvalue().decode())["tags"]:
                     tags.append(tag)
 
                 return tags
 
-            return json.loads(buf.getvalue())
+            return json.loads(buf.getvalue().decode())
         except (OSError, AttributeError, ValueError, TypeError):
             return []
 
@@ -398,7 +398,7 @@ class DockerIoAPI:
         LOG.debug("manifest url: %s", url)
         (hdr, buf) = self._get_url(url)
         try:
-            return (hdr.data, json.loads(buf.getvalue()))
+            return (hdr.data, json.loads(buf.getvalue().decode()))
         except (OSError, AttributeError, ValueError, TypeError):
             return (hdr.data, [])
 
@@ -612,7 +612,7 @@ class DockerIoAPI:
         url += f'&page={str(self.search_page)}'
         (dummy, buf) = self._get_url(url)
         try:
-            repo_list = json.loads(buf.getvalue())
+            repo_list = json.loads(buf.getvalue().decode())
             if repo_list["page"] == repo_list["num_pages"]:
                 self.search_ended = True
 
@@ -640,7 +640,7 @@ class DockerIoAPI:
             url += f"&page={str(self.search_page)}"
         (dummy, buf) = self._get_url(url)
         try:
-            repo_list = json.loads(buf.getvalue())
+            repo_list = json.loads(buf.getvalue().decode())
             if repo_list["count"] == self.search_page:
                 self.search_ended = True
 
