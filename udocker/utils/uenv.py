@@ -5,7 +5,7 @@ import os
 import sys
 import string
 
-from udocker import is_genstr
+from genstr import is_genstr
 
 def get_pair(envstr):
     """Split env=var into key and val"""

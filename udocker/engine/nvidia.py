@@ -7,10 +7,10 @@ import glob
 import re
 import shutil
 
-from udocker.msg import Msg
-from udocker.config import Config
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.uprocess import Uprocess
+from msg import Msg
+from config import Config
+from utils.fileutil import FileUtil
+from utils.uprocess import Uprocess
 
 
 class NvidiaMode(object):

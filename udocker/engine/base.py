@@ -6,17 +6,17 @@ import sys
 import re
 import json
 
-from udocker import is_genstr
-from udocker.msg import Msg
-from udocker.config import Config
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.uenv import Uenv
-from udocker.utils.uvolume import Uvolume
-from udocker.helper.nixauth import NixAuthentication
-from udocker.helper.hostinfo import HostInfo
-from udocker.container.structure import ContainerStructure
-from udocker.utils.filebind import FileBind
-from udocker.utils.mountpoint import MountPoint
+from genstr import is_genstr
+from msg import Msg
+from config import Config
+from helper.nixauth import NixAuthentication
+from helper.hostinfo import HostInfo
+from container.structure import ContainerStructure
+from utils.filebind import FileBind
+from utils.mountpoint import MountPoint
+from utils.fileutil import FileUtil
+from utils.uenv import Uenv
+from utils.uvolume import Uvolume
 
 
 class ExecutionEngineCommon(object):

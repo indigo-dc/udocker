@@ -4,8 +4,8 @@
 import os
 import re
 
-from udocker.utils.uprocess import Uprocess
-from udocker.utils.fileutil import FileUtil
+from utils.uprocess import Uprocess
+from utils.fileutil import FileUtil
 
 
 class OSInfo(object):

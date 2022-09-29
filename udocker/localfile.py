@@ -3,12 +3,11 @@
 
 import os
 
-from udocker.msg import Msg
-from udocker.utils.fileutil import FileUtil
-
-from udocker.docker import DockerLocalFileAPI
-from udocker.oci import OciLocalFileAPI
-from udocker.commonlocalfile import CommonLocalFileApi
+from msg import Msg
+from docker import DockerLocalFileAPI
+from oci import OciLocalFileAPI
+from commonlocalfile import CommonLocalFileApi
+from utils.fileutil import FileUtil
 
 
 class LocalFileAPI(CommonLocalFileApi):
