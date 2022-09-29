@@ -130,7 +130,7 @@ class LocalRepository(object):
         """Set the protection mark in a container or image tag"""
         try:
             # touch create version file
-            open(directory + "/PROTECT", 'w', encoding='utf-8').close()
+            open(directory + "/PROTECT", 'w').close()
             return True
         except (IOError, OSError):
             return False
@@ -178,8 +178,7 @@ class LocalRepository(object):
             container_dir = self.containersdir + '/' + fname
             if os.path.isdir(container_dir):
                 try:
-                    filep = open(container_dir + "/imagerepo.name", 'r',
-                                 encoding='utf-8')
+                    filep = open(container_dir + "/imagerepo.name", 'r')
                 except (IOError, OSError):
                     reponame = ""
                 else:
@@ -293,8 +292,7 @@ class LocalRepository(object):
             return ""
         try:
             os.makedirs(container_dir + "/ROOT")
-            out_imagerepo = open(container_dir + "/imagerepo.name", 'w',
-                                 encoding='utf-8')
+            out_imagerepo = open(container_dir + "/imagerepo.name", 'w')
         except (IOError, OSError):
             return None
         else:
@@ -460,7 +458,7 @@ class LocalRepository(object):
             if not os.path.exists(directory):
                 os.makedirs(directory)
             self.cur_tagdir = directory
-            out_tag = open(directory + "/TAG", 'w', encoding='utf-8')
+            out_tag = open(directory + "/TAG", 'w')
         except (IOError, OSError):
             return False
         else:
@@ -492,7 +490,7 @@ class LocalRepository(object):
                     return False
         try:
             # Create version file
-            open(directory + "/" + version, 'a', encoding='utf-8').close()
+            open(directory + "/" + version, 'a').close()
         except (IOError, OSError):
             return False
         return True
@@ -582,7 +580,7 @@ class LocalRepository(object):
             out_filename = self.cur_tagdir + "/" + filename
         outfile = None
         try:
-            outfile = open(out_filename, 'w', encoding='utf-8')
+            outfile = open(out_filename, 'w')
             json.dump(data, outfile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             if outfile:
@@ -609,7 +607,7 @@ class LocalRepository(object):
         json_obj = None
         infile = None
         try:
-            infile = open(in_filename, 'r', encoding='utf-8')
+            infile = open(in_filename, 'r')
             json_obj = json.load(infile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             pass

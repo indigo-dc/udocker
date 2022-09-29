@@ -32,7 +32,7 @@ class KeyStore(object):
     def _read_all(self):
         """Read all credentials from file"""
         try:
-            with open(self.keystore_file, "r", encoding='utf-8') as filep:
+            with open(self.keystore_file, "r") as filep:
                 return json.load(filep)
         except (IOError, OSError, ValueError):
             return {}
@@ -57,7 +57,7 @@ class KeyStore(object):
         oldmask = None
         try:
             oldmask = os.umask(0o77)
-            with open(self.keystore_file, "w", encoding='utf-8') as filep:
+            with open(self.keystore_file, "w") as filep:
                 json.dump(auths, filep)
             os.umask(oldmask)
         except (IOError, OSError):

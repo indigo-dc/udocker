@@ -23,10 +23,10 @@ limitations under the License.
 from setuptools import setup, find_packages
 from udocker import __version__
 
-with open('README.md', 'r', encoding='utf8') as readme_file:
+with open('README.md', 'r') as readme_file:
     README = readme_file.read()
 
-with open('CHANGELOG.md', 'r', encoding='utf8') as history_file:
+with open('CHANGELOG.md', 'r') as history_file:
     HISTORY = history_file.read()
 
 CONF_DIR = '/udocker/etc'
@@ -46,7 +46,6 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',

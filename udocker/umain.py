@@ -66,7 +66,6 @@ class UMain(object):
 
         self.cli = UdockerCLI(self.local)
 
-    # pylint: disable=too-many-return-statements
     def execute(self):
         """Command parsing and selection"""
         self._prepare_exec()

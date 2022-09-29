@@ -93,7 +93,7 @@ class RuncEngine(ExecutionEngineCommon):
         json_obj = None
         infile = None
         try:
-            infile = open(self._container_specfile, 'r', encoding='utf-8')
+            infile = open(self._container_specfile, 'r')
             json_obj = json.load(infile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             json_obj = None
@@ -108,7 +108,7 @@ class RuncEngine(ExecutionEngineCommon):
         """Save spec file"""
         outfile = None
         try:
-            outfile = open(self._container_specfile, 'w', encoding='utf-8')
+            outfile = open(self._container_specfile, 'w')
             json.dump(self._container_specjson, outfile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             if outfile:

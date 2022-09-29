@@ -433,9 +433,8 @@ class UdockerCLI(object):
         if clone:
             if cstruct.clone_tofile(tarfile):
                 return self.STATUS_OK
-        else:
-            if cstruct.export_tofile(tarfile):
-                return self.STATUS_OK
+        elif cstruct.export_tofile(tarfile):
+            return self.STATUS_OK
 
         Msg().err("Error: exporting")
         return self.STATUS_ERROR
