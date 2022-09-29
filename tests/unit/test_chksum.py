@@ -2,11 +2,17 @@
 """
 udocker unit tests: ChkSUM
 """
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../../udocker/')
 
 from unittest import TestCase, main
-from unittest.mock import patch, Mock, mock_open
-from io import BytesIO as strio
-from udocker.utils.chksum import ChkSUM
+from unittest.mock import patch
+
+#from unittest.mock import patch, Mock, mock_open
+#from io import BytesIO as strio
+from utils.chksum import ChkSUM
 import collections
 collections.Callable = collections.abc.Callable
 
