@@ -9,6 +9,8 @@ from unittest import TestCase, main
 from unittest.mock import patch, mock_open
 from udocker.utils.fileutil import FileUtil
 from udocker.config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 STDOUT = sys.stdout
 STDERR = sys.stderr

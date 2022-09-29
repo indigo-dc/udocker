@@ -10,6 +10,8 @@ from unittest.mock import patch, Mock
 from io import BytesIO as strio
 from udocker.utils.curl import GetURLpyCurl
 from udocker.config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 BUILTINS = "builtins"
 

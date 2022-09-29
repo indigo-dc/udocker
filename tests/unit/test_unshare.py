@@ -6,6 +6,8 @@ udocker unit tests: Unshare
 from unittest import TestCase, main
 from unittest.mock import patch, MagicMock
 from udocker.helper.unshare import Unshare
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class UnshareTestCase(TestCase):

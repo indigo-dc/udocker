@@ -7,6 +7,8 @@ from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.config import Config
 from udocker.engine.proot import PRootEngine
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class PRootEngineTestCase(TestCase):

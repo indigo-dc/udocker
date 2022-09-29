@@ -7,6 +7,8 @@ from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.config import Config
 from udocker.engine.singularity import SingularityEngine
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class SingularityEngineTestCase(TestCase):

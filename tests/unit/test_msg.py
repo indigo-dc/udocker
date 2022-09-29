@@ -7,6 +7,8 @@ from unittest import TestCase, main
 from unittest.mock import patch
 from io import StringIO
 from udocker.msg import Msg
+import collections
+collections.Callable = collections.abc.Callable
 
 STDOUT = sys.stdout
 STDERR = sys.stderr

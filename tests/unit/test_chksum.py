@@ -7,6 +7,8 @@ from unittest import TestCase, main
 from unittest.mock import patch, Mock, mock_open
 from io import BytesIO as strio
 from udocker.utils.chksum import ChkSUM
+import collections
+collections.Callable = collections.abc.Callable
 
 BUILTINS = "builtins"
 
