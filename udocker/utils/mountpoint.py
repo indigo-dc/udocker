@@ -4,8 +4,8 @@
 import os
 import stat
 
-from udocker.msg import Msg
-from udocker.utils.fileutil import FileUtil
+from msg import Msg
+from utils.fileutil import FileUtil
 
 
 class MountPoint(object):

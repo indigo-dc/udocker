@@ -5,13 +5,13 @@ import sys
 import os
 import subprocess
 
-from udocker.msg import Msg
-from udocker.config import Config
-from udocker.engine.base import ExecutionEngineCommon
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.uvolume import Uvolume
-from udocker.helper.hostinfo import HostInfo
-from udocker.utils.uprocess import Uprocess
+from msg import Msg
+from config import Config
+from engine.base import ExecutionEngineCommon
+from helper.hostinfo import HostInfo
+from utils.uprocess import Uprocess
+from utils.fileutil import FileUtil
+from utils.uvolume import Uvolume
 
 
 class PRootEngine(ExecutionEngineCommon):
@@ -195,6 +195,6 @@ class PRootEngine(ExecutionEngineCommon):
 
         # execute
         self._run_banner(self.opt["cmd"][0])
-        status = subprocess.call(cmd_l, shell=False, close_fds=True,
+        status = subprocess.call(cmd_l, shell=False, close_fds=False,
                                  env=os.environ.update(self.opt["env"].dict()))
         return status

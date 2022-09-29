@@ -7,21 +7,21 @@ import string
 import json
 from getpass import getpass
 
-from udocker import __version__
-from udocker.config import Config
-from udocker.msg import Msg
-from udocker.docker import DockerIoAPI
-from udocker.localfile import LocalFileAPI
-from udocker.helper.keystore import KeyStore
-from udocker.helper.hostinfo import HostInfo
-from udocker.helper.unshare import Unshare
-from udocker.container.structure import ContainerStructure
-from udocker.engine.execmode import ExecutionMode
-from udocker.engine.nvidia import NvidiaMode
-from udocker.tools import UdockerTools
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.filebind import FileBind
-from udocker.utils.mountpoint import MountPoint
+from __init__ import __version__
+from config import Config
+from msg import Msg
+from docker import DockerIoAPI
+from localfile import LocalFileAPI
+from helper.keystore import KeyStore
+from helper.hostinfo import HostInfo
+from helper.unshare import Unshare
+from container.structure import ContainerStructure
+from engine.execmode import ExecutionMode
+from engine.nvidia import NvidiaMode
+from tools import UdockerTools
+from utils.fileutil import FileUtil
+from utils.filebind import FileBind
+from utils.mountpoint import MountPoint
 
 # if Python 3
 if sys.version_info[0] >= 3:

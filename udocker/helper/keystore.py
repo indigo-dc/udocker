@@ -4,8 +4,8 @@
 import os
 import json
 
-from udocker.utils.fileutil import FileUtil
-from udocker.helper.hostinfo import HostInfo
+from helper.hostinfo import HostInfo
+from utils.fileutil import FileUtil
 
 
 class KeyStore(object):

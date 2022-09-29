@@ -21,12 +21,12 @@ limitations under the License.
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
+sys.path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../')
 
 # pylint: disable=wrong-import-position
-from udocker.msg import Msg
-from udocker.umain import UMain
-from udocker.utils.fileutil import FileUtil
+from msg import Msg
+from umain import UMain
+from utils.fileutil import FileUtil
 
 
 def main():

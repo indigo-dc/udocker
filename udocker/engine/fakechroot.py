@@ -6,14 +6,14 @@ import sys
 import re
 import subprocess
 
-from udocker import is_genstr
-from udocker.engine.base import ExecutionEngineCommon
-from udocker.helper.osinfo import OSInfo
-from udocker.msg import Msg
-from udocker.config import Config
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.uvolume import Uvolume
-from udocker.helper.elfpatcher import ElfPatcher
+from genstr import is_genstr
+from msg import Msg
+from config import Config
+from helper.osinfo import OSInfo
+from helper.elfpatcher import ElfPatcher
+from engine.base import ExecutionEngineCommon
+from utils.fileutil import FileUtil
+from utils.uvolume import Uvolume
 
 
 class FakechrootEngine(ExecutionEngineCommon):
@@ -283,5 +283,5 @@ class FakechrootEngine(ExecutionEngineCommon):
         self._run_banner(self.opt["cmd"][0], '#')
         cwd = FileUtil(self.container_root).cont2host(self.opt["cwd"],
                                                       self.opt["vol"])
-        status = subprocess.call(cmd_l, shell=False, close_fds=True, cwd=cwd)
+        status = subprocess.call(cmd_l, shell=False, close_fds=False, cwd=cwd)
         return status

@@ -7,13 +7,13 @@ import sys
 import stat
 import json
 
-from udocker import is_genstr
-from udocker.config import Config
-from udocker.msg import Msg
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.chksum import ChkSUM
-from udocker.utils.uprocess import Uprocess
-from udocker.helper.osinfo import OSInfo
+from genstr import is_genstr
+from config import Config
+from msg import Msg
+from helper.osinfo import OSInfo
+from utils.fileutil import FileUtil
+from utils.chksum import ChkSUM
+from utils.uprocess import Uprocess
 
 
 class LocalRepository(object):

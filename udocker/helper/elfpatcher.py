@@ -6,12 +6,12 @@ import os
 import sys
 import time
 
-from udocker import is_genstr
-from udocker.msg import Msg
-from udocker.config import Config
-from udocker.utils.uprocess import Uprocess
-from udocker.utils.fileutil import FileUtil
-from udocker.helper.hostinfo import HostInfo
+from genstr import is_genstr
+from msg import Msg
+from config import Config
+from helper.hostinfo import HostInfo
+from utils.uprocess import Uprocess
+from utils.fileutil import FileUtil
 
 
 class ElfPatcher(object):

@@ -5,9 +5,9 @@ import os
 import ctypes
 import subprocess
 
-from udocker.msg import Msg
-from udocker.helper.hostinfo import HostInfo
-from udocker.helper.nixauth import NixAuthentication
+from msg import Msg
+from helper.hostinfo import HostInfo
+from helper.nixauth import NixAuthentication
 
 class Unshare(object):
     """Place a process in a namespace"""

@@ -8,12 +8,12 @@ import random
 import json
 import stat
 
-from udocker import is_genstr
-from udocker.config import Config
-from udocker.utils.curl import GetURL
-from udocker.utils.fileutil import FileUtil
-from udocker.msg import Msg
-from udocker import __version__
+from __init__ import __version__
+from genstr import is_genstr
+from config import Config
+from msg import Msg
+from utils.curl import GetURL
+from utils.fileutil import FileUtil
 
 def _str(data):
     """Safe str for Python 3 and Python 2"""

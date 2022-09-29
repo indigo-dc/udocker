@@ -5,11 +5,11 @@ import os
 import sys
 import json
 
-from udocker import is_genstr
-from udocker.config import Config
-from udocker.msg import Msg
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.uprocess import Uprocess
+from genstr import is_genstr
+from config import Config
+from msg import Msg
+from utils.fileutil import FileUtil
+from utils.uprocess import Uprocess
 
 try:
     import pycurl
