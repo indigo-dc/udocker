@@ -170,9 +170,8 @@ udocker inspect ${DOCKER_IMG}; return=$?
 result
 
 STRING="T020: udocker create ${DOCKER_IMG}"
-export `udocker create ${DOCKER_IMG}`; return=$?
-CONT_ID=${ContainerID}
-echo "CONT_ID = ${CONT_ID}"
+CONT_ID=`udocker create ${DOCKER_IMG}`; return=$?
+echo "ContainerID = ${CONT_ID}"
 result
 
 STRING="T021: udocker create --name=${CONT} ${DOCKER_IMG}"
