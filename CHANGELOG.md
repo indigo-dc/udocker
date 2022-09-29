@@ -3,14 +3,15 @@
 ## udocker (1.3.5)
 
 * fix python backwards compatibility issues
-* fix image verification incorrectly reported errors
+* fix incorrectly reported errors by image verification
 * fix image search returning empty results
 * fix issue with logical links in the udocker executable path
-* verify if container name exists before creation or cloning
+* add check to verify if container name exists before creation
+  or cloning
 * add --force option to create and clone to allow creation
   of container even if the intended name given by --name exists
 * prevent closing of file descriptors upon engine invocation
-* improved pmi interoperability
+  improves PMI process management interface interoperability
 
 ## udocker (1.3.4)
 
