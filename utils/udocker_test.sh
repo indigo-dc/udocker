@@ -42,6 +42,30 @@ DOCKER_IMG="ubuntu:18.04"
 CONT="ubuntu"
 export UDOCKER_DIR=${DEFAULT_UDIR}
 
+if [ -n "$1" ]
+then
+  UDOCKER_CMD="$1"
+else
+  UDOCKER_CMD=$(type -p udocker)
+fi
+
+if [ ! -x "$UDOCKER_CMD" ]
+then
+  echo "ERROR udocker file not executable: $UDOCKER_CMD"
+  exit 1
+fi
+
+if [ -n "$2" ]
+then
+  PYTHON_CMD="$2"
+fi
+
+if [ -n "$PYTHON_CMD" -a ! -x "$PYTHON_CMD" ]
+then
+  echo "ERROR python interpreter not executable: $PYTHON_CMD"
+  exit 1
+fi
+
 function print_ok
 {
   printf "${OK_STR}"
@@ -56,7 +80,7 @@ function clean
 {
   if [ -d ${DEFAULT_UDIR} ]
   then
-    echo "${DEFAULT_UDIR} exists, exiting"
+    echo "ERROR test directory exists, remove first: ${DEFAULT_UDIR}"
     exit 1
   fi
 }
@@ -83,6 +107,11 @@ function result_inv
       FAILED_TESTS+=("$STRING")
   fi
   echo "|______________________________________________________________________________|"
+}
+
+function udocker
+{
+  $PYTHON_CMD $UDOCKER_CMD $*
 }
 
 echo "================================================="
