@@ -245,7 +245,7 @@ class ElfPatcher(object):
     def _get_ld_config(self):
         """Get get directories from container ld.so.cache"""
         cmd = ["ldconfig", "-p", "-C",
-               f"{self._container_root}/{Config.conf['ld_so_cache']}", ]
+               "%s/%s" % (self._container_root, Config.conf['ld_so_cache']), ]
         ld_dict = {}
         ld_data = Uprocess().get_output(cmd)
         if not ld_data:

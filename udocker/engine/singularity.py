@@ -68,13 +68,13 @@ class SingularityEngine(ExecutionEngineCommon):
                     tmp_is_binded = True
                 elif host_path == "/var/tmp" and cont_path in ("", "/var/tmp"):
                     vartmp_is_binded = True
-            vol_list.extend(["-B", f"{host_path}:{cont_path}", ])
+            vol_list.extend(["-B", "%s:%s" % (host_path, cont_path), ])
         if not home_is_binded:
-            vol_list.extend(["--home", f"{self.container_root}/root:/root", ])
+            vol_list.extend(["--home", "%s/root:%s" % (self.container_root, "/root"), ])
         if not tmp_is_binded:
-            vol_list.extend(["-B", f"{self.container_root}/tmp:/tmp", ])
+            vol_list.extend(["-B", "%s/tmp:/tmp" % (self.container_root), ])
         if not vartmp_is_binded:
-            vol_list.extend(["-B", f"{self.container_root}/var/tmp:/var/tmp", ])
+            vol_list.extend(["-B", "%s/var/tmp:/var/tmp" % (self.container_root), ])
         return vol_list
 
     def _singularity_env_get(self):
@@ -83,7 +83,7 @@ class SingularityEngine(ExecutionEngineCommon):
         """
         singularityenv = {}
         for (key, val) in self.opt["env"]:
-            singularityenv[f'SINGULARITYENV_{key}'] = val
+            singularityenv["SINGULARITYENV_%s" % key] = val
         return singularityenv
 
     def _make_container_directories(self):

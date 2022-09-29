@@ -207,7 +207,7 @@ class ExecutionEngineCommon(object):
                     self.opt["vol"].remove(vol)
                     found = True
             if not found:
-                Msg().err(f"Warning: --novol {novolume} not in volumes list", l=Msg.WAR)
+                Msg().err("Warning: --novol %s not in volumes list" % novolume, l=Msg.WAR)
         return self._check_volumes()
 
     def _check_paths(self):
@@ -217,7 +217,7 @@ class ExecutionEngineCommon(object):
                 path = Config.conf['root_path']
             else:
                 path = Config.conf['user_path']
-            self.opt["env"].append(f"PATH={path}")
+            self.opt["env"].append("PATH=%s" % path)
         # verify if the working directory is valid and fix it
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
@@ -550,7 +550,7 @@ class ExecutionEngineCommon(object):
             if   ((not self.opt["hostenv"]) and
                   env_var not in Config.conf['valid_host_env']):
                 continue
-            self.opt["env"].append(f"{env_var}={value}")
+            self.opt["env"].append("%s=%s" % (env_var, value))
 
     def _run_env_set(self):
         """Environment variables to set"""
