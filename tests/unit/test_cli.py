@@ -687,7 +687,7 @@ class UdockerCLITestCase(TestCase):
         udoc = UdockerCLI(self.local)
         status = udoc.do_create(cmdp)
         self.assertEqual(status, 1)
-        self.assertTrue(self.local.set_container_name.called)
+        self.assertFalse(self.local.set_container_name.called)
 
     # def test_22__get_run_options(self):
     #    """Test22 UdockerCLI()._get_run_options()"""
