@@ -26,7 +26,7 @@ docker-compose -f .sqa/docker-compose.yml --project-directory . exec qc.met02_ud
     cat codemeta.json
 
 docker-compose -f .sqa/docker-compose.yml --project-directory . exec qc.sec_udocker \
-    bandit -f html -o bandit.html -r udocker
+    bandit -f json --quiet --confidence-level medium --recursive udocker
 
 docker-compose -f .sqa/docker-compose.yml --project-directory . exec qc.sty_udocker \
     pylint --rcfile=pylintrc udocker

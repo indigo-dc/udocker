@@ -43,12 +43,12 @@ sqa_criteria:
   #       - cat codemeta.json
   #       container: qc.met02_udocker
 
-  QC.Sec:
-    repos:
-      this_repo:
-        commands:
-        - bandit -f json --quiet  --confidence-level medium --recursive .
-        container: qc.sec_udocker
+  # QC.Sec:
+  #   repos:
+  #     this_repo:
+  #       commands:
+  #       - bandit -f json --quiet --confidence-level medium --recursive udocker
+  #       container: qc.sec_udocker
 
   QC.Sty:
     repos:
