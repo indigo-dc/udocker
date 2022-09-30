@@ -29,7 +29,7 @@ if sys.version_info[0] >= 3:
     GET_INPUT = input
 else:
     BUILTIN = "__builtin__"
-    # pylint: disable=undefined-variable
+    # Xpylint: disable=undefined-variable
     GET_INPUT = raw_input
 
 
