@@ -24,6 +24,8 @@ import sys
 new_path=[]
 new_path.append(os.path.dirname(os.path.realpath(__file__)))
 new_path.extend(sys.path)
+for spath in sys.path:
+    new_path.append(spath + "/udocker")
 sys.path = new_path
 
 # pylint: disable=wrong-import-position
