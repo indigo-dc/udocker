@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+udocker-1.*
+
+
 # C extensions
 *.so
 

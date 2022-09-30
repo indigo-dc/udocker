@@ -27,6 +27,8 @@ echo "=========================================================="
 rm -rf `find . -name '*pycache*'` `find . -name '*.pyc'`
 mkdir -p udocker-${VER}
 cp -prv udocker udocker-${VER}/
-ln -s udocker-${VER}/udocker/maincmd.py udocker-${VER}/udocker/udocker
+cd udocker-${VER}/udocker/
+ln -s maincmd.py udocker
+cd ../../
 
 tar zcvf udocker-${VER}.tar.gz udocker-${VER}
