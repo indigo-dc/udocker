@@ -20,11 +20,11 @@ limitations under the License.
 """
 import os
 import sys
-import copy
 
-for spath in copy.deepcopy(sys.path):
-    sys.path.append(spath + "/udocker")
-sys.path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../')
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)))
+new_path.extend(sys.path)
+sys.path = new_path
 
 # pylint: disable=wrong-import-position
 from msg import Msg
