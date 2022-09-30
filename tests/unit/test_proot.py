@@ -3,10 +3,18 @@
 udocker unit tests: PRootEngine
 """
 
+import os
+import sys
+
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
-from udocker.config import Config
-from udocker.engine.proot import PRootEngine
+from config import Config
+from engine.proot import PRootEngine
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -26,13 +34,13 @@ class PRootEngineTestCase(TestCase):
         Config().conf['oskernel'] = "4.8.13"
         Config().conf['location'] = ""
 
-        str_local = 'udocker.container.localrepo.LocalRepository'
+        str_local = 'container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
         self.local = self.lrepo.start()
         self.mock_lrepo = Mock()
         self.local.return_value = self.mock_lrepo
 
-        str_exmode = 'udocker.engine.execmode.ExecutionMode'
+        str_exmode = 'engine.execmode.ExecutionMode'
         self.execmode = patch(str_exmode)
         self.xmode = self.execmode.start()
         self.mock_execmode = Mock()
@@ -42,7 +50,7 @@ class PRootEngineTestCase(TestCase):
         self.lrepo.stop()
         self.execmode.stop()
 
-    @patch('udocker.engine.proot.HostInfo.oskernel')
+    @patch('engine.proot.HostInfo.oskernel')
     def test_01_init(self, mock_kernel):
         """Test01 PRootEngine() constructor."""
         mock_kernel.return_value = "4.8.13"
@@ -51,9 +59,9 @@ class PRootEngineTestCase(TestCase):
         self.assertEqual(prex._kernel, "4.8.13")
 
     @patch.object(PRootEngine, '_is_seccomp_patched')
-    @patch('udocker.engine.proot.HostInfo.oskernel_isgreater')
-    @patch('udocker.engine.proot.FileUtil.find_file_in_dir')
-    @patch('udocker.helper.elfpatcher.os.path.exists')
+    @patch('engine.proot.HostInfo.oskernel_isgreater')
+    @patch('engine.proot.FileUtil.find_file_in_dir')
+    @patch('helper.elfpatcher.os.path.exists')
     def test_02_select_proot(self, mock_exists, mock_fimage,
                              mock_isgreater, mock_issecomp):
         """Test02 PRootEngine().select_proot()."""
@@ -143,7 +151,7 @@ class PRootEngineTestCase(TestCase):
         status = prex._get_volume_bindings()
         self.assertEqual(status, ['-b', '/tmp:/tmp', '-b', '/bbb:/bbb'])
 
-    @patch('udocker.engine.proot.ExecutionEngineCommon._get_portsmap')
+    @patch('engine.proot.ExecutionEngineCommon._get_portsmap')
     def test_06__get_network_map(self, mock_pmap):
         """Test06 PRootEngine()._get_network_map()."""
         mock_pmap.return_value = {}
@@ -164,10 +172,10 @@ class PRootEngineTestCase(TestCase):
         status = prex._get_network_map()
         self.assertEqual(status, ['-p', '80:8080', '-p', '443:8443', '-n'])
 
-    @patch('udocker.engine.proot.os.environ.update')
+    @patch('engine.proot.os.environ.update')
     @patch.object(PRootEngine, '_get_network_map')
-    @patch('udocker.engine.nvidia.Msg')
-    @patch('udocker.engine.proot.HostInfo.oskernel_isgreater')
+    @patch('engine.nvidia.Msg')
+    @patch('engine.proot.HostInfo.oskernel_isgreater')
     @patch.object(PRootEngine, '_run_banner')
     @patch.object(PRootEngine, '_run_env_cleanup_dict')
     @patch.object(PRootEngine, '_set_uid_map')
@@ -175,9 +183,9 @@ class PRootEngineTestCase(TestCase):
     @patch.object(PRootEngine, '_set_cpu_affinity')
     @patch.object(PRootEngine, '_run_env_set')
     @patch.object(PRootEngine, 'select_proot')
-    @patch('udocker.engine.proot.os.getenv')
-    @patch('udocker.engine.proot.subprocess.call')
-    @patch('udocker.engine.proot.ExecutionEngineCommon._run_init')
+    @patch('engine.proot.os.getenv')
+    @patch('engine.proot.subprocess.call')
+    @patch('engine.proot.ExecutionEngineCommon._run_init')
     def test_07_run(self, mock_run_init, mock_call, mock_getenv, mock_sel_proot,
                     mock_run_env_set,
                     mock_set_cpu_aff, mock_get_vol_bind, mock_set_uid_map,
@@ -206,6 +214,7 @@ class PRootEngineTestCase(TestCase):
         mock_envupd.return_value = None
         prex = PRootEngine(self.local, self.xmode)
         prex.opt["kernel"] = "5.4.0"
+        prex.opt["cmd"] = ['/bin/sh']
         status = prex.run("CONTAINERID")
         self.assertEqual(status, 5)
         self.assertTrue(mock_run_init.called)

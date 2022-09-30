@@ -5,17 +5,13 @@
 udocker unit tests: ContainerStructure
 """
 
-
 import os
 import sys
 
-new_sys_path = []
-for ppath in sys.path:
-    new_sys_path.append(ppath)
-    new_sys_path.append(ppath + "/udocker")
-
-new_sys_path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../')
-sys.path = new_sys_path
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
 
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
@@ -41,7 +37,7 @@ class ContainerStructureTestCase(TestCase):
         Config().conf['location'] = ""
         Config().conf['oskernel'] = "4.8.13"
 
-        str_local = 'udocker.container.localrepo.LocalRepository'
+        str_local = 'container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
         self.local = self.lrepo.start()
         self.mock_lrepo = Mock()

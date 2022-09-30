@@ -3,10 +3,18 @@
 udocker unit tests: OSInfo
 """
 
+import os
+import sys
+
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import patch
-from udocker.helper.osinfo import OSInfo
-from udocker.config import Config
+from helper.osinfo import OSInfo
+from config import Config
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -28,8 +36,8 @@ class GuestInfoTestCase(TestCase):
         ginfo = OSInfo(self.rootdir)
         self.assertIsInstance(ginfo._binarylist, list)
 
-    @patch('udocker.helper.osinfo.Uprocess.get_output')
-    @patch('udocker.helper.osinfo.os.path.isfile')
+    @patch('helper.osinfo.Uprocess.get_output')
+    @patch('helper.osinfo.os.path.isfile')
     def test_02_get_filetype(self, mock_isfile, mock_getout):
         """Test02 OSInfo.get_filetype(filename)"""
         # full filepath exists
@@ -79,9 +87,9 @@ class GuestInfoTestCase(TestCase):
         status = ginfo.arch()
         self.assertEqual(status, "arm")
 
-    @patch('udocker.helper.osinfo.os.path.exists')
-    @patch('udocker.helper.osinfo.FileUtil.match')
-    @patch('udocker.helper.osinfo.FileUtil.getdata')
+    @patch('helper.osinfo.os.path.exists')
+    @patch('helper.osinfo.FileUtil.match')
+    @patch('helper.osinfo.FileUtil.getdata')
     def test_04_osdistribution(self, mock_gdata, mock_match, mock_exists):
         """Test04 OSInfo.osdistribution()"""
         lsbdata = "DISTRIB_ID=Ubuntu\n" \

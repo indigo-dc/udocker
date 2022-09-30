@@ -3,10 +3,18 @@
 udocker unit tests: UMain
 """
 
+import os
+import sys
+
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import patch
-from udocker.umain import UMain
-from udocker.config import Config
+from umain import UMain
+from config import Config
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -26,10 +34,10 @@ class UMainTestCase(TestCase):
         udoc = UMain(argv)
         self.assertEqual(udoc.argv, argv)
 
-    @patch('udocker.umain.Msg')
-    @patch('udocker.umain.UdockerCLI')
-    @patch('udocker.umain.LocalRepository')
-    @patch('udocker.umain.os.geteuid')
+    @patch('umain.Msg')
+    @patch('umain.UdockerCLI')
+    @patch('umain.LocalRepository')
+    @patch('umain.os.geteuid')
     def test_02__prepare_exec(self, mock_getuid,
                               mock_local, mock_ucli, mock_msg):
         """Test02 UMain()._prepare_exec()."""
@@ -55,8 +63,8 @@ class UMainTestCase(TestCase):
         self.assertTrue(mock_local.return_value.is_repo.called)
         self.assertTrue(mock_ucli.called)
 
-    @patch('udocker.umain.Msg')
-    @patch('udocker.umain.UdockerCLI')
+    @patch('umain.Msg')
+    @patch('umain.UdockerCLI')
     def test_03_execute(self, mock_ucli, mock_msg):
         """Test03 UMain().execute()."""
         mock_msg.level = 0

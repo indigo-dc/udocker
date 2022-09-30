@@ -3,9 +3,17 @@
 udocker unit tests: OciLocalFileAPI
 """
 
+import os
+import sys
+
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
-from udocker.oci import OciLocalFileAPI
+from oci import OciLocalFileAPI
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -14,7 +22,7 @@ class OciLocalFileAPITestCase(TestCase):
     """Test OciLocalFileAPI()."""
 
     def setUp(self):
-        str_local = 'udocker.container.localrepo.LocalRepository'
+        str_local = 'container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
         self.local = self.lrepo.start()
         self.mock_lrepo = Mock()
@@ -26,9 +34,9 @@ class OciLocalFileAPITestCase(TestCase):
     # def test_01__init(self):
     #     """Test01 OciLocalFileAPI() constructor."""
 
-    @patch('udocker.oci.FileUtil.isdir')
-    @patch('udocker.oci.os.listdir')
-    @patch('udocker.container.localrepo.LocalRepository.load_json')
+    @patch('oci.FileUtil.isdir')
+    @patch('oci.os.listdir')
+    @patch('container.localrepo.LocalRepository.load_json')
     def test_02__load_structure(self, mock_ljson, mock_oslist, mock_isdir):
         """Test02 OciLocalFileAPI()._load_structure."""
         mock_ljson.side_effect = [[], []]
@@ -68,9 +76,9 @@ class OciLocalFileAPITestCase(TestCase):
         status = OciLocalFileAPI(self.local)._get_from_manifest(struct, imgtag)
         self.assertEqual(status, (conf_out, lay_out))
 
-    # @patch('udocker.oci.Unique.imagename')
-    # @patch('udocker.oci.Unique.imagetag')
-    # @patch('udocker.container.localrepo.LocalRepository.load_json')
+    # @patch('oci.Unique.imagename')
+    # @patch('oci.Unique.imagetag')
+    # @patch('container.localrepo.LocalRepository.load_json')
     # def test_04__load_manifest(self, mock_ljson, mock_uniqtag, mock_uniqname):
     #     """Test04 OciLocalFileAPI()._load_manifest."""
     #     manifest = {'annotations':
@@ -94,7 +102,7 @@ class OciLocalFileAPITestCase(TestCase):
     # def test_06__load_image_step2(self):
     #     """Test07 OciLocalFileAPI()._load_image_step2."""
 
-    @patch('udocker.oci.Msg.err')
+    @patch('oci.Msg.err')
     @patch.object(OciLocalFileAPI, '_load_repositories')
     @patch.object(OciLocalFileAPI, '_load_structure')
     def test_07_load(self, mock_loadstruct, mock_loadrepo, mock_msg):

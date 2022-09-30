@@ -3,10 +3,18 @@
 udocker unit tests: MountPoint
 """
 
+import os
+import sys
+
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
-from udocker.utils.mountpoint import MountPoint
-from udocker.config import Config
+from utils.mountpoint import MountPoint
+from config import Config
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -18,7 +26,7 @@ class MountPointTestCase(TestCase):
         Config().getconf()
         self.bind_dir = "/.bind_host_files"
         self.orig_dir = "/.bind_orig_files"
-        str_local = 'udocker.container.localrepo.LocalRepository'
+        str_local = 'container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
         self.local = self.lrepo.start()
         self.mock_lrepo = Mock()
@@ -28,7 +36,7 @@ class MountPointTestCase(TestCase):
         self.lrepo.stop()
 
     @patch.object(MountPoint, 'setup')
-    @patch('udocker.utils.mountpoint.os.path.realpath')
+    @patch('utils.mountpoint.os.path.realpath')
     def test_01_init(self, mock_realpath, mock_setup):
         """Test01 MountPoint() constructor"""
         container_id = "CONTAINERID"
@@ -41,10 +49,10 @@ class MountPointTestCase(TestCase):
         self.assertTrue(mpoint.container_root, mpoint.container_dir + "/ROOT")
         self.assertTrue(mock_setup.called)
 
-    @patch('udocker.utils.mountpoint.Msg.err')
-    @patch('udocker.utils.mountpoint.FileUtil.mkdir')
-    @patch('udocker.utils.mountpoint.os.path.isdir')
-    @patch('udocker.utils.mountpoint.os.path.realpath')
+    @patch('utils.mountpoint.Msg.err')
+    @patch('utils.mountpoint.FileUtil.mkdir')
+    @patch('utils.mountpoint.os.path.isdir')
+    @patch('utils.mountpoint.os.path.realpath')
     def test_02_setup(self, mock_realpath, mock_isdir, mock_mkdir, mock_msg):
         """Test02 MountPoint().setup()."""
         container_id = "CONTAINERID"
@@ -69,9 +77,9 @@ class MountPointTestCase(TestCase):
         self.assertTrue(mock_msg.called)
         self.assertFalse(status)
 
-    @patch('udocker.utils.mountpoint.FileUtil.getvalid_path')
+    @patch('utils.mountpoint.FileUtil.getvalid_path')
     @patch.object(MountPoint, 'setup')
-    @patch('udocker.utils.mountpoint.os.path.realpath')
+    @patch('utils.mountpoint.os.path.realpath')
     def test_03_add(self, mock_realpath, mock_setup, mock_valid):
         """Test03 MountPoint().add()."""
         container_id = "CONTAINERID"
@@ -83,9 +91,9 @@ class MountPointTestCase(TestCase):
         mpoint.add(cpath)
         self.assertEqual(mpoint.mountpoints[cpath], "/ROOT/dir1")
 
-    @patch('udocker.utils.mountpoint.os.path.normpath')
+    @patch('utils.mountpoint.os.path.normpath')
     @patch.object(MountPoint, 'setup')
-    @patch('udocker.utils.mountpoint.os.path.realpath')
+    @patch('utils.mountpoint.os.path.realpath')
     def test_04_delete(self, mock_realpath, mock_setup, mock_norm):
         """Test04 MountPoint().delete()."""
         container_id = "CONTAINERID"
@@ -106,9 +114,9 @@ class MountPointTestCase(TestCase):
         self.assertEqual(mpoint.mountpoints, {})
         self.assertTrue(status)
 
-    @patch('udocker.utils.mountpoint.os.path.normpath')
+    @patch('utils.mountpoint.os.path.normpath')
     @patch.object(MountPoint, 'setup')
-    @patch('udocker.utils.mountpoint.os.path.realpath')
+    @patch('utils.mountpoint.os.path.realpath')
     def test_05_delete_all(self, mock_realpath, mock_setup, mock_norm):
         """Test05 MountPoint().delete_all()."""
         container_id = "CONTAINERID"
@@ -122,15 +130,15 @@ class MountPointTestCase(TestCase):
 
     @patch.object(MountPoint, 'delete')
     @patch.object(MountPoint, 'add')
-    @patch('udocker.utils.mountpoint.Msg.err')
-    @patch('udocker.utils.mountpoint.os.path.isdir')
-    @patch('udocker.utils.mountpoint.os.path.islink')
-    @patch('udocker.utils.mountpoint.FileUtil.putdata')
-    @patch('udocker.utils.mountpoint.FileUtil.mkdir')
-    @patch('udocker.utils.mountpoint.os.path.isfile')
-    @patch('udocker.utils.mountpoint.os.path.exists')
+    @patch('utils.mountpoint.Msg.err')
+    @patch('utils.mountpoint.os.path.isdir')
+    @patch('utils.mountpoint.os.path.islink')
+    @patch('utils.mountpoint.FileUtil.putdata')
+    @patch('utils.mountpoint.FileUtil.mkdir')
+    @patch('utils.mountpoint.os.path.isfile')
+    @patch('utils.mountpoint.os.path.exists')
     @patch.object(MountPoint, 'setup')
-    @patch('udocker.utils.mountpoint.os.path.realpath')
+    @patch('utils.mountpoint.os.path.realpath')
     def test_06_create(self, mock_realpath, mock_setup, mock_exists,
                        mock_isfile, mock_mkdir, mock_putdata,
                        mock_islink, mock_isdir, mock_msg,
@@ -187,10 +195,10 @@ class MountPointTestCase(TestCase):
         self.assertTrue(mock_del.called)
         self.assertFalse(status)
 
-    @patch('udocker.utils.mountpoint.os.symlink')
-    @patch('udocker.utils.mountpoint.os.path.exists')
+    @patch('utils.mountpoint.os.symlink')
+    @patch('utils.mountpoint.os.path.exists')
     @patch.object(MountPoint, 'setup')
-    @patch('udocker.utils.mountpoint.os.path.realpath')
+    @patch('utils.mountpoint.os.path.realpath')
     def test_07_save(self, mock_realpath, mock_setup, mock_exists,
                      mock_syml):
         """Test07 MountPoint().save()."""
@@ -216,7 +224,7 @@ class MountPointTestCase(TestCase):
 
     @patch.object(MountPoint, 'save')
     @patch.object(MountPoint, 'setup')
-    @patch('udocker.utils.mountpoint.os.path.realpath')
+    @patch('utils.mountpoint.os.path.realpath')
     def test_08_save_all(self, mock_realpath, mock_setup, mock_save):
         """Test08 MountPoint().save_all()."""
         container_id = "CONTAINERID"
@@ -228,10 +236,10 @@ class MountPointTestCase(TestCase):
         mpoint.save_all()
         self.assertTrue(mock_save.called)
 
-    @patch('udocker.utils.mountpoint.os.readlink')
-    @patch('udocker.utils.mountpoint.os.listdir')
+    @patch('utils.mountpoint.os.readlink')
+    @patch('utils.mountpoint.os.listdir')
     @patch.object(MountPoint, 'setup')
-    @patch('udocker.utils.mountpoint.os.path.realpath')
+    @patch('utils.mountpoint.os.path.realpath')
     def test_09_load_all(self, mock_realpath, mock_setup,
                          mock_ldir, mock_readl):
         """Test09 MountPoint().load_all()."""
@@ -245,12 +253,12 @@ class MountPointTestCase(TestCase):
         mpoint.load_all()
         self.assertEqual(mpoint.mountpoints, result)
 
-    @patch('udocker.utils.mountpoint.FileUtil.remove')
+    @patch('utils.mountpoint.FileUtil.remove')
     @patch.object(MountPoint, 'delete_all')
     @patch.object(MountPoint, 'load_all')
     @patch.object(MountPoint, 'save_all')
     @patch.object(MountPoint, 'setup')
-    @patch('udocker.utils.mountpoint.os.path.realpath')
+    @patch('utils.mountpoint.os.path.realpath')
     def test_10_restore(self, mock_realpath, mock_setup, mock_save,
                         mock_load, mock_del, mock_remove):
         """Test10 MountPoint().restore()."""

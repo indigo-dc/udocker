@@ -3,9 +3,17 @@
 udocker unit tests: Unshare
 """
 
+import os
+import sys
+
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import patch, MagicMock
-from udocker.helper.unshare import Unshare
+from helper.unshare import Unshare
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -19,8 +27,8 @@ class UnshareTestCase(TestCase):
     def tearDown(self):
         pass
 
-    @patch('udocker.helper.unshare.Msg.err')
-    @patch('udocker.helper.unshare.ctypes.CDLL')
+    @patch('helper.unshare.Msg.err')
+    @patch('helper.unshare.ctypes.CDLL')
     def test_01_unshare(self, mock_cdll, mock_msg):
         """Test01 Unshare().unshare"""
         mock_msg.level = 0
@@ -33,21 +41,21 @@ class UnshareTestCase(TestCase):
         self.assertTrue(mock_cdll.return_value.unshare.called)
         self.assertFalse(status)
 
-    @patch('udocker.helper.unshare.os._exit')
+    @patch('helper.unshare.os._exit')
     @patch.object(Unshare, 'unshare')
-    @patch('udocker.helper.unshare.os.setgroups')
-    @patch('udocker.helper.unshare.os.setuid')
-    @patch('udocker.helper.unshare.os.setgid')
-    @patch('udocker.helper.unshare.Msg.err')
-    @patch('udocker.helper.unshare.os.waitpid')
-    @patch('udocker.helper.unshare.NixAuthentication.user_in_subgid')
-    @patch('udocker.helper.unshare.subprocess.call')
-    @patch('udocker.helper.unshare.NixAuthentication.user_in_subuid')
-    @patch('udocker.helper.unshare.HostInfo')
-    @patch('udocker.helper.unshare.os.read')
-    @patch('udocker.helper.unshare.os.close')
-    @patch('udocker.helper.unshare.os.fork')
-    @patch('udocker.helper.unshare.os.pipe')
+    @patch('helper.unshare.os.setgroups')
+    @patch('helper.unshare.os.setuid')
+    @patch('helper.unshare.os.setgid')
+    @patch('helper.unshare.Msg.err')
+    @patch('helper.unshare.os.waitpid')
+    @patch('helper.unshare.NixAuthentication.user_in_subgid')
+    @patch('helper.unshare.subprocess.call')
+    @patch('helper.unshare.NixAuthentication.user_in_subuid')
+    @patch('helper.unshare.HostInfo')
+    @patch('helper.unshare.os.read')
+    @patch('helper.unshare.os.close')
+    @patch('helper.unshare.os.fork')
+    @patch('helper.unshare.os.pipe')
     def test_02_namespace_exec(self, mock_pipe, mock_fork, mock_close,
                                mock_read, mock_hinfo, mock_usubuid,
                                mock_call, mock_usubgid, mock_wait, mock_msg,

@@ -3,9 +3,17 @@
 udocker unit tests: LocalFileAPI
 """
 
+import os
+import sys
+
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
-from udocker.localfile import LocalFileAPI
+from localfile import LocalFileAPI
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -14,7 +22,7 @@ class LocalFileAPITestCase(TestCase):
     """Test LocalFileAPI()."""
 
     def setUp(self):
-        str_local = 'udocker.container.localrepo.LocalRepository'
+        str_local = 'container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
         self.local = self.lrepo.start()
         self.mock_lrepo = Mock()
@@ -26,15 +34,15 @@ class LocalFileAPITestCase(TestCase):
     # def test_01__init(self):
     #     """Test01 LocalFileAPI() constructor."""
 
-    @patch('udocker.localfile.OciLocalFileAPI.load')
-    @patch('udocker.localfile.DockerLocalFileAPI.load')
+    @patch('localfile.OciLocalFileAPI.load')
+    @patch('localfile.DockerLocalFileAPI.load')
     @patch.object(LocalFileAPI, '_get_imagedir_type')
-    @patch('udocker.localfile.FileUtil.remove')
+    @patch('localfile.FileUtil.remove')
     @patch.object(LocalFileAPI, '_untar_saved_container')
-    @patch('udocker.localfile.os.makedirs')
-    @patch('udocker.localfile.FileUtil.mktmp')
-    @patch('udocker.localfile.Msg.err')
-    @patch('udocker.localfile.os.path.exists')
+    @patch('localfile.os.makedirs')
+    @patch('localfile.FileUtil.mktmp')
+    @patch('localfile.Msg.err')
+    @patch('localfile.os.path.exists')
     def test_02_load(self, mock_exists, mock_msg, mock_mktmp, mock_mkdir,
                      mock_untar, mock_remove, mock_imgtype, mock_dockerload,
                      mock_ociload):
@@ -90,7 +98,7 @@ class LocalFileAPITestCase(TestCase):
         self.assertTrue(mock_imgtype.called)
         self.assertEqual(status, [])
 
-    @patch('udocker.localfile.DockerLocalFileAPI.save')
+    @patch('localfile.DockerLocalFileAPI.save')
     def test_03_save(self, mock_dockersave):
         """Test03 LocalFileAPI().save."""
         mock_dockersave.return_value = True

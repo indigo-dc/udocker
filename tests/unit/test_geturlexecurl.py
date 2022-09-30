@@ -5,10 +5,18 @@
 udocker unit tests: GetURLexeCurl
 """
 
+import os
+import sys
+
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import patch
-from udocker.utils.curl import GetURLexeCurl
-from udocker.config import Config
+from utils.curl import GetURLexeCurl
+from config import Config
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -37,7 +45,7 @@ class GetURLexeCurlTestCase(TestCase):
         self.assertIsNone(geturl._opts)
         self.assertIsNone(geturl._files)
 
-    @patch('udocker.utils.curl.FileUtil.find_exec')
+    @patch('utils.curl.FileUtil.find_exec')
     def test_02_is_available(self, mock_findexec):
         """Test02 GetURLexeCurl()._is_available()."""
         mock_findexec.return_value = "/tmp"
@@ -51,7 +59,7 @@ class GetURLexeCurlTestCase(TestCase):
     # def test_03__select_implementation(self):
     #     """Test03 GetURLexeCurl()._select_implementation()."""
 
-    @patch('udocker.utils.curl.FileUtil.mktmp')
+    @patch('utils.curl.FileUtil.mktmp')
     def test_04__set_defaults(self, mock_mktemp):
         """Test04 GetURLexeCurl()._set_defaults()"""
         mock_mktemp.side_effect = ["/tmp/err", "/tmp/out", "/tmp/hdr"]
@@ -72,8 +80,8 @@ class GetURLexeCurlTestCase(TestCase):
         self.assertEqual(geturl._files["error_file"], "/tmp/err")
         self.assertEqual(geturl._files["header_file"], "/tmp/hdr")
 
-    @patch('udocker.utils.curl.FileUtil.remove')
-    @patch('udocker.utils.curl.json.dumps')
+    @patch('utils.curl.FileUtil.remove')
+    @patch('utils.curl.json.dumps')
     def test_05__mkcurlcmd(self, mock_jdump, mock_furm):
         """Test05 GetURLexeCurl()._mkcurlcmd()."""
         argl = ["http://host"]

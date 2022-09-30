@@ -3,14 +3,22 @@
 udocker unit tests: ExecutionMode
 """
 
+import os
+import sys
+
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
-from udocker.engine.execmode import ExecutionMode
-from udocker.engine.proot import PRootEngine
-from udocker.engine.runc import RuncEngine
-from udocker.engine.fakechroot import FakechrootEngine
-from udocker.engine.singularity import SingularityEngine
-from udocker.config import Config
+from engine.execmode import ExecutionMode
+from engine.proot import PRootEngine
+from engine.runc import RuncEngine
+from engine.fakechroot import FakechrootEngine
+from engine.singularity import SingularityEngine
+from config import Config
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -35,7 +43,7 @@ class ExecutionModeTestCase(TestCase):
         Config().conf['default_execution_mode'] = "P1"
         self.container_id = "CONTAINER_ID"
 
-        str_local = 'udocker.container.localrepo.LocalRepository'
+        str_local = 'container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
         self.local = self.lrepo.start()
         self.mock_lrepo = Mock()
@@ -62,7 +70,7 @@ class ExecutionModeTestCase(TestCase):
                          ("P1", "P2", "F1", "F2",
                           "F3", "F4", "R1", "R2", "R3", "S1"))
 
-    @patch('udocker.engine.execmode.FileUtil.getdata')
+    @patch('engine.execmode.FileUtil.getdata')
     def test_02_get_mode(self, mock_getdata):
         """Test02 ExecutionMode().get_mode."""
         mock_getdata.return_value.strip.return_value = None
@@ -75,17 +83,17 @@ class ExecutionModeTestCase(TestCase):
         status = uexm.get_mode()
         self.assertEqual(status, "F3")
 
-    @patch('udocker.engine.execmode.Msg')
-    @patch('udocker.engine.execmode.os.path')
-    @patch('udocker.engine.execmode.FileUtil.putdata')
-    @patch('udocker.engine.execmode.FileBind.setup')
-    @patch('udocker.engine.execmode.ElfPatcher.get_ld_libdirs')
-    @patch('udocker.engine.execmode.FileUtil.links_conv')
-    @patch('udocker.engine.execmode.FileBind.restore')
-    @patch('udocker.engine.execmode.FileUtil.getdata')
-    @patch('udocker.engine.execmode.FileUtil')
-    @patch('udocker.engine.execmode.FileBind')
-    @patch('udocker.engine.execmode.ElfPatcher')
+    @patch('engine.execmode.Msg')
+    @patch('engine.execmode.os.path')
+    @patch('engine.execmode.FileUtil.putdata')
+    @patch('engine.execmode.FileBind.setup')
+    @patch('engine.execmode.ElfPatcher.get_ld_libdirs')
+    @patch('engine.execmode.FileUtil.links_conv')
+    @patch('engine.execmode.FileBind.restore')
+    @patch('engine.execmode.FileUtil.getdata')
+    @patch('engine.execmode.FileUtil')
+    @patch('engine.execmode.FileBind')
+    @patch('engine.execmode.ElfPatcher')
     @patch.object(ExecutionMode, 'get_mode')
     def test_03_set_mode(self, mock_getmode, mock_elfp, mock_fbind,
                          mock_futil, mock_getdata, mock_restore, mock_links,
