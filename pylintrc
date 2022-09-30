@@ -112,6 +112,8 @@ enable=
 disable=
     fixme,
     too-few-public-methods,
+    protected-access,
+    too-many-nested-blocks,
     W0612,
     R1732,
     W1514,
