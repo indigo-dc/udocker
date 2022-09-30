@@ -92,8 +92,6 @@ class GetURL:
         self._curl_exec = Config.conf['use_curl_executable']
         self._select_implementation()
 
-    # pylint: disable=locally-disabled
-    # pylint: disable=protected-access
     def _select_implementation(self):
         """Select which implementation to use"""
         if GetURLpyCurl().is_available() and not self._curl_exec:

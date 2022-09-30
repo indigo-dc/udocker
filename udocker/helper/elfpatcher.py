@@ -265,7 +265,6 @@ class ElfPatcher:
 
         return list(ld_dict.keys())
 
-    # pylint: disable=too-many-nested-blocks
     def _find_ld_libdirs(self, root_path=None):
         """search for library directories in container"""
         if root_path is None:
