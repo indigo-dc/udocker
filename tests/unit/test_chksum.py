@@ -7,6 +7,7 @@ import os
 import sys
 
 new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
 new_path.extend(sys.path)
 sys.path = new_path
@@ -14,9 +15,7 @@ sys.path = new_path
 from unittest import TestCase, main
 from unittest.mock import patch
 
-#from unittest.mock import patch, Mock, mock_open
-#from io import BytesIO as strio
-from utils.chksum import ChkSUM
+from udocker.utils.chksum import ChkSUM
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -32,8 +31,8 @@ class ChkSUMTestCase(TestCase):
     def tearDown(self):
         pass
 
-    @patch('utils.chksum.hashlib.sha512')
-    @patch('utils.chksum.hashlib.sha256')
+    @patch('udocker.utils.chksum.hashlib.sha512')
+    @patch('udocker.utils.chksum.hashlib.sha256')
     @patch.object(ChkSUM, '_openssl_sha512', autospec=True)
     @patch.object(ChkSUM, '_hashlib_sha512', autospec=True)
     @patch.object(ChkSUM, '_openssl_sha256', autospec=True)

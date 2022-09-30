@@ -9,17 +9,15 @@ udocker unit tests: Config
 import os
 import sys
 
-new_sys_path = []
-for ppath in sys.path:
-    new_sys_path.append(ppath)
-    new_sys_path.append(ppath + "/udocker")
-
-new_sys_path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../')
-sys.path = new_sys_path
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
 
 from unittest import TestCase, main
 from unittest.mock import patch
-from config import Config
+from udocker.config import Config
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -56,9 +54,9 @@ class ConfigTestCase(TestCase):
         self.assertIsInstance(config.conf['dockerio_index_url'], str)
         self.assertIsInstance(config.conf['dockerio_registry_url'], str)
 
-    @patch('config.ConfigParser.items')
-    @patch('config.ConfigParser.read')
-    @patch('config.os.path.exists')
+    @patch('udocker.config.ConfigParser.items')
+    @patch('udocker.config.ConfigParser.read')
+    @patch('udocker.config.os.path.exists')
     def test_02__file_override(self, mock_exists, mock_cpread, mock_cpitems):
         """Test02 Config()._file_override"""
         cfile = "/home/udocker.conf"
@@ -68,7 +66,7 @@ class ConfigTestCase(TestCase):
         Config()._file_override(cfile)
         self.assertEqual(Config.conf['verbose_level'], 5)
 
-    @patch('config.os.getenv')
+    @patch('udocker.config.os.getenv')
     def test_03__env_override(self, mock_env):
         """Test03 Config()._env_override"""
         # Order of getenv:
@@ -80,7 +78,7 @@ class ConfigTestCase(TestCase):
 
     @patch.object(Config, '_env_override')
     @patch.object(Config, '_file_override')
-    @patch('config.Config')
+    @patch('udocker.config.Config')
     def test_04_getconf(self, mock_conf, mock_fileover, mock_envover):
         """Test04 Config.getconf()."""
         mock_conf.return_value.conf["topdir"] = "/.udocker"
@@ -90,7 +88,7 @@ class ConfigTestCase(TestCase):
         self.assertTrue(mock_envover.called)
 
     @patch.object(Config, '_file_override')
-    @patch('config.Config')
+    @patch('udocker.config.Config')
     def test_05_container(self, mock_conf, mock_fileover):
         """Test05 Config.container()."""
         mock_conf.return_value.conf["topdir"] = "/.udocker"

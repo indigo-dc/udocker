@@ -3,9 +3,18 @@
 udocker unit tests: SingularityEngine
 """
 
+import os
+import sys
+
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
-from udocker.config import Config
+from config import Config
 from udocker.engine.singularity import SingularityEngine
 import collections
 collections.Callable = collections.abc.Callable
@@ -223,6 +232,7 @@ class SingularityEngineTestCase(TestCase):
         mock_call.return_value = 0
         sing = SingularityEngine(self.local, self.xmode)
         sing.executable = "/bin/sing"
+        sing.opt["cmd"] = [""]
         status = sing.run("CONTAINERID")
         self.assertEqual(status, 0)
 

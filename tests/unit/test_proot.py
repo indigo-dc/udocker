@@ -3,9 +3,18 @@
 udocker unit tests: PRootEngine
 """
 
+import os
+import sys
+
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
-from udocker.config import Config
+from config import Config
 from udocker.engine.proot import PRootEngine
 import collections
 collections.Callable = collections.abc.Callable
@@ -206,6 +215,7 @@ class PRootEngineTestCase(TestCase):
         mock_envupd.return_value = None
         prex = PRootEngine(self.local, self.xmode)
         prex.opt["kernel"] = "5.4.0"
+        prex.opt["cmd"] = [""]
         status = prex.run("CONTAINERID")
         self.assertEqual(status, 5)
         self.assertTrue(mock_run_init.called)

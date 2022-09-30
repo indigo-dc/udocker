@@ -3,10 +3,19 @@
 udocker unit tests: LocalRepository
 """
 
+import os
+import sys
+
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import patch, mock_open, call
 from udocker.container.localrepo import LocalRepository
-from udocker.config import Config
+from config import Config
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -655,7 +664,7 @@ class LocalRepositoryTestCase(TestCase):
             lrepo.protect_imagerepo("IMAGE", "TAG")
             self.assertTrue(mopen.called)
             protect = lrepo.reposdir + "/IMAGE/TAG/PROTECT"
-            self.assertEqual(mopen.call_args, call(protect, 'w', encoding='utf-8'))
+            self.assertEqual(mopen.call_args, call(protect, 'w'))
 
     @patch('udocker.container.localrepo.FileUtil')
     @patch.object(LocalRepository, '_unprotect')

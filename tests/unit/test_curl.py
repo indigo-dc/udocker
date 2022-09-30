@@ -8,21 +8,19 @@ udocker unit tests: CurlHeader
 import os
 import sys
 
-new_sys_path = []
-for ppath in sys.path:
-    new_sys_path.append(ppath)
-    new_sys_path.append(ppath + "/udocker")
-
-new_sys_path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../')
-sys.path = new_sys_path
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
 
 from unittest import TestCase, main
 from unittest.mock import patch
 from io import StringIO
-from utils.curl import CurlHeader
-from utils.curl import GetURL
-from utils.curl import GetURLpyCurl
-from utils.curl import GetURLexeCurl
+from udocker.utils.curl import CurlHeader
+from udocker.utils.curl import GetURL
+from udocker.utils.curl import GetURLpyCurl
+from udocker.utils.curl import GetURLexeCurl
 from config import Config
 import collections
 collections.Callable = collections.abc.Callable
@@ -113,7 +111,7 @@ class GetURLTestCase(TestCase):
     @patch.object(GetURLexeCurl, '_select_implementation')
     @patch.object(GetURLexeCurl, 'is_available')
     @patch.object(GetURLpyCurl, 'is_available')
-    @patch('utils.curl.Msg')
+    @patch('udocker.utils.curl.Msg')
     def test_01_init(self, mock_msg, mock_gupycurl,
                      mock_guexecurl, mock_select):
         """Test01 GetURL() constructor."""
@@ -126,7 +124,7 @@ class GetURLTestCase(TestCase):
         self.assertEqual(geturl.insecure, Config().conf['http_insecure'])
         self.assertFalse(geturl.cache_support)
 
-    @patch('utils.curl.Msg')
+    @patch('udocker.utils.curl.Msg')
     @patch.object(GetURLexeCurl, 'is_available')
     @patch.object(GetURLpyCurl, 'is_available')
     def test_02__select_implementation(self, mock_gupycurl,
@@ -136,7 +134,7 @@ class GetURLTestCase(TestCase):
         mock_gupycurl.return_value = True
         geturl = GetURL()
         geturl._select_implementation()
-        # self.assertTrue(geturl.cache_support)
+        self.assertTrue(geturl.cache_support)
 
         mock_gupycurl.return_value = False
         geturl = GetURL()
@@ -227,7 +225,7 @@ class GetURLpyCurlTestCase(TestCase):
     # def test_01_init(self):
     #     """Test01 GetURLpyCurl() constructor."""
 
-    @patch('utils.curl.Msg')
+    @patch('udocker.utils.curl.Msg')
     @patch.object(GetURLpyCurl, 'is_available')
     def test_02_is_available(self, mock_gupycurl, mock_msg):
         """Test02 GetURLpyCurl()._is_available()."""
@@ -245,9 +243,9 @@ class GetURLpyCurlTestCase(TestCase):
     #     """Test03 GetURLpyCurl()._select_implementation()."""
 
     @patch.object(GetURLpyCurl, 'is_available')
-    @patch('utils.curl.Msg')
-    @patch('utils.curl.pycurl')
-    @patch('utils.curl.CurlHeader')
+    @patch('udocker.utils.curl.Msg')
+    @patch('udocker.utils.curl.pycurl')
+    @patch('udocker.utils.curl.CurlHeader')
     def test_04__set_defaults(self, mock_hdr, mock_pyc,
                               mock_msg, mock_selinsec):
         """Test04 GetURLpyCurl()._set_defaults()."""
@@ -320,8 +318,8 @@ class GetURLexeCurlTestCase(TestCase):
         geturl = GetURLexeCurl()
         self.assertIsNone(geturl._files)
 
-    @patch('utils.curl.Msg')
-    @patch('utils.curl.FileUtil.find_exec')
+    @patch('udocker.utils.curl.Msg')
+    @patch('udocker.utils.curl.FileUtil.find_exec')
     def test_02_is_available(self, mock_findexec, mock_msg):
         """Test02 GetURLexeCurl()._is_available()."""
         mock_msg.level = 0

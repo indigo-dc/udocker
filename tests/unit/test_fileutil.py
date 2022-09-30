@@ -3,12 +3,21 @@
 udocker unit tests: FileUtil
 """
 
+import os
+import sys
+
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 import sys
 import os
 from unittest import TestCase, main
 from unittest.mock import patch, mock_open
 from udocker.utils.fileutil import FileUtil
-from udocker.config import Config
+from config import Config
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -1088,15 +1097,15 @@ class FileUtilTestCase(TestCase):
         status = futil.match()
         self.assertEqual(status, [])
 
-        # mock_regpre.return_value = None
-        # mock_base.return_value = "fil*"
-        # mock_absp.return_value = "/con/filename*"
-        # mock_dirname.return_value = "/con/"
-        # mock_isdir.return_value = True
-        # mock_listdir = ["filename1", "filename2"]
-        # futil = FileUtil("/con/filename*")
-        # status = futil.match()
-        # self.assertEqual(status, ["/con/filename1", "/con/filename2"])
+        mock_regpre.return_value = None
+        mock_base.return_value = "fil"
+        mock_absp.return_value = "/con/filename*"
+        mock_dirname.return_value = "/con"
+        mock_isdir.return_value = True
+        mock_listdir.return_value = ["filename1", "filename2"]
+        futil = FileUtil("/con/filename*")
+        status = futil.match()
+        self.assertEqual(status, ["/con/filename1", "/con/filename2"])
 
 
 if __name__ == '__main__':
