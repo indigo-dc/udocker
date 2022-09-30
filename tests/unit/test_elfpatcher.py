@@ -3,18 +3,10 @@
 udocker unit tests: ElfPatcher
 """
 
-import os
-import sys
-
-new_path=[]
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
-new_path.extend(sys.path)
-sys.path = new_path
-
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
-from helper.elfpatcher import ElfPatcher
-from config import Config
+from udocker.helper.elfpatcher import ElfPatcher
+from udocker.config import Config
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -25,7 +17,7 @@ class ElfPatcherTestCase(TestCase):
     def setUp(self):
         self.contid = "12345"
         Config().getconf()
-        str_local = 'container.localrepo.LocalRepository'
+        str_local = 'udocker.container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
         self.local = self.lrepo.start()
         self.mock_lrepo = Mock()
@@ -34,8 +26,8 @@ class ElfPatcherTestCase(TestCase):
     def tearDown(self):
         self.lrepo.stop()
 
-    @patch('helper.elfpatcher.HostInfo')
-    @patch('helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.HostInfo')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
     def test_01__init(self, mock_path, mock_hinfo):
         """Test01 ElfPatcher() constructor."""
         mock_path.return_value = "/some_contdir"
@@ -44,11 +36,11 @@ class ElfPatcherTestCase(TestCase):
         self.assertTrue(mock_path.callled)
         self.assertEqual(elfp._uid, "1000")
 
-    @patch('helper.elfpatcher.Msg')
-    @patch('helper.elfpatcher.os.path.exists')
-    @patch('helper.elfpatcher.HostInfo.arch')
-    @patch('helper.elfpatcher.FileUtil.find_file_in_dir')
-    @patch('helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.Msg')
+    @patch('udocker.helper.elfpatcher.os.path.exists')
+    @patch('udocker.helper.elfpatcher.HostInfo.arch')
+    @patch('udocker.helper.elfpatcher.FileUtil.find_file_in_dir')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
     def test_02_select_patchelf(self, mock_path, mock_find,
                                 mock_arch, mock_exists, mock_msg):
         """Test02 ElfPatcher().select_patchelf()."""
@@ -70,7 +62,7 @@ class ElfPatcherTestCase(TestCase):
             elfp.select_patchelf()
             self.assertEqual(epexpt.exception.code, 1)
 
-    @patch('helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
     def test_03__replace(self, mock_path):
         """Test03 ElfPatcher()._replace."""
         mock_path.return_value = "/some_contdir"
@@ -81,12 +73,12 @@ class ElfPatcherTestCase(TestCase):
         self.assertEqual(output, ["/bin/", "ls"])
 
     # Needs reviewing
-    @patch('helper.elfpatcher.Uprocess.get_output')
-    @patch('helper.elfpatcher.os.path.islink')
-    @patch('helper.elfpatcher.os.stat')
-    @patch('helper.elfpatcher.os.walk')
-    @patch('helper.elfpatcher.os.access')
-    @patch('helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.Uprocess.get_output')
+    @patch('udocker.helper.elfpatcher.os.path.islink')
+    @patch('udocker.helper.elfpatcher.os.stat')
+    @patch('udocker.helper.elfpatcher.os.walk')
+    @patch('udocker.helper.elfpatcher.os.access')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
     def test_04__walk_fs(self, mock_path, mock_access, mock_walk,
                          mock_stat, mock_islink, mock_uprocout):
         """Test04 ElfPatcher()._walk_fs()."""
@@ -112,7 +104,7 @@ class ElfPatcherTestCase(TestCase):
         self.assertTrue(mock_uprocout.called)
         self.assertEqual(status, "some output")
 
-    @patch('helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
     @patch.object(ElfPatcher, '_walk_fs')
     @patch.object(ElfPatcher, 'select_patchelf')
     def test_05_guess_elf_loader(self, mock_spelf, mock_walk,
@@ -129,10 +121,10 @@ class ElfPatcherTestCase(TestCase):
         elfp = ElfPatcher(self.local, self.contid)
         self.assertEqual(elfp.guess_elf_loader(), "ld.so")
 
-    @patch('helper.elfpatcher.os.path.realpath')
-    @patch('helper.elfpatcher.os.path.exists')
-    @patch('helper.elfpatcher.FileUtil.getdata')
-    @patch('helper.elfpatcher.FileUtil.putdata')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.os.path.exists')
+    @patch('udocker.helper.elfpatcher.FileUtil.getdata')
+    @patch('udocker.helper.elfpatcher.FileUtil.putdata')
     @patch.object(ElfPatcher, 'guess_elf_loader')
     def test_06_get_original_loader(self, mock_guess, mock_getdata,
                                     mock_putdata, mock_exists, mock_path):
@@ -146,8 +138,8 @@ class ElfPatcherTestCase(TestCase):
         status = elfp.get_original_loader()
         self.assertEqual(status, "ld.so")
 
-    @patch('helper.elfpatcher.os.path.realpath')
-    @patch('helper.elfpatcher.os.path.exists')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.os.path.exists')
     @patch.object(ElfPatcher, 'get_original_loader')
     def test_07_get_container_loader(self, mock_gol, mock_exists, mock_path):
         """Test07 ElfPatcher().get_container_loader().
@@ -165,8 +157,8 @@ class ElfPatcherTestCase(TestCase):
         self.assertEqual(elfp.get_container_loader(),
                          elfp._container_root + "/" + "ld.so")
 
-    @patch('helper.elfpatcher.os.path.realpath')
-    @patch('helper.elfpatcher.FileUtil.getdata')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.FileUtil.getdata')
     def test_08_get_patch_last_path(self, mock_getdata,
                                     mock_path):
         """Test08 ElfPatcher().get_patch_last_path()."""
@@ -180,7 +172,7 @@ class ElfPatcherTestCase(TestCase):
         elfp = ElfPatcher(self.local, self.contid)
         self.assertEqual(elfp.get_patch_last_path(), "/tmp")
 
-    @patch('helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
     @patch.object(ElfPatcher, 'get_patch_last_path')
     def test_09_check_container_path(self, mock_lpath, mock_path):
         """Test09 ElfPatcher().check_container_path()."""
@@ -196,8 +188,8 @@ class ElfPatcherTestCase(TestCase):
         status = elfp.check_container_path()
         self.assertFalse(status)
 
-    @patch('helper.elfpatcher.os.path.realpath')
-    @patch('helper.elfpatcher.FileUtil.getdata')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.FileUtil.getdata')
     def test_10_get_patch_last_time(self, mock_getdata, mock_path):
         """Test10 ElfPatcher().patch_last_time()."""
         mock_getdata.return_value = "30"
@@ -205,9 +197,9 @@ class ElfPatcherTestCase(TestCase):
         elfp = ElfPatcher(self.local, self.contid)
         self.assertEqual(elfp.get_patch_last_time(), "30")
 
-    @patch('helper.elfpatcher.os.path.realpath')
-    @patch('helper.elfpatcher.os.path.exists')
-    @patch('helper.elfpatcher.FileUtil.putdata')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.os.path.exists')
+    @patch('udocker.helper.elfpatcher.FileUtil.putdata')
     @patch.object(ElfPatcher, '_walk_fs')
     @patch.object(ElfPatcher, 'guess_elf_loader')
     @patch.object(ElfPatcher, 'select_patchelf')
@@ -229,8 +221,8 @@ class ElfPatcherTestCase(TestCase):
         elfp._container_root = "/tmp/ROOT"
         self.assertTrue(elfp.patch_binaries())
 
-    @patch('helper.elfpatcher.os.path.realpath')
-    @patch('helper.elfpatcher.FileUtil.remove')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.FileUtil.remove')
     @patch.object(ElfPatcher, 'guess_elf_loader')
     @patch.object(ElfPatcher, '_walk_fs')
     @patch.object(ElfPatcher, 'get_patch_last_path')
@@ -253,11 +245,11 @@ class ElfPatcherTestCase(TestCase):
         self.assertTrue(mock_rm.called)
 
     @patch.object(ElfPatcher, 'get_container_loader')
-    @patch('helper.elfpatcher.os.path.realpath')
-    @patch('helper.elfpatcher.FileUtil.size')
-    @patch('helper.elfpatcher.FileUtil.copyto')
-    @patch('helper.elfpatcher.FileUtil.getdata')
-    @patch('helper.elfpatcher.FileUtil.putdata')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.FileUtil.size')
+    @patch('udocker.helper.elfpatcher.FileUtil.copyto')
+    @patch('udocker.helper.elfpatcher.FileUtil.getdata')
+    @patch('udocker.helper.elfpatcher.FileUtil.putdata')
     def test_13_patch_ld(self, mock_putdata, mock_getdata,
                          mock_copyto, mock_size, mock_path, mock_gcl):
         """Test13 ElfPatcher().patch_ld()."""
@@ -291,11 +283,11 @@ class ElfPatcherTestCase(TestCase):
         elfp = ElfPatcher(self.local, self.contid)
         self.assertFalse(elfp.patch_ld("OUTPUT_ELF"))
 
-    @patch('helper.elfpatcher.Msg')
+    @patch('udocker.helper.elfpatcher.Msg')
     @patch.object(ElfPatcher, 'get_container_loader')
-    @patch('helper.elfpatcher.os.path.realpath')
-    @patch('helper.elfpatcher.FileUtil.size')
-    @patch('helper.elfpatcher.FileUtil.copyto')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.FileUtil.size')
+    @patch('udocker.helper.elfpatcher.FileUtil.copyto')
     def test_14_restore_ld(self, mock_copyto, mock_size, mock_path,
                            mock_gcl, mock_msg):
         """Test14 ElfPatcher().restore_ld()."""
@@ -313,9 +305,9 @@ class ElfPatcherTestCase(TestCase):
         elfp = ElfPatcher(self.local, self.contid)
         self.assertTrue(elfp.restore_ld())
 
-    @patch('helper.elfpatcher.os.path.realpath')
-    @patch('helper.elfpatcher.os.path.dirname')
-    @patch('helper.elfpatcher.Uprocess.get_output')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.os.path.dirname')
+    @patch('udocker.helper.elfpatcher.Uprocess.get_output')
     def test_15__get_ld_config(self, mock_upout, mock_dir, mock_path):
         """Test15 ElfPatcher().get_ld_config()."""
         mock_upout.return_value = []
@@ -333,10 +325,10 @@ class ElfPatcherTestCase(TestCase):
         status = elfp._get_ld_config()
         self.assertIsInstance(status, list)
 
-    @patch('helper.elfpatcher.os.path.isfile')
-    @patch('helper.elfpatcher.os.path.realpath')
-    @patch('helper.elfpatcher.os.access')
-    @patch('helper.elfpatcher.os.walk')
+    @patch('udocker.helper.elfpatcher.os.path.isfile')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.os.access')
+    @patch('udocker.helper.elfpatcher.os.walk')
     def test_16__find_ld_libdirs(self, mock_walk, mock_access,
                                  mock_path, mock_isfile):
         """Test16 ElfPatcher()._find_ld_libdirs().
@@ -354,11 +346,11 @@ class ElfPatcherTestCase(TestCase):
         status = elfp._find_ld_libdirs()
         self.assertEqual(status, ["libsome.so.0"])
 
-    @patch('helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
     @patch.object(ElfPatcher, '_find_ld_libdirs')
-    @patch('helper.elfpatcher.FileUtil.putdata')
-    @patch('helper.elfpatcher.FileUtil.getdata')
-    @patch('helper.elfpatcher.os.path.exists')
+    @patch('udocker.helper.elfpatcher.FileUtil.putdata')
+    @patch('udocker.helper.elfpatcher.FileUtil.getdata')
+    @patch('udocker.helper.elfpatcher.os.path.exists')
     def test_17_get_ld_libdirs(self, mock_exists, mock_getdata,
                                mock_pudata, mock_findlib, mock_path):
         """Test17 ElfPatcher().get_ld_libdirs()."""
@@ -377,7 +369,7 @@ class ElfPatcherTestCase(TestCase):
         status = elfp.get_ld_libdirs(True)
         self.assertEqual(status, ['/lib', '/usr/lib'])
 
-    @patch('helper.elfpatcher.os.path.realpath')
+    @patch('udocker.helper.elfpatcher.os.path.realpath')
     @patch.object(ElfPatcher, 'get_ld_libdirs')
     @patch.object(ElfPatcher, '_get_ld_config')
     def test_18_get_ld_library_path(self, mock_ldconf,

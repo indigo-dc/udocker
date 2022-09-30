@@ -3,21 +3,13 @@
 udocker unit tests: NixAuthentication
 """
 
-import os
-import sys
 import pwd
 import grp
-
-new_path=[]
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
-new_path.extend(sys.path)
-sys.path = new_path
-
 from unittest import TestCase, main
 from unittest.mock import patch, mock_open
 from io import StringIO
-from helper.nixauth import NixAuthentication
-from config import Config
+from udocker.helper.nixauth import NixAuthentication
+from udocker.config import Config
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -104,8 +96,8 @@ class NixAuthenticationTestCase(TestCase):
             self.assertEqual(listuser, [("100000", "65536")])
             self.assertTrue(mock_file.called)
 
-    @patch('helper.nixauth.pwd.getpwnam')
-    @patch('helper.nixauth.pwd.getpwuid')
+    @patch('udocker.helper.nixauth.pwd.getpwnam')
+    @patch('udocker.helper.nixauth.pwd.getpwuid')
     def test_05__get_user_from_host(self, mock_getpwuid, mock_getpwnam):
         """Test05 NixAuthentication()._get_user_from_host()."""
         usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr",
@@ -130,8 +122,8 @@ class NixAuthenticationTestCase(TestCase):
         self.assertEqual(_dir, usr.pw_dir)
 
     # TODO: (mdavid) review test
-    @patch('helper.nixauth.grp.getgrnam')
-    @patch('helper.nixauth.grp.getgrgid')
+    @patch('udocker.helper.nixauth.grp.getgrnam')
+    @patch('udocker.helper.nixauth.grp.getgrgid')
     def test_06__get_group_from_host(self, mock_grgid, mock_grname):
         """Test06 NixAuthentication()._get_group_from_host()."""
         hgr = grp.struct_group(["root", "*", "0", str([])])

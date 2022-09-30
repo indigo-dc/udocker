@@ -3,22 +3,14 @@
 udocker unit tests: UdockerTools
 """
 
-import os
-import sys
 import tarfile
-
-new_path=[]
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
-new_path.extend(sys.path)
-sys.path = new_path
-
 from tarfile import TarInfo
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from io import StringIO
-from config import Config
-from utils.curl import CurlHeader
-from tools import UdockerTools
+from udocker.config import Config
+from udocker.utils.curl import CurlHeader
+from udocker.tools import UdockerTools
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -31,7 +23,7 @@ class UdockerToolsTestCase(TestCase):
 
     def setUp(self):
         Config().getconf()
-        str_local = 'container.localrepo.LocalRepository'
+        str_local = 'udocker.container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
         self.local = self.lrepo.start()
         self.mock_lrepo = Mock()
@@ -40,7 +32,7 @@ class UdockerToolsTestCase(TestCase):
     def tearDown(self):
         self.lrepo.stop()
 
-    @patch('tools.GetURL')
+    @patch('udocker.tools.GetURL')
     def test_01_init(self, mock_geturl):
         """Test01 UdockerTools() constructor."""
         mock_geturl.return_value = None
@@ -48,7 +40,7 @@ class UdockerToolsTestCase(TestCase):
         self.assertTrue(mock_geturl.called)
         self.assertEqual(utools.localrepo, self.local)
 
-    @patch('tools.Msg')
+    @patch('udocker.tools.Msg')
     def test_02__instructions(self, mock_msg):
         """Test02 UdockerTools()._instructions()."""
         utools = UdockerTools(self.local)
@@ -73,7 +65,7 @@ class UdockerToolsTestCase(TestCase):
         status = utools._version_isok("1.4")
         self.assertFalse(status)
 
-    @patch('tools.FileUtil.getdata')
+    @patch('udocker.tools.FileUtil.getdata')
     def test_05_is_available(self, mock_fuget):
         """Test05 UdockerTools().is_available()."""
         Config.conf['tarball_release'] = "2.3"
@@ -82,9 +74,9 @@ class UdockerToolsTestCase(TestCase):
         status = utools.is_available()
         self.assertTrue(status)
 
-    @patch('tools.FileUtil.remove')
-    @patch('tools.FileUtil.register_prefix')
-    @patch('tools.os.listdir')
+    @patch('udocker.tools.FileUtil.remove')
+    @patch('udocker.tools.FileUtil.register_prefix')
+    @patch('udocker.tools.os.listdir')
     def test_06_purge(self, mock_lsdir, mock_fureg, mock_furm):
         """Test06 UdockerTools().purge()."""
         mock_lsdir.side_effect = [["f1", "f2"],
@@ -98,9 +90,9 @@ class UdockerToolsTestCase(TestCase):
         self.assertTrue(mock_fureg.call_count, 4)
         self.assertTrue(mock_furm.call_count, 4)
 
-    @patch('tools.GetURL.get')
-    @patch('tools.FileUtil.remove')
-    @patch('tools.FileUtil.mktmp')
+    @patch('udocker.tools.GetURL.get')
+    @patch('udocker.tools.FileUtil.remove')
+    @patch('udocker.tools.FileUtil.mktmp')
     def test_07__download(self, mock_fumktmp, mock_furm, mock_geturl):
         """Test07 UdockerTools()._download()."""
         url = "https://down/file"
@@ -125,9 +117,9 @@ class UdockerToolsTestCase(TestCase):
         self.assertTrue(mock_furm.called)
         self.assertEqual(status, "")
 
-    @patch('tools.os.path.isfile')
-    @patch('tools.os.path.realpath')
-    @patch('tools.os.path.exists')
+    @patch('udocker.tools.os.path.isfile')
+    @patch('udocker.tools.os.path.realpath')
+    @patch('udocker.tools.os.path.exists')
     @patch.object(UdockerTools, '_download')
     def test_08__get_file(self, mock_downl, mock_exists, mock_rpath,
                           mock_isfile):
@@ -155,23 +147,23 @@ class UdockerToolsTestCase(TestCase):
         self.assertEqual(status, "/tmp/file")
 
     @patch.object(UdockerTools, '_version_isok')
-    @patch('tools.FileUtil.remove')
-    @patch('tools.FileUtil.getdata')
-    @patch('tools.os.path.basename')
-    @patch('tools.FileUtil.mktmpdir')
-    @patch('tools.os.path.isfile')
+    @patch('udocker.tools.FileUtil.remove')
+    @patch('udocker.tools.FileUtil.getdata')
+    @patch('udocker.tools.os.path.basename')
+    @patch('udocker.tools.FileUtil.mktmpdir')
+    @patch('udocker.tools.os.path.isfile')
     def test_09__verify_version(self, mock_isfile, mock_fumktmp,
                                 mock_osbase, mock_fugetdata,
                                 mock_furm, mock_versionok):
         """Test09 UdockerTools()._verify_version()."""
-        tball = "/home/tar"
+        tball = "/home/udocker.tar"
         mock_isfile.return_value = False
         utools = UdockerTools(self.local)
         status = utools._verify_version(tball)
         self.assertTrue(mock_isfile.called)
         self.assertEqual(status, (False, ""))
 
-        tball = "/home/tar"
+        tball = "/home/udocker.tar"
         mock_isfile.return_value = True
         mock_fumktmp.return_value = ""
         utools = UdockerTools(self.local)
@@ -180,7 +172,7 @@ class UdockerToolsTestCase(TestCase):
         self.assertTrue(mock_fumktmp.called)
         self.assertEqual(status, (False, ""))
 
-        tball = "/home/tar"
+        tball = "/home/udocker.tar"
         tinfo1 = TarInfo("udocker_dir/lib/VERSION")
         tinfo2 = TarInfo("a")
         mock_isfile.return_value = True
@@ -197,9 +189,9 @@ class UdockerToolsTestCase(TestCase):
             self.assertEqual(status, (True, "1.2.7"))
             self.assertTrue(mock_furm.called)
 
-    @patch('tools.os.path.basename')
-    @patch('tools.FileUtil')
-    @patch('tools.os.path.isfile')
+    @patch('udocker.tools.os.path.basename')
+    @patch('udocker.tools.FileUtil')
+    @patch('udocker.tools.os.path.isfile')
     def test_10__install(self, mock_isfile, mock_futil,
                          mock_osbase):
         """Test10 UdockerTools()._install()."""
@@ -211,7 +203,7 @@ class UdockerToolsTestCase(TestCase):
 
         tinfo1 = TarInfo("udocker_dir/bin/ls")
         tinfo2 = TarInfo("udocker_dir/lib/lib1")
-        tfile = "tar"
+        tfile = "udocker.tar"
         mock_isfile.return_value = True
         mock_futil.return_value.chmod.return_value = None
         mock_futil.return_value.rchmod.side_effect = [None, None, None,
@@ -238,7 +230,7 @@ class UdockerToolsTestCase(TestCase):
 
     @patch.object(UdockerTools, '_get_file')
     @patch.object(UdockerTools, '_get_mirrors')
-    @patch('tools.json.load')
+    @patch('udocker.tools.json.load')
     def test_12_get_installinfo(self, mock_jload, mock_mirr, mock_getf):
         """Test12 UdockerTools().get_installinfo()."""
         Config.conf['installinfo'] = "/home/info.json"
@@ -258,7 +250,7 @@ class UdockerToolsTestCase(TestCase):
     @patch.object(UdockerTools, '_verify_version')
     @patch.object(UdockerTools, '_get_file')
     @patch.object(UdockerTools, '_get_mirrors')
-    @patch('tools.FileUtil.remove')
+    @patch('udocker.tools.FileUtil.remove')
     def test_13__install_logic(self, mock_furm, mock_getmirr, mock_getfile,
                                mock_verversion, mock_install):
         """Test13 UdockerTools()._install_logic()."""
@@ -293,7 +285,7 @@ class UdockerToolsTestCase(TestCase):
         status = utools._install_logic(False)
         self.assertFalse(status)
 
-    @patch('tools.Msg')
+    @patch('udocker.tools.Msg')
     @patch.object(UdockerTools, 'get_installinfo')
     @patch.object(UdockerTools, '_install_logic')
     @patch.object(UdockerTools, 'is_available')

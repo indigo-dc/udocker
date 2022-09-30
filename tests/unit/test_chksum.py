@@ -8,7 +8,6 @@ import sys
 
 new_path=[]
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
-print (__file__)
 new_path.extend(sys.path)
 sys.path = new_path
 

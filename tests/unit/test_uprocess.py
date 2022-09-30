@@ -3,19 +3,11 @@
 udocker unit tests: Uprocess
 """
 
-import os
-import sys
-
-new_path=[]
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
-new_path.extend(sys.path)
-sys.path = new_path
-
 import subprocess
 from unittest import TestCase, main
 from unittest.mock import patch
-from utils.uprocess import Uprocess
-from config import Config
+from udocker.utils.uprocess import Uprocess
+from udocker.config import Config
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -29,8 +21,8 @@ class UprocessTestCase(TestCase):
     def tearDown(self):
         pass
 
-    @patch('utils.uprocess.os.path.lexists')
-    @patch('utils.uprocess.os.path.basename')
+    @patch('udocker.utils.uprocess.os.path.lexists')
+    @patch('udocker.utils.uprocess.os.path.basename')
     def test_01_find_inpath(self, mock_base, mock_lexists):
         """Test01 Uprocess().find_inpath()."""
         fname = ''
@@ -47,7 +39,7 @@ class UprocessTestCase(TestCase):
         status = uproc.find_inpath(fname, path)
         self.assertEqual(status, '/bin/ls')
 
-    @patch('utils.uprocess.subprocess.Popen')
+    @patch('udocker.utils.uprocess.subprocess.Popen')
     def test_02__check_output(self, mock_popen):
         """Test02 Uprocess()._check_output()."""
         mock_popen.return_value.communicate.return_value = ("OUTPUT", None)
@@ -62,14 +54,14 @@ class UprocessTestCase(TestCase):
         self.assertRaises(subprocess.CalledProcessError,
                           uproc._check_output, "CMD")
 
-    @patch('utils.uprocess.subprocess.check_output')
+    @patch('udocker.utils.uprocess.subprocess.check_output')
     def test_03_check_output(self, mock_subp_chkout):
         """Test03 Uprocess().check_output()."""
         uproc = Uprocess()
         uproc.check_output("CMD")
         self.assertTrue(mock_subp_chkout.called)
 
-    @patch('utils.uprocess.Uprocess.check_output')
+    @patch('udocker.utils.uprocess.Uprocess.check_output')
     def test_04_get_output(self, mock_uproc_chkout):
         """Test04 Uprocess().get_output()."""
         mock_uproc_chkout.return_value = "OUTPUT"

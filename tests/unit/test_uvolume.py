@@ -3,16 +3,8 @@
 udocker unit tests: Uvolume
 """
 
-import os
-import sys
-
-new_path=[]
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
-new_path.extend(sys.path)
-sys.path = new_path
-
 from unittest import TestCase, main
-from utils.uvolume import Uvolume
+from udocker.utils.uvolume import Uvolume
 import collections
 collections.Callable = collections.abc.Callable
 

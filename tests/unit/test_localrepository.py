@@ -3,18 +3,10 @@
 udocker unit tests: LocalRepository
 """
 
-import os
-import sys
-
-new_path=[]
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
-new_path.extend(sys.path)
-sys.path = new_path
-
 from unittest import TestCase, main
 from unittest.mock import patch, mock_open, call
-from container.localrepo import LocalRepository
-from config import Config
+from udocker.container.localrepo import LocalRepository
+from udocker.config import Config
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -41,7 +33,7 @@ class LocalRepositoryTestCase(TestCase):
     def tearDown(self):
         pass
 
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_01_init(self, mock_fu):
         """Test01 LocalRepository() constructor."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -60,7 +52,7 @@ class LocalRepositoryTestCase(TestCase):
         self.assertEqual(lrepo.cur_containerdir, "")
         self.assertTrue(mock_fu.register_prefix.called_count, 3)
 
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_02_setup(self, mock_fu):
         """Test02 LocalRepository().setup()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -70,9 +62,9 @@ class LocalRepositoryTestCase(TestCase):
         lrepo.setup(newdir)
         self.assertEqual(lrepo.topdir, newdir)
 
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.os.makedirs')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.os.makedirs')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_03_create_repo(self, mock_fu, mock_mkdir, mock_exists):
         """Test03 LocalRepository().create_repo()."""
         Config.conf['keystore'] = "tmp"
@@ -96,8 +88,8 @@ class LocalRepositoryTestCase(TestCase):
         status = lrepo.create_repo()
         self.assertFalse(status)
 
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_04_is_repo(self, mock_fu, mock_exists):
         """Test04 LocalRepository().is_repo()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -118,7 +110,7 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(mock_exists.call_count, 5)
         self.assertTrue(status)
 
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_05_is_container_id(self, mock_fu):
         """Test05 LocalRepository().is_container_id()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -143,7 +135,7 @@ class LocalRepositoryTestCase(TestCase):
         self.assertFalse(status)
 
     @patch.object(LocalRepository, '_protect')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_06_protect_container(self, mock_fu, mock_prot):
         """Test06 LocalRepository().protect_container()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -156,7 +148,7 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(mock_prot.called)
 
     @patch.object(LocalRepository, '_unprotect')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_07_unprotect_container(self, mock_fu, mock_unprot):
         """Test07 LocalRepository().unprotect_container()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -169,7 +161,7 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(mock_unprot.called)
 
     @patch.object(LocalRepository, '_isprotected')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_08_isprotected_container(self, mock_fu, mock_isprot):
         """Test08 LocalRepository().isprotected_container()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -181,7 +173,7 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(status)
         self.assertTrue(mock_isprot.called)
 
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_09__protect(self, mock_fu):
         """Test09 LocalRepository()._protect()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -192,7 +184,7 @@ class LocalRepositoryTestCase(TestCase):
             status = lrepo._protect(cdir)
             self.assertTrue(status)
 
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_10__unprotect(self, mock_fu):
         """Test10 LocalRepository()._unprotect()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -204,8 +196,8 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(status)
         self.assertTrue(mock_fu.return_value.remove.called)
 
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_11__isprotected(self, mock_fu, mock_exists):
         """Test11 LocalRepository()._isprotected()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -218,10 +210,10 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(mock_exists.called)
 
     @patch.object(LocalRepository, 'cd_container')
-    @patch('container.localrepo.os.access')
-    @patch('container.localrepo.os.path.isdir')
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.access')
+    @patch('udocker.container.localrepo.os.path.isdir')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_12_iswriteable_container(self, mock_fu, mock_exists,
                                       mock_isdir, mock_access,
                                       mock_cdcont):
@@ -268,8 +260,8 @@ class LocalRepositoryTestCase(TestCase):
         self.assertEqual(status, 0)
 
     @patch.object(LocalRepository, 'cd_container')
-    @patch('container.localrepo.Uprocess.get_output')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.Uprocess.get_output')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_13_get_size(self, mock_fu, mock_getout, mock_cdcont):
         """Test13 LocalRepository().get_size()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -291,9 +283,9 @@ class LocalRepositoryTestCase(TestCase):
         status = lrepo.get_size(container_id)
         self.assertEqual(status, -1)
 
-    @patch('container.localrepo.os.listdir')
-    @patch('container.localrepo.os.path.isdir')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.listdir')
+    @patch('udocker.container.localrepo.os.path.isdir')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_14_get_containers_list(self, mock_fu, mock_isdir,
                                     mock_listdir):
         """Test14 LocalRepository().get_containers_list()."""
@@ -345,7 +337,7 @@ class LocalRepositoryTestCase(TestCase):
     @patch.object(LocalRepository, 'cd_container')
     @patch.object(LocalRepository, 'get_container_name')
     @patch.object(LocalRepository, 'get_containers_list')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_15_del_container(self, mock_fu,
                               mock_getlist, mock_getname,
                               mock_cdcont, mock_delname):
@@ -390,8 +382,8 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(mock_fu.return_value.remove.called)
 
     @patch.object(LocalRepository, 'get_containers_list')
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_16_cd_container(self, mock_fu, mock_exists,
                              mock_getlist):
         """Test16 LocalRepository().cd_container()."""
@@ -417,10 +409,10 @@ class LocalRepositoryTestCase(TestCase):
         status = lrepo.cd_container(cont_id)
         self.assertEqual(status, contdir)
 
-    @patch('container.localrepo.os.path.relpath')
-    @patch('container.localrepo.os.symlink')
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.relpath')
+    @patch('udocker.container.localrepo.os.symlink')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_17__symlink(self, mock_fu, mock_exists,
                          mock_symlink, mock_relpath):
         """Test17 LocalRepository()._symlink()."""
@@ -440,7 +432,7 @@ class LocalRepositoryTestCase(TestCase):
         status = lrepo._symlink("EXISTINGFILE", "LINKFILE")
         self.assertTrue(status)
 
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_18__name_is_valid(self, mock_fu):
         """Test18 LocalRepository()._name_is_valid().
         Check name alias validity.
@@ -493,10 +485,10 @@ class LocalRepositoryTestCase(TestCase):
         status = lrepo._name_is_valid(name)
         self.assertFalse(status)
 
-    @patch('container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.os.path.exists')
     @patch.object(LocalRepository, '_symlink')
     @patch.object(LocalRepository, 'cd_container')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_18_set_container_name(self, mock_fu, mock_cd,
                                    mock_slink, mock_exists):
         """Test18 LocalRepository().set_container_name()."""
@@ -525,8 +517,8 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(status)
 
     @patch.object(LocalRepository, '_name_is_valid')
-    @patch('container.localrepo.os.path.islink')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.islink')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_19_del_container_name(self, mock_fu,
                                    mock_islink, mock_nameisvalid):
         """Test19 LocalRepository().del_container_name()."""
@@ -548,10 +540,10 @@ class LocalRepositoryTestCase(TestCase):
         status = lrepo.del_container_name(contname)
         self.assertTrue(status)
 
-    @patch('container.localrepo.os.readlink')
-    @patch('container.localrepo.os.path.isdir')
-    @patch('container.localrepo.os.path.islink')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.readlink')
+    @patch('udocker.container.localrepo.os.path.isdir')
+    @patch('udocker.container.localrepo.os.path.islink')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_20_get_container_id(self, mock_fu, mock_islink,
                                  mock_isdir, mock_readlink):
         """Test20 LocalRepository().get_container_id()."""
@@ -585,11 +577,11 @@ class LocalRepositoryTestCase(TestCase):
         status = lrepo.get_container_id("ALIASNAM")
         self.assertEqual(status, "ALIASNAM")
 
-    @patch('container.localrepo.os.readlink')
-    @patch('container.localrepo.os.path.islink')
-    @patch('container.localrepo.os.listdir')
-    @patch('container.localrepo.os.path.isdir')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.readlink')
+    @patch('udocker.container.localrepo.os.path.islink')
+    @patch('udocker.container.localrepo.os.listdir')
+    @patch('udocker.container.localrepo.os.path.isdir')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_21_get_container_name(self, mock_fu, mock_isdir,
                                    mock_listdir,
                                    mock_islink, mock_readlink):
@@ -611,9 +603,9 @@ class LocalRepositoryTestCase(TestCase):
         name_list = lrepo.get_container_name("IMAGE:TAG")
         self.assertEqual(name_list, ["LINK"])
 
-    @patch('container.localrepo.os.makedirs')
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.makedirs')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_22_setup_container(self, mock_fu, mock_exists,
                                 mock_makedirs):
         """Test22 LocalRepository().setup_container()."""
@@ -635,8 +627,8 @@ class LocalRepositoryTestCase(TestCase):
             self.assertEqual(lrepo.cur_containerdir,
                              lrepo.containersdir + "/ID")
 
-    @patch('container.localrepo.os.path.isfile')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.isfile')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_23__is_tag(self, mock_fu, mock_isfile):
         """Test23 LocalRepository()._is_tag()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -653,7 +645,7 @@ class LocalRepositoryTestCase(TestCase):
         status = lrepo._is_tag("tagdir")
         self.assertFalse(status)
 
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_24_protect_imagerepo(self, mock_fu):
         """Test24 LocalRepository().protect_imagerepo()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -663,9 +655,9 @@ class LocalRepositoryTestCase(TestCase):
             lrepo.protect_imagerepo("IMAGE", "TAG")
             self.assertTrue(mopen.called)
             protect = lrepo.reposdir + "/IMAGE/TAG/PROTECT"
-            self.assertEqual(mopen.call_args, call(protect, 'w'))
+            self.assertEqual(mopen.call_args, call(protect, 'w', encoding='utf-8'))
 
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     @patch.object(LocalRepository, '_unprotect')
     def test_25_unprotect_imagerepo(self, mock_fu, mock_unprotect):
         """Test25 LocalRepository().unprotected_imagerepo()."""
@@ -675,8 +667,8 @@ class LocalRepositoryTestCase(TestCase):
         lrepo.unprotect_imagerepo("IMAGE", "TAG")
         self.assertTrue(mock_unprotect.called)
 
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_26_isprotected_imagerepo(self, mock_fu, mock_exists):
         """Test26 LocalRepository().isprotected_imagerepo()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -692,8 +684,8 @@ class LocalRepositoryTestCase(TestCase):
         self.assertEqual(mock_exists.call_args, call(protect))
 
     @patch.object(LocalRepository, '_is_tag')
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_27_cd_imagerepo(self, mock_fu, mock_exists, mock_istag):
         """Test27 LocalRepository().cd_imagerepo()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -713,10 +705,10 @@ class LocalRepositoryTestCase(TestCase):
         out = lrepo.cd_imagerepo("IMAGE", "TAG")
         self.assertEqual(out, "/tmp/IMAGE/TAG")
 
-    @patch('container.localrepo.os.path.islink')
-    @patch('container.localrepo.os.path.isdir')
-    @patch('container.localrepo.os.listdir')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.islink')
+    @patch('udocker.container.localrepo.os.path.isdir')
+    @patch('udocker.container.localrepo.os.listdir')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_28__find(self, mock_fu, mock_listdir, mock_isdir, mock_islink):
         """Test28 LocalRepository()._find()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -738,10 +730,10 @@ class LocalRepositoryTestCase(TestCase):
         out = lrepo._find(filename, folder)
         self.assertEqual(out, [])
 
-    @patch('container.localrepo.os.path.islink')
-    @patch('container.localrepo.os.path.isdir')
-    @patch('container.localrepo.os.listdir')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.islink')
+    @patch('udocker.container.localrepo.os.path.isdir')
+    @patch('udocker.container.localrepo.os.listdir')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_29__inrepository(self, mock_fu, mock_listdir,
                               mock_isdir, mock_islink):
         """Test29 LocalRepository()._inrepository()."""
@@ -764,11 +756,11 @@ class LocalRepositoryTestCase(TestCase):
         out = lrepo._inrepository(filename)
         self.assertEqual(out, [])
 
-    @patch('container.localrepo.os.readlink')
-    @patch('container.localrepo.os.path.islink')
-    @patch('container.localrepo.os.listdir')
+    @patch('udocker.container.localrepo.os.readlink')
+    @patch('udocker.container.localrepo.os.path.islink')
+    @patch('udocker.container.localrepo.os.listdir')
     @patch.object(LocalRepository, '_inrepository')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_30__remove_layers(self, mock_fu, mock_in, mock_listdir,
                                mock_islink, mock_readlink):
         """Test30 LocalRepository()._remove_layers()."""
@@ -836,7 +828,7 @@ class LocalRepositoryTestCase(TestCase):
 
     @patch.object(LocalRepository, 'cd_imagerepo')
     @patch.object(LocalRepository, '_remove_layers')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_31_del_imagerepo(self, mock_fu, mock_rmlayers, mock_cd):
         """Test31 LocalRepository()._del_imagerepo()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -867,10 +859,10 @@ class LocalRepositoryTestCase(TestCase):
 
         return True
 
-    @patch('container.localrepo.os.path.isdir')
-    @patch('container.localrepo.os.listdir')
+    @patch('udocker.container.localrepo.os.path.isdir')
+    @patch('udocker.container.localrepo.os.listdir')
     @patch.object(LocalRepository, '_is_tag')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_32__get_tags(self, mock_fu, mock_is,
                           mock_listdir, mock_isdir):
         """Test32 LocalRepository()._get_tags()."""
@@ -915,7 +907,7 @@ class LocalRepositoryTestCase(TestCase):
         self.assertEqual(status, [])
 
     @patch.object(LocalRepository, '_get_tags')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_33_get_imagerepos(self, mock_fu, mock_gtags):
         """Test33 LocalRepository().get_imagerepos()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -926,9 +918,9 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(mock_gtags.called)
 
     @patch.object(LocalRepository, 'cd_imagerepo')
-    @patch('container.localrepo.os.path.islink')
-    @patch('container.localrepo.os.listdir')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.islink')
+    @patch('udocker.container.localrepo.os.listdir')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_34_get_layers(self, mock_fu, mock_ldir,
                            mock_islink, mock_cd):
         """Test34 LocalRepository().get_layers()."""
@@ -953,10 +945,10 @@ class LocalRepositoryTestCase(TestCase):
         self.assertEqual(status, [("IMAGE/TAG/f1", 123)])
 
     @patch.object(LocalRepository, '_symlink')
-    @patch('container.localrepo.os.path.basename')
-    @patch('container.localrepo.os.path.islink')
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.basename')
+    @patch('udocker.container.localrepo.os.path.islink')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_35_add_image_layer(self, mock_fu, mock_exists,
                                 mock_islink, mock_base, mock_symln):
         """Test35 LocalRepository().add_image_layer()."""
@@ -1006,9 +998,9 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(mock_islink.called)
         self.assertTrue(mock_symln.called)
 
-    @patch('container.localrepo.os.makedirs')
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.makedirs')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_36_setup_imagerepo(self, mock_fu, mock_exists,
                                 mock_mkdirs):
         """Test36 LocalRepository().setup_imagerepo()."""
@@ -1037,9 +1029,9 @@ class LocalRepositoryTestCase(TestCase):
         self.assertEqual(lrepo.cur_repodir, expected_directory)
         self.assertTrue(status)
 
-    @patch('container.localrepo.os.makedirs')
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.makedirs')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_37_setup_tag(self, mock_fu, mock_exists, mock_mkdirs):
         """Test37 LocalRepository().setup_tag()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -1055,9 +1047,9 @@ class LocalRepositoryTestCase(TestCase):
             self.assertTrue(mopen.called)
             self.assertTrue(status)
 
-    @patch('container.localrepo.os.listdir')
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.listdir')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_38_set_version(self, mock_fu, mock_exists,
                             mock_listdir):
         """Test38 LocalRepository().set_version()."""
@@ -1115,8 +1107,8 @@ class LocalRepositoryTestCase(TestCase):
             # self.assertTrue(mopen.called)
 
     @patch.object(LocalRepository, 'load_json')
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_39__get_image_attr_v1(self, mock_fu, mock_exists,
                                    mock_loadjson):
         """Test39 LocalRepository()._get_image_attributes_v1()."""
@@ -1143,9 +1135,9 @@ class LocalRepositoryTestCase(TestCase):
         status = lrepo._get_image_attributes_v1("/cont")
         self.assertEqual(status, (['lname1'], ['/cont/lname1.layer']))
 
-    @patch('container.localrepo.json.loads')
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.json.loads')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_40__get_image_attr_v2_s1(self, mock_fu, mock_exists,
                                       mock_jload):
         """Test40 LocalRepository()._get_image_attributes_v2_s1()."""
@@ -1173,9 +1165,9 @@ class LocalRepositoryTestCase(TestCase):
         status = lrepo._get_image_attributes_v2_s1("/cont", manifest)
         self.assertEqual(status, (manifest, ['/cont/foolayername']))
 
-    @patch('container.localrepo.json.loads')
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.json.loads')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_41__get_image_attr_v2_s2(self, mock_fu, mock_exists,
                                       mock_jload):
         """Test41 LocalRepository()._get_image_attributes_v2_s2()."""
@@ -1208,8 +1200,8 @@ class LocalRepositoryTestCase(TestCase):
     @patch.object(LocalRepository, '_get_image_attributes_v2_s1')
     @patch.object(LocalRepository, '_get_image_attributes_v1')
     @patch.object(LocalRepository, 'load_json')
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_42_get_image_attributes(self, mock_fu, mock_exists,
                                      mock_loadjson, mock_attrv1,
                                      mock_attrv1s1, mock_attrv1s2):
@@ -1265,8 +1257,8 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(mock_exists.call_count, 1)
         self.assertTrue(mock_attrv1s2.call_count, 1)
 
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_43_save_json(self, mock_fu, mock_exists):
         """Test43 LocalRepository().save_json()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -1321,8 +1313,8 @@ class LocalRepositoryTestCase(TestCase):
             self.assertTrue(mopen.called)
             self.assertFalse(status)
 
-    @patch('container.localrepo.os.path.exists')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.path.exists')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_44_load_json(self, mock_fu, mock_exists):
         """Test44 LocalRepository().load_json()."""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -1378,8 +1370,8 @@ class LocalRepositoryTestCase(TestCase):
             self.assertFalse(status)
 
     @patch.object(LocalRepository, 'load_json')
-    @patch('container.localrepo.os.listdir')
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.os.listdir')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_45__load_structure(self, mock_fu, mock_listdir,
                                 mock_json):
         """Test45 LocalRepository()._load_structure().
@@ -1403,7 +1395,7 @@ class LocalRepositoryTestCase(TestCase):
         status = lrepo._load_structure("IMAGETAGDIR")
         self.assertEqual(status, res)
 
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_46__find_top_layer_id(self, mock_fu):
         """Test46 LocalRepository()._find_top_layer_id"""
         mock_fu.return_value.register_prefix.side_effect = \
@@ -1428,7 +1420,7 @@ class LocalRepositoryTestCase(TestCase):
     #     """Test47 LocalRepository()._sorted_layers"""
     #     pass
 
-    @patch('container.localrepo.FileUtil')
+    @patch('udocker.container.localrepo.FileUtil')
     def test_48__split_layer_id(self, mock_fu):
         """Test48 LocalRepository()._split_layer_id"""
         mock_fu.return_value.register_prefix.side_effect = \

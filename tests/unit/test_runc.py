@@ -3,18 +3,10 @@
 udocker unit tests: RuncEngine
 """
 
-import os
-import sys
-
-new_path=[]
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
-new_path.extend(sys.path)
-sys.path = new_path
-
 from unittest import TestCase, main
 from unittest.mock import Mock, patch, mock_open
-from config import Config
-from engine.runc import RuncEngine
+from udocker.config import Config
+from udocker.engine.runc import RuncEngine
 import collections
 collections.Callable = collections.abc.Callable
 
@@ -42,13 +34,13 @@ class RuncEngineTestCase(TestCase):
         Config().conf['userhome'] = "/"
         Config().conf['oskernel'] = "4.8.13"
         Config().conf['location'] = ""
-        str_local = 'container.localrepo.LocalRepository'
+        str_local = 'udocker.container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
         self.local = self.lrepo.start()
         self.mock_lrepo = Mock()
         self.local.return_value = self.mock_lrepo
 
-        str_exmode = 'engine.execmode.ExecutionMode'
+        str_exmode = 'udocker.engine.execmode.ExecutionMode'
         self.execmode = patch(str_exmode)
         self.xmode = self.execmode.start()
         self.mock_execmode = Mock()
@@ -64,10 +56,10 @@ class RuncEngineTestCase(TestCase):
         self.assertEqual(rcex.executable, None)
         self.assertEqual(rcex.execution_id, None)
 
-    @patch('helper.elfpatcher.os.path.exists')
-    @patch('engine.runc.HostInfo.arch')
-    @patch('engine.runc.FileUtil.find_file_in_dir')
-    @patch('engine.runc.FileUtil.find_exec')
+    @patch('udocker.helper.elfpatcher.os.path.exists')
+    @patch('udocker.engine.runc.HostInfo.arch')
+    @patch('udocker.engine.runc.FileUtil.find_file_in_dir')
+    @patch('udocker.engine.runc.FileUtil.find_exec')
     def test_02_select_runc(self, mock_findexe, mock_find,
                             mock_arch, mock_exists):
         """Test02 RuncEngine().select_runc()."""
@@ -96,12 +88,12 @@ class RuncEngineTestCase(TestCase):
         self.assertTrue(mock_arch.called)
         self.assertTrue(mock_find.called)
 
-    @patch('engine.runc.json.load')
-    @patch('engine.runc.FileUtil.register_prefix')
-    @patch('engine.runc.FileUtil.remove')
-    @patch('engine.runc.FileUtil.size')
-    @patch('engine.runc.subprocess.call')
-    @patch('engine.runc.os.path.realpath')
+    @patch('udocker.engine.runc.json.load')
+    @patch('udocker.engine.runc.FileUtil.register_prefix')
+    @patch('udocker.engine.runc.FileUtil.remove')
+    @patch('udocker.engine.runc.FileUtil.size')
+    @patch('udocker.engine.runc.subprocess.call')
+    @patch('udocker.engine.runc.os.path.realpath')
     def test_03__load_spec(self, mock_realpath, mock_call, mock_size,
                            mock_rm, mock_reg, mock_jload):
         """Test03 RuncEngine()._load_spec()."""
@@ -138,7 +130,7 @@ class RuncEngineTestCase(TestCase):
             self.assertTrue(mock_rm.called)
             self.assertTrue(mock_reg.called)
 
-    @patch('engine.runc.json.dump')
+    @patch('udocker.engine.runc.json.dump')
     def test_04__save_spec(self, mock_jdump):
         """Test04 RuncEngine()._save_spec()."""
         jdump = {"container": "cxxx", "parent": "dyyy",
@@ -154,10 +146,10 @@ class RuncEngineTestCase(TestCase):
             self.assertTrue(mopen.called)
             self.assertTrue(status)
 
-    @patch('engine.runc.os.getgid')
-    @patch('engine.runc.os.getuid')
-    @patch('engine.runc.platform.node')
-    @patch('engine.runc.os.path.realpath')
+    @patch('udocker.engine.runc.os.getgid')
+    @patch('udocker.engine.runc.os.getuid')
+    @patch('udocker.engine.runc.platform.node')
+    @patch('udocker.engine.runc.os.path.realpath')
     def test_05__set_spec(self, mock_realpath, mock_node,
                           mock_getuid, mock_getgid):
         """Test05 RuncEngine()._set_spec()."""
@@ -256,7 +248,7 @@ class RuncEngineTestCase(TestCase):
         self.assertFalse(mock_getuid.called)
         self.assertFalse(mock_getgid.called)
 
-    @patch('engine.runc.Msg')
+    @patch('udocker.engine.runc.Msg')
     def test_06__uid_check(self, mock_msg):
         """Test06 RuncEngine()._uid_check()."""
         rcex = RuncEngine(self.local, self.xmode)
@@ -295,13 +287,13 @@ class RuncEngineTestCase(TestCase):
         res = rcex._container_specjson["process"]["capabilities"]["ambient"]
         self.assertEqual(res, Config.conf['runc_capabilities'])
 
-    @patch('engine.runc.HostInfo')
-    @patch('engine.runc.os.minor')
-    @patch('engine.runc.os.major')
-    @patch('engine.runc.stat.S_ISCHR')
-    @patch('engine.runc.stat.S_ISBLK')
-    @patch('engine.runc.os.path.exists')
-    @patch('engine.runc.Msg')
+    @patch('udocker.engine.runc.HostInfo')
+    @patch('udocker.engine.runc.os.minor')
+    @patch('udocker.engine.runc.os.major')
+    @patch('udocker.engine.runc.stat.S_ISCHR')
+    @patch('udocker.engine.runc.stat.S_ISBLK')
+    @patch('udocker.engine.runc.os.path.exists')
+    @patch('udocker.engine.runc.Msg')
     def test_08__add_device_spec(self, mock_msg, mock_exists,
                                  mock_blk, mock_chr, mock_osmaj,
                                  mock_osmin, mock_hi):
@@ -339,7 +331,7 @@ class RuncEngineTestCase(TestCase):
         self.assertTrue(mock_osmaj.called)
         self.assertTrue(mock_osmin.called)
 
-    @patch('engine.runc.NvidiaMode')
+    @patch('udocker.engine.runc.NvidiaMode')
     @patch.object(RuncEngine, '_add_device_spec')
     def test_09__add_devices(self, mock_adddecspec, mock_nv):
         """Test09 RuncEngine()._add_devices()."""
@@ -467,11 +459,11 @@ class RuncEngineTestCase(TestCase):
         self.assertTrue(status)
         self.assertEqual(len(rcex._container_specjson["mounts"]), 1)
 
-    @patch('engine.runc.Msg')
-    @patch('engine.runc.os.path.isfile')
-    @patch('engine.runc.os.path.isdir')
+    @patch('udocker.engine.runc.Msg')
+    @patch('udocker.engine.runc.os.path.isfile')
+    @patch('udocker.engine.runc.os.path.isdir')
     @patch.object(RuncEngine, '_add_mount_spec')
-    @patch('engine.runc.FileBind')
+    @patch('udocker.engine.runc.FileBind')
     def test_14__add_volume_bindings(self, mock_fbind,
                                      mock_add_mount_spec,
                                      mock_isdir, mock_isfile, mock_msg):
@@ -529,7 +521,7 @@ class RuncEngineTestCase(TestCase):
         self.assertTrue(rcex._filebind.set_file.called)
         self.assertTrue(rcex._filebind.add_file.called)
 
-    @patch('engine.runc.Msg')
+    @patch('udocker.engine.runc.Msg')
     def test_15__run_invalid_options(self, mock_msg):
         """Test15 RuncEngine()._run_invalid_options()."""
         mock_msg.level = 0
@@ -540,11 +532,11 @@ class RuncEngineTestCase(TestCase):
         self.assertTrue(mock_msg.called)
 
     @patch.object(RuncEngine, '_create_mountpoint')
-    @patch('engine.runc.stat')
-    @patch('engine.runc.FileUtil.chmod')
-    @patch('engine.runc.FileBind')
-    @patch('engine.runc.os.path.basename')
-    @patch('engine.runc.PRootEngine')
+    @patch('udocker.engine.runc.stat')
+    @patch('udocker.engine.runc.FileUtil.chmod')
+    @patch('udocker.engine.runc.FileBind')
+    @patch('udocker.engine.runc.os.path.basename')
+    @patch('udocker.engine.runc.PRootEngine')
     def test_16__proot_overlay(self, mock_proot, mock_base, mock_fbind,
                                mock_chmod, mock_stat, mock_crmpoint):
         """Test16 RuncEngine()._proot_overlay()."""
@@ -578,8 +570,8 @@ class RuncEngineTestCase(TestCase):
         self.assertTrue(rcex._filebind.set_file.called)
         self.assertTrue(rcex._filebind.add_file.called)
 
-    @patch('engine.runc.FileBind')
-    @patch('engine.runc.Unique')
+    @patch('udocker.engine.runc.FileBind')
+    @patch('udocker.engine.runc.Unique')
     @patch.object(RuncEngine, '_set_id_mappings')
     @patch.object(RuncEngine, '_del_namespace_spec')
     @patch.object(RuncEngine, '_del_mount_spec')
@@ -667,12 +659,11 @@ class RuncEngineTestCase(TestCase):
         rcex.container_dir = "/container/ROOT"
         rcex._filebind = mock_fbind
         rcex._filebind.setup.return_value = None
-        rcex.opt["cmd"] = ["/bin/sh"]
         status = rcex.run("CONTAINERID")
         self.assertEqual(status, 0)
 
-    @patch('engine.runc.FileBind')
-    @patch('engine.runc.subprocess.call')
+    @patch('udocker.engine.runc.FileBind')
+    @patch('udocker.engine.runc.subprocess.call')
     def test_18_run_pty(self, mock_call, mock_fbind):
         """Test18 RuncEngine().run_pty()."""
         mock_call.return_value = 0
