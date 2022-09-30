@@ -130,6 +130,7 @@ disable=
     I1101,
     R0801,
     C0413,
+    R0201
 
 [REPORTS]
 
@@ -587,4 +588,7 @@ check-str-concat-over-line-jumps=no
 # suggestions which would get split by a code formatter (e.g., black). Will
 # default to the setting for ``max-line-length``.
 #max-line-length-suggestions=
+
+[MASTER]
+init-hook='import sys; sys.path.append("udocker"); sys.path.append(".");'
 
