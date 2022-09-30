@@ -1,13 +1,6 @@
 # Dockerfile for CI/CD
 
-This directory container the Dockerfile to run the Jenkins CI/CD pipeline of udocker.
-
-Local build the docker image:
-
-```bash
-docker build -t udockercicd .
-```
-
+This directory container the Dockerfiles for some of the tools to run the Jenkins CI/CD pipeline of udocker.
 To create the containers for the tests of CI/CD locally, execute from the repository directory:
 
 ```bash
