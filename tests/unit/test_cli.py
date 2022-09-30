@@ -8,13 +8,10 @@ udocker unit tests: UdockerCLI
 import os
 import sys
 
-new_sys_path = []
-for ppath in sys.path:
-    new_sys_path.append(ppath)
-    new_sys_path.append(ppath + "/udocker")
-
-new_sys_path.append(os.path.dirname(os.path.realpath(sys.argv[0])) + '/../')
-sys.path = new_sys_path
+new_path=[]
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
 
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
@@ -45,7 +42,7 @@ class UdockerCLITestCase(TestCase):
         Config().conf['location'] = ""
         Config().conf['keystore'] = "KEYSTORE"
 
-        str_local = 'udocker.container.localrepo.LocalRepository'
+        str_local = 'container.localrepo.LocalRepository'
         self.lrepo = patch(str_local)
         self.local = self.lrepo.start()
         self.mock_lrepo = Mock()
@@ -778,7 +775,7 @@ class UdockerCLITestCase(TestCase):
         self.assertTrue(mock_exec.return_value.get_engine.called)
 
         mock_pull.return_value = None
-        exeng_patch = patch("udocker.engine.proot.PRootEngine")
+        exeng_patch = patch("engine.proot.PRootEngine")
         proot = exeng_patch.start()
         mock_proot = Mock()
         proot.return_value = mock_proot
@@ -849,7 +846,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_ps(cmdp)
         self.assertEqual(status, 1)
 
-        exeng_patch = patch("udocker.engine.proot.PRootEngine")
+        exeng_patch = patch("engine.proot.PRootEngine")
         proot = exeng_patch.start()
         mock_proot = Mock()
         proot.return_value = mock_proot
