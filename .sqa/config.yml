@@ -25,12 +25,12 @@ sqa_criteria:
         - mdl -r ~MD013,~MD029,~MD009,~MD022,~MD036,~MD023,~MD032,~MD012,~MD031,~MD033 .
         container: qc.doc_udocker
 
-  QC.Lic:
-    repos:
-      this_repo:
-        commands:
-        - licensee detect . --json
-        container: qc.lic_udocker
+  # QC.Lic:
+  #   repos:
+  #     this_repo:
+  #       commands:
+  #       - licensee detect . --json
+  #       container: qc.lic_udocker
 
   # QC.Met:
   #   repos:
