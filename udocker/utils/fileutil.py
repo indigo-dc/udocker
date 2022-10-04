@@ -42,7 +42,7 @@ class FileUtil(object):
         if os.path.islink(prefix):
             prefix = (os.path.realpath(os.path.dirname(prefix)) + "/" +
                       os.path.basename(prefix))
-        else:    
+        else:
             prefix = os.path.realpath(prefix)
         if prefix not in FileUtil.safe_prefixes:
             filename = prefix
@@ -118,7 +118,7 @@ class FileUtil(object):
         if os.path.islink(filename):
             filename = (os.path.realpath(os.path.dirname(filename)) + "/" +
                         os.path.basename(filename))
-        else:    
+        else:
             filename = os.path.realpath(filename)
         if os.path.isdir(filename):
             filename += '/'
@@ -439,7 +439,10 @@ class FileUtil(object):
         except (IOError, OSError):
             return False
         while True:
-            copy_buffer = sys.stdin.read(1024 * 1024)
+            if sys.version_info[0] >= 3:
+                copy_buffer = sys.stdin.buffer.read(1024 * 1024)
+            else:
+                copy_buffer = sys.stdin.read(1024 * 1024)
             if not copy_buffer:
                 break
             fpdst.write(copy_buffer)
@@ -459,7 +462,10 @@ class FileUtil(object):
             copy_buffer = fpsrc.read(1024 * 1024)
             if not copy_buffer:
                 break
-            sys.stdout.write(copy_buffer)
+            if sys.version_info[0] >= 3:
+                sys.stdout.buffer.write(copy_buffer)
+            else:
+                sys.stdout.write(copy_buffer)
 
         fpsrc.close()
         return True
