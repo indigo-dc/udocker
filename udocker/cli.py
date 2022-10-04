@@ -370,6 +370,8 @@ class UdockerCLI(object):
         if from_stdin:
             tarfile = '-'
             imagespec = cmdp.get("P1")
+            if imagespec == '-':
+                imagespec = cmdp.get("P2")
             move_tarball = False
         else:
             tarfile = cmdp.get("P1")
