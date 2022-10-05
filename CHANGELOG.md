@@ -12,6 +12,7 @@
   of container even if the intended name given by --name exists
 * prevent closing of file descriptors upon engine invocation
   improves PMI process management interface interoperability
+* fix issues in import and export while using pipes.
 
 ## udocker (1.3.4)
 
