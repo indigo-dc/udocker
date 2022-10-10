@@ -15,6 +15,7 @@ from msg import Msg
 from utils.curl import GetURL
 from utils.fileutil import FileUtil
 
+
 def _str(data):
     """Safe str for Python 3 and Python 2"""
     if sys.version_info[0] >= 3:
@@ -270,10 +271,9 @@ class UdockerTools(object):
             return True
 
         Msg().out("Info: udocker command line interface", __version__)
-        Msg().out("Info: searching for udockertools",
-                  self._tarball_release, l=Msg.INF)
+        Msg().out("Info: searching for udockertools", self._tarball_release, l=Msg.INF)
         retry = self._installretry
-        while  retry:
+        while retry:
             if self._install_logic(force):
                 self.get_installinfo()
                 Msg().out("Info: installation of udockertools successful")

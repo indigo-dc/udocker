@@ -6,7 +6,7 @@ udocker unit tests: FileUtil
 import os
 import sys
 
-new_path=[]
+new_path = []
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
 new_path.extend(sys.path)
@@ -103,7 +103,6 @@ class FileUtilTestCase(TestCase):
         futil = FileUtil('filename.txt')
         futil.register_prefix()
         self.assertTrue(mock_regpre.called)
-
 
     @patch('udocker.utils.fileutil.os.umask')
     @patch('udocker.utils.fileutil.os.path.abspath')

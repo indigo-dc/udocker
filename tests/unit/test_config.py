@@ -9,7 +9,7 @@ udocker unit tests: Config
 import os
 import sys
 
-new_path=[]
+new_path = []
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
 new_path.extend(sys.path)
@@ -95,6 +95,7 @@ class ConfigTestCase(TestCase):
         config = Config()
         config.container()
         self.assertTrue(mock_fileover.called)
+
 
 if __name__ == '__main__':
     main()

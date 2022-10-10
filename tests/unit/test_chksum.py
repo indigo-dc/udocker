@@ -6,7 +6,7 @@ udocker unit tests: ChkSUM
 import os
 import sys
 
-new_path=[]
+new_path = []
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
 new_path.extend(sys.path)
@@ -54,7 +54,6 @@ class ChkSUMTestCase(TestCase):
         # with self.assertRaises(NameError):
         #     ChkSUM()
         #     self.assertTrue(mock_ossl256.called)
-
 
     # def test_02__hashlib(self):
     #     """Test02 ChkSUM()._hashlib."""

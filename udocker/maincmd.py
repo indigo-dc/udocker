@@ -21,7 +21,7 @@ limitations under the License.
 import os
 import sys
 
-new_path=[]
+new_path = []
 new_path.append(os.path.dirname(os.path.realpath(__file__)))
 new_path.extend(sys.path)
 for spath in sys.path:
@@ -58,6 +58,7 @@ def main():
         FileUtil().cleanup()
 
     sys.exit(exit_status)
+
 
 if __name__ == "__main__":
     main()

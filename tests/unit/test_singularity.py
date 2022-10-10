@@ -6,7 +6,7 @@ udocker unit tests: SingularityEngine
 import os
 import sys
 
-new_path=[]
+new_path = []
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
 new_path.extend(sys.path)
@@ -235,6 +235,7 @@ class SingularityEngineTestCase(TestCase):
         sing.opt["cmd"] = [""]
         status = sing.run("CONTAINERID")
         self.assertEqual(status, 0)
+
 
 if __name__ == '__main__':
     main()

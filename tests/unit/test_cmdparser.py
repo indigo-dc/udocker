@@ -8,7 +8,7 @@ udocker unit tests: CmdParser
 import os
 import sys
 
-new_path=[]
+new_path = []
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
 new_path.extend(sys.path)
@@ -102,6 +102,7 @@ class CmdParserTestCase(TestCase):
 
     # def test_07__get_param(self):
     #     """Test07 CmdParser()._get_param()."""
+
 
 if __name__ == '__main__':
     main()

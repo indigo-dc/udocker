@@ -6,7 +6,7 @@ udocker unit tests: CommonLocalFileApi
 import os
 import sys
 
-new_path=[]
+new_path = []
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
 new_path.extend(sys.path)
@@ -378,6 +378,7 @@ class CommonLocalFileApiTestCase(TestCase):
         clfapi = CommonLocalFileApi(self.local)
         status = clfapi._get_imagedir_type(tmp_imagedir)
         self.assertEqual(status, "Docker")
+
 
 if __name__ == '__main__':
     main()

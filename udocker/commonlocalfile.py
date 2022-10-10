@@ -68,7 +68,7 @@ class CommonLocalFileApi(object):
 
     def _untar_saved_container(self, tarfile, destdir):
         """Untar container created with docker save"""
-        #umask 022
+        # umask 022
         verbose = ''
         if Msg.level >= Msg.VER:
             verbose = 'v'

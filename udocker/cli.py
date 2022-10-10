@@ -127,10 +127,8 @@ class UdockerCLI(object):
                 return False
             if "." in hostname:
                 try:
-                    self.dockerioapi.set_registry( \
-                            Config.conf['docker_registries'][hostname][0])
-                    self.dockerioapi.set_index( \
-                            Config.conf['docker_registries'][hostname][1])
+                    self.dockerioapi.set_registry(Config.conf['docker_registries'][hostname][0])
+                    self.dockerioapi.set_index(Config.conf['docker_registries'][hostname][1])
                 except (KeyError, NameError, TypeError):
                     self.dockerioapi.set_registry(transport + "//" + hostname)
                     self.dockerioapi.set_index(transport + "//" + hostname)
@@ -217,19 +215,19 @@ class UdockerCLI(object):
         while True:
             lines = term_lines
             while lines > 0:
-                repo_list = \
-                        self.dockerioapi.search_get_page(expression, term_lines)
+                repo_list = self.dockerioapi.search_get_page(expression, term_lines)
                 if not repo_list:
                     return self.STATUS_OK
                 if lines == term_lines:
-                    Msg().out(fmt % \
-                        ("NAME", "OFFICIAL", "DESCRIPTION", "STARS"), l=Msg.INF)
+                    Msg().out(fmt % ("NAME", "OFFICIAL", "DESCRIPTION", "STARS"), l=Msg.INF)
                 if len(repo_list["results"]) > lines:
                     print_lines = lines
                 else:
                     print_lines = len(repo_list["results"])
+
                 lines -= print_lines
                 self._search_print_lines(repo_list, print_lines, fmt)
+
             if pause and not self.dockerioapi.search_ended:
                 if GET_INPUT("[return or q to quit]") in ('q', 'Q', 'e', 'E'):
                     return self.STATUS_OK
@@ -702,7 +700,7 @@ class UdockerCLI(object):
                     if option_value or last_value is None:
                         exec_engine.opt[option] = option_value
                 elif cmdp_args["act"] == "E":   # action is extend
-                    #if option == "env":
+                    # if option == "env":
                     #    print (type(option_value))
                     #    print (option_value)
                     exec_engine.opt[option].extend(option_value)
@@ -754,7 +752,7 @@ class UdockerCLI(object):
         Config.conf['location'] = cmdp.get("--location=")
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
-        #
+
         if cmdp.missing_options(): # syntax error
             return self.STATUS_ERROR
 
@@ -857,8 +855,7 @@ class UdockerCLI(object):
                 self.localrepo.isprotected_container(container_id)]
             line[2] = ('R', 'W', 'N', 'D')[
                 self.localrepo.iswriteable_container(container_id)]
-            line[4] = self.localrepo.get_size(container_id) \
-                    if print_size else ""
+            line[4] = self.localrepo.get_size(container_id) if print_size else ""
             Msg().out(fmt % tuple(line))
         return self.STATUS_OK
 

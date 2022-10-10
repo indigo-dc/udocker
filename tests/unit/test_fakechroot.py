@@ -6,7 +6,7 @@ udocker unit tests: FakechrootEngine
 import os
 import sys
 
-new_path=[]
+new_path = []
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
 new_path.extend(sys.path)
@@ -301,7 +301,6 @@ class FakechrootEngineTestCase(TestCase):
         ufake = FakechrootEngine(self.local, self.xmode)
         status = ufake.run("12345")
         self.assertEqual(status, 2)
-
 
         mock_uidc.return_value = None
         mock_rinit.return_value = '/bin/exec'

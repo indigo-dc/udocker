@@ -2,6 +2,7 @@
 """Handling str instance checking"""
 import sys
 
+
 def is_genstr(objstr):
     """test if objstr is string or unicode both in py2 nd py3
     unicode type has been removed in py3
@@ -13,4 +14,5 @@ def is_genstr(objstr):
         is_gstr = isinstance(objstr, str)
     else:
         is_gstr = isinstance(objstr, (str, unicode))
+
     return is_gstr

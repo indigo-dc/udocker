@@ -6,7 +6,7 @@ udocker unit tests: DockerIoAPI
 import os
 import sys
 
-new_path=[]
+new_path = []
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
 new_path.extend(sys.path)
@@ -818,6 +818,7 @@ class DockerIoAPITestCase(TestCase):
         doia = DockerIoAPI(self.local)
         out = doia.search_get_page("SOMETHING")
         self.assertEqual(out, {"page": 1, "num_pages": 1})
+
 
 if __name__ == '__main__':
     main()

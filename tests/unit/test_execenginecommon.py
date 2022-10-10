@@ -6,7 +6,7 @@ udocker unit tests: ExecutionEngineCommon
 import os
 import sys
 
-new_path=[]
+new_path = []
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
 new_path.extend(sys.path)
@@ -696,7 +696,7 @@ class ExecutionEngineCommonTestCase(TestCase):
 
         cont_auth = mock_nix
         host_auth = mock_nix
-        res = ("/tmp/passwd:/etc/passwd","/tmp/group:/etc/group")
+        res = ("/tmp/passwd:/etc/passwd", "/tmp/group:/etc/group")
         cont_auth.passwd_file.return_value = "/c/etc/passwd"
         cont_auth.group_file.return_value = "/c/etc/group"
         mock_umask.side_effect = [None, None]
@@ -712,7 +712,7 @@ class ExecutionEngineCommonTestCase(TestCase):
 
         cont_auth = mock_nix
         host_auth = mock_nix
-        res = ("/tmp/passwd:/etc/passwd","/tmp/group:/etc/group")
+        res = ("/tmp/passwd:/etc/passwd", "/tmp/group:/etc/group")
         cont_auth.passwd_file.return_value = "/c/etc/passwd"
         cont_auth.group_file.return_value = "/c/etc/group"
         mock_umask.side_effect = [None, None]

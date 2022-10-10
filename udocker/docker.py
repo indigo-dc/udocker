@@ -86,7 +86,7 @@ class DockerIoAPI(object):
         elif status_code == 401:
             if "www-authenticate" in hdr.data:
                 www_authenticate = hdr.data["www-authenticate"]
-                if not "realm" in www_authenticate:
+                if "realm" not in www_authenticate:
                     return (hdr, buf)
                 if 'error="insufficient_scope"' in www_authenticate:
                     return (hdr, buf)
@@ -630,10 +630,8 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                         self.localrepo.load_json(f_path)
             elif len(fname) >= 69 and fname.endswith(".json"):
                 structure["repoconfigs"][fname] = {}
-                structure["repoconfigs"][fname]["json"] = \
-                        self.localrepo.load_json(f_path)
-                structure["repoconfigs"][fname]["json_f"] = \
-                        f_path
+                structure["repoconfigs"][fname]["json"] = self.localrepo.load_json(f_path)
+                structure["repoconfigs"][fname]["json_f"] = f_path
             elif len(fname) >= 64 and FileUtil(f_path).isdir():
                 layer_id = fname
                 structure["repolayers"][layer_id] = {}
@@ -645,11 +643,9 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                     elif layer_f == "json":
                         structure["repolayers"][layer_id]["json"] = \
                                 self.localrepo.load_json(layer_f_path)
-                        structure["repolayers"][layer_id]["json_f"] = \
-                                layer_f_path
+                        structure["repolayers"][layer_id]["json_f"] = layer_f_path
                     elif "layer" in layer_f:
-                        structure["repolayers"][layer_id]["layer_f"] = \
-                                layer_f_path
+                        structure["repolayers"][layer_id]["layer_f"] = layer_f_path
                     else:
                         Msg().out("Info: warning: unknown file in layer:",
                                   f_path, l=Msg.WAR)
@@ -703,7 +699,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                 if imagetag in repotag["RepoTags"]:
                     layers = []
                     for layer_file in repotag["Layers"]:
-                        #layers.append(layer_file.replace("/layer.tar", ""))
+                        # layers.append(layer_file.replace("/layer.tar", ""))
                         layers.append(layer_file)
                     layers.reverse()
                     return (repotag["Config"], layers)
@@ -712,8 +708,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
     def _load_image_step2(self, structure, imagerepo, tag):
         """Load a container image into a repository mimic docker load"""
         imagetag = imagerepo + ':' + tag
-        (json_config_file, layers) = \
-                self._get_from_manifest(structure, imagetag)
+        (json_config_file, layers) = self._get_from_manifest(structure, imagetag)
         if json_config_file:
             layer_id = json_config_file.replace(".json", "")
             json_file = structure["repoconfigs"][json_config_file]["json_f"]
