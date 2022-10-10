@@ -538,12 +538,11 @@ class ExecutionEngineCommon(object):
         for (env_var, value) in list(os.environ.items()):
             if not env_var:
                 continue
-            if   (env_var in Config.conf['invalid_host_env'] or
-                  env_var in container_env):
+            if (env_var in Config.conf['invalid_host_env'] or env_var in container_env):
                 continue
-            if   ((not self.opt["hostenv"]) and
-                  env_var not in Config.conf['valid_host_env']):
+            if ((not self.opt["hostenv"]) and env_var not in Config.conf['valid_host_env']):
                 continue
+
             self.opt["env"].append("%s=%s" % (env_var, value))
 
     def _run_env_set(self):
@@ -606,7 +605,7 @@ class ExecutionEngineCommon(object):
         self.container_dir = container_dir
 
         # execution mode
-        #self.exec_mode = ExecutionMode(self.localrepo, self.container_id)
+        # self.exec_mode = ExecutionMode(self.localrepo, self.container_id)
 
         # check if exposing privileged ports
         self._check_exposed_ports()
@@ -635,8 +634,7 @@ class ExecutionEngineCommon(object):
             if (saved["osversion"] == HostInfo().osversion() and
                     saved["oskernel"] == HostInfo().oskernel() and
                     saved["arch"] == HostInfo().arch() and
-                    saved["osdistribution"] == \
-                        str(HostInfo().osdistribution())):
+                    saved["osdistribution"] == str(HostInfo().osdistribution())):
                 return saved
         except (IOError, OSError, AttributeError, ValueError, TypeError,
                 IndexError, KeyError):

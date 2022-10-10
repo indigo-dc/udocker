@@ -154,10 +154,8 @@ class Config(object):
     # conf['dockerio_registry_url'] = "http://localhost:5000"
 
     # registries table
-    conf['docker_registries'] = {
-            "docker.io": [conf['dockerio_registry_url'],
-            conf['dockerio_index_url']],
-        }
+    conf['docker_registries'] = {"docker.io": [conf['dockerio_registry_url'],
+                                 conf['dockerio_index_url']], }
 
     # nvidia files
     conf['nvi_etc_list'] = ['vulkan/icd.d/nvidia_icd.json',

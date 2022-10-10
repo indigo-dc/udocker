@@ -9,6 +9,7 @@ from msg import Msg
 from helper.hostinfo import HostInfo
 from helper.nixauth import NixAuthentication
 
+
 class Unshare(object):
     """Place a process in a namespace"""
 

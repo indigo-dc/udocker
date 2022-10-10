@@ -753,7 +753,7 @@ class UdockerCLI(object):
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
 
-        if cmdp.missing_options(): # syntax error
+        if cmdp.missing_options():   # syntax error
             return self.STATUS_ERROR
 
         if Config.conf['location']:

@@ -52,7 +52,7 @@ class ContainerStructure(object):
             confidx = "config"
         elif "container_config" in container_json:
             confidx = "container_config"
-        if container_json[confidx]  and param in container_json[confidx]:
+        if container_json[confidx] and param in container_json[confidx]:
             if container_json[confidx][param] is None:
                 pass
             elif (is_genstr(container_json[confidx][param]) and

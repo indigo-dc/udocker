@@ -9,9 +9,9 @@ import platform
 from genstr import is_genstr
 from utils.uprocess import Uprocess
 
+
 class HostInfo(object):
     """Get information from the host system"""
-
     uid = os.getuid()
     gid = os.getgid()
 

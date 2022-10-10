@@ -20,7 +20,7 @@ class OSInfo(object):
                    "/system/bin/sh", "/system/bin/ls",
                    "/lib/ld-linux.so",
                    "/lib/ld-linux.so.2",
-                  ]
+                   ]
 
     def __init__(self, root_dir):
         self._root_dir = root_dir

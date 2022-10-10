@@ -253,8 +253,7 @@ class ElfPatcher(object):
         for line in ld_data.split('\n'):
             match = re.search("([^ ]+) => ([^ ]+)", line)
             if match:
-                ld_dict[self._container_root + \
-                        os.path.dirname(match.group(2))] = True
+                ld_dict[self._container_root + os.path.dirname(match.group(2))] = True
         return list(ld_dict.keys())
 
     # pylint: disable=too-many-nested-blocks

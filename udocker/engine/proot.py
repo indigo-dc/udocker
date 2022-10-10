@@ -99,8 +99,7 @@ class PRootEngine(ExecutionEngineCommon):
                                          executable, "--help"])
             del os.environ["PROOT_NEW_SECCOMP"]
             if out:
-                self._save_osenv(host_file,
-                                      dict([("PROOT_NEW_SECCOMP", 1), ]))
+                self._save_osenv(host_file, dict([("PROOT_NEW_SECCOMP", 1), ]))
                 return True
         self._save_osenv(host_file)
         return False

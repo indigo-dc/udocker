@@ -85,8 +85,7 @@ class RuncEngine(ExecutionEngineCommon):
             cmd_l = [self.executable, "spec", "--rootless", ]
             status = subprocess.call(cmd_l, shell=False, stderr=Msg.chlderr,
                                      close_fds=True,
-                                     cwd=os.path.realpath(\
-                                         self._container_specdir))
+                                     cwd=os.path.realpath(self._container_specdir))
             if status:
                 return False
 
@@ -149,15 +148,15 @@ class RuncEngine(ExecutionEngineCommon):
                 if "hostID" in idmap:
                     idmap["hostID"] = HostInfo.uid
         else:
-            json_obj["linux"]["uidMappings"] = [ \
-                    {"containerID": 0, "hostID": HostInfo.uid, "size":1, }, ]
+            json_obj["linux"]["uidMappings"] = [
+                {"containerID": 0, "hostID": HostInfo.uid, "size": 1, }, ]
         if "gidMappings" in json_obj["linux"]:
             for idmap in json_obj["linux"]["gidMappings"]:
                 if "hostID" in idmap:
                     idmap["hostID"] = HostInfo.gid
         else:
-            json_obj["linux"]["gidMappings"] = [ \
-                    {"containerID": 0, "hostID": HostInfo.gid, "size":1, }, ]
+            json_obj["linux"]["gidMappings"] = [
+                        {"containerID": 0, "hostID": HostInfo.gid, "size": 1, }, ]
 
     def _del_namespace_spec(self, namespace):
         """Remove a namespace"""
@@ -347,8 +346,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._filebind.add_file(host_executable, cont_executable)
         mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
         FileUtil(self._filebind.get_path(cont_executable)).chmod(mode)
-        self._container_specjson["process"]["args"] = \
-                [cont_executable, "-0"] + self.opt["cmd"]
+        self._container_specjson["process"]["args"] = [cont_executable, "-0"] + self.opt["cmd"]
         return True
 
     def run(self, container_id):
@@ -376,8 +374,7 @@ class RuncEngine(ExecutionEngineCommon):
             else:
                 self._container_specdir = FileUtil("SPECDIR").mktmpdir()
                 FileUtil(self._container_specdir).register_prefix()
-            self._container_specfile = \
-                    self._container_specdir + '/' + self._container_specfile
+            self._container_specfile = self._container_specdir + '/' + self._container_specfile
 
         self._filebind = FileBind(self.localrepo, container_id)
         self._filebind.setup()
@@ -416,7 +413,7 @@ class RuncEngine(ExecutionEngineCommon):
         else:
             runc_debug = []
 
-       # build the actual command
+        # build the actual command
         self.execution_id = Unique().uuid(self.container_id)
         cmd_l = self._set_cpu_affinity()
         cmd_l.append(self.executable)

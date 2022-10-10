@@ -86,8 +86,7 @@ class LocalRepository(object):
                 os.makedirs(self.libdir)
             if not os.path.exists(self.docdir):
                 os.makedirs(self.docdir)
-            if not (Config.conf['keystore'].startswith("/") or \
-                    os.path.exists(self.homedir)):
+            if not (Config.conf['keystore'].startswith("/") or os.path.exists(self.homedir)):
                 os.makedirs(self.homedir)
         except(IOError, OSError):
             return False
@@ -204,8 +203,8 @@ class LocalRepository(object):
                 self.del_container_name(name)  # delete aliases links
             if force:
                 FileUtil(container_dir).rchmod(stat.S_IWUSR | stat.S_IRUSR,
-                                                stat.S_IWUSR | stat.S_IRUSR |
-                                                stat.S_IXUSR)
+                                               stat.S_IWUSR | stat.S_IRUSR |
+                                               stat.S_IXUSR)
             if FileUtil(container_dir).remove(recursive=True):
                 self.cur_containerdir = ""
                 return True

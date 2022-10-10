@@ -139,11 +139,11 @@ class FakechrootEngine(ExecutionEngineCommon):
                                os.path.realpath(self.container_root))
         self.opt["env"].append("LD_PRELOAD=" + self._fakechroot_so)
         if Config.conf['fakechroot_expand_symlinks'] is None:
-            self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" + \
-                    str(self._recommend_expand_symlinks).lower())
+            self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" +
+                                   str(self._recommend_expand_symlinks).lower())
         else:
-            self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" + \
-                    str(Config.conf['fakechroot_expand_symlinks']).lower())
+            self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" +
+                                   str(Config.conf['fakechroot_expand_symlinks']).lower())
 
         if not self._is_volume("/tmp"):
             self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" +
@@ -209,13 +209,12 @@ class FakechrootEngine(ExecutionEngineCommon):
                                   "dynamic" in filetype):
             self.opt["cmd"][0] = exec_path
             return []
-        env_exec = FileUtil("env").find_exec("/bin:/usr/bin",
-                                             self.container_root)
-        if  env_exec:
+        env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
+        if env_exec:
             return [self.container_root + '/' + env_exec, ]
+
         relc_path = exec_path.split(self.container_root, 1)[-1]
-        real_path = FileUtil(self.container_root).cont2host(relc_path,
-                                                            self.opt["vol"])
+        real_path = FileUtil(self.container_root).cont2host(relc_path, self.opt["vol"])
         hashbang = FileUtil(real_path).get1stline()
         match = re.match("#! *([^ ]+)(.*)", hashbang)
         if match and not match.group(1).startswith('/'):
