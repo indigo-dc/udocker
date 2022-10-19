@@ -1,25 +1,59 @@
+config:
+  credentials: []
+  project_repos:
+    github.com/EOSC-synergy/sqaaas-tooling:
+      branch: release/1.7.4
+      repo: https://github.com/EOSC-synergy/sqaaas-tooling
+environment:
+  JPL_DOCKERFORCEBUILD: enabled
 sqa_criteria:
-   qc_style:
-     repos:
-       udocker:
-         container: udocker-testing
-         tox:
-           tox_file: /udocker/tox.ini
-           testenv:
-              - pylint            
-   qc_security:
-     repos:
-       udocker:
-         container: udocker-testing
-         tox:
-           tox_file: /udocker/tox.ini
-           testenv:
-              - bandit         
-   qc_coverage:
-     repos:
-       udocker:
-         container: udocker-testing
-         tox:
-           tox_file: /udocker/tox.ini
-           testenv:
-              - cover
+  QC.Acc:
+    repos:
+      this_repo:
+        commands:
+        - git rev-parse --is-inside-work-tree
+        container: qc.acc_nerdy-harlequin-eagle
+  QC.Doc:
+    repos:
+      this_repo:
+        commands:
+        - mdl --json .
+        container: qc.doc_dorky-magnolia-panda
+  QC.Lic:
+    repos:
+      this_repo:
+        commands:
+        - licensee detect . --json
+        container: qc.lic_sleazy-firebrick-moorhen
+  QC.Met:
+    repos:
+      this_repo:
+        commands:
+        - cat codemeta.json
+        container: qc.met_pretty-turquoise-chin
+  QC.Sec:
+    repos:
+      this_repo:
+        commands:
+        - bandit -f json --quiet  --confidence-level medium --severity-level medium
+          --recursive .
+        container: qc.sec_frumpy-pear-abyssinian
+  QC.Sty:
+    repos:
+      this_repo:
+        commands:
+        - flake8 .
+        container: qc.sty_ready-flax-ragdoll
+  QC.Uni:
+    repos:
+      this_repo:
+        commands:
+        - tox -c tox.ini -e cover
+        container: qc.uni_slaphappy-celadon-drever
+  QC.Ver:
+    repos:
+      this_repo:
+        commands:
+        - get_git_tags.py
+        container: qc.ver_lumpy-purple-chipmunk
+timeout: 1800

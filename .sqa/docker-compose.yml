@@ -1,10 +1,74 @@
-version: "3.6"
-
 services:
-  udocker-testing:
-    image: "indigodatacloud/ci-images:python3.6"
-    container_name: "udocker-testing"
+  qc.acc_nerdy-harlequin-eagle:
+    command: sleep 6000000
+    image: bitnami/git:2.34.1
     volumes:
-      - type: bind
-        source: ./
-        target: /udocker
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+  qc.doc_dorky-magnolia-panda:
+    build:
+      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Doc/markdownlint
+      dockerfile: Dockerfile
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+  qc.lic_sleazy-firebrick-moorhen:
+    build:
+      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Lic/licensee
+      dockerfile: Dockerfile
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+  qc.met_pretty-turquoise-chin:
+    command: sleep 6000000
+    image: alpine:3.15.0
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+  qc.sec_frumpy-pear-abyssinian:
+    build:
+      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Sec/bandit
+      dockerfile: Dockerfile
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+  qc.sty_ready-flax-ragdoll:
+    command: sleep 6000000
+    image: pipelinecomponents/flake8:0.9.0
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+  qc.uni_slaphappy-celadon-drever:
+    command: sleep 6000000
+    image: painless/tox@sha256:4f31b329507f9ab658e3c36c5252ad063cabe3d978d6836e0ba322ccb79af060
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+  qc.ver_lumpy-purple-chipmunk:
+    build:
+      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Ver
+      dockerfile: Dockerfile
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+version: '3.7'
