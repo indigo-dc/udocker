@@ -35,8 +35,7 @@ sqa_criteria:
     repos:
       this_repo:
         commands:
-        - bandit -f json --quiet  --confidence-level medium --severity-level medium
-          --recursive .
+        - bandit -f json --quiet  --confidence-level high --severity-level high --recursive .
         container: qc.sec_frumpy-pear-abyssinian
   QC.Sty:
     repos:
