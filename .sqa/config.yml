@@ -33,12 +33,12 @@ sqa_criteria:
         - /usr/bin/env sh .sqa/script.markdownlint.sh
         container: qc.doc02_udocker
 
-  QC.Lic:
-    repos:
-      github.com/indigo-dc/udocker licensee:
-        commands:
-        - /usr/bin/env sh .sqa/script.licensee.sh
-        container: qc.lic_udocker
+  # QC.Lic:
+  #   repos:
+  #     github.com/indigo-dc/udocker licensee:
+  #       commands:
+  #       - /usr/bin/env sh .sqa/script.licensee.sh
+  #       container: qc.lic_udocker
 
   QC.Met:
     repos:
