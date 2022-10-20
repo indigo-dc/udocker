@@ -88,7 +88,7 @@ class LocalRepository(object):
                 os.makedirs(self.docdir)
             if not (Config.conf['keystore'].startswith("/") or os.path.exists(self.homedir)):
                 os.makedirs(self.homedir)
-        except(IOError, OSError):
+        except (IOError, OSError):
             return False
         return True
 

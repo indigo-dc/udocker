@@ -271,7 +271,7 @@ class ExecutionEngineCommon(object):
             (container_dir, container_json) = \
                 container_structure.get_container_attr()
             if not container_dir:
-                return(None, None)
+                return (None, None)
             # load metadata from container
             if not self.opt["nometa"]:
                 if not self.opt["user"]:
@@ -307,7 +307,7 @@ class ExecutionEngineCommon(object):
                     container_structure.get_container_meta("ExposedPorts", [], container_json))
                 self.opt["env"].extendif(
                     container_structure.get_container_meta("Env", [], container_json))
-        return(container_dir, container_json)
+        return (container_dir, container_json)
 
     def _select_auth_files(self):
         """Select authentication files to use /etc/passwd /etc/group"""

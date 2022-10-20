@@ -29,7 +29,7 @@ def is_writable_file(obj):
     """Check if obj is a file."""
     try:
         obj.write("")
-    except(AttributeError, OSError, IOError):
+    except (AttributeError, OSError, IOError):
         return False
     else:
         return True

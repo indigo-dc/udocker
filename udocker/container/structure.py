@@ -35,15 +35,15 @@ class ContainerStructure(object):
             container_dir = self.localrepo.cd_container(self.container_id)
             if not container_dir:
                 Msg().err("Error: container id or name not found")
-                return(False, False)
+                return (False, False)
 
             fjson = container_dir + "/container.json"
             container_json = self.localrepo.load_json(fjson)
             if not container_json:
                 Msg().err("Error: invalid container json metadata")
-                return(False, False)
+                return (False, False)
 
-        return(container_dir, container_json)
+        return (container_dir, container_json)
 
     def get_container_meta(self, param, default, container_json):
         """Get the container metadata from the container"""

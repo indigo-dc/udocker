@@ -80,7 +80,7 @@ class UdockerCLI(object):
         if not (imagerepo and tag and
                 self.dockerioapi.is_repo_name(imagespec)):
             Msg().err("Error: must specify image:tag or repository/image:tag")
-            return(None, None)
+            return (None, None)
 
         return imagerepo, tag
 

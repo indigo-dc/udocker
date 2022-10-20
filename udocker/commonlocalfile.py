@@ -33,7 +33,7 @@ class CommonLocalFileApi(object):
             return False
         try:
             os.rename(filepath, target_file)
-        except(IOError, OSError):
+        except (IOError, OSError):
             if not FileUtil(filepath).copyto(target_file):
                 return False
         self.localrepo.add_image_layer(target_file, linkname)
@@ -177,7 +177,7 @@ class CommonLocalFileApi(object):
         if move_tarball:
             try:
                 os.rename(tarfile, layer_file)
-            except(IOError, OSError):
+            except (IOError, OSError):
                 pass
         if not os.path.exists(layer_file):
             if not FileUtil(tarfile).copyto(layer_file):

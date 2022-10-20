@@ -37,7 +37,7 @@ services:
     working_dir: /sqaaas-build
 
   qc.lic_udocker:
-    image: eoscsynergy/sqaaas-licensee:1.0.0
+    image: eoscsynergy/sqaaas-licensee:1.0.1
     command: sleep 6000000
     volumes:
     - source: ./
