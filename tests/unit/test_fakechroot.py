@@ -158,9 +158,11 @@ class FakechrootEngineTestCase(TestCase):
         self.assertEqual(status, ('', ''))
 
         ufake = FakechrootEngine(self.local, self.xmode)
-        ufake.opt["vol"] = ("/tmp", "/bin",)
+        dtmp = os.path.realpath("/tmp")
+        dbin = os.path.realpath("/bin")
+        ufake.opt["vol"] = (dtmp, dbin)
         status = ufake._get_volume_bindings()
-        self.assertEqual(status, ('', '/tmp!/tmp:/bin!/bin'))
+        self.assertEqual(status, ('', dbin+'!'+dbin+':'+dtmp+'!'+dtmp))
 
     @patch('udocker.engine.fakechroot.os.path.exists')
     @patch('udocker.engine.fakechroot.FileUtil.cont2host')
