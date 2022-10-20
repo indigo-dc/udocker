@@ -491,7 +491,6 @@ class DockerIoAPI(object):
 
     def _parse_imagerepo(self, imagerepo):
         """Parse imagerepo to extract registry"""
-        remoterepo = imagerepo
         registry = ""
         registry_url = ""
         index_url = ""
@@ -499,7 +498,7 @@ class DockerIoAPI(object):
         if '.' in components[0] and len(components) >= 2:
             registry = components[0]
             del components[0]
-        elif ('.' not in components[0] and
+        if ('.' not in components[0] and
               components[0] != "library" and len(components) == 1):
             components.insert(0, "library")
         remoterepo = '/'.join(components)
