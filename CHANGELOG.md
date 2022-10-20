@@ -13,6 +13,8 @@
 * prevent closing of file descriptors upon engine invocation
   improves PMI process management interface interoperability
 * fix issues in import and export while using pipes.
+* fix image name parsing where "library" component is missing
+  * closes: #359
 
 ## udocker (1.3.4)
 
