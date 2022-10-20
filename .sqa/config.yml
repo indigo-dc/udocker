@@ -1,58 +1,83 @@
 config:
   credentials: []
   project_repos:
-    github.com/EOSC-synergy/sqaaas-tooling:
-      branch: release/1.7.4
-      repo: https://github.com/EOSC-synergy/sqaaas-tooling
+    github.com/indigo-dc/udocker:
+      branch: devel3
+      repo: https://github.com/indigo-dc/udocker
 environment:
   JPL_DOCKERFORCEBUILD: enabled
+  JPL_KEEPGOING: enabled
 sqa_criteria:
+
   QC.Acc:
     repos:
-      this_repo:
+      github.com/indigo-dc/udocker git:
         commands:
-        - git rev-parse --is-inside-work-tree
-        container: qc.acc_nerdy-harlequin-eagle
+        - /usr/bin/env sh .sqa/script.acc.sh
+        container: qc.acc_udocker
+
   QC.Doc:
     repos:
-      this_repo:
+      github.com/indigo-dc/udocker find_doc_files.py:
         commands:
-        - mdl --json .
-        container: qc.doc_dorky-magnolia-panda
+        - /usr/bin/env sh .sqa/script.find_doc_files.sh
+        container: qc.doc01_udocker
+
+      github.com/indigo-dc/udocker git:
+        commands:
+        - /usr/bin/env sh .sqa/script.git_doc06.sh
+        container: qc.doc06_udocker
+
+      github.com/indigo-dc/udocker markdownlint:
+        commands:
+        - /usr/bin/env sh .sqa/script.markdownlint.sh
+        container: qc.doc02_udocker
+
   QC.Lic:
     repos:
-      this_repo:
+      github.com/indigo-dc/udocker licensee:
         commands:
-        - licensee detect . --json
-        container: qc.lic_sleazy-firebrick-moorhen
+        - /usr/bin/env sh .sqa/script.licensee.sh
+        container: qc.lic_udocker
+
   QC.Met:
     repos:
-      this_repo:
+      github.com/indigo-dc/udocker validate_codemeta:
         commands:
-        - cat codemeta.json
-        container: qc.met_pretty-turquoise-chin
+        - /usr/bin/env sh .sqa/script.codemeta.sh
+        container: qc.met_udocker
+
   QC.Sec:
     repos:
-      this_repo:
+      github.com/indigo-dc/udocker bandit:
         commands:
-        - bandit -f json --quiet  --confidence-level high --severity-level high --recursive .
-        container: qc.sec_frumpy-pear-abyssinian
+        - /usr/bin/env sh .sqa/script.bandit.sh
+        container: qc.sec_udocker
+
   QC.Sty:
     repos:
-      this_repo:
+      github.com/indigo-dc/udocker flake8:
         commands:
-        - flake8 .
-        container: qc.sty_ready-flax-ragdoll
-  QC.Uni:
-    repos:
-      this_repo:
+        - /usr/bin/env sh .sqa/script.flake8.sh
+        container: qc.sty_python_udocker
+
+      github.com/indigo-dc/udocker jsonlint:
         commands:
-        - tox -c tox.ini -e cover
-        container: qc.uni_slaphappy-celadon-drever
+        - /usr/bin/env sh .sqa/script.jsonlint.sh
+        container: qc.sty_json_udocker
+
   QC.Ver:
     repos:
-      this_repo:
+      github.com/indigo-dc/udocker get_git_tags.py:
         commands:
-        - get_git_tags.py
-        container: qc.ver_lumpy-purple-chipmunk
+        - /usr/bin/env sh .sqa/script.get_git_tags.sh
+        container: qc.ver_udocker
+
+  QC.Uni:
+    repos:
+      github.com/indigo-dc/udocker nosetests:
+        commands:
+        - /usr/bin/env sh .sqa/script.nosetests.sh
+        container: qc.unit_udocker
+
 timeout: 1800

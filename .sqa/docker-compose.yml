@@ -1,5 +1,6 @@
 services:
-  qc.acc_nerdy-harlequin-eagle:
+
+  qc.acc_udocker:
     command: sleep 6000000
     image: bitnami/git:2.34.1
     volumes:
@@ -7,27 +8,44 @@ services:
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
-  qc.doc_dorky-magnolia-panda:
-    build:
-      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Doc/markdownlint
-      dockerfile: Dockerfile
+
+  qc.doc01_udocker:
+    image: eoscsynergy/sqaaas-find_doc_files:1.0.0
     command: sleep 6000000
     volumes:
     - source: ./
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
-  qc.lic_sleazy-firebrick-moorhen:
-    build:
-      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Lic/licensee
-      dockerfile: Dockerfile
+
+  qc.doc06_udocker:
+    command: sleep 6000000
+    image: bitnami/git:2.34.1
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.doc02_udocker:
+    command: sleep 6000000
+    image: pipelinecomponents/markdownlint
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.lic_udocker:
+    image: eoscsynergy/sqaaas-licensee:1.0.0
     command: sleep 6000000
     volumes:
     - source: ./
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
-  qc.met_pretty-turquoise-chin:
+
+  qc.met_udocker:
     command: sleep 6000000
     image: alpine:3.15.0
     volumes:
@@ -35,40 +53,50 @@ services:
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
-  qc.sec_frumpy-pear-abyssinian:
-    build:
-      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Sec/bandit
-      dockerfile: Dockerfile
+
+  qc.sec_udocker:
+    image: eoscsynergy/sqaaas-bandit:1.0.1
     command: sleep 6000000
     volumes:
     - source: ./
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
-  qc.sty_ready-flax-ragdoll:
+
+  qc.sty_python_udocker:
     command: sleep 6000000
-    image: pipelinecomponents/flake8:0.9.0
+    image: pipelinecomponents/flake8:0.10.2
     volumes:
     - source: ./
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
-  qc.uni_slaphappy-celadon-drever:
-    command: sleep 6000000
-    image: painless/tox@sha256:4f31b329507f9ab658e3c36c5252ad063cabe3d978d6836e0ba322ccb79af060
-    volumes:
-    - source: ./
-      target: /sqaaas-build
-      type: bind
-    working_dir: /sqaaas-build
-  qc.ver_lumpy-purple-chipmunk:
-    build:
-      context: ./github.com/EOSC-synergy/sqaaas-tooling/QC.Ver
-      dockerfile: Dockerfile
+
+  qc.sty_json_udocker:
+    image: eoscsynergy/sqaaas-jsonlint:1.0.0
     command: sleep 6000000
     volumes:
     - source: ./
       target: /sqaaas-build
       type: bind
     working_dir: /sqaaas-build
+
+  qc.ver_udocker:
+    image: eoscsynergy/sqaaas-git_tags:1.0.0
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.unit_udocker:
+    image: eoscsynergy/sqaaas-nosetests:1.0.0
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
 version: '3.7'
