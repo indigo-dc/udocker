@@ -23,5 +23,6 @@
 
 * Jorge Gomes <jorge@lip.pt>
 * Mario David <mariojmdavid@gmail.com>
+* Samuel Bernardo <samuel@lip.pt>
 * Isabel Campos
 * many more

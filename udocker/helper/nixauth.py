@@ -5,8 +5,8 @@ import re
 import pwd
 import grp
 
-from udocker.utils.fileutil import FileUtil
-from udocker.helper.hostinfo import HostInfo
+from helper.hostinfo import HostInfo
+from utils.fileutil import FileUtil
 
 
 class NixAuthentication(object):
@@ -38,7 +38,7 @@ class NixAuthentication(object):
             (user, dum1, dum2, dum3, dum4, dum5) = \
                     self._get_user_from_host(wanted_user)
         try:
-            insub = open(sub_file, encoding='utf-8')
+            insub = open(sub_file)
         except (IOError, OSError):
             return []
         else:
@@ -110,7 +110,7 @@ class NixAuthentication(object):
             wanted_uid = str(wanted_user)
             wanted_user = ""
         try:
-            inpasswd = open(self.passwd_file, encoding='utf-8')
+            inpasswd = open(self.passwd_file)
         except (IOError, OSError):
             return ("", "", "", "", "", "")
         else:
@@ -132,7 +132,7 @@ class NixAuthentication(object):
             wanted_gid = str(wanted_group)
             wanted_group = ""
         try:
-            ingroup = open(self.group_file, encoding='utf-8')
+            ingroup = open(self.group_file)
         except (IOError, OSError):
             return ("", "", "")
         else:
@@ -148,7 +148,7 @@ class NixAuthentication(object):
     def add_user(self, user, passw, uid, gid, gecos,
                  home, shell):
         """Add a *nix user to a /etc/passwd file"""
-        line = f"{user}:{passw}:{uid}:{gid}:{gecos}:{home}:{shell}\n"
+        line = "%s:%s:%s:%s:%s:%s:%s\n" % (user, passw, uid, gid, gecos, home, shell)
         if line in FileUtil(self.passwd_file).getdata('r'):
             return True
         return FileUtil(self.passwd_file).putdata(line, 'a')
@@ -158,8 +158,8 @@ class NixAuthentication(object):
         users_str = ""
         if isinstance(users, list):
             for username in users:
-                users_str += f"{username},"
-        line = f"{group}:x:{gid}:{users_str}\n"
+                users_str += "%s," % username
+        line = "%s:x:%s:%s\n" % (group, gid, users_str)
         if line in FileUtil(self.group_file).getdata('r'):
             return True
         return FileUtil(self.group_file).putdata(line, 'a')

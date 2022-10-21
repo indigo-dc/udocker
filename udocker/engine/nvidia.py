@@ -7,10 +7,10 @@ import glob
 import re
 import shutil
 
-from udocker.msg import Msg
-from udocker.config import Config
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.uprocess import Uprocess
+from msg import Msg
+from config import Config
+from utils.fileutil import FileUtil
+from utils.uprocess import Uprocess
 
 
 class NvidiaMode(object):
@@ -114,7 +114,7 @@ class NvidiaMode(object):
         if library_path:
             for libdir in library_path.split(':'):
                 for lib in self._nvidia_main_libs:
-                    if glob.glob(libdir + f"/{lib}*"):
+                    if glob.glob(libdir + "/%s*" % lib):
                         dir_list.add(os.path.realpath(libdir) + '/')
         Msg().out("Info: List nvidia libs via path", dir_list, l=Msg.DBG)
         return dir_list

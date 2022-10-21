@@ -3,14 +3,25 @@
 udocker unit tests: ExecutionMode
 """
 
+import os
+import sys
+
+new_path = []
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.engine.execmode import ExecutionMode
-from udocker.engine.proot import PRootEngine
-from udocker.engine.runc import RuncEngine
-from udocker.engine.fakechroot import FakechrootEngine
-from udocker.engine.singularity import SingularityEngine
-from udocker.config import Config
+from engine.proot import PRootEngine
+from engine.runc import RuncEngine
+from engine.fakechroot import FakechrootEngine
+from engine.singularity import SingularityEngine
+from config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class ExecutionModeTestCase(TestCase):

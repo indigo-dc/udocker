@@ -7,21 +7,21 @@ import string
 import json
 from getpass import getpass
 
-from udocker import __version__
-from udocker.config import Config
-from udocker.msg import Msg
-from udocker.docker import DockerIoAPI
-from udocker.localfile import LocalFileAPI
-from udocker.helper.keystore import KeyStore
-from udocker.helper.hostinfo import HostInfo
-from udocker.helper.unshare import Unshare
-from udocker.container.structure import ContainerStructure
-from udocker.engine.execmode import ExecutionMode
-from udocker.engine.nvidia import NvidiaMode
-from udocker.tools import UdockerTools
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.filebind import FileBind
-from udocker.utils.mountpoint import MountPoint
+from __init__ import __version__
+from config import Config
+from msg import Msg
+from docker import DockerIoAPI
+from localfile import LocalFileAPI
+from helper.keystore import KeyStore
+from helper.hostinfo import HostInfo
+from helper.unshare import Unshare
+from container.structure import ContainerStructure
+from engine.execmode import ExecutionMode
+from engine.nvidia import NvidiaMode
+from tools import UdockerTools
+from utils.fileutil import FileUtil
+from utils.filebind import FileBind
+from utils.mountpoint import MountPoint
 
 # if Python 3
 if sys.version_info[0] >= 3:
@@ -29,7 +29,7 @@ if sys.version_info[0] >= 3:
     GET_INPUT = input
 else:
     BUILTIN = "__builtin__"
-    # pylint: disable=undefined-variable
+    # Xpylint: disable=undefined-variable
     GET_INPUT = raw_input
 
 
@@ -80,7 +80,7 @@ class UdockerCLI(object):
         if not (imagerepo and tag and
                 self.dockerioapi.is_repo_name(imagespec)):
             Msg().err("Error: must specify image:tag or repository/image:tag")
-            return(None, None)
+            return (None, None)
 
         return imagerepo, tag
 
@@ -127,10 +127,8 @@ class UdockerCLI(object):
                 return False
             if "." in hostname:
                 try:
-                    self.dockerioapi.set_registry( \
-                            Config.conf['docker_registries'][hostname][0])
-                    self.dockerioapi.set_index( \
-                            Config.conf['docker_registries'][hostname][1])
+                    self.dockerioapi.set_registry(Config.conf['docker_registries'][hostname][0])
+                    self.dockerioapi.set_index(Config.conf['docker_registries'][hostname][1])
                 except (KeyError, NameError, TypeError):
                     self.dockerioapi.set_registry(transport + "//" + hostname)
                     self.dockerioapi.set_index(transport + "//" + hostname)
@@ -217,19 +215,19 @@ class UdockerCLI(object):
         while True:
             lines = term_lines
             while lines > 0:
-                repo_list = \
-                        self.dockerioapi.search_get_page(expression, term_lines)
+                repo_list = self.dockerioapi.search_get_page(expression, term_lines)
                 if not repo_list:
                     return self.STATUS_OK
                 if lines == term_lines:
-                    Msg().out(fmt % \
-                        ("NAME", "OFFICIAL", "DESCRIPTION", "STARS"), l=Msg.INF)
+                    Msg().out(fmt % ("NAME", "OFFICIAL", "DESCRIPTION", "STARS"), l=Msg.INF)
                 if len(repo_list["results"]) > lines:
                     print_lines = lines
                 else:
                     print_lines = len(repo_list["results"])
+
                 lines -= print_lines
                 self._search_print_lines(repo_list, print_lines, fmt)
+
             if pause and not self.dockerioapi.search_ended:
                 if GET_INPUT("[return or q to quit]") in ('q', 'Q', 'e', 'E'):
                     return self.STATUS_OK
@@ -370,6 +368,8 @@ class UdockerCLI(object):
         if from_stdin:
             tarfile = '-'
             imagespec = cmdp.get("P1")
+            if imagespec == '-':
+                imagespec = cmdp.get("P2")
             move_tarball = False
         else:
             tarfile = cmdp.get("P1")
@@ -433,9 +433,8 @@ class UdockerCLI(object):
         if clone:
             if cstruct.clone_tofile(tarfile):
                 return self.STATUS_OK
-        else:
-            if cstruct.export_tofile(tarfile):
-                return self.STATUS_OK
+        elif cstruct.export_tofile(tarfile):
+            return self.STATUS_OK
 
         Msg().err("Error: exporting")
         return self.STATUS_ERROR
@@ -451,10 +450,13 @@ class UdockerCLI(object):
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
         container_id = self.localrepo.get_container_id(container_id)
-        Msg().out("Info: cloning container id:", container_id, l=Msg.DBG)
         if not container_id:
             Msg().err("Error: invalid container id", container_id)
             return self.STATUS_ERROR
+        if name and self.localrepo.get_container_id(name):
+            Msg().err("Error: container name already exists")
+            return self.STATUS_ERROR
+        Msg().out("Info: cloning container id:", container_id, l=Msg.DBG)
         clone_id = self.localfileapi.clone_container(container_id, name)
         if clone_id:
             Msg().out(clone_id)
@@ -564,20 +566,25 @@ class UdockerCLI(object):
         create: extract image layers and create a container
         create [options]  <repo/image:tag>
         --name=<container-name>    :set or change the name of the container
+        --force                    :allow create even if name already exists
         """
         imagespec = cmdp.get("P1")
         name = cmdp.get("--name=")
+        force = cmdp.get("--force")
         if cmdp.missing_options():               # syntax error
             return self.STATUS_ERROR
-
+        if not force:
+            if name and self.localrepo.get_container_id(name):
+                Msg().err("Error: container name already exists")
+                return self.STATUS_ERROR
         container_id = self._create(imagespec)
         if container_id:
             Msg().out(container_id)
             if name and not self.localrepo.set_container_name(container_id,
                                                               name):
-                Msg().err("Error: invalid container name may already exist "
-                          "or wrong format")
-                return self.STATUS_ERROR
+                if not force:
+                    Msg().err("Error: invalid container name or wrong format")
+                    return self.STATUS_ERROR
             return self.STATUS_OK
         return self.STATUS_ERROR
 
@@ -693,7 +700,7 @@ class UdockerCLI(object):
                     if option_value or last_value is None:
                         exec_engine.opt[option] = option_value
                 elif cmdp_args["act"] == "E":   # action is extend
-                    #if option == "env":
+                    # if option == "env":
                     #    print (type(option_value))
                     #    print (option_value)
                     exec_engine.opt[option].extend(option_value)
@@ -745,8 +752,8 @@ class UdockerCLI(object):
         Config.conf['location'] = cmdp.get("--location=")
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
-        #
-        if cmdp.missing_options(): # syntax error
+
+        if cmdp.missing_options():   # syntax error
             return self.STATUS_ERROR
 
         if Config.conf['location']:
@@ -805,7 +812,7 @@ class UdockerCLI(object):
             Msg().out("%s    %c" % (imagerepo + ":" + tag, prot))
             if verbose:
                 imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
-                Msg().out(f"  {imagerepo_dir}")
+                Msg().out(" %s" % (imagerepo_dir))
                 layers_list = self.localrepo.get_layers(imagerepo, tag)
                 if layers_list:
                     for (layer_name, size) in layers_list:
@@ -848,8 +855,7 @@ class UdockerCLI(object):
                 self.localrepo.isprotected_container(container_id)]
             line[2] = ('R', 'W', 'N', 'D')[
                 self.localrepo.iswriteable_container(container_id)]
-            line[4] = self.localrepo.get_size(container_id) \
-                    if print_size else ""
+            line[4] = self.localrepo.get_size(container_id) if print_size else ""
             Msg().out(fmt % tuple(line))
         return self.STATUS_OK
 
@@ -1019,7 +1025,7 @@ class UdockerCLI(object):
             Msg().err("Error: removing container name")
             return self.STATUS_ERROR
 
-        Msg().out(f"Info: container name: {name} removed.")
+        Msg().out("Info: container name: %s removed." % name)
         return self.STATUS_OK
 
     def do_inspect(self, cmdp):
@@ -1069,7 +1075,7 @@ class UdockerCLI(object):
         if (not imagerepo) or cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
-        Msg().out(f"Info: verifying: {imagerepo}:{tag}", l=Msg.INF)
+        Msg().out("Info: verifying: %s:%s" % (imagerepo, tag), l=Msg.INF)
         if not self.localrepo.cd_imagerepo(imagerepo, tag):
             Msg().err("Error: selecting image and tag")
             return self.STATUS_ERROR
@@ -1147,8 +1153,8 @@ class UdockerCLI(object):
             return self.STATUS_ERROR
 
         if xmode or not (xmode or force or nvidia or purge or fixperm):
-            Msg().out(f"execmode: {exec_mode.get_mode()}")
-            Msg().out(f"nvidiamode: {nvidia_mode.get_mode()}")
+            Msg().out("execmode: %s" % (exec_mode.get_mode()))
+            Msg().out("nvidiamode: %s" % (nvidia_mode.get_mode()))
 
         return self.STATUS_OK
 
@@ -1201,9 +1207,9 @@ class UdockerCLI(object):
             return self.STATUS_ERROR
 
         try:
-            Msg().out(f"version: {__version__}")
-            Msg().out(f"tarball: {Config.conf['tarball']}")
-            Msg().out(f"tarball_release: {Config.conf['tarball_release']}")
+            Msg().out("%s %s" % ("version:", __version__))
+            Msg().out("%s %s" % ("tarball:", Config.conf['tarball']))
+            Msg().out("%s %s" % ("tarball_release:", Config.conf['tarball_release']))
         except NameError:
             return self.STATUS_ERROR
 

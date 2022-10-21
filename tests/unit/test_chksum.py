@@ -3,10 +3,21 @@
 udocker unit tests: ChkSUM
 """
 
+import os
+import sys
+
+new_path = []
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
-from unittest.mock import patch, Mock, mock_open
-from io import BytesIO as strio
+from unittest.mock import patch
+
 from udocker.utils.chksum import ChkSUM
+import collections
+collections.Callable = collections.abc.Callable
 
 BUILTINS = "builtins"
 
@@ -43,7 +54,6 @@ class ChkSUMTestCase(TestCase):
         # with self.assertRaises(NameError):
         #     ChkSUM()
         #     self.assertTrue(mock_ossl256.called)
-
 
     # def test_02__hashlib(self):
     #     """Test02 ChkSUM()._hashlib."""

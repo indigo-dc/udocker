@@ -42,6 +42,30 @@ DOCKER_IMG="ubuntu:18.04"
 CONT="ubuntu"
 export UDOCKER_DIR=${DEFAULT_UDIR}
 
+if [ -n "$1" ]
+then
+  UDOCKER_CMD="$1"
+else
+  UDOCKER_CMD=$(type -p udocker)
+fi
+
+if [ ! -x "$UDOCKER_CMD" ]
+then
+  echo "ERROR udocker file not executable: $UDOCKER_CMD"
+  exit 1
+fi
+
+if [ -n "$2" ]
+then
+  PYTHON_CMD="$2"
+fi
+
+if [ -n "$PYTHON_CMD" -a ! -x "$PYTHON_CMD" ]
+then
+  echo "ERROR python interpreter not executable: $PYTHON_CMD"
+  exit 1
+fi
+
 function print_ok
 {
   printf "${OK_STR}"
@@ -56,7 +80,7 @@ function clean
 {
   if [ -d ${DEFAULT_UDIR} ]
   then
-    echo "${DEFAULT_UDIR} exists, exiting"
+    echo "ERROR test directory exists, remove first: ${DEFAULT_UDIR}"
     exit 1
   fi
 }
@@ -83,6 +107,11 @@ function result_inv
       FAILED_TESTS+=("$STRING")
   fi
   echo "|______________________________________________________________________________|"
+}
+
+function udocker
+{
+  $PYTHON_CMD $UDOCKER_CMD $*
 }
 
 echo "================================================="
@@ -289,6 +318,18 @@ STRING="T045: udocker images -l"
 udocker images -l; return=$?
 result
 
+STRING="T046: udocker pull docker.io/python:3-slim <REGRESSION test for issue #359>"
+udocker pull docker.io/python:3-slim; return=$?
+result
+
+STRING="T047: udocker create --name=py3slim docker.io/python:3-slim <REGRESSION test for issue #359>"
+udocker create --name=py3slim docker.io/python:3-slim; return=$?
+result
+
+STRING="T048: udocker run py3slim python3 --version <REGRESSION test for issue #359>"
+udocker run py3slim python3 --version; return=$?
+result
+
 # Cleanup files containers and images used in the tests
 echo "Clean up files containers and images used in the tests"
 rm -rf myexportcont.tar "${TEST_UDIR}" "${TAR_IMAGE}" "${TAR_CONT}" > /dev/null 2>&1
@@ -297,6 +338,7 @@ udocker rm clone_cont
 udocker rm myclone
 udocker rmi mycentos1
 udocker rmi centos:7
+udocker rmi docker.io/python:3-slim
 echo "|______________________________________________________________________________|"
 
 # Report failed tests

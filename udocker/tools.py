@@ -8,12 +8,13 @@ import random
 import json
 import stat
 
-from udocker import is_genstr
-from udocker.config import Config
-from udocker.utils.curl import GetURL
-from udocker.utils.fileutil import FileUtil
-from udocker.msg import Msg
-from udocker import __version__
+from __init__ import __version__
+from genstr import is_genstr
+from config import Config
+from msg import Msg
+from utils.curl import GetURL
+from utils.fileutil import FileUtil
+
 
 def _str(data):
     """Safe str for Python 3 and Python 2"""
@@ -225,7 +226,7 @@ class UdockerTools(object):
         for url in self._get_mirrors(self._installinfo):
             infofile = self._get_file(url)
             try:
-                with open(infofile, 'r', encoding='utf-8') as filep:
+                with open(infofile, 'r') as filep:
                     self._install_json = json.load(filep)
                 for msg in self._install_json["messages"]:
                     Msg().out("Info:", msg)
@@ -270,10 +271,9 @@ class UdockerTools(object):
             return True
 
         Msg().out("Info: udocker command line interface", __version__)
-        Msg().out("Info: searching for udockertools",
-                  self._tarball_release, l=Msg.INF)
+        Msg().out("Info: searching for udockertools", self._tarball_release, l=Msg.INF)
         retry = self._installretry
-        while  retry:
+        while retry:
             if self._install_logic(force):
                 self.get_installinfo()
                 Msg().out("Info: installation of udockertools successful")

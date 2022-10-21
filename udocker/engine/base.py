@@ -6,17 +6,17 @@ import sys
 import re
 import json
 
-from udocker import is_genstr
-from udocker.msg import Msg
-from udocker.config import Config
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.uenv import Uenv
-from udocker.utils.uvolume import Uvolume
-from udocker.helper.nixauth import NixAuthentication
-from udocker.helper.hostinfo import HostInfo
-from udocker.container.structure import ContainerStructure
-from udocker.utils.filebind import FileBind
-from udocker.utils.mountpoint import MountPoint
+from genstr import is_genstr
+from msg import Msg
+from config import Config
+from helper.nixauth import NixAuthentication
+from helper.hostinfo import HostInfo
+from container.structure import ContainerStructure
+from utils.filebind import FileBind
+from utils.mountpoint import MountPoint
+from utils.fileutil import FileUtil
+from utils.uenv import Uenv
+from utils.uvolume import Uvolume
 
 
 class ExecutionEngineCommon(object):
@@ -207,7 +207,7 @@ class ExecutionEngineCommon(object):
                     self.opt["vol"].remove(vol)
                     found = True
             if not found:
-                Msg().err(f"Warning: --novol {novolume} not in volumes list", l=Msg.WAR)
+                Msg().err("Warning: --novol %s not in volumes list" % novolume, l=Msg.WAR)
         return self._check_volumes()
 
     def _check_paths(self):
@@ -217,7 +217,7 @@ class ExecutionEngineCommon(object):
                 path = Config.conf['root_path']
             else:
                 path = Config.conf['user_path']
-            self.opt["env"].append(f"PATH={path}")
+            self.opt["env"].append("PATH=%s" % path)
         # verify if the working directory is valid and fix it
         if not self.opt["cwd"]:
             self.opt["cwd"] = self.opt["home"]
@@ -271,7 +271,7 @@ class ExecutionEngineCommon(object):
             (container_dir, container_json) = \
                 container_structure.get_container_attr()
             if not container_dir:
-                return(None, None)
+                return (None, None)
             # load metadata from container
             if not self.opt["nometa"]:
                 if not self.opt["user"]:
@@ -292,28 +292,22 @@ class ExecutionEngineCommon(object):
                             "Domainname", "", container_json)
                 if self.opt["entryp"] is False:
                     self.opt["entryp"] = \
-                        container_structure.get_container_meta(
-                            "Entrypoint", [], container_json)
+                        container_structure.get_container_meta("Entrypoint", [], container_json)
                     if not self.opt["cmd"]:
                         self.opt["cmd"] = \
-                            container_structure.get_container_meta(
-                                "Cmd", [], container_json)
+                            container_structure.get_container_meta("Cmd", [], container_json)
                 elif not self.opt["entryp"]:
                     self.opt["entryp"] = []
-                else:
-                    if isinstance(self.opt["entryp"], str):
-                        self.opt["entryp"] = \
-                            self.opt["entryp"].strip().split(' ')
+                elif isinstance(self.opt["entryp"], str):
+                    self.opt["entryp"] = self.opt["entryp"].strip().split(' ')
+
                 self.opt["Volumes"] = \
-                    container_structure.get_container_meta(
-                        "Volumes", [], container_json)
+                    container_structure.get_container_meta("Volumes", [], container_json)
                 self.opt["portsexp"].extend(
-                    container_structure.get_container_meta(
-                        "ExposedPorts", [], container_json))
+                    container_structure.get_container_meta("ExposedPorts", [], container_json))
                 self.opt["env"].extendif(
-                    container_structure.get_container_meta(
-                        "Env", [], container_json))
-        return(container_dir, container_json)
+                    container_structure.get_container_meta("Env", [], container_json))
+        return (container_dir, container_json)
 
     def _select_auth_files(self):
         """Select authentication files to use /etc/passwd /etc/group"""
@@ -544,13 +538,12 @@ class ExecutionEngineCommon(object):
         for (env_var, value) in list(os.environ.items()):
             if not env_var:
                 continue
-            if   (env_var in Config.conf['invalid_host_env'] or
-                  env_var in container_env):
+            if (env_var in Config.conf['invalid_host_env'] or env_var in container_env):
                 continue
-            if   ((not self.opt["hostenv"]) and
-                  env_var not in Config.conf['valid_host_env']):
+            if ((not self.opt["hostenv"]) and env_var not in Config.conf['valid_host_env']):
                 continue
-            self.opt["env"].append(f"{env_var}={value}")
+
+            self.opt["env"].append("%s=%s" % (env_var, value))
 
     def _run_env_set(self):
         """Environment variables to set"""
@@ -612,7 +605,7 @@ class ExecutionEngineCommon(object):
         self.container_dir = container_dir
 
         # execution mode
-        #self.exec_mode = ExecutionMode(self.localrepo, self.container_id)
+        # self.exec_mode = ExecutionMode(self.localrepo, self.container_id)
 
         # check if exposing privileged ports
         self._check_exposed_ports()
@@ -641,8 +634,7 @@ class ExecutionEngineCommon(object):
             if (saved["osversion"] == HostInfo().osversion() and
                     saved["oskernel"] == HostInfo().oskernel() and
                     saved["arch"] == HostInfo().arch() and
-                    saved["osdistribution"] == \
-                        str(HostInfo().osdistribution())):
+                    saved["osdistribution"] == str(HostInfo().osdistribution())):
                 return saved
         except (IOError, OSError, AttributeError, ValueError, TypeError,
                 IndexError, KeyError):

@@ -6,12 +6,12 @@ import os
 import sys
 import time
 
-from udocker import is_genstr
-from udocker.msg import Msg
-from udocker.config import Config
-from udocker.utils.uprocess import Uprocess
-from udocker.utils.fileutil import FileUtil
-from udocker.helper.hostinfo import HostInfo
+from genstr import is_genstr
+from msg import Msg
+from config import Config
+from helper.hostinfo import HostInfo
+from utils.uprocess import Uprocess
+from utils.fileutil import FileUtil
 
 
 class ElfPatcher(object):
@@ -245,7 +245,7 @@ class ElfPatcher(object):
     def _get_ld_config(self):
         """Get get directories from container ld.so.cache"""
         cmd = ["ldconfig", "-p", "-C",
-               f"{self._container_root}/{Config.conf['ld_so_cache']}", ]
+               "%s/%s" % (self._container_root, Config.conf['ld_so_cache']), ]
         ld_dict = {}
         ld_data = Uprocess().get_output(cmd)
         if not ld_data:
@@ -253,8 +253,7 @@ class ElfPatcher(object):
         for line in ld_data.split('\n'):
             match = re.search("([^ ]+) => ([^ ]+)", line)
             if match:
-                ld_dict[self._container_root + \
-                        os.path.dirname(match.group(2))] = True
+                ld_dict[self._container_root + os.path.dirname(match.group(2))] = True
         return list(ld_dict.keys())
 
     # pylint: disable=too-many-nested-blocks

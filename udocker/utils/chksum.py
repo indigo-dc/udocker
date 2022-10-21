@@ -3,12 +3,13 @@
 
 import re
 
-from udocker.utils.uprocess import Uprocess
+from utils.uprocess import Uprocess
 
 try:
     import hashlib
 except ImportError:
     pass
+
 
 class ChkSUM(object):
     """Checksumming for files"""

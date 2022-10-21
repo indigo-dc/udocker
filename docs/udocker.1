@@ -53,8 +53,8 @@ Pull an IMAGE from Docker Hub or from a private repository. A socks4 or socks5 p
 .BR images " " [ " " \-l " " ]
 Lists IMAGES available in the local udocker repository. The \-l option provides additional image details.
 .TP
-.BR create " " [ " " --name=ALIAS " " ] " " IMAGE
-Creates a container for execution from an IMAGE stored in the local repository. Multiple containers can be extracted from a single image. Each created container is identified by a CONTAINER-ID which is printed upon successful extraction. The option --name allows an ALIAS name to be assigned to the newly created container to facilitate identification. The ALIAS can later be used instead of the CONTAINER-ID.
+.BR create " " [ " " \--name=ALIAS " " | " " \--force " " ] " " IMAGE
+Creates a container for execution from an IMAGE stored in the local repository. Multiple containers can be extracted from a single image. Each created container is identified by a CONTAINER-ID which is printed upon successful extraction. The option --name allows an ALIAS name to be assigned to the newly created container to facilitate identification. The ALIAS can later be used instead of the CONTAINER-ID. The option --force enables the container creation even if the name already exists.
 .TP
 .BR ps " " [ " " \-m " " ] " " | " " [ " " \-s " " ]
 List containers in the local repository. These are containers produced with the command "create" and that can be executed with the command "run". The list contains the CONTAINER-ID, the protection flag against deletion, write status, ALIASEs, and the corresponding IMAGE. The command name "ps" has been kept for compatibility with the Docker command line, in udocker the command ps does not show running containers instead shows the created containers extracted to the filesystem that are ready to be executed. The option \-m adds the execution mode. The option \-s adds the size in MB.

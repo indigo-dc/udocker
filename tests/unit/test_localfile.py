@@ -3,9 +3,20 @@
 udocker unit tests: LocalFileAPI
 """
 
+import os
+import sys
+
+new_path = []
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.localfile import LocalFileAPI
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class LocalFileAPITestCase(TestCase):

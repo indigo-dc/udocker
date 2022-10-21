@@ -3,11 +3,22 @@
 udocker unit tests: DockerIoAPI
 """
 
+import os
+import sys
+
+new_path = []
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from io import BytesIO as strio
 from udocker.docker import DockerIoAPI
-from udocker.config import Config
+from config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class DockerIoAPITestCase(TestCase):
@@ -807,6 +818,7 @@ class DockerIoAPITestCase(TestCase):
         doia = DockerIoAPI(self.local)
         out = doia.search_get_page("SOMETHING")
         self.assertEqual(out, {"page": 1, "num_pages": 1})
+
 
 if __name__ == '__main__':
     main()

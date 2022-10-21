@@ -5,9 +5,9 @@ import os
 import sys
 import subprocess
 
-from udocker import is_genstr
-from udocker.msg import Msg
-from udocker.config import Config
+from genstr import is_genstr
+from msg import Msg
+from config import Config
 
 
 class Uprocess(object):

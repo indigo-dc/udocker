@@ -5,10 +5,21 @@
 udocker unit tests: HostInfo
 """
 
+import os
+import sys
 import pwd
+
+new_path = []
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import patch
 from udocker.helper.hostinfo import HostInfo
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class HostInfoTestCase(TestCase):

@@ -4,13 +4,13 @@
 import os
 import subprocess
 
-from udocker import is_genstr
-from udocker.config import Config
-from udocker.msg import Msg
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.uprocess import Uprocess
-from udocker.helper.unique import Unique
-from udocker.helper.hostinfo import HostInfo
+from genstr import is_genstr
+from config import Config
+from msg import Msg
+from helper.unique import Unique
+from helper.hostinfo import HostInfo
+from utils.fileutil import FileUtil
+from utils.uprocess import Uprocess
 
 
 class ContainerStructure(object):
@@ -35,15 +35,15 @@ class ContainerStructure(object):
             container_dir = self.localrepo.cd_container(self.container_id)
             if not container_dir:
                 Msg().err("Error: container id or name not found")
-                return(False, False)
+                return (False, False)
 
             fjson = container_dir + "/container.json"
             container_json = self.localrepo.load_json(fjson)
             if not container_json:
                 Msg().err("Error: invalid container json metadata")
-                return(False, False)
+                return (False, False)
 
-        return(container_dir, container_json)
+        return (container_dir, container_json)
 
     def get_container_meta(self, param, default, container_json):
         """Get the container metadata from the container"""
@@ -52,7 +52,7 @@ class ContainerStructure(object):
             confidx = "config"
         elif "container_config" in container_json:
             confidx = "container_config"
-        if container_json[confidx]  and param in container_json[confidx]:
+        if container_json[confidx] and param in container_json[confidx]:
             if container_json[confidx][param] is None:
                 pass
             elif (is_genstr(container_json[confidx][param]) and
@@ -76,14 +76,14 @@ class ContainerStructure(object):
         """Convert dict to str"""
         out_str = ""
         for (key, val) in in_dict.items():
-            out_str += f"{str(key)}:{str(val)} "
+            out_str += "%s:%s " % (str(key), str(val))
         return out_str
 
     def _dict_to_list(self, in_dict):
         """Convert dict to list"""
         out_list = []
         for (key, val) in in_dict.items():
-            out_list.append(f"{str(key)}:{str(val)}")
+            out_list.append("%s:%s" % (str(key), str(val)))
         return out_list
 
     def _chk_container_root(self, container_id=None):

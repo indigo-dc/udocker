@@ -6,14 +6,14 @@ import sys
 import re
 import subprocess
 
-from udocker import is_genstr
-from udocker.engine.base import ExecutionEngineCommon
-from udocker.helper.osinfo import OSInfo
-from udocker.msg import Msg
-from udocker.config import Config
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.uvolume import Uvolume
-from udocker.helper.elfpatcher import ElfPatcher
+from genstr import is_genstr
+from msg import Msg
+from config import Config
+from helper.osinfo import OSInfo
+from helper.elfpatcher import ElfPatcher
+from engine.base import ExecutionEngineCommon
+from utils.fileutil import FileUtil
+from utils.uvolume import Uvolume
 
 
 class FakechrootEngine(ExecutionEngineCommon):
@@ -54,21 +54,21 @@ class FakechrootEngine(ExecutionEngineCommon):
                 version = version.split(".")[0]
 
             if arch == "amd64":
-                image_list = [f"{lib}-{distro}-{version}-x86_64.so",
-                              f"{lib}-{distro}-x86_64.so",
-                              f"{lib}-x86_64.so", deflib]
+                image_list = ["%s-%s-%s-x86_64.so" % (lib, distro, version),
+                              "%s-%s-x86_64.so" % (lib, distro),
+                              "%s-x86_64.so" % (lib), deflib]
             elif arch == "i386":
-                image_list = [f"{lib}-{distro}-{version}-x86.so",
-                              f"{lib}-{distro}-x86.so",
-                              f"{lib}-x86.so", deflib]
+                image_list = ["%s-%s-%s-x86.so" % (lib, distro, version),
+                              "%s-%s-x86.so" % (lib, distro),
+                              "%s-x86.so" % (lib), deflib]
             elif arch == "arm64":
-                image_list = [f"{lib}-{distro}-{version}-arm64.so",
-                              f"{lib}-{distro}-arm64.so",
-                              f"{lib}-arm64.so", deflib]
+                image_list = ["%s-%s-%s-arm64.so" % (lib, distro, version),
+                              "%s-%s-arm64.so" % (lib, distro),
+                              "%s-arm64.so" % (lib), deflib]
             elif arch == "arm":
-                image_list = [f"{lib}-{distro}-{version}-arm.so",
-                              f"{lib}-{distro}-arm.so",
-                              f"{lib}-arm.so", deflib]
+                image_list = ["%s-%s-%s-arm.so" % (lib, distro, version),
+                              "%s-%s-arm.so" % (lib, distro),
+                              "%s-arm.so" % (lib), deflib]
 
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
@@ -139,11 +139,11 @@ class FakechrootEngine(ExecutionEngineCommon):
                                os.path.realpath(self.container_root))
         self.opt["env"].append("LD_PRELOAD=" + self._fakechroot_so)
         if Config.conf['fakechroot_expand_symlinks'] is None:
-            self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" + \
-                    str(self._recommend_expand_symlinks).lower())
+            self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" +
+                                   str(self._recommend_expand_symlinks).lower())
         else:
-            self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" + \
-                    str(Config.conf['fakechroot_expand_symlinks']).lower())
+            self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" +
+                                   str(Config.conf['fakechroot_expand_symlinks']).lower())
 
         if not self._is_volume("/tmp"):
             self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" +
@@ -209,13 +209,12 @@ class FakechrootEngine(ExecutionEngineCommon):
                                   "dynamic" in filetype):
             self.opt["cmd"][0] = exec_path
             return []
-        env_exec = FileUtil("env").find_exec("/bin:/usr/bin",
-                                             self.container_root)
-        if  env_exec:
+        env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
+        if env_exec:
             return [self.container_root + '/' + env_exec, ]
+
         relc_path = exec_path.split(self.container_root, 1)[-1]
-        real_path = FileUtil(self.container_root).cont2host(relc_path,
-                                                            self.opt["vol"])
+        real_path = FileUtil(self.container_root).cont2host(relc_path, self.opt["vol"])
         hashbang = FileUtil(real_path).get1stline()
         match = re.match("#! *([^ ]+)(.*)", hashbang)
         if match and not match.group(1).startswith('/'):
@@ -283,5 +282,5 @@ class FakechrootEngine(ExecutionEngineCommon):
         self._run_banner(self.opt["cmd"][0], '#')
         cwd = FileUtil(self.container_root).cont2host(self.opt["cwd"],
                                                       self.opt["vol"])
-        status = subprocess.call(cmd_l, shell=False, close_fds=True, cwd=cwd)
+        status = subprocess.call(cmd_l, shell=False, close_fds=False, cwd=cwd)
         return status

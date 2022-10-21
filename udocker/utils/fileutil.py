@@ -6,13 +6,13 @@ import sys
 import stat
 import re
 
-from udocker import is_genstr
-from udocker.msg import Msg
-from udocker.config import Config
-from udocker.helper.unique import Unique
-from udocker.helper.hostinfo import HostInfo
-from udocker.utils.uprocess import Uprocess
-from udocker.utils.uvolume import Uvolume
+from genstr import is_genstr
+from msg import Msg
+from config import Config
+from helper.unique import Unique
+from helper.hostinfo import HostInfo
+from utils.uprocess import Uprocess
+from utils.uvolume import Uvolume
 
 
 class FileUtil(object):
@@ -39,7 +39,11 @@ class FileUtil(object):
 
     def _register_prefix(self, prefix):
         """Register directory prefixes where remove() is allowed"""
-        prefix = os.path.realpath(prefix)
+        if os.path.islink(prefix):
+            prefix = (os.path.realpath(os.path.dirname(prefix)) + "/" +
+                      os.path.basename(prefix))
+        else:
+            prefix = os.path.realpath(prefix)
         if prefix not in FileUtil.safe_prefixes:
             filename = prefix
             if os.path.isdir(filename) and not filename.endswith('/'):
@@ -111,7 +115,11 @@ class FileUtil(object):
 
     def _is_safe_prefix(self, filename):
         """Check if file prefix falls under valid prefixes"""
-        filename = os.path.realpath(filename)
+        if os.path.islink(filename):
+            filename = (os.path.realpath(os.path.dirname(filename)) + "/" +
+                        os.path.basename(filename))
+        else:
+            filename = os.path.realpath(filename)
         if os.path.isdir(filename):
             filename += '/'
         for safe_prefix in FileUtil.safe_prefixes:
@@ -155,7 +163,6 @@ class FileUtil(object):
                 os.chmod(filename, mode)
         except OSError:
             Msg().err("Error: changing permissions of:", filename, l=Msg.VER)
-            raise OSError
 
     def chmod(self, filemode=0o600, dirmode=0o700, mask=0o755, recursive=False):
         """chmod directory recursively"""
@@ -248,7 +255,6 @@ class FileUtil(object):
 
     def tar(self, tarfile, sourcedir=None):
         """Create a tar file for a given sourcedir"""
-        #cmd += r" --xform 's:^\./::' "
         if sourcedir is None:
             sourcedir = self.filename
         verbose = ''
@@ -364,7 +370,7 @@ class FileUtil(object):
             while os.path.islink(f_path):
                 real_path = os.readlink(f_path)
                 if real_path.startswith('/'):
-                    if f_path.startswith(real_container_root): # in container
+                    if f_path.startswith(real_container_root):  # in container
                         if real_path.startswith(real_container_root):
                             f_path = real_path
                         else:
@@ -432,7 +438,10 @@ class FileUtil(object):
         except (IOError, OSError):
             return False
         while True:
-            copy_buffer = sys.stdin.read(1024 * 1024)
+            if sys.version_info[0] >= 3:
+                copy_buffer = sys.stdin.buffer.read(1024 * 1024)
+            else:
+                copy_buffer = sys.stdin.read(1024 * 1024)
             if not copy_buffer:
                 break
             fpdst.write(copy_buffer)
@@ -452,7 +461,10 @@ class FileUtil(object):
             copy_buffer = fpsrc.read(1024 * 1024)
             if not copy_buffer:
                 break
-            sys.stdout.write(copy_buffer)
+            if sys.version_info[0] >= 3:
+                sys.stdout.buffer.write(copy_buffer)
+            else:
+                sys.stdout.write(copy_buffer)
 
         fpsrc.close()
         return True
@@ -579,10 +591,8 @@ class FileUtil(object):
                     if to_container:
                         if self._link_set(f_path, orig_path, root_path, force):
                             links.append(f_path)
-                    else:
-                        if self._link_restore(f_path, orig_path,
-                                              root_path, force):
-                            links.append(f_path)
+                    elif self._link_restore(f_path, orig_path, root_path, force):
+                        links.append(f_path)
                 except OSError:
                     continue
         return links

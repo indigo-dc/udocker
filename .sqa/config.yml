@@ -1,25 +1,83 @@
+config:
+  credentials: []
+  project_repos:
+    github.com/indigo-dc/udocker:
+      branch: devel3
+      repo: https://github.com/indigo-dc/udocker
+environment:
+  JPL_DOCKERFORCEBUILD: enabled
+  JPL_KEEPGOING: enabled
 sqa_criteria:
-   qc_style:
-     repos:
-       udocker:
-         container: udocker-testing
-         tox:
-           tox_file: /udocker/tox.ini
-           testenv:
-              - pylint            
-   qc_security:
-     repos:
-       udocker:
-         container: udocker-testing
-         tox:
-           tox_file: /udocker/tox.ini
-           testenv:
-              - bandit         
-   qc_coverage:
-     repos:
-       udocker:
-         container: udocker-testing
-         tox:
-           tox_file: /udocker/tox.ini
-           testenv:
-              - cover
+
+  QC.Acc:
+    repos:
+      github.com/indigo-dc/udocker git:
+        commands:
+        - /usr/bin/env sh .sqa/script.acc.sh
+        container: qc.acc_udocker
+
+  QC.Doc:
+    repos:
+      github.com/indigo-dc/udocker find_doc_files.py:
+        commands:
+        - /usr/bin/env sh .sqa/script.find_doc_files.sh
+        container: qc.doc01_udocker
+
+      github.com/indigo-dc/udocker git:
+        commands:
+        - /usr/bin/env sh .sqa/script.git_doc06.sh
+        container: qc.doc06_udocker
+
+      github.com/indigo-dc/udocker markdownlint:
+        commands:
+        - /usr/bin/env sh .sqa/script.markdownlint.sh
+        container: qc.doc02_udocker
+
+  # QC.Lic:
+  #   repos:
+  #     github.com/indigo-dc/udocker licensee:
+  #       commands:
+  #       - /usr/bin/env sh .sqa/script.licensee.sh
+  #       container: qc.lic_udocker
+
+  QC.Met:
+    repos:
+      github.com/indigo-dc/udocker validate_codemeta:
+        commands:
+        - /usr/bin/env sh .sqa/script.codemeta.sh
+        container: qc.met_udocker
+
+  QC.Sec:
+    repos:
+      github.com/indigo-dc/udocker bandit:
+        commands:
+        - /usr/bin/env sh .sqa/script.bandit.sh
+        container: qc.sec_udocker
+
+  QC.Sty:
+    repos:
+      github.com/indigo-dc/udocker flake8:
+        commands:
+        - /usr/bin/env sh .sqa/script.flake8.sh
+        container: qc.sty_python_udocker
+
+      github.com/indigo-dc/udocker jsonlint:
+        commands:
+        - /usr/bin/env sh .sqa/script.jsonlint.sh
+        container: qc.sty_json_udocker
+
+  QC.Ver:
+    repos:
+      github.com/indigo-dc/udocker get_git_tags.py:
+        commands:
+        - /usr/bin/env sh .sqa/script.get_git_tags.sh
+        container: qc.ver_udocker
+
+  QC.Uni:
+    repos:
+      github.com/indigo-dc/udocker nosetests:
+        commands:
+        - /usr/bin/env sh .sqa/script.nosetests.sh
+        container: qc.unit_udocker
+
+timeout: 1800

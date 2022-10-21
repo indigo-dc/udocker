@@ -5,15 +5,16 @@ import sys
 import os
 import subprocess
 
-from udocker.engine.base import ExecutionEngineCommon
-from udocker.msg import Msg
-from udocker.config import Config
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.uvolume import Uvolume
-from udocker.helper.nixauth import NixAuthentication
-from udocker.utils.filebind import FileBind
-from udocker.helper.unique import Unique
-from udocker.helper.hostinfo import HostInfo
+from engine.base import ExecutionEngineCommon
+from msg import Msg
+from config import Config
+from helper.nixauth import NixAuthentication
+from helper.unique import Unique
+from helper.hostinfo import HostInfo
+from utils.fileutil import FileUtil
+from utils.uvolume import Uvolume
+from utils.filebind import FileBind
+
 
 class SingularityEngine(ExecutionEngineCommon):
     """Docker container execution engine using singularity
@@ -68,13 +69,13 @@ class SingularityEngine(ExecutionEngineCommon):
                     tmp_is_binded = True
                 elif host_path == "/var/tmp" and cont_path in ("", "/var/tmp"):
                     vartmp_is_binded = True
-            vol_list.extend(["-B", f"{host_path}:{cont_path}", ])
+            vol_list.extend(["-B", "%s:%s" % (host_path, cont_path), ])
         if not home_is_binded:
-            vol_list.extend(["--home", f"{self.container_root}/root:/root", ])
+            vol_list.extend(["--home", "%s/root:%s" % (self.container_root, "/root"), ])
         if not tmp_is_binded:
-            vol_list.extend(["-B", f"{self.container_root}/tmp:/tmp", ])
+            vol_list.extend(["-B", "%s/tmp:/tmp" % (self.container_root), ])
         if not vartmp_is_binded:
-            vol_list.extend(["-B", f"{self.container_root}/var/tmp:/var/tmp", ])
+            vol_list.extend(["-B", "%s/var/tmp:/var/tmp" % (self.container_root), ])
         return vol_list
 
     def _singularity_env_get(self):
@@ -83,7 +84,7 @@ class SingularityEngine(ExecutionEngineCommon):
         """
         singularityenv = {}
         for (key, val) in self.opt["env"]:
-            singularityenv[f'SINGULARITYENV_{key}'] = val
+            singularityenv["SINGULARITYENV_%s" % key] = val
         return singularityenv
 
     def _make_container_directories(self):
@@ -132,12 +133,10 @@ class SingularityEngine(ExecutionEngineCommon):
           * options:  many via self.opt see the help
         """
 
-        if os.path.isdir(
-                FileBind(self.localrepo, container_id).container_orig_dir):
-            FileBind(self.localrepo, container_id).restore() # legacy 1.1.3
+        if os.path.isdir(FileBind(self.localrepo, container_id).container_orig_dir):
+            FileBind(self.localrepo, container_id).restore()    # legacy 1.1.3
 
         Config.conf['sysdirs_list'] = (
-            # "/dev", "/proc", "/sys",
             "/etc/resolv.conf", "/etc/host.conf",
             "/lib/modules",
         )
@@ -146,19 +145,15 @@ class SingularityEngine(ExecutionEngineCommon):
         exec_path = self._run_init(container_id)
         if not exec_path:
             return 2
+
         self.opt["cmd"][0] = exec_path.replace(self.container_root + "/", "")
-
         self._run_invalid_options()
-
         self._make_container_directories()
-
         self.select_singularity()
-
         self._run_as_root()
 
         # set environment variables
         self._run_env_set()
-
         if Msg.level >= Msg.DBG:
             singularity_debug = ["--debug", "-v", ]
         elif self._has_option("--silent"):
@@ -171,7 +166,7 @@ class SingularityEngine(ExecutionEngineCommon):
         if self.executable.startswith(self.localrepo.bindir):
             Config.conf['singularity_options'].extend(["-u", ])
 
-        #if FileUtil("nvidia-smi").find_exec():
+        # if FileUtil("nvidia-smi").find_exec():
         #    Config.conf['singularity_options'].extend(["--nv", ])
 
         singularity_vol_list = self._get_volume_bindings()
@@ -195,6 +190,7 @@ class SingularityEngine(ExecutionEngineCommon):
 
         # execute
         self._run_banner(self.opt["cmd"][0], '/')
-        status = subprocess.call(cmd_l, shell=False, close_fds=True, \
-            env=os.environ.update(self._singularity_env_get()))
+        status = subprocess.call(cmd_l, shell=False, close_fds=False,
+                                 env=os.environ.update(self._singularity_env_get()))
+
         return status

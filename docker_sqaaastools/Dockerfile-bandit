@@ -1,0 +1,4 @@
+FROM python:3-slim
+LABEL maintainer='Mario David <mariojmdavid@gmail.com>'
+
+RUN pip install bandit

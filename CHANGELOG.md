@@ -1,5 +1,22 @@
 # Changelog
 
+## udocker (1.3.5)
+
+* fix python backwards compatibility issues
+  * closes: #374
+* fix incorrectly reported errors by image verification
+* fix image search returning empty results
+* fix issue with logical links in the udocker executable path
+* add check to verify if container name exists before creation
+  or cloning
+* add --force option to create and clone to allow creation
+  of container even if the intended name given by --name exists
+* prevent closing of file descriptors upon engine invocation
+  improves PMI process management interface interoperability
+* fix issues in import and export while using pipes.
+* fix image name parsing where "library" component is missing
+  * closes: #359
+
 ## udocker (1.3.4)
 
 * fix 2 unit tests
@@ -86,7 +103,7 @@
 * Fix issues with login credentials
   * closes: #310
 * Fix pull images from docker hub in Termux
-  * closes: #307 
+  * closes: #307
 * Fix issues on running udocker in googlecolab
   * closes: #286
 * Fix execution with Pn modes in alternate /tmp
@@ -105,9 +122,9 @@
 
 ## udocker (1.1.7)
 
-* Fix P1 when Linux 4.8.0 SECCOMP is backported, affects newer CentOS 7 
+* Fix P1 when Linux 4.8.0 SECCOMP is backported, affects newer CentOS 7
   * closes: #282
-* Check for file ownership on remove wrongly follows symlinks 
+* Check for file ownership on remove wrongly follows symlinks
   * closes: #266, #267
 * udocker unexpectedly uses P1 exec mode instead of P2
   * closes: #274
@@ -160,7 +177,7 @@
 * Added `UDOCKER_USE_SINGULARITY_EXECUTABLE` env var to select singularity
 * Added `UDOCKER_DEFAULT_EXECUTION_MODE` env var to select default execution mode
 * Added R2 and R3 execution modes for PRoot overlay execution in runc
-* Added setup --purge for cleanup of mountpoints and files 
+* Added setup --purge for cleanup of mountpoints and files
 * Added setup --fixperms to fix container file permissions
 * Added run --env-file= to load file with environment variables
 * Improve file and directory binding support for Singularity and runc
@@ -223,7 +240,7 @@
   * closes: #107
 * Add kill-on-exit to proot on Pn modes
 * Improve download of udocker utils
-* Handle authentication headers when pulling 
+* Handle authentication headers when pulling
   * closes: #110
 * Handle of redirects when pulling
 * Fix registries table
@@ -280,13 +297,13 @@
 
 ## udocker (1.1.0)
 
-* Support image names prefixed by registry similarly to docker 
+* Support image names prefixed by registry similarly to docker
 * Add execution engine selection logic
 * Add fr execution engine based on shared library interception
 * Add rc execution engine based on rootless namespaces
 * Improve proot tmp files cleanup on non ext filesystems
 * Improve search returning empty on Docker repositories
-* Improve runC execution portability 
+* Improve runC execution portability
 * Add environment variable `UDOCKER_KEYSTORE`
   * closes: #75
 * Prevent creation of .udocker when `UDOCKER_KEYSTORE` is used

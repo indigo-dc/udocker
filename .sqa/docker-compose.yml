@@ -1,10 +1,102 @@
-version: "3.6"
-
 services:
-  udocker-testing:
-    image: "indigodatacloud/ci-images:python3.6"
-    container_name: "udocker-testing"
+
+  qc.acc_udocker:
+    command: sleep 6000000
+    image: bitnami/git:2.34.1
     volumes:
-      - type: bind
-        source: ./
-        target: /udocker
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.doc01_udocker:
+    image: eoscsynergy/sqaaas-find_doc_files:1.0.0
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.doc06_udocker:
+    command: sleep 6000000
+    image: bitnami/git:2.34.1
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.doc02_udocker:
+    command: sleep 6000000
+    image: pipelinecomponents/markdownlint
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.lic_udocker:
+    image: eoscsynergy/sqaaas-licensee:1.0.1
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.met_udocker:
+    command: sleep 6000000
+    image: alpine:3.15.0
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.sec_udocker:
+    image: eoscsynergy/sqaaas-bandit:1.0.1
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.sty_python_udocker:
+    command: sleep 6000000
+    image: pipelinecomponents/flake8:0.10.2
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.sty_json_udocker:
+    image: eoscsynergy/sqaaas-jsonlint:1.0.0
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.ver_udocker:
+    image: eoscsynergy/sqaaas-git_tags:1.0.0
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+  qc.unit_udocker:
+    image: eoscsynergy/sqaaas-nosetests:1.0.0
+    command: sleep 6000000
+    volumes:
+    - source: ./
+      target: /sqaaas-build
+      type: bind
+    working_dir: /sqaaas-build
+
+version: '3.7'

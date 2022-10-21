@@ -3,8 +3,8 @@
 
 import os
 
-from udocker.msg import Msg
-from udocker.utils.fileutil import FileUtil
+from msg import Msg
+from utils.fileutil import FileUtil
 
 
 class FileBind(object):

@@ -9,16 +9,16 @@ import stat
 import select
 import json
 
-from udocker.engine.base import ExecutionEngineCommon
-from udocker.engine.proot import PRootEngine
-from udocker.msg import Msg
-from udocker.config import Config
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.uvolume import Uvolume
-from udocker.engine.nvidia import NvidiaMode
-from udocker.utils.filebind import FileBind
-from udocker.helper.unique import Unique
-from udocker.helper.hostinfo import HostInfo
+from msg import Msg
+from config import Config
+from engine.base import ExecutionEngineCommon
+from engine.proot import PRootEngine
+from engine.nvidia import NvidiaMode
+from helper.unique import Unique
+from helper.hostinfo import HostInfo
+from utils.fileutil import FileUtil
+from utils.uvolume import Uvolume
+from utils.filebind import FileBind
 
 
 class RuncEngine(ExecutionEngineCommon):
@@ -85,15 +85,14 @@ class RuncEngine(ExecutionEngineCommon):
             cmd_l = [self.executable, "spec", "--rootless", ]
             status = subprocess.call(cmd_l, shell=False, stderr=Msg.chlderr,
                                      close_fds=True,
-                                     cwd=os.path.realpath(\
-                                         self._container_specdir))
+                                     cwd=os.path.realpath(self._container_specdir))
             if status:
                 return False
 
         json_obj = None
         infile = None
         try:
-            infile = open(self._container_specfile, 'r', encoding='utf-8')
+            infile = open(self._container_specfile, 'r')
             json_obj = json.load(infile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             json_obj = None
@@ -108,7 +107,7 @@ class RuncEngine(ExecutionEngineCommon):
         """Save spec file"""
         outfile = None
         try:
-            outfile = open(self._container_specfile, 'w', encoding='utf-8')
+            outfile = open(self._container_specfile, 'w')
             json.dump(self._container_specjson, outfile)
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             if outfile:
@@ -136,7 +135,7 @@ class RuncEngine(ExecutionEngineCommon):
 
         json_obj["process"]["env"] = []
         for (env_key, env_val) in self.opt["env"]:
-            json_obj["process"]["env"].append(f"{env_key}={env_val}")
+            json_obj["process"]["env"].append("%s=%s" % (env_key, env_val))
 
         json_obj["process"]["args"] = self.opt["cmd"]
         return json_obj
@@ -149,15 +148,15 @@ class RuncEngine(ExecutionEngineCommon):
                 if "hostID" in idmap:
                     idmap["hostID"] = HostInfo.uid
         else:
-            json_obj["linux"]["uidMappings"] = [ \
-                    {"containerID": 0, "hostID": HostInfo.uid, "size":1, }, ]
+            json_obj["linux"]["uidMappings"] = [
+                {"containerID": 0, "hostID": HostInfo.uid, "size": 1, }, ]
         if "gidMappings" in json_obj["linux"]:
             for idmap in json_obj["linux"]["gidMappings"]:
                 if "hostID" in idmap:
                     idmap["hostID"] = HostInfo.gid
         else:
-            json_obj["linux"]["gidMappings"] = [ \
-                    {"containerID": 0, "hostID": HostInfo.gid, "size":1, }, ]
+            json_obj["linux"]["gidMappings"] = [
+                        {"containerID": 0, "hostID": HostInfo.gid, "size": 1, }, ]
 
     def _del_namespace_spec(self, namespace):
         """Remove a namespace"""
@@ -347,8 +346,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._filebind.add_file(host_executable, cont_executable)
         mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
         FileUtil(self._filebind.get_path(cont_executable)).chmod(mode)
-        self._container_specjson["process"]["args"] = \
-                [cont_executable, "-0"] + self.opt["cmd"]
+        self._container_specjson["process"]["args"] = [cont_executable, "-0"] + self.opt["cmd"]
         return True
 
     def run(self, container_id):
@@ -376,8 +374,7 @@ class RuncEngine(ExecutionEngineCommon):
             else:
                 self._container_specdir = FileUtil("SPECDIR").mktmpdir()
                 FileUtil(self._container_specdir).register_prefix()
-            self._container_specfile = \
-                    self._container_specdir + '/' + self._container_specfile
+            self._container_specfile = self._container_specdir + '/' + self._container_specfile
 
         self._filebind = FileBind(self.localrepo, container_id)
         self._filebind.setup()
@@ -416,7 +413,7 @@ class RuncEngine(ExecutionEngineCommon):
         else:
             runc_debug = []
 
-       # build the actual command
+        # build the actual command
         self.execution_id = Unique().uuid(self.container_id)
         cmd_l = self._set_cpu_affinity()
         cmd_l.append(self.executable)
@@ -439,7 +436,7 @@ class RuncEngine(ExecutionEngineCommon):
     def run_nopty(self, cmd_l):
         """runc without a terminal"""
         (pmaster, pslave) = os.openpty()
-        status = subprocess.Popen(cmd_l, shell=False, close_fds=True,
+        status = subprocess.Popen(cmd_l, shell=False, close_fds=False,
                                   stdout=pslave, stderr=pslave)
         os.close(pslave)
         while True:

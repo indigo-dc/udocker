@@ -3,10 +3,21 @@
 udocker unit tests: FakechrootEngine
 """
 
+import os
+import sys
+
+new_path = []
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
-from udocker.config import Config
+from config import Config
 from udocker.engine.fakechroot import FakechrootEngine
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class FakechrootEngineTestCase(TestCase):
@@ -146,10 +157,15 @@ class FakechrootEngineTestCase(TestCase):
         status = ufake._get_volume_bindings()
         self.assertEqual(status, ('', ''))
 
-        # ufake = FakechrootEngine(self.local, self.xmode)
-        # ufake.opt["vol"] = ("/tmp", "/bin",)
-        # status = ufake._get_volume_bindings()
-        # self.assertEqual(status, ('', '/tmp!/tmp:/bin!/bin'))
+        ufake = FakechrootEngine(self.local, self.xmode)
+        dtmp = os.path.realpath("/tmp")
+        dbin = os.path.realpath("/bin")
+        ufake.opt["vol"] = (dtmp, dbin)
+        status = ufake._get_volume_bindings()
+        if status[1].startswith(dtmp):
+            self.assertEqual(status, ('', dtmp+'!'+dtmp+':'+dbin+'!'+dbin))
+        else:
+            self.assertEqual(status, ('', dbin+'!'+dbin+':'+dtmp+'!'+dtmp))
 
     @patch('udocker.engine.fakechroot.os.path.exists')
     @patch('udocker.engine.fakechroot.FileUtil.cont2host')
@@ -246,6 +262,7 @@ class FakechrootEngineTestCase(TestCase):
         mock_msg.level = 3
         mock_ftype.return_value = "/bin/ls: ELF, x86-64, static"
         ufake = FakechrootEngine(self.local, self.xmode)
+        ufake.opt["cmd"] = [""]
         status = ufake._run_add_script_support("/bin/ls")
         self.assertEqual(status, [])
 
@@ -290,7 +307,6 @@ class FakechrootEngineTestCase(TestCase):
         status = ufake.run("12345")
         self.assertEqual(status, 2)
 
-
         mock_uidc.return_value = None
         mock_rinit.return_value = '/bin/exec'
         mock_rinval.return_value = None
@@ -306,6 +322,7 @@ class FakechrootEngineTestCase(TestCase):
         mock_cont2host.return_value = "/cont/ROOT"
         mock_call.return_value = 0
         ufake = FakechrootEngine(self.local, self.xmode)
+        ufake.opt["cmd"] = [""]
         status = ufake.run("12345")
         self.assertEqual(status, 0)
         self.assertTrue(mock_uidc.called)

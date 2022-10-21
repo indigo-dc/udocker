@@ -3,10 +3,21 @@
 udocker unit tests: DockerLocalFileAPI
 """
 
+import os
+import sys
+
+new_path = []
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.docker import DockerLocalFileAPI
-from udocker.config import Config
+from config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class DockerLocalFileAPITestCase(TestCase):
@@ -343,7 +354,7 @@ class DockerLocalFileAPITestCase(TestCase):
         status = dlocapi.save(imglist, imgfile)
         self.assertFalse(status)
 
-        imglist = [("/img1", "tag1"),]
+        imglist = [("/img1", "tag1"), ]
         imgfile = ""
         mock_mktmp.return_value = "/tmp/img1"
         mock_mkdir.return_value = None
@@ -355,7 +366,7 @@ class DockerLocalFileAPITestCase(TestCase):
         status = dlocapi.save(imglist, imgfile)
         self.assertFalse(status)
 
-        imglist = [("/img1", "tag1"),]
+        imglist = [("/img1", "tag1"), ]
         imgfile = ""
         mock_mktmp.return_value = "/tmp/img1"
         mock_mkdir.return_value = None

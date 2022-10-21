@@ -113,7 +113,7 @@ currently implemented by:
 
 udocker via PRoot offers the emulation of the root user. This emulation
 mimics a real root user (e.g getuid will return 0). This is just an emulation
-no root privileges are involved. This feature enables tools that do not 
+no root privileges are involved. This feature enables tools that do not
 require privileges but that check the user id to work properly. This enables
 for instance software installation with rpm and yum inside the container.
 
@@ -311,6 +311,7 @@ An easier to remember name can also be given with `--name`.
 Options:
 
 * `--name=NAME` give a name to the extracted container.
+* `--force` force the container creation even if NAME exists
 
 Examples:
 
@@ -503,8 +504,8 @@ Examples:
 udocker import docker_container.tar myrepo:latest
 udocker import - myrepo:latest < docker_container.tar
 udocker import --mv docker_container.tar myrepo:latest
-udocker import --tocontainer --name=BLUE docker_container.tar 
-udocker import --clone --name=RED udocker_container.tar 
+udocker import --tocontainer --name=BLUE docker_container.tar
+udocker import --clone --name=RED udocker_container.tar
 ```
 
 ### 3.17. load
@@ -687,16 +688,15 @@ cat motd
 cat lsb-release
 EOF
 
-
 # Search and pull from another repository than dockerhub
-# First search for the expression `myrepo` in quay.io 
+# First search for the expression `myrepo` in quay.io
 # Second list the tags for a given image in quay.io
 # Third finally pull a given image:tag from quay.io
 udocker search quay.io/myrepo
 udocker search --list-tags quay.io/myrepository/myimage
 udocker pull quay.io/myrepository/myimage:v2.3.1
 
-# Run container in a given directory tree using the DEFAULT EXECUTION MODE 
+# Run container in a given directory tree using the DEFAULT EXECUTION MODE
 # Below ROOT is the complete directory structure of the container operating system
 # This enables udocker to execute directory trees created by other tools
 # Much of the udocker functionality is not usable when using --location
@@ -1059,7 +1059,7 @@ The Open MPI source is compiled and installed in the container under /usr for co
 
 ```bash
 cd /usr
-tar xvf openmpi-2.0.1.tgz 
+tar xvf openmpi-2.0.1.tgz
 cd /usr/openmpi-2.0.1
 ./configure --with-verbs --prefix=/usr
 make
@@ -1075,7 +1075,7 @@ the batch script:
   $LUSTRE/udocker-master/udocker run -e LD_LIBRARY_PATH=/usr/lib  \
   --hostenv --hostauth --user=cscdiica -v /tmp \
   --workdir=/op/projects/openQCD-1.6/main openqcd \
-  /opt/projects/openQCD-1.6/main/ym1 -i ym1.in -noloc 
+  /opt/projects/openQCD-1.6/main/ym1 -i ym1.in -noloc
 ```
 
 (where `$LUSTRE` points to the appropriate user filesystem directory in the HPC system)
@@ -1212,7 +1212,7 @@ as root. In other modes execution as root is achieved by invoking
 run with the `--user=root` option:
 
 ```bash
-udocker run --user=root <container-id>` 
+udocker run --user=root <container-id>`
 ```
 
 ### 7.1. Running as root in Pn modes

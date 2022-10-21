@@ -3,11 +3,11 @@
 
 import os
 import sys
-from udocker.msg import Msg
-from udocker.cmdparser import CmdParser
-from udocker.config import Config
-from udocker.container.localrepo import LocalRepository
-from udocker.cli import UdockerCLI
+from msg import Msg
+from cmdparser import CmdParser
+from config import Config
+from container.localrepo import LocalRepository
+from cli import UdockerCLI
 
 
 class UMain(object):
@@ -66,7 +66,6 @@ class UMain(object):
 
         self.cli = UdockerCLI(self.local)
 
-    # pylint: disable=too-many-return-statements
     def execute(self):
         """Command parsing and selection"""
         self._prepare_exec()

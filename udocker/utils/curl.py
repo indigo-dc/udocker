@@ -5,19 +5,17 @@ import os
 import sys
 import json
 
-from udocker import is_genstr
-from udocker.config import Config
-from udocker.msg import Msg
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.uprocess import Uprocess
+from genstr import is_genstr
+from config import Config
+from msg import Msg
+from utils.fileutil import FileUtil
+from utils.uprocess import Uprocess
 
 try:
     import pycurl
 except ImportError:
     pass
 
-# if Python 3
-# pylint: disable=import-error
 if sys.version_info[0] >= 3:
     from io import BytesIO as strio
 else:
@@ -62,7 +60,7 @@ class CurlHeader(object):
         version.
         """
         try:
-            infile = open(in_filename, 'r', encoding='utf-8')
+            infile = open(in_filename, 'r')
         except (IOError, OSError):
             return False
         for line in infile:
@@ -94,7 +92,6 @@ class GetURL(object):
         self._curl_exec = Config.conf['use_curl_executable']
         self._select_implementation()
 
-    # pylint: disable=locally-disabled
     # pylint: disable=protected-access
     def _select_implementation(self):
         """Select which implementation to use"""
@@ -237,7 +234,7 @@ class GetURLpyCurl(GetURL):
             try:
                 filep = open(output_file, openflags)
             except(IOError, OSError):
-                Msg().err(f"Error: opening download file: {output_file}")
+                Msg().err("Error: opening download file: %s" % output_file)
                 raise
             pyc.setopt(pyc.WRITEDATA, filep)
         else:
@@ -262,7 +259,6 @@ class GetURLpyCurl(GetURL):
         except(IOError, OSError):
             return (None, None)
         except pycurl.error as error:
-            # pylint: disable=unbalanced-tuple-unpacking
             errno, errstr = error.args
             hdr.data["X-ND-CURLSTATUS"] = errno
             if not hdr.data["X-ND-HTTPSTATUS"]:
@@ -270,9 +266,9 @@ class GetURLpyCurl(GetURL):
         status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
-        if status_code == 401: # needs authentication
+        if status_code == 401:  # needs authentication
             pass
-        elif 300 <= status_code <= 308: # redirect
+        elif 300 <= status_code <= 308:  # redirect
             pass
         elif "ofile" in kwargs:
             filep.close()
@@ -381,20 +377,20 @@ class GetURLexeCurl(GetURL):
         self._set_defaults()
         cmd = self._mkcurlcmd(*args, **kwargs)
         status = Uprocess().call(cmd, close_fds=True, stderr=Msg.chlderr,
-                                 stdout=Msg.chlderr) # call curl
+                                 stdout=Msg.chlderr)  # call curl
         hdr.setvalue_from_file(self._files["header_file"])
         hdr.data["X-ND-CURLSTATUS"] = status
         if status:
             err_down = str(FileUtil(self._files["error_file"]).getdata('r'))
-            Msg().err(f"Error: in download: {err_down}")
+            Msg().err("Error: in download: %s", err_down)
             FileUtil(self._files["output_file"]).remove()
             return (hdr, buf)
         status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
-        if status_code == 401: # needs authentication
+        if status_code == 401:  # needs authentication
             pass
-        elif 300 <= status_code <= 308: # redirect
+        elif 300 <= status_code <= 308:  # redirect
             pass
         elif "ofile" in kwargs:
             if status_code == 206 and "resume" in kwargs:

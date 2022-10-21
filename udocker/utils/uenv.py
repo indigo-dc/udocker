@@ -5,7 +5,8 @@ import os
 import sys
 import string
 
-from udocker import is_genstr
+from genstr import is_genstr
+
 
 def get_pair(envstr):
     """Split env=var into key and val"""
@@ -18,10 +19,6 @@ def get_pair(envstr):
             return ("", "")
         key = key.strip()
         val = val.strip()
-        #for quote in ("'", '"'):
-        #    if quote == val[0]:
-        #        val = val.strip(quote)
-        #        break
     else:
         key = envstr.strip()
         val = os.getenv(envstr, "")
@@ -51,7 +48,7 @@ class UenvIterator(object):
             return (key, value)
         raise StopIteration
 
-    next = __next__ # Python 2
+    next = __next__  # Python 2
 
 
 class Uenv(object):
@@ -123,7 +120,7 @@ class Uenv(object):
 
     def setenv(self, key, val):
         """Set variable name"""
-        return self.append(f'{key}={val}')
+        return self.append("%s=%s" % (key, val))
 
     def unsetenv(self, key):
         """Delete variable by name"""
@@ -137,7 +134,7 @@ class Uenv(object):
         """Get list with environment variables"""
         env_list = []
         for (key, val) in self.env.items():
-            env_list.append(f'{key}={val}')
+            env_list.append("%s=%s" % (key, val))
         return env_list
 
     def dict(self):

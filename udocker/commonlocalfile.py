@@ -4,13 +4,13 @@
 import os
 import time
 
-from udocker.msg import Msg
-from udocker.utils.fileutil import FileUtil
-from udocker.utils.uprocess import Uprocess
-from udocker.helper.unique import Unique
-from udocker.helper.hostinfo import HostInfo
-from udocker.container.structure import ContainerStructure
-from udocker.engine.execmode import ExecutionMode
+from msg import Msg
+from helper.unique import Unique
+from helper.hostinfo import HostInfo
+from container.structure import ContainerStructure
+from engine.execmode import ExecutionMode
+from utils.fileutil import FileUtil
+from utils.uprocess import Uprocess
 
 
 class CommonLocalFileApi(object):
@@ -33,7 +33,7 @@ class CommonLocalFileApi(object):
             return False
         try:
             os.rename(filepath, target_file)
-        except(IOError, OSError):
+        except (IOError, OSError):
             if not FileUtil(filepath).copyto(target_file):
                 return False
         self.localrepo.add_image_layer(target_file, linkname)
@@ -68,7 +68,7 @@ class CommonLocalFileApi(object):
 
     def _untar_saved_container(self, tarfile, destdir):
         """Untar container created with docker save"""
-        #umask 022
+        # umask 022
         verbose = ''
         if Msg.level >= Msg.VER:
             verbose = 'v'
@@ -177,7 +177,7 @@ class CommonLocalFileApi(object):
         if move_tarball:
             try:
                 os.rename(tarfile, layer_file)
-            except(IOError, OSError):
+            except (IOError, OSError):
                 pass
         if not os.path.exists(layer_file):
             if not FileUtil(tarfile).copyto(layer_file):

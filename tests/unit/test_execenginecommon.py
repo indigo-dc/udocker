@@ -3,11 +3,22 @@
 udocker unit tests: ExecutionEngineCommon
 """
 
+import os
+import sys
+
+new_path = []
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
+new_path.extend(sys.path)
+sys.path = new_path
+
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.engine.base import ExecutionEngineCommon
 from udocker.utils.uenv import Uenv
-from udocker.config import Config
+from config import Config
+import collections
+collections.Callable = collections.abc.Callable
 
 
 class ExecutionEngineCommonTestCase(TestCase):
@@ -685,7 +696,7 @@ class ExecutionEngineCommonTestCase(TestCase):
 
         cont_auth = mock_nix
         host_auth = mock_nix
-        res = ("/tmp/passwd:/etc/passwd","/tmp/group:/etc/group")
+        res = ("/tmp/passwd:/etc/passwd", "/tmp/group:/etc/group")
         cont_auth.passwd_file.return_value = "/c/etc/passwd"
         cont_auth.group_file.return_value = "/c/etc/group"
         mock_umask.side_effect = [None, None]
@@ -701,7 +712,7 @@ class ExecutionEngineCommonTestCase(TestCase):
 
         cont_auth = mock_nix
         host_auth = mock_nix
-        res = ("/tmp/passwd:/etc/passwd","/tmp/group:/etc/group")
+        res = ("/tmp/passwd:/etc/passwd", "/tmp/group:/etc/group")
         cont_auth.passwd_file.return_value = "/c/etc/passwd"
         cont_auth.group_file.return_value = "/c/etc/group"
         mock_umask.side_effect = [None, None]
