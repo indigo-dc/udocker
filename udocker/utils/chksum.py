@@ -10,6 +10,7 @@ try:
 except ImportError:
     pass
 
+
 class ChkSUM(object):
     """Checksumming for files"""
 

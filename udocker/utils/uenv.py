@@ -7,6 +7,7 @@ import string
 
 from genstr import is_genstr
 
+
 def get_pair(envstr):
     """Split env=var into key and val"""
     if not (is_genstr(envstr) and envstr):
@@ -18,10 +19,6 @@ def get_pair(envstr):
             return ("", "")
         key = key.strip()
         val = val.strip()
-        #for quote in ("'", '"'):
-        #    if quote == val[0]:
-        #        val = val.strip(quote)
-        #        break
     else:
         key = envstr.strip()
         val = os.getenv(envstr, "")
@@ -51,7 +48,7 @@ class UenvIterator(object):
             return (key, value)
         raise StopIteration
 
-    next = __next__ # Python 2
+    next = __next__  # Python 2
 
 
 class Uenv(object):

@@ -266,9 +266,9 @@ class GetURLpyCurl(GetURL):
         status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
-        if status_code == 401: # needs authentication
+        if status_code == 401:  # needs authentication
             pass
-        elif 300 <= status_code <= 308: # redirect
+        elif 300 <= status_code <= 308:  # redirect
             pass
         elif "ofile" in kwargs:
             filep.close()
@@ -377,7 +377,7 @@ class GetURLexeCurl(GetURL):
         self._set_defaults()
         cmd = self._mkcurlcmd(*args, **kwargs)
         status = Uprocess().call(cmd, close_fds=True, stderr=Msg.chlderr,
-                                 stdout=Msg.chlderr) # call curl
+                                 stdout=Msg.chlderr)  # call curl
         hdr.setvalue_from_file(self._files["header_file"])
         hdr.data["X-ND-CURLSTATUS"] = status
         if status:
@@ -388,9 +388,9 @@ class GetURLexeCurl(GetURL):
         status_code = self.get_status_code(hdr.data["X-ND-HTTPSTATUS"])
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
-        if status_code == 401: # needs authentication
+        if status_code == 401:  # needs authentication
             pass
-        elif 300 <= status_code <= 308: # redirect
+        elif 300 <= status_code <= 308:  # redirect
             pass
         elif "ofile" in kwargs:
             if status_code == 206 and "resume" in kwargs:

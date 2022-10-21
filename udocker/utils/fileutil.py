@@ -255,7 +255,6 @@ class FileUtil(object):
 
     def tar(self, tarfile, sourcedir=None):
         """Create a tar file for a given sourcedir"""
-        #cmd += r" --xform 's:^\./::' "
         if sourcedir is None:
             sourcedir = self.filename
         verbose = ''
@@ -371,7 +370,7 @@ class FileUtil(object):
             while os.path.islink(f_path):
                 real_path = os.readlink(f_path)
                 if real_path.startswith('/'):
-                    if f_path.startswith(real_container_root): # in container
+                    if f_path.startswith(real_container_root):  # in container
                         if real_path.startswith(real_container_root):
                             f_path = real_path
                         else:
