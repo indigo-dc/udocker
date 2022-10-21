@@ -3,6 +3,7 @@
 ## udocker (1.3.5)
 
 * fix python backwards compatibility issues
+  * closes: #374
 * fix incorrectly reported errors by image verification
 * fix image search returning empty results
 * fix issue with logical links in the udocker executable path
