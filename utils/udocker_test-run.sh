@@ -114,21 +114,23 @@ udocker rm c7
 udocker rm ub18
 udocker rm jv
 
+## Use openjdk:8-jdk-alpine for regression of issue #363
+
 echo "|______________________________________________________________________________|"
 udocker rmi centos:7
 udocker rmi ubuntu:18.04
-udocker rmi java
+udocker rmi openjdk:8-jdk-alpine
 
 echo "|______________________________________________________________________________|"
 udocker pull centos:7; return=$?
 udocker pull ubuntu:18.04; return=$?
-udocker pull openjdk; return=$?
+udocker pull openjdk:8-jdk-alpine; return=$?
 
 echo "|______________________________________________________________________________|"
 udocker images; return=$?
 udocker create --name=c7 centos:7; return=$?
 udocker create --name=ub18 ubuntu:18.04; return=$?
-udocker create --name=jv openjdk; return=$?
+udocker create --name=jv openjdk:8-jdk-alpine; return=$?
 udocker ps; return=$?
 
 echo "===================="
