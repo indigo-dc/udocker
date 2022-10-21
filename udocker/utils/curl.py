@@ -92,7 +92,6 @@ class GetURL(object):
         self._curl_exec = Config.conf['use_curl_executable']
         self._select_implementation()
 
-    # Xpylint: disable=locally-disabled
     # pylint: disable=protected-access
     def _select_implementation(self):
         """Select which implementation to use"""
