@@ -29,13 +29,13 @@ class Config(object):
 
     # udocker installation tarball the release is the minimum requirement
     # the actual tarball used in the installation can have a higher version
-    conf['tarball_release'] = "1.2.8"
+    conf['tarball_release'] = "1.2.9"
     conf['tarball'] = (
         "https://download.ncg.ingrid.pt/"
-        "webdav/udocker/udocker-englib-1.2.8.tar.gz"
+        "webdav/udocker/udocker-englib-1.2.9.tar.gz"
         " "
         "https://raw.githubusercontent.com"
-        "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.8.tar.gz"
+        "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.9.tar.gz"
     )
     conf['installinfo'] = [
         "https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
