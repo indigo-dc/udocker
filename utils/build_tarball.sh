@@ -6902,6 +6902,8 @@ create_package_tarball()
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-20-x86_64.so"
     #/bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-21.so" \
     #           "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-21-x86_64.so"
+    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-22.so" \
+               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-22-x86_64.so"
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.6.so" \
                "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Alpine-3.6-x86_64.so"
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.8.so" \
