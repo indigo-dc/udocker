@@ -32,3 +32,5 @@ ln -s maincmd.py udocker
 cd ../../
 
 tar zcvf udocker-${VER}.tar.gz udocker-${VER}
+
+rm -rf udocker-${VER}
