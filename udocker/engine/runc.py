@@ -157,7 +157,7 @@ class RuncEngine(ExecutionEngineCommon):
                     idmap["hostID"] = HostInfo.uid
         else:
             json_obj["linux"]["uidMappings"] = [{"containerID": 0,
-                                                 "hostID": HostInfo.uid, "size":1, }, ]
+                                                 "hostID": HostInfo.uid, "size": 1, }, ]
 
         if "gidMappings" in json_obj["linux"]:
             for idmap in json_obj["linux"]["gidMappings"]:
@@ -165,7 +165,7 @@ class RuncEngine(ExecutionEngineCommon):
                     idmap["hostID"] = HostInfo.gid
         else:
             json_obj["linux"]["gidMappings"] = [{"containerID": 0, "hostID": HostInfo.gid,
-                                                 "size":1, }, ]
+                                                 "size": 1, }, ]
 
     def _del_namespace_spec(self, namespace):
         """Remove a namespace"""
@@ -396,7 +396,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._run_env_set()           # set environment variables
         self._set_spec()
         if (Config.conf['runc_nomqueue'] or (Config.conf['runc_nomqueue'] is None and not
-                 HostInfo().oskernel_isgreater([4, 8, 0]))):
+                                             HostInfo().oskernel_isgreater([4, 8, 0]))):
             self._del_mount_spec("mqueue", "/dev/mqueue")
 
         self._del_mount_spec("cgroup", "/sys/fs/cgroup")
