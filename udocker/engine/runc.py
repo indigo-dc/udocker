@@ -95,7 +95,7 @@ class RuncEngine(ExecutionEngineCommon):
 
         json_obj = None
         infile = None
-        #TODO: (mdavid) )redo this part
+        # (mdavid) )redo this part
         try:
             infile = open(self._cont_specfile, 'r')
             json_obj = json.load(infile)
@@ -111,7 +111,7 @@ class RuncEngine(ExecutionEngineCommon):
     def _save_spec(self):
         """Save spec file"""
         outfile = None
-        #TODO: (mdavid) )redo this part
+        # (mdavid) )redo this part
         try:
             outfile = open(self._cont_specfile, 'w')
             json.dump(self._cont_specjson, outfile)
