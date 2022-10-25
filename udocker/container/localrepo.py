@@ -679,7 +679,7 @@ class LocalRepository:
 
         json_obj = None
         infile = None
-        #TODO: (mdavid) )redo this part
+        # (mdavid) )redo this part
         try:
             infile = open(in_filename, 'r')
             json_obj = json.load(infile)

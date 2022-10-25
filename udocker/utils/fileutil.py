@@ -42,8 +42,7 @@ class FileUtil:
     def _register_prefix(self, prefix):
         """Register directory prefixes where remove() is allowed"""
         if os.path.islink(prefix):
-            prefix = (os.path.realpath(os.path.dirname(prefix)) + "/" +
-                      os.path.basename(prefix))
+            prefix = (os.path.realpath(os.path.dirname(prefix)) + "/" + os.path.basename(prefix))
         else:
             prefix = os.path.realpath(prefix)
         if prefix not in FileUtil.safe_prefixes:
@@ -126,6 +125,7 @@ class FileUtil:
                         os.path.basename(filename))
         else:
             filename = os.path.realpath(filename)
+
         if os.path.isdir(filename):
             filename += '/'
 
@@ -480,17 +480,14 @@ class FileUtil:
         """Copy from stdin to another file. We avoid shutil to have
         the fewest possible dependencies on other Python modules.
         """
-        #TODO: (mdavid) refactor this part
+        # (mdavid) refactor this part
         try:
             fpdst = open(dest_filename, mode + "b")
         except OSError:
             return False
 
         while True:
-            if sys.version_info[0] >= 3:
-                copy_buffer = sys.stdin.buffer.read(1024 * 1024)
-            else:
-                copy_buffer = sys.stdin.read(1024 * 1024)
+            copy_buffer = sys.stdin.buffer.read(1024 * 1024)
             if not copy_buffer:
                 break
 
@@ -503,7 +500,7 @@ class FileUtil:
         """Copy self.filename to stdout. We avoid shutil to have
         the fewest possible dependencies on other Python modules.
         """
-        #TODO: (mdavid) refactor this part
+        # (mdavid) refactor this part
         try:
             fpsrc = open(self.filename, "rb")
         except OSError:
@@ -523,7 +520,7 @@ class FileUtil:
         """Copy self.filename to another file. We avoid shutil to have
         the fewest possible dependencies on other Python modules.
         """
-        #TODO: (mdavid) refactor this part
+        # (mdavid) refactor this part
         try:
             fpsrc = open(self.filename, "rb")
         except OSError:

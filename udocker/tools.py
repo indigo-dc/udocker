@@ -165,7 +165,7 @@ class UdockerTools:
         if not tmpdir:
             return (False, "")
 
-        #TODO: (mdavid) )redo this part
+        # (mdavid) redo this part
         try:
             tfile = tarfile.open(tarball_file, "r:gz")
             for tar_in in tfile.getmembers():
@@ -183,6 +183,25 @@ class UdockerTools:
         FileUtil(tmpdir).remove(recursive=True)
         return (status, tarball_version)
 
+    def _clean_install(self, tfile):
+        """Remove files before install"""
+        for tar_in in tfile.getmembers():
+            basename = os.path.basename(tar_in.name)
+            if tar_in.name.startswith("udocker_dir/bin/"):
+                f_path = self.localrepo.bindir + '/' + basename
+                FileUtil(f_path).register_prefix()
+                FileUtil(f_path).remove(recursive=True)
+
+            if tar_in.name.startswith("udocker_dir/lib/"):
+                f_path = self.localrepo.libdir + '/' + basename
+                FileUtil(f_path).register_prefix()
+                FileUtil(f_path).remove(recursive=True)
+
+            if tar_in.name.startswith("udocker_dir/doc/"):
+                f_path = self.localrepo.docdir + '/' + basename
+                FileUtil(f_path).register_prefix()
+                FileUtil(f_path).remove(recursive=True)
+
     def _install(self, tarball_file):
         """Install the tarball"""
         if not (tarball_file and os.path.isfile(tarball_file)):
@@ -190,10 +209,11 @@ class UdockerTools:
 
         FileUtil(self.localrepo.topdir).chmod()
         self.localrepo.create_repo()
-        #TODO: (mdavid) )redo this part
+        # (mdavid) redo this part
         try:
             tfile = tarfile.open(tarball_file, "r:gz")
             FileUtil(self.localrepo.bindir).rchmod()
+            self._clean_install(tfile)
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/bin/"):
                     tar_in.name = os.path.basename(tar_in.name)
@@ -279,6 +299,7 @@ class UdockerTools:
     def install(self, force=False):
         """Get the udocker tools tarball and install the binaries"""
         if self.is_available() and not force:
+            LOG.info("tarball already installed, installation skipped")
             return True
 
         if not self._autoinstall and not force:
