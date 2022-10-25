@@ -96,7 +96,7 @@ class DockerIoAPI:
         elif status_code == 401:
             if "www-authenticate" in hdr.data:
                 www_authenticate = hdr.data["www-authenticate"]
-                if not "realm" in www_authenticate:
+                if "realm" not in www_authenticate:
                     return (hdr, buf)
 
                 if 'error="insufficient_scope"' in www_authenticate:
@@ -326,7 +326,7 @@ class DockerIoAPI:
                     self.v2_auth_header = auth_header
         # PR #126
         elif 'BASIC' in bearer or 'Basic' in bearer:
-            auth_header = f"Authorization: Basic {self.v2_auth_token}"
+            auth_header = "Authorization: Basic %s" % self.v2_auth_token
             self.v2_auth_header = auth_header
 
         return auth_header
@@ -337,7 +337,7 @@ class DockerIoAPI:
             return ""
         try:
             self.v2_auth_token = \
-                base64.b64encode((f"{username}:{password}").encode("utf-8")).decode("ascii")
+                base64.b64encode(("%s:%s" % (username, password).encode("utf-8")).decode("ascii"))
         except (KeyError, AttributeError, TypeError, ValueError, NameError):
             self.v2_auth_token = ""
         return self.v2_auth_token
@@ -537,7 +537,6 @@ class DockerIoAPI:
 
     def _parse_imagerepo(self, imagerepo):
         """Parse imagerepo to extract registry"""
-        remoterepo = imagerepo
         registry = ""
         registry_url = ""
         index_url = ""
@@ -545,7 +544,8 @@ class DockerIoAPI:
         if '.' in components[0] and len(components) >= 2:
             registry = components[0]
             del components[0]
-        elif ('.' not in components[0] and components[0] != "library" and len(components) == 1):
+
+        if ('.' not in components[0] and components[0] != "library" and len(components) == 1):
             components.insert(0, "library")
 
         remoterepo = '/'.join(components)
@@ -556,7 +556,7 @@ class DockerIoAPI:
             except (KeyError, NameError, TypeError):
                 registry_url = registry
                 if "://" not in registry:
-                    registry_url = f"https://{registry}"
+                    registry_url = "https://%s" % registry
                 index_url = registry_url
 
             if registry_url:
@@ -605,7 +605,7 @@ class DockerIoAPI:
     def search_get_page_v1(self, expression, url):
         """Get search results from Docker Hub using v1 API"""
         if expression:
-            url = url + f"/v1/search?q={expression}"
+            url = url + "/v1/search?q=%s" % expression
         else:
             url = url + "/v1/search?"
 
@@ -627,17 +627,17 @@ class DockerIoAPI:
         if not expression:
             expression = '*'
         if expression and official is None:
-            url = url + f"/v2/search/repositories?query={expression}"
+            url = url + "/v2/search/repositories?query=%s" % (expression)
         elif expression and official is True:
-            url = url + f"/v2/search/repositories?query={expression}&is_official=true"
+            url = url + "/v2/search/repositories?query=%s&is_official=%s" % (expression, "true")
         elif expression and official is False:
-            url = url + f"/v2/search/repositories?query={expression}&is_official=false"
+            url = url + "/v2/search/repositories?query=%s&is_official=%s" % (expression, "false")
         else:
             return []
 
         url += f"&page_size={str(lines)}"
         if self.search_page != 1:
-            url += f"&page={str(self.search_page)}"
+            url += "&page=%d" % (self.search_page)
         (dummy, buf) = self._get_url(url)
         try:
             repo_list = json.loads(buf.getvalue().decode())
@@ -754,7 +754,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                 if imagetag in repotag["RepoTags"]:
                     layers = []
                     for layer_file in repotag["Layers"]:
-                        #layers.append(layer_file.replace("/layer.tar", ""))
+                        # layers.append(layer_file.replace("/layer.tar", ""))
                         layers.append(layer_file)
 
                     layers.reverse()

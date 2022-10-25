@@ -2,7 +2,6 @@
 """
 udocker unit tests: ExecutionMode
 """
-
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.engine.execmode import ExecutionMode, LOG

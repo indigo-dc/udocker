@@ -2,7 +2,6 @@
 """
 udocker unit tests: FakechrootEngine
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.config import Config
@@ -144,9 +143,14 @@ class FakechrootEngineTestCase(TestCase):
         mock_rpath.side_effect = ["/tmp", "/bin"]
         mock_isdir.side_effect = [True, False, True]
         ufake = FakechrootEngine(self.local, self.xmode)
-        ufake.opt["vol"] = ["/tmp:/tmp", "/bin:/c/bin"]
+        dtmp = os.path.realpath("/tmp")
+        dbin = os.path.realpath("/bin")
+        ufake.opt["vol"] = (dtmp, dbin)
         status = ufake._get_volume_bindings()
-        self.assertEqual(status, ('', '/tmp!/tmp:/bin!/c/bin'))
+        if status[1].startswith(dtmp):
+            self.assertEqual(status, ('', dtmp+'!'+dtmp+':'+dbin+'!'+dbin))
+        else:
+            self.assertEqual(status, ('', dbin+'!'+dbin+':'+dtmp+'!'+dtmp))
 
     @patch('udocker.engine.fakechroot.os.path.exists')
     @patch('udocker.engine.fakechroot.FileUtil.cont2host')
@@ -242,7 +246,7 @@ class FakechrootEngineTestCase(TestCase):
         """Test09 FakechrootEngine._run_add_script_support()"""
         mock_ftype.return_value = "/bin/ls: ELF, x86-64, static"
         ufake = FakechrootEngine(self.local, self.xmode)
-        ufake.opt["cmd"] = ["/bin/ls"]
+        ufake.opt["cmd"] = [""]
         status = ufake._run_add_script_support("/bin/ls")
         self.assertEqual(status, [])
 
@@ -297,7 +301,7 @@ class FakechrootEngineTestCase(TestCase):
         mock_c2h.return_value = "/cont/ROOT"
         mock_call.return_value = 0
         ufake = FakechrootEngine(self.local, self.xmode)
-        ufake.opt["cmd"] = ["/bin/ls"]
+        ufake.opt["cmd"] = [""]
         status = ufake.run("12345")
         self.assertEqual(status, 0)
         self.assertTrue(mock_uidc.called)

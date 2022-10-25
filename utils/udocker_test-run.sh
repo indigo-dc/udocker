@@ -33,6 +33,30 @@ THIS_SCRIPT_NAME=$( basename "$0" )
 # Variables for the tests
 declare -a FAILED_TESTS
 
+if [ -n "$1" ]
+then
+  UDOCKER_CMD="$1"
+else
+  UDOCKER_CMD=$(type -p udocker)
+fi
+
+if [ ! -x "$UDOCKER_CMD" ]
+then
+  echo "ERROR udocker file not executable: $UDOCKER_CMD"
+  exit 1
+fi
+
+if [ -n "$2" ]
+then
+  PYTHON_CMD="$2"
+fi
+
+if [ -n "$PYTHON_CMD" -a ! -x "$PYTHON_CMD" ]
+then
+  echo "ERROR python interpreter not executable: $PYTHON_CMD"
+  exit 1
+fi
+
 function print_ok
 {
   printf "${OK_STR}"
@@ -67,6 +91,11 @@ function result_inv
   echo "|______________________________________________________________________________|"
 }
 
+function udocker
+{
+   $PYTHON_CMD $UDOCKER_CMD $*
+}
+
 echo "============================================="
 echo "* This script tests udocker run and options *"
 echo "* and volume mount options                  *"
@@ -76,7 +105,7 @@ DEFAULT_UDIR=$HOME/.udocker-tests
 export UDOCKER_DIR=${DEFAULT_UDIR}
 if [ -d ${DEFAULT_UDIR} ]
 then
-  echo "${DEFAULT_UDIR} exists, will not run tests"
+  echo "ERROR test directory exists, remove first: ${DEFAULT_UDIR}"
   exit 1
 fi
 
@@ -85,21 +114,23 @@ udocker rm c7
 udocker rm ub18
 udocker rm jv
 
+## Use openjdk:8-jdk-alpine for regression of issue #363
+
 echo "|______________________________________________________________________________|"
 udocker rmi centos:7
 udocker rmi ubuntu:18.04
-udocker rmi java
+udocker rmi openjdk:8-jdk-alpine
 
 echo "|______________________________________________________________________________|"
 udocker pull centos:7; return=$?
 udocker pull ubuntu:18.04; return=$?
-udocker pull openjdk; return=$?
+udocker pull openjdk:8-jdk-alpine; return=$?
 
 echo "|______________________________________________________________________________|"
 udocker images; return=$?
 udocker create --name=c7 centos:7; return=$?
 udocker create --name=ub18 ubuntu:18.04; return=$?
-udocker create --name=jv openjdk; return=$?
+udocker create --name=jv openjdk:8-jdk-alpine; return=$?
 udocker ps; return=$?
 
 echo "===================="

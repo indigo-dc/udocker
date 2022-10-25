@@ -287,7 +287,7 @@ class GetURLpyCurl(GetURL):
 
         if status_code == 401: # needs authentication
             pass
-        elif 300 <= status_code <= 308: # redirect
+        elif 300 <= status_code <= 308:  # redirect
             pass
         elif "ofile" in kwargs:
             filep.close()
@@ -428,7 +428,7 @@ class GetURLexeCurl(GetURL):
 
         if status_code == 401: # needs authentication
             pass
-        elif 300 <= status_code <= 308: # redirect
+        elif 300 <= status_code <= 308:  # redirect
             pass
         elif "ofile" in kwargs:
             if status_code == 206 and "resume" in kwargs:

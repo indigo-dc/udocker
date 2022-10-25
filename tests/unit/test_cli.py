@@ -1192,51 +1192,50 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.cli.ContainerStructure.get_container_attr')
     def test_33_do_inspect(self, mock_csattr, mock_jdump, mock_chkimg):
         """Test33 UdockerCLI().do_inspect()."""
-        cont_insp = \
-                {
-                    "architecture": "amd64",
-                    "config": {
-                        "AttachStderr": False,
-                        "AttachStdin": False,
-                        "AttachStdout": False,
-                        "Cmd": [
-                            "/bin/bash"
-                        ],
-                        "Domainname": "",
-                        "Entrypoint": None,
-                        "Env": [
-                            "PATH=/usr/local/sbin"
-                        ],
-                        "Hostname": "",
-                        "Image": "sha256:05725a",
-                        "Labels": {
-                            "org.opencontainers.image.vendor": "CentOS"
-                        },
-                        "WorkingDir": ""
-                    },
-                    "container": "c171c",
-                    "container_config": {
-                        "ArgsEscaped": True,
-                        "Cmd": ["/bin/sh", "-c"],
-                        "Domainname": "",
-                        "Env": [
-                            "PATH=/usr/local/sbin"
-                        ],
-                        "Hostname": "c171c5a1528a",
-                        "Image": "sha256:05725a",
-                        "Labels": {
-                            "org.label-schema.license": "GPLv2",
-                            "org.label-schema.name": "CentOS Base Image",
-                            "org.opencontainers.image.vendor": "CentOS"
-                        },
-                        "WorkingDir": ""
-                    },
-                    "created": "2020-05-05T21",
-                    "docker_version": "18.09.7",
-                    "id": "e72c1",
-                    "os": "linux",
-                    "parent": "61dc7"
-                }
+        cont_insp = {
+            "architecture": "amd64",
+            "config": {
+                "AttachStderr": False,
+                "AttachStdin": False,
+                "AttachStdout": False,
+                "Cmd": [
+                    "/bin/bash"
+                ],
+                "Domainname": "",
+                "Entrypoint": None,
+                "Env": [
+                    "PATH=/usr/local/sbin"
+                ],
+                "Hostname": "",
+                "Image": "sha256:05725a",
+                "Labels": {
+                    "org.opencontainers.image.vendor": "CentOS"
+                },
+                "WorkingDir": ""
+            },
+            "container": "c171c",
+            "container_config": {
+                "ArgsEscaped": True,
+                "Cmd": ["/bin/sh", "-c"],
+                "Domainname": "",
+                "Env": [
+                    "PATH=/usr/local/sbin"
+                ],
+                "Hostname": "c171c5a1528a",
+                "Image": "sha256:05725a",
+                "Labels": {
+                    "org.label-schema.license": "GPLv2",
+                    "org.label-schema.name": "CentOS Base Image",
+                    "org.opencontainers.image.vendor": "CentOS"
+                },
+                "WorkingDir": ""
+            },
+            "created": "2020-05-05T21",
+            "docker_version": "18.09.7",
+            "id": "e72c1",
+            "os": "linux",
+            "parent": "61dc7"
+        }
 
         argv = ["udocker", "-h"]
         cmdp = CmdParser()

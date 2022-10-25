@@ -161,7 +161,7 @@ class NixAuthentication:
 
     def add_user(self, user, passw, uid, gid, gecos, home, shell):
         """Add a *nix user to a /etc/passwd file"""
-        line = f"{user}:{passw}:{uid}:{gid}:{gecos}:{home}:{shell}\n"
+        line = "%s:%s:%s:%s:%s:%s:%s\n" % (user, passw, uid, gid, gecos, home, shell)
         if line in FileUtil(self.passwd_file).getdata('r'):
             return True
 

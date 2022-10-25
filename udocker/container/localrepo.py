@@ -647,7 +647,7 @@ class LocalRepository:
         outfile = None
         #TODO: (mdavid) )redo this part
         try:
-            outfile = open(out_filename, 'w', encoding='utf-8')
+            outfile = open(out_filename, 'w')
             json.dump(data, outfile)
         except (OSError, AttributeError, ValueError, TypeError):
             if outfile:
@@ -681,7 +681,7 @@ class LocalRepository:
         infile = None
         #TODO: (mdavid) )redo this part
         try:
-            infile = open(in_filename, 'r', encoding='utf-8')
+            infile = open(in_filename, 'r')
             json_obj = json.load(infile)
         except (OSError, AttributeError, ValueError, TypeError):
             pass

@@ -4,7 +4,6 @@
 """
 udocker unit tests: CurlHeader
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch
 from io import StringIO

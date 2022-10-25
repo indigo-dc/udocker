@@ -62,7 +62,7 @@ class KeyStore:
         oldmask = None
         try:
             oldmask = os.umask(0o77)
-            with open(self.keystore_file, "w", encoding='utf-8') as filep:
+            with open(self.keystore_file, "w") as filep:
                 json.dump(auths, filep)
 
             os.umask(oldmask)

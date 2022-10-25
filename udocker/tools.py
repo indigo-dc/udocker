@@ -241,7 +241,7 @@ class UdockerTools:
         for url in self._get_mirrors(self._installinfo):
             infofile = self._get_file(url)
             try:
-                with open(infofile, 'r', encoding='utf-8') as filep:
+                with open(infofile, 'r') as filep:
                     self._install_json = json.load(filep)
 
                 for msg in self._install_json["messages"]:
@@ -292,7 +292,7 @@ class UdockerTools:
         LOG.info("udocker command line interface %s", __version__)
         LOG.info("searching for udockertools %s", self._tarball_release)
         retry = self._installretry
-        while  retry:
+        while retry:
             if self._install_logic(force):
                 self.get_installinfo()
                 LOG.info("installation of udockertools successful")

@@ -318,6 +318,18 @@ STRING="T045: udocker images -l"
 udocker images -l; return=$?
 result
 
+STRING="T046: udocker pull docker.io/python:3-slim <REGRESSION test for issue #359>"
+udocker pull docker.io/python:3-slim; return=$?
+result
+
+STRING="T047: udocker create --name=py3slim docker.io/python:3-slim <REGRESSION test for issue #359>"
+udocker create --name=py3slim docker.io/python:3-slim; return=$?
+result
+
+STRING="T048: udocker run py3slim python3 --version <REGRESSION test for issue #359>"
+udocker run py3slim python3 --version; return=$?
+result
+
 # Cleanup files containers and images used in the tests
 echo "Clean up files containers and images used in the tests"
 rm -rf myexportcont.tar "${TEST_UDIR}" "${TAR_IMAGE}" "${TAR_CONT}" > /dev/null 2>&1
@@ -326,6 +338,7 @@ udocker rm clone_cont
 udocker rm myclone
 udocker rmi mycentos1
 udocker rmi centos:7
+udocker rmi docker.io/python:3-slim
 echo "|______________________________________________________________________________|"
 
 # Report failed tests

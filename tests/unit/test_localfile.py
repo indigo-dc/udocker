@@ -2,7 +2,6 @@
 """
 udocker unit tests: LocalFileAPI
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.localfile import LocalFileAPI, LOG

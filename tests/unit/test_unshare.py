@@ -2,7 +2,6 @@
 """
 udocker unit tests: Unshare
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch, MagicMock
 from udocker.helper.unshare import Unshare, LOG

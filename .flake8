@@ -1,0 +1,15 @@
+[flake8]
+extend-ignore = E402, F841, F821, E722
+max-line-length = 101
+exclude =
+    .git,
+    __pycache__,
+    docs/,
+    old,
+    build,
+    dist,
+    .tox,
+    .paper,
+    .etc,
+    .sqa,
+    utils

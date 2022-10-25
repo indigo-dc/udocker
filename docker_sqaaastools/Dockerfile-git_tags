@@ -1,0 +1,8 @@
+FROM bitnami/git:2.34.1
+LABEL maintainer="Pablo Orviz <orviz@ifca.unican.es>"
+COPY get_git_tags.py /usr/bin
+RUN apt-get update && \
+    apt-get install -y python3-pip && \
+    rm -rf /var/lib/apt/lists/* && \
+    python3 -m pip install GitPython==3.1.27 && \
+    chmod +x /usr/bin/get_git_tags.py

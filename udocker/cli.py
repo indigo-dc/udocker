@@ -393,6 +393,8 @@ class UdockerCLI:
         if from_stdin:
             tarfile = '-'
             imagespec = cmdp.get("P1")
+            if imagespec == '-':
+                imagespec = cmdp.get("P2")
             move_tarball = False
         else:
             tarfile = cmdp.get("P1")
@@ -790,7 +792,8 @@ class UdockerCLI:
         Config.conf['location'] = cmdp.get("--location=")
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
-        if cmdp.missing_options(): # syntax error
+
+        if cmdp.missing_options():   # syntax error
             return self.STATUS_ERROR
 
         if Config.conf['location']:

@@ -4,7 +4,6 @@
 """
 udocker unit tests: ContainerStructure
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.container.structure import ContainerStructure, LOG

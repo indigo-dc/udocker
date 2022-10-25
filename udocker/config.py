@@ -184,7 +184,7 @@ class Config:
             self._conf_file_read(cfpath, ignore_keys)
 
         if Config.conf['topdir'] != Config.conf['homedir']:
-            cfpath = Config.conf['topdir'] + '/'  + Config.conf['config']
+            cfpath = Config.conf['topdir'] + '/' + Config.conf['config']
             if os.path.exists(cfpath):
                 self._conf_file_read(cfpath, ignore_keys)
 
@@ -227,13 +227,14 @@ class Config:
         Config.conf['fakechroot_expand_symlinks'] = \
             os.getenv("UDOCKER_FAKECHROOT_EXPAND_SYMLINKS",
                       str(Config.conf['fakechroot_expand_symlinks'])).lower()
+
         os.environ["PROOT_TMP_DIR"] = os.getenv("PROOT_TMP_DIR",
                                                 Config.conf['tmpdir'])
 
     def getconf(self, user_cfile="u.conf"):
         """Return all configuration variables"""
-        self._file_override(user_cfile) # Override with variables in conf file
-        self._env_override()          # Override with variables in environment
+        self._file_override(user_cfile)  # Override with variables in conf file
+        self._env_override()             # Override with variables in environment
 
     # def container(self, user_cfile="u.conf"):
     #     """

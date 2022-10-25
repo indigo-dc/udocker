@@ -2,7 +2,6 @@
 """
 udocker unit tests: SingularityEngine
 """
-
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.config import Config
@@ -214,8 +213,10 @@ class SingularityEngineTestCase(TestCase):
         mock_call.return_value = 0
         sing = SingularityEngine(self.local, self.xmode)
         sing.executable = "/bin/sing"
+        sing.opt["cmd"] = [""]
         status = sing.run("CONTAINERID")
         self.assertEqual(status, 0)
+
 
 if __name__ == '__main__':
     main()

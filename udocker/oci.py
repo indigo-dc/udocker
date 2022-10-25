@@ -73,9 +73,10 @@ class OciLocalFileAPI(CommonLocalFileApi):
 
         imagetag = imagerepo + ':' + tag
         structure["manifest"][imagetag] = {}
-        struct_layers = structure["repolayers"][manifest["digest"]]["layer_f"]
-        structure["manifest"][imagetag]["json"] = self.localrepo.load_json(struct_layers)
-        structure["manifest"][imagetag]["json_f"] = struct_layers
+        structure["manifest"][imagetag]["json"] = \
+            self.localrepo.load_json(structure["repolayers"][manifest["digest"]]["layer_f"])
+        structure["manifest"][imagetag]["json_f"] = \
+            structure["repolayers"][manifest["digest"]]["layer_f"]
         return self._load_image(structure, imagerepo, tag)
 
     def _load_repositories(self, structure):
@@ -85,10 +86,9 @@ class OciLocalFileAPI(CommonLocalFileApi):
             if manifest["mediaType"] == "application/vnd.oci.image.manifest.v1+json":
                 loaded_repositories.append(self._load_manifest(structure, manifest))
             elif manifest["mediaType"] == "application/vnd.oci.image.index.v1+json":
-                struct_layers = structure["repolayers"][manifest["digest"]]["layer_f"]
-                ljson = self.localrepo.load_json(struct_layers)
-                loaded_repositories.extend(self._load_repositories(ljson))
-
+                loaded_repositories.extend(self._load_repositories(
+                    self.localrepo.load_json(
+                        structure["repolayers"][manifest["digest"]]["layer_f"])))
         return loaded_repositories
 
     def _load_image_step2(self, structure, imagerepo, tag):

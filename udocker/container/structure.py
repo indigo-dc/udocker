@@ -54,7 +54,7 @@ class ContainerStructure:
         elif "container_config" in cntjson:
             cidx = "container_config"
 
-        if cntjson[cidx]  and param in cntjson[cidx]:
+        if cntjson[cidx] and param in cntjson[cidx]:
             if cntjson[cidx][param] is None:
                 pass
             elif (isinstance(cntjson[cidx][param], str) and (isinstance(default, (list, tuple)))):

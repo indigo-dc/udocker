@@ -2,14 +2,11 @@
 """
 udocker unit tests: ExecutionEngineCommon
 """
-
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.engine.base import ExecutionEngineCommon, LOG
 from udocker.utils.uenv import Uenv
 from udocker.config import Config
-import collections
-collections.Callable = collections.abc.Callable
 
 
 class ExecutionEngineCommonTestCase(TestCase):
@@ -668,7 +665,7 @@ class ExecutionEngineCommonTestCase(TestCase):
 
         cont_auth = mock_nix
         host_auth = mock_nix
-        res = ("/tmp/passwd:/etc/passwd","/tmp/group:/etc/group")
+        res = ("/tmp/passwd:/etc/passwd", "/tmp/group:/etc/group")
         cont_auth.passwd_file.return_value = "/c/etc/passwd"
         cont_auth.group_file.return_value = "/c/etc/group"
         mock_umask.side_effect = [None, None]
@@ -684,7 +681,7 @@ class ExecutionEngineCommonTestCase(TestCase):
 
         cont_auth = mock_nix
         host_auth = mock_nix
-        res = ("/tmp/passwd:/etc/passwd","/tmp/group:/etc/group")
+        res = ("/tmp/passwd:/etc/passwd", "/tmp/group:/etc/group")
         cont_auth.passwd_file.return_value = "/c/etc/passwd"
         cont_auth.group_file.return_value = "/c/etc/group"
         mock_umask.side_effect = [None, None]

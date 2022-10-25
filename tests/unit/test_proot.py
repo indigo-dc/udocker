@@ -255,7 +255,7 @@ class PRootEngineTestCase(TestCase):
         mock_envupd.return_value = None
         prex = PRootEngine(self.local, self.xmode)
         prex.opt["kernel"] = "5.4.0"
-        prex.opt["cmd"] = ["/bin/ls"]
+        prex.opt["cmd"] = [""]
         status = prex.run("CONTAINERID")
         self.assertEqual(status, 5)
         self.assertTrue(mock_run_init.called)

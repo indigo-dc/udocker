@@ -2,7 +2,6 @@
 """
 udocker unit tests: FileBind
 """
-
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.utils.filebind import FileBind, LOG

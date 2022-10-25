@@ -262,7 +262,6 @@ class ElfPatcher:
             match = re.search("([^ ]+) => ([^ ]+)", line)
             if match:
                 ld_dict[self._container_root + os.path.dirname(match.group(2))] = True
-
         return list(ld_dict.keys())
 
     def _find_ld_libdirs(self, root_path=None):

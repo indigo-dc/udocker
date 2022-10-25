@@ -11,7 +11,6 @@ from udocker.utils.uprocess import Uprocess
 
 class HostInfo:
     """Get information from the host system"""
-
     uid = os.getuid()
     gid = os.getgid()
 

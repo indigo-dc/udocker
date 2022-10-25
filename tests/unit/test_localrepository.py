@@ -2,7 +2,6 @@
 """
 udocker unit tests: LocalRepository
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch, mock_open, call
 from udocker.container.localrepo import LocalRepository, LOG
@@ -585,7 +584,7 @@ class LocalRepositoryTestCase(TestCase):
             lrepo.protect_imagerepo("IMAGE", "TAG")
             self.assertTrue(mopen.called)
             protect = lrepo.reposdir + "/IMAGE/TAG/PROTECT"
-            self.assertEqual(mopen.call_args, call(protect, 'w', encoding='utf-8'))
+            self.assertEqual(mopen.call_args, call(protect, 'w'))
 
     @patch('udocker.container.localrepo.FileUtil')
     @patch.object(LocalRepository, '_unprotect')

@@ -2,7 +2,6 @@
 """
 udocker unit tests: DockerLocalFileAPI
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.docker import DockerLocalFileAPI, LOG
@@ -333,7 +332,7 @@ class DockerLocalFileAPITestCase(TestCase):
         status = dlocapi.save(imglist, imgfile)
         self.assertFalse(status)
 
-        imglist = [("/img1", "tag1"),]
+        imglist = [("/img1", "tag1"), ]
         imgfile = ""
         mock_mktmp.return_value = "/tmp/img1"
         mock_mkdir.return_value = None
@@ -345,7 +344,7 @@ class DockerLocalFileAPITestCase(TestCase):
         status = dlocapi.save(imglist, imgfile)
         self.assertFalse(status)
 
-        imglist = [("/img1", "tag1"),]
+        imglist = [("/img1", "tag1"), ]
         imgfile = ""
         mock_mktmp.return_value = "/tmp/img1"
         mock_mkdir.return_value = None

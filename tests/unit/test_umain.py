@@ -2,7 +2,6 @@
 """
 udocker unit tests: UMain
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch
 from udocker.umain import UMain, LOG

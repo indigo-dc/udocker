@@ -637,7 +637,8 @@ class ExecutionEngineCommon:
         self.container_dir = container_dir
 
         # execution mode
-        #self.exec_mode = ExecutionMode(self.localrepo, self.container_id)
+        # self.exec_mode = ExecutionMode(self.localrepo, self.container_id)
+
         # check if exposing privileged ports
         self._check_exposed_ports()
 
@@ -662,7 +663,8 @@ class ExecutionEngineCommon:
             saved = json.loads(FileUtil(filename).getdata())
             if (saved["osversion"] == HostInfo().osversion() and
                     saved["oskernel"] == HostInfo().oskernel() and
-                    saved["arch"] == HostInfo().arch()):
+                    saved["arch"] == HostInfo().arch() and
+                    saved["osdistribution"] == str(HostInfo().osdistribution())):
                 return saved
         except (OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
             pass

@@ -41,7 +41,11 @@ class FileUtil:
 
     def _register_prefix(self, prefix):
         """Register directory prefixes where remove() is allowed"""
-        prefix = os.path.realpath(prefix)
+        if os.path.islink(prefix):
+            prefix = (os.path.realpath(os.path.dirname(prefix)) + "/" +
+                      os.path.basename(prefix))
+        else:
+            prefix = os.path.realpath(prefix)
         if prefix not in FileUtil.safe_prefixes:
             filename = prefix
             if os.path.isdir(filename) and not filename.endswith('/'):
@@ -117,7 +121,11 @@ class FileUtil:
 
     def _is_safe_prefix(self, filename):
         """Check if file prefix falls under valid prefixes"""
-        filename = os.path.realpath(filename)
+        if os.path.islink(filename):
+            filename = (os.path.realpath(os.path.dirname(filename)) + "/" +
+                        os.path.basename(filename))
+        else:
+            filename = os.path.realpath(filename)
         if os.path.isdir(filename):
             filename += '/'
 
@@ -267,7 +275,6 @@ class FileUtil:
 
     def tar(self, tarfile, sourcedir=None):
         """Create a tar file for a given sourcedir"""
-        #cmd += r" --xform 's:^\./::' "
         if sourcedir is None:
             sourcedir = self.filename
 
@@ -400,7 +407,7 @@ class FileUtil:
             while os.path.islink(f_path):
                 real_path = os.readlink(f_path)
                 if real_path.startswith('/'):
-                    if f_path.startswith(real_container_root): # in container
+                    if f_path.startswith(real_container_root):  # in container
                         if real_path.startswith(real_container_root):
                             f_path = real_path
                         else:
@@ -480,7 +487,10 @@ class FileUtil:
             return False
 
         while True:
-            copy_buffer = sys.stdin.read(1024 * 1024)
+            if sys.version_info[0] >= 3:
+                copy_buffer = sys.stdin.buffer.read(1024 * 1024)
+            else:
+                copy_buffer = sys.stdin.read(1024 * 1024)
             if not copy_buffer:
                 break
 

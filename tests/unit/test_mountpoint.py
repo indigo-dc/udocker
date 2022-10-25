@@ -2,7 +2,6 @@
 """
 udocker unit tests: MountPoint
 """
-
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.utils.mountpoint import MountPoint, LOG

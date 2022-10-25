@@ -4,7 +4,6 @@
 """
 udocker unit tests: Config
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch
 from udocker.config import Config, LOG
@@ -77,6 +76,15 @@ class ConfigTestCase(TestCase):
         config.getconf()
         self.assertTrue(mock_fileover.called)
         self.assertTrue(mock_envover.called)
+
+    @patch.object(Config, '_file_override')
+    @patch('udocker.config.Config')
+    def test_05_container(self, mock_conf, mock_fileover):
+        """Test05 Config.container()."""
+        mock_conf.return_value.conf["topdir"] = "/.udocker"
+        config = Config()
+        config.container()
+        self.assertTrue(mock_fileover.called)
 
 
 if __name__ == '__main__':

@@ -31,9 +31,9 @@ class RuncEngine(ExecutionEngineCommon):
     def __init__(self, localrepo, exec_mode):
         super().__init__(localrepo, exec_mode)
         self.executable = None                   # runc
-        self._container_specjson = None
-        self._container_specfile = None
-        self._container_specdir = self.container_dir
+        self._cont_specjson = None
+        self._cont_specfile = None
+        self._cont_specdir = self.container_dir
         self._filebind = None
         self.execution_id = None
         self.engine_type = ""
@@ -82,14 +82,14 @@ class RuncEngine(ExecutionEngineCommon):
         if Config.conf['verbose_level'] == logging.DEBUG:
             stderror = sys.stderr
 
-        if FileUtil(self._container_specfile).size() != -1 and new:
-            FileUtil(self._container_specfile).register_prefix()
-            FileUtil(self._container_specfile).remove()
+        if FileUtil(self._cont_specfile).size() != -1 and new:
+            FileUtil(self._cont_specfile).register_prefix()
+            FileUtil(self._cont_specfile).remove()
 
-        if FileUtil(self._container_specfile).size() == -1:
+        if FileUtil(self._cont_specfile).size() == -1:
             cmd_l = [self.executable, "spec", "--rootless", ]
             status = subprocess.call(cmd_l, shell=False, stderr=stderror, close_fds=True,
-                                     cwd=os.path.realpath(self._container_specdir))
+                                     cwd=os.path.realpath(self._cont_specdir))
             if status:
                 return False
 
@@ -97,7 +97,7 @@ class RuncEngine(ExecutionEngineCommon):
         infile = None
         #TODO: (mdavid) )redo this part
         try:
-            infile = open(self._container_specfile, 'r', encoding='utf-8')
+            infile = open(self._cont_specfile, 'r')
             json_obj = json.load(infile)
         except (OSError, AttributeError, ValueError, TypeError):
             json_obj = None
@@ -105,7 +105,7 @@ class RuncEngine(ExecutionEngineCommon):
         if infile:
             infile.close()
 
-        self._container_specjson = json_obj
+        self._cont_specjson = json_obj
         return json_obj
 
     def _save_spec(self):
@@ -113,8 +113,8 @@ class RuncEngine(ExecutionEngineCommon):
         outfile = None
         #TODO: (mdavid) )redo this part
         try:
-            outfile = open(self._container_specfile, 'w', encoding='utf-8')
-            json.dump(self._container_specjson, outfile)
+            outfile = open(self._cont_specfile, 'w')
+            json.dump(self._cont_specjson, outfile)
         except (OSError, AttributeError, ValueError, TypeError):
             if outfile:
                 outfile.close()
@@ -126,7 +126,7 @@ class RuncEngine(ExecutionEngineCommon):
 
     def _set_spec(self):
         """Set spec values"""
-        json_obj = self._container_specjson
+        json_obj = self._cont_specjson
         json_obj["root"]["path"] = os.path.realpath(self.container_root)
         json_obj["root"]["readonly"] = False
         if '.' in self.opt["hostname"]:
@@ -143,14 +143,14 @@ class RuncEngine(ExecutionEngineCommon):
 
         json_obj["process"]["env"] = []
         for (env_key, env_val) in self.opt["env"]:
-            json_obj["process"]["env"].append(f"{env_key}={env_val}")
+            json_obj["process"]["env"].append("%s=%s" % (env_key, env_val))
 
         json_obj["process"]["args"] = self.opt["cmd"]
         return json_obj
 
     def _set_id_mappings(self):
         """set uid and gid mappings"""
-        json_obj = self._container_specjson
+        json_obj = self._cont_specjson
         if "uidMappings" in json_obj["linux"]:
             for idmap in json_obj["linux"]["uidMappings"]:
                 if "hostID" in idmap:
@@ -170,7 +170,7 @@ class RuncEngine(ExecutionEngineCommon):
     def _del_namespace_spec(self, namespace):
         """Remove a namespace"""
         try:
-            json_obj = self._container_specjson
+            json_obj = self._cont_specjson
             json_obj["linux"]["namespaces"].remove({"type": namespace})
         except ValueError:
             pass
@@ -185,15 +185,14 @@ class RuncEngine(ExecutionEngineCommon):
         if not Config.conf['runc_capabilities']:
             return
 
-        self._container_specjson["process"]["capabilities"]["ambient"] = \
+        self._cont_specjson["process"]["capabilities"]["ambient"] = Config.conf['runc_capabilities']
+        self._cont_specjson["process"]["capabilities"]["bounding"] = \
             Config.conf['runc_capabilities']
-        self._container_specjson["process"]["capabilities"]["bounding"] = \
+        self._cont_specjson["process"]["capabilities"]["effective"] = \
             Config.conf['runc_capabilities']
-        self._container_specjson["process"]["capabilities"]["effective"] = \
+        self._cont_specjson["process"]["capabilities"]["inheritable"] = \
             Config.conf['runc_capabilities']
-        self._container_specjson["process"]["capabilities"]["inheritable"] = \
-            Config.conf['runc_capabilities']
-        self._container_specjson["process"]["capabilities"]["permitted"] = \
+        self._cont_specjson["process"]["capabilities"]["permitted"] = \
             Config.conf['runc_capabilities']
 
     def _add_device_spec(self, dev_path, mode="rwm"):
@@ -221,8 +220,8 @@ class RuncEngine(ExecutionEngineCommon):
         if not filemode:
             filemode = 0o666
 
-        if "devices" not in self._container_specjson["linux"]:
-            self._container_specjson["linux"]["devices"] = []
+        if "devices" not in self._cont_specjson["linux"]:
+            self._cont_specjson["linux"]["devices"] = []
 
         device = {
             "path": dev_path,
@@ -233,7 +232,7 @@ class RuncEngine(ExecutionEngineCommon):
             "uid": HostInfo.uid,
             "gid": HostInfo.gid,
         }
-        self._container_specjson["linux"]["devices"].append(device)
+        self._cont_specjson["linux"]["devices"].append(device)
         return True
 
     def _add_devices(self):
@@ -264,17 +263,17 @@ class RuncEngine(ExecutionEngineCommon):
         if options is not None:
             mount["options"] = options
 
-        self._container_specjson["mounts"].append(mount)
+        self._cont_specjson["mounts"].append(mount)
 
     def _del_mount_spec(self, host_source, cont_dest):
         """Remove one mount point"""
         index = self._sel_mount_spec(host_source, cont_dest)
         if index:
-            del self._container_specjson["mounts"][index]
+            del self._cont_specjson["mounts"][index]
 
     def _sel_mount_spec(self, host_source, cont_dest):
         """Select mount point"""
-        for (index, mount) in enumerate(self._container_specjson["mounts"]):
+        for (index, mount) in enumerate(self._cont_specjson["mounts"]):
             if (mount["destination"] == cont_dest and mount["source"] == host_source):
                 return index
 
@@ -286,7 +285,7 @@ class RuncEngine(ExecutionEngineCommon):
         if index is None:
             return False
 
-        mount = self._container_specjson["mounts"][index]
+        mount = self._cont_specjson["mounts"][index]
         for new_item in new:
             if new_item == "options":
                 if "options" not in mount:
@@ -352,7 +351,7 @@ class RuncEngine(ExecutionEngineCommon):
             env_noseccomp = "PROOT_NO_SECCOMP=1"
 
         if env_noseccomp:
-            self._container_specjson["process"]["env"].append(env_noseccomp)
+            self._cont_specjson["process"]["env"].append(env_noseccomp)
 
         host_executable = preng.executable
         cont_executable = "/.udocker/bin/" + os.path.basename(host_executable)
@@ -361,7 +360,7 @@ class RuncEngine(ExecutionEngineCommon):
         self._filebind.add_file(host_executable, cont_executable)
         mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
         FileUtil(self._filebind.get_path(cont_executable)).chmod(mode)
-        self._container_specjson["process"]["args"] = [cont_executable, "-0"] + self.opt["cmd"]
+        self._cont_specjson["process"]["args"] = [cont_executable, "-0"] + self.opt["cmd"]
         return True
 
     def run(self, container_id):
@@ -376,15 +375,14 @@ class RuncEngine(ExecutionEngineCommon):
             return 2
 
         self._run_invalid_options()
-        self._container_specfile = "config.json"
+        self._cont_specfile = "config.json"
         if self.container_dir:
             if self.localrepo.iswriteable_container(container_id):
-                self._container_specdir = self.container_dir
+                self._cont_specdir = self.container_dir
             else:
-                self._container_specdir = FileUtil("SPECDIR").mktmpdir()
-                FileUtil(self._container_specdir).register_prefix()
-
-            self._container_specfile = self._container_specdir + '/' + self._container_specfile
+                self._cont_specdir = FileUtil("SPECDIR").mktmpdir()
+                FileUtil(self._cont_specdir).register_prefix()
+            self._cont_specfile = self._cont_specdir + '/' + self._cont_specfile
 
         self._filebind = FileBind(self.localrepo, container_id)
         self._filebind.setup()
@@ -395,7 +393,7 @@ class RuncEngine(ExecutionEngineCommon):
 
         self._uid_check()
         self._run_env_cleanup_list()  # if not --hostenv clean the environment
-        self._run_env_set()    # set environment variables
+        self._run_env_set()           # set environment variables
         self._set_spec()
         if (Config.conf['runc_nomqueue'] or (Config.conf['runc_nomqueue'] is None and not
                  HostInfo().oskernel_isgreater([4, 8, 0]))):
@@ -412,17 +410,17 @@ class RuncEngine(ExecutionEngineCommon):
         self._save_spec()
         if Config.conf['verbose_level'] == logging.DEBUG:
             runc_debug = ["--debug", ]
-            LOG.debug(json.dumps(self._container_specjson, indent=4, sort_keys=True))
+            LOG.debug(json.dumps(self._cont_specjson, indent=4, sort_keys=True))
         else:
             runc_debug = []
 
-       # build the actual command
+        # build the actual command
         self.execution_id = Unique().uuid(self.container_id)
         cmd_l = self._set_cpu_affinity()
         cmd_l.append(self.executable)
         cmd_l.extend(runc_debug)
-        cmd_l.extend(["--root", self._container_specdir, "run"])
-        cmd_l.extend(["--bundle", self._container_specdir, self.execution_id])
+        cmd_l.extend(["--root", self._cont_specdir, "run"])
+        cmd_l.extend(["--bundle", self._cont_specdir, self.execution_id])
         LOG.debug("CMD = %s", cmd_l)
         self._run_banner(self.opt["cmd"][0])
         if sys.stdout.isatty():

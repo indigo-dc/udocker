@@ -2,7 +2,6 @@
 """
 udocker unit tests: CommonLocalFileApi
 """
-
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from udocker.commonlocalfile import CommonLocalFileApi, LOG
@@ -353,6 +352,7 @@ class CommonLocalFileApiTestCase(TestCase):
         clfapi = CommonLocalFileApi(self.local)
         status = clfapi._get_imagedir_type(tmp_imagedir)
         self.assertEqual(status, "Docker")
+
 
 if __name__ == '__main__':
     main()

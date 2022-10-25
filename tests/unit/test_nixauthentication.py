@@ -2,7 +2,6 @@
 """
 udocker unit tests: NixAuthentication
 """
-
 import pwd
 import grp
 from unittest import TestCase, main

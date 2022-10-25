@@ -2,7 +2,6 @@
 """
 udocker unit tests: Keystore
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch, mock_open
 from udocker.helper.keystore import KeyStore, LOG

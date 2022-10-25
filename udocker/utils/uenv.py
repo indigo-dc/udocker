@@ -48,7 +48,7 @@ class UenvIterator:
 
         raise StopIteration
 
-    next = __next__ # Python 2
+    next = __next__  # Python 2
 
 
 class Uenv:
@@ -127,7 +127,7 @@ class Uenv:
 
     def setenv(self, key, val):
         """Set variable name"""
-        return self.append(f'{key}={val}')
+        return self.append("%s=%s" % (key, val))
 
     def unsetenv(self, key):
         """Delete variable by name"""

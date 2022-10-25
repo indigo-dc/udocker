@@ -688,7 +688,6 @@ cat motd
 cat lsb-release
 EOF
 
-
 # Search and pull from another repository than dockerhub
 # First search for the expression `myrepo` in quay.io
 # Second list the tags for a given image in quay.io

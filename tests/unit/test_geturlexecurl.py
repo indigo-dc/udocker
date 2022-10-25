@@ -4,7 +4,6 @@
 """
 udocker unit tests: GetURLexeCurl
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch
 from udocker.utils.curl import GetURLexeCurl, LOG

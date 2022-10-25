@@ -4,8 +4,6 @@
 """
 udocker unit tests: HostInfo
 """
-
-import pwd
 from unittest import TestCase, main
 from unittest.mock import patch
 from udocker.helper.hostinfo import HostInfo, LOG

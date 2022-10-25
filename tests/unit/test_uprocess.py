@@ -2,7 +2,6 @@
 """
 udocker unit tests: Uprocess
 """
-
 import subprocess
 from unittest import TestCase, main
 from unittest.mock import patch

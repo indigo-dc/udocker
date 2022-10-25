@@ -103,7 +103,7 @@ The execution engines are based on existing open source software that in several
 cases has been significantly improved, integrated and packaged to be used with
 udocker. The following engines are currently provided:
 
-- **F** engine: uses the Linux shared library PRELOAD mechanism to intercept
+* **F** engine: uses the Linux shared library PRELOAD mechanism to intercept
   shared library calls and translate pathnames to provide an unprivileged chroot
   like functionality. It is implemented by an extensively enhanced *Fakechroot*
   shared library with versions for the *glibc* [@FAKECHROOT-GLIBC-UDOCKER]
@@ -112,15 +112,18 @@ udocker. The following engines are currently provided:
   shared libraries and executables. These changes are performed by udocker using
   a modified *Patchelf* [@PATCHELF-UDOCKER]. This is the
   execution engine that generally provides the highest performance.
-- **P** engine: uses the Linux PTRACE mechanism to implement a chroot like
+
+* **P** engine: uses the Linux PTRACE mechanism to implement a chroot like
   environment by intercepting system calls and translating pathnames. It is
   implemented by a modified *PRoot* [@PROOT-UDOCKER]. This
   engine provides the highest interoperability across Linux distributions both
   older and newer, and constitutes the default execution engine for udocker.
-- **R** engine: uses either *runc* [@RUNC] or *crun* [@CRUN] to execute the
+
+* **R** engine: uses either *runc* [@RUNC] or *crun* [@CRUN] to execute the
   containers without privileges using Linux user namespaces. Both tools are
   provided with udocker for wider interoperability.
-- **S** engine: uses *Singularity* [@KURTZER2017] to execute the containers using
+
+* **S** engine: uses *Singularity* [@KURTZER2017] to execute the containers using
   user namespaces or other *Singularity* supported execution method depending
   on the system configuration.
 
@@ -220,23 +223,30 @@ and udocker repository level via `$UDOCKER_DIR/udocker.conf`.
 The most relevant configuration options can now be overridden through
 new environment variables.
 
-- `UDOCKER_DEFAULT_EXECUTION_MODE`: to change the default execution
+* `UDOCKER_DEFAULT_EXECUTION_MODE`: to change the default execution
   engine mode, which is currently **P1** using *PRoot*.
-- `UDOCKER_FAKECHROOT_SO`: to enforce the use of a specific *Fakechroot*
+
+* `UDOCKER_FAKECHROOT_SO`: to enforce the use of a specific *Fakechroot*
   shareable library for use in **F** execution modes.
-- `UDOCKER_USE_CURL_EXECUTABLE`: to select a *curl* executable as
+
+* `UDOCKER_USE_CURL_EXECUTABLE`: to select a *curl* executable as
   alternative to `pycurl` for downloads and interaction with REST APIs.
-- `UDOCKER_USE_PROOT_EXECUTABLE`: to enforce the use of a given *PRoot*
+
+* `UDOCKER_USE_PROOT_EXECUTABLE`: to enforce the use of a given *PRoot*
   executable for use in **P** execution modes.
-- `UDOCKER_USE_RUNC_EXECUTABLE`: to enforce the use of a given *runc*
+
+* `UDOCKER_USE_RUNC_EXECUTABLE`: to enforce the use of a given *runc*
   or *crun* executable for use in **R** execution modes.
-- `UDOCKER_USE_SINGULARITY_EXECUTABLE`: to enforce the use of a given
+
+* `UDOCKER_USE_SINGULARITY_EXECUTABLE`: to enforce the use of a given
   *Singularity* executable for use in **S** execution modes.
-- `UDOCKER_FAKECHROOT_EXPAND_SYMLINKS`: to control the expansion of
+
+* `UDOCKER_FAKECHROOT_EXPAND_SYMLINKS`: to control the expansion of
   symbolic links in paths pointing to volumes when using the **F** modes.
   This variable allows to disable the new path translation algorithm that
   is now accurate but slower.
-- `PROOT_TMP_DIR`: is now supported and correctly passed to the *PRoot*
+
+* `PROOT_TMP_DIR`: is now supported and correctly passed to the *PRoot*
   execution engine.
 
 The variables used to control the choice of images and libraries reflect
@@ -251,7 +261,7 @@ executables and `$HOME/.udocker/lib` for libraries.
 Currently the external tools and libraries compiled and provided with
 udocker support *x86_64*, *aarch64*, *arm* 32bit and *i386* for use with the
 **P** modes. The binaries for the remaining execution modes are currently
-only provided for *x86_64* systems, this may change in the future as these
+only provided for *x86_64* systems, this may change in the future as thes
 and other architectures become more widely used.
 
 The **F** mode is particularly unique to udocker. It relies on the interception
@@ -438,14 +448,16 @@ of the Python 3 version now available in production as 1.3.0.
 
 Examples of usage can be found in several domains including:
 physics [@BAGNASCHI2018] [@BAGNASCHI2019] [@BEZYAZEEKOV2019] [@BEZYAZEEKOV2021],
-life sciences [@KORHONEN2019] [@ZIEMANN2019] [@MERELLI2019] [@KERN2020] [@CHILLARON2017] [@KORHONEN2019],
+life sciences [@KORHONEN2019] [@ZIEMANN2019] [@MERELLI2019] [@KERN2020] [@CHILLARON2017]
+[@KORHONEN2019],
 coastal modeling [@OLIVEIRA2019] [@OLIVEIRA2020],
 chemistry [@NALINI2020] [@DBLP2020],
 structural biology [@TRAYNOR2020],
 fusion [@LAHIFF2020],
 earth sciences [@KERZENMACHER2021] [@AGUILAR2017],
 machine learning [@GRUPP2019] [@DEEP2020] [@CAVALLARO2019],
-and computer science in general [@CABALLER2021] [@RISCO2021] [@SUFI2020] [@ALDINUCCI2017] [@OWSIAK2017].
+and computer science in general [@CABALLER2021] [@RISCO2021] [@SUFI2020] [@ALDINUCCI2017]
+[@OWSIAK2017].
 
 udocker was used in the European projects EOSC-hub [@EOSCHUB] where it
 was further improved and DEEP-hybrid-DataCloud [@DEEP2020] where it was ported
@@ -455,25 +467,33 @@ EGI-ACE [@EGIACE] and BIG-HPC [@PAULO2020] projects. Although is a tool meant fo
 end-users, it is also supported by several scientific and academic computer
 centers and research infrastructures worldwide such as:
 
-- EGI advanced computing infrastructure in Europe [@EGI]
-- IBERGRID Iberian distributed computing infrastructure [@IBERGRID]
-- INCD Portuguese Distributed Computing Infrastructure [@INCD]
-- CESGA Super computing Center of Galicia [@CESGA]
-- HPC center of the Telaviv University  [@TELAVIV]
-- Trinity College HPC center in Dublin [@TCD]
-- University of Utah HPC center [@UTAH]
-- University of Coruña Pluton Cluster [@CORUNA]
+* EGI advanced computing infrastructure in Europe [@EGI]
+* IBERGRID Iberian distributed computing infrastructure [@IBERGRID]
+* INCD Portuguese Distributed Computing Infrastructure [@INCD]
+* CESGA Super computing Center of Galicia [@CESGA]
+* HPC center of the Telaviv University  [@TELAVIV]
+* Trinity College HPC center in Dublin [@TCD]
+* University of Utah HPC center [@UTAH]
+* University of Coruña Pluton Cluster [@CORUNA]
 
 udocker was been integrated in several research oriented frameworks such as:
 
-- SCAR - Serverless Container-aware Architectures [@PEREZ2018] to enable execution of containers in Amazon Lambda exploiting function as a service (FaaS);
-- common-workflow-language [@CWL2016], [@KORHONEN2019] to enable containers in scientific workflows;
-- bioconda [@GRUNING2018] for the conda package manager specialized in bioinformatics software;
-- openmole  workflow engine [@REUILLON2013] for exploration of simulation models using high throughput computing;
-- and is also referenced in the SLUM Containers Guide [@SLURM].
+* SCAR - Serverless Container-aware Architectures [@PEREZ2018] to enable execution of
+   containers in Amazon Lambda exploiting function as a service (FaaS);
+* common-workflow-language [@CWL2016], [@KORHONEN2019] to enable containers in scientific
+  workflows;
+* bioconda [@GRUNING2018] for the conda package manager specialized in bioinformatics software;
+* openmole  workflow engine [@REUILLON2013] for exploration of simulation models using high
+  throughput computing;
+* and is also referenced in the SLUM Containers Guide [@SLURM].
 
 # Acknowledgments
 
-udocker has been developed in the framework of the H2020 projects INDIGO-DataCloud (RIA 653549), EOSC-hub (RIA 777536) and DEEP-Hybrid-DataCloud (RIA 777435). The proofs of concept have been performed at INCD-Infraestrutura Nacional de Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER under the project number 22153-01/SAICT/2016), FinisTerrae II machine provided by CESGA (funded by Xunta de Galicia and MINECO) and Altamira machine (funded by the University of Cantabria and MINECO).
+udocker has been developed in the framework of the H2020 projects INDIGO-DataCloud (RIA 653549),
+EOSC-hub (RIA 777536) and DEEP-Hybrid-DataCloud (RIA 777435). The proofs of concept have been
+performed at INCD-Infraestrutura Nacional de Computação Distribuída (funded by FCT, P2020,
+Lisboa2020, COMPETE and FEDER under the project number 22153-01/SAICT/2016), FinisTerrae II machine
+provided by CESGA (funded by Xunta de Galicia and MINECO) and Altamira machine (funded by the
+University of Cantabria and MINECO).
 
 # References

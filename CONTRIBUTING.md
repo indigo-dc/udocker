@@ -41,4 +41,5 @@ Other issues and or feature enhancements can be communicated on GitHub
 
 * Perform pull requests against the dev-v1.4 branch: <https://github.com/indigo-dc/udocker/tree/dev-v1.4>
 * Please check you Python code with pylint.
+
 * For new features please also provide unit tests.

@@ -2,7 +2,6 @@
 """
 udocker unit tests: OciLocalFileAPI
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.oci import OciLocalFileAPI, LOG

@@ -2,7 +2,6 @@
 """
 udocker unit tests: DockerIoAPI
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from io import BytesIO as strio
@@ -782,6 +781,7 @@ class DockerIoAPITestCase(TestCase):
         doia = DockerIoAPI(self.local)
         out = doia.search_get_page("SOMETHING")
         self.assertEqual(out, {"page": 1, "num_pages": 1})
+
 
 if __name__ == '__main__':
     main()

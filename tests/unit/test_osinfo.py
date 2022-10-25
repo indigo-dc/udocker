@@ -2,7 +2,6 @@
 """
 udocker unit tests: OSInfo
 """
-
 from unittest import TestCase, main
 from unittest.mock import patch
 from udocker.helper.osinfo import OSInfo, LOG

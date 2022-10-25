@@ -34,4 +34,5 @@ cd ..
 ```
 
 * It produces udocker-x.y.z.tar.gz
-* On github make a **new release** and upload this tarball, copy/paste text from other release.
+* On github make a **new release** and upload this tarball, copy/paste text
+  from other release.

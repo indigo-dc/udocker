@@ -4,8 +4,7 @@
 
 Support is provided for both:
 
-* the latest 1.3.x tagged version.
-* the latest 1.5.x released version.
+* the latest 1.3.x released version.
 
 ## Reporting a Vulnerability
 

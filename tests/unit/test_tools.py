@@ -2,13 +2,12 @@
 """
 udocker unit tests: UdockerTools
 """
-
 import tarfile
 from tarfile import TarInfo
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from io import StringIO
-from udocker.config import Config
+from config import Config
 from udocker.utils.curl import CurlHeader
 from udocker.tools import UdockerTools, LOG
 import collections

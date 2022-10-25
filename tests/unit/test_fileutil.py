@@ -2,7 +2,6 @@
 """
 udocker unit tests: FileUtil
 """
-
 import sys
 import os
 from unittest import TestCase, main
@@ -34,7 +33,7 @@ def is_writable_file(obj):
     """Check if obj is a file."""
     try:
         obj.write("")
-    except(AttributeError, OSError, IOError):
+    except (AttributeError, OSError, IOError):
         return False
     else:
         return True
@@ -108,7 +107,6 @@ class FileUtilTestCase(TestCase):
         futil = FileUtil('filename.txt')
         futil.register_prefix()
         self.assertTrue(mock_regpre.called)
-
 
     @patch('udocker.utils.fileutil.os.umask')
     @patch('udocker.utils.fileutil.os.path.abspath')

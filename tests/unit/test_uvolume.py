@@ -2,7 +2,6 @@
 """
 udocker unit tests: Uvolume
 """
-
 from unittest import TestCase, main
 from udocker.utils.uvolume import Uvolume, LOG
 import collections

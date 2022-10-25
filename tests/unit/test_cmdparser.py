@@ -4,7 +4,6 @@
 """
 udocker unit tests: CmdParser
 """
-
 from unittest import TestCase, main
 from udocker.cmdparser import CmdParser
 import collections
@@ -93,6 +92,7 @@ class CmdParserTestCase(TestCase):
 
     # def test_07__get_param(self):
     #     """Test07 CmdParser()._get_param()."""
+
 
 if __name__ == '__main__':
     main()

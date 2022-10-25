@@ -9,6 +9,7 @@ from udocker.utils.chksum import ChkSUM, LOG
 import collections
 collections.Callable = collections.abc.Callable
 
+
 class ChkSUMTestCase(TestCase):
     """Test ChkSUM()."""
     def setUp(self):
