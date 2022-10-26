@@ -330,12 +330,25 @@ STRING="T048: udocker run py3slim python3 --version <REGRESSION test for issue #
 udocker run py3slim python3 --version; return=$?
 result
 
+STRING="T049: udocker pull public.ecr.aws/docker/library/redis <REGRESSION test for issue #168>"
+udocker pull public.ecr.aws/docker/library/redis; return=$?
+result
+
+STRING="T050: udocker create --name=redis public.ecr.aws/docker/library/redis <REGRESSION test for issue #168>"
+udocker create --name=redis public.ecr.aws/docker/library/redis; return=$?
+result
+
+STRING="T051: udocker run redis redis-server --version <REGRESSION test for issue #168>"
+udocker run redis redis-server --version; return=$?
+result
+
 # Cleanup files containers and images used in the tests
 echo "Clean up files containers and images used in the tests"
 rm -rf myexportcont.tar "${TEST_UDIR}" "${TAR_IMAGE}" "${TAR_CONT}" > /dev/null 2>&1
 udocker rm mycont
 udocker rm clone_cont
 udocker rm myclone
+udocker rm py3slim
 udocker rmi mycentos1
 udocker rmi centos:7
 udocker rmi docker.io/python:3-slim
