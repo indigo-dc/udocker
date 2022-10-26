@@ -349,9 +349,11 @@ udocker rm mycont
 udocker rm clone_cont
 udocker rm myclone
 udocker rm py3slim
+udocker rm redis
 udocker rmi mycentos1
 udocker rmi centos:7
 udocker rmi docker.io/python:3-slim
+udocker rmi public.ecr.aws/docker/library/redis
 echo "|______________________________________________________________________________|"
 
 # Report failed tests
