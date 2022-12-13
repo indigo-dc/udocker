@@ -1,10 +1,9 @@
 [![PyPI version](https://badge.fury.io/py/udocker.svg)](https://badge.fury.io/py/udocker)
 [![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc%2Fudocker%2Fmaster)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/master/)
 
-## Achievements 
-[![SQAaaS badge](https://github.com/EOSC-synergy/SQAaaS/raw/master/badges/badges_150x116/badge_software_silver.png)](https://api.eu.badgr.io/public/assertions/Ox7b5mTmS261hqn0BXnM8A "SQAaaS silver badge achieved")
+[![SQAaaS badge](https://github.com/EOSC-synergy/SQAaaS/raw/master/badges/badges_150x116/badge_software_gold.png)](https://api.eu.badgr.io/public/assertions/Ox7b5mTmS261hqn0BXnM8A "SQAaaS gold badge achieved")
 
-## udocker
+## 
 ![logo](docs/logo-small.png)
 
 udocker is a basic user tool to execute simple docker containers in user
