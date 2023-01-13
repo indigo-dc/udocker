@@ -4,13 +4,13 @@
 import os
 import time
 
-from msg import Msg
-from helper.unique import Unique
-from helper.hostinfo import HostInfo
-from container.structure import ContainerStructure
-from engine.execmode import ExecutionMode
-from utils.fileutil import FileUtil
-from utils.uprocess import Uprocess
+from udocker.msg import Msg
+from udocker.helper.unique import Unique
+from udocker.helper.hostinfo import HostInfo
+from udocker.container.structure import ContainerStructure
+from udocker.engine.execmode import ExecutionMode
+from udocker.utils.fileutil import FileUtil
+from udocker.utils.uprocess import Uprocess
 
 
 class CommonLocalFileApi(object):
