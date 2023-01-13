@@ -20,18 +20,12 @@ limitations under the License.
 """
 import os
 import sys
-
-new_path = []
-new_path.append(os.path.dirname(os.path.realpath(__file__)))
-new_path.extend(sys.path)
-for spath in sys.path:
-    new_path.append(spath + "/udocker")
-sys.path = new_path
+sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 
 # pylint: disable=wrong-import-position
-from msg import Msg
-from umain import UMain
-from utils.fileutil import FileUtil
+from udocker.msg import Msg
+from udocker.umain import UMain
+from udocker.utils.fileutil import FileUtil
 
 
 def main():

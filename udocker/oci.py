@@ -3,10 +3,10 @@
 
 import os
 
-from msg import Msg
-from helper.unique import Unique
-from commonlocalfile import CommonLocalFileApi
-from utils.fileutil import FileUtil
+from udocker.msg import Msg
+from udocker.helper.unique import Unique
+from udocker.commonlocalfile import CommonLocalFileApi
+from udocker.utils.fileutil import FileUtil
 
 
 class OciLocalFileAPI(CommonLocalFileApi):
