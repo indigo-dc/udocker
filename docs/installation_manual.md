@@ -34,7 +34,7 @@ Download a release tarball from <https://github.com/indigo-dc/udocker/releases>:
 ```bash
 wget https://github.com/indigo-dc/udocker/releases/download/1.3.6/udocker-1.3.6.tar.gz
 tar zxvf udocker-1.3.6.tar.gz
-export PATH=`pwd`/udocker:$PATH
+export PATH=`pwd`/udocker-1.3.6/udocker:$PATH
 ```
 
 Alternatively use `curl` instead of `wget` as follows:
@@ -43,7 +43,7 @@ Alternatively use `curl` instead of `wget` as follows:
 curl -L https://github.com/indigo-dc/udocker/releases/download/1.3.6/udocker-1.3.6.tar.gz \
   > udocker-1.3.6.tar.gz
 tar zxvf udocker-1.3.6.tar.gz
-export PATH=`pwd`/udocker:$PATH
+export PATH=`pwd`/udocker-1.3.6/udocker:$PATH
 ```
 
 udocker executes containers using external tools and libraries that
@@ -66,10 +66,10 @@ git clone --depth=1 https://github.com/indigo-dc/udocker.git
 export PATH=`pwd`/udocker/udocker:$PATH
 ```
 
-Alternatively, install the latest development code from the github `devel3` branch:
+Alternatively, install the latest development code from the github `dev-v1.4` branch:
 
 ```bash
-git clone -b devel3 --depth=1 https://github.com/indigo-dc/udocker.git
+git clone -b dev-v1.4 --depth=1 https://github.com/indigo-dc/udocker.git
 (cd udocker/udocker; ln -s maincmd.py udocker)
 export PATH=`pwd`/udocker/udocker:$PATH
 ```
@@ -637,4 +637,3 @@ Other tests configured in `tox.ini`, can be executed as well, such as linting
 pylint --rcfile=pylintrc --disable=R,C udocker
 bandit -r udocker -f html -o bandit.html
 ```
-
