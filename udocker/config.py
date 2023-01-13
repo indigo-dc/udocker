@@ -2,7 +2,7 @@
 """Configurations options and treatment/overrinding"""
 import os
 import sys
-from msg import Msg
+from udocker.msg import Msg
 
 # if Python 3
 if sys.version_info[0] >= 3:

@@ -7,13 +7,13 @@ import re
 import base64
 import json
 
-from config import Config
-from msg import Msg
-from commonlocalfile import CommonLocalFileApi
-from helper.unique import Unique
-from utils.fileutil import FileUtil
-from utils.curl import GetURL
-from utils.chksum import ChkSUM
+from udocker.config import Config
+from udocker.msg import Msg
+from udocker.commonlocalfile import CommonLocalFileApi
+from udocker.helper.unique import Unique
+from udocker.utils.fileutil import FileUtil
+from udocker.utils.curl import GetURL
+from udocker.utils.chksum import ChkSUM
 
 
 class DockerIoAPI(object):
