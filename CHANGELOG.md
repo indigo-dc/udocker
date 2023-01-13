@@ -1,5 +1,10 @@
 # Changelog
 
+## udocker (1.3.6)
+
+* re-implement udocker namespace solves #380
+
+
 ## udocker (1.3.5)
 
 * fix python backwards compatibility issues

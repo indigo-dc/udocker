@@ -32,17 +32,17 @@ udocker requires:
 Download a release tarball from <https://github.com/indigo-dc/udocker/releases>:
 
 ```bash
-wget https://github.com/indigo-dc/udocker/releases/download/1.3.5/udocker-1.3.5.tar.gz
-tar zxvf udocker-1.3.5.tar.gz
+wget https://github.com/indigo-dc/udocker/releases/download/1.3.6/udocker-1.3.6.tar.gz
+tar zxvf udocker-1.3.6.tar.gz
 export PATH=`pwd`/udocker:$PATH
 ```
 
 Alternatively use `curl` instead of `wget` as follows:
 
 ```bash
-curl -L https://github.com/indigo-dc/udocker/releases/download/1.3.5/udocker-1.3.5.tar.gz \
-  > udocker-1.3.5.tar.gz
-tar zxvf udocker-1.3.5.tar.gz
+curl -L https://github.com/indigo-dc/udocker/releases/download/1.3.6/udocker-1.3.6.tar.gz \
+  > udocker-1.3.6.tar.gz
+tar zxvf udocker-1.3.6.tar.gz
 export PATH=`pwd`/udocker:$PATH
 ```
 
@@ -345,8 +345,8 @@ The udocker tool should be installed as shown in section 2.1:
 
 ```bash
 cd /sw
-wget https://github.com/indigo-dc/udocker/releases/download/1.3.5/udocker-1.3.5.tar.gz
-tar zxvf udocker-1.3.5.tar.gz
+wget https://github.com/indigo-dc/udocker/releases/download/1.3.6/udocker-1.3.6.tar.gz
+tar zxvf udocker-1.3.6.tar.gz
 ```
 
 Directing users to the central udocker installation can be done using the
