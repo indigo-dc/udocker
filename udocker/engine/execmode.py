@@ -3,15 +3,15 @@
 
 import os
 
-from msg import Msg
-from config import Config
-from helper.elfpatcher import ElfPatcher
-from engine.fakechroot import FakechrootEngine
-from engine.proot import PRootEngine
-from engine.runc import RuncEngine
-from engine.singularity import SingularityEngine
-from utils.fileutil import FileUtil
-from utils.filebind import FileBind
+from udocker.msg import Msg
+from udocker.config import Config
+from udocker.helper.elfpatcher import ElfPatcher
+from udocker.engine.fakechroot import FakechrootEngine
+from udocker.engine.proot import PRootEngine
+from udocker.engine.runc import RuncEngine
+from udocker.engine.singularity import SingularityEngine
+from udocker.utils.fileutil import FileUtil
+from udocker.utils.filebind import FileBind
 
 
 class ExecutionMode(object):

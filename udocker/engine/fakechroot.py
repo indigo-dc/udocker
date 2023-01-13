@@ -6,14 +6,14 @@ import sys
 import re
 import subprocess
 
-from genstr import is_genstr
-from msg import Msg
-from config import Config
-from helper.osinfo import OSInfo
-from helper.elfpatcher import ElfPatcher
-from engine.base import ExecutionEngineCommon
-from utils.fileutil import FileUtil
-from utils.uvolume import Uvolume
+from udocker.genstr import is_genstr
+from udocker.msg import Msg
+from udocker.config import Config
+from udocker.helper.osinfo import OSInfo
+from udocker.helper.elfpatcher import ElfPatcher
+from udocker.engine.base import ExecutionEngineCommon
+from udocker.utils.fileutil import FileUtil
+from udocker.utils.uvolume import Uvolume
 
 
 class FakechrootEngine(ExecutionEngineCommon):

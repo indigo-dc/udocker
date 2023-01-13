@@ -4,8 +4,8 @@
 import os
 import stat
 
-from msg import Msg
-from utils.fileutil import FileUtil
+from udocker.msg import Msg
+from udocker.utils.fileutil import FileUtil
 
 
 class MountPoint(object):
@@ -17,8 +17,7 @@ class MountPoint(object):
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = container_id         # Container id
         self.mountpoints = {}
-        self.container_dir = \
-            os.path.realpath(self.localrepo.cd_container(container_id))
+        self.container_dir = os.path.realpath(self.localrepo.cd_container(container_id))
         self.container_root = self.container_dir + "/ROOT"
         self.mountpoints_orig_dir = self.container_dir + self.orig_dir
         self.setup()
@@ -29,6 +28,7 @@ class MountPoint(object):
             if not FileUtil(self.mountpoints_orig_dir).mkdir():
                 Msg().err("Error: creating dir:", self.mountpoints_orig_dir)
                 return False
+
         return True
 
     def add(self, cont_path):
@@ -36,8 +36,8 @@ class MountPoint(object):
         mountpoint = self.container_root + '/' + cont_path
         orig_mpath = FileUtil(mountpoint).getvalid_path()
         if orig_mpath:
-            self.mountpoints[cont_path] = \
-                orig_mpath.replace(self.container_root, "", 1)
+            self.mountpoints[cont_path] = orig_mpath.replace(self.container_root, "", 1)
+
         if not self.mountpoints[cont_path]:
             self.mountpoints[cont_path] = "/"
 
@@ -45,6 +45,7 @@ class MountPoint(object):
         """Delete container mountpoint"""
         if cont_path not in self.mountpoints or not self.container_root:
             return False
+
         container_root = os.path.realpath(self.container_root)
         mountpoint = container_root + '/' + cont_path
         orig_mpath = container_root + '/' + self.mountpoints[cont_path]
@@ -55,9 +56,11 @@ class MountPoint(object):
                 if not FileUtil(mountpoint).remove():
                     Msg().err("Error: while deleting:", cont_path)
                     return False
+
                 link_path = self.mountpoints[cont_path].replace('/', '#')
                 FileUtil(self.mountpoints_orig_dir + '/' + link_path).remove()
                 mountpoint = os.path.dirname(mountpoint)
+
         del self.mountpoints[cont_path]
         return True
 
@@ -71,12 +74,12 @@ class MountPoint(object):
         status = True
         mountpoint = self.container_root + '/' + cont_path
         if os.path.exists(mountpoint):
-            if (stat.S_IFMT(os.stat(mountpoint).st_mode) ==
-                    stat.S_IFMT(os.stat(host_path).st_mode)):
+            if stat.S_IFMT(os.stat(mountpoint).st_mode) == stat.S_IFMT(os.stat(host_path).st_mode):
                 return True
-            Msg().err("Error: host and container volume paths not same type:",
-                      host_path, cont_path)
+
+            Msg().err("Error: host and container volume paths not same type:", host_path, cont_path)
             return False
+
         self.add(cont_path)
         if os.path.isfile(host_path):
             FileUtil(os.path.dirname(mountpoint)).mkdir()
@@ -84,16 +87,19 @@ class MountPoint(object):
             status = os.path.isfile(mountpoint) or os.path.islink(mountpoint)
         elif os.path.isdir(host_path):
             status = FileUtil(mountpoint).mkdir()
+
         if not status:
             Msg().err("Error: creating container mountpoint:", cont_path)
             self.delete(cont_path)
             return False
+
         return True
 
     def save(self, cont_path):
         """Save one mountpoint"""
         if cont_path not in self.mountpoints:
             return True
+
         orig_mountpoint = self.mountpoints[cont_path].replace('/', '#')
         curr_mountpoint = cont_path.replace('/', '#')
         curr_mountpoint = self.mountpoints_orig_dir + '/' + curr_mountpoint
@@ -102,6 +108,7 @@ class MountPoint(object):
                 os.symlink(orig_mountpoint, curr_mountpoint)
         except (IOError, OSError):
             return False
+
         return True
 
     def save_all(self):

@@ -5,15 +5,15 @@ import sys
 import os
 import subprocess
 
-from engine.base import ExecutionEngineCommon
-from msg import Msg
-from config import Config
-from helper.nixauth import NixAuthentication
-from helper.unique import Unique
-from helper.hostinfo import HostInfo
-from utils.fileutil import FileUtil
-from utils.uvolume import Uvolume
-from utils.filebind import FileBind
+from udocker.engine.base import ExecutionEngineCommon
+from udocker.msg import Msg
+from udocker.config import Config
+from udocker.helper.nixauth import NixAuthentication
+from udocker.helper.unique import Unique
+from udocker.helper.hostinfo import HostInfo
+from udocker.utils.fileutil import FileUtil
+from udocker.utils.uvolume import Uvolume
+from udocker.utils.filebind import FileBind
 
 
 class SingularityEngine(ExecutionEngineCommon):
