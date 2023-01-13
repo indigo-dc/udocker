@@ -50,8 +50,7 @@ class CommonLocalFileApi(object):
             cd_imagerepo = imagerepo
 
         if self.localrepo.cd_imagerepo(cd_imagerepo, tag):
-            Msg().err("Error: repository and tag already exist",
-                      cd_imagerepo, tag)
+            Msg().out("Info: repository and tag already exist", cd_imagerepo, tag)
             return []
 
         self.localrepo.setup_imagerepo(cd_imagerepo)
@@ -162,7 +161,7 @@ class CommonLocalFileApi(object):
         self.localrepo.setup_imagerepo(imagerepo)
         tag_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
         if tag_dir:
-            Msg().err("Error: tag already exists in repo:", tag)
+            Msg().out("Info: tag already exists in repo:", tag)
             return False
         tag_dir = self.localrepo.setup_tag(tag)
         if not tag_dir:
@@ -223,11 +222,9 @@ class CommonLocalFileApi(object):
             return False
         if container_name:
             if self.localrepo.get_container_id(container_name):
-                Msg().err("Error: container name already exists:",
-                          container_name)
+                Msg().out("Info: container name already exists:", container_name)
                 return False
-        container_id = ContainerStructure(self.localrepo).clone_fromfile(
-            tarfile)
+        container_id = ContainerStructure(self.localrepo).clone_fromfile(tarfile)
         if container_name:
             self.localrepo.set_container_name(container_id, container_name)
         return container_id
@@ -239,18 +236,18 @@ class CommonLocalFileApi(object):
         """
         if container_name:
             if self.localrepo.get_container_id(container_name):
-                Msg().err("Error: container name already exists:",
-                          container_name)
+                Msg().out("Info: container name already exists:", container_name)
                 return False
-        dest_container_id = ContainerStructure(self.localrepo,
-                                               container_id).clone()
+
+        dest_container_id = ContainerStructure(self.localrepo, container_id).clone()
         if container_name:
-            self.localrepo.set_container_name(dest_container_id,
-                                              container_name)
+            self.localrepo.set_container_name(dest_container_id, container_name)
+
         exec_mode = ExecutionMode(self.localrepo, dest_container_id)
         xmode = exec_mode.get_mode()
         if xmode.startswith('F'):
             exec_mode.set_mode(xmode, True)
+
         return dest_container_id
 
     def _get_imagedir_type(self, tmp_imagedir):

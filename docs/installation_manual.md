@@ -16,7 +16,7 @@ shipped with udocker. For more information see
 The udocker dependencies are minimal and should be supported by most Linux installations.
 udocker requires:
 
-* Python 3 or alternatively Python >= 2.6
+* Python 3 or alternatively Python >= 2.7
 * pycurl or alternatively the curl command
 * python hashlib or alternatively the openssl command
 * tar
