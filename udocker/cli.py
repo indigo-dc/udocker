@@ -49,8 +49,11 @@ class UdockerCLI(object):
         if Config.conf['keystore'].startswith("/"):
             self.keystore = KeyStore(Config.conf['keystore'])
         else:
-            self.keystore = KeyStore(self.localrepo.homedir + "/" +
-                                     Config.conf['keystore'])
+            self.keystore = KeyStore(self.localrepo.homedir + "/" + Config.conf['keystore'])
+
+        Msg().out("Info: Localrepo homedir is", self.localrepo.homedir, l=Msg.DBG)
+        Msg().out("Info: Keystore is", self.keystore, l=Msg.DBG)
+
 
     def _cdrepo(self, cmdp):
         """Select the top directory of a local repository"""
@@ -478,17 +481,17 @@ class UdockerCLI(object):
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
         self._set_repository(registry_url, None, None, None)
+        Msg().out("Info: registry URL", registry_url, l=Msg.DBG)
         if not username:
             username = GET_INPUT("username: ")
         if not password:
             password = getpass("password: ")
         if password and password == password.upper():
-            Msg().out("Warning: password in uppercase",
-                      "Caps Lock ?", l=Msg.WAR)
+            Msg().out("Warning: password in uppercase", "Caps Lock ?", l=Msg.WAR)
 
         v2_auth_token = self.dockerioapi.get_v2_login_token(username, password)
-        if self.keystore.put(self.dockerioapi.registry_url,
-                             v2_auth_token, "") == 0:
+        Msg().out("Info: v2_auth_token", v2_auth_token, l=Msg.DBG)
+        if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, "") == 0:
             return self.STATUS_OK
 
         Msg().err("Error: invalid credentials")
