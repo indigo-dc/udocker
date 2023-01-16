@@ -709,8 +709,11 @@ class DockerLocalFileAPI(CommonLocalFileApi):
         """Load a container image into a repository mimic docker load"""
         imagetag = imagerepo + ':' + tag
         (json_config_file, layers) = self._get_from_manifest(structure, imagetag)
+        Msg().out("Debug: json config file ->", json_config_file, l=Msg.DBG)
         if json_config_file:
             layer_id = json_config_file.replace(".json", "")
+            Msg().out("Debug: layer_id ->", layer_id, l=Msg.DBG)
+            Msg().out("Debug: structure ->", structure, l=Msg.DBG)
             json_file = structure["repoconfigs"][json_config_file]["json_f"]
             self._move_layer_to_v1repo(json_file, layer_id, "container.json")
         top_layer_id = self._find_top_layer_id(structure)
