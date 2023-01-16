@@ -135,7 +135,7 @@ class UdockerCLI(object):
                     self.dockerioapi.set_registry(transport + "//" + hostname)
                     self.dockerioapi.set_index(transport + "//" + hostname)
 
-        Msg().out("Debug: (_set_repository) Set registry URL", registry_url, l=Msg.DBG)
+        Msg().out("Debug: Set registry URL", registry_url, l=Msg.DBG)
         return True
 
     def _split_imagespec(self, imagerepo):
