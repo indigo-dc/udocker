@@ -52,7 +52,6 @@ class UdockerCLI(object):
             self.keystore = KeyStore(self.localrepo.homedir + "/" + Config.conf['keystore'])
 
         Msg().out("Debug: Localrepo homedir is", self.localrepo.homedir, l=Msg.DBG)
-        Msg().out("Debug: Keystore is", self.keystore, l=Msg.DBG)
 
 
     def _cdrepo(self, cmdp):
@@ -136,6 +135,7 @@ class UdockerCLI(object):
                     self.dockerioapi.set_registry(transport + "//" + hostname)
                     self.dockerioapi.set_index(transport + "//" + hostname)
 
+        Msg().out("Debug: (_set_repository) Set registry URL", registry_url, l=Msg.DBG)
         return True
 
     def _split_imagespec(self, imagerepo):
@@ -272,6 +272,7 @@ class UdockerCLI(object):
         if cmdp.missing_options():               # syntax error
             return self.STATUS_ERROR
         self._set_repository(registry_url, index_url, expression, http_proxy)
+        Msg().out("Debug: registry URL", registry_url, l=Msg.DBG)
         (dum1, dum2, expression, dum3) = self._split_imagespec(expression)
         self.dockerioapi.search_init(pause)
         v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
@@ -481,7 +482,6 @@ class UdockerCLI(object):
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
         self._set_repository(registry_url, None, None, None)
-        Msg().out("Debug: registry URL", registry_url, l=Msg.DBG)
         if not username:
             username = GET_INPUT("username: ")
         if not password:
@@ -490,8 +490,9 @@ class UdockerCLI(object):
             Msg().out("Warning: password in uppercase", "Caps Lock ?", l=Msg.WAR)
 
         v2_auth_token = self.dockerioapi.get_v2_login_token(username, password)
-        Msg().out("Debug: v2_auth_token", v2_auth_token, l=Msg.DBG)
+        Msg().out("Debug: V2 Auth token", v2_auth_token, l=Msg.DBG)
         if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, "") == 0:
+            Msg().out("Debug: registry URL", self.dockerioapi.registry_url, l=Msg.DBG)
             return self.STATUS_OK
 
         Msg().err("Error: invalid credentials")

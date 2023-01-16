@@ -310,7 +310,6 @@ class DockerIoAPI(object):
         except (KeyError, AttributeError, TypeError, ValueError, NameError):
             self.v2_auth_token = ""
 
-        Msg().out("Debug: auth token", self.v2_auth_token, l=Msg.DBG)
         return self.v2_auth_token
 
     def set_v2_login_token(self, v2_auth_token):
