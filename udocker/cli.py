@@ -51,8 +51,8 @@ class UdockerCLI(object):
         else:
             self.keystore = KeyStore(self.localrepo.homedir + "/" + Config.conf['keystore'])
 
-        Msg().out("Info: Localrepo homedir is", self.localrepo.homedir, l=Msg.DBG)
-        Msg().out("Info: Keystore is", self.keystore, l=Msg.DBG)
+        Msg().out("Debug: Localrepo homedir is", self.localrepo.homedir, l=Msg.DBG)
+        Msg().out("Debug: Keystore is", self.keystore, l=Msg.DBG)
 
 
     def _cdrepo(self, cmdp):
@@ -459,7 +459,7 @@ class UdockerCLI(object):
         if name and self.localrepo.get_container_id(name):
             Msg().err("Error: container name already exists")
             return self.STATUS_ERROR
-        Msg().out("Info: cloning container id:", container_id, l=Msg.DBG)
+        Msg().out("Debug: cloning container id:", container_id, l=Msg.DBG)
         clone_id = self.localfileapi.clone_container(container_id, name)
         if clone_id:
             Msg().out(clone_id)
@@ -481,7 +481,7 @@ class UdockerCLI(object):
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
         self._set_repository(registry_url, None, None, None)
-        Msg().out("Info: registry URL", registry_url, l=Msg.DBG)
+        Msg().out("Debug: registry URL", registry_url, l=Msg.DBG)
         if not username:
             username = GET_INPUT("username: ")
         if not password:
@@ -490,7 +490,7 @@ class UdockerCLI(object):
             Msg().out("Warning: password in uppercase", "Caps Lock ?", l=Msg.WAR)
 
         v2_auth_token = self.dockerioapi.get_v2_login_token(username, password)
-        Msg().out("Info: v2_auth_token", v2_auth_token, l=Msg.DBG)
+        Msg().out("Debug: v2_auth_token", v2_auth_token, l=Msg.DBG)
         if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, "") == 0:
             return self.STATUS_OK
 

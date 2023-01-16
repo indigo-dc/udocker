@@ -76,7 +76,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             Msg().err("Error: no libfakechroot found", image_list)
             sys.exit(1)
 
-        Msg().out("Info: fakechroot_so:", fakechroot_so, l=Msg.DBG)
+        Msg().out("Debug: fakechroot_so:", fakechroot_so, l=Msg.DBG)
         return fakechroot_so
 
     def _setup_container_user(self, user):
