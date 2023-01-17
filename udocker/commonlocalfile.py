@@ -55,7 +55,7 @@ class CommonLocalFileApi:
             cd_imagerepo = imagerepo
 
         if self.localrepo.cd_imagerepo(cd_imagerepo, tag):
-            LOG.error("repository: %s and tag: %s already exist", cd_imagerepo, tag)
+            LOG.info("repository: %s and tag: %s already exist", cd_imagerepo, tag)
             return []
 
         self.localrepo.setup_imagerepo(cd_imagerepo)
@@ -167,7 +167,7 @@ class CommonLocalFileApi:
         self.localrepo.setup_imagerepo(imagerepo)
         tag_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
         if tag_dir:
-            LOG.error("tag already exists in repo: %s", tag)
+            LOG.info("tag already exists in repo: %s", tag)
             return False
 
         tag_dir = self.localrepo.setup_tag(tag)
@@ -214,7 +214,7 @@ class CommonLocalFileApi:
 
         if container_name:
             if self.localrepo.get_container_id(container_name):
-                LOG.error("container name already exists: %s", container_name)
+                LOG.info("container name already exists: %s", container_name)
                 return False
 
         layer_id = Unique().layer_v1()
@@ -237,7 +237,7 @@ class CommonLocalFileApi:
 
         if container_name:
             if self.localrepo.get_container_id(container_name):
-                LOG.error("container name already exists: %s", container_name)
+                LOG.info("container name already exists: %s", container_name)
                 return False
 
         container_id = ContainerStructure(self.localrepo).clone_fromfile(tarfile)
@@ -253,13 +253,12 @@ class CommonLocalFileApi:
         """
         if container_name:
             if self.localrepo.get_container_id(container_name):
-                LOG.error("container name already exists: %s", container_name)
+                LOG.info("container name already exists: %s", container_name)
                 return False
 
         dest_container_id = ContainerStructure(self.localrepo, container_id).clone()
         if container_name:
-            self.localrepo.set_container_name(dest_container_id,
-                                              container_name)
+            self.localrepo.set_container_name(dest_container_id, container_name)
 
         exec_mode = ExecutionMode(self.localrepo, dest_container_id)
         xmode = exec_mode.get_mode()
