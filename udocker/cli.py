@@ -43,6 +43,9 @@ class UdockerCLI:
         else:
             self.keystore = KeyStore(self.localrepo.homedir + "/" + Config.conf['keystore'])
 
+        LOG.debug("Localrepo homedir is: %s", self.localrepo.homedir)
+        LOG.debug("Keystore is: %s", self.keystore)
+
     def _cdrepo(self, cmdp):
         """Select the top directory of a local repository"""
         topdir = cmdp.get("P1")
@@ -513,6 +516,7 @@ class UdockerCLI:
             return self.STATUS_ERROR
 
         self._set_repository(registry_url, None, None, None)
+        LOG.debug("Registry URL: %s", registry_url)
         if not username:
             username = GET_INPUT("username: ")
 
@@ -523,6 +527,7 @@ class UdockerCLI:
             LOG.warning("password in uppercase. Caps Lock ?")
 
         v2_auth_token = self.dockerioapi.get_v2_login_token(username, password)
+        LOG.debug("v2 Auth token is: %s", v2_auth_token)
         if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, "") == 0:
             return self.STATUS_OK
 

@@ -335,11 +335,14 @@ class DockerIoAPI:
         """Get a login token from username and password"""
         if not (username and password):
             return ""
+
         try:
-            self.v2_auth_token = \
-                base64.b64encode(("%s:%s" % (username, password).encode("utf-8")).decode("ascii"))
+            userpass = (f'{username}:{password}').encode("utf-8")
+            self.v2_auth_token = base64.b64encode(userpass).decode("ascii")
         except (KeyError, AttributeError, TypeError, ValueError, NameError):
             self.v2_auth_token = ""
+
+        LOG.debug("Auth token is: %s", self.v2_auth_token)
         return self.v2_auth_token
 
     def set_v2_login_token(self, v2_auth_token):
