@@ -342,6 +342,14 @@ STRING="T051: udocker run redis redis-server --version <REGRESSION test for issu
 udocker run redis redis-server --version; return=$?
 result
 
+STRING="T052: udocker login --username=username --password=password"
+udocker login --username=username --password=password; return=$?
+result
+
+STRING="T053: udocker logout -a"
+udocker logout -a; return=$?
+result
+
 # Cleanup files containers and images used in the tests
 echo "Clean up files containers and images used in the tests"
 rm -rf myexportcont.tar "${TEST_UDIR}" "${TAR_IMAGE}" "${TAR_CONT}" > /dev/null 2>&1
