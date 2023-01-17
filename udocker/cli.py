@@ -53,7 +53,6 @@ class UdockerCLI(object):
 
         Msg().out("Debug: Localrepo homedir is", self.localrepo.homedir, l=Msg.DBG)
 
-
     def _cdrepo(self, cmdp):
         """Select the top directory of a local repository"""
         topdir = cmdp.get("P1")
