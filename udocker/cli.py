@@ -281,6 +281,7 @@ class UdockerCLI:
             return self.STATUS_ERROR
 
         self._set_repository(registry_url, index_url, expression, http_proxy)
+        LOG.debug("Registry URL: %s", registry_url)
         (dum1, dum2, expression, dum3) = self._split_imagespec(expression)
         self.dockerioapi.search_init(pause)
         v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
@@ -529,6 +530,7 @@ class UdockerCLI:
         v2_auth_token = self.dockerioapi.get_v2_login_token(username, password)
         LOG.debug("v2 Auth token is: %s", v2_auth_token)
         if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, "") == 0:
+            LOG.debug("Registry URL: %s", self.dockerioapi.registry_url)
             return self.STATUS_OK
 
         LOG.error("invalid credentials")
