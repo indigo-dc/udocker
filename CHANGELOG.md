@@ -1,5 +1,11 @@
 # Changelog
 
+## udocker (1.3.6)
+
+* re-implement udocker namespace solves #380
+* login fails all the time solves #379
+* Ignore image loading if already exists solves #378
+
 ## udocker (1.3.5)
 
 * fix python backwards compatibility issues
