@@ -4,8 +4,8 @@
 import os
 import re
 
-from utils.uprocess import Uprocess
-from utils.fileutil import FileUtil
+from udocker.utils.uprocess import Uprocess
+from udocker.utils.fileutil import FileUtil
 
 
 class OSInfo(object):
@@ -65,38 +65,39 @@ class OSInfo(object):
                 osinfo = FileUtil(f_path).getdata('r')
                 match = re.match(r"([^=]+) release (\d+)", osinfo)
                 if match and match.group(1):
-                    return (match.group(1).split(' ')[0],
-                            match.group(2).split('.')[0])
+                    return (match.group(1).split(' ')[0], match.group(2).split('.')[0])
         f_path = self._root_dir + "/etc/lsb-release"
         if os.path.exists(f_path):
             distribution = ""
             version = ""
             osinfo = FileUtil(f_path).getdata('r')
-            match = re.search(r"DISTRIB_ID=(.+)(\n|$)",
-                              osinfo, re.MULTILINE)
+            match = re.search(r"DISTRIB_ID=(.+)(\n|$)", osinfo, re.MULTILINE)
             if match:
                 distribution = match.group(1).split(' ')[0]
-            match = re.search(r"DISTRIB_RELEASE=(.+)(\n|$)",
-                              osinfo, re.MULTILINE)
+
+            match = re.search(r"DISTRIB_RELEASE=(.+)(\n|$)", osinfo, re.MULTILINE)
             if match:
                 version = match.group(1).split('.')[0]
+
             if distribution and version:
                 return (distribution, version)
+
         f_path = self._root_dir + "/etc/os-release"
         if os.path.exists(f_path):
             distribution = ""
             version = ""
             osinfo = FileUtil(f_path).getdata('r')
-            match = re.search(r"NAME=\"?([^ \n\"\.]+).*\"?(\n|$)",
-                              osinfo, re.MULTILINE)
+            match = re.search(r"NAME=\"?([^ \n\"\.]+).*\"?(\n|$)", osinfo, re.MULTILINE)
             if match:
                 distribution = match.group(1).split(' ')[0]
-            match = re.search(r"VERSION_ID=\"?([^ \n\"\.]+).*\"?(\n|$)",
-                              osinfo, re.MULTILINE)
+
+            match = re.search(r"VERSION_ID=\"?([^ \n\"\.]+).*\"?(\n|$)", osinfo, re.MULTILINE)
             if match:
                 version = match.group(1).split('.')[0]
+
             if distribution and version:
                 return (distribution, version)
+
         return ("", "")
 
     def osversion(self):

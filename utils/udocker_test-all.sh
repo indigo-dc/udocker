@@ -20,7 +20,7 @@
 
 UTILS_DIR="$(dirname $0)"
 UDOCKER_CMD="${UTILS_DIR}/../udocker/maincmd.py"
-PYTHON_LIST="$(type -p python2.6) $(type -p python2.7) $(type -p python3.5) $(type -p python3.6) $(type -p python3.11)" 
+PYTHON_LIST="$(type -p python2.7) $(type -p python3.6) $(type -p python3.11)" 
 
 for PYTHON_CMD in $PYTHON_LIST
 do

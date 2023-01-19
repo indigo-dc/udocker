@@ -8,12 +8,12 @@ import random
 import json
 import stat
 
-from __init__ import __version__
-from genstr import is_genstr
-from config import Config
-from msg import Msg
-from utils.curl import GetURL
-from utils.fileutil import FileUtil
+from udocker import __version__
+from udocker.genstr import is_genstr
+from udocker.config import Config
+from udocker.msg import Msg
+from udocker.utils.curl import GetURL
+from udocker.utils.fileutil import FileUtil
 
 
 def _str(data):
@@ -184,7 +184,7 @@ class UdockerTools(object):
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/bin/"):
                     tar_in.name = os.path.basename(tar_in.name)
-                    Msg().out("Info: extrating", tar_in.name, l=Msg.DBG)
+                    Msg().out("Debug: extrating", tar_in.name, l=Msg.DBG)
                     tfile.extract(tar_in, self.localrepo.bindir)
             FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR |
                                                    stat.S_IWUSR |
@@ -194,7 +194,7 @@ class UdockerTools(object):
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/lib/"):
                     tar_in.name = os.path.basename(tar_in.name)
-                    Msg().out("Info: extrating", tar_in.name, l=Msg.DBG)
+                    Msg().out("Debug: extrating", tar_in.name, l=Msg.DBG)
                     tfile.extract(tar_in, self.localrepo.libdir)
             FileUtil(self.localrepo.libdir).rchmod()
 
@@ -202,7 +202,7 @@ class UdockerTools(object):
             for tar_in in tfile.getmembers():
                 if tar_in.name.startswith("udocker_dir/doc/"):
                     tar_in.name = os.path.basename(tar_in.name)
-                    Msg().out("Info: extrating", tar_in.name, l=Msg.DBG)
+                    Msg().out("Debug: extrating", tar_in.name, l=Msg.DBG)
                     tfile.extract(tar_in, self.localrepo.docdir)
             FileUtil(self.localrepo.docdir).rchmod()
             tfile.close()

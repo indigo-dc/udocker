@@ -57,7 +57,6 @@ class Unique(object):
         prefix = self.def_name + '-' + str(os.getpid()) + '-'
         try:
             return (prefix +
-                    str(uuid.uuid3(uuid.uuid4(), str(time.time()))) +
-                    '-' + str(filename))
+                    str(uuid.uuid3(uuid.uuid4(), str(time.time()))) + '-' + str(filename))
         except (NameError, AttributeError):
             return prefix + self.uuid(filename) + '-' + str(filename)

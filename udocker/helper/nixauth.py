@@ -5,8 +5,8 @@ import re
 import pwd
 import grp
 
-from helper.hostinfo import HostInfo
-from utils.fileutil import FileUtil
+from udocker.helper.hostinfo import HostInfo
+from udocker.utils.fileutil import FileUtil
 
 
 class NixAuthentication(object):

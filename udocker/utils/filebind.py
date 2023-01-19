@@ -3,8 +3,8 @@
 
 import os
 
-from msg import Msg
-from utils.fileutil import FileUtil
+from udocker.msg import Msg
+from udocker.utils.fileutil import FileUtil
 
 
 class FileBind(object):
@@ -19,8 +19,7 @@ class FileBind(object):
     def __init__(self, localrepo, container_id):
         self.localrepo = localrepo               # LocalRepository object
         self.container_id = container_id         # Container id
-        self.container_dir = \
-            os.path.realpath(self.localrepo.cd_container(container_id))
+        self.container_dir = os.path.realpath(self.localrepo.cd_container(container_id))
         self.container_root = self.container_dir + "/ROOT"
         self.container_bind_dir = self.container_root + self.bind_dir
         self.container_orig_dir = self.container_dir + self.orig_dir
@@ -32,10 +31,12 @@ class FileBind(object):
             if not FileUtil(self.container_orig_dir).mkdir():
                 Msg().err("Error: creating dir:", self.container_orig_dir)
                 return False
+
         if not os.path.isdir(self.container_bind_dir):
             if not FileUtil(self.container_bind_dir).mkdir():
                 Msg().err("Error: creating dir:", self.container_bind_dir)
                 return False
+
         return True
 
     def restore(self, force=False):
@@ -43,10 +44,12 @@ class FileBind(object):
         error = False
         if not os.path.isdir(self.container_orig_dir):
             return
+
         for f_name in os.listdir(self.container_orig_dir):
             orig_file = self.container_orig_dir + '/' + f_name
             if not os.path.isfile(orig_file):
                 continue
+
             cont_file = os.path.basename(f_name).replace('#', '/')
             cont_file = self.container_root + '/' + cont_file
             if os.path.islink(cont_file):
@@ -54,11 +57,14 @@ class FileBind(object):
                 FileUtil(cont_file).remove()
             elif os.path.exists(cont_file):
                 continue
+
             if not FileUtil(orig_file).rename(cont_file):
                 Msg().err("Error: restoring binded file:", cont_file)
                 error = True
+
         if not error or force:
             FileUtil(self.container_orig_dir).remove(recursive=True)
+
         FileUtil(self.container_bind_dir).remove(recursive=True)
 
     def start(self, files_list=None):
@@ -71,6 +77,7 @@ class FileBind(object):
         self.host_bind_dir = FileUtil("BIND_FILES").mktmpdir()
         if files_list:
             self.set_list(files_list)
+
         return (self.host_bind_dir, self.bind_dir)
 
     def set_list(self, files_list):
@@ -91,7 +98,9 @@ class FileBind(object):
                 os.rename(cont_file_path, orig_file_path)
             else:
                 return
+
             os.symlink(link_path, cont_file_path)
+
         FileUtil(orig_file_path).copyto(self.host_bind_dir)
 
     def add_file(self, host_file, cont_file):

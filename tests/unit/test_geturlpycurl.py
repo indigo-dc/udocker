@@ -5,23 +5,14 @@
 udocker unit tests: GetURLpyCurl
 """
 
-import os
-import sys
-
-new_path = []
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
-new_path.extend(sys.path)
-sys.path = new_path
-
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from io import BytesIO as strio
 from udocker.utils.curl import GetURLpyCurl
 from udocker.config import Config
 import collections
-collections.Callable = collections.abc.Callable
 
+collections.Callable = collections.abc.Callable
 BUILTINS = "builtins"
 
 

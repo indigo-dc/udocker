@@ -5,9 +5,9 @@ import os
 import sys
 import subprocess
 
-from genstr import is_genstr
-from msg import Msg
-from config import Config
+from udocker.genstr import is_genstr
+from udocker.msg import Msg
+from udocker.config import Config
 
 
 class Uprocess(object):
@@ -21,13 +21,17 @@ class Uprocess(object):
         if is_genstr(path):
             if "=" in path:
                 path = "".join(path.split("=", 1)[1:])
+
             path = path.split(":")
+
         if isinstance(path, (list, tuple)):
             for directory in path:
                 full_path = rootdir + directory + "/" + basename
                 if os.path.lexists(full_path):
                     return directory + "/" + basename
+
             return ""
+
         return ""
 
     def _check_output(self, *popenargs, **kwargs):
@@ -39,7 +43,9 @@ class Uprocess(object):
             cmd = kwargs.get("args")
             if cmd is None:
                 cmd = popenargs[0]
+
             raise subprocess.CalledProcessError(retcode, cmd)
+
         return output
 
     def check_output(self, *popenargs, **kwargs):
@@ -55,6 +61,7 @@ class Uprocess(object):
             # if Python < 2.7
             else:
                 chk_out = self._check_output(*popenargs, **kwargs)
+
         except OSError:
             return ""
 
@@ -67,13 +74,14 @@ class Uprocess(object):
             cmd_path = self.find_inpath(cmd[0], path)
             if cmd_path:
                 cmd[0] = cmd_path
+
         content = ""
         try:
-            content = self.check_output(cmd, shell=False, stderr=Msg.chlderr,
-                                        close_fds=True)
+            content = self.check_output(cmd, shell=False, stderr=Msg.chlderr, close_fds=True)
         except subprocess.CalledProcessError:
             if not ignore_error:
                 return None
+
         return content.strip()
 
     def call(self, cmd, **kwargs):
@@ -81,6 +89,7 @@ class Uprocess(object):
         if not cmd[0].startswith("/"):
             path = Config.conf["root_path"] + ":" + os.getenv("PATH", "")
             cmd[0] = self.find_inpath(cmd[0], path)
+
         kwargs["shell"] = False
         return subprocess.call(cmd, **kwargs)
 
@@ -89,20 +98,24 @@ class Uprocess(object):
         path = Config.conf["root_path"] + ":" + os.getenv("PATH", "")
         if not cmd1[0].startswith("/"):
             cmd1[0] = self.find_inpath(cmd1[0], path)
+
         if not cmd2[0].startswith("/"):
             cmd2[0] = self.find_inpath(cmd2[0], path)
+
         try:
             proc_1 = subprocess.Popen(cmd1, stderr=Msg.chlderr, shell=False,
                                       stdout=subprocess.PIPE, **kwargs)
         except (OSError, ValueError):
             return False
+
         try:
-            proc_2 = subprocess.Popen(cmd2, stderr=Msg.chlderr, shell=False,
-                                      stdin=proc_1.stdout)
+            proc_2 = subprocess.Popen(cmd2, stderr=Msg.chlderr, shell=False, stdin=proc_1.stdout)
         except (OSError, ValueError):
             proc_1.kill()
             return False
+
         while proc_1.returncode is None or proc_2.returncode is None:
             proc_1.wait()
             proc_2.wait()
+
         return not (proc_1.returncode or proc_2.returncode)

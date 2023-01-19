@@ -25,8 +25,12 @@ echo "* This script produces udocker-${VER}.tar.gz, for release *"
 echo "=========================================================="
 
 rm -rf `find . -name '*pycache*'` `find . -name '*.pyc'`
-cd udocker
+mkdir -p udocker-${VER}
+cp -prv udocker udocker-${VER}/
+cd udocker-${VER}/udocker/
 ln -s maincmd.py udocker
-cd ../
-tar zcvf udocker-${VER}.tar.gz udocker
-rm -f udocker/udocker
+cd ../../
+
+tar zcvf udocker-${VER}.tar.gz udocker-${VER}
+
+rm -rf udocker-${VER}

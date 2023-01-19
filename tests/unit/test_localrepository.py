@@ -3,22 +3,13 @@
 udocker unit tests: LocalRepository
 """
 
-import os
-import sys
-
-new_path = []
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
-new_path.extend(sys.path)
-sys.path = new_path
-
 from unittest import TestCase, main
 from unittest.mock import patch, mock_open, call
 from udocker.container.localrepo import LocalRepository
-from config import Config
+from udocker.config import Config
 import collections
-collections.Callable = collections.abc.Callable
 
+collections.Callable = collections.abc.Callable
 BUILTIN = "builtins"
 BOPEN = BUILTIN + '.open'
 UDOCKER_TOPDIR = "/home/u1/.udocker"

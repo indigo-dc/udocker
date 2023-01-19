@@ -34,4 +34,5 @@ class Uvolume(object):
         except ValueError:
             host_dir = self.volume
             cont_dir = self.volume
+
         return (self.cleanpath(host_dir), self.cleanpath(cont_dir))

@@ -188,7 +188,6 @@ result
 STRING="T017: udocker verify ${DOCKER_IMG}"
 udocker verify ${DOCKER_IMG}; return=$?
 result
-## TODO: Add test to check layers after pull
 
 STRING="T018: udocker images"
 udocker images; return=$?
@@ -328,6 +327,14 @@ result
 
 STRING="T048: udocker run py3slim python3 --version <REGRESSION test for issue #359>"
 udocker run py3slim python3 --version; return=$?
+result
+
+STRING="T049: udocker login --username=username --password=password"
+udocker login --username=username --password=password; return=$?
+result
+
+STRING="T050: udocker logout -a"
+udocker logout -a; return=$?
 result
 
 # Cleanup files containers and images used in the tests

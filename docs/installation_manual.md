@@ -16,7 +16,7 @@ shipped with udocker. For more information see
 The udocker dependencies are minimal and should be supported by most Linux installations.
 udocker requires:
 
-* Python 3 or alternatively Python >= 2.6
+* Python 3 or alternatively Python >= 2.7
 * pycurl or alternatively the curl command
 * python hashlib or alternatively the openssl command
 * tar
@@ -32,18 +32,18 @@ udocker requires:
 Download a release tarball from <https://github.com/indigo-dc/udocker/releases>:
 
 ```bash
-wget https://github.com/indigo-dc/udocker/releases/download/1.3.5/udocker-1.3.5.tar.gz
-tar zxvf udocker-1.3.5.tar.gz
-export PATH=`pwd`/udocker:$PATH
+wget https://github.com/indigo-dc/udocker/releases/download/1.3.6/udocker-1.3.6.tar.gz
+tar zxvf udocker-1.3.6.tar.gz
+export PATH=`pwd`/udocker-1.3.6/udocker:$PATH
 ```
 
 Alternatively use `curl` instead of `wget` as follows:
 
 ```bash
-curl -L https://github.com/indigo-dc/udocker/releases/download/1.3.5/udocker-1.3.5.tar.gz \
-  > udocker-1.3.5.tar.gz
-tar zxvf udocker-1.3.5.tar.gz
-export PATH=`pwd`/udocker:$PATH
+curl -L https://github.com/indigo-dc/udocker/releases/download/1.3.6/udocker-1.3.6.tar.gz \
+  > udocker-1.3.6.tar.gz
+tar zxvf udocker-1.3.6.tar.gz
+export PATH=`pwd`/udocker-1.3.6/udocker:$PATH
 ```
 
 udocker executes containers using external tools and libraries that
@@ -66,10 +66,10 @@ git clone --depth=1 https://github.com/indigo-dc/udocker.git
 export PATH=`pwd`/udocker/udocker:$PATH
 ```
 
-Alternatively, install the latest development code from the github `devel3` branch:
+Alternatively, install the latest development code from the github `dev-v1.4` branch:
 
 ```bash
-git clone -b devel3 --depth=1 https://github.com/indigo-dc/udocker.git
+git clone -b dev-v1.4 --depth=1 https://github.com/indigo-dc/udocker.git
 (cd udocker/udocker; ln -s maincmd.py udocker)
 export PATH=`pwd`/udocker/udocker:$PATH
 ```
@@ -345,8 +345,8 @@ The udocker tool should be installed as shown in section 2.1:
 
 ```bash
 cd /sw
-wget https://github.com/indigo-dc/udocker/releases/download/1.3.5/udocker-1.3.5.tar.gz
-tar zxvf udocker-1.3.5.tar.gz
+wget https://github.com/indigo-dc/udocker/releases/download/1.3.6/udocker-1.3.6.tar.gz
+tar zxvf udocker-1.3.6.tar.gz
 ```
 
 Directing users to the central udocker installation can be done using the
@@ -637,4 +637,3 @@ Other tests configured in `tox.ini`, can be executed as well, such as linting
 pylint --rcfile=pylintrc --disable=R,C udocker
 bandit -r udocker -f html -o bandit.html
 ```
-

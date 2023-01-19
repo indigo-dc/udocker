@@ -5,20 +5,12 @@ udocker unit tests: FileUtil
 
 import os
 import sys
-
-new_path = []
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
-new_path.extend(sys.path)
-sys.path = new_path
-
-import sys
-import os
 from unittest import TestCase, main
 from unittest.mock import patch, mock_open
 from udocker.utils.fileutil import FileUtil
-from config import Config
+from udocker.config import Config
 import collections
+
 collections.Callable = collections.abc.Callable
 
 STDOUT = sys.stdout

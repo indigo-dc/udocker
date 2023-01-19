@@ -5,11 +5,11 @@ import os
 import sys
 import json
 
-from genstr import is_genstr
-from config import Config
-from msg import Msg
-from utils.fileutil import FileUtil
-from utils.uprocess import Uprocess
+from udocker.genstr import is_genstr
+from udocker.config import Config
+from udocker.msg import Msg
+from udocker.utils.fileutil import FileUtil
+from udocker.utils.uprocess import Uprocess
 
 try:
     import pycurl
@@ -98,11 +98,10 @@ class GetURL(object):
         if GetURLpyCurl().is_available() and not self._curl_exec:
             self._geturl = GetURLpyCurl()
             self.cache_support = True
-            Msg().out("Info: using pycurl", l=Msg.DBG)
+            Msg().out("Debug: using pycurl", l=Msg.DBG)
         elif GetURLexeCurl().is_available():
             self._geturl = GetURLexeCurl()
-            Msg().out("Info: using curl executable", self._geturl._curl_exec,
-                      l=Msg.DBG)
+            Msg().out("Debug: using curl executable", self._geturl._curl_exec, l=Msg.DBG)
         else:
             Msg().err("Error: need curl or pycurl to perform downloads")
             raise NameError('need curl or pycurl')
@@ -253,8 +252,8 @@ class GetURLpyCurl(GetURL):
         try:
             (output_file, filep) = \
                     self._mkpycurl(pyc, hdr, buf, *args, **kwargs)
-            Msg().out("curl url: ", self._url, l=Msg.DBG)
-            Msg().out("curl arg: ", kwargs, l=Msg.DBG)
+            Msg().out("Debug: curl url", self._url, l=Msg.DBG)
+            Msg().out("Debug: curl arg ", kwargs, l=Msg.DBG)
             pyc.perform()     # call pyculr
         except(IOError, OSError):
             return (None, None)
