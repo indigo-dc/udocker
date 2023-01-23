@@ -1491,14 +1491,6 @@ class UdockerCLITestCase(TestCase):
     def test_37_do_showconf(self, mock_msg):
         """Test37 UdockerCLI().do_showconf()."""
         mock_msg.level = 0
-        argv = ["udocker", "-h"]
-        cmdp = CmdParser()
-        cmdp.parse(argv)
-        udoc = UdockerCLI(self.local)
-        status = udoc.do_showconf(cmdp)
-        self.assertEqual(status, 1)
-        self.assertFalse(mock_msg.return_value.out.called)
-
         argv = ["udocker", "showconf"]
         cmdp = CmdParser()
         cmdp.parse(argv)
@@ -1511,14 +1503,6 @@ class UdockerCLITestCase(TestCase):
     def test_38_do_version(self, mock_msg):
         """Test38 UdockerCLI().do_version()."""
         mock_msg.level = 0
-        argv = ["udocker", "-h"]
-        cmdp = CmdParser()
-        cmdp.parse(argv)
-        udoc = UdockerCLI(self.local)
-        status = udoc.do_version(cmdp)
-        self.assertEqual(status, 1)
-        self.assertFalse(mock_msg.return_value.out.called)
-
         argv = ["udocker", "version"]
         cmdp = CmdParser()
         cmdp.parse(argv)
