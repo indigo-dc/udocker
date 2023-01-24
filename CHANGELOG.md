@@ -1,5 +1,9 @@
 # Changelog
 
+## udocker (1.3.7)
+
+* Remove deprecated unit tests. udocker is the same as version 1.3.6
+
 ## udocker (1.3.6)
 
 * re-implement udocker namespace solves #380
