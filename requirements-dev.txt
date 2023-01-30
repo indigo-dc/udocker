@@ -8,3 +8,5 @@ nose
 nosexcover
 mock
 bandit
+pytest
+pytest-mock
