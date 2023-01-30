@@ -5,8 +5,8 @@ coverage
 twine
 pylint
 nose
-nosexcover
 mock
 bandit
 pytest
 pytest-mock
+pytest-cov
