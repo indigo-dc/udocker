@@ -29,64 +29,74 @@ def test_01_parse_03():
     status = cmdp.parse(argv)
     assert status == False
 
-def test_02_missing_options():
-    """Test02 CmdParser().missing_options()."""
+def test_02_missing_options_01():
+    """Test02_01 CmdParser().missing_options() no options."""
     cmdp = CmdParser()
-    argv = ["udocker", "run", "--bindhome", "--hostauth", "--hostenv",
-            "-v", "/sys", "-v", "/proc", "-v", "/var/run", "-v", "/dev",
-            "--user=jorge", "--dri", "myfed", "firefox"]
+    argv = ["udocker"]
     cmdp.parse(argv)
     out = cmdp.missing_options()
-    self.assertIsInstance(out, list)
+    assert out == []
 
-# def test_03_missing_options(self):
-#     """Test03 CmdParser().missing_options()."""
-#     cmdp = CmdParser()
-#     argv = ["udocker", "run", "--bindhome", "--hostauth", "--hostenv",
-#             "-v", "/sys", "-v", "/proc", "-v", "/var/run", "-v", "/dev",
-#             "--user=jorge", "--dri", "myfed", "firefox"]
-#     cmdp.parse(argv)
-#     out = cmdp.missing_options()
-#     self.assertIsInstance(out, list)
+def test_02_missing_options_02():
+    """Test02_02 CmdParser().missing_options() -h."""
+    cmdp = CmdParser()
+    argv = ["udocker", "-h"]
+    cmdp.parse(argv)
+    out = cmdp.missing_options()
+    assert out == ["-h"]
 
-# def test_04_get(self):
-#     """Test04 CmdParser().get()."""
-#     argv = ["udocker", "--debug", "run", "--bindhome", "--hostauth",
-#             "--hostenv", "-v", "/sys", "-v", "/proc", "-v",
-#             "/var/run", "-v", "/dev", "--user=jorge", "--dri",
-#             "myfed", "firefox"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     out = cmdp.get("xyz")
-#     self.assertIsNone(out)
+def test_02_missing_options_03():
+    """Test02_03 CmdParser().missing_options() -h ans cmd options."""
+    cmdp = CmdParser()
+    argv = ["udocker", "-h", "import", "centos"]
+    cmdp.parse(argv)
+    out = cmdp.missing_options()
+    assert out == ["-h", "centos"]
 
-#     argv = ["udocker", "--debug", "run", "--bindhome",
-#             "-v", "/sys", "--user=jorge", "--dri", "myfed", "firefox"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     out = cmdp.get("--debug", "GEN_OPT", True)
-#     self.assertTrue(out)
-#     out = cmdp.get("", "CMD", True)
-#     self.assertTrue(out, "run")
-#     out = cmdp.get("--bindhome", "CMD_OPT", True)
-#     self.assertEqual(out, [True])
+def test_03_get_01():
+    """Test03_01 CmdParser().get() gen option exist."""
+    argv = ["udocker", "-D"]
+    cmdp = CmdParser()
+    cmdp.parse(argv)
+    out = cmdp.get("-D", "GEN_OPT")
+    assert out == True
 
-#     argv = ["udocker", "export", "-o", "cont.tar", "12345"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     out = cmdp.get("", "CMD", True)
-#     cmdp.get("-o")
-#     tarfile = cmdp.get("P1")
-#     container_id = cmdp.get("P2")
-#     self.assertTrue(out, "export")
-#     self.assertTrue(tarfile, "cont.tar")
-#     self.assertTrue(container_id, "12345")
+def test_03_get_02():
+    """Test03_02 CmdParser().get() gen option non exist."""
+    argv = ["udocker", "-h"]
+    cmdp = CmdParser()
+    cmdp.parse(argv)
+    out = cmdp.get("-D", "GEN_OPT")
+    assert out == False
 
-# def test_05_declare_options(self):
-#     """Test05 CmdParser().declare_options()."""
+def test_03_get_03():
+    """Test03_03 CmdParser().get() multi gen option exist."""
+    argv = ["udocker", "-D", "-h"]
+    cmdp = CmdParser()
+    cmdp.parse(argv)
+    out = cmdp.get("-h", "GEN_OPT", True)
+    assert out == [True]
 
-# def test_06__get_option(self):
-#     """Test06 CmdParser()._get_option()."""
+def test_03_get_04():
+    """Test03_04 CmdParser().get() command."""
+    argv = ["udocker", "run"]
+    cmdp = CmdParser()
+    cmdp.parse(argv)
+    out = cmdp.get("", "CMD")
+    assert out == "run"
 
-# def test_07__get_param(self):
-#     """Test07 CmdParser()._get_param()."""
+def test_03_get_05():
+    """Test03_05 CmdParser().get() command with options."""
+    argv = ["udocker", "run", "cont"]
+    cmdp = CmdParser()
+    cmdp.parse(argv)
+    out = cmdp.get("P1", "CMD_OPT")
+    assert out == "cont"
+
+def test_03_get_06():
+    """Test03_06 CmdParser().get() none."""
+    argv = ["udocker", "run", "cont"]
+    cmdp = CmdParser()
+    cmdp.parse(argv)
+    out = cmdp.get("", "GEN_OPT")
+    assert out == None
