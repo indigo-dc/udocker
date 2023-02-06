@@ -7,7 +7,10 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
-addopts = "-ra --cov-report term --cov=udocker"
+addopts = "-ra --cov-report term --cov"
 testpaths = [
     "test/units",
 ]
+
+[tool.coverage.run]
+source = ["udocker"]
