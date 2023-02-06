@@ -1,5 +1,9 @@
+[project]
+name = "udocker"
+version = "attr: udocker.__version__"
+
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]

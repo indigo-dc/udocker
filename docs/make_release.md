@@ -5,6 +5,8 @@
 * build python binary dist to upload to test pypi:
 
 ```bash
+python -m build --wheel .
+
 python setup.py sdist bdist_wheel
 twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 ```
