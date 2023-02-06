@@ -3,7 +3,7 @@
 udocker unit tests: Uvolume
 """
 import pytest
-from udocker.utils.uvolume import Uvolume, LOG
+from udocker.utils.uvolume import Uvolume
 
 
 def test_01_cleanpath_01():

@@ -3,7 +3,7 @@
 udocker unit tests: Unique
 """
 import pytest
-from udocker.helper.unique import Unique, LOG
+from udocker.helper.unique import Unique
 
 
 def test_01_uuid_01():
