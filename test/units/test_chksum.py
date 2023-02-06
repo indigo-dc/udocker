@@ -2,7 +2,7 @@
 """
 udocker unit tests: ChkSUM
 """
-import pytest
+from unittest.mock import patch, mock_open
 from udocker.utils.chksum import ChkSUM
 
 
@@ -10,7 +10,7 @@ def test_01_hash256(mocker):
     """Test01 ChkSUM().hash sha256."""
     mocked_file_data = mocker.mock_open(read_data=b'qwertyui\n')
     mocker.patch("builtins.open", mocked_file_data)
-    sha256sum = ("42e6d97f00bff046ae2dea5c6db56d866ae749fb7dc05319e08e5fbee31d851c")
+    sha256sum = "42e6d97f00bff046ae2dea5c6db56d866ae749fb7dc05319e08e5fbee31d851c"
     cksum = ChkSUM()
     ret_function = cksum.hash(mocked_file_data, "sha256")
     assert ret_function == sha256sum
@@ -24,3 +24,11 @@ def test_02_hash512(mocker):
     cksum = ChkSUM()
     ret_function = cksum.hash(mocked_file_data, "sha512")
     assert ret_function == sha512sum
+
+def test_03_hash256_nofile():
+    """Test03 ChkSUM().hash sha256 no file."""
+    with patch("builtins.open", mock_open()) as mock_file:
+        mock_file.side_effect = OSError()
+        cksum = ChkSUM()
+        ret_function = cksum.hash("some_file", "sha256")
+        assert ret_function == ""
