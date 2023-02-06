@@ -4,7 +4,6 @@
 """
 udocker unit tests: CmdParser
 """
-import pytest
 from udocker.cmdparser import CmdParser
 
 
@@ -46,7 +45,7 @@ def test_02_missing_options_02():
     assert out == ["-h"]
 
 def test_02_missing_options_03():
-    """Test02_03 CmdParser().missing_options() -h ans cmd options."""
+    """Test02_03 CmdParser().missing_options() -h and cmd options."""
     cmdp = CmdParser()
     argv = ["udocker", "-h", "import", "centos"]
     cmdp.parse(argv)
