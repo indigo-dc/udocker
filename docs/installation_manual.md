@@ -633,7 +633,7 @@ nosetests -v --with-coverage --cover-package=udocker tests/unit
 We are now supporting unit tests with pytest, you can run as follows:
 
 ```bash
-pytest --cov-report term --cov=udocker tests/unit2
+pytest --cov-report term --cov=udocker test/units
 ```
 
 Other tests configured in `tox.ini`, can be executed as well, such as linting
