@@ -8,9 +8,9 @@ from udocker.helper.unshare import Unshare, LOG
 
 def test_01_unshare(mocker):
     """Test01 Unshare().unshare"""
-    mocker.patch('udocker.helper.unshare.ctypes.CDLL')
+    mock_cdll = mocker.patch('ctypes.CDLL')
     status = Unshare().unshare(False)
-    ctypes.CDLL.assert_called()
+    mock_cdll.assert_called_with("libc.so.6")
     assert status == True
 
     # mock_cdll.return_value.unshare.return_value = -1

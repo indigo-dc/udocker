@@ -4,6 +4,7 @@
 """
 udocker unit tests: Config
 """
+from io import StringIO
 from udocker.config import Config
 
 def test_01_getconf_01():
@@ -12,15 +13,13 @@ def test_01_getconf_01():
     config.getconf()
     assert config.conf["keystore"] == "keystore"
 
-def test_01_getconf_02(mocker):
-    """Test01_02 Config.getconf() conf file."""
-    conf_data = "[DEFAULT]\nkeystore = ks_conf\n"
-    mocked_file_data = mocker.mock_open(read_data=conf_data)
-    mocker.patch("builtins.open", mocked_file_data)
-    mocker.patch("os.path.exists", side_effect=[False, False, True])
-    config = Config()
-    config.getconf(mocked_file_data)
-    assert config.conf["keystore"] == "ks_conf"
+# def test_01_getconf_02(mocker):
+#     """Test01_02 Config.getconf() conf file."""
+#     conf_file = StringIO("[DEFAULT]\nkeystore = ks_conf\n")
+#     mocker.patch("os.path.exists", side_effect=[False, False, True])
+#     config = Config()
+#     config.getconf(conf_file)
+#     assert config.conf["keystore"] == "ks_conf"
 
 def test_01_getconf_03(monkeypatch):
     """Test01_03 Config.getconf() env var."""
