@@ -13,6 +13,7 @@ def test_01_cleanpath():
     result = uvol.cleanpath(path)
     assert result == path
 
+
 def test_02_cleanpath():
     """Test02 Uvolume().cleanpath() with duplicate /."""
     path = '//bin//ls'
@@ -22,12 +23,14 @@ def test_02_cleanpath():
     result = uvol.cleanpath(path)
     assert result == path_clean
 
+
 def test_03_split():
     """Test03 Uvolume().split()."""
     volm = '/data:/contdata'
     uvol = Uvolume(volm)
     result = uvol.split()
     assert result == ('/data', '/contdata')
+
 
 def test_04_split():
     """Test04 Uvolume().split()."""

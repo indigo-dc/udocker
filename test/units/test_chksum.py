@@ -15,6 +15,7 @@ def test_01_hash256(mocker):
     ret_function = cksum.hash(mocked_file_data, "sha256")
     assert ret_function == sha256sum
 
+
 def test_02_hash512(mocker):
     """Test02 ChkSUM().hash sha512."""
     mocked_file_data = mocker.mock_open(read_data=b'qwertyui\n')
@@ -24,6 +25,7 @@ def test_02_hash512(mocker):
     cksum = ChkSUM()
     ret_function = cksum.hash(mocked_file_data, "sha512")
     assert ret_function == sha512sum
+
 
 def test_03_hash256_nofile():
     """Test03 ChkSUM().hash sha256 no file."""
