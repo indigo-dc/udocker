@@ -7,8 +7,8 @@ udocker unit tests: Config
 from io import StringIO
 from udocker.config import Config
 
-def test_01_getconf_01():
-    """Test01_01 Config.getconf() default conf."""
+def test_01_getconf():
+    """Test01 Config.getconf() default conf."""
     config = Config()
     config.getconf()
     assert config.conf["keystore"] == "keystore"
@@ -21,8 +21,8 @@ def test_01_getconf_01():
 #     config.getconf(conf_file)
 #     assert config.conf["keystore"] == "ks_conf"
 
-def test_01_getconf_03(monkeypatch):
-    """Test01_03 Config.getconf() env var."""
+def test_03_getconf(monkeypatch):
+    """Test03 Config.getconf() env var."""
     monkeypatch.setenv("UDOCKER_KEYSTORE", "ks_env")
     config = Config()
     config.getconf()
