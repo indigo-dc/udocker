@@ -2,7 +2,6 @@
 """
 udocker unit tests: Uvolume
 """
-import pytest
 from udocker.utils.uvolume import Uvolume
 
 

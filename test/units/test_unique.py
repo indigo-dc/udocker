@@ -2,7 +2,6 @@
 """
 udocker unit tests: Unique
 """
-import pytest
 from udocker.helper.unique import Unique
 
 
