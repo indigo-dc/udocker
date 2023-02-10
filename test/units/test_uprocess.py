@@ -3,6 +3,7 @@
 udocker unit tests: Uprocess
 """
 import logging
+import subprocess
 from udocker.utils.uprocess import Uprocess, LOG
 from udocker.config import Config
 
@@ -94,27 +95,51 @@ def test_08_get_output(mocker):
     mock_findinpath = mocker.patch.object(Uprocess, 'find_inpath', return_value='/usr/bin/ls')
     mock_chkout = mocker.patch.object(Uprocess, 'check_output', return_value='OUTPUT')
 
-    status = Uprocess().check_output('/usr/bin/ls')
+    status = Uprocess().get_output(['ls', '-a'])
     assert status == "OUTPUT"
-    mock_getenv.assert_not_called()
-    mock_findinpath.assert_not_called()
+    mock_getenv.assert_called()
+    mock_findinpath.assert_called()
     mock_chkout.assert_called()
 
 
+def test_09_get_output(mocker):
+    """Test09 Uprocess().get_output() raise error."""
+    mock_getenv = mocker.patch('os.getenv', return_value='/usr/bin')
+    mock_findinpath = mocker.patch.object(Uprocess, 'find_inpath', return_value='/usr/bin/ls')
+    mock_chkout = mocker.patch.object(Uprocess, 'check_output',
+                                      side_effect=subprocess.CalledProcessError(1, "CMD"))
+
+    status = Uprocess().get_output(['ls', '-a'])
+    assert status is None
+    mock_getenv.assert_called()
+    mock_findinpath.assert_called()
+    mock_chkout.assert_called()
 
 
-    # @patch.object(Uprocess, 'find_inpath')
-    # @patch('udocker.utils.uprocess.subprocess.call')
-    # def test_05_call(self, mock_subcall, mock_find):
-    #     """Test05 Uprocess().call()."""
-    #     mock_find.return_value = '/bin/ls'
-    #     mock_subcall.return_value = 0
-    #     uproc = Uprocess()
-    #     status = uproc.call('/bin/ls')
-    #     self.assertEqual(status, 0)
+def test_10_call(mocker):
+    """Test10 Uprocess().call()."""
+    mock_getenv = mocker.patch('os.getenv', return_value='/usr/bin')
+    mock_findinpath = mocker.patch.object(Uprocess, 'find_inpath', return_value='/usr/bin/ls')
+    mock_subcall = mocker.patch('subprocess.call', return_value='OUTPUT')
 
-    # # @patch.object(Uprocess, 'find_inpath')
-    # # @patch('udocker.utils.uprocess.subprocess.Popen')
-    # # def test_06_pipe(self, mock_popen, mock_find):
-    # #     """Test06 Uprocess().pipe()."""
-    # #     mock_find.side_effect = ["/bin/ls", "/usr/bin/grep"]
+    status = Uprocess().call(['ls', '-a'])
+    assert status == "OUTPUT"
+    mock_getenv.assert_called()
+    mock_findinpath.assert_called()
+    mock_subcall.assert_called()
+
+
+# def test_11_pipe(mocker):
+#     """Test11 Uprocess().pipe()."""
+#     mock_getenv = mocker.patch('os.getenv', return_value='/usr/bin')
+#     mock_findinpath = mocker.patch.object(Uprocess, 'find_inpath',
+#                                           side_effect=['/usr/bin/ls', '/usr/bin/grep'])
+#     mock_subpopen = mocker.patch('subprocess.Popen', side_effect=[None, None])
+#     mock_subret = mocker.patch('subprocess.Popen.returncode', side_effect=[True, True])
+
+#     status = Uprocess().pipe(['ls', '-a'], ['grep', '-r'])
+#     assert status
+#     mock_getenv.assert_called()
+#     assert mock_findinpath.call_count == 2
+#     assert mock_subpopen.call_count == 2
+#     assert mock_subret.call_count == 2
