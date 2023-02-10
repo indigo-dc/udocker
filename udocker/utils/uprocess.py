@@ -18,6 +18,7 @@ class Uprocess:
         # TODO: (mdavid) refactor stderror changes type
         stderror = subprocess.DEVNULL
         if Config.conf['verbose_level'] == logging.DEBUG:
+            LOG.debug("sys.stderr, loglevel: %s", Config.conf['verbose_level'])
             stderror = sys.stderr
 
         return stderror
@@ -39,25 +40,12 @@ class Uprocess:
             for directory in path:
                 full_path = rootdir + directory + "/" + basename
                 if os.path.lexists(full_path):
+                    LOG.debug("file found: %s", full_path)
                     return directory + "/" + basename
 
             return ""
 
         return ""
-
-    def _check_output(self, *popenargs, **kwargs):
-        """Alternative to subprocess.check_output"""
-        process = subprocess.Popen(*popenargs, stdout=subprocess.PIPE, **kwargs)
-        output, dummy = process.communicate()
-        retcode = process.poll()
-        if retcode:
-            cmd = kwargs.get("args")
-            if cmd is None:
-                cmd = popenargs[0]
-
-            raise subprocess.CalledProcessError(retcode, cmd)
-
-        return output
 
     def check_output(self, *popenargs, **kwargs):
         """Select check_output implementation"""
