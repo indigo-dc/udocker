@@ -23,114 +23,88 @@ def test_01__prepare_exec(mocker):
         mock_logerr.assert_called()
 
 
-def test_02__prepare_exec(mocker):
-    """Test02 UMain()._prepare_exec() userid=2000."""
-    argv = ["udocker", "-h"]
+# def test_02__prepare_exec(mocker):
+#     """Test02 UMain()._prepare_exec() userid=2000."""
+#     argv = ["udocker", "-h"]
+#     Config().getconf()
+#     mock_cmdp = mocker.patch('udocker.umain.CmdParser')
+#     mock_getuid = mocker.patch('os.geteuid', return_value=2000)
+#     with patch('sys.exit') as mock_exit:
+#         umain = UMain(argv)
+#         umain._prepare_exec()
+#         mock_exit.assert_called()
+#         mock_cmdp.assert_called()
+#         mock_getuid.assert_called()
+
+
+def test_03_execute(mocker):
+    """Test03 UMain().execute() help."""
     Config().getconf()
-    mock_cmdp = mocker.patch('udocker.umain.CmdParser')
-    mock_getuid = mocker.patch('os.geteuid', return_value=2000)
-    with patch('sys.exit') as mock_exit:
-        umain = UMain(argv)
-        umain._prepare_exec()
-        mock_exit.assert_called()
-        mock_cmdp.assert_called()
-        mock_getuid.assert_called()
+    argv = ['udocker', '--allow-root', '-h']
+    mock_lrepo = mocker.patch('udocker.umain.LocalRepository')
+    mock_ucli = mocker.patch('udocker.umain.UdockerCLI')
+    mock_lrepo.return_value.is_repo.return_value = True
+    mock_ucli.return_value.do_help.return_value = 0
+
+    umain = UMain(argv)
+    status = umain.execute()
+    assert status == 0
+    mock_ucli.assert_called()
+    mock_lrepo.return_value.is_repo.assert_called()
+    mock_ucli.return_value.do_help.assert_called()
 
 
-    # mock_lrepo = mocker.patch('udocker.umain.LocalRepository')
-    # mock_ucli = mocker.patch('udocker.umain.UdockerCLI')
+def test_04_execute(mocker):
+    """Test04 UMain().execute() version."""
+    Config().getconf()
+    argv = ['udocker', '--allow-root', '--version']
+    mock_lrepo = mocker.patch('udocker.umain.LocalRepository')
+    mock_ucli = mocker.patch('udocker.umain.UdockerCLI')
+    mock_lrepo.return_value.is_repo.return_value = True
+    mock_ucli.return_value.do_version.return_value = 0
 
-    # def setUp(self):
-    #     LOG.setLevel(100)
-    #     Config().getconf()
+    umain = UMain(argv)
+    status = umain.execute()
+    assert status == 0
+    mock_ucli.assert_called()
+    mock_lrepo.return_value.is_repo.assert_called()
+    mock_ucli.return_value.do_version.assert_called()
 
 
-    # def test_01_init(self):
-    #     """Test01 UMain(argv) constructor."""
-    #     argv = ["udocker", "-h"]
-    #     udoc = UMain(argv)
-    #     self.assertEqual(udoc.argv, argv)
+def test_05_execute(mocker):
+    """Test05 UMain().execute() version with error."""
+    Config().getconf()
+    argv = ['udocker', '--allow-root', '--config=udocker.conf']
+    mock_lrepo = mocker.patch('udocker.umain.LocalRepository')
+    mock_ucli = mocker.patch('udocker.umain.UdockerCLI')
+    mock_lrepo.return_value.is_repo.return_value = True
+    mock_ucli.return_value.do_version.return_value = 0
 
-    # @patch('udocker.umain.UdockerCLI')
-    # @patch('udocker.umain.LocalRepository')
-    # @patch('udocker.umain.os.geteuid')
-    # def test_02__prepare_exec(self, mock_getuid, mock_local, mock_ucli):
-    #     """Test02 UMain()._prepare_exec()."""
-    #     argv = ["udocker", "-h"]
-    #     mock_getuid.return_value = 0
-    #     with patch('sys.exit') as mock_exit:
-    #         umain = UMain(argv)
-    #         umain._prepare_exec()
-    #         self.assertTrue(mock_exit.called)
+    umain = UMain(argv)
+    status = umain.execute()
+    assert status == 1
+    mock_ucli.assert_called()
+    mock_lrepo.return_value.is_repo.assert_called()
+    mock_ucli.return_value.do_version.assert_called()
 
-    #     argv = ["udocker", "--repo=ud"]
-    #     mock_getuid.return_value = 1000
-    #     mock_local.return_value.is_repo.return_value = False
-    #     mock_local.return_value.create_repo.return_value = None
-    #     with patch('sys.exit') as mock_exit:
-    #         umain = UMain(argv)
-    #         umain._prepare_exec()
-    #         self.assertTrue(mock_exit.called)
 
-    #     argv = ["udocker", "-h", "--debug", "--insecure"]
-    #     mock_getuid.return_value = 100
-    #     mock_local.return_value.is_repo.return_value = True
-    #     mock_local.return_value.create_repo.return_value = None
-    #     mock_ucli.return_value = None
-    #     umain = UMain(argv)
-    #     umain._prepare_exec()
-    #     self.assertTrue(mock_getuid.called)
-    #     self.assertTrue(mock_local.return_value.is_repo.called)
-    #     self.assertTrue(mock_ucli.called)
+def test_06_execute(mocker):
+    """Test06 UMain().execute() version."""
+    Config().getconf()
+    argv = ['udocker', '--allow-root', 'install']
+    mock_lrepo = mocker.patch('udocker.umain.LocalRepository')
+    mock_ucli = mocker.patch('udocker.umain.UdockerCLI')
+    mock_lrepo.return_value.is_repo.return_value = True
+    mock_ucli.return_value.do_install.return_value = 0
 
-    # @patch('udocker.umain.LocalRepository')
-    # @patch('udocker.umain.UdockerCLI')
-    # def test_03_execute(self, mock_ucli, mock_local):
-    #     """Test03 UMain().execute()."""
-    #     argv = ['udocker', '--allow-root', '-h']
-    #     mock_local.return_value.is_repo.return_value = True
-    #     mock_local.return_value.create_repo.return_value = None
-    #     mock_ucli.return_value.do_help.return_value = 0
-    #     umain = UMain(argv)
-    #     status = umain.execute()
-    #     self.assertTrue(mock_ucli.return_value.do_help.called)
-    #     self.assertEqual(status, 0)
+    umain = UMain(argv)
+    status = umain.execute()
+    assert status == 0
+    mock_ucli.assert_called()
+    mock_lrepo.return_value.is_repo.assert_called()
+    mock_ucli.return_value.do_install.assert_called()
 
-    #     argv = ['udocker', '--allow-root', '--version']
-    #     mock_local.return_value.is_repo.return_value = True
-    #     mock_local.return_value.create_repo.return_value = None
-    #     mock_ucli.return_value.do_version.return_value = 0
-    #     umain = UMain(argv)
-    #     status = umain.execute()
-    #     self.assertTrue(mock_ucli.return_value.do_version.called)
-    #     self.assertEqual(status, 0)
 
-    #     argv = ['udocker', '--allow-root', '--config=udocker.conf']
-    #     mock_local.return_value.is_repo.return_value = True
-    #     mock_local.return_value.create_repo.return_value = None
-    #     mock_ucli.return_value.do_version.return_value = 0
-    #     umain = UMain(argv)
-    #     status = umain.execute()
-    #     self.assertTrue(mock_ucli.return_value.do_version.called)
-    #     self.assertEqual(status, 1)
-
-    #     argv = ['udocker', '--allow-root', 'install']
-    #     mock_local.return_value.is_repo.return_value = True
-    #     mock_local.return_value.create_repo.return_value = None
-    #     mock_ucli.return_value.do_install.return_value = 0
-    #     umain = UMain(argv)
-    #     status = umain.execute()
-    #     self.assertTrue(mock_ucli.return_value.do_install.called)
-    #     self.assertEqual(status, 0)
-
-    #     argv = ['udocker', '--allow-root', '-q', 'install']
-    #     mock_local.return_value.is_repo.return_value = True
-    #     mock_local.return_value.create_repo.return_value = None
-    #     mock_ucli.return_value.do_install.return_value = 0
-    #     umain = UMain(argv)
-    #     status = umain.execute()
-    #     self.assertTrue(mock_ucli.return_value.do_install.called)
-    #     self.assertEqual(status, 0)
 
     #     argv = ['udocker', '--allow-root', 'showconf']
     #     mock_local.return_value.is_repo.return_value = True
