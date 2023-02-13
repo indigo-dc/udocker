@@ -2,39 +2,27 @@
 """
 udocker unit tests: Uvolume
 """
+import pytest
 from udocker.utils.uvolume import Uvolume
 
 
-def test_01_cleanpath():
-    """Test01 Uvolume().cleanpath() no duplicate /."""
-    path = '/bin/ls'
-    volm = '/data'
-    uvol = Uvolume(volm)
-    result = uvol.cleanpath(path)
-    assert result == path
+data_cleanp = [('/bin/ls', '/bin/ls', '/data'),
+               ('//bin//ls', '/bin/ls', '/data')]
 
 
-def test_02_cleanpath():
-    """Test02 Uvolume().cleanpath() with duplicate /."""
-    path = '//bin//ls'
-    path_clean = '/bin/ls'
-    volm = '/data'
-    uvol = Uvolume(volm)
-    result = uvol.cleanpath(path)
+@pytest.mark.parametrize("path,path_clean,volm", data_cleanp)
+def test_01_cleanpath(path, path_clean, volm):
+    """Test01 Uvolume().cleanpath()."""
+    result = Uvolume(volm).cleanpath(path)
     assert result == path_clean
 
 
-def test_03_split():
-    """Test03 Uvolume().split()."""
-    volm = '/data:/contdata'
-    uvol = Uvolume(volm)
-    result = uvol.split()
-    assert result == ('/data', '/contdata')
+data_split = [('/data:/contdata', ('/data', '/contdata')),
+              ('/data', ('/data', '/data'))]
 
 
-def test_04_split():
-    """Test04 Uvolume().split()."""
-    volm = '/data'
-    uvol = Uvolume(volm)
-    result = uvol.split()
-    assert result == ('/data', '/data')
+@pytest.mark.parametrize("volm,expected", data_split)
+def test_02_split(volm, expected):
+    """Test02 Uvolume().split()."""
+    result = Uvolume(volm).split()
+    assert result == expected
