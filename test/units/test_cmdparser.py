@@ -4,109 +4,54 @@
 """
 udocker unit tests: CmdParser
 """
+import pytest
 from udocker.cmdparser import CmdParser
 
 
-def test_01_parse():
-    """Test01_01 CmdParser().parse() no cmd."""
-    cmdp = CmdParser()
-    argv = ["udocker"]
+@pytest.fixture
+def cmdp():
+    return CmdParser()
+
+
+data_parse = [(["udocker"], False),
+              (["udocker", "run"], True),
+              (["udocker", "-h"], False)]
+
+
+@pytest.mark.parametrize("argv,expected", data_parse)
+def test_01_parse(cmdp, argv, expected):
+    """Test01_01 CmdParser().parse()."""
     status = cmdp.parse(argv)
-    assert not status
+    assert status == expected
 
 
-def test_02_parse():
-    """Test02 CmdParser().parse() with cmd."""
-    cmdp = CmdParser()
-    argv = ["udocker", "run"]
-    status = cmdp.parse(argv)
-    assert status
+data_missopt = [(["udocker"], []),
+                (["udocker", "-h"], ["-h"]),
+                (["udocker", "-h", "import", "centos"], ["-h", "centos"])]
 
 
-def test_03_parse():
-    """Test03 CmdParser().parse() with gen options."""
-    cmdp = CmdParser()
-    argv = ["udocker", "-h"]
-    status = cmdp.parse(argv)
-    assert not status
-
-
-def test_04_missing_options():
-    """Test04 CmdParser().missing_options() no options."""
-    cmdp = CmdParser()
-    argv = ["udocker"]
+@pytest.mark.parametrize("argv,expected", data_missopt)
+def test_04_missing_options(cmdp, argv, expected):
+    """Test04 CmdParser().missing_options()."""
     cmdp.parse(argv)
     out = cmdp.missing_options()
-    assert out == []
+    assert out == expected
 
 
-def test_05_missing_options():
-    """Test05 CmdParser().missing_options() -h."""
-    cmdp = CmdParser()
-    argv = ["udocker", "-h"]
-    cmdp.parse(argv)
-    out = cmdp.missing_options()
-    assert out == ["-h"]
+# Param is    argv                       p1     p2        p3     expected
+data_get = [(["udocker", "-D"],          "-D", "GEN_OPT", False, True),
+            (["udocker", "-h"],          "-D", "GEN_OPT", False, False),
+            (["udocker", "-D", "-h"],    "-h", "GEN_OPT", True,  [True]),
+            (["udocker", "run"],         "",   "CMD",     False, "run"),
+            (["udocker", "run", "cont"], "P1", "CMD_OPT", False, "cont"),
+            (["udocker", "run", "cont"], "",   "GEN_OPT", False, None)
+            ]
 
 
-def test_06_missing_options():
-    """Test06 CmdParser().missing_options() -h and cmd options."""
-    cmdp = CmdParser()
-    argv = ["udocker", "-h", "import", "centos"]
-    cmdp.parse(argv)
-    out = cmdp.missing_options()
-    assert out == ["-h", "centos"]
 
-
-def test_07_get():
+@pytest.mark.parametrize("argv,p1,p2,p3,expected", data_get)
+def test_07_get(cmdp, argv, p1, p2, p3, expected):
     """Test07 CmdParser().get() gen option exist."""
-    argv = ["udocker", "-D"]
-    cmdp = CmdParser()
     cmdp.parse(argv)
-    out = cmdp.get("-D", "GEN_OPT")
-    assert out
-
-
-def test_08_get():
-    """Test08 CmdParser().get() gen option non exist."""
-    argv = ["udocker", "-h"]
-    cmdp = CmdParser()
-    cmdp.parse(argv)
-    out = cmdp.get("-D", "GEN_OPT")
-    assert not out
-
-
-def test_09_get():
-    """Test09 CmdParser().get() multi gen option exist."""
-    argv = ["udocker", "-D", "-h"]
-    cmdp = CmdParser()
-    cmdp.parse(argv)
-    out = cmdp.get("-h", "GEN_OPT", True)
-    assert out == [True]
-
-
-def test_10_get():
-    """Test10 CmdParser().get() command."""
-    argv = ["udocker", "run"]
-    cmdp = CmdParser()
-    cmdp.parse(argv)
-    out = cmdp.get("", "CMD")
-    assert out == "run"
-
-
-def test_11_get():
-    """Test11 CmdParser().get() command with options."""
-    argv = ["udocker", "run", "cont"]
-    cmdp = CmdParser()
-    cmdp.parse(argv)
-    out = cmdp.get("P1", "CMD_OPT")
-    assert out == "cont"
-
-
-def test_12_get():
-    """Test12 CmdParser().get() none."""
-    argv = ["udocker", "run", "cont"]
-    cmdp = CmdParser()
-    cmdp.parse(argv)
-    out = cmdp.get("", "GEN_OPT")
-    assert out is None
+    out = cmdp.get(p1, p2, p3)
+    assert out == expected
