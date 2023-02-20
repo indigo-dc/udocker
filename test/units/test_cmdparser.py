@@ -9,7 +9,7 @@ from udocker.cmdparser import CmdParser
 
 
 @pytest.fixture
-def cmdp():
+def cmdparse():
     return CmdParser()
 
 
@@ -19,9 +19,9 @@ data_parse = [(["udocker"], False),
 
 
 @pytest.mark.parametrize("argv,expected", data_parse)
-def test_01_parse(cmdp, argv, expected):
+def test_01_parse(cmdparse, argv, expected):
     """Test01_01 CmdParser().parse()."""
-    status = cmdp.parse(argv)
+    status = cmdparse.parse(argv)
     assert status == expected
 
 
@@ -31,10 +31,10 @@ data_missopt = [(["udocker"], []),
 
 
 @pytest.mark.parametrize("argv,expected", data_missopt)
-def test_04_missing_options(cmdp, argv, expected):
+def test_04_missing_options(cmdparse, argv, expected):
     """Test04 CmdParser().missing_options()."""
-    cmdp.parse(argv)
-    out = cmdp.missing_options()
+    cmdparse.parse(argv)
+    out = cmdparse.missing_options()
     assert out == expected
 
 
@@ -50,8 +50,8 @@ data_get = [(["udocker", "-D"],          "-D", "GEN_OPT", False, True),
 
 
 @pytest.mark.parametrize("argv,p1,p2,p3,expected", data_get)
-def test_07_get(cmdp, argv, p1, p2, p3, expected):
+def test_07_get(cmdparse, argv, p1, p2, p3, expected):
     """Test07 CmdParser().get() gen option exist."""
-    cmdp.parse(argv)
-    out = cmdp.get(p1, p2, p3)
+    cmdparse.parse(argv)
+    out = cmdparse.get(p1, p2, p3)
     assert out == expected
