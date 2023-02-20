@@ -48,8 +48,6 @@ class UenvIterator:
 
         raise StopIteration
 
-    next = __next__  # Python 2
-
 
 class Uenv:
     """Class to store environment variables"""

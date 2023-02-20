@@ -71,52 +71,50 @@ data_get = [(['HOME=/h/u1'], 'HOME', '/h/u1'),
             (['HOME=/h/u1'], 'dummy', '')]
 
 @pytest.mark.parametrize("envl,keystr,expected", data_get)
-def test_09_getenv(envl, keystr, expected):
-    """Test09 Uenv().getenv"""
+def test_07_getenv(envl, keystr, expected):
+    """Test07 Uenv().getenv"""
     result = Uenv(envl).getenv(keystr)
     assert result == expected
 
 
-# def test_10_setenv(self):
-#     """Test10 Uenv().setenv"""
-#     envt = 'HOME=/home/user'
-#     result = {'HOME': '/home/user',
-#                 'LANG': 'en_US.UTF-8'}
-#     uenv = Uenv(envt)
-#     uenv.setenv('LANG', 'en_US.UTF-8')
-#     self.assertEqual(uenv.env, result)
+data_set = [(['LANG=en_US'], 'HOME', '/h/u1', {'HOME': '/h/u1', 'LANG': 'en_US'})]
 
-# def test_11_unsetenv(self):
-#     """Test11 Uenv().unsetenv"""
-#     envt = 'HOME=/home/user'
-#     result = {'HOME': '/home/user'}
-#     uenv = Uenv(envt)
-#     uenv.setenv('LANG', 'en_US.UTF-8')
+@pytest.mark.parametrize("envl,key,value,expected", data_set)
+def test_08_setenv(envl, key, value, expected):
+    """Test08 Uenv().setenv"""
+    uenv = Uenv(envl).setenv(key, value)
+    assert uenv.env == expected
 
-#     uenv.unsetenv('LANG')
-#     self.assertEqual(uenv.env, result)
 
-# def test_12_list(self):
-#     """Test12 Uenv().list"""
-#     envt = 'HOME=/home/user'
-#     result = ['LANG=en_US.UTF-8', envt]
-#     uenv = Uenv(envt)
-#     uenv.setenv('LANG', 'en_US.UTF-8')
-#     self.assertEqual(uenv.list().sort(), result.sort())
+data_unset = [(['LANG=en_US', 'HOME=/h/u1'], 'HOME', True),
+              (['LANG=en_US', 'HOME=/h/u1'], 'dummy', False)]
 
-# def test_13_dict(self):
-#     """Test13 Uenv().dict"""
-#     envt = 'HOME=/home/user'
-#     result = {'HOME': '/home/user',
-#                 'LANG': 'en_US.UTF-8'}
-#     uenv = Uenv(envt)
-#     uenv.setenv('LANG', 'en_US.UTF-8')
-#     self.assertEqual(uenv.dict(), result)
+@pytest.mark.parametrize("envl,key,expected", data_unset)
+def test_09_unsetenv(envl, key, expected):
+    """Test09 Uenv().unsetenv"""
+    out = Uenv(envl).unsetenv(key)
+    assert out == expected
 
-# def test_14_keys(self):
-#     """Test14 Uenv().keys"""
-#     envt = 'HOME=/home/user'
-#     result = {'HOME': None, 'LANG': None}
-#     uenv = Uenv(envt)
-#     uenv.setenv('LANG', 'en_US.UTF-8')
-#     self.assertEqual(uenv.keys(), result.keys())
+
+def test_10_list():
+    """Test10 Uenv().list"""
+    envl = ['LANG=en_US', 'HOME=/h/u1']
+    result = ['LANG=en_US', 'HOME=/h/u1']
+    out = Uenv(envl).list()
+    assert out == result
+
+
+def test_11_dict():
+    """Test11 Uenv().dict"""
+    envl = ['LANG=en_US', 'HOME=/h/u1']
+    result = {'HOME': '/h/u1', 'LANG': 'en_US'}
+    out = Uenv(envl).dict()
+    assert out == result
+
+
+def test_12_keys():
+    """Test12 Uenv().keys"""
+    envl = ['LANG=en_US', 'HOME=/h/u1']
+    result = {'HOME': None, 'LANG': None}
+    out = Uenv(envl).keys()
+    assert out == result.keys()
