@@ -4,7 +4,7 @@ udocker unit tests: Uprocess
 """
 import logging
 import subprocess
-from udocker.utils.uprocess import Uprocess, LOG
+from udocker.utils.uprocess import Uprocess
 from udocker.config import Config
 
 
