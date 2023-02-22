@@ -20,7 +20,7 @@ def test_01_getconf(config):
     assert config.conf["keystore"] == "keystore"
 
 
-# def test_01_getconf_02(mocker):
+# def test_02_getconf_02(mocker):
 #     """Test01_02 Config.getconf() conf file."""
 #     conf_file = StringIO("[DEFAULT]\nkeystore = ks_conf\n")
 #     mocker.patch("os.path.exists", side_effect=[False, False, True])
