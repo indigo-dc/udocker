@@ -5,6 +5,7 @@
 udocker unit tests: HostInfo
 """
 import pytest
+import pwd
 from udocker.helper.hostinfo import HostInfo
 
 
@@ -16,101 +17,118 @@ def hinfo(mocker):
 
 
 def test_01_username(hinfo, mocker):
-    """Test01 HostInfo().username."""
-    usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr", "/root", "/bin/bash"])
-    mock_getpwuid = mocker.patch('pwd.getpwuid')
-    mock_getpwuid.return_value = usr
-    name = HostInfo().username()
-    self.assertEqual(name, usr.pw_name)
+    """Test01 HostInfo().username. With user"""
+    usr = pwd.struct_passwd(["user", "*", "1000", "1000", "User", "/home/user", "/bin/bash"])
+    mock_getpwuid = mocker.patch('pwd.getpwuid', return_value=usr)
+    name = hinfo.username()
+    assert name == usr.pw_name
+    mock_getpwuid.assert_called()
 
-# @patch('udocker.helper.hostinfo.os.getgid')
-# @patch('udocker.helper.hostinfo.os.getuid')
-# @patch('udocker.helper.hostinfo.pwd.getpwuid')
-# def test_01_username(self, mock_getpwuid, mock_uid, mock_gid):
-#     """Test01 HostInfo().username."""
-#     usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr", "/root", "/bin/bash"])
-#     mock_uid.return_value = 0
-#     mock_gid.return_value = 0
-#     mock_getpwuid.return_value = usr
-#     name = HostInfo().username()
-#     self.assertEqual(name, usr.pw_name)
 
-#     mock_getpwuid.side_effect = KeyError("fail")
-#     name = HostInfo().username()
-#     self.assertEqual(name, "")
+def test_02_username(hinfo, mocker):
+    """Test02 HostInfo().username. NO user"""
+    mock_getpwuid = mocker.patch('pwd.getpwuid', side_effect=KeyError("fail"))
+    name = hinfo.username()
+    assert name == ""
+    mock_getpwuid.assert_called()
 
-# @patch('udocker.helper.hostinfo.platform.architecture')
-# @patch('udocker.helper.hostinfo.platform.machine')
-# def test_02_arch(self, mock_mach, mock_arch):
-#     """Test02 HostInfo().arch."""
-#     mock_mach.return_value = "x86_64"
-#     mock_arch.return_value = ('64bit', '')
-#     result = HostInfo().arch()
-#     self.assertEqual(result, "amd64")
 
-#     mock_mach.return_value = "x86_64"
-#     mock_arch.return_value = ('32bit', '')
-#     result = HostInfo().arch()
-#     self.assertEqual(result, "i386")
+data_arch = (("x86_64", ('64bit', ''), "amd64"),
+             ("x86_64", ('32bit', ''), "i386"),
+             ("arm", ('64bit', ''), "arm64"),
+             ("arm", ('32bit', ''), "arm"))
 
-#     mock_mach.return_value = "arm"
-#     mock_arch.return_value = ('64bit', '')
-#     result = HostInfo().arch()
-#     self.assertEqual(result, "arm64")
+@pytest.mark.parametrize("mach,arch,expected", data_arch)
+def test_03_arch(mocker, hinfo, mach, arch, expected):
+    """Test03 HostInfo().arch. With mach and arch"""
+    mock_mach = mocker.patch('platform.machine', return_value=mach)
+    mock_arch = mocker.patch('platform.architecture', return_value=arch)
+    result = hinfo.arch()
+    assert result == expected
+    mock_mach.assert_called()
+    mock_arch.assert_called()
 
-#     mock_mach.return_value = "arm"
-#     mock_arch.return_value = ('32bit', '')
-#     result = HostInfo().arch()
-#     self.assertEqual(result, "arm")
 
-# @patch('udocker.helper.hostinfo.platform.system')
-# def test_03_osversion(self, mock_sys):
-#     """Test03 HostInfo().osversion."""
-#     mock_sys.return_value = "linux"
-#     result = HostInfo().osversion()
-#     self.assertEqual(result, "linux")
+def test_04_arch(hinfo, mocker):
+    """Test04 HostInfo().arch. NO mach"""
+    mock_mach = mocker.patch('platform.machine', side_effect=NameError("fail"))
+    res_arch = hinfo.arch()
+    assert res_arch == ""
+    mock_mach.assert_called()
 
-#     mock_sys.side_effect = NameError("fail")
-#     status = HostInfo().osversion()
-#     self.assertEqual(status, "")
 
-# @patch('udocker.helper.hostinfo.platform.release')
-# def test_04_oskernel(self, mock_rel):
-#     """Test04 HostInfo().oskernel."""
-#     mock_rel.return_value = "3.2.1"
-#     result = HostInfo().oskernel()
-#     self.assertEqual(result, "3.2.1")
+def test_05_osversion(mocker, hinfo):
+    """Test05 HostInfo().osversion. With osversion"""
+    mock_osversion = mocker.patch('platform.system', return_value="linux")
+    result = hinfo.osversion()
+    assert result == "linux"
+    mock_osversion.assert_called()
 
-#     mock_rel.side_effect = NameError("fail")
-#     status = HostInfo().oskernel()
-#     self.assertEqual(status, "6.1.1")
 
-# @patch.object(HostInfo, 'oskernel')
-# def test_05_oskernel_isgreater(self, mock_kernel):
-#     """Test05 HostInfo().oskernel_isgreater."""
-#     mock_kernel.return_value = "1.1.2-"
-#     status = HostInfo().oskernel_isgreater([1, 1, 1])
-#     self.assertTrue(status)
+def test_06_osversion(hinfo, mocker):
+    """Test06 HostInfo().osversion. NO osversion"""
+    mock_osversion = mocker.patch('platform.system', side_effect=NameError("fail"))
+    res_osversion = hinfo.osversion()
+    assert res_osversion == ""
+    mock_osversion.assert_called()
 
-#     mock_kernel.return_value = "1.2.1-"
-#     status = HostInfo().oskernel_isgreater([1, 1, 1])
-#     self.assertTrue(status)
 
-#     mock_kernel.return_value = "1.0.0-"
-#     status = HostInfo().oskernel_isgreater([1, 1, 1])
-#     self.assertFalse(status)
+def test_07_oskernel(mocker, hinfo):
+    """Test07 HostInfo().oskernel. With oskernel"""
+    mock_oskernel = mocker.patch('platform.release', return_value="3.2.1")
+    result = hinfo.oskernel()
+    assert result == "3.2.1"
+    mock_oskernel.assert_called()
 
-# def test_06_cmd_has_option(self):
-#     """Test06 HostInfo().cmd_has_option."""
-#     status = HostInfo().cmd_has_option("ls", "-a")
-#     self.assertTrue(status)
 
-#     status = HostInfo().cmd_has_option("ls", "-z")
-#     self.assertFalse(status)
+def test_08_oskernel(hinfo, mocker):
+    """Test08 HostInfo().oskernel. NO oskernel"""
+    mock_oskernel = mocker.patch('platform.release', side_effect=NameError("fail"))
+    res_oskernel = hinfo.oskernel()
+    assert res_oskernel == "6.1.1"
+    mock_oskernel.assert_called()
 
-# @patch('udocker.helper.hostinfo.Uprocess.check_output')
-# def test_07_termsize(self, mock_chkout):
-#     """Test07 HostInfo().termsize."""
-#     mock_chkout.return_value = "24 80"
-#     status = HostInfo().termsize()
-#     self.assertEqual(status, (24, 80))
+
+data_version = (("1.1.2-", [1, 1, 1], True),
+                ("1.1.2-", [1, 1, 2], True),
+                ("1.2.1-", [1, 1, 1], True),
+                ("2.2.1-", [1, 1, 1], True),
+                ("0.1.0-", [1, 1, 1], False),
+                ("1.0.0-", [1, 1, 1], False),
+                ("1.1.0-", [1, 1, 1], False))
+
+@pytest.mark.parametrize("version,list_ver,expected", data_version)
+def test_09_oskernel_isgreater(mocker, hinfo, version, list_ver, expected):
+    """Test09 HostInfo().oskernel_isgreater."""
+    mock_kernel = mocker.patch.object(HostInfo, 'oskernel', return_value=version)
+    result = hinfo.oskernel_isgreater(list_ver)
+    assert result == expected
+    mock_kernel.assert_called()
+
+
+data_cmd_opt = (("ls", "-a", ["-a"], True),
+                ("ls", "-a", "-a", True),
+                ("ls", "-z", "-a", False))
+
+@pytest.mark.parametrize("cmd,option,argmt,expected", data_cmd_opt)
+def test_10_cmd_has_option(mocker, hinfo, cmd, option, argmt, expected):
+    """Test10 HostInfo().cmd_has_option."""
+    status = hinfo.cmd_has_option(cmd, option, argmt)
+    assert status == expected
+
+
+def test_11_termsize(mocker, hinfo):
+    """Test11 HostInfo().termsize. Change size"""
+    mock_chk = mocker.patch('udocker.helper.hostinfo.Uprocess.check_output', return_value = "48 90")
+    status = hinfo.termsize()
+    assert status == (48, 90)
+    mock_chk.assert_called()
+
+
+def test_12_termsize(mocker, hinfo):
+    """Test12 HostInfo().termsize. Default termsize and raises"""
+    mock_chk = mocker.patch('udocker.helper.hostinfo.Uprocess.check_output',
+                            side_effect=OSError("fail"))
+    status = hinfo.termsize()
+    assert status == (24, 80)
+    mock_chk.assert_called()
