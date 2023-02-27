@@ -14,94 +14,123 @@ def lrepo(mocker):
 
 @pytest.fixture
 def lfileapi(mocker, lrepo):
-    mock_commonfapi = mocker.patch('udocker.container.localrepo.LocalRepository')
-    return mock_lrepo
+    mock_commonfapi = mocker.patch('udocker.commonlocalfile.CommonLocalFileApi')
+    return LocalFileAPI(lrepo)
 
 
-
-def test_01_load(mocker):
-    """Test01 LocalFileAPI().load."""
-    mock_exists.return_value = False
-    status = LocalFileAPI(self.mock_lrepo).load('imgfile')
-    self.assertFalse(status)
-
-# def setUp(self):
-#     LOG.setLevel(100)
-#     str_local = 'udocker.container.localrepo.LocalRepository'
-#     self.lrepo = patch(str_local)
-#     self.local = self.lrepo.start()
-#     self.mock_lrepo = Mock()
-#     self.local.return_value = self.mock_lrepo
-
-# def tearDown(self):
-#     self.lrepo.stop()
+def test_01_load(mocker, lfileapi):
+    """Test01 LocalFileAPI().load. image path does not exist."""
+    mock_exists = mocker.patch('os.path.exists', return_value=False)
+    mock_futilmktmp = mocker.patch('udocker.localfile.FileUtil.mktmp')
+    status = lfileapi.load('imgfile')
+    assert not status
+    mock_exists.assert_called()
+    mock_futilmktmp.assert_not_called()
 
 
-# @patch('udocker.localfile.OciLocalFileAPI.load')
-# @patch('udocker.localfile.DockerLocalFileAPI.load')
-# @patch.object(LocalFileAPI, '_get_imagedir_type')
-# @patch('udocker.localfile.FileUtil.remove')
-# @patch.object(LocalFileAPI, '_untar_saved_container')
-# @patch('udocker.localfile.os.makedirs')
-# @patch('udocker.localfile.FileUtil.mktmp')
-# @patch('udocker.localfile.os.path.exists')
-# def test_02_load(self, mock_exists, mock_mktmp, mock_mkdir,
-#                     mock_untar, mock_remove, mock_imgtype, mock_dockerload,
-#                     mock_ociload):
-#     """Test02 LocalFileAPI().load."""
-#     mock_exists.return_value = False
-#     status = LocalFileAPI(self.mock_lrepo).load('imgfile')
-#     self.assertFalse(status)
+def test_02_load(mocker, lfileapi):
+    """Test02 LocalFileAPI().load. image path exist. os.mkdir raises OSError"""
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    mock_futilmktmp = mocker.patch('udocker.localfile.FileUtil.mktmp', return_value='/tmp/imgdir')
+    mock_mkdir = mocker.patch('os.makedirs', side_effect=OSError)
+    mock_untar = mocker.patch.object(LocalFileAPI, '_untar_saved_container', return_value = False)
+    status = lfileapi.load('imgfile')
+    assert not status
+    mock_exists.assert_called()
+    mock_futilmktmp.assert_called()
+    mock_mkdir.assert_called()
+    mock_untar.assert_not_called()
 
-#     mock_exists.return_value = True
-#     mock_mktmp.return_value = '/tmp/imgdir'
-#     mock_mkdir.return_value = None
-#     mock_untar.return_value = False
-#     mock_remove.return_value = None
-#     status = LocalFileAPI(self.mock_lrepo).load('imgfile')
-#     self.assertTrue(mock_mktmp.called)
-#     self.assertTrue(mock_mkdir.called)
-#     self.assertTrue(mock_remove.called)
-#     self.assertFalse(status)
 
-#     mock_exists.return_value = True
-#     mock_mktmp.return_value = '/tmp/imgdir'
-#     mock_mkdir.return_value = None
-#     mock_untar.return_value = True
-#     mock_remove.return_value = None
-#     mock_imgtype.return_value = 'Docker'
-#     mock_dockerload.return_value = ['docker-repo1', 'docker-repo2']
-#     status = LocalFileAPI(self.mock_lrepo).load('imgfile')
-#     self.assertTrue(mock_imgtype.called)
-#     self.assertTrue(mock_dockerload.called)
-#     self.assertEqual(status, ['docker-repo1', 'docker-repo2'])
+def test_03_load(mocker, lfileapi):
+    """Test03 LocalFileAPI().load. image path exist. os.mkdir OK, untar False"""
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    mock_futilmktmp = mocker.patch('udocker.localfile.FileUtil.mktmp', return_value='/tmp/imgdir')
+    mock_mkdir = mocker.patch('os.makedirs')
+    mock_untar = mocker.patch.object(LocalFileAPI, '_untar_saved_container', return_value = False)
+    mock_remove = mocker.patch('udocker.localfile.FileUtil.remove')
+    mock_imgtype = mocker.patch.object(LocalFileAPI, '_get_imagedir_type')
+    status = lfileapi.load('imgfile')
+    assert not status
+    mock_exists.assert_called()
+    mock_futilmktmp.assert_called()
+    mock_mkdir.assert_called()
+    mock_untar.assert_called()
+    mock_remove.assert_called()
+    mock_imgtype.assert_not_called()
 
-#     mock_exists.return_value = True
-#     mock_mktmp.return_value = '/tmp/imgdir'
-#     mock_mkdir.return_value = None
-#     mock_untar.return_value = True
-#     mock_remove.return_value = None
-#     mock_imgtype.return_value = 'OCI'
-#     mock_ociload.return_value = ['OCI-repo1', 'OCI-repo2']
-#     status = LocalFileAPI(self.mock_lrepo).load('imgfile')
-#     self.assertTrue(mock_imgtype.called)
-#     self.assertTrue(mock_ociload.called)
-#     self.assertEqual(status, ['OCI-repo1', 'OCI-repo2'])
 
-#     mock_exists.return_value = True
-#     mock_mktmp.return_value = '/tmp/imgdir'
-#     mock_mkdir.return_value = None
-#     mock_untar.return_value = True
-#     mock_remove.return_value = None
-#     mock_imgtype.return_value = ''
-#     status = LocalFileAPI(self.mock_lrepo).load('imgfile')
-#     self.assertTrue(mock_imgtype.called)
-#     self.assertEqual(status, [])
+def test_04_load(mocker, lfileapi):
+    """Test04 LocalFileAPI().load. image path exist. os.mkdir OK, untar True, imagetype Docker"""
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    mock_futilmktmp = mocker.patch('udocker.localfile.FileUtil.mktmp', return_value='/tmp/imgdir')
+    mock_mkdir = mocker.patch('os.makedirs')
+    mock_untar = mocker.patch.object(LocalFileAPI, '_untar_saved_container', return_value = True)
+    mock_remove = mocker.patch('udocker.localfile.FileUtil.remove')
+    mock_imgtype = mocker.patch.object(LocalFileAPI, '_get_imagedir_type', return_value = "Docker")
+    mock_dockerload = mocker.patch('udocker.localfile.DockerLocalFileAPI.load',
+                                   return_value = ['docker-repo1', 'docker-repo2'])
+    mock_ociload = mocker.patch('udocker.localfile.OciLocalFileAPI.load')
+    status = lfileapi.load('imgfile')
+    assert status == ['docker-repo1', 'docker-repo2']
+    mock_exists.assert_called()
+    mock_futilmktmp.assert_called()
+    mock_mkdir.assert_called()
+    mock_untar.assert_called()
+    mock_remove.assert_called()
+    mock_imgtype.assert_called()
+    mock_dockerload.assert_called()
+    mock_ociload.assert_not_called()
 
-# @patch('udocker.localfile.DockerLocalFileAPI.save')
-# def test_03_save(self, mock_dockersave):
-#     """Test03 LocalFileAPI().save."""
-#     mock_dockersave.return_value = True
-#     img_tag = ['tag1', 'tag2']
-#     status = LocalFileAPI(self.mock_lrepo).save(img_tag, 'imgfile')
-#     self.assertTrue(status)
+
+def test_05_load(mocker, lfileapi):
+    """Test05 LocalFileAPI().load. image path exist. os.mkdir OK, untar True, imagetype OCI"""
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    mock_futilmktmp = mocker.patch('udocker.localfile.FileUtil.mktmp', return_value='/tmp/imgdir')
+    mock_mkdir = mocker.patch('os.makedirs')
+    mock_untar = mocker.patch.object(LocalFileAPI, '_untar_saved_container', return_value = True)
+    mock_remove = mocker.patch('udocker.localfile.FileUtil.remove')
+    mock_imgtype = mocker.patch.object(LocalFileAPI, '_get_imagedir_type', return_value = "OCI")
+    mock_dockerload = mocker.patch('udocker.localfile.DockerLocalFileAPI.load')
+    mock_ociload = mocker.patch('udocker.localfile.OciLocalFileAPI.load',
+                                return_value=['OCI-repo1', 'OCI-repo2'])
+    status = lfileapi.load('imgfile')
+    assert status == ['OCI-repo1', 'OCI-repo2']
+    mock_exists.assert_called()
+    mock_futilmktmp.assert_called()
+    mock_mkdir.assert_called()
+    mock_untar.assert_called()
+    mock_remove.assert_called()
+    mock_imgtype.assert_called()
+    mock_dockerload.assert_not_called()
+    mock_ociload.assert_called()
+
+
+def test_06_load(mocker, lfileapi):
+    """Test06 LocalFileAPI().load. image path exist. os.mkdir OK, untar True, imagetype empty"""
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    mock_futilmktmp = mocker.patch('udocker.localfile.FileUtil.mktmp', return_value='/tmp/imgdir')
+    mock_mkdir = mocker.patch('os.makedirs')
+    mock_untar = mocker.patch.object(LocalFileAPI, '_untar_saved_container', return_value = True)
+    mock_remove = mocker.patch('udocker.localfile.FileUtil.remove')
+    mock_imgtype = mocker.patch.object(LocalFileAPI, '_get_imagedir_type', return_value = "")
+    mock_dockerload = mocker.patch('udocker.localfile.DockerLocalFileAPI.load')
+    mock_ociload = mocker.patch('udocker.localfile.OciLocalFileAPI.load')
+    status = lfileapi.load('imgfile')
+    assert status == []
+    mock_exists.assert_called()
+    mock_futilmktmp.assert_called()
+    mock_mkdir.assert_called()
+    mock_untar.assert_called()
+    mock_remove.assert_called()
+    mock_imgtype.assert_called()
+    mock_dockerload.assert_not_called()
+    mock_ociload.assert_not_called()
+
+
+def test_07_save(mocker, lfileapi):
+    """Test07 LocalFileAPI().save."""
+    mock_dockersave = mocker.patch('udocker.localfile.DockerLocalFileAPI.save', return_value=True)
+    status = lfileapi.save(['tag1', 'tag2'], 'imgfile')
+    assert status
+    mock_dockersave.assert_called()
