@@ -48,7 +48,6 @@ data_get = [(["udocker", "-D"],          "-D", "GEN_OPT", False, True),
             ]
 
 
-
 @pytest.mark.parametrize("argv,p1,p2,p3,expected", data_get)
 def test_07_get(cmdparse, argv, p1, p2, p3, expected):
     """Test07 CmdParser().get() gen option exist."""

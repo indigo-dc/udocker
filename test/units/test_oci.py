@@ -2,40 +2,92 @@
 """
 udocker unit tests: OciLocalFileAPI
 """
+import pytest
 from udocker.oci import OciLocalFileAPI
 
 
+@pytest.fixture
+def lrepo(mocker):
+    mock_lrepo = mocker.patch('udocker.container.localrepo.LocalRepository')
+    return mock_lrepo
 
-# @patch('udocker.oci.FileUtil.isdir')
-# @patch('udocker.oci.os.listdir')
-# @patch('udocker.container.localrepo.LocalRepository.load_json')
-# def test_02__load_structure(self, mock_ljson, mock_oslist, mock_isdir):
-#     """Test02 OciLocalFileAPI()._load_structure."""
-#     mock_ljson.side_effect = [[], []]
-#     status = OciLocalFileAPI(self.local)._load_structure('tmpimg')
-#     self.assertEqual(status, {})
 
-#     out_res = {'repolayers': {},
-#                 'manifest': {},
-#                 'oci-layout': 'oci_lay1',
-#                 'index': 'idx1'}
-#     mock_ljson.side_effect = ['oci_lay1', 'idx1']
-#     mock_oslist.return_value = ['f1']
-#     mock_isdir.return_value = False
-#     status = OciLocalFileAPI(self.local)._load_structure('tmpimg')
-#     self.assertEqual(status, out_res)
+@pytest.fixture
+def ociapi(mocker, lrepo):
+    mock_commonfapi = mocker.patch('udocker.commonlocalfile.CommonLocalFileApi')
+    return OciLocalFileAPI(lrepo)
 
-#     out_res = {'repolayers': {'f1:f2': {'layer_a': 'f1',
-#                                         'layer_f': 'tmpimg/blobs/f1/f2',
-#                                         'layer_h': 'f2'}},
-#                 'manifest': {},
-#                 'oci-layout': 'oci_lay1',
-#                 'index': 'idx1'}
-#     mock_ljson.side_effect = ['oci_lay1', 'idx1']
-#     mock_oslist.side_effect = [['f1'], ['f2']]
-#     mock_isdir.return_value = True
-#     status = OciLocalFileAPI(self.local)._load_structure('tmpimg')
-#     self.assertEqual(status, out_res)
+
+@pytest.fixture
+def load_json(mocker):
+    mock_ljson = mocker.patch('udocker.container.localrepo.LocalRepository.load_json')
+    return mock_ljson
+
+
+def test_01__load_structure(mocker, ociapi, load_json):
+    """Test01 OciLocalFileAPI()._load_structure. Structure empty"""
+    tmpdir = '/ROOT'
+    load_json.side_effect = [[], []]
+    mock_oslist = mocker.patch('os.listdir')
+    status = ociapi._load_structure(tmpdir)
+    assert status == {}
+    assert load_json.call_count == 2
+    mock_oslist.assert_not_called()
+
+
+def test_02__load_structure(mocker, ociapi, load_json):
+    """Test02 OciLocalFileAPI()._load_structure. Structure not empty"""
+    tmpdir = '/ROOT'
+    load_json.side_effect = ['oci_lay1', 'idx1']
+    out_res = {'repolayers': {'f1:f2': {'layer_a': 'f1',
+                                        'layer_f': '/ROOT/blobs/f1/f2',
+                                        'layer_h': 'f2'}},
+               'manifest': {},
+               'oci-layout': 'oci_lay1',
+               'index': 'idx1'}
+
+    mock_oslist = mocker.patch('os.listdir', side_effect=[['f1'], ['f2']])
+    mock_isdir = mocker.patch('udocker.oci.FileUtil.isdir', return_value=True)
+    status = ociapi._load_structure(tmpdir)
+    assert status == out_res
+    assert load_json.call_count == 2
+    assert mock_oslist.call_count == 2
+    mock_isdir.assert_called()
+
+
+
+
+def test_10_load(mocker, ociapi):
+    """Test10 OciLocalFileAPI().load. Structure empty list"""
+    tmpdir = '/ROOT'
+    imgrepo = 'somerepo'
+    mock_loadstruct = mocker.patch.object(OciLocalFileAPI, '_load_structure', return_value={})
+    mock_loadrepo = mocker.patch.object(OciLocalFileAPI, '_load_repositories')
+    status = ociapi.load(tmpdir, imgrepo)
+    assert status == []
+    mock_loadstruct.assert_called()
+    mock_loadrepo.assert_not_called()
+
+
+def test_11_load(mocker, ociapi):
+    """Test11 OciLocalFileAPI().load. Structure non empty list"""
+    tmpdir = '/ROOT'
+    imgrepo = 'somerepo'
+    struct = {'repolayers':
+                    {'f1:f2': {'layer_a': 'f1',
+                               'layer_f': 'tmpimg/blobs/f1/f2',
+                               'layer_h': 'f2'}},
+              'manifest': {},
+              'oci-layout': 'oci_lay1',
+              'index': 'idx1'}
+    mock_loadstruct = mocker.patch.object(OciLocalFileAPI, '_load_structure', return_value=struct)
+    mock_loadrepo = mocker.patch.object(OciLocalFileAPI, '_load_repositories',
+                                        return_value=['r1', 'r2'])
+    status = ociapi.load(tmpdir, imgrepo)
+    assert status == ['r1', 'r2']
+    mock_loadstruct.assert_called()
+    mock_loadrepo.assert_called()
+
 
 # def test_03__get_from_manifest(self):
 #     """Test03 OciLocalFileAPI()._get_from_manifest."""
@@ -78,25 +130,3 @@ from udocker.oci import OciLocalFileAPI
 # # def test_06__load_image_step2(self):
 # #     """Test07 OciLocalFileAPI()._load_image_step2."""
 
-# @patch.object(OciLocalFileAPI, '_load_repositories')
-# @patch.object(OciLocalFileAPI, '_load_structure')
-# def test_07_load(self, mock_loadstruct, mock_loadrepo):
-#     """Test07 OciLocalFileAPI().load."""
-#     tmpdir = '/ROOT'
-#     imgrepo = 'somerepo'
-#     mock_loadstruct.return_value = {}
-#     status = OciLocalFileAPI(self.local).load(tmpdir, imgrepo)
-#     self.assertEqual(status, [])
-
-#     tmpdir = '/ROOT'
-#     imgrepo = 'somerepo'
-#     mock_loadstruct.return_value = {'repolayers':
-#                                         {'f1:f2': {'layer_a': 'f1',
-#                                                     'layer_f': 'tmpimg/blobs/f1/f2',
-#                                                     'layer_h': 'f2'}},
-#                                     'manifest': {},
-#                                     'oci-layout': 'oci_lay1',
-#                                     'index': 'idx1'}
-#     mock_loadrepo.return_value = ['r1', 'r2']
-#     status = OciLocalFileAPI(self.local).load(tmpdir, imgrepo)
-#     self.assertEqual(status, ['r1', 'r2'])
