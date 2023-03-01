@@ -55,6 +55,70 @@ def test_02__load_structure(mocker, ociapi, load_json):
     mock_isdir.assert_called()
 
 
+def test_03__get_from_manifest(ociapi):
+    """Test03 OciLocalFileAPI()._get_from_manifest. Struct empty"""
+    imgtag = ''
+    struct = dict()
+    status = ociapi._get_from_manifest(struct, imgtag)
+    assert status == ("", list())
+
+
+def test_04__get_from_manifest(ociapi):
+    """Test04 OciLocalFileAPI()._get_from_manifest. Struct non-empty"""
+    imgtag = '123'
+    struct = {'manifest': {'123': {'json': {'layers': [{'digest': 'd1'},
+                                                        {'digest': 'd2'}],
+                                            'config': {'digest': 'dgt'}}}}}
+    lay_out = ['d2', 'd1']
+    conf_out = 'dgt'
+    status = ociapi._get_from_manifest(struct, imgtag)
+    assert status == (conf_out, lay_out)
+
+
+## TODO: the structure and manifest need to be understood what is the schema in particular
+##         structure["manifest"][imagetag]["json"] = \
+##            self.localrepo.load_json(structure["repolayers"][manifest["digest"]]["layer_f"])
+##        structure["manifest"][imagetag]["json_f"] = \
+##            structure["repolayers"][manifest["digest"]]["layer_f"]
+
+# def test_05__load_manifest(mocker, ociapi, load_json):
+#     """Test05 OciLocalFileAPI()._load_manifest."""
+#     manifest = {'annotations': {'org.opencontainers.image.ref.name': '/ctn:123'},
+#                 'digest': {'layer_a': 'f1',
+#                            'layer_f': 'tmpimg/blobs/f1/f2',
+#                            'layer_h': 'f2'}}
+
+#     ljson = {'layers': [{'digest': 'd1'},
+#                         {'digest': 'd2'}],
+#              'config': {'digest': 'dgt'}}
+#     load_json.return_value = ljson
+
+#     struct = {'manifest': {'123': {'json': ljson}},
+#               'repolayers': manifest}
+
+#     mock_loadimg = mocker.patch('udocker.commonlocalfile.CommonLocalFileApi._load_image',
+#                                 return_value=['123'])
+#     status = ociapi._load_manifest(struct, manifest)
+#     assert status == ['123']
+
+
+# def test_06__load_manifest(mocker, ociapi, load_json):
+#     """Test06 OciLocalFileAPI()._load_manifest. with Unique"""
+
+
+def test_07__load_repositories(mocker, ociapi):
+    """Test05 OciLocalFileAPI()._load_repositories."""
+
+    manifest = [{'mediaType': 'application/vnd.oci.image.manifest.v1+json'}]
+
+    struct = {'index': {'manifests': manifest}}
+
+    mock_loadmanif = mocker.patch.object(OciLocalFileAPI, '_load_manifest',
+                                         return_value=['123'])
+
+    status = ociapi._load_repositories(struct)
+    assert status == [['123']]
+    mock_loadmanif.assert_called()
 
 
 def test_10_load(mocker, ociapi):
@@ -89,43 +153,9 @@ def test_11_load(mocker, ociapi):
     mock_loadrepo.assert_called()
 
 
-# def test_03__get_from_manifest(self):
-#     """Test03 OciLocalFileAPI()._get_from_manifest."""
-#     imgtag = '123'
-#     struct = {'manifest': {'123': {'json': {'layers': [{'digest': 'd1'},
-#                                                         {'digest': 'd2'}],
-#                                             'config': {'digest': 'dgt'}}}}}
-#     lay_out = ['d2', 'd1']
-#     conf_out = 'dgt'
-#     status = OciLocalFileAPI(self.local)._get_from_manifest(struct, imgtag)
-#     self.assertEqual(status, (conf_out, lay_out))
 
-#     imgtag = ''
-#     struct = dict()
-#     ocilocal = OciLocalFileAPI(self.local)
-#     self.assertEqual(ocilocal._get_from_manifest(struct, imgtag), ("", list()))
 
-# # @patch('udocker.oci.Unique.imagename')
-# # @patch('udocker.oci.Unique.imagetag')
-# # @patch('udocker.container.localrepo.LocalRepository.load_json',autospec=True)
-# # def test_04__load_manifest(self, mock_ljson, mock_uniqtag, mock_uniqname):
-# #     """Test04 OciLocalFileAPI()._load_manifest."""
-# #     manifest = {'annotations': {'org.opencontainers.image.ref.name': '123'},
-# #                 'digest': {'layer_a': 'f1',
-# #                            'layer_f': 'tmpimg/blobs/f1/f2',
-# #                            'layer_h': 'f2'}}
-# #     mock_uniqtag.return_value = '123'
-# #     mock_uniqname.return_value = 'imgname'
-# #     mock_ljson.return_value = {'layers': [{'digest': 'd1'},
-# #                                           {'digest': 'd2'}],
-# #                                'config': {'digest': 'dgt'}}
-# #     struct = {'manifest': {'123': {'json': mock_ljson}},
-# #               'repolayers': manifest}
-# #     status = OciLocalFileAPI(self.local)._load_manifest(struct, manifest)
-# #     self.assertEqual(status, (struct, "imgname", ['123']))
 
-# # def test_05__load_repositories(self):
-# #     """Test05 OciLocalFileAPI()._load_repositories."""
 
 # # def test_06__load_image_step2(self):
 # #     """Test07 OciLocalFileAPI()._load_image_step2."""
