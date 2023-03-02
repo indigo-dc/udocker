@@ -33,7 +33,7 @@ data_in = (("/home/.udocker/12345.json", "12345"),
 
 @pytest.mark.parametrize("fpath,lid", data_in)
 def test_03__move_layer_to_v1repo(mocker, clfapi, lrepo, fpath, lid):
-    """Test03 CommonLocalFileApi()._move_layer_to_v1repo(). filepath 12345.json"""
+    """Test03 CommonLocalFileApi()._move_layer_to_v1repo(). filepath not empty"""
     layer_id = lid
     filepath = fpath
     mock_rename = mocker.patch('os.rename')
