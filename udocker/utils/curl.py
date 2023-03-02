@@ -18,7 +18,6 @@ except ImportError:
     pass
 
 
-
 class CurlHeader:
     """An http header parser to be used with PyCurl
     Allows to retrieve the header fields and the status.
@@ -56,7 +55,7 @@ class CurlHeader:
         Alternative to write() to be used with the curl executable
         version.
         """
-        #TODO: (mdavid) )redo this part
+        # TODO: (mdavid) )redo this part
         try:
             infile = open(in_filename, 'r', encoding='utf-8')
         except OSError:
@@ -260,7 +259,7 @@ class GetURLpyCurl(GetURL):
             pyc.setopt(pyc.WRITEFUNCTION, buf.write)
 
         hdr.data["X-ND-CURLSTATUS"] = 0
-        return(output_file, filep)
+        return (output_file, filep)
 
     def get(self, *args, **kwargs):
         """http get implementation using the PyCurl"""
@@ -445,7 +444,7 @@ class GetURLexeCurl(GetURL):
             else:  # OK downloaded
                 os.rename(self._files["output_file"], kwargs["ofile"])
 
-        #TODO: (mdavid) )redo this part
+        # TODO: (mdavid) )redo this part
         if "ofile" not in kwargs:
             try:
                 buf = strio(open(self._files["output_file"], 'rb').read())
