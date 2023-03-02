@@ -108,14 +108,10 @@ def test_04__get_from_manifest(ociapi):
 
 def test_07__load_repositories(mocker, ociapi):
     """Test05 OciLocalFileAPI()._load_repositories."""
-
     manifest = [{'mediaType': 'application/vnd.oci.image.manifest.v1+json'}]
-
     struct = {'index': {'manifests': manifest}}
-
     mock_loadmanif = mocker.patch.object(OciLocalFileAPI, '_load_manifest',
                                          return_value=['123'])
-
     status = ociapi._load_repositories(struct)
     assert status == [['123']]
     mock_loadmanif.assert_called()
@@ -124,13 +120,57 @@ def test_07__load_repositories(mocker, ociapi):
 def test_08__load_image_step2(mocker, ociapi):
     """Test08 OciLocalFileAPI()._load_image_step2. move layer to v1 repo false"""
     imgtag = '123'
-    struct = {'manifest': {'123': {'json': {'layers': [{'digest': 'd1'},
-                                                       {'digest': 'd2'}],
-                                            'config': {'digest': 'dgt'}}}}}
     imgrepo = '/somerepo'
-    mock_loadstruct = mocker.patch.object(OciLocalFileAPI, '_get_from_manifest', return_value={})
+    struct = {'repolayers':
+              {'layer1': {'layer_a': 'f1',
+                          'layer_f': '/somedir/cfg1.json',
+                          'layer_h': 'f2'},
+               'layer2': {'layer_a': 'g1',
+                          'layer_f': '/somedir/cfg2.json',
+                          'layer_h': 'g2'}},
+              'manifest': {},
+              'oci-layout': 'oci_lay1',
+              'index': 'idx1'}
+    out_manif = ('layer1', ['layer1', 'layer2'])
+    mock_getmanif = mocker.patch.object(OciLocalFileAPI, '_get_from_manifest',
+                                        return_value=out_manif)
+    mock_mvv1 = mocker.patch.object(OciLocalFileAPI, '_move_layer_to_v1repo',
+                                    side_effect=[True, False, False])
+    mock_logerr = mocker.patch('udocker.LOG.error')
     status = ociapi._load_image_step2(struct, imgrepo, imgtag)
     assert status == []
+    mock_getmanif.assert_called()
+    assert mock_mvv1.call_count == 2
+    mock_logerr.assert_called()
+
+
+def test_09__load_image_step2(mocker, ociapi):
+    """Test09 OciLocalFileAPI()._load_image_step2. move layer to v1 repo true"""
+    imgtag = '123'
+    imgrepo = '/somerepo'
+    struct = {'repolayers':
+              {'layer1': {'layer_a': 'f1',
+                          'layer_f': '/somedir/cfg1.json',
+                          'layer_h': 'f2'},
+               'layer2': {'layer_a': 'g1',
+                          'layer_f': '/somedir/cfg2.json',
+                          'layer_h': 'g2'}},
+              'manifest': {},
+              'oci-layout': 'oci_lay1',
+              'index': 'idx1'}
+    out_manif = ('layer1', ['layer1', 'layer2'])
+    mock_getmanif = mocker.patch.object(OciLocalFileAPI, '_get_from_manifest',
+                                        return_value=out_manif)
+    mock_mvv1 = mocker.patch.object(OciLocalFileAPI, '_move_layer_to_v1repo',
+                                    side_effect=[True, True, True])
+    mock_logerr = mocker.patch('udocker.LOG.error')
+    mock_sjson = mocker.patch('udocker.container.localrepo.LocalRepository.save_json')
+    status = ociapi._load_image_step2(struct, imgrepo, imgtag)
+    assert status == ['/somerepo:123']
+    mock_getmanif.assert_called()
+    assert mock_mvv1.call_count == 3
+    mock_logerr.assert_not_called()
+    mock_sjson.assert_called()
 
 
 def test_10_load(mocker, ociapi):
