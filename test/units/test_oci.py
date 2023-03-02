@@ -67,7 +67,7 @@ def test_04__get_from_manifest(ociapi):
     """Test04 OciLocalFileAPI()._get_from_manifest. Struct non-empty"""
     imgtag = '123'
     struct = {'manifest': {'123': {'json': {'layers': [{'digest': 'd1'},
-                                                        {'digest': 'd2'}],
+                                                       {'digest': 'd2'}],
                                             'config': {'digest': 'dgt'}}}}}
     lay_out = ['d2', 'd1']
     conf_out = 'dgt'
@@ -121,6 +121,18 @@ def test_07__load_repositories(mocker, ociapi):
     mock_loadmanif.assert_called()
 
 
+def test_08__load_image_step2(mocker, ociapi):
+    """Test08 OciLocalFileAPI()._load_image_step2. move layer to v1 repo false"""
+    imgtag = '123'
+    struct = {'manifest': {'123': {'json': {'layers': [{'digest': 'd1'},
+                                                       {'digest': 'd2'}],
+                                            'config': {'digest': 'dgt'}}}}}
+    imgrepo = '/somerepo'
+    mock_loadstruct = mocker.patch.object(OciLocalFileAPI, '_get_from_manifest', return_value={})
+    status = ociapi._load_image_step2(struct, imgrepo, imgtag)
+    assert status == []
+
+
 def test_10_load(mocker, ociapi):
     """Test10 OciLocalFileAPI().load. Structure empty list"""
     tmpdir = '/ROOT'
@@ -138,9 +150,9 @@ def test_11_load(mocker, ociapi):
     tmpdir = '/ROOT'
     imgrepo = 'somerepo'
     struct = {'repolayers':
-                    {'f1:f2': {'layer_a': 'f1',
-                               'layer_f': 'tmpimg/blobs/f1/f2',
-                               'layer_h': 'f2'}},
+              {'f1:f2': {'layer_a': 'f1',
+                         'layer_f': 'tmpimg/blobs/f1/f2',
+                         'layer_h': 'f2'}},
               'manifest': {},
               'oci-layout': 'oci_lay1',
               'index': 'idx1'}
@@ -151,12 +163,3 @@ def test_11_load(mocker, ociapi):
     assert status == ['r1', 'r2']
     mock_loadstruct.assert_called()
     mock_loadrepo.assert_called()
-
-
-
-
-
-
-# # def test_06__load_image_step2(self):
-# #     """Test07 OciLocalFileAPI()._load_image_step2."""
-
