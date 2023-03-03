@@ -40,6 +40,7 @@ def test_03__move_layer_to_v1repo(mocker, clfapi, lrepo, fpath, lid):
     mock_copy = mocker.patch('udocker.commonlocalfile.FileUtil.copyto')
     lrepo.return_value.layersdir = "/home/.udocker"
     lrepo.return_value.add_image_layer.return_value = True
+
     status = clfapi._move_layer_to_v1repo(filepath, layer_id)
     assert status
     mock_rename.assert_called()
@@ -55,6 +56,7 @@ def test_04__move_layer_to_v1repo(mocker, clfapi, lrepo):
     mock_copy = mocker.patch('udocker.commonlocalfile.FileUtil.copyto', return_value=False)
     lrepo.return_value.layersdir = "/home/.udocker"
     lrepo.return_value.add_image_layer.return_value = True
+
     status = clfapi._move_layer_to_v1repo(filepath, layer_id)
     assert not status
     mock_rename.assert_called()
@@ -62,152 +64,239 @@ def test_04__move_layer_to_v1repo(mocker, clfapi, lrepo):
     mock_copy.assert_called()
 
 
-# def test_04__load_image(self):
-#     """Test04 CommonLocalFileApi()._load_image()."""
-#     structure = "12345"
-#     imagerepo = "/home/.udocker/images"
-#     tag = "v1"
-#     self.local.cd_imagerepo.return_value = True
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi._load_image(structure, imagerepo, tag)
-#     self.assertEqual(status, [])
+def test_05__load_image(clfapi, lrepo):
+    """Test05 CommonLocalFileApi()._load_image().cd_imagerepo True"""
+    structure = "12345"
+    imagerepo = "/home/.udocker/images"
+    tag = "v1"
+    lrepo.cd_imagerepo.return_value = True
 
-#     self.local.cd_imagerepo.return_value = False
-#     self.local.setup_imagerepo.return_value = True
-#     self.local.setup_tag.return_value = False
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi._load_image(structure, imagerepo, tag)
-#     self.assertEqual(status, [])
+    status = clfapi._load_image(structure, imagerepo, tag)
+    assert status == []
+    lrepo.cd_imagerepo.assert_called()
+    lrepo.setup_imagerepo.assert_not_called()
 
-#     self.local.cd_imagerepo.return_value = False
-#     self.local.setup_imagerepo.return_value = True
-#     self.local.setup_tag.return_value = True
-#     self.local.set_version.return_value = False
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi._load_image(structure, imagerepo, tag)
-#     self.assertEqual(status, [])
 
-#     self.local.cd_imagerepo.return_value = False
-#     self.local.setup_imagerepo.return_value = True
-#     self.local.setup_tag.return_value = True
-#     self.local.set_version.return_value = True
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi._load_image(structure, imagerepo, tag)
-#     self.assertEqual(status, None)
+def test_06__load_image(clfapi, lrepo):
+    """Test06 CommonLocalFileApi()._load_image().cd_imagerepo False"""
+    structure = "12345"
+    imagerepo = "/home/.udocker/images"
+    tag = "v1"
+    lrepo.cd_imagerepo.return_value = False
+    lrepo.setup_imagerepo.return_value = True
+    lrepo.setup_tag.return_value = False
 
-# @patch('udocker.commonlocalfile.Uprocess.call')
-# def test_05__untar_saved_container(self, mock_ucall):
-#     """Test05 CommonLocalFileApi()._untar_saved_container()."""
-#     tarfile = "file.tar"
-#     destdir = "/home/.udocker/images"
-#     mock_ucall.return_value = True
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi._untar_saved_container(tarfile, destdir)
-#     self.assertFalse(status)
+    status = clfapi._load_image(structure, imagerepo, tag)
+    assert status == []
+    lrepo.cd_imagerepo.assert_called()
+    lrepo.setup_imagerepo.assert_called()
+    lrepo.setup_tag.assert_called()
+    lrepo.set_version.assert_not_called()
 
-#     mock_ucall.return_value = False
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi._untar_saved_container(tarfile, destdir)
-#     self.assertTrue(status)
 
-# @patch('udocker.commonlocalfile.FileUtil.size')
-# @patch('udocker.commonlocalfile.HostInfo.osversion')
-# @patch('udocker.commonlocalfile.HostInfo.arch')
-# def test_06_create_container_meta(self, mock_arch, mock_version, mock_size):
-#     """Test06 CommonLocalFileApi().create_container_meta()."""
-#     layer_id = "12345"
-#     comment = "created by my udocker"
-#     mock_arch.return_value = "x86_64"
-#     mock_version.return_value = "8"
-#     mock_size.return_value = 125
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.create_container_meta(layer_id, comment)
-#     self.assertEqual(status["id"], layer_id)
-#     self.assertEqual(status["comment"], comment)
-#     self.assertTrue(mock_arch.called)
-#     self.assertTrue(mock_version.called)
-#     self.assertTrue(mock_size.called)
+def test_07__load_image(clfapi, lrepo):
+    """Test07 CommonLocalFileApi()._set version False"""
+    structure = "12345"
+    imagerepo = "/home/.udocker/images"
+    tag = "v1"
+    lrepo.cd_imagerepo.return_value = False
+    lrepo.setup_imagerepo.return_value = True
+    lrepo.setup_tag.return_value = True
+    lrepo.set_version.return_value = False
 
-# @patch('udocker.commonlocalfile.os.rename')
-# @patch('udocker.commonlocalfile.FileUtil.copyto')
-# @patch('udocker.commonlocalfile.Unique.layer_v1')
-# @patch('udocker.commonlocalfile.os.path.exists')
-# def test_07_import_toimage(self, mock_exists, mock_layerv1, mock_copy, mock_rename):
-#     """Test07 CommonLocalFileApi().import_toimage()."""
-#     tarfile = "img.tar"
-#     imagerepo = "/home/.udocker/images"
-#     tag = "v1"
-#     move_tarball = True
-#     mock_exists.side_effect = [False, False]
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.import_toimage(tarfile, imagerepo, tag, move_tarball)
-#     self.assertFalse(status)
+    status = clfapi._load_image(structure, imagerepo, tag)
+    assert status == []
+    lrepo.cd_imagerepo.assert_called()
+    lrepo.setup_imagerepo.assert_called()
+    lrepo.setup_tag.assert_called()
+    lrepo.set_version.assert_called()
 
-#     mock_exists.side_effect = [True, False]
-#     self.local.setup_imagerepo.return_value = True
-#     self.local.cd_imagerepo.return_value = True
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.import_toimage(tarfile, imagerepo, tag, move_tarball)
-#     self.assertFalse(status)
-#     self.assertTrue(self.local.setup_imagerepo.called)
-#     self.assertTrue(self.local.cd_imagerepo.called)
 
-#     mock_exists.side_effect = [True, False]
-#     self.local.setup_imagerepo.return_value = True
-#     self.local.cd_imagerepo.return_value = False
-#     self.local.setup_tag.return_value = False
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.import_toimage(tarfile, imagerepo, tag, move_tarball)
-#     self.assertFalse(status)
-#     self.assertTrue(self.local.setup_imagerepo.called)
-#     self.assertTrue(self.local.cd_imagerepo.called)
-#     self.assertTrue(self.local.setup_tag.called)
+def test_08__load_image(mocker, clfapi, lrepo):
+    """Test08 CommonLocalFileApi()._set version True"""
+    structure = "12345"
+    imagerepo = "/home/.udocker/images"
+    tag = "v1"
+    lrepo.cd_imagerepo.return_value = False
+    lrepo.setup_imagerepo.return_value = True
+    lrepo.setup_tag.return_value = True
+    lrepo.set_version.return_value = True
+    mock_imgstep2 = mocker.patch.object(CommonLocalFileApi, '_load_image_step2', return_value=True)
 
-#     mock_exists.side_effect = [True, False]
-#     self.local.setup_imagerepo.return_value = True
-#     self.local.cd_imagerepo.return_value = False
-#     self.local.setup_tag.return_value = True
-#     self.local.set_version.return_value = False
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.import_toimage(tarfile, imagerepo, tag, move_tarball)
-#     self.assertFalse(status)
-#     self.assertTrue(self.local.setup_imagerepo.called)
-#     self.assertTrue(self.local.cd_imagerepo.called)
-#     self.assertTrue(self.local.setup_tag.called)
+    status = clfapi._load_image(structure, imagerepo, tag)
+    assert status
+    lrepo.cd_imagerepo.assert_called()
+    lrepo.setup_imagerepo.assert_called()
+    lrepo.setup_tag.assert_called()
+    lrepo.set_version.assert_called()
+    mock_imgstep2.assert_called()
 
-#     tarfile = "img.tar"
-#     imagerepo = "/home/.udocker/images"
-#     tag = "v1"
-#     move_tarball = True
-#     mock_exists.side_effect = [True, False]
-#     self.local.setup_imagerepo.return_value = True
-#     self.local.cd_imagerepo.return_value = False
-#     self.local.setup_tag.return_value = True
-#     self.local.set_version.return_value = True
-#     mock_layerv1.return_value = "12345"
-#     mock_copy.return_value = False
-#     mock_rename.return_value = None
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.import_toimage(tarfile, imagerepo, tag, move_tarball)
-#     self.assertFalse(status)
-#     self.assertTrue(mock_layerv1.called)
-#     self.assertTrue(mock_rename.called)
 
-#     move_tarball = False
-#     mock_exists.side_effect = [True, True]
-#     self.local.setup_imagerepo.return_value = True
-#     self.local.cd_imagerepo.return_value = False
-#     self.local.setup_tag.return_value = True
-#     self.local.set_version.return_value = True
-#     self.local.add_image_layer.side_effect = [True, True]
-#     self.local.save_json.side_effect = [True, True]
-#     mock_layerv1.return_value = "12345"
-#     mock_copy.return_value = False
-#     mock_rename.return_value = None
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.import_toimage(tarfile, imagerepo, tag, move_tarball)
-#     self.assertEqual(status, "12345")
-#     self.assertTrue(mock_layerv1.called)
+def test_09__untar_saved_container(mocker, clfapi):
+    """Test09 CommonLocalFileApi()._untar_saved_container()."""
+    tarfile = "file.tar"
+    destdir = "/home/.udocker/images"
+    mock_ucall = mocker.patch('udocker.commonlocalfile.Uprocess.call', return_value=True)
+
+    status = clfapi._untar_saved_container(tarfile, destdir)
+    assert not status
+    mock_ucall.assert_called()
+
+
+def test_10_create_container_meta(mocker, clfapi):
+    """Test10 CommonLocalFileApi().create_container_meta()."""
+    layer_id = "12345"
+    comment = "created by my udocker"
+    mock_arch = mocker.patch('udocker.commonlocalfile.HostInfo.arch', return_value="x86_64")
+    mock_version = mocker.patch('udocker.commonlocalfile.HostInfo.osversion', return_value="8")
+    mock_size = mocker.patch('udocker.commonlocalfile.FileUtil.size', return_value=-1)
+
+    status = clfapi.create_container_meta(layer_id, comment)
+    assert status["id"] == layer_id
+    assert status["comment"] == comment
+    assert status["size"] == 0
+    mock_arch.assert_called()
+    mock_version.assert_called()
+    mock_size.assert_called()
+
+
+def test_11_import_toimage(mocker, clfapi, lrepo):
+    """Test11 CommonLocalFileApi().import_toimage(). path exists False"""
+    mock_exists = mocker.patch('os.path.exists', return_value=False)
+    mock_logerr = mocker.patch('udocker.LOG.error')
+    lrepo.setup_imagerepo.return_value = True
+
+    status = clfapi.import_toimage("img.tar", "/images", "v1")
+    assert not status
+    mock_exists.assert_called()
+    mock_logerr.assert_called()
+    lrepo.setup_imagerepo.assert_not_called()
+
+
+def test_12_import_toimage(mocker, clfapi, lrepo):
+    """Test12 CommonLocalFileApi().import_toimage(). path exists True"""
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    mock_logerr = mocker.patch('udocker.LOG.error')
+    mock_loginf = mocker.patch('udocker.LOG.info')
+    lrepo.setup_imagerepo.return_value = True
+    lrepo.cd_imagerepo.return_value = '/tag'
+    lrepo.setup_tag.return_value = ''
+
+    status = clfapi.import_toimage("img.tar", "/images", "v1")
+    assert not status
+    mock_exists.assert_called()
+    mock_logerr.assert_not_called()
+    lrepo.setup_imagerepo.assert_called()
+    lrepo.cd_imagerepo.assert_called()
+    mock_loginf.assert_called()
+    lrepo.setup_tag.assert_not_called()
+
+
+def test_13_import_toimage(mocker, clfapi, lrepo):
+    """Test13 CommonLocalFileApi().import_toimage(). path exists True tag not exist"""
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    mock_logerr = mocker.patch('udocker.LOG.error')
+    mock_loginf = mocker.patch('udocker.LOG.info')
+    lrepo.setup_imagerepo.return_value = True
+    lrepo.cd_imagerepo.return_value = ''
+    lrepo.setup_tag.return_value = ''
+    lrepo.set_version.return_value = False
+
+    status = clfapi.import_toimage("img.tar", "/images", "v1")
+    assert not status
+    mock_exists.assert_called()
+    mock_logerr.assert_called()
+    lrepo.setup_imagerepo.assert_called()
+    lrepo.cd_imagerepo.assert_called()
+    mock_loginf.assert_not_called()
+    lrepo.setup_tag.assert_called()
+    lrepo.set_version.assert_not_called()
+
+
+def test_14_import_toimage(mocker, clfapi, lrepo):
+    """Test14 CommonLocalFileApi().import_toimage(). tag exist set version False"""
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    mock_logerr = mocker.patch('udocker.LOG.error')
+    mock_loginf = mocker.patch('udocker.LOG.info')
+    mock_layerv1 = mocker.patch('udocker.commonlocalfile.Unique.layer_v1')
+    lrepo.setup_imagerepo.return_value = True
+    lrepo.cd_imagerepo.return_value = ''
+    lrepo.setup_tag.return_value = 'tag'
+    lrepo.set_version.return_value = False
+
+    status = clfapi.import_toimage("img.tar", "/images", "v1")
+    assert not status
+    mock_exists.assert_called()
+    mock_logerr.assert_called()
+    lrepo.setup_imagerepo.assert_called()
+    lrepo.cd_imagerepo.assert_called()
+    mock_loginf.assert_not_called()
+    lrepo.setup_tag.assert_called()
+    lrepo.set_version.assert_called()
+    mock_layerv1.assert_not_called()
+
+
+def test_15_import_toimage(mocker, clfapi, lrepo):
+    """Test15 CommonLocalFileApi().import_toimage(). set version True copyto False"""
+    mock_exists = mocker.patch('os.path.exists', side_effect=[True, False])
+    mock_logerr = mocker.patch('udocker.LOG.error')
+    mock_loginf = mocker.patch('udocker.LOG.info')
+    mock_layerv1 = mocker.patch('udocker.commonlocalfile.Unique.layer_v1', return_value='123')
+    mock_rename = mocker.patch('os.rename', return_value=True)
+    mock_copy = mocker.patch('udocker.commonlocalfile.FileUtil.copyto', return_value=False)
+    lrepo.setup_imagerepo.return_value = True
+    lrepo.cd_imagerepo.return_value = ''
+    lrepo.setup_tag.return_value = 'tag'
+    lrepo.set_version.return_value = True
+    lrepo.layersdir.return_value = '/layers'
+
+    status = clfapi.import_toimage("img.tar", "/images", "v1")
+    assert not status
+    assert mock_exists.call_count == 2
+    mock_logerr.assert_called()
+    lrepo.setup_imagerepo.assert_called()
+    lrepo.cd_imagerepo.assert_called()
+    mock_loginf.assert_not_called()
+    lrepo.setup_tag.assert_called()
+    lrepo.set_version.assert_called()
+    mock_layerv1.assert_called()
+    mock_rename.assert_called()
+    mock_copy.assert_called()
+
+
+def test_16_import_toimage(mocker, clfapi, lrepo):
+    """Test16 CommonLocalFileApi().import_toimage(). return layerid"""
+    mock_exists = mocker.patch('os.path.exists', side_effect=[True, True])
+    mock_logerr = mocker.patch('udocker.LOG.error')
+    mock_loginf = mocker.patch('udocker.LOG.info')
+    mock_layerv1 = mocker.patch('udocker.commonlocalfile.Unique.layer_v1', return_value='123')
+    mock_rename = mocker.patch('os.rename', return_value=True)
+    mock_copy = mocker.patch('udocker.commonlocalfile.FileUtil.copyto', return_value=False)
+    mock_contmeta = mocker.patch.object(CommonLocalFileApi, 'create_container_meta')
+    lrepo.setup_imagerepo.return_value = True
+    lrepo.cd_imagerepo.return_value = ''
+    lrepo.setup_tag.return_value = 'tag'
+    lrepo.set_version.return_value = True
+    lrepo.layersdir.return_value = '/layers'
+    lrepo.add_image_layer.side_effect = [True, True]
+    lrepo.save_json.side_effect = [True, True]
+
+    status = clfapi.import_toimage("img.tar", "/images", "v1")
+    assert status == '123'
+    assert mock_exists.call_count == 2
+    assert lrepo.add_image_layer.call_count == 2
+    assert lrepo.save_json.call_count == 2
+    mock_logerr.assert_not_called()
+    lrepo.setup_imagerepo.assert_called()
+    lrepo.cd_imagerepo.assert_called()
+    mock_loginf.assert_called()
+    lrepo.setup_tag.assert_called()
+    lrepo.set_version.assert_called()
+    mock_layerv1.assert_called()
+    mock_rename.assert_called()
+    mock_copy.assert_not_called()
+    mock_contmeta.assert_called()
+
 
 # @patch('udocker.commonlocalfile.ContainerStructure.create_fromlayer')
 # @patch('udocker.commonlocalfile.Unique.layer_v1')
