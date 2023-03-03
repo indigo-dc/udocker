@@ -298,48 +298,56 @@ def test_16_import_toimage(mocker, clfapi, lrepo):
     mock_contmeta.assert_called()
 
 
-# @patch('udocker.commonlocalfile.ContainerStructure.create_fromlayer')
-# @patch('udocker.commonlocalfile.Unique.layer_v1')
-# @patch('udocker.commonlocalfile.os.path.exists')
-# def test_08_import_tocontainer(self, mock_exists, mock_layerv1, mock_create):
-#     """Test08 CommonLocalFileApi().import_tocontainer()."""
-#     tarfile = ""
-#     imagerepo = ""
-#     tag = ""
-#     container_name = ""
-#     mock_exists.return_value = False
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.import_tocontainer(tarfile, imagerepo, tag, container_name)
-#     self.assertFalse(status)
+def test_17_import_tocontainer(mocker, clfapi):
+    """Test17 CommonLocalFileApi().import_tocontainer(). path exists False"""
+    mock_exists = mocker.patch('os.path.exists', return_value=False)
+    mock_logerr = mocker.patch('udocker.LOG.error')
 
-#     tarfile = "img.tar"
-#     imagerepo = "/home/.udocker/images"
-#     tag = "v1"
-#     container_name = "mycont"
-#     self.local.get_container_id.return_value = True
-#     mock_exists.return_value = True
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.import_tocontainer(tarfile, imagerepo, tag, container_name)
-#     self.assertTrue(self.local.get_container_id.called)
-#     self.assertTrue(mock_exists.called)
-#     self.assertFalse(status)
+    status = clfapi.import_tocontainer('', '', '', '')
+    assert not status
+    mock_exists.assert_called()
+    mock_logerr.assert_called()
 
-#     tarfile = "img.tar"
-#     imagerepo = "/home/.udocker/images"
-#     tag = "v1"
-#     container_name = "mycont"
-#     self.local.get_container_id.return_value = False
-#     self.local.set_container_name.return_value = True
-#     mock_exists.return_value = True
-#     mock_layerv1.return_value = "12345"
-#     mock_create.return_value = "345"
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.import_tocontainer(tarfile, imagerepo, tag, container_name)
-#     self.assertTrue(self.local.get_container_id.called)
-#     self.assertTrue(mock_exists.called)
-#     self.assertTrue(mock_layerv1.called)
-#     self.assertTrue(mock_create.called)
-#     self.assertEqual(status, "345")
+
+def test_18_import_tocontainer(mocker, clfapi, lrepo):
+    """Test18 CommonLocalFileApi().import_tocontainer(). path exists cont exists"""
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    mock_logerr = mocker.patch('udocker.LOG.error')
+    mock_loginf = mocker.patch('udocker.LOG.info')
+    lrepo.get_container_id.return_value = True
+
+    status = clfapi.import_tocontainer('img.tar', '/images', 'v1', 'mycont')
+    assert not status
+    lrepo.get_container_id.assert_called()
+    mock_exists.assert_called()
+    mock_logerr.assert_not_called()
+    mock_loginf.assert_called()
+
+
+def test_19_import_tocontainer(mocker, clfapi, lrepo):
+    """Test19 CommonLocalFileApi().import_tocontainer(). path exists cont does not exist"""
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    mock_logerr = mocker.patch('udocker.LOG.error')
+    mock_loginf = mocker.patch('udocker.LOG.info')
+    lrepo.get_container_id.return_value = False
+    mock_layerv1 = mocker.patch('udocker.commonlocalfile.Unique.layer_v1', return_value='123')
+    mock_contmeta = mocker.patch.object(CommonLocalFileApi, 'create_container_meta')
+    mock_cstruct = mocker.patch('udocker.commonlocalfile.ContainerStructure')
+    mock_cstruct.return_value.create_fromlayer.return_value = '543'
+    lrepo.set_container_name.return_value = True
+
+    status = clfapi.import_tocontainer('img.tar', '/images', 'v1', 'mycont')
+    assert status == '543'
+    lrepo.get_container_id.assert_called()
+    mock_exists.assert_called()
+    mock_logerr.assert_not_called()
+    mock_loginf.assert_not_called()
+    mock_layerv1.assert_called()
+    mock_contmeta.assert_called()
+    mock_cstruct.return_value.create_fromlayer.assert_called()
+    lrepo.set_container_name.assert_called()
+
+
 
 # @patch('udocker.commonlocalfile.ContainerStructure.clone_fromfile')
 # @patch('udocker.commonlocalfile.os.path.exists')
