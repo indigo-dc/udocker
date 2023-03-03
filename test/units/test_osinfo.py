@@ -17,6 +17,7 @@ def test_01_get_filetype(osinfo, mocker):
     mock_isfile = mocker.patch('os.path.isfile', return_value=True)
     mock_islnk = mocker.patch('os.path.islink', return_value=False)
     mock_getout = mocker.patch('udocker.helper.osinfo.Uprocess.get_output', return_value=ftype)
+
     status = osinfo.get_filetype("bin/ls")
     assert status == ftype
     mock_isfile.assert_called()
@@ -29,7 +30,8 @@ def test_02_get_filetype(osinfo, mocker):
     mock_isfile = mocker.patch('os.path.isfile', return_value=True)
     mock_islnk = mocker.patch('os.path.islink', return_value=False)
     mock_getout = mocker.patch('udocker.helper.osinfo.Uprocess.get_output',
-                               side_effect = [False, 'x86'])
+                               side_effect=[False, 'x86'])
+
     status = osinfo.get_filetype("ls")
     assert status == 'x86'
     mock_isfile.assert_called()
@@ -42,10 +44,12 @@ data_arch = [('/bin/ls: yyy, x86-64, xxx', 'amd64'),
              ('/bin/ls: yyy, aarch64', 'arm64'),
              ('/bin/ls: yyy, ARM, xxx', 'arm')]
 
+
 @pytest.mark.parametrize("ftype,expected", data_arch)
 def test_04_arch(osinfo, ftype, expected, mocker):
     """Test04 OSInfo.arch()"""
     mock_getftype = mocker.patch.object(OSInfo, 'get_filetype', return_value=ftype)
+
     status = osinfo.arch()
     assert status == expected
     mock_getftype.assert_called()
@@ -70,6 +74,7 @@ data_os = [(1, RELEASE_DATA, '/etc/centos-release', [True, False, False], ("Cent
            (1, OS_DATA, '/etc/os-release', [False, False, True], ("Ubuntu", "20")),
            (0, '', '', [False, False, False], ("", ""))]
 
+
 @pytest.mark.parametrize("mock_count,data,filepath,path_exist,expected", data_os)
 def test_05_osdistribution(osinfo, mock_count, data, filepath, path_exist, expected, mocker):
     """Test05 OSInfo.osdistribution()"""
@@ -83,13 +88,16 @@ def test_05_osdistribution(osinfo, mock_count, data, filepath, path_exist, expec
     mock_exists.assert_called()
     assert mock_gdata.call_count == mock_count
 
+
 data_ver = [(("Ubuntu", "20"), 'linux'),
             (("", ""), '')]
+
 
 @pytest.mark.parametrize("osver,expected", data_ver)
 def test_06_osversion(osinfo, osver, expected, mocker):
     """Test06 OSInfo.osversion()"""
     mock_osdist = mocker.patch.object(OSInfo, 'osdistribution', return_value = osver)
+
     status = osinfo.osversion()
     assert status == expected
     mock_osdist.assert_called()

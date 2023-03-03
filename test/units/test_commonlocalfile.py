@@ -28,8 +28,8 @@ def test_02__move_layer_to_v1repo(mocker, clfapi):
 
 
 data_in = (("/home/.udocker/12345.json", "12345"),
-                ("/home/.udocker/12345.layer.tar", "12345"),
-                ("/home/.udocker/12345", "some:12345"))
+           ("/home/.udocker/12345.layer.tar", "12345"),
+           ("/home/.udocker/12345", "some:12345"))
 
 @pytest.mark.parametrize("fpath,lid", data_in)
 def test_03__move_layer_to_v1repo(mocker, clfapi, lrepo, fpath, lid):
@@ -348,100 +348,99 @@ def test_19_import_tocontainer(mocker, clfapi, lrepo):
     lrepo.set_container_name.assert_called()
 
 
+def test_20_import_clone(mocker, clfapi, lrepo):
+    """Test20 CommonLocalFileApi().import_clone(). path not exist"""
+    mock_exists = mocker.patch('os.path.exists', return_value=False)
+    mock_logerr = mocker.patch('udocker.LOG.error')
+    lrepo.get_container_id.return_value = False
 
-# @patch('udocker.commonlocalfile.ContainerStructure.clone_fromfile')
-# @patch('udocker.commonlocalfile.os.path.exists')
-# def test_09_import_clone(self, mock_exists, mock_clone):
-#     """Test09 CommonLocalFileApi().import_clone()."""
-#     tarfile = ""
-#     container_name = ""
-#     mock_exists.return_value = False
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.import_clone(tarfile, container_name)
-#     self.assertFalse(status)
+    status = clfapi.import_clone('', '')
+    assert not status
+    mock_exists.assert_called()
+    mock_logerr.assert_called()
+    lrepo.get_container_id.assert_not_called()
 
-#     tarfile = "img.tar"
-#     container_name = "mycont"
-#     self.local.get_container_id.return_value = True
-#     mock_exists.return_value = True
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.import_clone(tarfile, container_name)
-#     self.assertTrue(self.local.get_container_id.called)
-#     self.assertTrue(mock_exists.called)
-#     self.assertFalse(status)
 
-#     tarfile = "img.tar"
-#     container_name = "mycont"
-#     self.local.get_container_id.return_value = False
-#     self.local.set_container_name.return_value = True
-#     mock_exists.return_value = True
-#     mock_clone.return_value = "345"
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.import_clone(tarfile, container_name)
-#     self.assertTrue(self.local.get_container_id.called)
-#     self.assertTrue(mock_exists.called)
-#     self.assertTrue(mock_clone.called)
-#     self.assertEqual(status, "345")
+def test_21_import_clone(mocker, clfapi, lrepo):
+    """Test21 CommonLocalFileApi().import_clone(). path exists"""
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    mock_logerr = mocker.patch('udocker.LOG.error')
+    lrepo.get_container_id.return_value = True
+    mock_loginf = mocker.patch('udocker.LOG.info')
+    mock_cstruct = mocker.patch('udocker.commonlocalfile.ContainerStructure.clone_fromfile')
 
-# @patch('udocker.commonlocalfile.ExecutionMode.set_mode')
-# @patch('udocker.commonlocalfile.ExecutionMode.get_mode')
-# @patch('udocker.commonlocalfile.ContainerStructure.clone')
-# def test_10_clone_container(self, mock_clone, mock_exget, mock_exset):
-#     """Test10 CommonLocalFileApi().clone_container()."""
-#     container_name = "mycont"
-#     container_id = ""
-#     self.local.get_container_id.return_value = True
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.clone_container(container_id, container_name)
-#     self.assertFalse(status)
+    status = clfapi.import_clone('img.tar', 'mycont')
+    assert not status
+    mock_exists.assert_called()
+    mock_logerr.assert_not_called()
+    lrepo.get_container_id.assert_called()
+    mock_loginf.assert_called()
+    mock_cstruct.assert_not_called()
 
-#     container_name = "mycont"
-#     container_id = ""
-#     self.local.get_container_id.return_value = False
-#     self.local.set_container_name.return_value = True
-#     mock_clone.return_value = "345"
-#     mock_exget.return_value = "P1"
-#     mock_exset.return_value = True
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.clone_container(container_id, container_name)
-#     self.assertTrue(self.local.get_container_id.called)
-#     self.assertTrue(self.local.set_container_name.called)
-#     self.assertTrue(mock_exget.called)
-#     self.assertFalse(mock_exset.called)
-#     self.assertTrue(mock_clone.called)
-#     self.assertEqual(status, "345")
 
-#     container_name = "mycont"
-#     container_id = ""
-#     self.local.get_container_id.return_value = False
-#     self.local.set_container_name.return_value = True
-#     mock_clone.return_value = "345"
-#     mock_exget.return_value = "F1"
-#     mock_exset.return_value = True
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi.clone_container(container_id, container_name)
-#     self.assertTrue(self.local.get_container_id.called)
-#     self.assertTrue(self.local.set_container_name.called)
-#     self.assertTrue(mock_exget.called)
-#     self.assertTrue(mock_exset.called)
-#     self.assertTrue(mock_clone.called)
-#     self.assertEqual(status, "345")
+def test_22_import_clone(mocker, clfapi, lrepo):
+    """Test22 CommonLocalFileApi().import_clone(). path exists cont does not exist"""
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    mock_logerr = mocker.patch('udocker.LOG.error')
+    lrepo.get_container_id.return_value = False
+    mock_loginf = mocker.patch('udocker.LOG.info')
+    mock_cstruct = mocker.patch('udocker.commonlocalfile.ContainerStructure.clone_fromfile',
+                                return_value='543')
+    lrepo.set_container_name.return_value = True
 
-# @patch('udocker.commonlocalfile.os.path.exists')
-# def test_11__get_imagedir_type(self, mock_exists):
-#     """Test11 CommonLocalFileApi()._get_imagedir_type()."""
-#     tmp_imagedir = "/home/.udocker/images/myimg"
-#     mock_exists.side_effect = [False, False]
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi._get_imagedir_type(tmp_imagedir)
-#     self.assertEqual(status, "")
+    status = clfapi.import_clone('img.tar', 'mycont')
+    assert status == '543'
+    mock_exists.assert_called()
+    mock_logerr.assert_not_called()
+    lrepo.get_container_id.assert_called()
+    mock_loginf.assert_not_called()
+    mock_cstruct.assert_called()
+    lrepo.set_container_name.assert_called()
 
-#     mock_exists.side_effect = [True, False]
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi._get_imagedir_type(tmp_imagedir)
-#     self.assertEqual(status, "OCI")
 
-#     mock_exists.side_effect = [False, True]
-#     clfapi = CommonLocalFileApi(self.local)
-#     status = clfapi._get_imagedir_type(tmp_imagedir)
-#     self.assertEqual(status, "Docker")
+def test_22_clone_container(mocker, clfapi, lrepo):
+    """Test22 CommonLocalFileApi().clone_container(). container name exists"""
+    lrepo.get_container_id.return_value = True
+    mock_loginf = mocker.patch('udocker.LOG.info')
+
+    status = clfapi.clone_container("1234", "mycont")
+    assert not status
+    lrepo.get_container_id.assert_called()
+    mock_loginf.assert_called()
+
+
+def test_23_clone_container(mocker, clfapi, lrepo):
+    """Test23 CommonLocalFileApi().clone_container(). container does not exists"""
+    lrepo.get_container_id.return_value = False
+    mock_loginf = mocker.patch('udocker.LOG.info')
+    mock_clone = mocker.patch('udocker.commonlocalfile.ContainerStructure.clone',
+                              return_value="345")
+    lrepo.set_container_name.return_value = True
+    mock_exmode = mocker.patch('udocker.commonlocalfile.ExecutionMode')
+    mock_exmode.return_value.get_mode.return_value = 'F2'
+    mock_exmode.return_value.set_mode.return_value = None
+
+    status = clfapi.clone_container("1234", "mycont")
+    assert status == "345"
+    lrepo.get_container_id.assert_called()
+    mock_loginf.assert_not_called()
+    mock_clone.assert_called()
+    lrepo.set_container_name.assert_called()
+    mock_exmode.assert_called()
+    mock_exmode.return_value.get_mode.assert_called()
+    mock_exmode.return_value.set_mode.assert_called()
+
+
+data_in = (([False, False], ""),
+           ([True, False], "OCI"),
+           ([False, True], "Docker"))
+
+
+@pytest.mark.parametrize("pexists,expected", data_in)
+def test_11__get_imagedir_type(mocker, clfapi, pexists, expected):
+    """Test11 CommonLocalFileApi()._get_imagedir_type()."""
+    mock_exists = mocker.patch('os.path.exists', side_effect=pexists)
+
+    status = clfapi._get_imagedir_type('images/myimg')
+    assert status == expected
+    mock_exists.assert_called()

@@ -32,5 +32,6 @@ def test_01_getconf(config):
 def test_03_getconf(monkeypatch, config):
     """Test03 Config.getconf() env var."""
     monkeypatch.setenv("UDOCKER_KEYSTORE", "ks_env")
+
     config.getconf()
     assert config.conf["keystore"] == "ks_env"

@@ -14,6 +14,7 @@ def test_01_get_stderr(mocker):
     mock_subproc.DEVNULL = -3
     Config().getconf()
     Config.conf['verbose_level'] = logging.INFO
+
     status = Uprocess().get_stderr()
     assert status == -3
 
@@ -36,6 +37,7 @@ def test_03_find_inpath(mocker):
     path = ''
     mock_base = mocker.patch('os.path.basename')
     mock_debug = mocker.patch('udocker.LOG.debug')
+
     status = Uprocess().find_inpath(fname, path)
     assert status == ''
     mock_base.assert_not_called()
@@ -50,6 +52,7 @@ def test_04_find_inpath(mocker):
     mock_base = mocker.patch('os.path.basename', return_value=fname)
     mock_debug = mocker.patch('udocker.LOG.debug')
     mock_lexists = mocker.patch('os.path.lexists', return_value=True)
+
     status = Uprocess().find_inpath(fname, path)
     assert status == full_path
     mock_base.assert_called()
@@ -65,6 +68,7 @@ def test_05_find_inpath(mocker):
     mock_base = mocker.patch('os.path.basename', return_value=fname)
     mock_debug = mocker.patch('udocker.LOG.debug')
     mock_lexists = mocker.patch('os.path.lexists', side_effect=[False, True])
+
     status = Uprocess().find_inpath(fname, path)
     assert status == full_path
     mock_base.assert_called()
@@ -75,6 +79,7 @@ def test_05_find_inpath(mocker):
 def test_06_check_output(mocker):
     """Test06 Uprocess().check_output() raise OSError."""
     mock_subp_chkout = mocker.patch('subprocess.check_output', side_effect=OSError("fail"))
+
     status = Uprocess().check_output()
     assert status == ""
     mock_subp_chkout.assert_called()
@@ -84,6 +89,7 @@ def test_07_check_output(mocker):
     """Test06 Uprocess().check_output()."""
     chkout = b"some_check"
     mock_subp_chkout = mocker.patch('subprocess.check_output', return_value=chkout)
+
     status = Uprocess().check_output()
     assert status == "some_check"
     mock_subp_chkout.assert_called()

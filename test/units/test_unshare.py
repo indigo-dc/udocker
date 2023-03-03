@@ -9,6 +9,7 @@ from udocker.helper.unshare import Unshare
 def test_01_unshare(mocker):
     """Test01 Unshare().unshare"""
     mock_cdll = mocker.patch('ctypes.CDLL')
+
     status = Unshare().unshare(False)
     mock_cdll.return_value.unshare.assert_called()
     assert status
@@ -18,6 +19,7 @@ def test_02_unshare(mocker):
     """Test02 Unshare().unshare"""
     mock_cdll = mocker.patch('ctypes.CDLL')
     mock_cdll.return_value.unshare.return_value = -1
+
     status = Unshare().unshare(False)
     mock_cdll.return_value.unshare.assert_called()
     assert not status
@@ -27,6 +29,7 @@ def test_03_unshare(mocker):
     """Test03 Unshare().unshare"""
     mock_cdll = mocker.patch('ctypes.CDLL', side_effect=OSError)
     mock_logerr = mocker.patch('udocker.LOG.error')
+
     status = Unshare().unshare(False)
     mock_cdll.assert_called()
     mock_logerr.assert_called()

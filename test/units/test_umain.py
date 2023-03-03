@@ -29,6 +29,7 @@ def test_01__prepare_exec(mocker, config):
     mock_cmdp = mocker.patch('udocker.umain.CmdParser')
     mock_getuid = mocker.patch('os.geteuid', return_value=0)
     mock_logerr = mocker.patch('udocker.umain.LOG.error')
+
     with patch('sys.exit') as mock_exit:
         UMain(argv)._prepare_exec()
         mock_exit.assert_called()
@@ -42,6 +43,7 @@ def test_02__prepare_exec(mocker, config):
     argv = ["udocker", "-h"]
     mock_cmdp = mocker.patch('udocker.umain.CmdParser')
     mock_getuid = mocker.patch('os.geteuid', return_value=2000)
+
     with patch('sys.exit') as mock_exit:
         UMain(argv)._prepare_exec()
         mock_exit.assert_called()
