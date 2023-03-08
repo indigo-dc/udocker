@@ -251,7 +251,7 @@ class ElfPatcher:
         return True
 
     def _get_ld_config(self):
-        """Get get directories from container ld.so.cache"""
+        """Get directories from container ld.so.cache"""
         cmd = ["ldconfig", "-p", "-C", f"{self._container_root}/{Config.conf['ld_so_cache']}", ]
         ld_dict = {}
         ld_data = Uprocess().get_output(cmd)
@@ -262,6 +262,7 @@ class ElfPatcher:
             match = re.search("([^ ]+) => ([^ ]+)", line)
             if match:
                 ld_dict[self._container_root + os.path.dirname(match.group(2))] = True
+
         return list(ld_dict.keys())
 
     def _find_ld_libdirs(self, root_path=None):

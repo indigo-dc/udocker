@@ -209,185 +209,190 @@ def test_11_get_container_loader(mocker, elfp, get_loader, expected, pexist, pex
     mock_gol.assert_called()
     assert mock_exists.call_count == pexist_count
 
+# Tuple is (FileUtil.getdata return value, expected output)
+data_lpath = (('', ''),
+              ('  withspaces', 'withspaces'),
+              ('nospaces', 'nospaces'))
 
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch('udocker.helper.elfpatcher.os.path.exists')
-# @patch.object(ElfPatcher, 'get_original_loader')
-# def test_07_get_container_loader(self, mock_gol, mock_exists, mock_path):
-#     """Test07 ElfPatcher().get_container_loader().
-#     Get an absolute pathname to the container ld.so"""
-#     mock_gol.return_value = ""
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     self.assertEqual(elfp.get_container_loader(), "")
 
-#     mock_exists.return_value = True
-#     mock_gol.return_value = "ld.so"
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     self.assertEqual(elfp.get_container_loader(), elfp._container_root + "/" + "ld.so")
+@pytest.mark.parametrize("getdata,expected", data_lpath)
+def test_12_get_patch_last_path(mocker, elfp, getdata, expected):
+    """Test12 ElfPatcher().get_patch_last_path()."""
+    mock_getdata = mocker.patch('udocker.helper.elfpatcher.FileUtil.getdata', return_value=getdata)
 
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch('udocker.helper.elfpatcher.FileUtil.getdata')
-# def test_08_get_patch_last_path(self, mock_getdata, mock_path):
-#     """Test08 ElfPatcher().get_patch_last_path()."""
-#     mock_getdata.return_value = ""
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     self.assertEqual(elfp.get_patch_last_path(), "")
+    out = elfp.get_patch_last_path()
+    assert out == expected
+    assert mock_getdata.call_count == 1
 
-#     mock_getdata.return_value = "/tmp"
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     self.assertEqual(elfp.get_patch_last_path(), "/tmp")
 
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch.object(ElfPatcher, 'get_patch_last_path')
-# def test_09_check_container_path(self, mock_lpath, mock_path):
-#     """Test09 ElfPatcher().check_container_path()."""
-#     mock_lpath.return_value = ""
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     status = elfp.check_container_path()
-#     self.assertTrue(status)
+# Tuple is (get_patch_last_path return value, expected output)
+data_contpath = (('', True),
+                 ('lastpath', False))
 
-#     mock_lpath.return_value = "xxx"
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     status = elfp.check_container_path()
-#     self.assertFalse(status)
 
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch('udocker.helper.elfpatcher.FileUtil.getdata')
-# def test_10_get_patch_last_time(self, mock_getdata, mock_path):
-#     """Test10 ElfPatcher().patch_last_time()."""
-#     mock_getdata.return_value = "30"
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     self.assertEqual(elfp.get_patch_last_time(), "30")
+@pytest.mark.parametrize("getlpath,expected", data_contpath)
+def test_13_get_patch_last_path(mocker, elfp, getlpath, expected):
+    """Test13 ElfPatcher().check_container_path()."""
+    mock_lpath = mocker.patch.object(ElfPatcher, 'get_patch_last_path', return_value=getlpath)
 
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch('udocker.helper.elfpatcher.os.path.exists')
-# @patch('udocker.helper.elfpatcher.FileUtil.putdata')
-# @patch.object(ElfPatcher, '_walk_fs')
-# @patch.object(ElfPatcher, 'guess_elf_loader')
-# @patch.object(ElfPatcher, 'select_patchelf')
-# @patch.object(ElfPatcher, 'get_container_loader')
-# @patch.object(ElfPatcher, 'check_container_path')
-# def test_11_patch_binaries(self, mock_chkcont, mock_gcl, mock_select, mock_guess, mock_walk,
-#                             mock_putdata, mock_exists, mock_path):
-#     """Test11 ElfPatcher().patch_binaries()."""
-#     mock_exists.return_value = True
-#     mock_chkcont.return_value = True
-#     mock_walk.return_value = True
-#     mock_gcl.return_value = "/usr/bin/ld"
-#     mock_select.return_value = "runc-arm"
-#     mock_putdata.side_effect = ["10", "/tmp"]
-#     mock_guess.return_value = "/usr/bin/ld"
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     elfp._container_root = "/tmp/ROOT"
-#     self.assertTrue(elfp.patch_binaries())
+    out = elfp.check_container_path()
+    assert out == expected
+    mock_lpath.assert_called()
 
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch('udocker.helper.elfpatcher.FileUtil.remove')
-# @patch.object(ElfPatcher, 'guess_elf_loader')
-# @patch.object(ElfPatcher, '_walk_fs')
-# @patch.object(ElfPatcher, 'get_patch_last_path')
-# @patch.object(ElfPatcher, 'get_original_loader')
-# @patch.object(ElfPatcher, 'select_patchelf')
-# def test_12_restore_binaries(self, mock_select, mock_gol, mock_lpath, mock_walk, mock_guess,
-#                                 mock_rm, mock_path):
-#     """Test12 ElfPatcher().restore_binaries()."""
-#     mock_select.return_value = "runc-arm"
-#     mock_gol.return_value = "ld.so"
-#     mock_lpath.return_value = "xxx"
-#     mock_walk.return_value = ""
-#     mock_guess.return_value = "ld.so"
-#     mock_rm.return_value = True
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     elfp._container_root = "/tmp/ROOT"
-#     self.assertTrue(elfp.restore_binaries())
-#     self.assertTrue(mock_rm.called)
 
-# @patch.object(ElfPatcher, 'get_container_loader')
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch('udocker.helper.elfpatcher.FileUtil.size')
-# @patch('udocker.helper.elfpatcher.FileUtil.copyto')
-# @patch('udocker.helper.elfpatcher.FileUtil.getdata')
-# @patch('udocker.helper.elfpatcher.FileUtil.putdata')
-# def test_13_patch_ld(self, mock_putdata, mock_getdata,
-#                         mock_copyto, mock_size, mock_path, mock_gcl):
-#     """Test13 ElfPatcher().patch_ld()."""
-#     mock_size.return_value = -1
-#     mock_putdata.return_value = False
-#     mock_path.return_value = "/some_contdir"
-#     mock_gcl.return_value = ""
-#     elfp = ElfPatcher(self.local, self.contid)
-#     self.assertFalse(elfp.patch_ld())
+data_ltime = (('30', '30'),
+              ('aa', '0'))
 
-#     mock_size.return_value = 20
-#     mock_copyto.return_value = False
-#     mock_path.return_value = "/some_contdir"
-#     mock_gcl.return_value = ""
-#     elfp = ElfPatcher(self.local, self.contid)
-#     self.assertFalse(elfp.patch_ld())
 
-#     mock_size.return_value = 20
-#     mock_copyto.return_value = True
-#     mock_getdata.return_value = []
-#     mock_path.return_value = "/some_contdir"
-#     mock_gcl.return_value = ""
-#     elfp = ElfPatcher(self.local, self.contid)
-#     self.assertFalse(elfp.patch_ld())
+@pytest.mark.parametrize("getdata,expected", data_ltime)
+def test_14_get_patch_last_time(mocker, elfp, getdata, expected):
+    """Test14 ElfPatcher().get_patch_last_time()."""
+    mock_getdata = mocker.patch('udocker.helper.elfpatcher.FileUtil.getdata', return_value=getdata)
 
-#     mock_size.return_value = 20
-#     mock_copyto.return_value = True
-#     mock_getdata.return_value = []
-#     mock_path.return_value = "/some_contdir"
-#     mock_gcl.return_value = ""
-#     elfp = ElfPatcher(self.local, self.contid)
-#     self.assertFalse(elfp.patch_ld("OUTPUT_ELF"))
+    out = elfp.get_patch_last_time()
+    assert out == expected
+    mock_getdata.assert_called()
 
-# @patch.object(ElfPatcher, 'get_container_loader')
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch('udocker.helper.elfpatcher.FileUtil.size')
-# @patch('udocker.helper.elfpatcher.FileUtil.copyto')
-# def test_14_restore_ld(self, mock_copyto, mock_size, mock_path, mock_gcl):
-#     """Test14 ElfPatcher().restore_ld()."""
-#     mock_size.return_value = -1
-#     mock_path.return_value = "/some_contdir"
-#     mock_gcl.return_value = ""
-#     elfp = ElfPatcher(self.local, self.contid)
-#     self.assertFalse(elfp.restore_ld())
 
-#     mock_size.return_value = 20
-#     mock_copyto.return_value = True
-#     mock_path.return_value = "/some_contdir"
-#     mock_gcl.return_value = ""
-#     elfp = ElfPatcher(self.local, self.contid)
-#     self.assertTrue(elfp.restore_ld())
+def test_15_patch_binaries(mocker, elfp):
+    """Test15 ElfPatcher().patch_binaries()."""
+    mock_chkcont = mocker.patch.object(ElfPatcher, 'check_container_path', return_value=False)
+    mock_restbin = mocker.patch.object(ElfPatcher, 'restore_binaries')
+    mock_select = mocker.patch.object(ElfPatcher, 'select_patchelf', return_value="patchelf-arm")
+    mock_gcl = mocker.patch.object(ElfPatcher, 'get_container_loader', return_value="/usr/bin/ld")
+    mock_walk = mocker.patch.object(ElfPatcher, '_walk_fs', return_value=True)
+    mock_guess = mocker.patch.object(ElfPatcher, 'guess_elf_loader', return_value="/usr/bin/ld")
+    mock_time = mocker.patch('time.time')
+    mock_putdata = mocker.patch('udocker.helper.elfpatcher.FileUtil.putdata',
+                                side_effect = ["10", "/tmp"])
 
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch('udocker.helper.elfpatcher.os.path.dirname')
-# @patch('udocker.helper.elfpatcher.Uprocess.get_output')
-# def test_15__get_ld_config(self, mock_upout, mock_dir, mock_path):
-#     """Test15 ElfPatcher().get_ld_config()."""
-#     mock_upout.return_value = []
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     status = elfp._get_ld_config()
-#     self.assertEqual(status, [])
+    assert elfp.patch_binaries()
+    mock_chkcont.assert_called()
+    mock_restbin.assert_called()
+    mock_select.assert_called()
+    mock_gcl.assert_called()
+    mock_walk.assert_called()
+    mock_guess.assert_called()
+    mock_time.assert_called()
+    assert mock_putdata.call_count == 2
 
-#     mock_upout.return_value = \
-#         "ld.so.cache => /tmp/ROOT/etc/ld.so.cache\n" \
-#         "ld.so.cache => /tmp/ROOT/etc/ld.so"
-#     mock_dir.side_effect = ['/ld.so.cache', '/ld.so']
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     status = elfp._get_ld_config()
-#     self.assertIsInstance(status, list)
+
+def test_16_patch_binaries(mocker, elfp):
+    """Test16 ElfPatcher().patch_binaries()."""
+    mock_chkcont = mocker.patch.object(ElfPatcher, 'check_container_path', return_value=False)
+    mock_restbin = mocker.patch.object(ElfPatcher, 'restore_binaries')
+    mock_select = mocker.patch.object(ElfPatcher, 'select_patchelf', return_value="patchelf-arm")
+    mock_gcl = mocker.patch.object(ElfPatcher, 'get_container_loader', return_value="/usr/bin/ld1")
+    mock_walk = mocker.patch.object(ElfPatcher, '_walk_fs', return_value=True)
+    mock_guess = mocker.patch.object(ElfPatcher, 'guess_elf_loader', return_value="/usr/bin/ld2")
+    mock_time = mocker.patch('time.time')
+    mock_putdata = mocker.patch('udocker.helper.elfpatcher.FileUtil.putdata')
+
+    assert not elfp.patch_binaries()
+    mock_chkcont.assert_called()
+    mock_restbin.assert_called()
+    mock_select.assert_called()
+    mock_gcl.assert_called()
+    mock_walk.assert_called()
+    mock_guess.assert_called()
+    mock_time.assert_not_called()
+    mock_putdata.assert_not_called()
+
+
+data_restbin = (('ld1', '', 'ld1', 2, True),
+                ('ld1', '/lib', 'ld1', 2, True),
+                ('ld1', '/lib', 'ld2', 0, False))
+
+
+@pytest.mark.parametrize("gol,lpath,gelfload,count_futilrm,expected", data_restbin)
+def test_17_restore_binaries(mocker, elfp, gol, lpath, gelfload, count_futilrm, expected):
+    """Test17 ElfPatcher().restore_binaries()."""
+    mock_select = mocker.patch.object(ElfPatcher, 'select_patchelf', return_value="patchelf-arm")
+    mock_gol = mocker.patch.object(ElfPatcher, 'get_original_loader', return_value=gol)
+    mock_lpath = mocker.patch.object(ElfPatcher, 'get_patch_last_path', return_value=lpath)
+    mock_walk = mocker.patch.object(ElfPatcher, '_walk_fs')
+    mock_guess = mocker.patch.object(ElfPatcher, 'guess_elf_loader', return_value=gelfload)
+    mock_rm = mocker.patch('udocker.helper.elfpatcher.FileUtil.remove', side_effect=[True, True])
+
+    out = elfp.restore_binaries()
+    assert out == expected
+    mock_select.assert_called()
+    mock_gol.assert_called()
+    mock_lpath.assert_called()
+    mock_walk.assert_called()
+    mock_guess.assert_called()
+    assert mock_rm.call_count == count_futilrm
+
+
+USRENC = "\x00/usr".encode()
+LIBENC = "\x00/lib".encode()
+data_pld = ((-1, False, 1, [USRENC, LIBENC], 0, False, 0, None, False),
+            (-1, True, 1, [False, False], 2, False, 0, None, False),
+            (10, False, 0, [USRENC, LIBENC], 1, True, 1, None, True),
+            (10, False, 0, [USRENC, LIBENC], 1, True, 1, 'patchelf-amd64', True))
+
+
+@pytest.mark.parametrize("retsize,retcp,cnt_call,side_get,cnt_get,retput,cnt_put,out_elf,expected",
+                         data_pld)
+def test_18_patch_ld(mocker, elfp, retsize, retcp, cnt_call, side_get, cnt_get, retput, cnt_put,
+                     out_elf, expected):
+    """Test18 ElfPatcher().patch_ld()."""
+    mock_gcl = mocker.patch.object(ElfPatcher, 'get_container_loader')
+    mock_size = mocker.patch('udocker.helper.elfpatcher.FileUtil.size', return_value=retsize)
+    mock_copyto = mocker.patch('udocker.helper.elfpatcher.FileUtil.copyto', return_value=retcp)
+    mock_getdata = mocker.patch('udocker.helper.elfpatcher.FileUtil.getdata', side_effect=side_get)
+    mock_putdata = mocker.patch('udocker.helper.elfpatcher.FileUtil.putdata', return_value=retput)
+
+    out = elfp.patch_ld(out_elf)
+    assert out == expected
+    mock_gcl.assert_called()
+    mock_size.assert_called()
+    assert mock_copyto.call_count == cnt_call
+    assert mock_getdata.call_count == cnt_get
+    assert mock_putdata.call_count == cnt_put
+
+
+data_restld = ((-1, False, 0, 1, False),
+               (10, False, 1, 1, False),
+               (10, True, 1, 0, True))
+
+
+@pytest.mark.parametrize("retsize,retcp,cnt_cp,cnt_log,expected", data_restld)
+def test_19_restore_ld(mocker, elfp, retsize, retcp, cnt_cp, cnt_log, expected):
+    """Test19 ElfPatcher().restore_ld()."""
+    mock_gcl = mocker.patch.object(ElfPatcher, 'get_container_loader')
+    mock_size = mocker.patch('udocker.helper.elfpatcher.FileUtil.size', return_value=retsize)
+    mock_copyto = mocker.patch('udocker.helper.elfpatcher.FileUtil.copyto', return_value=retcp)
+    mock_logerr = mocker.patch('udocker.helper.elfpatcher.LOG.error')
+
+    out = elfp.restore_ld()
+    assert out == expected
+    mock_gcl.assert_called()
+    mock_size.assert_called()
+    assert mock_copyto.call_count == cnt_cp
+    assert mock_logerr.call_count == cnt_log
+
+
+UPOUT = ("ld.so.cache => /tmp/ROOT/etc/ld.so.cache\n"
+         "ld.so.cache => /tmp/ROOT/etc/ld.so")
+
+data_ldconf = (([], ['/ld.so.cache', '/ld.so'], 0, []),
+               (UPOUT, ['/ld.so.cache', '/ld.so'], 2,
+                ['/some_contdir/ROOT/ld.so.cache', '/some_contdir/ROOT/ld.so']))
+
+
+@pytest.mark.parametrize("upout,side_dir,cnt_dir,expected", data_ldconf)
+def test_20__get_ld_config(mocker, elfp, upout, side_dir, cnt_dir, expected):
+    """Test20 ElfPatcher()._get_ld_config()."""
+    mock_upout = mocker.patch('udocker.helper.elfpatcher.Uprocess.get_output', return_value=upout)
+    mock_dir = mocker.patch('udocker.helper.elfpatcher.os.path.dirname', side_effect=side_dir)
+
+    out = elfp._get_ld_config()
+    assert out == expected
+    mock_upout.assert_called()
+    assert mock_dir.call_count == cnt_dir
+
+
 
 # @patch('udocker.helper.elfpatcher.os.path.isfile')
 # @patch('udocker.helper.elfpatcher.os.path.realpath')
