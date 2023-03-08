@@ -169,38 +169,46 @@ def test_09_guess_elf_loader(mocker, elfp, pwalk, pout):
     mock_walk.assert_called()
 
 
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch.object(ElfPatcher, '_walk_fs')
-# @patch.object(ElfPatcher, 'select_patchelf')
-# def test_05_guess_elf_loader(self, mock_spelf, mock_walk, mock_path):
-#     """Test05 ElfPatcher().guess_elf_loader()."""
-#     mock_spelf.return_value = "ld.so"
-#     mock_walk.return_value = ""
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     self.assertEqual(elfp.guess_elf_loader(), "")
+# Tuple is (os.path.exists, <return value AND expected output>,
+#           call count FileUtil.getdata, call count of guess_elf_loader, call count of putdata)
+data_get_load = ((True, 'ld.so', 1, 0, 0),
+                 (False, 'ld.so', 0, 1, 1))
 
-#     mock_walk.return_value = "ld.so"
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     self.assertEqual(elfp.guess_elf_loader(), "ld.so")
 
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch('udocker.helper.elfpatcher.os.path.exists')
-# @patch('udocker.helper.elfpatcher.FileUtil.getdata')
-# @patch('udocker.helper.elfpatcher.FileUtil.putdata')
-# @patch.object(ElfPatcher, 'guess_elf_loader')
-# def test_06_get_original_loader(self, mock_guess, mock_getdata,
-#                                 mock_putdata, mock_exists, mock_path):
-#     """Test06 ElfPatcher().get_original_loader()."""
-#     mock_path.return_value = "/some_contdir"
-#     mock_exists.return_value = False
-#     mock_guess.return_value = "ld.so"
-#     mock_getdata.return_value.strip.return_value = "ld.so"
-#     mock_putdata.return_value = "ld.so"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     status = elfp.get_original_loader()
-#     self.assertEqual(status, "ld.so")
+@pytest.mark.parametrize("pexists,expected,getdata_count,guess_count,put_count", data_get_load)
+def test_10_get_original_loader(mocker, elfp, pexists, expected, getdata_count,
+                                guess_count, put_count):
+    """Test06 ElfPatcher().get_original_loader()."""
+    mock_exists = mocker.patch('os.path.exists', return_value=pexists)
+    mock_getdata = mocker.patch('udocker.helper.elfpatcher.FileUtil.getdata', return_value=expected)
+    mock_guess = mocker.patch.object(ElfPatcher, 'guess_elf_loader', return_value=expected)
+    mock_putdata = mocker.patch('udocker.helper.elfpatcher.FileUtil.putdata', return_value=expected)
+
+    out = elfp.get_original_loader()
+    assert out == expected
+    mock_exists.assert_called()
+    assert mock_getdata.call_count == getdata_count
+    assert mock_guess.call_count == guess_count
+    assert mock_putdata.call_count == put_count
+
+
+# Tuple is (get_original_loader, expected output, return value path.exist, call count path.exists)
+data_get_load = (('', '', False, 0),
+                 ('ld.so', '', False, 1),
+                 ('ld.so', '/some_contdir/ROOT/ld.so', True, 1))
+
+
+@pytest.mark.parametrize("get_loader,expected,pexist,pexist_count", data_get_load)
+def test_11_get_container_loader(mocker, elfp, get_loader, expected, pexist, pexist_count):
+    """Test1 ElfPatcher().get_container_loader()."""
+    mock_gol = mocker.patch.object(ElfPatcher, 'get_original_loader', return_value=get_loader)
+    mock_exists = mocker.patch('os.path.exists', return_value=pexist)
+
+    out = elfp.get_container_loader()
+    assert out == expected
+    mock_gol.assert_called()
+    assert mock_exists.call_count == pexist_count
+
 
 # @patch('udocker.helper.elfpatcher.os.path.realpath')
 # @patch('udocker.helper.elfpatcher.os.path.exists')
