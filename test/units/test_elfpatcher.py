@@ -393,58 +393,53 @@ def test_20__get_ld_config(mocker, elfp, upout, side_dir, cnt_dir, expected):
     assert mock_dir.call_count == cnt_dir
 
 
+def test_21__find_ld_libdirs(mocker, elfp):
+    """Test21 ElfPatcher()._find_ld_libdirs(). search for library directories in container"""
+    mock_walk = mocker.patch('udocker.helper.elfpatcher.os.walk',
+                             return_value=[("/lib", ["dir"], ["lib1.so.0", "lib2.so.0"]), ])
+    mock_access = mocker.patch('udocker.helper.elfpatcher.os.access', side_effect=[False, True])
+    mock_isfile = mocker.patch('udocker.helper.elfpatcher.os.path.isfile', return_value=True)
 
-# @patch('udocker.helper.elfpatcher.os.path.isfile')
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch('udocker.helper.elfpatcher.os.access')
-# @patch('udocker.helper.elfpatcher.os.walk')
-# def test_16__find_ld_libdirs(self, mock_walk, mock_access, mock_path, mock_isfile):
-#     """Test16 ElfPatcher()._find_ld_libdirs().
-#     search for library directories in container"""
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     status = elfp._find_ld_libdirs()
-#     self.assertEqual(status, [])
+    out = elfp._find_ld_libdirs()
+    assert out == ["/lib"]
+    mock_walk.assert_called()
+    assert mock_access.call_count == 2
+    mock_isfile.assert_called()
 
-#     mock_path.return_value = "/some_contdir"
-#     mock_walk.return_value = [("libsome.so.0", ["dir"], ["libsome.so.0"]), ]
-#     mock_access.return_value = True
-#     mock_isfile.return_value = True
-#     elfp = ElfPatcher(self.local, self.contid)
-#     status = elfp._find_ld_libdirs()
-#     self.assertEqual(status, ["libsome.so.0"])
 
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch.object(ElfPatcher, '_find_ld_libdirs')
-# @patch('udocker.helper.elfpatcher.FileUtil.putdata')
-# @patch('udocker.helper.elfpatcher.FileUtil.getdata')
-# @patch('udocker.helper.elfpatcher.os.path.exists')
-# def test_17_get_ld_libdirs(self, mock_exists, mock_getd, mock_pudata, mock_findlib, mock_path):
-#     """Test17 ElfPatcher().get_ld_libdirs()."""
-#     mock_exists.return_value = True
-#     mock_getd.return_value = '/lib:/usr/lib'
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     status = elfp.get_ld_libdirs(False)
-#     self.assertEqual(status, ['/lib', '/usr/lib'])
+data_ldlib = ((False, True, 1, 0, 0, 1, ['/lib', '/usr/lib']),
+              (True, True, 0, 1, 1, 0, ['/lib', '/usr/lib']),
+              (False, False, 1, 1, 1, 0, ['/lib', '/usr/lib']))
 
-#     mock_exists.return_value = False
-#     mock_pudata.return_value = '/lib:/usr/lib'
-#     mock_findlib.return_value = ['/lib', '/usr/lib']
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     status = elfp.get_ld_libdirs(True)
-#     self.assertEqual(status, ['/lib', '/usr/lib'])
 
-# @patch('udocker.helper.elfpatcher.os.path.realpath')
-# @patch.object(ElfPatcher, 'get_ld_libdirs')
-# @patch.object(ElfPatcher, '_get_ld_config')
-# def test_18_get_ld_library_path(self, mock_ldconf, mock_ldlib, mock_path):
-#     """Test18 ElfPatcher().get_ld_library_path()."""
-#     Config().conf['lib_dirs_list_essential'] = ""
-#     mock_ldconf.return_value = ["/lib"]
-#     mock_ldlib.return_value = ["/usr/lib"]
-#     mock_path.return_value = "/some_contdir"
-#     elfp = ElfPatcher(self.local, self.contid)
-#     status = elfp.get_ld_library_path()
-#     self.assertEqual(status, "/lib:/usr/lib:.")
+@pytest.mark.parametrize("pin,retexist,cnt_exist,cnt_find,cnt_put,cnt_get,expected", data_ldlib)
+def test_22_get_ld_libdirs(mocker, elfp, pin, retexist, cnt_exist, cnt_find,
+                           cnt_put, cnt_get, expected):
+    """Test22 ElfPatcher().get_ld_libdirs()."""
+    mock_exists = mocker.patch('udocker.helper.elfpatcher.os.path.exists', return_value=retexist)
+    mock_findlib = mocker.patch.object(ElfPatcher, '_find_ld_libdirs',
+                                       return_value=['/lib', '/usr/lib'])
+    mock_pudata = mocker.patch('udocker.helper.elfpatcher.FileUtil.putdata')
+    mock_getdata = mocker.patch('udocker.helper.elfpatcher.FileUtil.getdata', 
+                                return_value='/lib:/usr/lib')
+
+    out = elfp.get_ld_libdirs(pin)
+    assert out == expected
+    assert mock_exists.call_count == cnt_exist
+    assert mock_findlib.call_count == cnt_find
+    assert mock_pudata.call_count == cnt_put
+    assert mock_getdata.call_count == cnt_get
+
+
+def test_23_get_ld_library_path(mocker, elfp):
+    """Test23 ElfPatcher().get_ld_library_path()."""
+    Config().conf['lib_dirs_list_essential'] = ("/lib64", )
+    mock_ldconf = mocker.patch.object(ElfPatcher, '_get_ld_config',
+                                      return_value=["/some_contdir/ROOT/lib"])
+    mock_ldlib = mocker.patch.object(ElfPatcher, 'get_ld_libdirs',
+                                     return_value=["/some_contdir/ROOT/usr/lib"])
+
+    out = elfp.get_ld_library_path()
+    assert out == "/some_contdir/ROOT//lib64:/some_contdir/ROOT/lib:/some_contdir/ROOT/usr/lib:."
+    mock_ldconf.assert_called()
+    mock_ldlib.assert_called()
