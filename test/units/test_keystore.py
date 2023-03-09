@@ -3,6 +3,7 @@
 udocker unit tests: Keystore
 """
 import pytest
+from io import StringIO
 from udocker.helper.keystore import KeyStore
 
 
@@ -14,80 +15,75 @@ def kstore():
 def test_01__verify_keystore(mocker, kstore):
     """Test01 KeyStore()._verify_keystore()."""
     mock_fu_uid = mocker.patch('udocker.helper.keystore.FileUtil.uid', return_value=1001)
-    mock_hi_uid = mocker.patch('udocker.helper.keystore.HostInfo.uid', return_value=10)
+    mock_hi = mocker.patch('udocker.helper.keystore.HostInfo')
     mock_pdir = mocker.patch('os.path.dirname')
 
     pytest.raises(OSError, kstore._verify_keystore)
     assert mock_fu_uid.call_count == 1
-    assert mock_hi_uid.call_count == 0
-    assert mock_pdir.call_count == 0
+    mock_hi.assert_not_called()
+    mock_pdir.assert_not_called()
 
 
 def test_02__verify_keystore(mocker, kstore):
     """Test02 KeyStore()._verify_keystore()."""
-    mock_fu_uid = mocker.patch('udocker.helper.keystore.FileUtil.uid', side_effect=[10, 1001])
+    mock_fu = mocker.patch('udocker.helper.keystore.FileUtil')
+    mock_fu.return_value.uid.side_effect = [10, 1001]
     mock_hi = mocker.patch('udocker.helper.keystore.HostInfo')
-    mock_hi.return_value.uid = 10
+    mock_hi.uid = 10
     mock_pdir = mocker.patch('os.path.dirname', return_value="somedir/filename")
+    mock_stat = mocker.patch('udocker.helper.keystore.os.stat')
+
+    pytest.raises(OSError, kstore._verify_keystore)
+    assert mock_fu.return_value.uid.call_count == 2
+    mock_pdir.assert_called()
+    mock_stat.assert_not_called()
+
+
+def test_03__verify_keystore(mocker, kstore):
+    """Test03 KeyStore()._verify_keystore()."""
+    mock_fu_uid = mocker.patch('udocker.helper.keystore.FileUtil.uid', side_effect=[10, 10])
+    mock_hi = mocker.patch('udocker.helper.keystore.HostInfo')
+    mock_hi.uid = 10
+    mock_pdir = mocker.patch('os.path.dirname', return_value="somedir/filename")
+    mock_stat = mocker.patch('udocker.helper.keystore.os.stat')
+    mock_stat.return_value.st_mode = 0o077
 
     pytest.raises(OSError, kstore._verify_keystore)
     assert mock_fu_uid.call_count == 2
-    mock_hi.return_value.uid.assert_called()
-    assert mock_pdir.call_count == 1
+    mock_pdir.assert_called()
+    mock_stat.assert_called()
 
 
-# data_verks = (([1001, 1001], 1, 10, 0, 0, False, 0),
-#               ([10, 1001], 1, 10, 1, 1, 0o077, 0))
+def test_04__read_all(mocker, kstore):
+    """Test04 KeyStore()._read_all()."""
+    url = 'https://xxx'
+    email = 'user@domain'
+    auth = 'xxx'
+    credentials = {url: {'email': email, 'auth': auth}}
+    mock_jload = mocker.patch('json.load', return_value=credentials)
+    mock_jfile = mocker.mock_open(read_data=str(credentials))
+    mocker.patch("builtins.open", mock_jfile)
+    mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
 
-# @pytest.mark.parametrize("se_fuuid,cnt_fuuid,ret_hiuid,cnt_hiuid,cnt_pdir,ret_stat,cnt_stat",
-#                          data_verks)
-# def test_01__verify_keystore(mocker, kstore, se_fuuid, cnt_fuuid, ret_hiuid, cnt_hiuid,
-#                              cnt_pdir, ret_stat, cnt_stat):
-#     """Test01 KeyStore()._verify_keystore()."""
-#     mock_fu_uid = mocker.patch('udocker.helper.keystore.FileUtil.uid', side_effect=se_fuuid)
-#     mock_hi_uid = mocker.patch('udocker.helper.keystore.HostInfo.uid', return_value=ret_hiuid)
-#     mock_pdir = mocker.patch('udocker.helper.keystore.os.path.dirname',
-#                              return_value="somedir/filename")
-#     mock_stat = mocker.patch('udocker.helper.keystore.os.stat')
-#     mock_stat.return_value.st_mode = ret_stat
-
-#     pytest.raises(OSError, kstore._verify_keystore)
-#     assert mock_fu_uid.call_count == cnt_fuuid
-#     assert mock_hi_uid.call_count == cnt_hiuid
-#     assert mock_pdir.call_count == cnt_pdir
-#     assert mock_stat.call_count == cnt_stat
+    out = kstore._read_all()
+    assert out == credentials
+    mock_jload.assert_called()
+    mock_loginfo.assert_called()
 
 
+def test_05__read_all(mocker, kstore):
+    """Test05 KeyStore()._read_all()."""
+    mock_jload = mocker.patch('json.load')
+    mock_jfile = mocker.mock_open()
+    mock_jfile.side_effect = OSError
+    mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
 
-# BUILTINS = "builtins"
-# @patch('udocker.helper.keystore.os.path.dirname')
-# @patch('udocker.helper.keystore.HostInfo')
-# @patch('udocker.helper.keystore.FileUtil')
-# def test_02__verify_keystore(self, mock_futil, mock_hinfo, mock_pdir):
-#     """Test02 KeyStore()._verify_keystore()."""
-#     mock_futil.return_value.uid.return_value = 1001
-#     mock_hinfo.return_value.uid.return_value = 0
-#     kstore = KeyStore("filename")
-#     self.assertRaises(IOError, kstore._verify_keystore)
+    out = kstore._read_all()
+    assert out == {}
+    mock_jload.assert_not_called()
+    mock_loginfo.assert_not_called()
 
-#     mock_futil.return_value.uid.side_effect = [1001, 1000]
-#     mock_hinfo.return_value.uid.return_value = 1001
-#     mock_pdir.return_value = "somedir/filename"
-#     kstore = KeyStore("filename")
-#     self.assertRaises(IOError, kstore._verify_keystore)
 
-# @patch('udocker.helper.keystore.json.load')
-# def test_03__read_all(self, mock_jload):
-#     """Test03 KeyStore()._read_all()."""
-#     url = u'https://xxx'
-#     email = u'user@domain'
-#     auth = u'xxx'
-#     credentials = {url: {u'email': email, u'auth': auth}}
-#     mock_jload.return_value = credentials
-#     with patch(BUILTINS + '.open', mock_open()):
-#         kstore = KeyStore("filename")
-#         status = kstore._read_all()
-#         self.assertEqual(status, credentials)
 
 # @patch.object(KeyStore, '_verify_keystore')
 # @patch('udocker.helper.keystore.FileUtil.size')

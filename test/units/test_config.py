@@ -20,13 +20,18 @@ def test_01_getconf(config):
     assert config.conf["keystore"] == "keystore"
 
 
-# def test_02_getconf_02(mocker):
-#     """Test01_02 Config.getconf() conf file."""
-#     conf_file = StringIO("[DEFAULT]\nkeystore = ks_conf\n")
-#     mocker.patch("os.path.exists", side_effect=[False, False, True])
-#     config = Config()
-#     config.getconf(conf_file)
-#     assert config.conf["keystore"] == "ks_conf"
+def test_02_getconf_02(mocker):
+    """Test01_02 Config.getconf() conf file."""
+    conf_file = "[DEFAULT]\nkeystore = ks_conf\n"
+    mock_pexist = mocker.patch("os.path.exists", side_effect=[False, False, True])
+    mock_file = mocker.mock_open(read_data=conf_file)
+    mocker.patch("builtins.open", mock_file)
+
+    config = Config()
+    config.getconf(conf_file)
+    assert config.conf["keystore"] == "ks_conf"
+    mock_pexist.assert_called()
+    mock_file.assert_called()
 
 
 def test_03_getconf(monkeypatch, config):
