@@ -84,28 +84,49 @@ def test_05__read_all(mocker, kstore):
     mock_loginfo.assert_not_called()
 
 
+def test_06__shred(mocker, kstore):
+    """Test06 KeyStore()._shred()."""
+    mock_verks = mocker.patch.object(KeyStore, '_verify_keystore')
+    mock_size  = mocker.patch('udocker.helper.keystore.FileUtil.size', return_value=123)
+    mock_file = mocker.mock_open()
+    mocker.patch("builtins.open", mock_file)
 
-# @patch.object(KeyStore, '_verify_keystore')
-# @patch('udocker.helper.keystore.FileUtil.size')
-# def test_04__shred(self, mock_size, mock_verks):
-#     """Test04 KeyStore()._shred()."""
-#     mock_verks.return_value = None
-#     with patch(BUILTINS + '.open', mock_open()):
-#         kstore = KeyStore("filename")
-#         status = kstore._shred()
-#         self.assertEqual(status, 0)
+    out = kstore._shred()
+    assert out == 0
+    mock_verks.assert_called()
+    mock_size.assert_called()
+    mock_file.assert_called()
 
-#     mock_size.return_value = 123
-#     mock_verks.return_value = None
-#     with patch(BUILTINS + '.open', mock_open()):
-#         kstore = KeyStore("filename")
-#         status = kstore._shred()
-#         self.assertEqual(status, 0)
 
-#     mock_size.side_effect = IOError("fail")
-#     kstore = KeyStore("filename")
-#     status = kstore._shred()
-#     self.assertEqual(status, 1)
+def test_07__shred(mocker, kstore):
+    """Test07 KeyStore()._shred()."""
+    mock_verks = mocker.patch.object(KeyStore, '_verify_keystore')
+    mock_size  = mocker.patch('udocker.helper.keystore.FileUtil.size', side_effect=OSError('fail'))
+    mock_file = mocker.mock_open()
+    mocker.patch("builtins.open", mock_file)
+
+    out = kstore._shred()
+    assert out == 1
+    mock_verks.assert_called()
+    mock_size.assert_called()
+    mock_file.assert_not_called()
+
+
+def test_08__write_all(mocker, kstore):
+    """Test08 KeyStore()._write_all()."""
+    mock_verks = mocker.patch.object(KeyStore, '_verify_keystore')
+    mock_umask = mocker.patch('os.umask', side_effect=[0o77, 0o77])
+    mock_jdump = mocker.patch('json.dump')
+    mock_file = mocker.mock_open()
+    mocker.patch("builtins.open", mock_file)
+
+    out = kstore._write_all('{auth}')
+    assert out == 0
+    mock_verks.assert_called()
+    assert mock_umask.call_count == 2
+    mock_jdump.assert_called()
+    mock_file.assert_called()
+
 
 # @patch.object(KeyStore, '_verify_keystore')
 # @patch('udocker.helper.keystore.json.dump')
