@@ -87,7 +87,7 @@ def test_05__read_all(mocker, kstore):
 def test_06__shred(mocker, kstore):
     """Test06 KeyStore()._shred()."""
     mock_verks = mocker.patch.object(KeyStore, '_verify_keystore')
-    mock_size  = mocker.patch('udocker.helper.keystore.FileUtil.size', return_value=123)
+    mock_size = mocker.patch('udocker.helper.keystore.FileUtil.size', return_value=123)
     mock_file = mocker.mock_open()
     mocker.patch("builtins.open", mock_file)
 
@@ -101,7 +101,7 @@ def test_06__shred(mocker, kstore):
 def test_07__shred(mocker, kstore):
     """Test07 KeyStore()._shred()."""
     mock_verks = mocker.patch.object(KeyStore, '_verify_keystore')
-    mock_size  = mocker.patch('udocker.helper.keystore.FileUtil.size', side_effect=OSError('fail'))
+    mock_size = mocker.patch('udocker.helper.keystore.FileUtil.size', side_effect=OSError('fail'))
     mock_file = mocker.mock_open()
     mocker.patch("builtins.open", mock_file)
 
@@ -128,92 +128,136 @@ def test_08__write_all(mocker, kstore):
     mock_file.assert_called()
 
 
-# @patch.object(KeyStore, '_verify_keystore')
-# @patch('udocker.helper.keystore.json.dump')
-# @patch('udocker.helper.keystore.os.umask')
-# def test_05__write_all(self, mock_umask, mock_jdump, mock_verks):
-#     """Test05 KeyStore()._write_all()."""
-#     url = u'https://xxx'
-#     email = u'user@domain'
-#     auth = u'xxx'
-#     credentials = {url: {u'email': email, u'auth': auth}}
-#     mock_umask.return_value = 0o77
-#     mock_jdump.side_effect = IOError('json dump')
-#     mock_verks.return_value = None
-#     with patch(BUILTINS + '.open', mock_open()):
-#         kstore = KeyStore("filename")
-#         status = kstore._write_all(credentials)
-#         self.assertEqual(status, 1)
+def test_09__write_all(mocker, kstore):
+    """Test09 KeyStore()._write_all()."""
+    mock_verks = mocker.patch.object(KeyStore, '_verify_keystore')
+    mock_umask = mocker.patch('os.umask', side_effect=[0o77, 0o77])
+    mock_jdump = mocker.patch('json.dump')
+    mock_file = mocker.mock_open()
+    mopen = mocker.patch("builtins.open", mock_file)
+    mopen.side_effect = OSError
 
-#     mock_umask.side_effect = IOError("fail")
-#     kstore = KeyStore("filename")
-#     status = kstore._write_all(credentials)
-#     self.assertEqual(status, 1)
+    out = kstore._write_all('{auth}')
+    assert out == 1
+    mock_verks.assert_called()
+    assert mock_umask.call_count == 2
+    mock_jdump.assert_not_called()
+    mock_file.assert_called()
 
-# @patch.object(KeyStore, '_read_all')
-# def test_06_get(self, mock_readall):
-#     """Test06 KeyStore().get()."""
-#     url = u'https://xxx'
-#     email = u'user@domain'
-#     auth = u'xxx'
-#     credentials = {url: {u'email': email, u'auth': auth}}
-#     mock_readall.return_value = credentials
-#     kstore = KeyStore("filename")
-#     self.assertTrue(kstore.get(url))
-#     self.assertFalse(kstore.get("NOT EXISTING ENTRY"))
 
-# @patch.object(KeyStore, '_shred')
-# @patch.object(KeyStore, '_write_all')
-# @patch.object(KeyStore, '_read_all')
-# def test_07_put(self, mock_readall, mock_writeall, mock_shred):
-#     """Test07 KeyStore().put()."""
-#     url = u'https://xxx'
-#     email = u'user@domain'
-#     auth = u'xxx'
-#     credentials = {url: {u'email': email, u'auth': auth}}
-#     mock_shred.return_value = None
-#     kstore = KeyStore("filename")
-#     status = kstore.put("", "", "")
-#     self.assertEqual(status, 1)
+def test_10_get(mocker, kstore):
+    """Test10 KeyStore().get()."""
+    url = 'https://xxx'
+    email = 'user@domain'
+    auth = 'xxx'
+    credentials = {url: {'email': email, 'auth': auth}}
+    mock_readall = mocker.patch.object(KeyStore, '_read_all', return_value=credentials)
 
-#     mock_shred.return_value = None
-#     mock_readall.return_value = dict()
-#     kstore = KeyStore("filename")
-#     status = kstore.put(url, auth, email)
-#     mock_writeall.assert_called_once_with(credentials)
+    out = kstore.get(url)
+    assert out == auth
+    mock_readall.assert_called()
 
-# @patch.object(KeyStore, '_verify_keystore')
-# @patch.object(KeyStore, '_shred')
-# @patch.object(KeyStore, '_write_all')
-# @patch.object(KeyStore, '_read_all')
-# def test_08_delete(self, mock_readall, mock_writeall, mock_shred, mock_verks):
-#     """Test08 KeyStore().delete()."""
-#     url = u'https://xxx'
-#     email = u'user@domain'
-#     auth = u'xxx'
-#     credentials = {url: {u'email': email, u'auth': auth}}
-#     mock_readall.return_value = credentials
-#     mock_writeall.return_value = 0
-#     mock_shred.return_value = 0
-#     mock_verks.return_value = None
-#     kstore = KeyStore("filename")
-#     status = kstore.delete(url)
-#     mock_writeall.assert_called_once_with({})
-#     self.assertEqual(status, 0)
 
-# @patch('udocker.helper.keystore.os.unlink')
-# @patch.object(KeyStore, '_verify_keystore')
-# @patch.object(KeyStore, '_shred')
-# def test_09_erase(self, mock_shred, mock_verks, mock_unlink):
-#     """Test09 KeyStore().erase()."""
-#     mock_verks.return_value = None
-#     mock_shred.return_value = None
-#     kstore = KeyStore("filename")
-#     self.assertEqual(kstore.erase(), 0)
-#     mock_unlink.assert_called_once_with("filename")
+def test_11_get(mocker, kstore):
+    """Test11 KeyStore().get()."""
+    mock_readall = mocker.patch.object(KeyStore, '_read_all', return_value={})
 
-#     mock_verks.return_value = None
-#     mock_shred.return_value = None
-#     mock_unlink.side_effect = IOError
-#     kstore = KeyStore("filename")
-#     self.assertEqual(kstore.erase(), 1)
+    out = kstore.get('')
+    assert out == ''
+    mock_readall.assert_called()
+
+
+def test_12_put(mocker, kstore):
+    """Test12 KeyStore().put()."""
+    mock_readall = mocker.patch.object(KeyStore, '_read_all')
+
+    out = kstore.put("", "", "")
+    assert out == 1
+    mock_readall.assert_not_called()
+
+
+def test_13_put(mocker, kstore):
+    """Test13 KeyStore().put()."""
+    url = u'https://xxx'
+    email = u'user@domain'
+    auth = u'xxx'
+    credentials = {url: {u'email': email, u'auth': auth}}
+    mock_readall = mocker.patch.object(KeyStore, '_read_all', return_value=credentials)
+    mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
+    mock_shred = mocker.patch.object(KeyStore, '_shred', return_value=0)
+    mock_writeall = mocker.patch.object(KeyStore, '_write_all', return_value=0)
+
+    out = kstore.put(url, auth, email)
+    assert out == 0
+    mock_readall.assert_called()
+    mock_loginfo.assert_called()
+    mock_shred.assert_called()
+    mock_writeall.assert_called()
+
+
+def test_14_delete(mocker, kstore):
+    """Test14 KeyStore().delete()."""
+    url = 'https://xxx'
+    email = 'user@domain'
+    auth = 'xxx'
+    credentials = {url: {'email': email, 'auth': auth}}
+    mock_verks = mocker.patch.object(KeyStore, '_verify_keystore')
+    mock_readall = mocker.patch.object(KeyStore, '_read_all', return_value=credentials)
+    mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
+    mock_shred = mocker.patch.object(KeyStore, '_shred', return_value=0)
+    mock_writeall = mocker.patch.object(KeyStore, '_write_all', return_value=0)
+
+    out = kstore.delete(url)
+    assert out == 0
+    mock_verks.assert_called()
+    mock_readall.assert_called()
+    mock_loginfo.assert_called()
+    mock_shred.assert_called()
+    mock_writeall.assert_called()
+
+
+def test_15_delete(mocker, kstore):
+    """Test15 KeyStore().delete()."""
+    mock_verks = mocker.patch.object(KeyStore, '_verify_keystore')
+    mock_readall = mocker.patch.object(KeyStore, '_read_all', return_value={})
+    mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
+    mock_shred = mocker.patch.object(KeyStore, '_shred')
+    mock_writeall = mocker.patch.object(KeyStore, '_write_all')
+
+    out = kstore.delete('')
+    assert out == 1
+    mock_verks.assert_called()
+    mock_readall.assert_called()
+    mock_loginfo.assert_not_called()
+    mock_shred.assert_not_called()
+    mock_writeall.assert_not_called()
+
+
+def test_16_erase(mocker, kstore):
+    """Test16 KeyStore().erase()."""
+    mock_verks = mocker.patch.object(KeyStore, '_verify_keystore')
+    mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
+    mock_shred = mocker.patch.object(KeyStore, '_shred', return_value=0)
+    mock_unlink = mocker.patch('os.unlink')
+
+    out = kstore.erase()
+    assert out == 0
+    mock_verks.assert_called()
+    mock_loginfo.assert_called()
+    mock_shred.assert_called()
+    mock_unlink.assert_called()
+
+
+def test_17_erase(mocker, kstore):
+    """Test17 KeyStore().erase()."""
+    mock_verks = mocker.patch.object(KeyStore, '_verify_keystore')
+    mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
+    mock_shred = mocker.patch.object(KeyStore, '_shred', return_value=0)
+    mock_unlink = mocker.patch('os.unlink', side_effect=OSError)
+
+    out = kstore.erase()
+    assert out == 1
+    mock_verks.assert_called()
+    mock_loginfo.assert_not_called()
+    mock_shred.assert_called()
+    mock_unlink.assert_called()
