@@ -48,6 +48,8 @@ def test_02_user_in_subuid(mocker):
 
 def test_03_user_in_subuid(mocker):
     """Test03 NixAuthentication().user_in_subuid."""
+    sub_file = ("user1:100000:65536\n"
+                "user2:165536:65536")
     uinfo = ("user2", "1000", "1000", "usr", "/home/user", "/bin/bash")
     mock_file = mocker.mock_open()
     mock_file.side_effect = OSError
@@ -55,7 +57,7 @@ def test_03_user_in_subuid(mocker):
     mock_userhost = mocker.patch.object(NixAuthentication, '_get_user_from_host',
                                         return_value=uinfo)
 
-    auth = NixAuthentication()
+    auth = NixAuthentication(subuid_file=sub_file)
     out = auth.user_in_subuid('user2')
     assert out == []
     mock_userfile.assert_not_called()
@@ -127,173 +129,267 @@ def test_12_add_group(mocker):
     mock_put.assert_called()
 
 
-# @patch('udocker.helper.nixauth.pwd.getpwnam')
-# @patch('udocker.helper.nixauth.pwd.getpwuid')
-# def test_05__get_user_from_host(self, mock_getpwuid, mock_getpwnam):
-#     """Test05 NixAuthentication()._get_user_from_host()."""
-#     usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr", "/root", "/bin/bash"])
-#     mock_getpwuid.return_value = usr
-#     auth = NixAuthentication()
-#     (name, uid, gid, gecos, _dir, shell) = auth._get_user_from_host(0)
-#     self.assertEqual(name, usr.pw_name)
-#     self.assertEqual(uid, usr.pw_uid)
-#     self.assertEqual(gid, str(usr.pw_gid))
-#     self.assertEqual(gecos, usr.pw_gecos)
-#     self.assertEqual(_dir, usr.pw_dir)
-#     self.assertEqual(shell, usr.pw_shell)
+def test_13_get_user(mocker):
+    """Test13 NixAuthentication().get_user(). From host uid exist"""
+    usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr", "/root", "/bin/bash"])
+    usr_tuple = (usr.pw_name, str(usr.pw_uid), str(usr.pw_gid),
+                 usr.pw_gecos, usr.pw_dir, usr.pw_shell)
+    mock_getpwuid = mocker.patch('pwd.getpwuid', return_value=usr)
+    mock_getpwnam = mocker.patch('pwd.getpwnam')
 
-#     mock_getpwnam.return_value = usr
-#     auth = NixAuthentication()
-#     (name, uid, gid, gecos, _dir, shell) = auth._get_user_from_host("root")
-#     self.assertEqual(name, usr.pw_name)
-#     self.assertEqual(uid, usr.pw_uid)
-#     self.assertEqual(gid, str(usr.pw_gid))
-#     self.assertEqual(gecos, usr.pw_gecos)
-#     self.assertEqual(_dir, usr.pw_dir)
-
-#     mock_getpwuid.side_effect = IOError("fail")
-#     auth = NixAuthentication()
-#     self.assertEqual(auth._get_user_from_host(0), ("", "", "", "", "", ""))
-
-#     mock_getpwnam.side_effect = IOError("fail")
-#     auth = NixAuthentication()
-#     self.assertEqual(auth._get_user_from_host("root"), ("", "", "", "", "", ""))
-
-# @patch('udocker.helper.nixauth.grp.getgrnam')
-# @patch('udocker.helper.nixauth.grp.getgrgid')
-# def test_06__get_group_from_host(self, mock_grgid, mock_grname):
-#     """Test06 NixAuthentication()._get_group_from_host()."""
-#     hgr = grp.struct_group(["root", "*", "0", str([])])
-#     mock_grgid.return_value = hgr
-#     auth = NixAuthentication()
-#     (name, gid, mem) = auth._get_group_from_host(0)
-#     self.assertEqual(name, hgr.gr_name)
-#     self.assertEqual(gid, str(hgr.gr_gid))
-#     self.assertEqual(mem, hgr.gr_mem)
-
-#     mock_grname.return_value = hgr
-#     auth = NixAuthentication()
-#     (name, gid, mem) = auth._get_group_from_host("root")
-#     self.assertEqual(name, hgr.gr_name)
-#     self.assertEqual(gid, str(hgr.gr_gid))
-#     self.assertEqual(mem, hgr.gr_mem)
-
-#     mock_grgid.side_effect = IOError("fail")
-#     auth = NixAuthentication()
-#     self.assertEqual(auth._get_group_from_host(0), ("", "", ""))
-
-#     mock_grname.side_effect = IOError("fail")
-#     auth = NixAuthentication()
-#     self.assertEqual(auth._get_group_from_host("root"), ("", "", ""))
-
-# def test_07__get_user_from_file(self):
-#     """Test07 NixAuthentication()._get_user_from_file()."""
-#     auth = NixAuthentication()
-#     auth.passwd_file = "passwd"
-#     passwd_line = StringIO('root:x:0:0:root:/root:/bin/bash')
-#     with patch(BUILTINS + '.open') as mopen:
-#         mopen.return_value.__iter__ = (lambda self: iter(passwd_line.readline, ''))
-#         (name, uid, gid, gecos, _dir, shell) = auth._get_user_from_file("root")
-#         self.assertEqual(name, "root")
-#         self.assertEqual(uid, "0")
-#         self.assertEqual(gid, "0")
-#         self.assertEqual(gecos, "root")
-#         self.assertEqual(_dir, "/root")
-#         self.assertEqual(shell, "/bin/bash")
-
-#     passwd_line = StringIO('root:x:0:0:root:/root:/bin/bash')
-#     auth = NixAuthentication()
-#     with patch(BUILTINS + '.open') as mopen:
-#         mopen.return_value.__iter__ = (lambda self: iter(passwd_line.readline, ''))
-#         (name, uid, gid, gecos, _dir, shell) = auth._get_user_from_file(0)
-#         self.assertEqual(name, "root")
-#         self.assertEqual(uid, "0")
-#         self.assertEqual(gid, "0")
-#         self.assertEqual(gecos, "root")
-#         self.assertEqual(_dir, "/root")
-#         self.assertEqual(shell, "/bin/bash")
-
-#     mock_open.side_effect = OSError("fail")
-#     auth = NixAuthentication()
-#     auth.passwd_file = ""
-#     self.assertEqual(auth._get_user_from_file(0), ("", "", "", "", "", ""))
-
-# def test_08__get_group_from_file(self):
-#     """Test08 NixAuthentication()._get_group_from_file()."""
-#     auth = NixAuthentication()
-#     auth.passwd_file = "passwd"
-#     group_line = StringIO('root:x:0:a,b,c')
-#     with patch(BUILTINS + '.open') as mopen:
-#         mopen.return_value.__iter__ = (lambda self: iter(group_line.readline, ''))
-#         (name, gid, mem) = auth._get_group_from_file("root")
-#         self.assertEqual(name, "root")
-#         self.assertEqual(gid, "0")
-#         self.assertEqual(mem, "a,b,c")
-
-#     group_line = StringIO('root:x:0:a,b,c')
-#     auth = NixAuthentication()
-#     with patch(BUILTINS + '.open') as mopen:
-#         mopen.return_value.__iter__ = (lambda self: iter(group_line.readline, ''))
-#         (name, gid, mem) = auth._get_group_from_file(0)
-#         self.assertEqual(name, "root")
-#         self.assertEqual(gid, "0")
-#         self.assertEqual(mem, "a,b,c")
-
-#     mock_open.side_effect = IOError("fail")
-#     auth = NixAuthentication()
-#     auth.group_file = ""
-#     self.assertEqual(auth._get_group_from_file(0), ("", "", ""))
+    auth = NixAuthentication()
+    out = auth.get_user(0)
+    assert out == usr_tuple
+    mock_getpwuid.assert_called()
+    mock_getpwnam.assert_not_called()
 
 
+def test_14_get_user(mocker):
+    """Test14 NixAuthentication().get_user(). From host uid not exist"""
+    usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr", "/root", "/bin/bash"])
+    usr_tuple = ("", "", "", "", "", "")
+    mock_getpwuid = mocker.patch('pwd.getpwuid', side_effect=OSError)
+    mock_getpwnam = mocker.patch('pwd.getpwnam')
 
-# @patch.object(NixAuthentication, '_get_user_from_host')
-# @patch.object(NixAuthentication, '_get_user_from_file')
-# def test_11_get_user(self, mock_file, mock_host):
-#     """Test11 NixAuthentication().get_user()."""
-#     auth = NixAuthentication()
-#     auth.passwd_file = ""
-#     auth.get_user("user")
-#     self.assertTrue(mock_host.called)
-#     self.assertFalse(mock_file.called)
+    auth = NixAuthentication()
+    out = auth.get_user(1001)
+    assert out == usr_tuple
+    mock_getpwuid.assert_called()
+    mock_getpwnam.assert_not_called()
 
-#     mock_host.reset_mock()
-#     mock_file.reset_mock()
-#     auth = NixAuthentication()
-#     auth.passwd_file = "passwd"
-#     auth.get_user("user")
-#     self.assertFalse(mock_host.called)
-#     self.assertTrue(mock_file.called)
 
-# @patch.object(NixAuthentication, '_get_group_from_host')
-# @patch.object(NixAuthentication, '_get_group_from_file')
-# def test_12_get_group(self, mock_file, mock_host):
-#     """Test12 NixAuthentication().get_group()."""
-#     auth = NixAuthentication()
-#     auth.group_file = ""
-#     auth.get_group("group")
-#     self.assertTrue(mock_host.called)
-#     self.assertFalse(mock_file.called)
+def test_15_get_user(mocker):
+    """Test15 NixAuthentication().get_user(). From host name exit"""
+    usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr", "/root", "/bin/bash"])
+    usr_tuple = (usr.pw_name, str(usr.pw_uid), str(usr.pw_gid),
+                 usr.pw_gecos, usr.pw_dir, usr.pw_shell)
+    mock_getpwuid = mocker.patch('pwd.getpwuid')
+    mock_getpwnam = mocker.patch('pwd.getpwnam', return_value=usr)
 
-#     mock_host.reset_mock()
-#     mock_file.reset_mock()
-#     auth = NixAuthentication()
-#     auth.group_file = "group"
-#     auth.get_group("group")
-#     self.assertFalse(mock_host.called)
-#     self.assertTrue(mock_file.called)
+    auth = NixAuthentication()
+    out = auth.get_user('root')
+    assert out == usr_tuple
+    mock_getpwuid.assert_not_called()
+    mock_getpwnam.assert_called()
 
-# @patch('udocker.helper.nixauth.HostInfo')
-# @patch.object(NixAuthentication, 'get_user')
-# def test_13_get_home(self, mock_user, mock_hinfo):
-#     """Test13 NixAuthentication().get_home()."""
-#     mock_user.return_value = ('root', '0', '0', 'root', '/root', '/bin/bash')
-#     mock_hinfo.uid = 0
-#     auth = NixAuthentication()
-#     status = auth.get_home()
-#     self.assertEqual(status, '/root')
 
-#     mock_user.return_value = ('', '', '', '', '', '')
-#     mock_hinfo.uid = None
-#     auth = NixAuthentication()
-#     status = auth.get_home()
-#     self.assertEqual(status, '')
+def test_16_get_user(mocker):
+    """Test16 NixAuthentication().get_user(). From host name not exist"""
+    usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr", "/root", "/bin/bash"])
+    usr_tuple = ("", "", "", "", "", "")
+    mock_getpwuid = mocker.patch('pwd.getpwuid')
+    mock_getpwnam = mocker.patch('pwd.getpwnam', side_effect=OSError)
+
+    auth = NixAuthentication()
+    out = auth.get_user('user')
+    assert out == usr_tuple
+    mock_getpwuid.assert_not_called()
+    mock_getpwnam.assert_called()
+
+
+def test_17_get_user(mocker):
+    """Test17 NixAuthentication().get_user(). From file uid exist"""
+    pwd_file = 'root:x:0:0:root user:/root:/bin/bash\n'
+    usr_tuple = ('root', '0', '0', 'root user', '/root', '/bin/bash')
+    mock_file = mocker.mock_open(read_data=pwd_file)
+    mocker.patch("builtins.open", mock_file)
+
+    auth = NixAuthentication(passwd_file=pwd_file)
+    out = auth.get_user(0)
+    assert out == usr_tuple
+    mock_file.assert_called()
+
+
+def test_18_get_user(mocker):
+    """Test18 NixAuthentication().get_user(). From file uid not exist"""
+    pwd_file = 'root:x:0:0:root user:/root:/bin/bash\n'
+    usr_tuple = ("", "", "", "", "", "")
+    mock_file = mocker.mock_open(read_data=pwd_file)
+    mocker.patch("builtins.open", mock_file)
+
+    auth = NixAuthentication(passwd_file=pwd_file)
+    out = auth.get_user(1001)
+    assert out == usr_tuple
+    mock_file.assert_called()
+
+
+def test_19_get_user(mocker):
+    """Test19 NixAuthentication().get_user(). From file name exist"""
+    pwd_file = 'root:x:0:0:root user:/root:/bin/bash\n'
+    usr_tuple = ('root', '0', '0', 'root user', '/root', '/bin/bash')
+    mock_file = mocker.mock_open(read_data=pwd_file)
+    mocker.patch("builtins.open", mock_file)
+
+    auth = NixAuthentication(passwd_file=pwd_file)
+    out = auth.get_user('root')
+    assert out == usr_tuple
+    mock_file.assert_called()
+
+
+def test_20_get_user(mocker):
+    """Test20 NixAuthentication().get_user(). From file name not exist"""
+    pwd_file = 'root:x:0:0:root user:/root:/bin/bash\n'
+    usr_tuple = ("", "", "", "", "", "")
+    mock_file = mocker.mock_open(read_data=pwd_file)
+    mocker.patch("builtins.open", mock_file)
+
+    auth = NixAuthentication(passwd_file=pwd_file)
+    out = auth.get_user('user')
+    assert out == usr_tuple
+    mock_file.assert_called()
+
+
+def test_21_get_user(mocker):
+    """Test21 NixAuthentication().get_user(). From file oserror"""
+    pwd_file = 'root:x:0:0:root user:/root:/bin/bash\n'
+    usr_tuple = ("", "", "", "", "", "")
+    mock_file = mocker.mock_open()
+    mock_file.side_effect = OSError
+
+    auth = NixAuthentication(passwd_file=pwd_file)
+    out = auth.get_user('')
+    assert out == usr_tuple
+    mock_file.assert_not_called()
+
+
+def test_22_get_group(mocker):
+    """Test22 NixAuthentication().get_group(). From host gid exist"""
+    grp_struct = grp.struct_group(["root", "*", "0", str(['root', 'admin'])])
+    grp_tuple = (grp_struct.gr_name, str(grp_struct.gr_gid), grp_struct.gr_mem)
+    mock_getgrgid = mocker.patch('grp.getgrgid', return_value=grp_struct)
+    mock_getgrnam = mocker.patch('grp.getgrnam')
+
+    auth = NixAuthentication()
+    out = auth.get_group(0)
+    assert out == grp_tuple
+    mock_getgrgid.assert_called()
+    mock_getgrnam.assert_not_called()
+
+
+def test_23_get_group(mocker):
+    """Test23 NixAuthentication().get_group(). From host gid not exist"""
+    grp_struct = grp.struct_group(["root", "*", "0", str(['root', 'admin'])])
+    grp_tuple = ("", "", "")
+    mock_getgrgid = mocker.patch('grp.getgrgid', side_effect=OSError)
+    mock_getgrnam = mocker.patch('grp.getgrnam')
+
+    auth = NixAuthentication()
+    out = auth.get_group(1000)
+    assert out == grp_tuple
+    mock_getgrgid.assert_called()
+    mock_getgrnam.assert_not_called()
+
+
+def test_24_get_group(mocker):
+    """Test24 NixAuthentication().get_group(). From host groupname exist"""
+    grp_struct = grp.struct_group(["root", "*", "0", str(['root', 'admin'])])
+    grp_tuple = (grp_struct.gr_name, str(grp_struct.gr_gid), grp_struct.gr_mem)
+    mock_getgrgid = mocker.patch('grp.getgrgid')
+    mock_getgrnam = mocker.patch('grp.getgrnam', return_value=grp_struct)
+
+    auth = NixAuthentication()
+    out = auth.get_group('root')
+    assert out == grp_tuple
+    mock_getgrgid.assert_not_called()
+    mock_getgrnam.assert_called()
+
+
+def test_25_get_group(mocker):
+    """Test25 NixAuthentication().get_group(). From host groupname not exist"""
+    grp_struct = grp.struct_group(["root", "*", "0", str(['root', 'admin'])])
+    grp_tuple = ("", "", "")
+    mock_getgrgid = mocker.patch('grp.getgrgid')
+    mock_getgrnam = mocker.patch('grp.getgrnam', side_effect=OSError)
+
+    auth = NixAuthentication()
+    out = auth.get_group('user')
+    assert out == grp_tuple
+    mock_getgrgid.assert_not_called()
+    mock_getgrnam.assert_called()
+
+
+def test_26_get_group(mocker):
+    """Test26 NixAuthentication().get_group(). From file gid exist"""
+    grp_file = 'root:x:0:root,admin\n'
+    grp_tuple = ('root', '0', 'root,admin')
+    mock_file = mocker.mock_open(read_data=grp_file)
+    mocker.patch("builtins.open", mock_file)
+
+    auth = NixAuthentication(group_file=grp_file)
+    out = auth.get_group(0)
+    assert out == grp_tuple
+    mock_file.assert_called()
+
+
+def test_27_get_group(mocker):
+    """Test27 NixAuthentication().get_group(). From file gid not exist"""
+    grp_file = 'root:x:0:root,admin\n'
+    grp_tuple = ('', '', '')
+    mock_file = mocker.mock_open(read_data=grp_file)
+    mocker.patch("builtins.open", mock_file)
+
+    auth = NixAuthentication(group_file=grp_file)
+    out = auth.get_group(1000)
+    assert out == grp_tuple
+    mock_file.assert_called()
+
+
+def test_28_get_group(mocker):
+    """Test28 NixAuthentication().get_group(). From file groupname exist"""
+    grp_file = 'root:x:0:root,admin\n'
+    grp_tuple = ('root', '0', 'root,admin')
+    mock_file = mocker.mock_open(read_data=grp_file)
+    mocker.patch("builtins.open", mock_file)
+
+    auth = NixAuthentication(group_file=grp_file)
+    out = auth.get_group('root')
+    assert out == grp_tuple
+    mock_file.assert_called()
+
+
+def test_29_get_group(mocker):
+    """Test29 NixAuthentication().get_group(). From file groupname not exist"""
+    grp_file = 'root:x:0:root,admin\n'
+    grp_tuple = ('', '', '')
+    mock_file = mocker.mock_open(read_data=grp_file)
+    mocker.patch("builtins.open", mock_file)
+
+    auth = NixAuthentication(group_file=grp_file)
+    out = auth.get_group('group')
+    assert out == grp_tuple
+    mock_file.assert_called()
+
+
+def test_30_get_group(mocker):
+    """Test30 NixAuthentication().get_group(). From groupfile oserror"""
+    grp_file = 'root:x:0:root,admin\n'
+    grp_tuple = ('', '', '')
+    mock_file = mocker.mock_open()
+    mock_file.side_effect = OSError
+
+    auth = NixAuthentication(group_file=grp_file)
+    out = auth.get_group('')
+    assert out == grp_tuple
+    mock_file.assert_not_called()
+
+
+def test_31_get_home(mocker):
+    """Test31 NixAuthentication().get_home()."""
+    uinfo = ('root', '0', '0', 'root', '/root', '/bin/bash')
+    mock_user = mocker.patch.object(NixAuthentication, 'get_user', return_value=uinfo)
+
+    auth = NixAuthentication()
+    out = auth.get_home()
+    assert out == '/root'
+    mock_user.assert_called()
+
+
+def test_32_get_home(mocker):
+    """Test32 NixAuthentication().get_home()."""
+    uinfo = ('', '', '', '', '', '')
+    mock_user = mocker.patch.object(NixAuthentication, 'get_user', return_value=uinfo)
+
+    auth = NixAuthentication()
+    out = auth.get_home()
+    assert out == ''
+    mock_user.assert_called()
