@@ -168,7 +168,7 @@ class NixAuthentication:
         return FileUtil(self.passwd_file).putdata(line, 'a')
 
     def add_group(self, group, gid, users=None):
-        """Add a group to a /etc/passwd file"""
+        """Add a group to a /etc/group file"""
         users_str = ""
         if isinstance(users, list):
             for username in users:
