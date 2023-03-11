@@ -57,28 +57,33 @@ def test_04__version_isok(mocker, utools, side_v2i, cnt_v2i, pin, expected):
     assert mock_ver2int.call_count == cnt_v2i
 
 
-# @patch('udocker.tools.FileUtil.getdata')
-# def test_05_is_available(self, mock_fuget):
-#     """Test05 UdockerTools().is_available()."""
-#     Config.conf['tarball_release'] = "2.3"
-#     mock_fuget.return_value = "2.3\n"
-#     utools = UdockerTools(self.local)
-#     status = utools.is_available()
-#     self.assertTrue(status)
+def test_05_is_available(mocker, utools, lrepo):
+    """Test05 UdockerTools().is_available()."""
+    lrepo.return_value.libdir = '/cont/ROOT/lib'
+    mock_fuget = mocker.patch('udocker.tools.FileUtil.getdata', return_value="2.3\n")
+    mock_verok = mocker.patch.object(UdockerTools, '_version_isok', return_value=True)
 
-# @patch('udocker.tools.FileUtil.remove')
-# @patch('udocker.tools.FileUtil.register_prefix')
-# @patch('udocker.tools.os.listdir')
-# def test_06_purge(self, mock_lsdir, mock_fureg, mock_furm):
-#     """Test06 UdockerTools().purge()."""
-#     mock_lsdir.side_effect = [["f1", "f2"], ["f3", "f4"], ["f5", "f6"]]
-#     mock_fureg.side_effect = [None, None, None, None, None, None]
-#     mock_furm.side_effect = [None, None, None, None, None, None]
-#     utools = UdockerTools(self.local)
-#     utools.purge()
-#     self.assertTrue(mock_lsdir.call_count, 3)
-#     self.assertTrue(mock_fureg.call_count, 4)
-#     self.assertTrue(mock_furm.call_count, 4)
+    out = utools.is_available()
+    assert out
+    mock_fuget.assert_called()
+    mock_verok.assert_called()
+
+
+def test_06_purge(mocker, utools):
+    """Test06 UdockerTools().purge()."""
+    mock_lsdir = mocker.patch('os.listdir', side_effect=[["f1", "f2"], ["f3", "f4"], ["f5", "f6"]])
+    mock_logdeb = mocker.patch('udocker.tools.LOG.debug')
+    mock_fureg = mocker.patch('udocker.tools.FileUtil.register_prefix',
+                              side_effect=[None, None, None, None, None, None])
+    mock_furm = mocker.patch('udocker.tools.FileUtil.remove',
+                             side_effect=[None, None, None, None, None, None])
+
+    utools.purge()
+    assert mock_lsdir.call_count == 3
+    assert mock_fureg.call_count == 6
+    assert mock_furm.call_count == 6
+    assert mock_logdeb.call_count == 6
+
 
 # @patch('udocker.tools.GetURL.get')
 # @patch('udocker.tools.FileUtil.remove')
