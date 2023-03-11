@@ -3,7 +3,6 @@
 udocker unit tests: Keystore
 """
 import pytest
-from io import StringIO
 from udocker.helper.keystore import KeyStore
 
 

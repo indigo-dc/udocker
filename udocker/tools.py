@@ -12,6 +12,7 @@ from udocker.utils.curl import GetURL
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.osinfo import OSInfo
 
+
 def _str(data):
     """Safe str for Python 3"""
     try:
