@@ -111,33 +111,30 @@ def test_07__download(mocker, utools, get_url, fout, hdr_status, cnt_mktmp, cnt_
     assert mock_furm.call_count == cnt_rm
 
 
-# @patch('udocker.tools.os.path.isfile')
-# @patch('udocker.tools.os.path.realpath')
-# @patch('udocker.tools.os.path.exists')
-# @patch.object(UdockerTools, '_download')
-# def test_08__get_file(self, mock_downl, mock_exists, mock_rpath, mock_isfile):
-#     """Test08 UdockerTools()._get_file()."""
-#     url = ""
-#     mock_downl.return_value = ""
-#     mock_exists.return_value = False
-#     mock_isfile.return_value = False
-#     utools = UdockerTools(self.local)
-#     status = utools._get_file(url)
-#     self.assertFalse(mock_downl.called)
-#     self.assertTrue(mock_exists.called)
-#     self.assertEqual(status, "")
+data_getfile = (('', None, 0, False, 1, None, 0, False, 0, ''),
+                ('https://down/f1', 'f1', 1, False, 0, None, 0, True, 1, 'f1'),
+                ('/tmp/f1', '', 0, True, 1, 'f1', 1, True, 1, 'f1'))
 
-#     url = "https://down/file"
-#     mock_downl.return_value = "/tmp/file"
-#     mock_exists.return_value = True
-#     mock_isfile.return_value = True
-#     mock_rpath.return_value = "/tmp/file"
-#     utools = UdockerTools(self.local)
-#     status = utools._get_file(url)
-#     self.assertTrue(mock_downl.called)
-#     self.assertTrue(mock_exists.called)
-#     self.assertTrue(mock_isfile.called)
-#     self.assertEqual(status, "/tmp/file")
+
+PARAM = ("url,ret_downl,cnt_downl,ret_exists,cnt_exists,ret_rpath,"
+         "cnt_rpath,ret_isfile,cnt_isfile,expected")
+@pytest.mark.parametrize(PARAM, data_getfile)
+def test_08__get_file(mocker, utools, url, ret_downl, cnt_downl, ret_exists, cnt_exists,
+                      ret_rpath, cnt_rpath, ret_isfile, cnt_isfile, expected):
+    """Test08 UdockerTools()._get_file()."""
+    mock_downl = mocker.patch.object(UdockerTools, '_download', return_value=ret_downl)
+    mock_exists = mocker.patch('udocker.tools.os.path.exists', return_value=ret_exists)
+    mock_rpath = mocker.patch('udocker.tools.os.path.realpath', return_value=ret_rpath)
+    mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=ret_isfile)
+
+    out = utools._get_file(url)
+    assert out == expected
+    assert mock_downl.call_count == cnt_downl
+    assert mock_exists.call_count == cnt_exists
+    assert mock_rpath.call_count == cnt_rpath
+    assert mock_isfile.call_count == cnt_isfile
+
+
 
 # @patch.object(UdockerTools, '_version_isok')
 # @patch('udocker.tools.FileUtil.remove')
