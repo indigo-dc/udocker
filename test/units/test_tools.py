@@ -17,8 +17,13 @@ def lrepo(mocker):
 
 
 @pytest.fixture
-def utools(mocker, lrepo):
+def get_url(mocker):
     mock_geturl = mocker.patch('udocker.tools.GetURL')
+    return mock_geturl
+
+
+@pytest.fixture
+def utools(mocker, lrepo, get_url):
     return UdockerTools(lrepo)
 
 
@@ -85,32 +90,26 @@ def test_06_purge(mocker, utools):
     assert mock_logdeb.call_count == 6
 
 
-# @patch('udocker.tools.GetURL.get')
-# @patch('udocker.tools.FileUtil.remove')
-# @patch('udocker.tools.FileUtil.mktmp')
-# def test_07__download(self, mock_fumktmp, mock_furm, mock_geturl):
-#     """Test07 UdockerTools()._download()."""
-#     url = "https://down/file"
-#     hdr = CurlHeader()
-#     hdr.data["X-ND-HTTPSTATUS"] = "HTTP/1.1 200 OK"
-#     mock_fumktmp.return_value = "/tmp/tmpf"
-#     mock_furm.return_value = None
-#     mock_geturl.return_value = (hdr, "content type...")
-#     utools = UdockerTools(self.local)
-#     status = utools._download(url)
-#     self.assertTrue(mock_fumktmp.called)
-#     self.assertEqual(status, "/tmp/tmpf")
+data_downl = (('file1', 'HTTP/1.1 200 OK', 0, 0, 'file1'),
+              ('', 'HTTP/1.1 200 OK', 1, 0, '/tmp/tmpf'),
+              ('', 'HTTP/1.1 401 FAIL', 1, 1, ''))
 
-#     url = "https://down/file"
-#     hdr = CurlHeader()
-#     hdr.data["X-ND-HTTPSTATUS"] = "HTTP/1.1 401 FAIL"
-#     mock_fumktmp.return_value = "/tmp/tmpf"
-#     mock_furm.return_value = None
-#     mock_geturl.return_value = (hdr, "content type...")
-#     utools = UdockerTools(self.local)
-#     status = utools._download(url)
-#     self.assertTrue(mock_furm.called)
-#     self.assertEqual(status, "")
+
+@pytest.mark.parametrize("fout,hdr_status,cnt_mktmp,cnt_rm,expected", data_downl)
+def test_07__download(mocker, utools, get_url, fout, hdr_status, cnt_mktmp, cnt_rm, expected):
+    """Test07 UdockerTools()._download()."""
+    hdr = CurlHeader()
+    hdr.data["X-ND-HTTPSTATUS"] = hdr_status
+    mock_fumktmp = mocker.patch('udocker.tools.FileUtil.mktmp', return_value="/tmp/tmpf")
+    get_url.return_value.get.return_value = (hdr, "content type...")
+    mock_furm = mocker.patch('udocker.tools.FileUtil.remove')
+
+    out = utools._download("https://down/file1", fout)
+    assert out == expected
+    assert mock_fumktmp.call_count == cnt_mktmp
+    get_url.return_value.get.assert_called()
+    assert mock_furm.call_count == cnt_rm
+
 
 # @patch('udocker.tools.os.path.isfile')
 # @patch('udocker.tools.os.path.realpath')
