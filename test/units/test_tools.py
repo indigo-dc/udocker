@@ -3,6 +3,7 @@
 udocker unit tests: UdockerTools
 """
 import pytest
+from unittest.mock import mock_open, patch
 import tarfile
 from tarfile import TarInfo
 from udocker.config import Config
@@ -160,47 +161,48 @@ def test_10__verify_version(mocker, utools):
     mock_file.assert_not_called()
 
 
-# @patch.object(UdockerTools, '_version_isok')
-# @patch('udocker.tools.FileUtil.remove')
-# @patch('udocker.tools.FileUtil.getdata')
-# @patch('udocker.tools.os.path.basename')
-# @patch('udocker.tools.FileUtil.mktmpdir')
-# @patch('udocker.tools.os.path.isfile')
-# def test_09__verify_version(self, mock_isfile, mock_fumktmp, mock_osbase, mock_fugetdata,
-#                             mock_furm, mock_versionok):
-#     """Test09 UdockerTools()._verify_version()."""
-#     tball = "/home/udocker.tar"
-#     mock_isfile.return_value = False
-#     utools = UdockerTools(self.local)
-#     status = utools._verify_version(tball)
-#     self.assertTrue(mock_isfile.called)
-#     self.assertEqual(status, (False, ""))
+def test_11__verify_version(mocker, utools):
+    """Test11 UdockerTools()._verify_version()."""
+    tinfo = [TarInfo("a"), TarInfo("udocker_dir/lib/VERSION")]
+    mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=True)
+    mock_fumktmp = mocker.patch('udocker.tools.FileUtil.mktmpdir', return_value='/home/tmp')
+    mock_osbase = mocker.patch('os.path.basename', return_value='VERSION')
+    mock_fugetdata = mocker.patch('udocker.tools.FileUtil.getdata', return_value='1.2.7\n')
+    mock_vok = mocker.patch.object(UdockerTools, '_version_isok', return_value=True)
 
-#     tball = "/home/udocker.tar"
-#     mock_isfile.return_value = True
-#     mock_fumktmp.return_value = ""
-#     utools = UdockerTools(self.local)
-#     status = utools._verify_version(tball)
-#     self.assertTrue(mock_isfile.called)
-#     self.assertTrue(mock_fumktmp.called)
-#     self.assertEqual(status, (False, ""))
+    with patch.object(tarfile, 'open', autospec=True) as open_mock:
+        open_mock.return_value.getmembers.return_value = tinfo
+        open_mock.return_value.extract.return_value = None
 
-#     tball = "/home/udocker.tar"
-#     tinfo1 = TarInfo("udocker_dir/lib/VERSION")
-#     tinfo2 = TarInfo("a")
-#     mock_isfile.return_value = True
-#     mock_fumktmp.return_value = "/home/tmp"
-#     mock_osbase.return_value = "VERSION"
-#     mock_fugetdata.return_value = "1.2.7"
-#     mock_furm.return_value = None
-#     mock_versionok.return_value = True
-#     with patch.object(tarfile, 'open', autospec=True) as open_mock:
-#         open_mock.return_value.getmembers.return_value = [tinfo2, tinfo1]
-#         open_mock.return_value.extract.return_value = None
-#         utools = UdockerTools(self.local)
-#         status = utools._verify_version(tball)
-#         self.assertEqual(status, (True, "1.2.7"))
-#         self.assertTrue(mock_furm.called)
+        out = utools._verify_version('/home/udocker.tar')
+        assert out == (True, '1.2.7')
+        mock_isfile.assert_called()
+        mock_fumktmp.assert_called()
+        open_mock.return_value.getmembers.assert_called()
+        open_mock.return_value.extract.assert_called()
+        mock_osbase.assert_called()
+        mock_fugetdata.assert_called()
+        mock_vok.assert_called()
+
+
+def test_12__verify_version(mocker, utools):
+    """Test12 UdockerTools()._verify_version()."""
+    mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=True)
+    mock_fumktmp = mocker.patch('udocker.tools.FileUtil.mktmpdir', return_value='/home/tmp')
+    mock_furm = mocker.patch('udocker.tools.FileUtil.remove')
+    mock_fugetdata = mocker.patch('udocker.tools.FileUtil.getdata')
+    mock_file = mocker.mock_open()
+    mocker.patch.object(tarfile, 'open', mock_file)
+    mock_file.side_effect = tarfile.TarError
+
+    out = utools._verify_version('/home/udocker.tar')
+    assert out == (False, '')
+    mock_isfile.assert_called()
+    mock_fumktmp.assert_called()
+    mock_file.assert_called()
+    mock_furm.assert_called()
+    mock_fugetdata.assert_not_called()
+
 
 # @patch.object(UdockerTools, '_clean_install')
 # @patch('udocker.tools.os.path.basename')
