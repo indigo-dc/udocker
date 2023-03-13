@@ -5,7 +5,6 @@
 udocker unit tests: Config
 """
 import pytest
-from io import StringIO
 from udocker.config import Config
 
 

@@ -135,6 +135,30 @@ def test_08__get_file(mocker, utools, url, ret_downl, cnt_downl, ret_exists, cnt
     assert mock_isfile.call_count == cnt_isfile
 
 
+def test_09__verify_version(mocker, utools):
+    """Test09 UdockerTools()._verify_version()."""
+    mock_isfile = mocker.patch('udocker.tools.os.path.isfile')
+    mock_fumktmp = mocker.patch('udocker.tools.FileUtil.mktmpdir')
+
+    out = utools._verify_version('')
+    assert out == (False, '')
+    mock_isfile.assert_not_called()
+    mock_fumktmp.assert_not_called()
+
+
+def test_10__verify_version(mocker, utools):
+    """Test10 UdockerTools()._verify_version()."""
+    mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=True)
+    mock_fumktmp = mocker.patch('udocker.tools.FileUtil.mktmpdir', return_value='')
+    mock_file = mocker.mock_open()
+    mocker.patch.object(tarfile, 'open', mock_file)
+
+    out = utools._verify_version('/home/udocker.tar')
+    assert out == (False, '')
+    mock_isfile.assert_called()
+    mock_fumktmp.assert_called()
+    mock_file.assert_not_called()
+
 
 # @patch.object(UdockerTools, '_version_isok')
 # @patch('udocker.tools.FileUtil.remove')

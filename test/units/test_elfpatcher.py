@@ -209,6 +209,7 @@ def test_11_get_container_loader(mocker, elfp, get_loader, expected, pexist, pex
     mock_gol.assert_called()
     assert mock_exists.call_count == pexist_count
 
+
 # Tuple is (FileUtil.getdata return value, expected output)
 data_lpath = (('', ''),
               ('  withspaces', 'withspaces'),
@@ -264,7 +265,7 @@ def test_15_patch_binaries(mocker, elfp):
     mock_guess = mocker.patch.object(ElfPatcher, 'guess_elf_loader', return_value="/usr/bin/ld")
     mock_time = mocker.patch('time.time')
     mock_putdata = mocker.patch('udocker.helper.elfpatcher.FileUtil.putdata',
-                                side_effect = ["10", "/tmp"])
+                                side_effect=["10", "/tmp"])
 
     assert elfp.patch_binaries()
     mock_chkcont.assert_called()
