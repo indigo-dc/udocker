@@ -3,7 +3,7 @@
 udocker unit tests: UdockerTools
 """
 import pytest
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 import tarfile
 from tarfile import TarInfo
 from udocker.config import Config
@@ -203,6 +203,30 @@ def test_12__verify_version(mocker, utools):
     mock_furm.assert_called()
     mock_fugetdata.assert_not_called()
 
+
+def test_13__clean_install(mocker, utools, lrepo):
+    """Test13 UdockerTools()._clean_install()."""
+    tfile = [TarInfo("udocker_dir/bin/ls"), TarInfo("udocker_dir/lib/lib1"),
+             TarInfo("udocker_dir/doc/f.txt")]
+    lrepo.bindir.return_value = '/bin'
+    lrepo.libdir.return_value = '/lib'
+    lrepo.docdir.return_value = '/doc'
+    mock_osbase = mocker.patch('os.path.basename',
+                               side_effect=['udocker_dir', 'udocker_dir', 'udocker_dir'])
+    mock_furegpref = mocker.patch('udocker.tools.FileUtil.register_prefix',
+                                  side_effect=[None, None, None])
+    mock_furm  = mocker.patch('udocker.tools.FileUtil.remove',
+                              side_effect=[None, None, None])
+
+    # with patch.object(tarfile, 'open', autospec=True) as open_mock:
+    #     open_mock.side_effect = tfile
+    #     utools._clean_install(open_mock)
+    #     assert mock_osbase.call_count == 3
+    #     lrepo.bindir.assert_called()
+    #     lrepo.libdir.assert_called()
+    #     lrepo.docdir.assert_called()
+    #     assert mock_furegpref.call_count == 3
+    #     assert mock_furm.call_count == 3
 
 # @patch.object(UdockerTools, '_clean_install')
 # @patch('udocker.tools.os.path.basename')
