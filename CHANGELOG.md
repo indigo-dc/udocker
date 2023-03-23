@@ -1,5 +1,12 @@
 # Changelog
 
+## udocker (1.3.8)
+
+* build udockertools 1.2.9 and set it as default
+* add Fn support for Ubuntu:22
+* remove files to be installed
+* set Fn preference to use runc
+
 ## udocker (1.3.7)
 
 * Remove deprecated unit tests. udocker is the same as version 1.3.6
