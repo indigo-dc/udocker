@@ -6976,7 +6976,7 @@ create_package_tarball()
         ln -s libfakechroot-Ubuntu-22-x86_64.so libfakechroot-Debian-x86_64.so ; \
         ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-CentOS-4-x86_64.so ; \
         ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-CentOS-5-x86_64.so ; \
-        ln -s libfakechroot-Centos-9-x86_64.so  libfakechroot-CentOS-x86_64.so ; \
+        ln -s libfakechroot-CentOS-9-x86_64.so  libfakechroot-CentOS-x86_64.so ; \
 	ln -s libfakechroot-Ubuntu-12-x86_64.so libfakechroot-LinuxMint-10-x86_64.so ; \
 	ln -s libfakechroot-Ubuntu-12-x86_64.so libfakechroot-LinuxMint-11-x86_64.so ; \
 	ln -s libfakechroot-Ubuntu-12-x86_64.so libfakechroot-LinuxMint-12-x86_64.so ; \
