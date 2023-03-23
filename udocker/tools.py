@@ -276,6 +276,7 @@ class UdockerTools(object):
     def install(self, force=False):
         """Get the udocker tools tarball and install the binaries"""
         if self.is_available() and not force:
+            Msg().out("Info: already installed, installation skipped", l=Msg.INF)
             return True
 
         if not self._autoinstall and not force:
