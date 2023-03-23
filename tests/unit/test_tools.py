@@ -189,14 +189,15 @@ class UdockerToolsTestCase(TestCase):
             self.assertEqual(status, (True, "1.2.7"))
             self.assertTrue(mock_furm.called)
 
+    @patch.object(UdockerTools, '_clean_install')
     @patch('udocker.tools.os.path.basename')
     @patch('udocker.tools.FileUtil')
     @patch('udocker.tools.os.path.isfile')
-    def test_10__install(self, mock_isfile, mock_futil,
-                         mock_osbase):
+    def test_10__install(self, mock_isfile, mock_futil, mock_osbase, mock_cleaninstall):
         """Test10 UdockerTools()._install()."""
         tfile = ""
         mock_isfile.return_value = False
+        mock_cleaninstall.return_value = None
         utools = UdockerTools(self.local)
         status = utools._install(tfile)
         self.assertFalse(status)
