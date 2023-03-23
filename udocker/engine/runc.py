@@ -51,9 +51,6 @@ class RuncEngine(ExecutionEngineCommon):
             arch = HostInfo().arch()
             image_list = []
             eng = ["runc", "crun"]
-            if "cgroup2" in FileUtil("/proc/filesystems").getdata('r'):
-                eng = ["crun", "runc"]
-
             if arch == "amd64":
                 image_list = [eng[0]+"-x86_64", eng[0],
                               eng[1]+"-x86_64", eng[1]]
