@@ -7,10 +7,10 @@ import glob
 import re
 import shutil
 
-from msg import Msg
-from config import Config
-from utils.fileutil import FileUtil
-from utils.uprocess import Uprocess
+from udocker.msg import Msg
+from udocker.config import Config
+from udocker.utils.fileutil import FileUtil
+from udocker.utils.uprocess import Uprocess
 
 
 class NvidiaMode(object):
@@ -37,8 +37,8 @@ class NvidiaMode(object):
 
     def _copy_files(self, host_src_dir, cont_dst_dir, files_list, force=False):
         """copy or link file to destination creating directories as needed"""
-        Msg().out("Source (host) dir ", host_src_dir, l=Msg.DBG)
-        Msg().out("Destination (container) dir ", cont_dst_dir, l=Msg.DBG)
+        Msg().out("Debug: Source (host) dir ", host_src_dir, l=Msg.DBG)
+        Msg().out("Debug: Destination (container) dir ", cont_dst_dir, l=Msg.DBG)
         for fname in files_list:
             srcname = host_src_dir + '/' + fname
             dstname = self.container_root + '/' + cont_dst_dir + '/' + fname
@@ -66,10 +66,10 @@ class NvidiaMode(object):
             if os.path.islink(srcname):
                 linkto = os.readlink(srcname)
                 os.symlink(linkto, dstname)
-                Msg().out("Info: is link", srcname, "to", dstname, l=Msg.DBG)
+                Msg().out("Debug: is link", srcname, "to", dstname, l=Msg.DBG)
             elif os.path.isfile(srcname):
                 shutil.copy2(srcname, dstname)
-                Msg().out("Info: is file", srcname, "to", dstname, l=Msg.DBG)
+                Msg().out("Debug: is file", srcname, "to", dstname, l=Msg.DBG)
                 try:
                     mask = stat.S_IMODE(os.stat(srcname).st_mode) | \
                                         stat.S_IWUSR | stat.S_IRUSR
@@ -81,7 +81,7 @@ class NvidiaMode(object):
             else:
                 Msg().err("Warn: nvidia file in config not found", srcname)
 
-        Msg().out("Info: nvidia copied", srcname, "to", dstname, l=Msg.DBG)
+        Msg().out("Debug: nvidia copied", srcname, "to", dstname, l=Msg.DBG)
         return True
 
     def _get_nvidia_libs(self, host_dir):
@@ -90,7 +90,7 @@ class NvidiaMode(object):
         for lib in Config.conf['nvi_lib_list']:
             for expanded_libs in glob.glob(host_dir + '/' + lib + '*'):
                 lib_list.append(expanded_libs.replace(host_dir, ''))
-        Msg().out("Info: List nvidia libs", lib_list, l=Msg.DBG)
+        Msg().out("Debug: List nvidia libs", lib_list, l=Msg.DBG)
         return lib_list
 
     def _find_host_dir_ldconfig(self, arch="x86-64"):
@@ -105,7 +105,7 @@ class NvidiaMode(object):
                     if match:
                         dir_list.add(os.path.realpath(
                             os.path.dirname(match.group(1))) + '/')
-        Msg().out("Info: List nvidia libs via ldconfig", dir_list, l=Msg.DBG)
+        Msg().out("Debug: List nvidia libs via ldconfig", dir_list, l=Msg.DBG)
         return dir_list
 
     def _find_host_dir_ldpath(self, library_path):
@@ -116,7 +116,7 @@ class NvidiaMode(object):
                 for lib in self._nvidia_main_libs:
                     if glob.glob(libdir + "/%s*" % lib):
                         dir_list.add(os.path.realpath(libdir) + '/')
-        Msg().out("Info: List nvidia libs via path", dir_list, l=Msg.DBG)
+        Msg().out("Debug: List nvidia libs via path", dir_list, l=Msg.DBG)
         return dir_list
 
     def _find_host_dir(self):
@@ -127,14 +127,14 @@ class NvidiaMode(object):
         dir_list.update(self._find_host_dir_ldconfig())
         library_path = os.getenv("LD_LIBRARY_PATH", "")
         dir_list.update(self._find_host_dir_ldpath(library_path))
-        Msg().out("Info: Host location nvidia", dir_list, l=Msg.DBG)
+        Msg().out("Debug: Host location nvidia", dir_list, l=Msg.DBG)
         return dir_list
 
     def _find_cont_dir(self):
         """Find the location of the host target directory for libraries"""
         for dst_dir in ("/usr/lib/x86_64-linux-gnu", "/usr/lib64"):
             if os.path.isdir(self.container_root + '/' + dst_dir):
-                Msg().out("Info: Cont. location nvidia", dst_dir, l=Msg.DBG)
+                Msg().out("Debug: Cont. location nvidia", dst_dir, l=Msg.DBG)
                 return dst_dir
         return ""
 
@@ -189,5 +189,5 @@ class NvidiaMode(object):
         for dev in Config.conf['nvi_dev_list']:
             for expanded_devs in glob.glob(dev + '*'):
                 dev_list.append(expanded_devs)
-        Msg().out("Info: nvidia device list", dev_list, l=Msg.DBG)
+        Msg().out("Debug: nvidia device list", dev_list, l=Msg.DBG)
         return dev_list

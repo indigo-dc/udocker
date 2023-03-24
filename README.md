@@ -1,6 +1,9 @@
 [![PyPI version](https://badge.fury.io/py/udocker.svg)](https://badge.fury.io/py/udocker)
 [![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc%2Fudocker%2Fmaster)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/master/)
 
+[![SQAaaS badge](https://github.com/EOSC-synergy/SQAaaS/raw/master/badges/badges_150x116/badge_software_gold.png)](https://api.eu.badgr.io/public/assertions/70dSTwYKQpmEv7dFy6TF3w "SQAaaS gold badge achieved")
+
+---
 ![logo](docs/logo-small.png)
 
 udocker is a basic user tool to execute simple docker containers in user
@@ -26,9 +29,9 @@ containers with minimal functionality.
 The full documentation is available at:
 
 * [udocker documentation](https://indigo-dc.github.io/udocker/)
-  * [Installation manual](https://indigo-dc.github.io/udocker/installation_manual.html)
-  * [User manual](https://indigo-dc.github.io/udocker/user_manual.html)
-  * [Reference card](https://indigo-dc.github.io/udocker/reference_card.html)
+* [Installation manual](https://indigo-dc.github.io/udocker/installation_manual.html)
+* [User manual](https://indigo-dc.github.io/udocker/user_manual.html)
+* [Reference card](https://indigo-dc.github.io/udocker/reference_card.html)
 
 ## How does it work
 

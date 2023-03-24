@@ -6,17 +6,17 @@ import sys
 import re
 import json
 
-from genstr import is_genstr
-from msg import Msg
-from config import Config
-from helper.nixauth import NixAuthentication
-from helper.hostinfo import HostInfo
-from container.structure import ContainerStructure
-from utils.filebind import FileBind
-from utils.mountpoint import MountPoint
-from utils.fileutil import FileUtil
-from utils.uenv import Uenv
-from utils.uvolume import Uvolume
+from udocker.genstr import is_genstr
+from udocker.msg import Msg
+from udocker.config import Config
+from udocker.helper.nixauth import NixAuthentication
+from udocker.helper.hostinfo import HostInfo
+from udocker.container.structure import ContainerStructure
+from udocker.utils.filebind import FileBind
+from udocker.utils.mountpoint import MountPoint
+from udocker.utils.fileutil import FileUtil
+from udocker.utils.uenv import Uenv
+from udocker.utils.uvolume import Uvolume
 
 
 class ExecutionEngineCommon(object):
@@ -487,8 +487,7 @@ class ExecutionEngineCommon(object):
                 FileUtil(container_auth.group_file).copyto(tmp_group)
             FileUtil().umask()
         if not (self.opt["containerauth"] or self.opt["hostauth"]):
-            Msg().out("Warning: non-existing user will be created",
-                      l=Msg.DBG)
+            Msg().out("Debug: non-existing user will be created", l=Msg.DBG)
             self._fill_user()
             new_auth = NixAuthentication(tmp_passwd, tmp_group)
             new_auth.add_user(self.opt["user"], 'x',

@@ -6,8 +6,8 @@ import re
 import pwd
 import platform
 
-from genstr import is_genstr
-from utils.uprocess import Uprocess
+from udocker.genstr import is_genstr
+from udocker.utils.uprocess import Uprocess
 
 
 class HostInfo(object):

@@ -7,21 +7,21 @@ import string
 import json
 from getpass import getpass
 
-from __init__ import __version__
-from config import Config
-from msg import Msg
-from docker import DockerIoAPI
-from localfile import LocalFileAPI
-from helper.keystore import KeyStore
-from helper.hostinfo import HostInfo
-from helper.unshare import Unshare
-from container.structure import ContainerStructure
-from engine.execmode import ExecutionMode
-from engine.nvidia import NvidiaMode
-from tools import UdockerTools
-from utils.fileutil import FileUtil
-from utils.filebind import FileBind
-from utils.mountpoint import MountPoint
+from udocker import __version__
+from udocker.config import Config
+from udocker.msg import Msg
+from udocker.docker import DockerIoAPI
+from udocker.localfile import LocalFileAPI
+from udocker.helper.keystore import KeyStore
+from udocker.helper.hostinfo import HostInfo
+from udocker.helper.unshare import Unshare
+from udocker.container.structure import ContainerStructure
+from udocker.engine.execmode import ExecutionMode
+from udocker.engine.nvidia import NvidiaMode
+from udocker.tools import UdockerTools
+from udocker.utils.fileutil import FileUtil
+from udocker.utils.filebind import FileBind
+from udocker.utils.mountpoint import MountPoint
 
 # if Python 3
 if sys.version_info[0] >= 3:
@@ -49,8 +49,9 @@ class UdockerCLI(object):
         if Config.conf['keystore'].startswith("/"):
             self.keystore = KeyStore(Config.conf['keystore'])
         else:
-            self.keystore = KeyStore(self.localrepo.homedir + "/" +
-                                     Config.conf['keystore'])
+            self.keystore = KeyStore(self.localrepo.homedir + "/" + Config.conf['keystore'])
+
+        Msg().out("Debug: Localrepo homedir is", self.localrepo.homedir, l=Msg.DBG)
 
     def _cdrepo(self, cmdp):
         """Select the top directory of a local repository"""
@@ -133,6 +134,7 @@ class UdockerCLI(object):
                     self.dockerioapi.set_registry(transport + "//" + hostname)
                     self.dockerioapi.set_index(transport + "//" + hostname)
 
+        Msg().out("Debug: Set registry URL", registry_url, l=Msg.DBG)
         return True
 
     def _split_imagespec(self, imagerepo):
@@ -269,6 +271,7 @@ class UdockerCLI(object):
         if cmdp.missing_options():               # syntax error
             return self.STATUS_ERROR
         self._set_repository(registry_url, index_url, expression, http_proxy)
+        Msg().out("Debug: registry URL", registry_url, l=Msg.DBG)
         (dum1, dum2, expression, dum3) = self._split_imagespec(expression)
         self.dockerioapi.search_init(pause)
         v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
@@ -456,7 +459,7 @@ class UdockerCLI(object):
         if name and self.localrepo.get_container_id(name):
             Msg().err("Error: container name already exists")
             return self.STATUS_ERROR
-        Msg().out("Info: cloning container id:", container_id, l=Msg.DBG)
+        Msg().out("Debug: cloning container id:", container_id, l=Msg.DBG)
         clone_id = self.localfileapi.clone_container(container_id, name)
         if clone_id:
             Msg().out(clone_id)
@@ -483,12 +486,12 @@ class UdockerCLI(object):
         if not password:
             password = getpass("password: ")
         if password and password == password.upper():
-            Msg().out("Warning: password in uppercase",
-                      "Caps Lock ?", l=Msg.WAR)
+            Msg().out("Warning: password in uppercase", "Caps Lock ?", l=Msg.WAR)
 
         v2_auth_token = self.dockerioapi.get_v2_login_token(username, password)
-        if self.keystore.put(self.dockerioapi.registry_url,
-                             v2_auth_token, "") == 0:
+        Msg().out("Debug: V2 Auth token", v2_auth_token, l=Msg.DBG)
+        if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, "") == 0:
+            Msg().out("Debug: registry URL", self.dockerioapi.registry_url, l=Msg.DBG)
             return self.STATUS_OK
 
         Msg().err("Error: invalid credentials")

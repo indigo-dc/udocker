@@ -3,26 +3,17 @@
 udocker unit tests: UdockerTools
 """
 
-import os
-import sys
-
-new_path = []
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
-new_path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../udocker")
-new_path.extend(sys.path)
-sys.path = new_path
-
 import tarfile
 from tarfile import TarInfo
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from io import StringIO
-from config import Config
+from udocker.config import Config
 from udocker.utils.curl import CurlHeader
 from udocker.tools import UdockerTools
 import collections
-collections.Callable = collections.abc.Callable
 
+collections.Callable = collections.abc.Callable
 BUILTINS = "builtins"
 BOPEN = BUILTINS + '.open'
 
@@ -202,11 +193,11 @@ class UdockerToolsTestCase(TestCase):
     @patch('udocker.tools.os.path.basename')
     @patch('udocker.tools.FileUtil')
     @patch('udocker.tools.os.path.isfile')
-    def test_10__install(self, mock_isfile, mock_futil,
-                         mock_osbase, mock_cleaninstall):
+    def test_10__install(self, mock_isfile, mock_futil, mock_osbase, mock_cleaninstall):
         """Test10 UdockerTools()._install()."""
         tfile = ""
         mock_isfile.return_value = False
+        mock_cleaninstall.return_value = None
         utools = UdockerTools(self.local)
         status = utools._install(tfile)
         self.assertFalse(status)

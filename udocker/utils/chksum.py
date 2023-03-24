@@ -3,7 +3,7 @@
 
 import re
 
-from utils.uprocess import Uprocess
+from udocker.utils.uprocess import Uprocess
 
 try:
     import hashlib
@@ -21,6 +21,7 @@ class ChkSUM(object):
             self._algorithms["sha256"] = self._hashlib_sha256
         except NameError:
             self._algorithms["sha256"] = self._openssl_sha256
+
         try:
             dummy = hashlib.sha512()
             self._algorithms["sha512"] = self._hashlib_sha512
@@ -33,6 +34,7 @@ class ChkSUM(object):
             with open(filename, "rb") as filep:
                 for chunk in iter(lambda: filep.read(4096), b""):
                     algorithm.update(chunk)
+
             return algorithm.hexdigest()
         except (IOError, OSError):
             return ""
@@ -51,9 +53,11 @@ class ChkSUM(object):
         output = Uprocess().get_output(cmd)
         if output is None:
             return ""
+
         match = re.match("^(\\S+) ", output)
         if match:
             return match.group(1)
+
         return ""
 
     def _openssl_sha256(self, filename):
@@ -76,4 +80,5 @@ class ChkSUM(object):
         """Compute hash algorithm for file"""
         if algorithm in self._algorithms:
             return self._algorithms[algorithm](filename)
+
         return ""

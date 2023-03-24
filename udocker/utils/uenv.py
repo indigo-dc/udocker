@@ -5,25 +5,29 @@ import os
 import sys
 import string
 
-from genstr import is_genstr
+from udocker.genstr import is_genstr
 
 
 def get_pair(envstr):
     """Split env=var into key and val"""
     if not (is_genstr(envstr) and envstr):
         return ("", "")
+
     if '=' in envstr:
         try:
             (key, val) = envstr.split('=', 1)
         except (ValueError, NameError, AttributeError):
             return ("", "")
+
         key = key.strip()
         val = val.strip()
     else:
         key = envstr.strip()
         val = os.getenv(envstr, "")
+
     if not key or ' ' in key or key[0] in string.digits:
         return ("", "")
+
     return (key, val)
 
 
@@ -37,6 +41,7 @@ class UenvIterator(object):
             self._keys = list(uenv.env.keys())
         else:
             self._keys = uenv.env.keys()
+
         self._index = 0
 
     def __next__(self):
@@ -46,6 +51,7 @@ class UenvIterator(object):
             value = self._uenv.env[key]
             self._index += 1
             return (key, value)
+
         raise StopIteration
 
     next = __next__  # Python 2
@@ -73,6 +79,7 @@ class Uenv(object):
         (key, val) = get_pair(envstr)
         if key:
             self.env[key] = val
+
         return self
 
     def appendif(self, envstr):
@@ -80,6 +87,7 @@ class Uenv(object):
         (key, val) = get_pair(envstr)
         if key and key not in self.env:
             self.env[key] = val
+
         return self
 
     def extend(self, envlist):
@@ -90,6 +98,7 @@ class Uenv(object):
         elif isinstance(envlist, (dict)):
             for key in envlist.keys():
                 self.env[key] = envlist[key]
+
         return self
 
     def extendif(self, envlist):
@@ -101,6 +110,7 @@ class Uenv(object):
             for key in envlist.keys():
                 if key not in self.env:
                     self.env[key] = envlist[key]
+
         return self
 
     def add(self, thisenv):
@@ -109,6 +119,7 @@ class Uenv(object):
             self.append(thisenv)
         elif isinstance(thisenv, (list)):
             self.extend(thisenv)
+
         return self
 
     def getenv(self, key):
@@ -135,6 +146,7 @@ class Uenv(object):
         env_list = []
         for (key, val) in self.env.items():
             env_list.append("%s=%s" % (key, val))
+
         return env_list
 
     def dict(self):

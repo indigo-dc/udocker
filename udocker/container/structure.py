@@ -4,13 +4,13 @@
 import os
 import subprocess
 
-from genstr import is_genstr
-from config import Config
-from msg import Msg
-from helper.unique import Unique
-from helper.hostinfo import HostInfo
-from utils.fileutil import FileUtil
-from utils.uprocess import Uprocess
+from udocker.genstr import is_genstr
+from udocker.config import Config
+from udocker.msg import Msg
+from udocker.helper.unique import Unique
+from udocker.helper.hostinfo import HostInfo
+from udocker.utils.fileutil import FileUtil
+from udocker.utils.uprocess import Uprocess
 
 
 class ContainerStructure(object):

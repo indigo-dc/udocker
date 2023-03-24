@@ -5,9 +5,9 @@ import os
 import ctypes
 import subprocess
 
-from msg import Msg
-from helper.hostinfo import HostInfo
-from helper.nixauth import NixAuthentication
+from udocker.msg import Msg
+from udocker.helper.hostinfo import HostInfo
+from udocker.helper.nixauth import NixAuthentication
 
 
 class Unshare(object):
@@ -30,10 +30,10 @@ class Unshare(object):
 
         _unshare.restype = ctypes.c_int
         _unshare.argtypes = (ctypes.c_int, )
-
         if _unshare(flags) == -1:
             Msg().err("Error: in unshare:", os.strerror(-1))
             return False
+
         return True
 
     def namespace_exec(self, method, flags=CLONE_NEWUSER):
