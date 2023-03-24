@@ -29,9 +29,9 @@ containers with minimal functionality.
 The full documentation is available at:
 
 * [udocker documentation](https://indigo-dc.github.io/udocker/)
-  * [Installation manual](https://indigo-dc.github.io/udocker/installation_manual.html)
-  * [User manual](https://indigo-dc.github.io/udocker/user_manual.html)
-  * [Reference card](https://indigo-dc.github.io/udocker/reference_card.html)
+* [Installation manual](https://indigo-dc.github.io/udocker/installation_manual.html)
+* [User manual](https://indigo-dc.github.io/udocker/user_manual.html)
+* [Reference card](https://indigo-dc.github.io/udocker/reference_card.html)
 
 ## How does it work
 

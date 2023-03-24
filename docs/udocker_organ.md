@@ -29,10 +29,10 @@ dir = utils/
 * chkcsum.py -  class ChkSUM(object):
 
 * curl.py:
-  * class CurlHeader(object):
-  * class GetURL(object):
-  * class GetURLpyCurl(GetURL):
-  * class GetURLexeCurl(GetURL):
+* class CurlHeader(object):
+* class GetURL(object):
+* class GetURLpyCurl(GetURL):
+* class GetURLexeCurl(GetURL):
 
 ## Directory helper
 
