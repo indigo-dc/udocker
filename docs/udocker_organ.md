@@ -10,14 +10,13 @@ dir = .
 
 * udocker.py - class Main(object):
 * cmdparser.py - class CmdParser(object):
-* cli.py -     class UdockerCLI(object):
-  * This is the command line implementation
+* cli.py -     class UdockerCLI(object): This is the command line implementation
 * config.py -  class Config(object):
 * tools.py -   class UdockerTools(object):
 * msg.py - class Msg(object):
 * docker.py:
-  * class DockerIoAPI(object):
-  * class DockerLocalFileAPI(object):
+* class DockerIoAPI(object):
+* class DockerLocalFileAPI(object):
 
 ## Directory utils
 
