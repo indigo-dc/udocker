@@ -2,11 +2,11 @@
 
 * Verify that the version is updated.
 * Update the `CHANGELOG.md`.
-* Prepare a PR and check jenkins pipeline are ok, then approve
-
 * build python binary dist to upload to test pypi:
 
 ```bash
+python -m build --wheel .
+
 python setup.py sdist bdist_wheel
 twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 ```
@@ -24,6 +24,8 @@ twine upload dist/*
 pip install udocker
 udocker version
 ```
+
+* Prepare a PR and check jenkins pipeline are ok, then approve
 
 * Make an independent tarball of udocker
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## udocker (1.3.8)
+
+* build udockertools 1.2.9 and set it as default
+* add Fn support for Ubuntu:22
+* remove files to be installed
+* set Fn preference to use runc
+
 ## udocker (1.3.7)
 
 * Remove deprecated unit tests. udocker is the same as version 1.3.6
@@ -12,8 +19,7 @@
 
 ## udocker (1.3.5)
 
-* fix python backwards compatibility issues
-  * closes: #374
+* fix python backwards compatibility issues - closes: #374
 * fix incorrectly reported errors by image verification
 * fix image search returning empty results
 * fix issue with logical links in the udocker executable path
@@ -24,8 +30,7 @@
 * prevent closing of file descriptors upon engine invocation
   improves PMI process management interface interoperability
 * fix issues in import and export while using pipes.
-* fix image name parsing where "library" component is missing
-  * closes: #359
+* fix image name parsing where "library" component is missing - closes: #359
 
 ## udocker (1.3.4)
 
@@ -75,18 +80,14 @@
 * Cmd and entrypoint metadata and arguments processing changed to mimic docker
 * Improve removal of files and links in install and filebind restore
 * Add follow location option to GetURL()
-* Implement use of `--entrypoint=<cmd>` to force execution of command
-  * closes: #306
-* Implement use of `--entrypoint=""` to bypass entrypoint in metadata
-  * closes: #306
+* Implement use of `--entrypoint=<cmd>` to force execution of command - closes: #306
+* Implement use of `--entrypoint=""` to bypass entrypoint in metadata - closes: #306
 
 ## udocker (1.2.9)
 
-* method Unshare.unshare os.strerror() takes one argument,
-  * closes: #254
+* method Unshare.unshare os.strerror() takes one argument - closes: #254
 * Add unit test for #254
-* Method chown udocker.utils.fileutil FileUtil
-  * closes: #276
+* Method chown udocker.utils.fileutil FileUtil - closes: #276
 * Several fixes of unit tests and pylint
 * Fix confusion between exit code 0 and inferred False
 * Dereference on `safe_prefixes`
@@ -108,16 +109,11 @@
 * Fix handling of dockerhub repository names in /v2
 * Improve documentation and algn with 1.1.8b2
 * Add credits
-* Fix delete of paths with symlinks
-  * closes: #267, #265
-* Fix issues with login credentials
-  * closes: #310
-* Fix pull images from docker hub in Termux
-  * closes: #307
-* Fix issues on running udocker in googlecolab
-  * closes: #286
-* Fix execution with Pn modes in alternate /tmp
-  * closes: #284
+* Fix delete of paths with symlinks - closes: #267, #265
+* Fix issues with login credentials - closes: #310
+* Fix pull images from docker hub in Termux - closes: #307
+* Fix issues on running udocker in googlecolab - closes: #286
+* Fix execution with Pn modes in alternate /tmp - closes: #284
 * Add conditional delay-directory-restore to untar layers
 * Add exclude of whiteouts on layer untar
 * Add --nobanner to udocker run
@@ -132,19 +128,14 @@
 
 ## udocker (1.1.7)
 
-* Fix P1 when Linux 4.8.0 SECCOMP is backported, affects newer CentOS 7
-  * closes: #282
-* Check for file ownership on remove wrongly follows symlinks
-  * closes: #266, #267
-* udocker unexpectedly uses P1 exec mode instead of P2
-  * closes: #274
-* Allow passing of `PROOT_TMP_DIR` environment variable
-  * closes: #284
+* Fix P1 when Linux 4.8.0 SECCOMP is backported, affects newer CentOS 7 - closes: #282
+* Check for file ownership on remove wrongly follows symlinks - closes: #266, #267
+* udocker unexpectedly uses P1 exec mode instead of P2 - closes: #274
+* Allow passing of `PROOT_TMP_DIR` environment variable - closes: #284
 
 ## udocker (1.1.6)
 
-* Complete fix for of ELF paths in modes Fn for $ORIGIN:$ORIGIN
-  * closes: #255
+* Complete fix for of ELF paths in modes Fn for $ORIGIN:$ORIGIN - closes: #255
 
 ## udocker (1.1.5)
 
@@ -198,88 +189,58 @@
 * Improved fix of SECCOMP accelerated mode for P1 mode
 * Added loading and handling of container images in OCI format
 * Fixes for udocker in ARM aarch64
-* Fix processing of --dri in Sn mode
-  * closes: #241
-* Improve handling of container and host authentication
-  * partially addresses: #239
-* Fixes to address authentication and redirects in pull
-  * closes: #225, #230
-* Added minimal support to load OCI images
-  * closes: #111
-* Added Pn support for newer distributions
-  * closes: #192
-* Improve the installation of udockertools
-  * closes: #220, #228
-* Read environment variables from file with --env-file=
-  * closes: #212
-* Prepare for pypy
-  * closes: #211
-* Fixes for verification of container images
-  * closes: #209
-* Fix command line processing for "-" in argument
-  * closes: #202
-* Fix file protections on extraction making files u+r
-  * closes: #202, #206
-* Fix comparison of kernel versions having non-integers
-  * closes: #183
-* Support for both manifest V2 schema 1 and schema 2
-  * closes: #218, #225
-* Further improved pathname translation in Fn modes
-  * closes: #160
-* Implement save images in docker format
-  * closes: #74
-* useradd and groupadd not working in containers
-  * closes: #141
-* fix return code when exporting to stdin
-  * closes: #202
+* Fix processing of --dri in Sn mode - closes: #241
+* Improve handling of container and host authentication - partially addresses: #239
+* Fixes to address authentication and redirects in pull - closes: #225, #230
+* Added minimal support to load OCI images - closes: #111
+* Added Pn support for newer distributions - closes: #192
+* Improve the installation of udockertools - closes: #220, #228
+* Read environment variables from file with --env-file= - closes: #212
+* Prepare for pypy - closes: #211
+* Fixes for verification of container images - closes: #209
+* Fix command line processing for "-" in argument - closes: #202
+* Fix file protections on extraction making files u+r - closes: #202, #206
+* Fix comparison of kernel versions having non-integers - closes: #183
+* Support for both manifest V2 schema 1 and schema 2 - closes: #218, #225
+* Further improved pathname translation in Fn modes - closes: #160
+* Implement save images in docker format - closes: #74
+* useradd and groupadd not working in containers - closes: #141
+* fix return code when exporting to stdin - closes: #202
 
 ## udocker (1.1.3)
 
-* Support for nvidia drivers on ubuntu
-  * closes: #162
-* Installation improvements
-  * closes: #166
-* Fix issue on Fn mode symlink convertion
-  * partially addresses: #160
+* Support for nvidia drivers on ubuntu - closes: #162
+* Installation improvements - closes: #166
+* Fix issue on Fn mode symlink conversion - partially addresses: #160
 
 ## udocker (1.1.2)
 
-* Improve parsing of quotes in the command line
-  * closes: #98
-* Fix version command to exit with 0
-  * closes: #107
+* Improve parsing of quotes in the command line - closes: #98
+* Fix version command to exit with 0 - closes: #107
 * Add kill-on-exit to proot on Pn modes
 * Improve download of udocker utils
-* Handle authentication headers when pulling
-  * closes: #110
+* Handle authentication headers when pulling - closes: #110
 * Handle of redirects when pulling
 * Fix registries table
 * Support search quay.io
 * Fix auth header when no standard Docker registry is used
 * Add registry detection on image name
 * Add --version option
-* Force python2 as interpreter
-  * closes: #131
+* Force python2 as interpreter - closes: #131
 * Fix handling of volumes in metadata
 * Handle empty metadata
-* Fix http proxy functionality
-  * closes: #115
-* Ignore --no-trunc and --all in the images command
-  * closes: #108
+* Fix http proxy functionality - closes: #115
+* Ignore --no-trunc and --all in the images command - closes: #108
 * Implement verification of layers in manifest
 * Add --nvidia to support GPUs and related drivers
 * Send download messages to stderr
 * Enable override of curl executable
-* Fix building on CentOS 6
-  * closes: #157
-* Mitigation for upstream limitation in runC without tty
-  * closes: #132
-* Fix detection of executable with symlinks in container
-  * closes: #118
+* Fix building on CentOS 6 - closes: #157
+* Mitigation for upstream limitation in runC without tty - closes: #132
+* Fix detection of executable with symlinks in container - closes: #118
 * Updated runC to v1.0.0-rc5
 * Experimental support for Alpine in Fn modes
-* Improve pathname translation in Fn modes for mounted dirs
-  * partially addresses: #160
+* Improve pathname translation in Fn modes for mounted dirs - partially addresses: #160
 
 ## udocker (1.1.1)
 
@@ -287,8 +248,7 @@
 * Updated documentation with OpenMPI information and examples
 * Additional unit tests
 * Redirect messages to stderr
-* Improved parsing of quotes in the command line
-  * closes: #87
+* Improved parsing of quotes in the command line - closes: #87
 * Allow override of the HOME environment variable
 * Allow override of libfakechroot.so at the container level
 * Automatic selection of libfakechroot.so from container info
@@ -300,10 +260,8 @@
 * Load, import and export to/from stdin/stdout
 * Clone existing containers
 * Support for TCP/IP port remap in execution modes Pn
-* Fix run with basenames failing
-  * closes: #89
-* Allow run as root flag
-  * closes: #91
+* Fix run with basenames failing - closes: #89
+* Allow run as root flag - closes: #91
 
 ## udocker (1.1.0)
 
@@ -314,10 +272,8 @@
 * Improve proot tmp files cleanup on non ext filesystems
 * Improve search returning empty on Docker repositories
 * Improve runC execution portability
-* Add environment variable `UDOCKER_KEYSTORE`
-  * closes: #75
-* Prevent creation of .udocker when `UDOCKER_KEYSTORE` is used
-  * closes: #75
+* Add environment variable `UDOCKER_KEYSTORE` - closes: #75
+* Prevent creation of .udocker when `UDOCKER_KEYSTORE` is used - closes: #75
 
 ## udocker (1.0.4)
 
@@ -329,27 +285,19 @@
 * Improve the command line parsing
 * Improve temporary file handling and removal
 * Support for additional execution engines to be provided in the future
-* Improved parsing of entrypoint and cmd metadata
-  * closes: #53
-* Increase name alias length
-  * closes: #52
-* Add support for change dir into volume directories
-  * closes: #51
-* Fix deletion of files upon container import
-  * closes: #50
-* Fix exporting of host environment variables to the containers
-  * closes: #48
-* Change misleading behavior of import tarball from move to copy
-  * closes: #44
-* Fix validation of volumes specification
-  * closes: #43
+* Improved parsing of entrypoint and cmd metadata - closes: #53
+* Increase name alias length - closes: #52
+* Add support for change dir into volume directories - closes: #51
+* Fix deletion of files upon container import - closes: #50
+* Fix exporting of host environment variables to the containers - closes: #48
+* Change misleading behavior of import tarball from move to copy - closes: #44
+* Fix validation of volumes specification - closes: #43
 
 ## udocker (1.0.2)
 
 * Improve download on repositories that fail authentication on /v2
 * Improve run verification of binaries with recursive symbolic links
-* Improve accelerated seccomp on kernels >= 4.8.0
-  * closes: #40
+* Improve accelerated seccomp on kernels >= 4.8.0 - closes: #40
 
 ## udocker (1.0.1)
 
@@ -364,14 +312,10 @@
 * Insecure flag fixed
 * Address seccomp change introduced on kernels >= 4.8.0
 * Utilities for packaging
-* Improved verbose levels, messaging and output
-  * closes: #24, #23
-* Fully implement support for registry selection --registry parameter
-  * closes: #29
-* Provide support for private repositories e.g. gitlab registries
-  * closes: #30
-* Provide --insecure command line parameter for SSL requests
-  * closes: #31
+* Improved verbose levels, messaging and output - closes: #24, #23
+* Fully implement support for registry selection --registry parameter - closes: #29
+* Provide support for private repositories e.g. gitlab registries - closes: #30
+* Provide --insecure command line parameter for SSL requests - closes: #31
 
 ## udocker (1.0.0)
 
