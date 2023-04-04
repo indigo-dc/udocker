@@ -381,7 +381,7 @@ class UdockerTools:
         else:
             LOG.debug('list of uids not given')
             osinfo = OSInfo('/')
-            arch =osinfo.arch()
+            arch = osinfo.arch()
             (os_dist, os_ver) = osinfo.osdistribution()
             default_mod = ['proot', 'libfakechroot']
             for mod in default_mod:

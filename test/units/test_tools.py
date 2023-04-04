@@ -215,57 +215,76 @@ def test_12__verify_version(mocker, utools):
 #                                side_effect=['udocker_dir', 'udocker_dir', 'udocker_dir'])
 #     mock_furegpref = mocker.patch('udocker.tools.FileUtil.register_prefix',
 #                                   side_effect=[None, None, None])
-#     mock_furm  = mocker.patch('udocker.tools.FileUtil.remove',
-#                               side_effect=[None, None, None])
+#     mock_furm = mocker.patch('udocker.tools.FileUtil.remove',
+#                              side_effect=[None, None, None])
 
-#     with patch.object(tarfile, 'open', autospec=True) as open_mock:
-#         open_mock.side_effect = tfile
-#         utools._clean_install(open_mock)
-#         assert mock_osbase.call_count == 3
-#         lrepo.bindir.assert_called()
-#         lrepo.libdir.assert_called()
-#         lrepo.docdir.assert_called()
-#         assert mock_furegpref.call_count == 3
-#         assert mock_furm.call_count == 3
+#     utools._clean_install(tfile)
+#     assert mock_osbase.call_count == 3
+#     lrepo.bindir.assert_called()
+#     lrepo.libdir.assert_called()
+#     lrepo.docdir.assert_called()
+#     assert mock_furegpref.call_count == 3
+#     assert mock_furm.call_count == 3
 
-# @patch.object(UdockerTools, '_clean_install')
-# @patch('udocker.tools.os.path.basename')
-# @patch('udocker.tools.os.path.basename')
-# @patch('udocker.tools.FileUtil')
-# @patch('udocker.tools.os.path.isfile')
-# def test_10__install(self, mock_isfile, mock_futil, mock_osbase, mock_cleaninstall):
-#     """Test10 UdockerTools()._install()."""
-#     tfile = ""
-#     mock_isfile.return_value = False
-#     utools = UdockerTools(self.local)
-#     status = utools._install(tfile)
-#     self.assertFalse(status)
+    # with patch.object(tarfile, 'open', autospec=True) as open_mock:
+    #     open_mock.side_effect = tfile
+    #     utools._clean_install(open_mock)
+    #     assert mock_osbase.call_count == 3
+    #     lrepo.bindir.assert_called()
+    #     lrepo.libdir.assert_called()
+    #     lrepo.docdir.assert_called()
+    #     assert mock_furegpref.call_count == 3
+    #     assert mock_furm.call_count == 3
 
-#     tinfo1 = TarInfo("udocker_dir/bin/ls")
-#     tinfo2 = TarInfo("udocker_dir/lib/lib1")
-#     tfile = "udocker.tar"
-#     mock_isfile.return_value = True
-#     mock_futil.return_value.chmod.return_value = None
-#     mock_futil.return_value.rchmod.side_effect = [None, None, None, None, None, None]
-#     mock_osbase.side_effect = ["ls", "ls", "lib1", "lib1", "doc", "doc1"]
-#     self.local.create_repo.return_value = None
-#     with patch.object(tarfile, 'open', autospec=True) as open_mock:
-#         open_mock.return_value.getmembers.side_effect = [[tinfo1, tinfo2],
-#                                                             [tinfo1, tinfo2],
-#                                                             [tinfo1, tinfo2]]
-#         open_mock.return_value.extract.side_effect = [None, None]
-#         utools = UdockerTools(self.local)
-#         status = utools._install(tfile)
-#         self.assertTrue(status)
-#         self.assertTrue(mock_futil.called)
-#         self.assertTrue(mock_futil.return_value.rchmod.call_count, 4)
 
-# def test_11__get_mirrors(self):
-#     """Test11 UdockerTools()._get_mirrors()."""
-#     mirrors = "https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz"
-#     utools = UdockerTools(self.local)
-#     status = utools._get_mirrors(mirrors)
-#     self.assertEqual(status, [mirrors])
+def test_13__install(mocker, utools):
+    """Test13 UdockerTools()._install(). tar does not exist"""
+    tfile = "some.tar"
+    mock_isfile = mocker.patch('os.path.isfile', return_value=False)
+    mock_fuchmod = mocker.patch('udocker.tools.FileUtil.chmod')
+    out = utools._install(tfile)
+    assert not out
+    mock_isfile.assert_called()
+    mock_fuchmod.assert_not_called()
+
+
+def test_14__install(mocker, utools, lrepo):
+    """Test14 UdockerTools()._install(). tar does not open"""
+    tfile = "some.tar"
+    mock_isfile = mocker.patch('os.path.isfile', return_value=True)
+    mock_fuchmod = mocker.patch('udocker.tools.FileUtil.chmod')
+    lrepo.return_value.create_repo.return_value = None
+    mock_tarfile = mocker.mock_open()
+    mopen = mocker.patch("tarfile.open", mock_tarfile)
+    mopen.side_effect = tarfile.TarError
+    out = utools._install(tfile)
+    assert not out
+    mock_isfile.assert_called()
+    mock_fuchmod.assert_called()
+    lrepo.create_repo.assert_called()
+
+
+# def test_15__install(mocker, utools, lrepo):
+#     """Test15 UdockerTools()._install(). tar exists and opens"""
+#     tfile = "some.tar"
+#     mock_isfile = mocker.patch('os.path.isfile', return_value=True)
+#     mock_fuchmod = mocker.patch('udocker.tools.FileUtil.chmod')
+#     lrepo.return_value.create_repo.return_value = None
+#     mock_tarfile = mocker.mock_open()
+#     mopen = mocker.patch("tarfile.open", mock_tarfile)
+
+#     out = utools._install(tfile)
+#     assert not out
+#     mock_isfile.assert_called()
+#     mock_fuchmod.assert_called()
+#     lrepo.create_repo.assert_called()
+
+
+def test_16__get_mirrors(mocker, utools):
+    """Test16 UdockerTools()._get_mirrors()."""
+    mirrors = "https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz"
+    out = utools._get_mirrors(mirrors)
+    assert out == [mirrors]
 
 # @patch.object(UdockerTools, '_get_file')
 # @patch.object(UdockerTools, '_get_mirrors')
