@@ -285,7 +285,7 @@ class UdockerCLI:
         (dum1, dum2, expression, dum3) = self._split_imagespec(expression)
         self.dockerioapi.search_init(pause)
         v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
-        self.dockerioapi.set_v2_login_token(v2_auth_token)
+        self.dockerioapi.v2api.set_login_token(v2_auth_token)
         if list_tags:
             return self._list_tags(expression)
 
@@ -527,7 +527,7 @@ class UdockerCLI:
         if password and password == password.upper():
             LOG.warning("password in uppercase. Caps Lock ?")
 
-        v2_auth_token = self.dockerioapi.get_v2_login_token(username, password)
+        v2_auth_token = self.dockerioapi.v2api.get_login_token(username, password)
         LOG.debug("v2 Auth token is: %s", v2_auth_token)
         if self.keystore.put(self.dockerioapi.registry_url, v2_auth_token, "") == 0:
             LOG.debug("Registry URL: %s", self.dockerioapi.registry_url)
@@ -572,6 +572,7 @@ class UdockerCLI:
         --httpproxy=socks5h://host:port                 :use http proxy
         --index=https://index.docker.io/v1              :docker index
         --registry=https://registry-1.docker.io         :docker registry
+        --platform=os/arch                              :docker platform
 
         Examples:
           pull fedora:latest
@@ -580,14 +581,17 @@ class UdockerCLI:
         index_url = cmdp.get("--index=")
         registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
+        platform = cmdp.get("--platform=")
+        if not platform:
+            platform = HostInfo().platform()
         (imagerepo, tag) = self._check_imagespec(cmdp.get("P1"))
         if (not imagerepo) or cmdp.missing_options():    # syntax error
             return self.STATUS_ERROR
 
         self._set_repository(registry_url, index_url, imagerepo, http_proxy)
         v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
-        self.dockerioapi.set_v2_login_token(v2_auth_token)
-        if self.dockerioapi.get(imagerepo, tag):
+        self.dockerioapi.v2api.set_login_token(v2_auth_token)
+        if self.dockerioapi.get(imagerepo, tag, platform):
             return self.STATUS_OK
 
         LOG.error("no files downloaded")

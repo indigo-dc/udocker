@@ -52,6 +52,30 @@ class HostInfo:
         except (NameError, AttributeError):
             return ""
 
+    def parse_platform(self, platform_str):
+        """Load platform string into a dict"""
+        try:
+            (p_os, p_architecture, p_variant) = platform_str.split("/")
+            return (p_os, p_architecture, p_variant)
+        except ValueError:
+            try:
+                (p_os, p_architecture) = platform_str.split("/")
+                return (p_os, p_architecture, "") 
+            except ValueError:
+                try:
+                    (p_os) = platform_str.split("/")
+                    return (p_os, "", "") 
+                except ValueError:
+                    pass
+        return ("", "", "")
+
+    def platform(self, return_str=True):
+        """get docker platform os/architecture/variant"""
+        platform_str = self.osversion() + "/" + self.arch()
+        if return_str:
+            return platform_str
+        return self.parse_platform(platform_str)
+
     def oskernel(self):
         """Get operating system"""
         try:
