@@ -369,16 +369,17 @@ class DockerIoAPIv2:
                 return ""
         (p_os, p_architecture, p_variant) = HostInfo().parse_platform(platform)
         try:
-            for manifest in index_list["manifests"].lower():
+            for manifest in index_list["manifests"]:
                 if (p_os and
-                    manifest["platform"]["os"].lower() != p_os):
+                    (manifest["platform"]["os"]).lower() != p_os):
                     continue
                 if (p_architecture and
-                    manifest["platform"]["architecture"].lower() != p_architecture):
+                    (manifest["platform"]["architecture"]).lower() != p_architecture):
                     continue
                 if (p_variant and
-                    manifest["platform"]["variant"].lower() != p_variant):
+                    (manifest["platform"]["variant"]).lower() != p_variant):
                     continue
+                print(manifest["digest"])
                 return manifest["digest"]
         except (KeyError, AttributeError, ValueError, TypeError):
             pass
@@ -388,6 +389,8 @@ class DockerIoAPIv2:
         """API v2 Get the image manifest which contains JSON metadata
         that is common to all layers in this image tag
         """
+        if not (imagerepo and tag):
+            return (dict(), [])
         reqhdr = ['Accept: application/vnd.docker.distribution.manifest.v2+json',
                   'Accept: application/vnd.docker.distribution.manifest.v1+prettyjws',
                   'Accept: application/json',
