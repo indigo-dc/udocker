@@ -47,26 +47,31 @@ class ContainerStructure:
         return(container_dir, cntjson)
 
     def get_container_meta(self, param, default, cntjson):
-        """Get the container metadata from the container"""
+        """Get the metadata configuration from the container"""
         cidx = ""
         if "config" in cntjson:
             cidx = "config"
         elif "container_config" in cntjson:
             cidx = "container_config"
 
+        meta_item = None
         if cntjson[cidx] and param in cntjson[cidx]:
-            if cntjson[cidx][param] is None:
-                pass
-            elif (isinstance(cntjson[cidx][param], str) and (isinstance(default, (list, tuple)))):
-                return cntjson[cidx][param].strip().split()
-            elif (isinstance(default, str) and (isinstance(cntjson[cidx][param], (list, tuple)))):
-                return " ".join(cntjson[cidx][param])
-            elif (isinstance(default, str) and (isinstance(cntjson[cidx][param], dict))):
-                return self._dict_to_str(cntjson[cidx][param])
-            elif (isinstance(default, list) and (isinstance(cntjson[cidx][param], dict))):
-                return self._dict_to_list(cntjson[cidx][param])
-            else:
-                return cntjson[cidx][param]
+            meta_item = cntjson[cidx][param]
+        elif param in cntjson:
+            meta_item = cntjson[param]
+
+        if meta_item is None:
+            pass
+        elif (isinstance(meta_item, str) and (isinstance(default, (list, tuple)))):
+            return meta_item.strip().split()
+        elif (isinstance(default, str) and (isinstance(meta_item, (list, tuple)))):
+            return " ".join(meta_item)
+        elif (isinstance(default, str) and (isinstance(meta_item, dict))):
+            return self._dict_to_str(meta_item)
+        elif (isinstance(default, list) and (isinstance(meta_item, dict))):
+            return self._dict_to_list(meta_item)
+        else:
+            return meta_item
 
         return default
 
