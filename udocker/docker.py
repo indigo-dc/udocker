@@ -379,7 +379,6 @@ class DockerIoAPIv2:
                 if (p_variant and
                     (manifest["platform"]["variant"]).lower() != p_variant):
                     continue
-                print(manifest["digest"])
                 return manifest["digest"]
         except (KeyError, AttributeError, ValueError, TypeError):
             pass
@@ -389,8 +388,6 @@ class DockerIoAPIv2:
         """API v2 Get the image manifest which contains JSON metadata
         that is common to all layers in this image tag
         """
-        if not (imagerepo and tag):
-            return (dict(), [])
         reqhdr = ['Accept: application/vnd.docker.distribution.manifest.v2+json',
                   'Accept: application/vnd.docker.distribution.manifest.v1+prettyjws',
                   'Accept: application/json',
@@ -400,7 +397,6 @@ class DockerIoAPIv2:
         url = self.dockerioapi.registry_url + "/v2/" + imagerepo + "/manifests/" + tag
         LOG.debug("manifest url: %s", url)
         (hdr, buf) = self.dockerioapi.get_url(url, header=reqhdr)
-        # JorgeOCI
 
         try:
             if "docker.distribution.manifest.v1" in hdr.data['content-type']:
@@ -409,14 +405,15 @@ class DockerIoAPIv2:
                 return (hdr.data, json.loads(buf.getvalue().decode()))
             if "oci.image.manifest.v1+json" in hdr.data['content-type']:
                 return (hdr.data, json.loads(buf.getvalue().decode()))
-            if "docker.distribution.manifest.list.v2" in hdr.data['content-type']:
+            if ("docker.distribution.manifest.list.v2" in hdr.data['content-type'] or
+                "oci.image.index.v1+json" in hdr.data['content-type']):
                 image_index = json.loads(buf.getvalue().decode())
                 digest = self._get_digest_from_image_index(image_index, platform)
-                return self.get_image_manifest(imagerepo, digest, platform)
-            if "oci.image.index.v1+json" in hdr.data['content-type']:
-                image_index = json.loads(buf.getvalue().decode())
-                digest = self._get_digest_from_image_index(image_index, platform)
-                return self.get_image_manifest(imagerepo, digest, platform)
+                if not digest:
+                    LOG.error("no image found in manifest for platform (%s)",
+                              HostInfo().platform_to_str(platform))
+                else:
+                    return self.get_image_manifest(imagerepo, digest, platform)
         except (OSError, KeyError, AttributeError, ValueError, TypeError):
             pass
         return (hdr.data, [])
@@ -462,6 +459,10 @@ class DockerIoAPIv2:
 
         if status != 200:
             LOG.error("pulling manifest:")
+            return []
+
+        if not manifest:
+            LOG.error("no manifest for given image and platform")
             return []
 
         try:
