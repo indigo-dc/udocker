@@ -582,8 +582,6 @@ class UdockerCLI:
         registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
         platform = cmdp.get("--platform=")
-        if not platform:
-            platform = HostInfo().platform()
         (imagerepo, tag) = self._check_imagespec(cmdp.get("P1"))
         if (not imagerepo) or cmdp.missing_options():    # syntax error
             return self.STATUS_ERROR
@@ -739,6 +737,10 @@ class UdockerCLI:
             },
             "nobanner": {
                 "fl": ("--nobanner",), "act": 'R',
+                "p2": "CMD_OPT", "p3": False
+            },
+            "platform": {
+                "fl": ("--platform=",), "act": 'R',
                 "p2": "CMD_OPT", "p3": False
             }
         }

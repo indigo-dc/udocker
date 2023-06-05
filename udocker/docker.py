@@ -369,15 +369,15 @@ class DockerIoAPIv2:
                 return ""
         (p_os, p_architecture, p_variant) = HostInfo().parse_platform(platform)
         try:
-            for manifest in index_list["manifests"]:
+            for manifest in index_list["manifests"].lower():
                 if (p_os and
-                    manifest["platform"]["os"] != p_os):
+                    manifest["platform"]["os"].lower() != p_os):
                     continue
                 if (p_architecture and
-                    manifest["platform"]["architecture"] != p_architecture):
+                    manifest["platform"]["architecture"].lower() != p_architecture):
                     continue
                 if (p_variant and
-                    manifest["platform"]["variant"] != p_variant):
+                    manifest["platform"]["variant"].lower() != p_variant):
                     continue
                 return manifest["digest"]
         except (KeyError, AttributeError, ValueError, TypeError):
@@ -695,6 +695,8 @@ class DockerIoAPI:
     def get(self, imagerepo, tag, platform=""):
         """Pull a docker image from a v2 registry or v1 index"""
         LOG.debug("get imagerepo: %s tag: %s", imagerepo, tag)
+        if not platform:
+            platform = HostInfo().platform()
         (imagerepo, remoterepo) = self._parse_imagerepo(imagerepo)
         if self.localrepo.cd_imagerepo(imagerepo, tag):
             new_repo = False
