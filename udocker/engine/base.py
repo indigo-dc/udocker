@@ -60,6 +60,9 @@ class ExecutionEngineCommon:
         self.exec_mode = exec_mode            # ExecutionMode instance
         self.mountp = None                    # MountPoint object
         self.executable = ""                  # Executable proot, runc, etc
+        self.container_os = ""                # Container operating system
+        self.container_architecture = ""      # Container architecture
+        self.container_variant = ""           # Container variant
 
     def _has_option(self, search_option, arg=None):
         """Check if executable has a given cli option"""
@@ -107,7 +110,7 @@ class ExecutionEngineCommon:
                     # if port_number in list(mapped_ports.keys()):
                     #     if mapped_ports[port_number] >= 1024:
                     #         continue
-                    for (mports, mportd) in mapped_ports.items():
+                    for (mports, dummy) in mapped_ports.items():
                         if mports >= 1024:
                             continue
                     exposes_priv = True
@@ -325,10 +328,15 @@ class ExecutionEngineCommon:
                 self.opt["portsexp"].extend(cstruc.get_container_meta("ExposedPorts", [], cntjson))
                 self.opt["env"].extendif(cstruc.get_container_meta("Env", [], cntjson))
 
+                self.container_os = cstruc.get_container_meta("os", "", cntjson)
+                self.container_architecture = cstruc.get_container_meta("architecture",
+                                                                        "", cntjson)
+                self.container_variant = cstruc.get_container_meta("variant", "", cntjson)
+
         return(cont_dir, cntjson)
 
     def _select_auth_files(self):
-        """Select authentication files to use /etc/passwd /etc/group"""
+        """select authentication files to use /etc/passwd /etc/group"""
         cont_passwd = self.container_root + "/etc/passwd"
         cont_group = self.container_root + "/etc/group"
         bind_passwd = self.container_dir + FileBind.orig_dir + "/#etc#passwd"
@@ -352,12 +360,12 @@ class ExecutionEngineCommon:
         return (passwd, group)
 
     def _validate_user_str(self, user):
-        """Parse string with uid:gid or username"""
+        """parse string with uid:gid or username"""
         user_id = {}
         if not isinstance(user, str):
             return user_id
 
-        if re.match("^[a-zA-Z_][a-zA-Z0-9_-]*$", user):
+        if re.match("^[a-za-z_][a-za-z0-9_-]*$", user):
             user_id["user"] = user
             return user_id
 
@@ -371,7 +379,7 @@ class ExecutionEngineCommon:
 
     def _user_from_str(self, user, host_auth=None, container_auth=None):
         """user password entry from host or container passwd
-           Returns (valid_user: bool, user_passwd_fields: dict)
+           returns (valid_user: bool, user_passwd_fields: dict)
         """
         user_id = self._validate_user_str(user)
         if not user_id:
@@ -390,9 +398,9 @@ class ExecutionEngineCommon:
         return (True, user_id)
 
     def _setup_container_user(self, user):
-        """Once we know which username to use inside the container
+        """once we know which username to use inside the container
         we need to check if it exists in the passwd file that will
-        be used inside the container. Since we can override the
+        be used inside the container. since we can override the
         usage of the container /etc/passwd and /etc/group with
         files passed from the host, then we must check if this
         username is in the appropriate file so:
@@ -400,9 +408,9 @@ class ExecutionEngineCommon:
            either because we passwd --hostauth or because we did
            --volume=/etc/passwd:/etc/passwd
         2. else we are using the container original /etc/passwd
-        In either case the user specified may not exist, in which
+        in either case the user specified may not exist, in which
         case we copy the passwd file to a new file and we create
-        the intended user. The file is then passwd/mapped into
+        the intended user. the file is then passwd/mapped into
         the container.
         """
         host_auth = NixAuthentication()
@@ -437,8 +445,8 @@ class ExecutionEngineCommon:
         return True
 
     def _setup_container_user_noroot(self, user):
-        """ Setup user for engines without root support.
-        Equivalent to _setup_container_user() for engines without root support.
+        """ setup user for engines without root support.
+        equivalent to _setup_container_user() for engines without root support.
         """
         host_auth = NixAuthentication()
         (passwd, group) = self._select_auth_files()
@@ -476,8 +484,8 @@ class ExecutionEngineCommon:
         return True
 
     def _fill_user(self):
-        """Fill in values for user to be used in the account creation.
-        Provide default values in case the required fields are empty.
+        """fill in values for user to be used in the account creation.
+        provide default values in case the required fields are empty.
         """
         if not self.opt["uid"]:
             self.opt["uid"] = str(HostInfo.uid)
@@ -498,13 +506,13 @@ class ExecutionEngineCommon:
             self.opt["shell"] = "/bin/sh"
 
         if not self.opt["gecos"]:
-            self.opt["gecos"] = "*UDOCKER*"
+            self.opt["gecos"] = "*udocker*"
 
     def _create_user(self, container_auth, host_auth):
-        """If we need to create a new user then we first
+        """if we need to create a new user then we first
         copy /etc/passwd and /etc/group to new files and them
         we add the user account into these copied files which
-        later are binding/mapped/passed to the container. So
+        later are binding/mapped/passed to the container. so
         setup this binding as well via hostauth.
         """
         if self.opt["containerauth"]:
@@ -535,7 +543,7 @@ class ExecutionEngineCommon:
                 new_auth.add_group(self.opt["user"], self.opt["gid"])
 
             for sup_gid in os.getgroups():
-                new_auth.add_group('G' + str(sup_gid), str(sup_gid), [self.opt["user"], ])
+                new_auth.add_group('g' + str(sup_gid), str(sup_gid), [self.opt["user"], ])
 
         if not self.opt["containerauth"]:
             self.opt["hostauth"] = True
@@ -544,12 +552,12 @@ class ExecutionEngineCommon:
         return True
 
     def _run_banner(self, cmd):
-        """Print a container startup banner"""
+        """print a container startup banner"""
         if not self.opt["nobanner"]:
             msgout = 76*"#" + "\n"
             msgout = msgout + "|" + 74*" " + "|\n"
             msgout = msgout + "|"
-            msgout = msgout + ("STARTING " + self.container_id).center(74, " ")
+            msgout = msgout + ("starting " + self.container_id).center(74, " ")
             msgout = msgout + "|" + "\n"
             msgout = msgout + "|" + 74*" " + "|\n"
             msgout = msgout + 76*"#" + "\n\n"
@@ -558,7 +566,7 @@ class ExecutionEngineCommon:
             MSG.info(msgout)
 
     def _run_env_cleanup_dict(self):
-        """Allow only to pass essential environment variables."""
+        """allow only to pass essential environment variables."""
         environ_copy = os.environ.copy()
         for env_var in environ_copy:
             if env_var in Config.conf['invalid_host_env']:
@@ -570,8 +578,8 @@ class ExecutionEngineCommon:
                     del os.environ[env_var]
 
     def _run_env_cleanup_list(self):
-        """ Allow only to pass essential environment variables.
-            Overriding parent ExecutionEngineCommon() class.
+        """ allow only to pass essential environment variables.
+            overriding parent executionenginecommon() class.
         """
         container_env = self.opt["env"].keys()
         for (env_var, value) in list(os.environ.items()):
@@ -587,17 +595,17 @@ class ExecutionEngineCommon:
             self.opt["env"].append(f"{env_var}={value}")
 
     def _run_env_set(self):
-        """Environment variables to set"""
-        self.opt["env"].appendif("HOME=" + self.opt["home"])
-        self.opt["env"].append("USER=" + self.opt["user"])
-        self.opt["env"].append("LOGNAME=" + self.opt["user"])
-        self.opt["env"].append("USERNAME=" + self.opt["user"])
+        """environment variables to set"""
+        self.opt["env"].appendif("home=" + self.opt["home"])
+        self.opt["env"].append("user=" + self.opt["user"])
+        self.opt["env"].append("logname=" + self.opt["user"])
+        self.opt["env"].append("username=" + self.opt["user"])
         if str(self.opt["uid"]) == "0":
-            self.opt["env"].append(fr'PS1={self.container_id[:8]} # ')
+            self.opt["env"].append(fr'ps1={self.container_id[:8]} # ')
         else:
-            self.opt["env"].append(fr'PS1={self.container_id[:8]} \$ ')
+            self.opt["env"].append(fr'ps1={self.container_id[:8]} \$ ')
 
-        self.opt["env"].append("SHLVL=0")
+        self.opt["env"].append("shlvl=0")
         self.opt["env"].append("container_ruser=" + HostInfo().username())
         self.opt["env"].append("container_root=" + self.container_root)
         self.opt["env"].append("container_uuid=" + self.container_id)
@@ -607,23 +615,37 @@ class ExecutionEngineCommon:
         self.opt["env"].append("container_names=" + names)
 
     def _run_env_cmdoptions(self):
-        """Load environment from file --env-file="""
+        """load environment from file --env-file="""
         for envfile in self.opt["envfile"]:
             envdata = FileUtil(envfile).getdata('r')
             for line in envdata.split("\n"):
                 self.opt["env"].appendif(line)
 
+    def _check_platform(self):
+        """Check if container platform matches the host"""
+        container_platform = HostInfo().platform_to_str("%s/%s/%s" %
+                                                        (self.container_os,
+                                                         self.container_architecture,
+                                                         self.container_variant))
+        if not container_platform:
+            return
+
+        if not HostInfo().is_same_platform(container_platform):
+            LOG.warning("container platform (%s) does not match host platform (%s)",
+                        container_platform, HostInfo().platform())
+
     def _run_init(self, container_id):
-        """Prepare execution of the container
-        To be called by the run() method of the actual ExecutionEngine
+        """prepare execution of the container
+        to be called by the run() method of the actual executionengine
         """
         try:
             (container_dir, dummy) = self._run_load_metadata(container_id)
         except (ValueError, TypeError):
             return ""
-
         if not (container_dir or Config.conf['location']):
             return ""
+
+        self._check_platform()
 
         self._run_env_cmdoptions()
         if Config.conf['location']:               # using specific root tree
