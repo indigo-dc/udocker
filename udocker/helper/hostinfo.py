@@ -52,30 +52,60 @@ class HostInfo:
         except (NameError, AttributeError):
             return ""
 
-    def parse_platform(self, platform_str):
-        """Load platform string into a dict"""
-        platform_str = platform_str.lower()
-        try:
-            (p_os, p_architecture, p_variant) = platform_str.split("/")
+    def parse_platform(self, platform_in):
+        """Convert a platform string or dict into (os, architecture, variant)"""
+        if isinstance(platform_in, dict):
+            p_os = ""
+            p_architecture = ""
+            p_variant = ""
+            for (key, val) in platform_in.items():
+                if key == "os":
+                    p_os = val.lower()
+                elif key == "architecture":
+                    p_architecture = val.lower()
+                elif key == "variant":
+                    p_variant = val.lower()
             return (p_os, p_architecture, p_variant)
-        except ValueError:
+        if isinstance(platform_in, str):
             try:
-                (p_os, p_architecture) = platform_str.split("/")
-                return (p_os, p_architecture, "") 
+                (p_os, p_architecture, p_variant) = platform_in.lower().split("/")
+                return (p_os, p_architecture, p_variant)
             except ValueError:
                 try:
-                    (p_os) = platform_str.split("/")
-                    return (p_os, "", "") 
+                    (p_os, p_architecture) = platform_in.split("/")
+                    return (p_os, p_architecture, "")
                 except ValueError:
-                    pass
+                    try:
+                        (p_os) = platform_in.split("/")
+                        return (p_os, "", "")
+                    except ValueError:
+                        pass
         return ("", "", "")
+
+    def platform_to_str(self, platform_in):
+        """Parse platform and return a string with os/architecture/variant"""
+        parsed_platform = self.parse_platform(platform_in)
+        if parsed_platform[2]:
+            return "%s/%s/%s" % parsed_platform
+        if parsed_platform[1]:
+            return "%s/%s" % parsed_platform[0:2]
+        return parsed_platform[0]
 
     def platform(self, return_str=True):
         """get docker platform os/architecture/variant"""
-        platform_str = self.osversion() + "/" + self.arch()
+        translate_architecture = {"i386":"386", "i486":"486", "i586":"586", "i686":"686"}
+        architecture = self.arch()
+        host_platform = self.osversion() + "/" + \
+                translate_architecture.get(architecture, architecture)
         if return_str:
-            return platform_str.lower()
-        return self.parse_platform(platform_str)
+            return host_platform.lower()
+        return self.parse_platform(host_platform)
+
+    def is_same_platform(self, platform_in):
+        """Compare some platform against the host platform"""
+        if self.parse_platform(platform_in) == self.platform(return_str=False):
+            return True
+        return False
 
     def oskernel(self):
         """Get operating system"""
