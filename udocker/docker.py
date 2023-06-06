@@ -725,7 +725,7 @@ class DockerIoAPI:
         if self.v2api.is_valid():
             return self.v2api.get_image_tags(remoterepo, True)  # try v2
 
-        return self.v2api.get_image_tags(remoterepo, True)  # try v1
+        return self.v1api.get_image_tags(remoterepo, True)  # try v1
 
     def search_init(self, pause):
         """Setup new search"""
