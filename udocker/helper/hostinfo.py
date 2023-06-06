@@ -75,11 +75,7 @@ class HostInfo:
                     (p_os, p_architecture) = platform_in.split("/")
                     return (p_os, p_architecture, "")
                 except ValueError:
-                    try:
-                        (p_os) = platform_in.split("/")
-                        return (p_os, "", "")
-                    except ValueError:
-                        pass
+                    return (platform_in.strip(), "", "")
         return ("", "", "")
 
     def platform_to_str(self, platform_in):

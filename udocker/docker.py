@@ -279,7 +279,8 @@ class DockerIoAPIv2:
                 if self.v2_auth_token:
                     header = [f'Authorization: Basic {self.v2_auth_token}']
 
-                (dummy, auth_buf) = self.dockerioapi.get_url(auth_url, header=header, RETRY=retry)
+                (dummy, auth_buf) = self.dockerioapi.get_url(auth_url, header=header,
+                                                             RETRY=retry)
                 token_buf = auth_buf.getvalue().decode()
                 if token_buf and "token" in token_buf:
                     try:
@@ -359,7 +360,7 @@ class DockerIoAPIv2:
             return []
 
     def _get_digest_from_image_index(self, image_index, platform):
-        """Get OCI manifest from an OCI image index"""
+        """Get OCI or docker manifest from an image index"""
         if isinstance(image_index, dict):
             index_list = image_index
         else:
