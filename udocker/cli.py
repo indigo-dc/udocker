@@ -532,6 +532,7 @@ class UdockerCLI(object):
         --httpproxy=socks5h://host:port                 :use http proxy
         --index=https://index.docker.io/v1              :docker index
         --registry=https://registry-1.docker.io         :docker registry
+        --platform=os/arch                              :docker platform
 
         Examples:
           pull fedora:latest
@@ -540,6 +541,7 @@ class UdockerCLI(object):
         index_url = cmdp.get("--index=")
         registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
+        platform = cmdp.get("--platform=")
         (imagerepo, tag) = self._check_imagespec(cmdp.get("P1"))
         if (not imagerepo) or cmdp.missing_options():    # syntax error
             return self.STATUS_ERROR
@@ -547,7 +549,7 @@ class UdockerCLI(object):
         self._set_repository(registry_url, index_url, imagerepo, http_proxy)
         v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
         self.dockerioapi.set_v2_login_token(v2_auth_token)
-        if self.dockerioapi.get(imagerepo, tag):
+        if self.dockerioapi.get(imagerepo, tag, platform):
             return self.STATUS_OK
 
         Msg().err("Error: no files downloaded")
@@ -689,6 +691,10 @@ class UdockerCLI(object):
             },
             "nobanner": {
                 "fl": ("--nobanner",), "act": 'R',
+                "p2": "CMD_OPT", "p3": False
+            },
+            "platform": {
+                "fl": ("--platform=",), "act": 'R',
                 "p2": "CMD_OPT", "p3": False
             }
         }
