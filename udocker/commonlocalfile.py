@@ -80,6 +80,7 @@ class CommonLocalFileApi(object):
         status = Uprocess().call(cmd, stderr=Msg.chlderr, close_fds=True)
         return not status
 
+    # ARCHNEW
     def create_container_meta(self, layer_id, comment="created by udocker"):
         """Create metadata for a given container layer, used in import.
         A file for import is a tarball of a directory tree, does not contain
@@ -90,7 +91,7 @@ class CommonLocalFileApi(object):
         container_json["comment"] = comment
         container_json["created"] = \
             time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z")
-        container_json["architecture"] = HostInfo().arch()
+        container_json["architecture"] = HostInfo().arch("docker")
         container_json["os"] = HostInfo().osversion()
         layer_file = self.localrepo.layersdir + '/' + layer_id + ".layer"
         container_json["size"] = FileUtil(layer_file).size()
