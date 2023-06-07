@@ -8,9 +8,10 @@ import platform
 
 from udocker.genstr import is_genstr
 from udocker.utils.uprocess import Uprocess
+from udocker.helper.archinfo import ArchInfo
 
 
-class HostInfo(object):
+class HostInfo(ArchInfo):
     """Get information from the host system"""
     uid = os.getuid()
     gid = os.getgid()
@@ -22,27 +23,12 @@ class HostInfo(object):
         except KeyError:
             return ""
 
-    def arch(self):
+    # ARCHNEW
+    def arch(self, target="UDOCKER"):
         """Get the host system architecture"""
-        arch = ""
-        try:
-            machine = platform.machine()
-            bits = platform.architecture()[0]
-            if machine == "x86_64":
-                if bits == "32bit":
-                    arch = "i386"
-                else:
-                    arch = "amd64"
-            elif machine in ("i386", "i486", "i586", "i686"):
-                arch = "i386"
-            elif machine.startswith("arm") or machine.startswith("aarch"):
-                if bits == "32bit":
-                    arch = "arm"
-                else:
-                    arch = "arm64"
-        except (NameError, AttributeError):
-            pass
-        return arch
+        machine = platform.machine()
+        (arch, dummy, dummy) = self.get_arch("uname", machine, target) 
+        return arch[0] if arch[0] else ""
 
     def osversion(self):
         """Get operating system"""
@@ -113,12 +99,11 @@ class HostInfo(object):
             return "%s/%s" % parsed_platform[0:2]
         return parsed_platform[0]
 
+    # ARCHNEW
     def platform(self, return_str=True):
         """get docker platform os/architecture/variant"""
-        translate_architecture = {"i386":"386", "i486":"486", "i586":"586", "i686":"686"}
-        architecture = self.arch()
-        host_platform = self.osversion() + "/" + \
-                translate_architecture.get(architecture, architecture)
+        architecture = self.arch("docker")
+        host_platform = self.osversion() + "/" + architecture
         if return_str:
             return host_platform.lower()
         return self.parse_platform(host_platform)
