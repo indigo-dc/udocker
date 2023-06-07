@@ -6,28 +6,17 @@ import re
 
 from udocker.utils.uprocess import Uprocess
 from udocker.utils.fileutil import FileUtil
+from udocker.helper.archinfo import ArchInfo
 
-
-class OSInfo(object):
-    """Get os information from a directory tree"""
-
-    _binarylist = ["/lib64/ld-linux-x86-64.so",
-                   "/lib64/ld-linux-x86-64.so.2",
-                   "/lib64/ld-linux-x86-64.so.3",
-                   "/bin/bash", "/bin/sh", "/bin/zsh",
-                   "/bin/csh", "/bin/tcsh", "/bin/ash",
-                   "/bin/ls", "/bin/busybox",
-                   "/system/bin/sh", "/system/bin/ls",
-                   "/lib/ld-linux.so",
-                   "/lib/ld-linux.so.2",
-                   ]
+class OSInfo(ArchInfo):
+    """Get os information"""
 
     def __init__(self, root_dir):
         self._root_dir = root_dir
 
+    # ARCH NEW
     def get_filetype(self, filename):
-        """Get the file architecture"""
-        filetype = ""
+        """Get architecture information from binary using file and readelf"""
         if not filename.startswith(self._root_dir):
             filename = self._root_dir + '/' + filename
         if os.path.islink(filename):
@@ -37,26 +26,24 @@ class OSInfo(object):
             return self.get_filetype(f_path)
         if os.path.isfile(filename):
             filetype = Uprocess().get_output(["file", filename])
-            if not filetype:
-                filetype = Uprocess().get_output(["readelf", "-h", filename])
-        return filetype
+            if filetype:
+                return ("file", filetype)
+            filetype = Uprocess().get_output(["readelf", "-h", filename])
+            if filetype:
+                return ("readelf", filetype)
+        return ("", "")
 
-    def arch(self):
+    # ARCH NEW
+    def arch(self, target="UDOCKER"):
         """Get guest system architecture"""
-        for filename in OSInfo._binarylist:
+        for filename in self.get_binaries_list():
             f_path = self._root_dir + filename
-            filetype = self.get_filetype(f_path)
-            if not filetype:
+            (sourcetype, fileinfo) = self.get_filetype(f_path)
+            if not sourcetype:
                 continue
-            if "x86-64" in filetype.lower():
-                return "amd64"
-            if "Intel 80386" in filetype:
-                return "i386"
-            if "aarch64" in filetype.lower():
-                return "arm64"
-            if " ARM" in filetype:
-                return "arm"
-        return ""
+
+            (arch, dummy, dummy) = self.get_arch(sourcetype, fileinfo, target)
+            return arch[0] if arch[0] else ""
 
     def osdistribution(self):
         """Get guest operating system distribution"""
@@ -100,6 +87,7 @@ class OSInfo(object):
 
         return ("", "")
 
+    # ARCH NEW
     def osversion(self):
         """Get guest operating system"""
         if self.osdistribution()[0]:
