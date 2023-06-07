@@ -1,5 +1,10 @@
 # Changelog
 
+## udocker (1.3.9)
+
+* add support to access non-config metadata
+* support for multiplatform manifests
+
 ## udocker (1.3.8)
 
 * build udockertools 1.2.9 and set it as default
