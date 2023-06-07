@@ -1,5 +1,11 @@
 # Changelog
 
+## udocker (1.3.10)
+
+* improved handling and mapping of architecture information
+* added support for qemu on Pn modes enabling execution of
+  containers with architectures different than the host 
+
 ## udocker (1.3.9)
 
 * add support to access non-config metadata from containers
