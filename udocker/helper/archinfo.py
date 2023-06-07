@@ -11,7 +11,7 @@ class ArchInfo(object):
 
     _arch_list = [
         {'docker':['amd64'], 'qemu':['x86_64'], 'UDOCKER':['x86_64'],
-         'uname':['x86_64'], 'file':['x86_64'], 'readelf':['X86_64']},
+         'uname':['x86_64'], 'file':['x86-64'], 'readelf':['X86_64']},
         {'docker':['386'], 'qemu':['i386'], 'UDOCKER':['x86'],
          'uname':['i386'], 'file':['Intel 80386'], 'readelf':['Intel 80386']},
         {'docker':['arm64'], 'qemu':['aarch64'], 'UDOCKER':['arm64'],
@@ -72,15 +72,19 @@ class ArchInfo(object):
         arch_info is data previously produced by uname, file or readelf
         target_type can be docker, qemu, UDOCKER or ALL
         """
+        found = False
         try:
             for arch_dict in self._arch_list:
                 for arch_expression in arch_dict[source_type]:
-                    if not arch_expression in arch_info:
+                    if arch_expression not in arch_info:
+                        found = False
                         break
-                if target_type == "ALL":
-                    return (arch_dict['docker'], arch_dict['qemu'],
-                            arch_dict['UDOCKER'])
-                return (arch_dict[target_type], [], [])
+                    found = True
+                if found:
+                    if target_type == "ALL":
+                        return (arch_dict['docker'], arch_dict['qemu'],
+                                arch_dict['UDOCKER'])
+                    return (arch_dict[target_type], [], [])
         except (KeyError, ValueError, TypeError, AttributeError):
             pass
         return ([], [], [])
