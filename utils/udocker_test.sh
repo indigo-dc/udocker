@@ -38,7 +38,7 @@ TAR_IMAGE="centos7.tar"
 TAR_CONT="centos7-cont.tar"
 TAR_IMAGE_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_IMAGE}"
 TAR_CONT_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_CONT}"
-DOCKER_IMG="ubuntu:18.04"
+DOCKER_IMG="ubuntu:22.04"
 CONT="ubuntu"
 export UDOCKER_DIR=${DEFAULT_UDIR}
 
