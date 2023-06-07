@@ -38,7 +38,7 @@ TAR_IMAGE="centos7.tar"
 TAR_CONT="centos7-cont.tar"
 TAR_IMAGE_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_IMAGE}"
 TAR_CONT_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_CONT}"
-DOCKER_IMG="ubuntu:18.04"
+DOCKER_IMG="ubuntu:22.04"
 CONT="ubuntu"
 export UDOCKER_DIR=${DEFAULT_UDIR}
 
@@ -94,7 +94,10 @@ function result
       print_fail; echo "    $STRING"
       FAILED_TESTS+=("$STRING")
   fi
-  echo "|______________________________________________________________________________|"
+  echo "\____________________________________________________________________________________________________________________________________/"
+  echo ""
+  echo " ____________________________________________________________________________________________________________________________________ "
+  echo "/                                                                                                                                    \ "
 }
 
 function result_inv
@@ -106,7 +109,10 @@ function result_inv
       print_fail; echo "    $STRING"
       FAILED_TESTS+=("$STRING")
   fi
-  echo "|______________________________________________________________________________|"
+  echo "\____________________________________________________________________________________________________________________________________/"
+  echo ""
+  echo " ____________________________________________________________________________________________________________________________________ "
+  echo "/                                                                                                                                    \ "
 }
 
 function udocker
@@ -188,6 +194,7 @@ result
 STRING="T017: udocker verify ${DOCKER_IMG}"
 udocker verify ${DOCKER_IMG}; return=$?
 result
+## TODO: Add test to check layers after pull
 
 STRING="T018: udocker images"
 udocker images; return=$?
@@ -197,9 +204,8 @@ STRING="T019: udocker inspect (image)"
 udocker inspect ${DOCKER_IMG}; return=$?
 result
 
-STRING="T020: udocker create ${DOCKER_IMG}"
-CONT_ID=`udocker create ${DOCKER_IMG}`; return=$?
-echo "ContainerID = ${CONT_ID}"
+STRING="T020: udocker -q create ${DOCKER_IMG}"
+CONT_ID=`udocker -q create ${DOCKER_IMG}`; return=$?
 result
 
 STRING="T021: udocker create --name=${CONT} ${DOCKER_IMG}"
@@ -329,11 +335,23 @@ STRING="T048: udocker run py3slim python3 --version <REGRESSION test for issue #
 udocker run py3slim python3 --version; return=$?
 result
 
-STRING="T049: udocker login --username=username --password=password"
+STRING="T049: udocker pull public.ecr.aws/docker/library/redis <REGRESSION test for issue #168>"
+udocker pull public.ecr.aws/docker/library/redis; return=$?
+result
+
+STRING="T050: udocker create --name=redis public.ecr.aws/docker/library/redis <REGRESSION test for issue #168>"
+udocker create --name=redis public.ecr.aws/docker/library/redis; return=$?
+result
+
+STRING="T051: udocker run redis redis-server --version <REGRESSION test for issue #168>"
+udocker run redis redis-server --version; return=$?
+result
+
+STRING="T052: udocker login --username=username --password=password"
 udocker login --username=username --password=password; return=$?
 result
 
-STRING="T050: udocker logout -a"
+STRING="T053: udocker logout -a"
 udocker logout -a; return=$?
 result
 
@@ -343,9 +361,12 @@ rm -rf myexportcont.tar "${TEST_UDIR}" "${TAR_IMAGE}" "${TAR_CONT}" > /dev/null 
 udocker rm mycont
 udocker rm clone_cont
 udocker rm myclone
+udocker rm py3slim
+udocker rm redis
 udocker rmi mycentos1
 udocker rmi centos:7
 udocker rmi docker.io/python:3-slim
+udocker rmi public.ecr.aws/docker/library/redis
 echo "|______________________________________________________________________________|"
 
 # Report failed tests

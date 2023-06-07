@@ -76,7 +76,10 @@ function result
       print_fail; echo "    $STRING"
       FAILED_TESTS+=("$STRING")
   fi
-  echo "|______________________________________________________________________________|"
+  echo "\____________________________________________________________________________________________________________________________________/"
+  echo ""
+  echo " ____________________________________________________________________________________________________________________________________ "
+  echo "/                                                                                                                                    \ "
 }
 
 function result_inv
@@ -88,7 +91,10 @@ function result_inv
       print_fail; echo "    $STRING"
       FAILED_TESTS+=("$STRING")
   fi
-  echo "|______________________________________________________________________________|"
+  echo "\____________________________________________________________________________________________________________________________________/"
+  echo ""
+  echo " ____________________________________________________________________________________________________________________________________ "
+  echo "/                                                                                                                                    \ "
 }
 
 function udocker
@@ -109,27 +115,27 @@ then
   exit 1
 fi
 
-echo "|______________________________________________________________________________|"
+echo "\____________________________________________________________________________________________________________________________________/"
 udocker rm c7
-udocker rm ub18
+udocker rm ub22
 udocker rm jv
 
 ## Use openjdk:8-jdk-alpine for regression of issue #363
 
-echo "|______________________________________________________________________________|"
+echo "\____________________________________________________________________________________________________________________________________/"
 udocker rmi centos:7
-udocker rmi ubuntu:18.04
+udocker rmi ubuntu:22.04
 udocker rmi openjdk:8-jdk-alpine
 
-echo "|______________________________________________________________________________|"
+echo "\____________________________________________________________________________________________________________________________________/"
 udocker pull centos:7; return=$?
-udocker pull ubuntu:18.04; return=$?
+udocker pull ubuntu:22.04; return=$?
 udocker pull openjdk:8-jdk-alpine; return=$?
 
-echo "|______________________________________________________________________________|"
+echo "\____________________________________________________________________________________________________________________________________/"
 udocker images; return=$?
 udocker create --name=c7 centos:7; return=$?
-udocker create --name=ub18 ubuntu:18.04; return=$?
+udocker create --name=ub22 ubuntu:22.04; return=$?
 udocker create --name=jv openjdk:8-jdk-alpine; return=$?
 udocker ps; return=$?
 
@@ -154,12 +160,12 @@ STRING="T004: udocker run c7 ls --version == execmode = P1"
 udocker run c7 ls --version; return=$?
 result
 
-STRING="T005: udocker setup ub18 == execmode = P1"
-udocker setup ub18; return=$?
+STRING="T005: udocker setup ub22 == execmode = P1"
+udocker setup ub22; return=$?
 result
 
-STRING="T006: udocker run ub18 ls --version == execmode = P1"
-udocker run ub18 ls --version; return=$?
+STRING="T006: udocker run ub22 ls --version == execmode = P1"
+udocker run ub22 ls --version; return=$?
 result
 
 echo "===================================== execmode = P2"
@@ -179,12 +185,12 @@ STRING="T010: udocker run c7 ls --version == execmode = P2"
 udocker run c7 ls --version; return=$?
 result
 
-STRING="T011: udocker setup --execmode=P2 ub18 == execmode = P2"
-udocker setup --execmode=P2 ub18; return=$?
+STRING="T011: udocker setup --execmode=P2 ub22 == execmode = P2"
+udocker setup --execmode=P2 ub22; return=$?
 result
 
-STRING="T012: udocker run ub18 ls --version == execmode = P2"
-udocker run ub18 ls --version; return=$?
+STRING="T012: udocker run ub22 ls --version == execmode = P2"
+udocker run ub22 ls --version; return=$?
 result
 
 echo "===================================== execmode = F1"
@@ -196,12 +202,12 @@ STRING="T014: udocker run c7 ls --version == execmode = F1"
 udocker run c7 ls --version; return=$?
 result
 
-STRING="T015: udocker setup --execmode=F1 ub18 == execmode = F1"
-udocker setup --execmode=F1 ub18; return=$?
+STRING="T015: udocker setup --execmode=F1 ub22 == execmode = F1"
+udocker setup --execmode=F1 ub22; return=$?
 result
 
-STRING="T016: udocker run ub18 ls --version == execmode = F1"
-udocker run ub18 ls --version; return=$?
+STRING="T016: udocker run ub22 ls --version == execmode = F1"
+udocker run ub22 ls --version; return=$?
 result
 
 echo "===================================== execmode = F2"
@@ -213,12 +219,12 @@ STRING="T018: udocker run c7 ls --version == execmode = F2"
 udocker run c7 ls --version; return=$?
 result
 
-STRING="T019: udocker setup --execmode=F2 ub18 == execmode = F2"
-udocker setup --execmode=F2 ub18; return=$?
+STRING="T019: udocker setup --execmode=F2 ub22 == execmode = F2"
+udocker setup --execmode=F2 ub22; return=$?
 result
 
-STRING="T020: udocker run ub18 ls --version == execmode = F2"
-udocker run ub18 ls --version; return=$?
+STRING="T020: udocker run ub22 ls --version == execmode = F2"
+udocker run ub22 ls --version; return=$?
 result
 
 echo "===================================== execmode = F3"
@@ -238,12 +244,12 @@ STRING="T024: udocker run c7 ls --version == execmode = F3"
 udocker run c7 ls --version; return=$?
 result
 
-STRING="T025: udocker setup --execmode=F3 ub18 == execmode = F3"
-udocker setup --execmode=F3 ub18; return=$?
+STRING="T025: udocker setup --execmode=F3 ub22 == execmode = F3"
+udocker setup --execmode=F3 ub22; return=$?
 result
 
-STRING="T026: udocker run ub18 ls --version == execmode = F3"
-udocker run ub18 ls --version; return=$?
+STRING="T026: udocker run ub22 ls --version == execmode = F3"
+udocker run ub22 ls --version; return=$?
 result
 
 echo "===================================== execmode = F4"
@@ -263,12 +269,12 @@ STRING="T030: udocker run c7 ls --version == execmode = F4"
 udocker run c7 ls --version; return=$?
 result
 
-STRING="T031: udocker setup --execmode=F4 ub18 == execmode = F4"
-udocker setup --execmode=F4 ub18; return=$?
+STRING="T031: udocker setup --execmode=F4 ub22 == execmode = F4"
+udocker setup --execmode=F4 ub22; return=$?
 result
 
-STRING="T032: udocker run ub18 ls --version == execmode = F4"
-udocker run ub18 ls --version; return=$?
+STRING="T032: udocker run ub22 ls --version == execmode = F4"
+udocker run ub22 ls --version; return=$?
 result
 
 echo "===================================== execmode = R1"
@@ -288,12 +294,12 @@ STRING="T036: udocker run c7 ls --version == execmode = R1"
 udocker run c7 ls --version; return=$?
 result
 
-STRING="T037: udocker setup --execmode=R1 ub18 == execmode = R1"
-udocker setup --execmode=R1 ub18; return=$?
+STRING="T037: udocker setup --execmode=R1 ub22 == execmode = R1"
+udocker setup --execmode=R1 ub22; return=$?
 result
 
-STRING="T038: udocker run ub18 ls --version == execmode = R1"
-udocker run ub18 ls --version; return=$?
+STRING="T038: udocker run ub22 ls --version == execmode = R1"
+udocker run ub22 ls --version; return=$?
 result
 
 echo "===================================== execmode = R2"
@@ -313,12 +319,12 @@ STRING="T042: udocker run c7 ls --version == execmode = R2"
 udocker run c7 ls --version; return=$?
 result
 
-STRING="T043: udocker setup --execmode=R2 ub18 == execmode = R2"
-udocker setup --execmode=R2 ub18; return=$?
+STRING="T043: udocker setup --execmode=R2 ub22 == execmode = R2"
+udocker setup --execmode=R2 ub22; return=$?
 result
 
-STRING="T044: udocker run ub18 ls --version == execmode = R2"
-udocker run ub18 ls --version; return=$?
+STRING="T044: udocker run ub22 ls --version == execmode = R2"
+udocker run ub22 ls --version; return=$?
 result
 
 echo "===================================== execmode = R3"
@@ -338,12 +344,12 @@ STRING="T048: udocker run c7 ls --version == execmode = R3"
 udocker run c7 ls --version; return=$?
 result
 
-STRING="T049: udocker setup --execmode=R3 ub18 == execmode = R3"
-udocker setup --execmode=R3 ub18; return=$?
+STRING="T049: udocker setup --execmode=R3 ub22 == execmode = R3"
+udocker setup --execmode=R3 ub22; return=$?
 result
 
-STRING="T050: udocker run ub18 ls --version == execmode = R3"
-udocker run ub18 ls --version; return=$?
+STRING="T050: udocker run ub22 ls --version == execmode = R3"
+udocker run ub22 ls --version; return=$?
 result
 
 # Report failed tests

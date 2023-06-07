@@ -4,7 +4,6 @@
 import os
 import subprocess
 
-from udocker.genstr import is_genstr
 from udocker.config import Config
 from udocker.msg import Msg
 from udocker.helper.unique import Unique
@@ -45,33 +44,39 @@ class ContainerStructure(object):
 
         return (container_dir, container_json)
 
-    def get_container_meta(self, param, default, container_json):
-        """Get the container metadata from the container"""
-        confidx = ""
-        if "config" in container_json:
-            confidx = "config"
-        elif "container_config" in container_json:
-            confidx = "container_config"
-        if container_json[confidx] and param in container_json[confidx]:
-            if container_json[confidx][param] is None:
-                pass
-            elif (is_genstr(container_json[confidx][param]) and
-                  (isinstance(default, (list, tuple)))):
-                return container_json[confidx][param].strip().split()
-            elif (is_genstr(default) and (
-                    isinstance(container_json[confidx][param], (list, tuple)))):
-                return " ".join(container_json[confidx][param])
-            elif (is_genstr(default) and (
-                    isinstance(container_json[confidx][param], dict))):
-                return self._dict_to_str(container_json[confidx][param])
-            elif (isinstance(default, list) and (
-                    isinstance(container_json[confidx][param], dict))):
-                return self._dict_to_list(container_json[confidx][param])
-            else:
-                return container_json[confidx][param]
+    def get_container_meta(self, param, default, cntjson):
+        """Get the metadata configuration from the container"""
+        cidx = ""
+        if "config" in cntjson:
+            cidx = "config"
+        elif "container_config" in cntjson:
+            cidx = "container_config"
+
+        meta_item = None
+        if cntjson[cidx] and param in cntjson[cidx]:
+            meta_item = cntjson[cidx][param]
+        elif param in cntjson:
+            meta_item = cntjson[param]
+
+        if meta_item is None:
+            pass
+        elif (isinstance(meta_item, str) and
+              (isinstance(default, (list, tuple)))):
+            return meta_item.strip().split()
+        elif (isinstance(default, str) and
+              (isinstance(meta_item, (list, tuple)))):
+            return " ".join(meta_item)
+        elif (isinstance(default, str) and
+              (isinstance(meta_item, dict))):
+            return self._dict_to_str(meta_item)
+        elif (isinstance(default, list) and
+              (isinstance(meta_item, dict))):
+            return self._dict_to_list(meta_item)
+        else:
+            return meta_item
+
         return default
 
-    # DEBUG
     def _dict_to_str(self, in_dict):
         """Convert dict to str"""
         out_str = ""

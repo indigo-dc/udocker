@@ -32,18 +32,18 @@ udocker requires:
 Download a release tarball from <https://github.com/indigo-dc/udocker/releases>:
 
 ```bash
-wget https://github.com/indigo-dc/udocker/releases/download/1.3.8/udocker-1.3.8.tar.gz
-tar zxvf udocker-1.3.8.tar.gz
-export PATH=`pwd`/udocker-1.3.8/udocker:$PATH
+wget https://github.com/indigo-dc/udocker/releases/download/1.3.9/udocker-1.3.9.tar.gz
+tar zxvf udocker-1.3.9.tar.gz
+export PATH=`pwd`/udocker-1.3.9/udocker:$PATH
 ```
 
 Alternatively use `curl` instead of `wget` as follows:
 
 ```bash
-curl -L https://github.com/indigo-dc/udocker/releases/download/1.3.8/udocker-1.3.8.tar.gz \
-  > udocker-1.3.8.tar.gz
-tar zxvf udocker-1.3.8.tar.gz
-export PATH=`pwd`/udocker-1.3.8/udocker:$PATH
+curl -L https://github.com/indigo-dc/udocker/releases/download/1.3.9/udocker-1.3.9.tar.gz \
+  > udocker-1.3.9.tar.gz
+tar zxvf udocker-1.3.9.tar.gz
+export PATH=`pwd`/udocker-1.3.9/udocker:$PATH
 ```
 
 udocker executes containers using external tools and libraries that
@@ -345,8 +345,8 @@ The udocker tool should be installed as shown in section 2.1:
 
 ```bash
 cd /sw
-wget https://github.com/indigo-dc/udocker/releases/download/1.3.8/udocker-1.3.8.tar.gz
-tar zxvf udocker-1.3.8.tar.gz
+wget https://github.com/indigo-dc/udocker/releases/download/1.3.9/udocker-1.3.9.tar.gz
+tar zxvf udocker-1.3.9.tar.gz
 ```
 
 Directing users to the central udocker installation can be done using the

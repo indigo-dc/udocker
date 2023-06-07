@@ -14,6 +14,7 @@ from udocker.helper.unique import Unique
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.curl import GetURL
 from udocker.utils.chksum import ChkSUM
+from udocker.helper.hostinfo import HostInfo
 
 
 class DockerIoAPI(object):
@@ -96,7 +97,11 @@ class DockerIoAPI(object):
                                                     kwargs["RETRY"])
                 if "/v1/" in url:
                     auth_header = self._get_v1_auth(www_authenticate)
-                auth_kwargs.update({"header": [auth_header]})
+                # OCI and multiplatform, prevent removal of header attributes
+                try:
+                    auth_kwargs["header"].append(auth_header)
+                except KeyError:
+                    auth_kwargs.update({"header": [auth_header]})
         (hdr, buf) = self._get_url(*args, **auth_kwargs)
         return (hdr, buf)
 
@@ -356,18 +361,71 @@ class DockerIoAPI(object):
         except (IOError, OSError, AttributeError, ValueError, TypeError):
             return []
 
-    def get_v2_image_manifest(self, imagerepo, tag):
-        """Get the image manifest which contains JSON metadata
+    def _get_v2_digest_from_image_index(self, image_index, platform):
+        """Get OCI or docker manifest from an image index"""
+        if isinstance(image_index, dict):
+            index_list = image_index
+        else:
+            try:
+                index_list = json.loads(image_index.decode())
+            except (OSError, AttributeError, ValueError, TypeError):
+                return ""
+        (p_os, p_architecture, p_variant) = HostInfo().parse_platform(platform)
+        try:
+            for manifest in index_list["manifests"]:
+                manifest_p = manifest["platform"]
+                if (p_os and
+                    (manifest_p["os"]).lower() != p_os):
+                    continue
+                if (p_architecture and
+                    (manifest_p["architecture"]).lower() != p_architecture):
+                    continue
+                if (p_variant and
+                    (manifest_p["variant"]).lower() != p_variant):
+                    continue
+                return manifest["digest"]
+        except (KeyError, AttributeError, ValueError, TypeError):
+            pass
+        return ""
+
+    def get_v2_image_manifest(self, imagerepo, tag, platform=""):
+        """API v2 Get the image manifest which contains JSON metadata
         that is common to all layers in this image tag
         """
-        url = self.registry_url + "/v2/" + imagerepo + \
-            "/manifests/" + tag
+        reqhdr = [
+            'Accept: application/vnd.docker.distribution.manifest.v2+json',
+            'Accept: application/vnd.docker.distribution.manifest.v1+prettyjws',
+            'Accept: application/json',
+            'Accept: application/vnd.docker.distribution.manifest.list.v2+json',
+            'Accept: application/vnd.oci.image.manifest.v1+json',
+            'Accept: application/vnd.oci.image.index.v1+json',
+        ]
+        url = self.registry_url + "/v2/" + imagerepo + "/manifests/" + tag
         Msg().out("Debug: manifest url", url, l=Msg.DBG)
-        (hdr, buf) = self._get_url(url)
+        (hdr, buf) = self._get_url(url, header=reqhdr)
+
         try:
-            return (hdr.data, json.loads(buf.getvalue().decode()))
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
-            return (hdr.data, [])
+            content_type = hdr.data['content-type']
+            if "docker.distribution.manifest.v1" in content_type:
+                return (hdr.data, json.loads(buf.getvalue().decode()))
+            if "docker.distribution.manifest.v2" in content_type:
+                return (hdr.data, json.loads(buf.getvalue().decode()))
+            if "oci.image.manifest.v1+json" in content_type:
+                return (hdr.data, json.loads(buf.getvalue().decode()))
+            if ("docker.distribution.manifest.list.v2" in content_type
+                or "oci.image.index.v1+json" in content_type):
+                image_index = json.loads(buf.getvalue().decode())
+                digest = self._get_v2_digest_from_image_index(image_index,
+                                                              platform)
+                if not digest:
+                    Msg().err("no image found in manifest for platform (%s)" %
+                              HostInfo().platform_to_str(platform))
+                else:
+                    return self.get_v2_image_manifest(imagerepo,
+                                                      digest, platform)
+        except (OSError, KeyError, AttributeError, ValueError, TypeError):
+            pass
+        return (hdr.data, [])
 
     def get_v2_image_layer(self, imagerepo, layer_id):
         """Get one image layer data file (tarball)"""
@@ -396,16 +454,20 @@ class DockerIoAPI(object):
                 files.append(blob)
         return files
 
-    def get_v2(self, imagerepo, tag):
+    def get_v2(self, imagerepo, tag, platform=""):
         """Pull container with v2 API"""
         files = []
-        (hdr_data, manifest) = self.get_v2_image_manifest(imagerepo, tag)
+        (hdr_data, manifest) = self.get_v2_image_manifest(imagerepo, tag,
+                                                          platform)
         status = self.curl.get_status_code(hdr_data["X-ND-HTTPSTATUS"])
         if status == 401:
             Msg().err("Error: manifest not found or not authorized")
             return []
         if status != 200:
             Msg().err("Error: pulling manifest:")
+            return []
+        if not manifest:
+            Msg().err("no manifest for given image and platform")
             return []
         try:
             if not (self.localrepo.setup_tag(tag) and
@@ -518,7 +580,7 @@ class DockerIoAPI(object):
                 self.index_url = index_url
         return (imagerepo, remoterepo)
 
-    def get(self, imagerepo, tag):
+    def get(self, imagerepo, tag, platform=""):
         """Pull a docker image from a v2 registry or v1 index"""
         Msg().out("Debug: get imagerepo: %s tag: %s" % (imagerepo, tag), l=Msg.DBG)
         (imagerepo, remoterepo) = self._parse_imagerepo(imagerepo)
@@ -528,7 +590,9 @@ class DockerIoAPI(object):
             self.localrepo.setup_imagerepo(imagerepo)
             new_repo = True
         if self.is_v2():
-            files = self.get_v2(remoterepo, tag)  # try v2
+            if not platform:
+                platform = HostInfo().platform()
+            files = self.get_v2(remoterepo, tag, platform)  # try v2
         else:
             files = self.get_v1(remoterepo, tag)  # try v1
         if new_repo and not files:
