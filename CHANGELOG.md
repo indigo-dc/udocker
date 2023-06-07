@@ -2,8 +2,8 @@
 
 ## udocker (1.3.9)
 
-* add support to access non-config metadata
-* support for multiplatform manifests
+* add support to access non-config metadata from containers
+* added support for multiplatform manifests and indices solves #392
 
 ## udocker (1.3.8)
 
