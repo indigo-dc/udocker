@@ -94,7 +94,11 @@ function result
       print_fail; echo "    $STRING"
       FAILED_TESTS+=("$STRING")
   fi
-  echo "|______________________________________________________________________________|"
+  echo "|                                                                                                                                    |"
+  echo ".____________________________________________________________________________________________________________________________________."
+  echo ""
+  echo ".____________________________________________________________________________________________________________________________________."
+  echo "|                                                                                                                                    |"
 }
 
 function result_inv
@@ -106,7 +110,11 @@ function result_inv
       print_fail; echo "    $STRING"
       FAILED_TESTS+=("$STRING")
   fi
-  echo "|______________________________________________________________________________|"
+  echo "|                                                                                                                                    |"
+  echo ".____________________________________________________________________________________________________________________________________."
+  echo ""
+  echo ".____________________________________________________________________________________________________________________________________."
+  echo "|                                                                                                                                    |"
 }
 
 function udocker
@@ -199,8 +207,8 @@ udocker inspect ${DOCKER_IMG}; return=$?
 result
 
 STRING="T020: udocker create ${DOCKER_IMG}"
-CONT_ID=`udocker create ${DOCKER_IMG}`; return=$?
-echo "ContainerID = ${CONT_ID}"
+export `udocker create ${DOCKER_IMG}`; return=$?
+CONT_ID=$ContainerID
 result
 
 STRING="T021: udocker create --name=${CONT} ${DOCKER_IMG}"
