@@ -11,6 +11,7 @@ from udocker.msg import Msg
 from udocker.config import Config
 from udocker.helper.nixauth import NixAuthentication
 from udocker.helper.hostinfo import HostInfo
+from udocker.helper.osinfo import OSInfo
 from udocker.container.structure import ContainerStructure
 from udocker.utils.filebind import FileBind
 from udocker.utils.mountpoint import MountPoint
@@ -626,20 +627,29 @@ class ExecutionEngineCommon(object):
 
         return exec_path
 
+    # ARCHNEW
+    def _get_saved_osenv(self, filename):
+        """get saved osenv from json file"""
+        try:
+            return json.loads(FileUtil(filename).getdata())
+        except (IOError, OSError, ValueError, TypeError):
+            return {}
+
+    # ARCHNEW
     def _is_same_osenv(self, filename):
         """Check if the host has changed"""
+        saved = self._get_saved_osenv(filename)
         try:
-            saved = json.loads(FileUtil(filename).getdata())
             if (saved["osversion"] == HostInfo().osversion() and
                     saved["oskernel"] == HostInfo().oskernel() and
                     saved["arch"] == HostInfo().arch() and
-                    saved["osdistribution"] == str(HostInfo().osdistribution())):
+                    saved["osdistribution"] == str(OSInfo("/").osdistribution())):
                 return saved
-        except (IOError, OSError, AttributeError, ValueError, TypeError,
-                IndexError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         return {}
 
+    # ARCHNEW
     def _save_osenv(self, filename, save=None):
         """Save host info for is_same_host()"""
         if save is None:
@@ -648,10 +658,9 @@ class ExecutionEngineCommon(object):
             save["osversion"] = HostInfo().osversion()
             save["oskernel"] = HostInfo().oskernel()
             save["arch"] = HostInfo().arch()
-            save["osdistribution"] = str(HostInfo().osdistribution())
+            save["osdistribution"] = str(OSInfo("/").osdistribution())
             if FileUtil(filename).putdata(json.dumps(save)):
                 return True
-        except (AttributeError, ValueError, TypeError,
-                IndexError, KeyError):
+        except (ValueError, TypeError, IndexError, KeyError):
             pass
         return False
