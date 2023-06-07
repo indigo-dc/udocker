@@ -29,6 +29,7 @@ class PRootEngine(ExecutionEngineCommon):
         self.proot_newseccomp = False            # New seccomp mode
         self._kernel = HostInfo().oskernel()     # Emulate kernel
 
+    # ARCHNEW
     def select_proot(self):
         """Set proot executable and related variables"""
         self.executable = Config.conf['use_proot_executable']
@@ -38,27 +39,10 @@ class PRootEngine(ExecutionEngineCommon):
         if self.executable == "UDOCKER" or not self.executable:
             self.executable = ""
             arch = HostInfo().arch()
-            image_list = []
-            if arch == "amd64":
-                if HostInfo().oskernel_isgreater([4, 8, 0]):
-                    image_list = ["proot-x86_64-4_8_0", "proot-x86_64", "proot"]
-                else:
-                    image_list = ["proot-x86_64", "proot"]
-            elif arch == "i386":
-                if HostInfo().oskernel_isgreater([4, 8, 0]):
-                    image_list = ["proot-x86-4_8_0", "proot-x86", "proot"]
-                else:
-                    image_list = ["proot-x86", "proot"]
-            elif arch == "arm64":
-                if HostInfo().oskernel_isgreater([4, 8, 0]):
-                    image_list = ["proot-arm64-4_8_0", "proot-arm64", "proot"]
-                else:
-                    image_list = ["proot-arm64", "proot"]
-            elif arch == "arm":
-                if HostInfo().oskernel_isgreater([4, 8, 0]):
-                    image_list = ["proot-arm-4_8_0", "proot-arm", "proot"]
-                else:
-                    image_list = ["proot-arm", "proot"]
+            if HostInfo().oskernel_isgreater([4, 8, 0]):
+                image_list = ["proot-%s-4_8_0" % (arch), "proot-%s" % (arch), "proot"]
+            else:
+                image_list = ["proot-%s" % (arch), "proot"]
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
 
@@ -73,6 +57,7 @@ class PRootEngine(ExecutionEngineCommon):
         if self._is_seccomp_patched(self.executable):
             self.proot_newseccomp = True
 
+    # ARCHNEW
     def _is_seccomp_patched(self, executable):
         """Check if kernel has ptrace/seccomp fixes added
            on 4.8.0.
@@ -85,8 +70,10 @@ class PRootEngine(ExecutionEngineCommon):
                 self.proot_noseccomp or
                 HostInfo().oskernel_isgreater([4, 8, 0])):
             return False
+
         host_file = self.container_dir + "/osenv.json"
-        host_info = self._is_same_osenv(host_file)
+        #host_info = self._is_same_osenv(host_file)
+        host_info = self._get_saved_osenv(host_file)
         if host_info:
             if "PROOT_NEW_SECCOMP" in host_info:
                 return True

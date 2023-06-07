@@ -29,6 +29,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         self._elfpatcher = None
         self._recommend_expand_symlinks = False
 
+    # ARCHNEW
     def select_fakechroot_so(self):
         """Select fakechroot sharable object library"""
         image_list = []
@@ -53,22 +54,9 @@ class FakechrootEngine(ExecutionEngineCommon):
             if "Alpine" not in distro:
                 version = version.split(".")[0]
 
-            if arch == "amd64":
-                image_list = ["%s-%s-%s-x86_64.so" % (lib, distro, version),
-                              "%s-%s-x86_64.so" % (lib, distro),
-                              "%s-x86_64.so" % (lib), deflib]
-            elif arch == "i386":
-                image_list = ["%s-%s-%s-x86.so" % (lib, distro, version),
-                              "%s-%s-x86.so" % (lib, distro),
-                              "%s-x86.so" % (lib), deflib]
-            elif arch == "arm64":
-                image_list = ["%s-%s-%s-arm64.so" % (lib, distro, version),
-                              "%s-%s-arm64.so" % (lib, distro),
-                              "%s-arm64.so" % (lib), deflib]
-            elif arch == "arm":
-                image_list = ["%s-%s-%s-arm.so" % (lib, distro, version),
-                              "%s-%s-arm.so" % (lib, distro),
-                              "%s-arm.so" % (lib), deflib]
+            image_list = ["%s-%s-%s-%s.so" % (lib, distro, version, arch),
+                          "%s-%s-%s.so" % (lib, distro, arch),
+                          "%s-%s.so" % (lib, arch), deflib]
 
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)

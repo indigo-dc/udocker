@@ -37,6 +37,7 @@ class RuncEngine(ExecutionEngineCommon):
         self.execution_id = None
         self.engine_type = ""
 
+    # ARCHNEW
     def select_runc(self):
         """Set runc executable and related variables"""
         self.executable = Config.conf['use_runc_executable']
@@ -51,15 +52,7 @@ class RuncEngine(ExecutionEngineCommon):
             arch = HostInfo().arch()
             image_list = []
             eng = ["runc", "crun"]
-            if arch == "amd64":
-                image_list = [eng[0]+"-x86_64", eng[0],
-                              eng[1]+"-x86_64", eng[1]]
-            elif arch == "i386":
-                image_list = [eng[0]+"-x86", eng[0], eng[1]+"-x86", eng[1]]
-            elif arch == "arm64":
-                image_list = [eng[0]+"-arm64", eng[0], eng[1]+"-arm64", eng[1]]
-            elif arch == "arm":
-                image_list = [eng[0]+"-arm", eng[0], eng[1]+"-arm", eng[1]]
+            image_list = [eng[0]+"-"+arch, eng[0], eng[1]+"-"+arch, eng[1]]
 
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
