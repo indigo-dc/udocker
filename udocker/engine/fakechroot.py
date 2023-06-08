@@ -190,20 +190,21 @@ class FakechrootEngine(ExecutionEngineCommon):
             Msg().out("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
 
+    # ARCHNEW
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non binary executables (scripts)"""
         (dummy, filetype) = OSInfo(self.container_root).get_filetype(exec_path)
         if "ELF" in filetype and ("static" in filetype or "dynamic" in filetype):
             self.opt["cmd"][0] = exec_path
             return []
-        env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
-        if env_exec:
-            return [self.container_root + '/' + env_exec, ]
+        #env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
+        #if env_exec:
+        #    return [self.container_root + '/' + env_exec, ]
 
         relc_path = exec_path.split(self.container_root, 1)[-1]
         real_path = FileUtil(self.container_root).cont2host(relc_path, self.opt["vol"])
         hashbang = FileUtil(real_path).get1stline()
-        match = re.match("#! *([^ ]+)(.*)", hashbang)
+        match = re.search("#! *([^ ]+)(.*)", hashbang.decode())
         if match and not match.group(1).startswith('/'):
             Msg().err("Error: no such file", match.group(1), "in", exec_path)
             sys.exit(1)
