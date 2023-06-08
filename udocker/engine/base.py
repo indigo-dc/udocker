@@ -664,3 +664,30 @@ class ExecutionEngineCommon(object):
         except (ValueError, TypeError, IndexError, KeyError):
             pass
         return False
+
+    # ARCHNEW
+    def _check_arch(self, fail=False):
+        """Check if architecture is the same"""
+        if not OSInfo(self.container_root).is_same_arch():
+            if fail:
+                Msg().err("Error: host and container architectures mismatch")
+                return False
+            Msg().err("Warning: host and container architectures mismatch",
+                      l=Msg.WAR)
+        return True
+
+    # ARCHNEW
+    def _get_qemu(self, return_path=False):
+        """Get the qemu binary name if emulation needed"""
+        container_qemu_arch = OSInfo(self.container_root).arch("qemu")
+        host_qemu_arch = OSInfo("/").arch("qemu")
+        if not (container_qemu_arch and host_qemu_arch):
+            return ""
+        if container_qemu_arch == host_qemu_arch:
+            return ""
+        qemu_filename = "qemu-%s" % container_qemu_arch
+        qemu_path = FileUtil(qemu_filename).find_exec()
+        if not qemu_path:
+            Msg().err("Warning: qemu required but not available", l=Msg.WAR)
+            return ""
+        return qemu_path if return_path else qemu_filename
