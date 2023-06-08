@@ -9,7 +9,6 @@ from udocker.msg import Msg
 from udocker.config import Config
 from udocker.engine.base import ExecutionEngineCommon
 from udocker.helper.hostinfo import HostInfo
-from udocker.helper.osinfo import OSInfo
 from udocker.utils.uprocess import Uprocess
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uvolume import Uvolume
@@ -122,15 +121,10 @@ class PRootEngine(ExecutionEngineCommon):
         return proot_netmap_list
 
     # ARCHNEW
-    def _get_qemu(self):
+    def _get_qemu_string(self):
         """Get the qemu string for container run command if emulation needed"""
-        container_qemu_arch = OSInfo(self.container_root).arch("qemu")
-        host_qemu_arch = OSInfo("/").arch("qemu")
-        if not (container_qemu_arch and host_qemu_arch):
-            return []
-        if container_qemu_arch != host_qemu_arch:
-            return ["-q", "qemu-%s " % container_qemu_arch, ]
-        return []
+        qemu_filename = self._get_qemu()
+        return ["-q", qemu_filename ] if qemu_filename else []
 
     def run(self, container_id):
         """Execute a Docker container using PRoot. This is the main method
@@ -177,7 +171,7 @@ class PRootEngine(ExecutionEngineCommon):
         cmd_l.append(self.executable)
         cmd_l.extend(proot_verbose)
         cmd_l.extend(proot_kill_on_exit)
-        cmd_l.extend(self._get_qemu())
+        cmd_l.extend(self._get_qemu_string())
         cmd_l.extend(self._get_volume_bindings())
         cmd_l.extend(self._set_uid_map())
         cmd_l.extend(["-k", self._kernel, ])
