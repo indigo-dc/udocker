@@ -139,6 +139,8 @@ class SingularityEngine(ExecutionEngineCommon):
         if not exec_path:
             return 2
 
+        self._check_arch()
+
         self.opt["cmd"][0] = exec_path.replace(self.container_root + "/", "")
         self._run_invalid_options()
         self._make_container_directories()

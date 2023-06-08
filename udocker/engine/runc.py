@@ -355,6 +355,7 @@ class RuncEngine(ExecutionEngineCommon):
         if not self._run_init(container_id):
             return 2
 
+        self._check_arch()
         self._run_invalid_options()
 
         self._container_specfile = "config.json"

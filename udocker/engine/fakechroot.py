@@ -236,6 +236,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         if not exec_path:
             return 2
 
+        self._check_arch()
         self._run_invalid_options()
 
         # execution mode and get patcher
