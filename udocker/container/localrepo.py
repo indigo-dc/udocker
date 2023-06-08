@@ -706,6 +706,7 @@ class LocalRepository(object):
 
         return ("", layer_id)
 
+    # ARCHNEW
     def _verify_layer_file(self, structure, layer_id):
         """Verify layer file in repository"""
         (layer_algorithm, layer_hash) = self._split_layer_id(layer_id)
@@ -719,7 +720,8 @@ class LocalRepository(object):
                               os.readlink(layer_f)):
             Msg().err("Error: layer data file not found")
             return False
-        if "gzip" in OSInfo('/').get_filetype(layer_f):
+        (dummy, filetype) = OSInfo('/').get_filetype(layer_f)
+        if "gzip" in filetype:
             if not FileUtil(layer_f).verify_tar():
                 Msg().err("Error: layer tar verify failed:", layer_f)
                 return False
