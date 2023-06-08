@@ -26,8 +26,8 @@ class OSInfo(ArchInfo):
             return self.get_filetype(f_path)
         if os.path.isfile(filename):
             filetype = Uprocess().get_output(["file", filename])
-            if filetype:
-                return ("file", filetype)
+            if filetype and ":" in filetype:
+                return ("file", filetype.split(":", 1)[1])
             filetype = Uprocess().get_output(["readelf", "-h", filename])
             if filetype:
                 return ("readelf", filetype)
@@ -35,15 +35,24 @@ class OSInfo(ArchInfo):
 
     # ARCH NEW
     def arch(self, target="UDOCKER"):
-        """Get guest system architecture"""
+        """Get OS architecture"""
         for filename in self.get_binaries_list():
-            f_path = self._root_dir + filename
+            f_path = self._root_dir + "/" + filename
             (sourcetype, fileinfo) = self.get_filetype(f_path)
             if not sourcetype:
                 continue
 
             (arch, dummy, dummy) = self.get_arch(sourcetype, fileinfo, target)
             return arch[0] if arch[0] else ""
+
+    # ARCH NEW
+    def is_same_arch(self, other_root_dir="/" ,target="UDOCKER"):
+        """Compare architectures for two system trees"""
+        this_arch = self.arch(target)
+        other_arch = OSInfo(other_root_dir).arch(target)
+        if not (this_arch and other_arch):
+            return None
+        return this_arch == other_arch
 
     def osdistribution(self):
         """Get guest operating system distribution"""
