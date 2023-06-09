@@ -793,7 +793,8 @@ class LocalRepository:
             LOG.error("layer data file not found")
             return False
 
-        if "gzip" in OSInfo('/').get_filetype(layer_f):
+        (dummy, filetype) = OSInfo('/').get_filetype(layer_f)
+        if "gzip" in filetype:
             if not FileUtil(layer_f).verify_tar():
                 LOG.error("layer tar verify failed: %s", layer_f)
                 return False
