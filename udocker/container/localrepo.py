@@ -336,6 +336,32 @@ class LocalRepository(object):
                     return self.cur_tagdir
         return ""
 
+    def tag(self, src_imagerepo, src_tag, new_imagerepo, new_tag):
+        """Change the repository tag name"""
+        src_tag_dir = self.cd_imagerepo(src_imagerepo, src_tag)
+        if (not src_tag_dir) or self.cd_imagerepo(new_imagerepo, new_tag):
+            return None
+
+        if not (self.setup_imagerepo(new_imagerepo) is not None
+                and self.setup_tag(new_tag)):
+            return False
+
+        new_tag_dir = self.cd_imagerepo(new_imagerepo, new_tag)
+        if not new_tag_dir:
+            return False
+
+        for fname in os.listdir(src_tag_dir):
+            filename = src_tag_dir + "/" + fname
+            if os.path.islink(filename):
+                if not self.add_image_layer(os.path.realpath(filename)):
+                    return False
+            elif fname == "TAG":
+                continue
+            elif os.path.isfile(filename):
+                if not FileUtil(filename).copyto(new_tag_dir + "/" + fname):
+                    return False
+        return True
+
     def _find(self, filename, in_dir):
         """is a specific layer filename referenced by another image TAG"""
         found_list = []
