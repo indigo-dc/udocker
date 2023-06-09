@@ -94,7 +94,7 @@ class CommonLocalFileApi:
         container_json["id"] = layer_id
         container_json["comment"] = comment
         container_json["created"] = time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z")
-        container_json["architecture"] = HostInfo().arch()
+        container_json["architecture"] = HostInfo().arch("docker")
         container_json["os"] = HostInfo().osversion()
         layer_file = self.localrepo.layersdir + '/' + layer_id + ".layer"
         container_json["size"] = FileUtil(layer_file).size()
