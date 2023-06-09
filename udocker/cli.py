@@ -972,6 +972,40 @@ class UdockerCLI:
 
         return exit_status
 
+    def do_tag(self, cmdp):
+        """
+        tag: create a new tag for a given image
+        tag <source repo/image:tag> <target repo/image:tag>
+        """
+        source_imagespec = str(cmdp.get("P1"))
+        target_imagespec = str(cmdp.get("P2"))
+        if cmdp.missing_options():               # syntax error
+            return self.STATUS_ERROR
+
+        (tgt_imagerepo, tgt_tag) = self._check_imagespec(target_imagespec)
+        if not (tgt_imagerepo and tgt_tag):
+            LOG.error("target name is invalid")
+            return self.STATUS_ERROR
+
+        if self.localrepo.cd_imagerepo(tgt_imagerepo, tgt_tag):
+            LOG.error("target already exists")
+            return self.STATUS_ERROR
+
+        (src_imagerepo, src_tag) = self._check_imagespec(source_imagespec)
+        if not self.localrepo.cd_imagerepo(src_imagerepo, src_tag):
+            LOG.error("source does not exist")
+            return self.STATUS_ERROR
+
+        if self.localrepo.isprotected_imagerepo(src_imagerepo, src_tag):
+            LOG.error("source repository is protected")
+            return self.STATUS_ERROR
+
+        if not self.localrepo.tag(src_imagerepo, src_tag, tgt_imagerepo, tgt_tag):
+            LOG.error("creation of new image tag failed")
+            return self.STATUS_ERROR
+
+        return self.STATUS_OK
+
     def do_rmi(self, cmdp):
         """
         rmi: delete an image in the local repository

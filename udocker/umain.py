@@ -104,7 +104,8 @@ class UMain:
             "downloadmod": self.cli.do_downloadmod,
             "showmod": self.cli.do_showmod,
             "upgrademod": self.cli.do_upgrademod,
-            "verifymod": self.cli.do_verifymod
+            "verifymod": self.cli.do_verifymod,
+            "tag": self.cli.do_tag
         }
 
         larg = len(self.argv)
