@@ -1,5 +1,24 @@
 # Changelog
 
+## udocker (1.3.10a1)
+
+* improved handling and mapping of architecture information
+* added support for qemu on Pn modes enabling execution of
+  containers with architectures different than the host
+  using PROOT
+
+## udocker (1.3.9)
+
+* add support to access non-config metadata from containers
+* added support for multiplatform manifests and indices solves #392
+
+## udocker (1.3.8)
+
+* udockertools 1.2.9 set as default
+* add Fn support for Ubuntu:22
+* remove files to be installed
+* set Fn preference to use runc
+
 ## udocker (1.3.6)
 
 * re-implement udocker namespace solves #380
