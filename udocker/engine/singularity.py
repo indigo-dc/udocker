@@ -36,15 +36,7 @@ class SingularityEngine(ExecutionEngineCommon):
         if self.executable == "UDOCKER" or not self.executable:
             self.executable = ""
             arch = HostInfo().arch()
-            image_list = []
-            if arch == "amd64":
-                image_list = ["singularity-x86_64", "singularity"]
-            elif arch == "i386":
-                image_list = ["singularity-x86", "singularity"]
-            elif arch == "arm64":
-                image_list = ["singularity-arm64", "singularity"]
-            elif arch == "arm":
-                image_list = ["singularity-arm", "singularity"]
+            image_list = ["singularity-%s" % (arch), "singularity"]
 
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
@@ -144,6 +136,8 @@ class SingularityEngine(ExecutionEngineCommon):
         exec_path = self._run_init(container_id)  # setup execution
         if not exec_path:
             return 2
+
+        self._check_arch()
 
         self.opt["cmd"][0] = exec_path.replace(self.container_root + "/", "")
         self._run_invalid_options()
