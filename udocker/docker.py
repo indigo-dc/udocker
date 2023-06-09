@@ -46,9 +46,17 @@ class DockerIoAPI(object):
         """Change docker index url"""
         self.index_url = index_url
 
+    # ARCHNEW
     def is_repo_name(self, imagerepo):
         """Check if name matches authorized characters for a docker repo"""
         if imagerepo and re.match("^[a-zA-Z0-9][a-zA-Z0-9-_./:]+$", imagerepo):
+            return True
+        return False
+
+    # ARCHNEW
+    def is_layer_name(self, layername):
+        """Check if name matches authorized characters for a docker layer"""
+        if layername and re.match("^[a-zA-Z0-9]+@[a-z0-9]+:[a-z0-9]+$", layername):
             return True
         return False
 
