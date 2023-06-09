@@ -557,6 +557,12 @@ class DockerIoAPI:
 
         return False
 
+    def is_layer_name(self, layername):
+        """Check if name matches authorized characters for a docker layer"""
+        if layername and re.match("^[a-zA-Z0-9]+@[a-z0-9]+:[a-z0-9]+$", layername):
+            return True
+        return False
+
     def get_url(self, *args, **kwargs):
         """Encapsulates the call to GetURL.get() so that authentication
         for v1 and v2 repositories can be treated differently.
@@ -612,7 +618,7 @@ class DockerIoAPI:
                 if "/v1/" in url:
                     auth_header = self.v1api.get_auth(www_authenticate)
 
-                # JorgeOCI
+                # OCI and multiplatform, prevent removal of header attributes
                 try:
                     auth_kwargs["header"].append(auth_header)
                 except KeyError:
@@ -700,8 +706,6 @@ class DockerIoAPI:
     def get(self, imagerepo, tag, platform=""):
         """Pull a docker image from a v2 registry or v1 index"""
         LOG.debug("get imagerepo: %s tag: %s", imagerepo, tag)
-        if not platform:
-            platform = HostInfo().platform()
         (imagerepo, remoterepo) = self._parse_imagerepo(imagerepo)
         if self.localrepo.cd_imagerepo(imagerepo, tag):
             new_repo = False
@@ -710,6 +714,8 @@ class DockerIoAPI:
             new_repo = True
 
         if self.v2api.is_valid():
+            if not platform:
+                platform = HostInfo().platform()
             files = self.v2api.get(remoterepo, tag, platform)  # try v2
         else:
             files = self.v1api.get(remoterepo, tag)  # try v1
