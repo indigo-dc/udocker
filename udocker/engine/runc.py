@@ -52,14 +52,7 @@ class RuncEngine(ExecutionEngineCommon):
             arch = HostInfo().arch()
             image_list = []
             eng = ["runc", "crun"]
-            if arch == "amd64":
-                image_list = [eng[0]+"-x86_64", eng[0], eng[1]+"-x86_64", eng[1]]
-            elif arch == "i386":
-                image_list = [eng[0]+"-x86", eng[0], eng[1]+"-x86", eng[1]]
-            elif arch == "arm64":
-                image_list = [eng[0]+"-arm64", eng[0], eng[1]+"-arm64", eng[1]]
-            elif arch == "arm":
-                image_list = [eng[0]+"-arm", eng[0], eng[1]+"-arm", eng[1]]
+            image_list = [eng[0]+"-"+arch, eng[0], eng[1]+"-"+arch, eng[1]]
 
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
@@ -371,6 +364,7 @@ class RuncEngine(ExecutionEngineCommon):
         if not self._run_init(container_id):
             return 2
 
+        self._check_arch()
         self._run_invalid_options()
         self._cont_specfile = "config.json"
         if self.container_dir:
