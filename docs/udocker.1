@@ -1,7 +1,7 @@
 .\" Manpage for udocker
 .\" Contact udocker@lip.pt to correct errors or typos.
 .\" To read this man page use:   man -l udocker.1
-.TH udocker 1 "23 Jun 2021" "version 1.3.2" "udocker man page"
+.TH udocker 1 "9 Jun 2023" "version 1.3.10" "udocker man page"
 .SH NAME
 udocker \- execute Docker containers in user space without privileges
 .SH SYNOPSIS
@@ -47,8 +47,8 @@ Prints a usage summary. Further help for specific udocker commands can be obtain
 .BR search " " [ " " \-a " " ] " " | " " [ " " \--list-tags " " ] " " | " " [ " " --registry=REGISTRY " " ] " " | " " STRING
 Search for IMAGES in a Docker registry. Not all registries support searching. The \-a option displays all matching entries without pausing. The \--list-tags option lists the tags for a given repository in this case STRING must be a repository name.
 .TP
-.BR pull " " [ " " \--httpproxy=PROXY " " | " " \--index=INDEX " " | " " \--registry=REGISTRY " " ] " " IMAGE
-Pull an IMAGE from Docker Hub or from a private repository. A socks4 or socks5 proxy can be specified with \--httpproxy the syntax of PROXY is socks[4|5|4a|5h]://user:pass@host:port. The --registry and --index options enable other repositories (beyond dockerhub) to be selected, it is an URL prefix (ex. https://myrepository.mydomain).
+.BR pull " " [ " " \--httpproxy=PROXY " " | " " \--index=INDEX " " | " " \--registry=REGISTRY " " | " " \--platform=OS/ARCH " " ] " " IMAGE
+Pull an IMAGE from Docker Hub or from a private repository. A socks4 or socks5 proxy can be specified with \--httpproxy the syntax of PROXY is socks[4|5|4a|5h]://user:pass@host:port. The --registry and --index options enable other repositories (beyond dockerhub) to be selected, it is an URL prefix (ex. https://myrepository.mydomain). If the image is multi-platform the operating system and architecture of the image to be pulled can be specified using \--platform.
 .TP
 .BR images " " [ " " \-l " " ]
 Lists IMAGES available in the local udocker repository. The \-l option provides additional image details.
@@ -185,6 +185,9 @@ Do not print the startup banner.
 .TP
 --entrypoint="COMMAND"
 Override the container metadata entrypoint.
+.TP
+--platform=OS/ARCH
+Specify the operating system and/or architecture of the image to be pulled and executed.
 .RE
 
 .SH ENVIRONMENT
