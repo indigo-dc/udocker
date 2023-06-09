@@ -41,15 +41,7 @@ class ElfPatcher:
     def select_patchelf(self):
         """Set patchelf executable"""
         arch = HostInfo().arch()
-        image_list = []
-        if arch == "amd64":
-            image_list = ["patchelf-x86_64", "patchelf"]
-        elif arch == "i386":
-            image_list = ["patchelf-x86", "patchelf"]
-        elif arch == "arm64":
-            image_list = ["patchelf-arm64", "patchelf"]
-        elif arch == "arm":
-            image_list = ["patchelf-arm", "patchelf"]
+        image_list = ["patchelf-%s" % (arch), "patchelf"]
 
         f_util = FileUtil(self.localrepo.bindir)
         patchelf_exec = f_util.find_file_in_dir(image_list)
