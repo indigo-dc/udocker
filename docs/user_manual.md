@@ -257,6 +257,7 @@ Options:
 * `--index=url` specify an index other than index.docker.io
 * `--registry=url` specify a registry other than registry-1.docker.io
 * `--httpproxy=proxy` specify a socks proxy for downloading
+* `--platform=os/architecture` specify a different platform to be pulled
 
 Examples:
 
@@ -273,6 +274,7 @@ udocker pull --httpproxy=socks4a://host:port busybox
 udocker pull --httpproxy=socks5h://host:port busybox
 udocker pull --httpproxy=socks4a://user:pass@host:port busybox
 udocker pull --httpproxy=socks5h://user:pass@host:port busybox
+udocker pull --platform=linux/arm64 fedora:latest
 ```
 
 ### 3.6. images
@@ -632,6 +634,7 @@ Options:
 * `--bindhome` attempt to make the user home directory appear inside the container
 * `--kernel=KERNELID` use a specific kernel id to emulate useful when the host kernel is too old
 * `--location=DIR` execute a container in a given directory
+* `--platform=os/architecture` specify a different platform to be pulled
 
 Options valid only in Pn execution modes:
 
