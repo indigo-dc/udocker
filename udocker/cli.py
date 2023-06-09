@@ -701,6 +701,10 @@ class UdockerCLI(object):
             "platform": {
                 "fl": ("--platform=",), "act": 'R',
                 "p2": "CMD_OPT", "p3": False
+            },
+            "pull": {
+                "fl": ("--pull="), "act": 'R',
+                "p2": "CMD_OPT", "p3": False
             }
         }
         for option, cmdp_args in list(cmd_options.items()):
@@ -748,6 +752,7 @@ class UdockerCLI(object):
         --nobanner                 :don't print a startup banner
         --entrypoint               :override the container metadata entrypoint
         --platform=os/arch         :pull image for OS and architecture
+        --pull=<when>              :when to pull missing|never|always
 
         Only available in Rn execution modes:
         --device=/dev/xxx          :pass device to container (R1 mode only)
@@ -767,6 +772,8 @@ class UdockerCLI(object):
         Config.conf['location'] = cmdp.get("--location=")
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
+        pull = cmdp.get("--pull=")
+        dummy = cmdp.get("--pull") # if invoked without option
 
         if cmdp.missing_options():   # syntax error
             return self.STATUS_ERROR
@@ -783,7 +790,7 @@ class UdockerCLI(object):
                 if (imagerepo and
                         self.localrepo.cd_imagerepo(imagerepo, tag)):
                     container_id = self._create(imagerepo + ":" + tag)
-                if not container_id:
+                if pull != "never" and (not container_id or pull == "always"):
                     self.do_pull(cmdp)
                     if self.localrepo.cd_imagerepo(imagerepo, tag):
                         container_id = self._create(imagerepo + ":" + tag)

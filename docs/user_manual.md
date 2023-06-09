@@ -635,6 +635,7 @@ Options:
 * `--kernel=KERNELID` use a specific kernel id to emulate useful when the host kernel is too old
 * `--location=DIR` execute a container in a given directory
 * `--platform=os/architecture` specify a different platform to be pulled
+* `--pull=missing|never|always` specify when to pull the image
 
 Options valid only in Pn execution modes:
 
