@@ -7,28 +7,17 @@ import re
 from udocker import LOG
 from udocker.utils.uprocess import Uprocess
 from udocker.utils.fileutil import FileUtil
+from udocker.helper.archinfo import ArchInfo
 
 
-class OSInfo:
-    """Get os information from a directory tree"""
-
-    _binarylist = ["/lib64/ld-linux-x86-64.so",
-                   "/lib64/ld-linux-x86-64.so.2",
-                   "/lib64/ld-linux-x86-64.so.3",
-                   "/bin/bash", "/bin/sh", "/bin/zsh",
-                   "/bin/csh", "/bin/tcsh", "/bin/ash",
-                   "/bin/ls", "/bin/busybox",
-                   "/system/bin/sh", "/system/bin/ls",
-                   "/lib/ld-linux.so",
-                   "/lib/ld-linux.so.2",
-                   ]
+class OSInfo(ArchInfo):
+    """Get os information"""
 
     def __init__(self, root_dir):
         self._root_dir = root_dir
 
     def get_filetype(self, filename):
-        """Get the file architecture"""
-        filetype = ""
+        """Get architecture information from binary using file and readelf"""
         if not filename.startswith(self._root_dir):
             filename = self._root_dir + '/' + filename
 
@@ -36,38 +25,36 @@ class OSInfo:
             f_path = os.readlink(filename)
             if not f_path.startswith('/'):
                 f_path = os.path.dirname(filename) + '/' + f_path
-
             return self.get_filetype(f_path)
 
         if os.path.isfile(filename):
             filetype = Uprocess().get_output(["file", filename])
-            if not filetype:
-                filetype = Uprocess().get_output(["readelf", "-h", filename])
+            if filetype and ":" in filetype:
+                return ("file", filetype.split(":", 1)[1])
+            filetype = Uprocess().get_output(["readelf", "-h", filename])
+            if filetype:
+                return ("readelf", filetype)
 
-        return filetype
+        return ("", "")
 
-    def arch(self):
-        """Get guest system architecture"""
-        for filename in OSInfo._binarylist:
-            f_path = self._root_dir + filename
-            filetype = self.get_filetype(f_path)
-            LOG.info("get guest arch")
-            if not filetype:
+    def arch(self, target="UDOCKER"):
+        """Get OS architecture"""
+        for filename in self.get_binaries_list():
+            f_path = self._root_dir + "/" + filename
+            (sourcetype, fileinfo) = self.get_filetype(f_path)
+            if not sourcetype:
                 continue
 
-            if "x86-64" in filetype.lower():
-                return "amd64"
+            (arch, dummy, dummy) = self.get_arch(sourcetype, fileinfo, target)
+            return arch[0] if arch[0] else ""
 
-            if "Intel 80386" in filetype:
-                return "i386"
-
-            if "aarch64" in filetype.lower():
-                return "arm64"
-
-            if " ARM" in filetype:
-                return "arm"
-
-        return ""
+    def is_same_arch(self, other_root_dir="/" ,target="UDOCKER"):
+        """Compare architectures for two system trees"""
+        this_arch = self.arch(target)
+        other_arch = OSInfo(other_root_dir).arch(target)
+        if not (this_arch and other_arch):
+            return None
+        return this_arch == other_arch
 
     def osdistribution(self):
         """Get guest operating system distribution"""
