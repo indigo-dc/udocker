@@ -65,12 +65,17 @@ class UdockerCLI:
             imagespec = def_imagespec
 
         try:
-            (imagerepo, tag) = imagespec.rsplit(":", 1)
+            (imagerepo, tag) = imagespec.split("@", 1)
         except (ValueError, AttributeError):
-            imagerepo = imagespec
-            tag = "latest"
+            try:
+                (imagerepo, tag) = imagespec.split(":", 1)
+            except (ValueError, AttributeError):
+                imagerepo = imagespec
+                tag = "latest"
 
-        if not (imagerepo and tag and self.dockerioapi.is_repo_name(imagespec)):
+        if not (imagerepo and tag and
+                (self.dockerioapi.is_repo_name(imagespec) or
+                 self.dockerioapi.is_layer_name(imagespec))):
             LOG.error("must specify image:tag or repository/image:tag")
             return (None, None)
 
@@ -786,6 +791,7 @@ class UdockerCLI:
         --location=<container-dir> :use container outside the repository
         --nobanner                 :don't print a startup banner
         --entrypoint               :override the container metadata entrypoint
+        --platform=os/arch         :pull image for OS and architecture
 
         Only available in Rn execution modes:
         --device=/dev/xxx          :pass device to container (R1 mode only)
