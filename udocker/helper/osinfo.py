@@ -96,7 +96,6 @@ class OSInfo(ArchInfo):
 
         return ("", "")
 
-    # ARCH NEW
     def osversion(self):
         """Get guest operating system"""
         if self.osdistribution()[0]:
