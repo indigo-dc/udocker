@@ -53,22 +53,9 @@ class FakechrootEngine(ExecutionEngineCommon):
             if "Alpine" not in distro:
                 version = version.split(".")[0]
 
-            if arch == "amd64":
-                image_list = ["%s-%s-%s-x86_64.so" % (lib, distro, version),
-                              "%s-%s-x86_64.so" % (lib, distro),
-                              "%s-x86_64.so" % (lib), deflib]
-            elif arch == "i386":
-                image_list = ["%s-%s-%s-x86.so" % (lib, distro, version),
-                              "%s-%s-x86.so" % (lib, distro),
-                              "%s-x86.so" % (lib), deflib]
-            elif arch == "arm64":
-                image_list = ["%s-%s-%s-arm64.so" % (lib, distro, version),
-                              "%s-%s-arm64.so" % (lib, distro),
-                              "%s-arm64.so" % (lib), deflib]
-            elif arch == "arm":
-                image_list = ["%s-%s-%s-arm.so" % (lib, distro, version),
-                              "%s-%s-arm.so" % (lib, distro),
-                              "%s-arm.so" % (lib), deflib]
+            image_list = ["%s-%s-%s-%s.so" % (lib, distro, version, arch),
+                          "%s-%s-%s.so" % (lib, distro, arch),
+                          "%s-%s.so" % (lib, arch), deflib]
 
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
@@ -198,19 +185,19 @@ class FakechrootEngine(ExecutionEngineCommon):
 
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non binary executables (scripts)"""
-        filetype = OSInfo(self.container_root).get_filetype(exec_path)
+        (dummy, filetype) = OSInfo(self.container_root).get_filetype(exec_path)
         if "ELF" in filetype and ("static" in filetype or "dynamic" in filetype):
             self.opt["cmd"][0] = exec_path
             return []
 
-        env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
-        if env_exec:
-            return [self.container_root + '/' + env_exec, ]
+        #env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
+        #if env_exec:
+        #    return [self.container_root + '/' + env_exec, ]
 
         relc_path = exec_path.split(self.container_root, 1)[-1]
         real_path = FileUtil(self.container_root).cont2host(relc_path, self.opt["vol"])
         hashbang = FileUtil(real_path).get1stline()
-        match = re.match("#! *([^ ]+)(.*)", hashbang)
+        match = re.search("#! *([^ ]+)(.*)", hashbang.decode())
         if match and not match.group(1).startswith('/'):
             LOG.error("no such file %s in %s", match.group(1), exec_path)
             sys.exit(1)
@@ -242,6 +229,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         if not exec_path:
             return 2
 
+        self._check_arch()
         self._run_invalid_options()
         # execution mode and get patcher
         xmode = self.exec_mode.get_mode()
