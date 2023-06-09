@@ -22,7 +22,7 @@ class HostInfo(ArchInfo):
         except KeyError:
             return ""
 
-    def arch(self):
+    def arch(self, target="UDOCKER"):
         """Get the host system architecture"""
         machine = platform.machine()
         (arch, dummy, dummy) = self.get_arch("uname", machine, target)
