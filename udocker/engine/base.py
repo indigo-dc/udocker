@@ -12,6 +12,7 @@ from udocker.utils.uenv import Uenv
 from udocker.utils.uvolume import Uvolume
 from udocker.helper.nixauth import NixAuthentication
 from udocker.helper.hostinfo import HostInfo
+from udocker.helper.osinfo import OSInfo
 from udocker.container.structure import ContainerStructure
 from udocker.utils.filebind import FileBind
 from udocker.utils.mountpoint import MountPoint
@@ -679,16 +680,23 @@ class ExecutionEngineCommon:
         exec_path = self._check_executable()
         return exec_path
 
+    def _get_saved_osenv(self, filename):
+        """get saved osenv from json file"""
+        try:
+            return json.loads(FileUtil(filename).getdata())
+        except (IOError, OSError, ValueError, TypeError):
+            return {}
+
     def _is_same_osenv(self, filename):
         """Check if the host has changed"""
+        saved = json.loads(FileUtil(filename).getdata())
         try:
-            saved = json.loads(FileUtil(filename).getdata())
             if (saved["osversion"] == HostInfo().osversion() and
                     saved["oskernel"] == HostInfo().oskernel() and
                     saved["arch"] == HostInfo().arch() and
-                    saved["osdistribution"] == str(HostInfo().osdistribution())):
+                    saved["osdistribution"] == str(OSInfo("/").osdistribution())):
                 return saved
-        except (OSError, AttributeError, ValueError, TypeError, IndexError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
 
         return {}
@@ -702,9 +710,34 @@ class ExecutionEngineCommon:
             save["osversion"] = HostInfo().osversion()
             save["oskernel"] = HostInfo().oskernel()
             save["arch"] = HostInfo().arch()
+            save["osdistribution"] = str(OSInfo("/").osdistribution())
             if FileUtil(filename).putdata(json.dumps(save)):
                 return True
-        except (AttributeError, ValueError, TypeError, IndexError, KeyError):
+        except (ValueError, TypeError, IndexError, KeyError):
             pass
 
         return False
+
+    def _check_arch(self, fail=False):
+        """Check if architecture is the same"""
+        if not OSInfo(self.container_root).is_same_arch():
+            if fail:
+                LOG.error("host and container architectures mismatch")
+                return False
+            LOG.warning("host and container architectures mismatch")
+        return True
+
+    def _get_qemu(self, return_path=False):
+        """Get the qemu binary name if emulation needed"""
+        container_qemu_arch = OSInfo(self.container_root).arch("qemu")
+        host_qemu_arch = OSInfo("/").arch("qemu")
+        if not (container_qemu_arch and host_qemu_arch):
+            return ""
+        if container_qemu_arch == host_qemu_arch:
+            return ""
+        qemu_filename = "qemu-%s" % container_qemu_arch
+        qemu_path = FileUtil(qemu_filename).find_exec()
+        if not qemu_path:
+            LOG.error("qemu required but not available")
+            return ""
+        return qemu_path if return_path else qemu_filename
