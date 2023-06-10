@@ -106,6 +106,9 @@ Protect an IMAGE or CONTAINER against accidental deletion by "udocker rm" or "ud
 .BR unprotect " " IMAGE " " | " " CONTAINER\-ID " " | " " ALIAS
 Remove a protection flag placed by "protect".
 .TP
+.BR manifest " " inspect " " IMAGE
+Obtain and print information about an IMAGE manifest from a remote registry.
+.TP
 .BR mkrepo " " DIRECTORY
 Setup a local repository in the host DIRECTORY. The required directory structure is created.
 .TP
