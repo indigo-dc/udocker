@@ -4,7 +4,6 @@
 import os
 import re
 
-from udocker import LOG
 from udocker.utils.uprocess import Uprocess
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.archinfo import ArchInfo

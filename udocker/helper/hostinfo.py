@@ -6,7 +6,6 @@ import re
 import pwd
 import platform
 
-from udocker import LOG
 from udocker.utils.uprocess import Uprocess
 from udocker.helper.archinfo import ArchInfo
 
