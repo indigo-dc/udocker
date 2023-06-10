@@ -752,7 +752,7 @@ class UdockerCLI(object):
         --nobanner                 :don't print a startup banner
         --entrypoint               :override the container metadata entrypoint
         --platform=os/arch         :pull image for OS and architecture
-        --pull=<when>              :when to pull missing|never|always
+        --pull=<when>              :when to pull (missing|never|always)
 
         Only available in Rn execution modes:
         --device=/dev/xxx          :pass device to container (R1 mode only)
@@ -1087,7 +1087,7 @@ class UdockerCLI(object):
     def do_manifest(self, cmdp):
         """
         manifest: commands for image manifests
-        manifest inspect <repo/image:tag>
+        manifest [options] inspect <repo/image:tag>
         --httpproxy=socks4://user:pass@host:port        :use http proxy
         --httpproxy=socks5://user:pass@host:port        :use http proxy
         --httpproxy=socks4://host:port                  :use http proxy
@@ -1107,13 +1107,11 @@ class UdockerCLI(object):
         registry_url = cmdp.get("--registry=")
         http_proxy = cmdp.get("--httpproxy=")
         platform = cmdp.get("--platform=")
-        if platform is False:
-            platform = ""
-        if cmdp.get("P1") != "inspect":
-            return self.STATUS_ERROR
+        platform = "" if platform is False else platform
+        subcommand = cmdp.get("P1")
 
         (imagerepo, tag) = self._check_imagespec(cmdp.get("P2"))
-        if (not imagerepo) or cmdp.missing_options():    # syntax error
+        if (not imagerepo) or cmdp.missing_options() or subcommand != "inspect":
             return self.STATUS_ERROR
 
         self._set_repository(registry_url, index_url, imagerepo, http_proxy)
@@ -1357,6 +1355,7 @@ Commands:
   clone <container_id>          :Duplicate container
   rm  <container-id|name>       :Delete container
   rmi <repo/image:tag>          :Delete image
+  tag <repo/image:tag> <repo2/image2:tag2> :Tag image
 
   import <tar> <repo/image:tag> :Import tar file (exported by docker)
   import - <repo/image:tag>     :Import from stdin (exported by docker)
@@ -1366,8 +1365,13 @@ Commands:
   load                          :Load image from stdin (saved by docker)
   save -o <imagefile> <repo/image:tag>  :Save image with layers to file
 
-  inspect -p <repo/image:tag>   :Return low level information on image
+  inspect -p <repo/image:tag>   :Print image or container metadata
   verify <repo/image:tag>       :Verify a pulled image
+  manifest inspect <repo/image:tag> :Print manifest metadata
+
+  udocker manifest inspect centos/centos8
+  udocker pull --platform=linux/arm64 centos/centos8
+  udocker tag centos/centos8  mycentos/centos8:arm64
 
   protect <repo/image:tag>      :Protect repository
   unprotect <repo/image:tag>    :Unprotect repository
