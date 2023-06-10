@@ -49,7 +49,7 @@ class Config:
         conf['meta_json'].append(url + "metadata.json")
 
     # defaults for container execution
-    conf['cmd'] = ["/bin/bash", "-i"]  # Comand to execute
+    conf['cmd'] = ["bash", "-i"]  # Comand to execute
 
     # default path for executables
     conf['root_path'] = "/usr/sbin:/sbin:/usr/bin:/bin"
