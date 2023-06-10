@@ -325,6 +325,16 @@ class FileUtil:
 
         return False
 
+    def isfile(self):
+        """Is filename a plain file"""
+        try:
+            if os.path.isfile(self.filename):
+                return True
+        except (IOError, OSError, TypeError):
+            pass
+
+        return False
+
     def size(self):
         """File size in bytes"""
         try:
