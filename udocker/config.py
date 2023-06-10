@@ -46,7 +46,7 @@ class Config(object):
     conf['tmpdir'] = os.getenv("TMPDIR", "/tmp")    # for tmp files only
 
     # defaults for container execution
-    conf['cmd'] = ["/bin/bash", "-i"]  # Comand to execute
+    conf['cmd'] = ["bash", "-i"]  # Comand to execute
 
     # default path for executables
     conf['root_path'] = "/usr/sbin:/sbin:/usr/bin:/bin"
