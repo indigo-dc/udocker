@@ -985,11 +985,26 @@ new tag does not occupy additional space as the image layers are shared.
 The image layers are only removed from the local udocker repository when
 no other image is referencing them. 
 
-Examples:
+Example:
 
 ```bash
 udocker tag centos:centos7  mycentos:mycentos7
 ```
+
+### 3.29. manifest
+
+```bash
+udocker manifest inspect REPO/IMAGE:TAG
+```
+
+Obtain and print information about an IMAGE manifest from a remote registry.
+
+Example:
+
+```bash
+udocker manifest inspect centos:centos7  
+```
+
 
 
 ## 4. Running MPI jobs
