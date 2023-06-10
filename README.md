@@ -96,6 +96,7 @@ but is still available
           pull <repo/image:tag>         :Pull container image from dockerhub
           create <repo/image:tag>       :Create container from a pulled image
           run <container>               :Execute container
+          run <repo/image:tag>          :Pull, create and execute container
 
           images -l                     :List container images
           ps -m -s                      :List created containers
@@ -105,6 +106,7 @@ but is still available
           clone <container_id>          :Duplicate container
           rm <container-id>             :Delete container
           rmi <repo/image:tag>          :Delete image
+          tag <repo/image:tag> <repo2/image2:tag2> :Tag image
 
           import <tar> <repo/image:tag> :Import tar file (exported by docker)
           import - <repo/image:tag>     :Import from stdin (exported by docker)
@@ -116,6 +118,7 @@ but is still available
 
           inspect -p <repo/image:tag>   :Return low level information on image
           verify <repo/image:tag>       :Verify a pulled or loaded image
+          manifest inspect <repo/image:tag> :Print manifest metadata
 
           protect <repo/image:tag>      :Protect repository
           unprotect <repo/image:tag>    :Unprotect repository
@@ -167,6 +170,14 @@ udocker search  quay.io/bio
 udocker search  --list-tags  quay.io/biocontainers/scikit-bio
 udocker pull    quay.io/biocontainers/scikit-bio:0.2.3--np112py35_0
 udocker images
+```
+
+Pull a different architecture such as arm64 instead of amd64.
+
+```bash
+udocker manifest inspect centos/centos8
+udocker pull --platform=linux/arm64 centos/centos8
+udocker tag centos/centos8  mycentos/centos8:arm64
 ```
 
 Create a container from a pulled image, assign a name to the created
