@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Common architecture info and methods for hostinfo and osinfo"""
 
-class ArchInfo(object):
+class ArchInfo:
     """Common object for architecture information"""
 
     # { 'docker':['docker_arch'], 'qemu':['qemu_arch'],
