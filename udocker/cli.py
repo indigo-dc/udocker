@@ -367,10 +367,12 @@ class UdockerCLI(object):
         --tocontainer             :import to container, no image is created
         --clone                   :import udocker container format with metadata
         --name=<container-name>   :with --tocontainer or --clone to add an alias
+        --platform=os/arch        :docker platform
         """
         move_tarball = cmdp.get("--mv")
         to_container = cmdp.get("--tocontainer")
         name = cmdp.get("--name=")
+        platform = cmdp.get("--platform=")
         clone = cmdp.get("--clone")
         from_stdin = cmdp.get('-')
         if from_stdin:
@@ -395,7 +397,7 @@ class UdockerCLI(object):
                 (imagerepo, tag) = self._check_imagespec(imagespec,
                                                          "IMPORTED:unknown")
                 container_id = self.localfileapi.import_tocontainer(
-                    tarfile, imagerepo, tag, name)
+                    tarfile, imagerepo, tag, name, platform)
             if container_id:
                 Msg().out(container_id)
                 return self.STATUS_OK
@@ -404,7 +406,7 @@ class UdockerCLI(object):
             if not imagerepo:
                 return self.STATUS_ERROR
             if self.localfileapi.import_toimage(tarfile, imagerepo, tag,
-                                                move_tarball):
+                                                move_tarball, platform):
                 return self.STATUS_OK
         Msg().err("Error: importing")
         return self.STATUS_ERROR

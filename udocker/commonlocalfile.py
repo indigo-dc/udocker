@@ -81,18 +81,22 @@ class CommonLocalFileApi(object):
         return not status
 
     # ARCHNEW
-    def create_container_meta(self, layer_id, comment="created by udocker"):
+    def create_container_meta(self, layer_id, platform=""):
         """Create metadata for a given container layer, used in import.
         A file for import is a tarball of a directory tree, does not contain
         metadata. This method creates minimal metadata.
         """
+        (p_os, p_arch, p_variant) = HostInfo().parse_platform(platform)
         container_json = {}
         container_json["id"] = layer_id
-        container_json["comment"] = comment
+        container_json["comment"] = "created by udocker"
         container_json["created"] = \
             time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z")
-        container_json["architecture"] = HostInfo().arch("docker")
-        container_json["os"] = HostInfo().osversion()
+        container_json["architecture"] = \
+            p_arch if p_arch else HostInfo().arch("docker")
+        if p_variant:
+            container_json["variant"] = p_variant
+        container_json["os"] = p_os if p_os else HostInfo().osversion()
         layer_file = self.localrepo.layersdir + '/' + layer_id + ".layer"
         container_json["size"] = FileUtil(layer_file).size()
         if container_json["size"] == -1:
@@ -153,7 +157,8 @@ class CommonLocalFileApi(object):
         }
         return container_json
 
-    def import_toimage(self, tarfile, imagerepo, tag, move_tarball=True):
+    def import_toimage(self, tarfile, imagerepo, tag, move_tarball=True,
+                       platform=""):
         """Import a tar file containing a simple directory tree possibly
         created with Docker export and create local image"""
         if not os.path.exists(tarfile) and tarfile != '-':
@@ -185,13 +190,14 @@ class CommonLocalFileApi(object):
                 return False
         self.localrepo.add_image_layer(layer_file)
         self.localrepo.save_json("ancestry", [layer_id])
-        container_json = self.create_container_meta(layer_id)
+        container_json = self.create_container_meta(layer_id, platform)
         self.localrepo.save_json(json_file, container_json)
         self.localrepo.add_image_layer(json_file)
         Msg().out("Info: added layer", layer_id, l=Msg.INF)
         return layer_id
 
-    def import_tocontainer(self, tarfile, imagerepo, tag, container_name):
+    def import_tocontainer(self, tarfile, imagerepo, tag, container_name,
+                           platform=""):
         """Import a tar file containing a simple directory tree possibly
         created with Docker export and create local container ready to use"""
         if not imagerepo:
@@ -206,7 +212,7 @@ class CommonLocalFileApi(object):
                           container_name)
                 return False
         layer_id = Unique().layer_v1()
-        container_json = self.create_container_meta(layer_id)
+        container_json = self.create_container_meta(layer_id, platform)
         container_id = ContainerStructure(self.localrepo).create_fromlayer(
             imagerepo, tag, tarfile, container_json)
         if container_name:
