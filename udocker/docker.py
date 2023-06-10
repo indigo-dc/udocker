@@ -423,6 +423,8 @@ class DockerIoAPI(object):
             if ("docker.distribution.manifest.list.v2" in content_type
                 or "oci.image.index.v1+json" in content_type):
                 image_index = json.loads(buf.getvalue().decode())
+                if not platform:
+                    return (hdr.data, image_index)
                 digest = self._get_v2_digest_from_image_index(image_index,
                                                               platform)
                 if not digest:
@@ -433,7 +435,7 @@ class DockerIoAPI(object):
                                                       digest, platform)
         except (OSError, KeyError, AttributeError, ValueError, TypeError):
             pass
-        return (hdr.data, [])
+        return (hdr.data, {})
 
     def get_v2_image_layer(self, imagerepo, layer_id):
         """Get one image layer data file (tarball)"""
@@ -606,6 +608,15 @@ class DockerIoAPI(object):
         if new_repo and not files:
             self.localrepo.del_imagerepo(imagerepo, tag, False)
         return files
+
+    def get_manifest(self, imagerepo, tag, platform=""):
+        """Get image manifest"""
+        Msg().out("Debug: get manifest imagerepo: %s tag: %s"
+                  % (imagerepo, tag), l=Msg.DBG)
+        (dummy, remoterepo) = self._parse_imagerepo(imagerepo)
+        if self.is_v2():
+            return self.get_v2_image_manifest(remoterepo, tag, platform)
+        return ({}, {})
 
     def get_tags(self, imagerepo):
         """List tags from a v2 or v1 repositories"""

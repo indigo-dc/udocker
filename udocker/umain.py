@@ -84,7 +84,7 @@ class UMain(object):
             "showconf": self.cli.do_showconf, "save": self.cli.do_save,
             "inspect": self.cli.do_inspect, "login": self.cli.do_login,
             "setup": self.cli.do_setup, "install": self.cli.do_install,
-            "tag": self.cli.do_tag,
+            "tag": self.cli.do_tag, "manifest": self.cli.do_manifest,
         }
 
         if ((len(self.argv) == 1) or
