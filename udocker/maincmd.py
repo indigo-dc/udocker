@@ -22,8 +22,8 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 
-from udocker import LOG
 from udocker.umain import UMain
+from udocker import LOG
 from udocker.utils.fileutil import FileUtil
 
 

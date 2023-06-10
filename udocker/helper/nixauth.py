@@ -33,9 +33,9 @@ class NixAuthentication:
         """get user information from the host /etc/sub*"""
         subid_list = []
         if self.passwd_file:
-            (user, dum1, dum2, dum3, dum4, dum5) = self._get_user_from_file(wanted_user)
+            (user, dummy, dummy, dummy, dummy, dummy) = self._get_user_from_file(wanted_user)
         else:
-            (user, dum1, dum2, dum3, dum4, dum5) = self._get_user_from_host(wanted_user)
+            (user, dummy, dummy, dummy, dummy, dummy) = self._get_user_from_host(wanted_user)
 
         #TODO: (mdavid) )redo this part
         try:
@@ -198,7 +198,7 @@ class NixAuthentication:
 
     def get_home(self):
         """Get host or container home directory"""
-        (r_user, dum1, dum2, dum3, r_home, dum4) = self.get_user(HostInfo.uid)
+        (r_user, dummy, dummy, dummy, r_home, dummy) = self.get_user(HostInfo.uid)
         LOG.info("getting home")
         if r_user:
             return r_home
