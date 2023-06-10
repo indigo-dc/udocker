@@ -157,6 +157,14 @@ udocker pull    quay.io/biocontainers/scikit-bio:0.2.3--np112py35_0
 udocker images
 ```
 
+Pull a different architecture such as arm64 instead of amd64.
+
+```bash
+udocker manifest inspect centos/centos8
+udocker pull --platform=linux/arm64 centos/centos8
+udocker tag centos/centos8  mycentos/centos8:arm64
+```
+
 Create a container from a pulled image, assign a name to the created container and run it. A created
 container can be run multiple times until it is explicitly removed.
 
