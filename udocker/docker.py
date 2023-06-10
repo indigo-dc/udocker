@@ -409,6 +409,9 @@ class DockerIoAPIv2:
             if ("docker.distribution.manifest.list.v2" in hdr.data['content-type'] or
                 "oci.image.index.v1+json" in hdr.data['content-type']):
                 image_index = json.loads(buf.getvalue().decode())
+                if not platform:
+                    return (hdr.data, image_index)
+
                 digest = self._get_digest_from_image_index(image_index, platform)
                 if not digest:
                     LOG.error("no image found in manifest for platform (%s)",
@@ -417,7 +420,7 @@ class DockerIoAPIv2:
                     return self.get_image_manifest(imagerepo, digest, platform)
         except (OSError, KeyError, AttributeError, ValueError, TypeError):
             pass
-        return (hdr.data, [])
+        return (hdr.data, {})
 
     def get_image_layer(self, imagerepo, layer_id):
         """API v2 Get one image layer data file (tarball)"""
@@ -724,6 +727,14 @@ class DockerIoAPI:
             self.localrepo.del_imagerepo(imagerepo, tag, False)
 
         return files
+
+    def get_manifest(self, imagerepo, tag, platform=""):
+        """Get image manifest"""
+        LOG.debug("get manifest imagerepo: %s tag: %s", imagerepo, tag)
+        (dummy, remoterepo) = self._parse_imagerepo(imagerepo)
+        if self.v2api.is_valid():
+            return self.v2api.get_image_manifest(remoterepo, tag, platform)
+        return ({}, {})
 
     def get_tags(self, imagerepo):
         """List tags from a v2 or v1 repositories"""
