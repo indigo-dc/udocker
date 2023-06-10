@@ -789,11 +789,11 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                 structure["repositories"] = self.localrepo.load_json(f_path)
             elif fname == "manifest.json":
                 structure["manifest"] = self.localrepo.load_json(f_path)
-            elif len(fname) >= 69 and fname.endswith(".json"):
+            elif fname.endswith(".json") and FileUtil(f_path).isfile():
                 structure["repoconfigs"][fname] = {}
                 structure["repoconfigs"][fname]["json"] = self.localrepo.load_json(f_path)
                 structure["repoconfigs"][fname]["json_f"] = f_path
-            elif len(fname) >= 64 and FileUtil(f_path).isdir():
+            elif FileUtil(f_path).isdir():
                 layer_id = fname
                 structure["repolayers"][layer_id] = {}
                 for layer_f in os.listdir(f_path):
