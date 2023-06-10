@@ -77,13 +77,13 @@ Change a given container ALIAS name.
 .BR rmi " " [ " " -f " " ] " " IMAGE
 Delete an IMAGE in the local repository. Any related CONTAINERS previously extracted are NOT affected by the parent IMAGE removal. The option \-f forces the deletion, and can be used when the IMAGE structure is damaged.
 .TP
-.BR import " " [ " " --mv " " ] " " TARBALL " " IMAGE " " | " " - " " IMAGE 
+.BR import " " [ " " --mv " " ] " " [ " " --platform=OS/ARCH " " ] " " TARBALL " " IMAGE " " | " " - " " IMAGE
 .TP
-.BR import " " --tocontainer " " --name=ALIAS " " TARBALL " " | " " --tocontainer " " --name=ALIAS " " - " "
+.BR import " " --tocontainer " " --name=ALIAS " " [ " " --platform=OS/ARCH " " ] " " TARBALL " " | " " --tocontainer " " --name=ALIAS " " - " "
 .TP
 .BR import " " --clone " " --name=ALIAS " " TARBALL " " | " " --clone " " --name=ALIAS " " - " "
-Import a tarball from file or stdin. The tarball can be imported into a new image or container. The first form can be used to import a container exported by docker into a new image. The second form uses --tocontainer to import directly into a container without creating an image. The third form uses --clone to import a udocker container (e.g. exported with udocker export --clone) into a new container without creating an image, preserving the container metadata and execution modes. When importing to an image (default) the option --mv will try to move the tarball file into the repository instead of copying the content. When importing to a container the option --name can be used to provide a name alias to the created container.
-.TP
+Import a tarball from file or stdin. The tarball can be imported into a new image or container. The first form can be used to import a container exported by docker into a new image. The second form uses --tocontainer to import directly into a container without creating an image. The third form uses --clone to import a udocker container (e.g. exported with udocker export --clone) into a new container without creating an image, preserving the container metadata and execution modes. When importing to an image (default) the option --mv will try to move the tarball file into the repository instead of copying the content. When importing to a container the option --name can be used to provide a name alias to the created container. The operating system and architecture of the tarball content can be specified with --platform.
+.TP 
 .BR load " " - " "
 .TP
 .BR load " " -i " " IMAGE\-TARBALL
