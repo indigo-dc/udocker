@@ -499,6 +499,7 @@ Options:
 * `--tocontainer` import directly into a container.
 * `--clone` import udocker container format with both metadata and container
 * `--name=ALIAS` with `--tocontainer` or `--clone` to give an alias to the container
+* `--platform=os/architecture` specify the architecture of the binaries in the tarball
 
 Examples:
 
@@ -990,7 +991,7 @@ Example:
 udocker tag centos:centos7  mycentos:mycentos7
 ```
 
-### 3.29. manifest
+### 3.29. manifest inspect
 
 ```bash
 udocker manifest inspect REPO/IMAGE:TAG
