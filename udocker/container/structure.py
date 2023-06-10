@@ -44,7 +44,7 @@ class ContainerStructure(object):
 
         return (container_dir, container_json)
 
-    def get_container_meta(self, param, default, cntjson):
+    def _get_container_meta(self, param, default, cntjson):
         """Get the metadata configuration from the container"""
         cidx = ""
         if "config" in cntjson:
@@ -76,6 +76,13 @@ class ContainerStructure(object):
             return meta_item
 
         return default
+
+    def get_container_meta(self, param, default, cntjson):
+        """Get the metadata configuration normalcase or lowercase"""
+        meta_item = self._get_container_meta(param, default, cntjson)
+        if meta_item:
+            return meta_item
+        return self._get_container_meta(param.lower(), default, cntjson)
 
     def _dict_to_str(self, in_dict):
         """Convert dict to str"""
