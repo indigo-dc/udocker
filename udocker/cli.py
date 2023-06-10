@@ -1400,6 +1400,10 @@ Examples:
   udocker inspect mycontainer
   udocker inspect -p mycontainer
 
+  udocker manifest inspect centos/centos8
+  udocker pull --platform=linux/arm64 centos/centos8
+  udocker tag centos/centos8  mycentos/centos8:arm64
+
   udocker run  mycontainer  cat /etc/redhat-release
   udocker run --hostauth --hostenv --bindhome  mycontainer
   udocker run --user=root  mycontainer  yum install firefox
