@@ -205,7 +205,8 @@ udocker inspect ${DOCKER_IMG}; return=$?
 result
 
 STRING="T020: udocker -q create ${DOCKER_IMG}"
-CONT_ID=`udocker -q create ${DOCKER_IMG}`; return=$?
+export `udocker -q create ${DOCKER_IMG}`; return=$?
+echo "${ContainerID}"
 result
 
 STRING="T021: udocker create --name=${CONT} ${DOCKER_IMG}"
@@ -216,31 +217,31 @@ STRING="T022: udocker ps"
 udocker ps; return=$?
 result
 
-STRING="T023: udocker name ${CONT_ID}"
-udocker name ${CONT_ID} conti; return=$?
+STRING="T023: udocker name ${ContainerID}"
+udocker name ${ContainerID} conti; return=$?
 udocker ps |grep conti
 result
 
 STRING="T024: udocker rmname"
 udocker rmname conti; return=$?
-udocker ps |grep ${CONT_ID}
+udocker ps |grep ${ContainerID}
 result
 
-STRING="T025: udocker inspect (container ${CONT_ID})"
-udocker inspect ${CONT_ID}; return=$?
+STRING="T025: udocker inspect (container ${ContainerID})"
+udocker inspect ${ContainerID}; return=$?
 result
 
-STRING="T026: udocker clone --name=myclone ${CONT_ID}"
-udocker clone --name=myclone ${CONT_ID}; return=$?
+STRING="T026: udocker clone --name=myclone ${ContainerID}"
+udocker clone --name=myclone ${ContainerID}; return=$?
 result
 
-STRING="T027: udocker export -o myexportcont.tar ${CONT_ID}"
-chmod -R u+x ${DEFAULT_UDIR}/containers/${CONT_ID}/ROOT
-udocker export -o myexportcont.tar ${CONT_ID}; return=$?
+STRING="T027: udocker export -o myexportcont.tar ${ContainerID}"
+chmod -R u+x ${DEFAULT_UDIR}/containers/${ContainerID}/ROOT
+udocker export -o myexportcont.tar ${ContainerID}; return=$?
 result
 
-STRING="T028: udocker rm ${CONT_ID}"
-udocker rm ${CONT_ID}; return=$?
+STRING="T028: udocker rm ${ContainerID}"
+udocker rm ${ContainerID}; return=$?
 result
 
 STRING="T029: udocker setup ${CONT}"
