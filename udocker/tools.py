@@ -382,7 +382,7 @@ class UdockerTools:
             osinfo = OSInfo('/')
             arch = osinfo.arch()
             (os_dist, os_ver) = osinfo.osdistribution()
-            default_mod = ['proot', 'libfakechroot']
+            default_mod = ['proot', 'libfakechroot', 'patchelf']
             for mod in default_mod:
                 url_mod = self._match_mod(mod, arch, os_dist, os_ver, metadict)
                 LOG.debug('download mod: %s, arch: %s, dist: %s, version: %s',

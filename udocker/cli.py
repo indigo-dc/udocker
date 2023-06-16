@@ -1442,26 +1442,23 @@ class UdockerCLI:
 
     def do_downloadmod(self, cmdp):
         """
-        download: download modules
+        download: download modules and verifies sha256sum
         download [options] uid_module1 uid_module2
         --from=<url>|<dir>         :URL or local directory with modules
         --prefix=<directory>       :destination download directory
         """
-        list_uid = []
-        dst_dir = os.path.expanduser("~") + "/udocker/tar"  # Default dest dir for tarballs
-        if os.getenv("VIRTUAL_ENV"):
-            dst_dir = os.getenv("VIRTUAL_ENV") + "/tar"
-
+        dst_dir = Config.conf['tardir']    # Destination dir for tarballs
+        list_uid = [int(item) for item in cmdp.get("P*")]
         chk_dir = cmdp.get("--prefix=")
         if chk_dir:
             dst_dir = chk_dir
 
-        ## Get list of files to download
+        # Get list of files to download
         utools = UdockerTools(self.localrepo)
         list_tarurl = utools.select_tarnames(list_uid)
         LOG.info('the list of tar urls: %s', list_tarurl)
 
-        ## Download that list
+        # Download that list
         return self.STATUS_OK
 
     def do_showmod(self, cmdp):
