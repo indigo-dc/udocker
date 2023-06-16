@@ -1424,15 +1424,19 @@ class UdockerCLI:
         utools.show_metadata(force)
         return self.STATUS_OK
 
-    def do_deletemeta(self, cmdp):
+    def do_delmeta(self, cmdp):
         """
-        deletemeta: Delete metadata.json
+        delmeta: Delete metadata.json
         """
+        f_path = Config.conf['metadata_file']
+        FileUtil(f_path).register_prefix()
+        FileUtil(f_path).remove()
+        LOG.info("removed: %s", f_path)
         return self.STATUS_OK
 
-    def do_deletemod(self, cmdp):
+    def do_delmod(self, cmdp):
         """
-        deletemod: Delete modules
+        delmod: Delete modules
         """
         return self.STATUS_OK
 

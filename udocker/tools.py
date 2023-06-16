@@ -37,7 +37,6 @@ class UdockerTools:
         self._installinfo = Config.conf['installinfo']  # URL or file
         self._tarball_release = Config.conf['tarball_release']
         self._installretry = Config.conf['installretry']
-        self._metajson = Config.conf['meta_json']
         self._install_json = {}
         self.curl = GetURL()
 
@@ -330,8 +329,8 @@ class UdockerTools:
 
     def _get_metadata(self, force):
         """Download metadata file with modules and versions and output json"""
-        fileout = Config.conf['topdir'] + "/" + "metadata.json"
-        for urlmeta in self._get_mirrors(self._metajson):
+        fileout = Config.conf['metadata_file']
+        for urlmeta in self._get_mirrors(Config.conf['metadata_url']):
             mjson = fileout
             if force or not os.path.isfile(fileout):
                 LOG.info("url metadata json of modules: %s", urlmeta)

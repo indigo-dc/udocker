@@ -44,9 +44,12 @@ class Config:
     base_url = ["https://download.ncg.ingrid.pt/webdav/udocker/engines/",
                 "https://github.com/LIP-Computing/udocker_tools/raw/main/data/"]
 
-    conf['meta_json'] = []
+    conf['metadata_json'] = "metadata.json"
+    conf['metadata_url'] = []
     for url in base_url:
-        conf['meta_json'].append(url + "metadata.json")
+        conf['metadata_url'].append(url + conf['metadata_json'])
+
+    conf['metadata_file'] = conf['topdir'] + '/' + conf['metadata_json']
 
     # defaults for container execution
     conf['cmd'] = ["bash", "-i"]  # Comand to execute
