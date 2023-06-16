@@ -269,7 +269,7 @@ result
 rm -f ${TAR_IMAGE} > /dev/null 2>&1
 echo "Download a docker tar img file ${TAR_IMAGE_URL}"
 wget --no-check-certificate ${TAR_IMAGE_URL}
-echo "|______________________________________________________________________________|"
+echo "\____________________________________________________________________________________________________________________________________/"
 
 STRING="T034: udocker load -i ${TAR_IMAGE}"
 udocker load -i ${TAR_IMAGE}; return=$?
@@ -294,7 +294,7 @@ result
 rm -f ${TAR_CONT} > /dev/null 2>&1
 echo "Download a docker tar container file ${TAR_CONT_URL}"
 wget --no-check-certificate ${TAR_CONT_URL}
-echo "|______________________________________________________________________________|"
+echo "\____________________________________________________________________________________________________________________________________/"
 
 STRING="T039: udocker import ${TAR_CONT} mycentos1:latest"
 udocker import ${TAR_CONT} mycentos1:latest; return=$?
@@ -368,7 +368,7 @@ udocker rmi mycentos1
 udocker rmi centos:7
 udocker rmi docker.io/python:3-slim
 udocker rmi public.ecr.aws/docker/library/redis
-echo "|______________________________________________________________________________|"
+echo "\____________________________________________________________________________________________________________________________________/"
 
 # Report failed tests
 if [ "${#FAILED_TESTS[*]}" -le 0 ]

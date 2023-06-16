@@ -419,4 +419,8 @@ class UdockerTools:
             for url in module["docs_url"]:
                 MSG.info("                %s", url)
 
+            MSG.info("Dependencies:")
+            for dep in module["dependencies"]:
+                MSG.info("                %s", dep)
+
         return True

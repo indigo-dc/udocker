@@ -42,7 +42,7 @@ class Config:
 
     # new conf options and commands for install
     base_url = ["https://download.ncg.ingrid.pt/webdav/udocker/engines/",
-                "https://github.com/LIP-Computing/udocker_tools/raw/main/"]
+                "https://github.com/LIP-Computing/udocker_tools/raw/main/data/"]
 
     conf['meta_json'] = []
     for url in base_url:
