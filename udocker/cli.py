@@ -1450,16 +1450,16 @@ class UdockerCLI:
         dst_dir = Config.conf['tardir']    # Destination dir for tarballs
         list_uid = [int(item) for item in cmdp.get("P*")]
         chk_dir = cmdp.get("--prefix=")
+        from_locat = cmdp.get("--from=")
         if chk_dir:
             dst_dir = chk_dir
 
-        # Get list of files to download
         utools = UdockerTools(self.localrepo)
-        list_tarurl = utools.select_tarnames(list_uid)
-        LOG.info('the list of tar urls: %s', list_tarurl)
-
-        # Download that list
-        return self.STATUS_OK
+        download = utools.download_tarballs(list_uid)  # Download list of modules
+        if download:
+            return self.STATUS_OK
+        else:
+            return self.STATUS_ERROR
 
     def do_showmod(self, cmdp):
         """
