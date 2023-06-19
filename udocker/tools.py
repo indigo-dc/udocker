@@ -349,19 +349,6 @@ class UdockerTools:
 
         return []
 
-    def _match_mod(self, mod, arch, os_dist, os_ver, metadict):
-        """matches a given module mod in the metadict metadata dictionary
-        according to arch, os_dist and os_ver
-        return the matched module"""
-        for module in metadict:
-            if (module['arch'] == arch) and (module['module'] == mod):
-                if (module['os'] == os_dist) or (module['os'] == ''):
-                    if (module['os_ver'] == os_ver) or (module['os_ver'] == ''):
-                        LOG.debug('matched module: %s', module)
-                        return module
-
-        return []
-
     def _select_modules(self, list_uid):
         """Get the list of modules from a list of UIDs"""
         force = True
@@ -402,8 +389,13 @@ class UdockerTools:
         Check for default files based on the host OS and arch
         or download from the list of uids in list_uid"""
         lmodules = self._select_modules(list_uid)
+        # for modul in lmodules:
+        #     for url in modul['urls']:
+        #         LOG.info("install using: %s", url)
+        #         tarballfile = self._get_file(url)
 
-        LOG.info('list of modules downloaded: %s', lmodules)
+        #     LOG.info('module downloaded: %s', modul)
+
         return True
 
     def show_metadata(self, force):
