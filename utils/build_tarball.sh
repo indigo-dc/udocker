@@ -3561,6 +3561,10 @@ centos7_build_fakechroot()
         #PROOT="$S_PROOT_DIR/proot-x86_64"
         #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
         PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -8233,6 +8237,10 @@ prepare_fakechroot_glibc_source "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
 fedora31_setup "aarch64"
 fedora31_build_proot "aarch64" "${BUILD_DIR}/proot-source-aarch64"
 #ostree_delete "aarch64" "fedora" "31"
+#
+centos7_setup "aarch64"
+centos7_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ostree_delete "x86_64" "centos" "7"
 #
 rocky8_setup "aarch64"
 rocky8_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
