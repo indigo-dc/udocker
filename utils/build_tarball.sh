@@ -4797,6 +4797,10 @@ rocky9_build_fakechroot()
         #PROOT="$S_PROOT_DIR/proot-x86_64"
         #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
         PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5060,6 +5064,10 @@ alma9_build_fakechroot()
         #PROOT="$S_PROOT_DIR/proot-x86_64"
         #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
         PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -8230,8 +8238,8 @@ rocky8_setup "aarch64"
 rocky8_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
 #ostree_delete "aarch64" "rocky" "8"
 #
-#rocky9_setup "aarch64"
-#rocky9_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+rocky9_setup "aarch64"
+rocky9_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
 #ostree_delete "x86_64" "rocky" "9"
 
 
