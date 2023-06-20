@@ -57,7 +57,7 @@ class Config(object):
                             "/etc/resolv.conf", "/etc/host.conf",
                             "/lib/modules", )
 
-    # POSSIBLE DEPRECATED
+    # DEPRECATED
     # directories to be mapped in containers with: run --hostauth
     # conf['hostauth_list'] = ("/etc/passwd", "/etc/group",
     #                               "/etc/shadow", "/etc/gshadow", )
@@ -85,12 +85,19 @@ class Config(object):
     # conf['fakechroot_so'] = "libfakechroot-CentOS-7-x86_64.so"
     conf['fakechroot_so'] = None
 
-    # translate symbolic links in pathnames None means automatic
+    # translate symbolic links into pathnames None means automatic
     conf['fakechroot_expand_symlinks'] = None
 
+    # patterns to search for libc.so for bypass in fakechroot
+    conf['libc_search'] = ("/lib64/libc.so.[0-9]+", "/usr/lib64/libc.so.[0-9]+",
+                           "/lib/libc.so.[0-9]+", "/usr/lib/libc.so.[0-9]+",
+                           "/usr/libc.so.[0-9]+", "/libc.so.[0-9]+", "/libc.so",)
+
+    # override the above search for libc with a specified relative pathname
+    conf['fakechroot_libc'] = None
+
     # sharable library directories
-    conf['lib_dirs_list_nvidia'] = ("/usr/lib/x86_64-linux-gnu",
-                                    "/usr/lib64",)
+    conf['lib_dirs_list_nvidia'] = ("/usr/lib/x86_64-linux-gnu", "/usr/lib64",)
 
     # fakechroot sharable library directories
     conf['lib_dirs_list_essential'] = ("/lib/x86_64-linux-gnu",
@@ -237,6 +244,8 @@ class Config(object):
                       Config.conf['default_execution_mode'])
         Config.conf['fakechroot_so'] = \
             os.getenv("UDOCKER_FAKECHROOT_SO", Config.conf['fakechroot_so'])
+        Config.conf['fakechroot_libc'] = \
+            os.getenv("UDOCKER_FAKECHROOT_LIBC", Config.conf['fakechroot_libc'])
         Config.conf['tmpdir'] = os.getenv("UDOCKER_TMP", Config.conf['tmpdir'])
         Config.conf['keystore'] = \
             os.getenv("UDOCKER_KEYSTORE", Config.conf['keystore'])
