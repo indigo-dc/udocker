@@ -673,7 +673,7 @@ class FileUtil(object):
         return links
 
     def match(self):
-        """Find matching file with wildcard matching expression"""
+        """Find file with wildcard matching expression"""
         directory = os.path.dirname(self.filename)
         matching_expression = os.path.basename(self.filename)
         matching_files = []
@@ -686,8 +686,8 @@ class FileUtil(object):
 
         return matching_files
 
-    def match_recursively(self, filetype='F'):
-        """Find matching file with wildcard matching expression"""
+    def match_recursive(self, filetype='FL'):
+        """Recursively find file with wildcard matching expression"""
         directory = os.path.dirname(self.filename)
         matching_expression = os.path.basename(self.filename)
         matching_files = []
