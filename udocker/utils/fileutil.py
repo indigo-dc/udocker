@@ -685,3 +685,26 @@ class FileUtil(object):
                 matching_files.append(directory + "/" + f_name)
 
         return matching_files
+
+    def match_recursively(self, filetype='F'):
+        """Find matching file with wildcard matching expression"""
+        directory = os.path.dirname(self.filename)
+        matching_expression = os.path.basename(self.filename)
+        matching_files = []
+        if not os.path.isdir(directory):
+            return []
+
+        for dir_path, dirs, files in os.walk(directory):
+            f_list = []
+            if 'F' in filetype:
+                f_list += files
+            if 'D' in filetype:
+                f_list += dirs
+            for f_name in f_list:
+                f_path = dir_path + "/" + f_name
+                if os.path.islink(f_path) and 'L' not in filetype:
+                    continue
+                if re.match(matching_expression, f_name):
+                    matching_files.append(f_path)
+
+        return matching_files
