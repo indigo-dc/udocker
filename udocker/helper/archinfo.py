@@ -51,14 +51,23 @@ class ArchInfo(object):
     # host tools such as "readelf -h" and "file"
 
     _binaries_list = ["/lib64/ld-linux-x86-64.so",
+                      "/lib64/ld-linux-x86-64.so.1",
                       "/lib64/ld-linux-x86-64.so.2",
                       "/lib64/ld-linux-x86-64.so.3",
+                      "/lib64/ld-linux-aarch64.so",
+                      "/lib64/ld-linux-aarch64.so.1",
+                      "/lib64/ld-linux-aarch64.so.2",
+                      "/lib64/ld-linux-aarch64.so.3",
+                      "/lib64/ld64.so", "/lib64/ld64.so.1",
+                      "/lib64/ld64.so.2", "/lib64/ld64.so.3",
+                      "/usr/sbin/ldconfig", "/sbin/ldconfig",
                       "/bin/bash", "/bin/sh", "/bin/zsh",
                       "/bin/csh", "/bin/tcsh", "/bin/ash",
                       "/bin/ls", "/bin/busybox",
                       "/system/bin/sh", "/system/bin/ls",
-                      "/lib/ld-linux.so",
-                      "/lib/ld-linux.so.2",
+                      "/lib/ld-linux.so", "/lib/ld-linux.so.1",
+                      "/lib/ld-linux.so.2", "/lib/ld-linux.so.3",
+                      "/usr/bin/coreutils", "/bin/coreutils",
                      ]
 
     def get_binaries_list(self):

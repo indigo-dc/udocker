@@ -29,7 +29,7 @@ class Config(object):
 
     # udocker installation tarball the release is the minimum requirement
     # the actual tarball used in the installation can have a higher version
-    conf['tarball_release'] = "1.2.10"
+    conf['tarball_release'] = "1.2.9"
     conf['tarball'] = (
         "https://download.ncg.ingrid.pt/"
         "webdav/udocker/udocker-englib-1.2.10.tar.gz"
@@ -89,7 +89,7 @@ class Config(object):
     conf['fakechroot_expand_symlinks'] = None
 
     # sharable library directories
-    conf['lib_dirs_list_x86_64'] = ("/usr/lib/x86_64-linux-gnu",
+    conf['lib_dirs_list_nvidia'] = ("/usr/lib/x86_64-linux-gnu",
                                     "/usr/lib64",)
 
     # fakechroot sharable library directories
