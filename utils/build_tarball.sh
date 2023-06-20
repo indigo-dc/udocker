@@ -26,7 +26,7 @@
 
 # This script produces the following udocker-englib tarball
 
-DEVEL3=$(realpath "$0" | grep "devel3")
+DEVEL3=$(realpath "$0" | egrep "devel3|devel4")
 
 TARBALL_VERSION_P3="1.2.10"
 TARBALL_VERSION_P2="1.1.10"
@@ -55,13 +55,55 @@ get_proot_static()
     echo "get_proot_static"
     cd "$BUILD_DIR"
 
-    if [ -d "$BUILD_DIR/proot-static-build" ] ; then
+    if [ -d "$BUILD_DIR/proot-static-build/static" ] ; then
         echo "proot static already exists: $BUILD_DIR/proot-static-build"
         return
     fi
 
     git clone --depth=1 --branch v5.1.1 https://github.com/proot-me/proot-static-build 
     /bin/rm -Rf $BUILD_DIR/proot-static-build/.git
+}
+
+get_udocker_build()
+{
+    local BUILD_VERSION="$1"
+
+    echo "get_udocker_tools"
+    cd "$BUILD_DIR"
+
+    if [ -d "$BUILD_DIR/proot-static-build/static" ] ; then
+	echo "udocker build directory already exists: $BUILD_DIR/proot-static-build"
+	return
+    fi
+    /bin/mkdir -p "$BUILD_DIR/proot-static-build/static"
+
+    curl "https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-englib-${BUILD_VERSION}.tar.gz" > \
+	"$BUILD_DIR/proot-static-build/udocker-englib.tar.gz"
+    (cd "$BUILD_DIR/proot-static-build"; tar xvf udocker-englib.tar.gz)
+    (cd "$BUILD_DIR/proot-static-build"; /bin/mv udocker_dir/bin/proot-x86-4_8_0 static/proot-x86)
+    (cd "$BUILD_DIR/proot-static-build"; /bin/mv udocker_dir/bin/proot-x86_64-4_8_0 static/proot-x86_64)
+    (cd "$BUILD_DIR/proot-static-build"; /bin/mv udocker_dir/bin/proot-arm static/proot-arm)
+    (cd "$BUILD_DIR/proot-static-build"; /bin/mv udocker_dir/bin/proot-arm64-4_8_0 static/proot-arm64)
+    chmod u+rx "$BUILD_DIR/proot-static-build/static/*"
+}
+
+get_libtalloc()
+{
+	echo "get_libtalloc"
+
+        if [ -f "$S_PROOT_PACKAGES_DIR/talloc.tar.gz" ] ; then
+            echo "talloc.tar.gz already exists: " \
+		    "$S_PROOT_PACKAGES_DIR/talloc.tar.gz"
+            return
+        fi
+	[ ! -d "$S_PROOT_PACKAGES_DIR" ] && /bin/mkdir -p "$S_PROOT_PACKAGES_DIR"
+
+	#June 2013
+	#https://www.samba.org/ftp/talloc/talloc-2.1.16.tar.gz
+	#https://www.samba.org/ftp/talloc/talloc-2.3.4.tar.gz
+	#https://www.samba.org/ftp/talloc/talloc-2.4.0.tar.gz
+	curl "https://www.samba.org/ftp/talloc/talloc-2.1.16.tar.gz" > \
+	    "$S_PROOT_PACKAGES_DIR/talloc.tar.gz"
 }
 
 prepare_proot_source()
@@ -78,7 +120,7 @@ prepare_proot_source()
     #git clone --branch v5.1.0 --depth=1 https://github.com/proot-me/PRoot 
     #git clone --branch udocker-2 --depth=1 https://github.com/jorge-lip/proot-udocker.git
 
-    git clone --branch udocker-3 https://github.com/jorge-lip/proot-udocker.git
+    git clone --branch udocker-4 https://github.com/jorge-lip/proot-udocker.git
 
     #/bin/rm -Rf $BUILD_DIR/proot-udocker/.git
     #/bin/rm -Rf $BUILD_DIR/proot-udocker/static/care*
@@ -123,7 +165,7 @@ prepare_fakechroot_glibc_source()
     fi
 
     #git clone --depth=1 --branch 2.18 https://github.com/dex4er/fakechroot.git
-    git clone --branch udocker-2 --depth=1 \
+    git clone --branch udocker-3 --depth=1 \
         https://github.com/jorge-lip/libfakechroot-glibc-udocker.git
     /bin/rm -Rf $BUILD_DIR/libfakechroot-glibc-udocker/.git
     /bin/mv libfakechroot-glibc-udocker "$FAKECHROOT_SOURCE_DIR"
@@ -313,12 +355,14 @@ fedora25_setup()
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    gzip zlib diffutils file dnf
+	    --forcearch="$OS_ARCH" \
+            gcc kernel-devel make libtalloc libtalloc-devel glibc-static \
+	    glibc-devel tar python gzip zlib diffutils file dnf which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
+    if [ "$OS_ARCH" = "x86_64" -o "$OS_ARCH" = "aarch64" -o "$OS_ARCH" = "arm" ]; then
         $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
             install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	        --forcearch="$OS_ARCH" \
                 autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
     fi
 
@@ -344,7 +388,8 @@ fedora25_build_proot()
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        PROOT="$HOME/.udocker/bin/proot-x86_64"
+        #PROOT="$HOME/.udocker/bin/proot-x86_64"
+	PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -360,15 +405,17 @@ fedora25_build_proot()
                            -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora25_proot_1'
 cd /proot
 /bin/rm -f proot-Fedora-25.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 make clean
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -376,7 +423,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora25_proot_1
     fi
 
@@ -447,11 +494,11 @@ fedora25_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$S_PROOT_DIR/proot-x86"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-25.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-25.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -563,7 +610,7 @@ fedora29_setup()
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
             gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file dnf
+	    python2 gzip zlib diffutils file dnf which
 
     if [ "$OS_ARCH" = "x86_64" ]; then
         $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
@@ -571,7 +618,8 @@ fedora29_setup()
                 autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
     fi
     if [ "$OS_ARCH" = "aarch64" ]; then
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf "dnf -y reinstall $(rpm -qa)"
     fi
@@ -595,11 +643,11 @@ fedora29_build_proot()
     local PROOT=""
 
     if [ "$OS_ARCH" = "i386" ]; then
-        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -615,14 +663,16 @@ fedora29_build_proot()
                            -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora29_proot_1'
 cd /proot
 /bin/rm -f proot-Fedora-29.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -630,7 +680,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora29_proot_1
     fi
 
@@ -657,10 +707,12 @@ fedora29_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -702,10 +754,12 @@ fedora29_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -814,16 +868,19 @@ fedora30_setup()
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file dnf
+	    --forcearch="$OS_ARCH" \
+            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel \
+	    tar python python2 gzip zlib diffutils file dnf which
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	    --forcearch="$OS_ARCH" \
             coreutils-8.31-1.fc30.x86_64 coreutils-common-8.31-1.fc30.x86_64
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
+    if [ "$OS_ARCH" = "x86_64" -o  "$OS_ARCH" = "aarch64" ]; then
         $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
             install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	        --forcearch="$OS_ARCH" \
                 autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
     fi
 
@@ -847,11 +904,12 @@ fedora30_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
         #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-25.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -867,14 +925,16 @@ fedora30_build_proot()
                            -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora30_proot_1'
 cd /proot
 /bin/rm -f proot-Fedora-30.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -882,7 +942,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora30_proot_1
     fi
 
@@ -909,10 +969,12 @@ fedora30_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -954,10 +1016,12 @@ fedora30_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1067,23 +1131,26 @@ fedora31_setup()
     fedora31_create_dnf "${OS_ROOTDIR}/etc/dnf/dnf.conf" "$OS_ARCH"
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	    --forcearch="$OS_ARCH" \
             gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file glibc-headers dnf git
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
 
     #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
     #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
     #        coreutils-8.31-1.fc31.x86_64 coreutils-common-8.31-1.fc31.x86_64
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
+    if [ "$OS_ARCH" = "x86_64" -o "$OS_ARCH" = "aarch64" ]; then
         $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
             install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+	        --forcearch="$OS_ARCH" \
                 autoconf m4 gcc-c++ libstdc++-static automake gawk libtool xz
     fi
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R $(id -u):$(id -g) "$OS_ROOTDIR"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora31_reinstall'
 dnf -y reinstall --releasever=31 $(rpm -qa)
@@ -1110,14 +1177,16 @@ fedora31_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
         #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	PROOT="$S_PROOT_DIR/proot-x86_64"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1136,14 +1205,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-31.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -1151,7 +1222,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora31_proot_1
     fi
 
@@ -1178,10 +1249,12 @@ fedora31_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1223,10 +1296,12 @@ fedora31_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1337,7 +1412,7 @@ fedora32_setup()
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
             gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file glibc-headers dnf
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
 
     #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
     #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
@@ -1351,7 +1426,8 @@ fedora32_setup()
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R $(id -u):$(id -g) "$OS_ROOTDIR"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora32_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -1377,14 +1453,17 @@ fedora32_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1403,14 +1482,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-32.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -1418,7 +1499,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora32_proot_1
     fi
 
@@ -1445,10 +1526,12 @@ fedora32_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1490,10 +1573,12 @@ fedora32_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1604,7 +1689,7 @@ fedora33_setup()
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
             gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file glibc-headers dnf
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
 
     #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
     #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
@@ -1618,7 +1703,8 @@ fedora33_setup()
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R $(id -u):$(id -g) "$OS_ROOTDIR"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora33_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -1644,14 +1730,17 @@ fedora33_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1670,14 +1759,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-33.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -1685,7 +1776,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora33_proot_1
     fi
 
@@ -1712,10 +1803,12 @@ fedora33_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1757,10 +1850,12 @@ fedora33_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1871,7 +1966,7 @@ fedora34_setup()
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
             gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file glibc-headers dnf
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
 
     #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
     #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
@@ -1885,7 +1980,8 @@ fedora34_setup()
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R $(id -u):$(id -g) "$OS_ROOTDIR"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora34_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -1923,14 +2019,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-34.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -1938,7 +2036,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora34_proot_1
     sync
     $SUDO umount "$OS_ROOTDIR/proot"
@@ -1968,14 +2066,17 @@ fedora34_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1994,14 +2095,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-34.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -2009,7 +2112,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora34_proot_1
     fi
 
@@ -2036,10 +2139,12 @@ fedora34_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2081,10 +2186,12 @@ fedora34_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2195,7 +2302,7 @@ fedora35_setup()
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
             gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file glibc-headers dnf
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
 
     #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
     #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
@@ -2209,7 +2316,8 @@ fedora35_setup()
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R $(id -u):$(id -g) "$OS_ROOTDIR"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora35_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -2247,14 +2355,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-35.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -2262,7 +2372,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora35_proot_1
     sync
     $SUDO umount "$OS_ROOTDIR/proot"
@@ -2292,14 +2402,17 @@ fedora35_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2318,14 +2431,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-35.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -2333,7 +2448,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora35_proot_1
     fi
 
@@ -2360,10 +2475,12 @@ fedora35_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2405,10 +2522,12 @@ fedora35_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2519,7 +2638,7 @@ fedora36_setup()
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
             gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file glibc-headers dnf
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
 
     #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
     #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
@@ -2533,7 +2652,8 @@ fedora36_setup()
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R $(id -u):$(id -g) "$OS_ROOTDIR"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora36_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -2571,14 +2691,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-36.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -2586,7 +2708,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora36_proot_1
     sync
     $SUDO umount "$OS_ROOTDIR/proot"
@@ -2616,14 +2738,17 @@ fedora36_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2642,14 +2767,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-36.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -2657,7 +2784,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora36_proot_1
     fi
 
@@ -2684,10 +2811,12 @@ fedora36_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2729,10 +2858,12 @@ fedora36_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2843,7 +2974,7 @@ fedora38_setup()
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
             gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file glibc-headers dnf
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
 
     #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
     #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
@@ -2857,7 +2988,8 @@ fedora38_setup()
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R $(id -u):$(id -g) "$OS_ROOTDIR"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora38_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -2895,14 +3027,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-38.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -2910,7 +3044,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora38_proot_1
     sync
     $SUDO umount "$OS_ROOTDIR/proot"
@@ -2940,14 +3074,17 @@ fedora38_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2966,14 +3103,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-38.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -2981,7 +3120,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora38_proot_1
     fi
 
@@ -3008,10 +3147,12 @@ fedora38_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3053,10 +3194,12 @@ fedora38_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3212,7 +3355,8 @@ centos6_setup()
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            gcc make libtalloc libtalloc-devel glibc-static glibc-devel tar python gzip zlib diffutils file
+            gcc make libtalloc libtalloc-devel glibc-static glibc-devel \
+	    tar python gzip zlib diffutils file git which
 
     if [ "$OS_ARCH" = "x86_64" ]; then
         $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
@@ -3240,6 +3384,7 @@ centos6_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         PROOT="$S_PROOT_DIR/proot-x86_64"
@@ -3379,11 +3524,14 @@ centos7_setup()
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            gcc make libtalloc libtalloc-devel glibc-static glibc-devel tar python gzip zlib diffutils file
+	    --forcearch="$OS_ARCH" \
+            gcc make libtalloc libtalloc-devel glibc-static glibc-devel \
+            tar python gzip zlib diffutils file git which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
+    if [ "$OS_ARCH" = "x86_64" -o "$OS_ARCH" = "aarch64" ]; then
         $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
             install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	        --forcearch="$OS_ARCH" \
                 autoconf m4 gcc-c++ automake gawk libtool
     fi
 
@@ -3407,10 +3555,12 @@ centos7_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3452,10 +3602,12 @@ centos7_build_proot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$HOME/.udocker/bin/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$HOME/.udocker/bin/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3471,15 +3623,17 @@ centos7_build_proot()
                            -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_centos7_proot_1'
 cd /proot
 /bin/rm -f proot-CentOS-7.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 make clean
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -3487,7 +3641,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_centos7_proot_1
     fi
 
@@ -3649,12 +3803,16 @@ centos8_setup()
     centos8_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --setopt=module_platform_id=platform:el$OS_RELVER \
-            dnf dnf-data gcc make libtalloc libtalloc-devel glibc-static glibc-devel tar python3 python2 gzip zlib diffutils file
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	    --setopt=module_platform_id=platform:el$OS_RELVER \
+	    --forcearch="$OS_ARCH" \
+            dnf dnf-data gcc make libtalloc libtalloc-devel glibc-static \
+	    glibc-devel tar python3 python2 gzip zlib diffutils file git which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
+    if [ "$OS_ARCH" = "x86_64" -o "$OS_ARCH" = "aarch64" ]; then
         $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
             install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	        --forcearch="$OS_ARCH" \
                 autoconf m4 gcc-c++ automake gawk libtool
     fi
 
@@ -3678,10 +3836,12 @@ centos8_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3872,12 +4032,16 @@ centos_stream8_setup()
     centos_stream8_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --setopt=module_platform_id=platform:el${OS_RELVER} \
-            dnf dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar python3 python2 gzip zlib diffutils file
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	    --setopt=module_platform_id=platform:el${OS_RELVER} \
+	    --forcearch="$OS_ARCH" \
+            dnf dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar \
+	    python3 python2 gzip zlib diffutils file git which
 
     if [ "$OS_ARCH" = "x86_64" ]; then
         $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
             install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	        --forcearch="$OS_ARCH" \
                 autoconf m4 gcc-c++ automake gawk libtool
     fi
 
@@ -3901,10 +4065,12 @@ centos_stream8_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4085,12 +4251,16 @@ centos_stream9_setup()
     centos_stream9_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --setopt=module_platform_id=platform:el${OS_RELVER} \
-            dnf dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar python3 python2 gzip zlib diffutils file
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	    --setopt=module_platform_id=platform:el${OS_RELVER} \
+	    --forcearch="$OS_ARCH" \
+            dnf dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar \
+	    python3 python2 gzip zlib diffutils file git which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
+    if [ "$OS_ARCH" = "x86_64" -o "$OS_ARCH" = "aarch64" ]; then
         $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
             install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	    --forcearch="$OS_ARCH" \
                 autoconf m4 gcc-c++ automake gawk libtool
     fi
 
@@ -4114,10 +4284,12 @@ centos_stream9_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4318,15 +4490,17 @@ rocky8_setup()
     /bin/mkdir -p "${OS_ROOTDIR}/etc/yum.repos.d"
     rocky8_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
 
-set -v
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --setopt=module_platform_id=platform:el$OS_RELVER \
-            dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar python3 python2 gzip zlib diffutils file
-set +v
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	    --setopt=module_platform_id=platform:el$OS_RELVER \
+	    --forcearch="$OS_ARCH" \
+            dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar \
+	    python3 python2 gzip zlib diffutils file git which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
+    if [ "$OS_ARCH" = "x86_64" -o "$OS_ARCH" = "aarch64" ]; then
         $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
             install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	        --forcearch="$OS_ARCH" \
                 autoconf m4 gcc-c++ automake gawk libtool
     fi
 
@@ -4350,10 +4524,16 @@ rocky8_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4577,13 +4757,17 @@ rocky9_setup()
 
 set -v
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --setopt=module_platform_id=platform:el$OS_RELVER \
-            dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar python3 python2 gzip zlib diffutils file
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	    --setopt=module_platform_id=platform:el$OS_RELVER \
+	    --forcearch="$OS_ARCH" \
+            dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar \
+	    python3 python2 gzip zlib diffutils file git which
 set +v
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
+    if [ "$OS_ARCH" = "x86_64" -o "$OS_ARCH" = "aarch64" ]; then
         $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
             install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	        --forcearch="$OS_ARCH" \
                 autoconf m4 gcc-c++ automake gawk libtool
     fi
 
@@ -4607,10 +4791,12 @@ rocky9_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4834,13 +5020,17 @@ alma9_setup()
 
 set -v
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --setopt=module_platform_id=platform:el$OS_RELVER \
-            dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar python3 python2 gzip zlib diffutils file
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	    --setopt=module_platform_id=platform:el$OS_RELVER \
+	    --forcearch="$OS_ARCH" \
+            dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar \
+	    python3 python2 gzip zlib diffutils file git which
 set +v
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
+    if [ "$OS_ARCH" = "x86_64" -o "$OS_ARCH" = "aarch64" ]; then
         $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
             install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	        --forcearch="$OS_ARCH" \
                 autoconf m4 gcc-c++ automake gawk libtool
     fi
 
@@ -4864,10 +5054,12 @@ alma9_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4936,6 +5128,7 @@ ubuntu12_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         PROOT="$S_PROOT_DIR/proot-x86_64"
@@ -4959,7 +5152,8 @@ ubuntu12_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano 
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash i
+apt-get -y install diffutils file which
 EOF_ubuntu12_packages
 
     SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
@@ -5017,6 +5211,7 @@ ubuntu14_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         PROOT="$S_PROOT_DIR/proot-x86_64"
@@ -5041,7 +5236,8 @@ ubuntu14_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano 
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash 
+apt-get -y install diffutils file which
 EOF_ubuntu14_packages
     fi
 
@@ -5099,6 +5295,7 @@ ubuntu16_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         PROOT="$S_PROOT_DIR/proot-x86_64"
@@ -5123,7 +5320,8 @@ ubuntu16_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash 
+apt-get -y install diffutils file which
 EOF_ubuntu16_packages
     fi
 
@@ -5248,7 +5446,8 @@ ubuntu18_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash 
+apt-get -y install diffutils file which
 EOF_ubuntu18_packages
     fi
 
@@ -5281,10 +5480,12 @@ ubuntu18_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5359,10 +5560,12 @@ ubuntu19_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5384,7 +5587,8 @@ ubuntu19_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash 
+apt-get -y install diffutils file which
 EOF_ubuntu19_packages
     fi
 
@@ -5417,10 +5621,12 @@ ubuntu19_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5495,10 +5701,12 @@ ubuntu20_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5520,7 +5728,8 @@ ubuntu20_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash 
+apt-get -y install diffutils file which
 EOF_ubuntu20_packages
     fi
 
@@ -5553,10 +5762,12 @@ ubuntu20_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5630,10 +5841,12 @@ ubuntu21_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5655,7 +5868,8 @@ ubuntu21_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash 
+apt-get -y install diffutils file which
 EOF_ubuntu21_packages
     fi
 
@@ -5688,10 +5902,12 @@ ubuntu21_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5765,10 +5981,12 @@ ubuntu22_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5790,7 +6008,8 @@ ubuntu22_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash 
+apt-get -y install diffutils file which
 EOF_ubuntu22_packages
     fi
 
@@ -5823,10 +6042,12 @@ ubuntu22_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5899,10 +6120,12 @@ ubuntu23_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5924,7 +6147,8 @@ ubuntu23_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash 
+apt-get -y install diffutils file which
 EOF_ubuntu23_packages
     fi
 
@@ -5957,10 +6181,12 @@ ubuntu23_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6040,7 +6266,8 @@ alpine36_setup()
         --allow-untrusted \
         --root ${OS_ROOTDIR} \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils \
+		     file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
@@ -6543,7 +6770,8 @@ alpine312_setup()
         --allow-untrusted \
         --root ${OS_ROOTDIR} \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils \
+		     file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
@@ -6644,7 +6872,8 @@ alpine313_setup()
         --allow-untrusted \
         --root ${OS_ROOTDIR} \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils \
+		     file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
@@ -6745,7 +6974,8 @@ alpine314_setup()
         --allow-untrusted \
         --root ${OS_ROOTDIR} \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils \
+		     file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
@@ -6768,10 +6998,12 @@ alpine314_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6848,7 +7080,8 @@ alpine315_setup()
         --allow-untrusted \
         --root ${OS_ROOTDIR} \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils \
+		     file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
@@ -6871,10 +7104,12 @@ alpine315_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6951,7 +7186,8 @@ alpine316_setup()
         --allow-untrusted \
         --root ${OS_ROOTDIR} \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils \
+		     file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
@@ -6974,10 +7210,12 @@ alpine316_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -7055,7 +7293,8 @@ alpine317_setup()
         --allow-untrusted \
         --root ${OS_ROOTDIR} \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev musl-fts musl-fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev musl-fts musl-fts-dev libconfig-dev musl-dev bash \
+		     diffutils file
     set +x
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
@@ -7079,10 +7318,12 @@ alpine317_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -7160,7 +7401,8 @@ alpine318_setup()
         --allow-untrusted \
         --root ${OS_ROOTDIR} \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev musl-fts musl-fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev musl-fts musl-fts-dev libconfig-dev musl-dev bash \
+		     diffutils file
     set +x
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
@@ -7184,10 +7426,12 @@ alpine318_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -7515,6 +7759,11 @@ create_package_tarball()
         return
     fi
 
+    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-aarch64/libfakechroot-Rocky-8.so" ] ; then
+        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-aarch/libfakechroot-Rocky-8.so"
+        return
+    fi
+
     if [ -n "$DEVEL3" ] ; then
         echo "$TARBALL_VERSION_P3"
         echo "$TARBALL_VERSION_P3" > "${PACKAGE_DIR}/udocker_dir/lib/VERSION"
@@ -7622,6 +7871,9 @@ create_package_tarball()
     /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/COPYING" \
                "${PACKAGE_DIR}/udocker_dir/doc/COPYING.fakechroot"
 
+    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-aarch64/libfakechroot-Rocky-8.so" \
+               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Rocky-8-arm64.so"
+
     /bin/cp -f "${BUILD_DIR}/runc-source-x86_64/runc" \
                "${PACKAGE_DIR}/udocker_dir/bin/runc-x86_64"
     /bin/cp -f "${BUILD_DIR}/runc-source-x86_64/LICENSE" \
@@ -7683,7 +7935,7 @@ create_package_tarball()
 	ln -s libfakechroot-Ubuntu-20-x86_64.so libfakechroot-LinuxMint-20-x86_64.so ; \
 	ln -s libfakechroot-Ubuntu-21-x86_64.so libfakechroot-LinuxMint-21-x86_64.so ; \
 	ln -s libfakechroot-Ubuntu-22-x86_64.so libfakechroot-LinuxMint-22-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-22-x86_64.so libfakechroot-LinuxMint-23-x86_64.so ; \
+	ln -s libfakechroot-Ubuntu-23-x86_64.so libfakechroot-LinuxMint-23-x86_64.so ; \
 	ln -s libfakechroot-Ubuntu-23-x86_64.so libfakechroot-LinuxMint-x86_64.so ; \
         ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-Ubuntu-9-x86_64.so ; \
         ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-Ubuntu-10-x86_64.so ; \
@@ -7729,6 +7981,7 @@ BUILD_DIR="${HOME}/udocker-englib-${TARBALL_VERSION_P3}"
 S_PROOT_DIR="${BUILD_DIR}/proot-static-build/static"
 S_PROOT_PACKAGES_DIR="${BUILD_DIR}/proot-static-build/packages"
 PACKAGE_DIR="${BUILD_DIR}/package"
+TALLOC_TAR="$BUILD_DIR/libtalloc/talloc.tar.gz"
 
 if [ -n "$DEVEL3" ]; then
     TARBALL_FILE="${BUILD_DIR}/udocker-englib-${TARBALL_VERSION_P3}.tar.gz"
@@ -7742,7 +7995,11 @@ fi
 # Prepare
 # #######
 
-get_proot_static 
+#get_proot_static 
+
+get_udocker_build "1.2.10"
+
+get_libtalloc
 
 prepare_crun_source "${BUILD_DIR}/crun-source-x86_64"
 
@@ -7754,7 +8011,7 @@ prepare_package ERASE
 # #######
 prepare_proot_source "${BUILD_DIR}/proot-source-x86"
 #
-fedora25_setup "i386"
+#fedora25_setup "i386"
 fedora25_build_proot "i386" "${BUILD_DIR}/proot-source-x86"
 #ostree_delete "i386" "fedora" "25"
 #
@@ -7962,10 +8219,21 @@ ubuntu23_build_runc "amd64" "${BUILD_DIR}/runc-source-x86_64"
 # aarch64
 # #######
 prepare_proot_source "${BUILD_DIR}/proot-source-aarch64"
+#prepare_patchelf_source "${BUILD_DIR}/patchelf-source-aarch64"
+prepare_fakechroot_glibc_source "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
 #
 fedora31_setup "aarch64"
 fedora31_build_proot "aarch64" "${BUILD_DIR}/proot-source-aarch64"
 #ostree_delete "aarch64" "fedora" "31"
+#
+rocky8_setup "aarch64"
+rocky8_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ostree_delete "aarch64" "rocky" "8"
+#
+#rocky9_setup "aarch64"
+#rocky9_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ostree_delete "x86_64" "rocky" "9"
+
 
 
 # #######
