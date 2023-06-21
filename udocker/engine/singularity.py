@@ -31,19 +31,22 @@ class SingularityEngine(ExecutionEngineCommon):
     def select_singularity(self):
         """Set singularity executable and related variables"""
         self.executable = Config.conf['use_singularity_executable']
-        if self.executable != "UDOCKER" and not self.executable:
+        if not self.executable:
+            self.executable = FileUtil("apptainer").find_exec()
+        if not self.executable:
             self.executable = FileUtil("singularity").find_exec()
 
         if self.executable == "UDOCKER" or not self.executable:
             self.executable = ""
             arch = HostInfo().arch()
-            image_list = ["singularity-%s" % (arch), "singularity"]
+            image_list = ["apptainer-%s" % (arch), "apptainer",
+                          "singularity-%s" % (arch), "singularity"]
 
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
 
         if not os.path.exists(self.executable):
-            Msg().err("Error: singularity executable not found")
+            Msg().err("Error: apptainer/singularity executable not found")
             sys.exit(1)
 
     def _get_volume_bindings(self):
