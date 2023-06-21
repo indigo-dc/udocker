@@ -2,9 +2,24 @@
 
 ## udocker (1.3.10)
 
-* improved handling and mapping of architecture information
-* added support for qemu on Pn modes enabling execution of
-  containers with architectures different than the host 
+* improved handling of container platform information
+* added support for QEMU on Pn modes enabling execution of containers
+  with architectures different than the host 
+* added support for QEMU on Fn modes enabling execution of containers
+  with architectures different than the host 
+* selection of executable for Sn mode now defaults to apptainer and 
+  in second place to singularity
+* the new command "manifest inspect" allows display of image manifests
+  therefore enabling access to the catalogue of platforms supported by
+  a given image
+* the new command "tag" enables changing the name of an existing image
+* the udocker tools support for Fn now includes Ubuntu 23:04, Fedora 38,
+  Alpine 3.17 and 3.18. 
+* limited Support for native Fn execution on arm64 for Fedora 36,
+  Fedora 37, Fedora 38, CentOS 7, AlmaLinux 8, AlmaLinux 9 and similar.
+* limited Support for native Fn execution on ppc64le for CentOS 7, 
+  AlmaLinux 8, AlmaLinux 9 and similar.
+* updated version of Pn engine for x86, x86_64 and arm64.
 
 ## udocker (1.3.9)
 
