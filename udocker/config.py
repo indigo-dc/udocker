@@ -89,9 +89,9 @@ class Config(object):
     conf['fakechroot_expand_symlinks'] = None
 
     # patterns to search for libc.so for bypass in fakechroot
-    conf['libc_search'] = ("/lib64/libc.so.[0-9]+", "/usr/lib64/libc.so.[0-9]+",
-                           "/lib/libc.so.[0-9]+", "/usr/lib/libc.so.[0-9]+",
-                           "/usr/libc.so.[0-9]+", "/libc.so.[0-9]+", "/libc.so",)
+    conf['libc_search'] = ("/lib64/libc.so.[0-9]", "/usr/lib64/libc.so.[0-9]",
+                           "/usr/lib/libc.so.[0-9]", "/lib/libc.so.[0-9]",
+                           "/usr/libc.so.[0-9]", "/libc.so.[0-9]", "/libc.so",)
 
     # override the above search for libc with a specified relative pathname
     conf['fakechroot_libc'] = None
