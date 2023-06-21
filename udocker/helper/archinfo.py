@@ -19,7 +19,7 @@ class ArchInfo(object):
         {'docker':['arm'], 'qemu':['arm'], 'UDOCKER':['arm'],
          'uname':['arm'], 'file':[' ARM'], 'readelf':[' ARM']},
         {'docker':['ppc64le'], 'qemu':['ppc64le'], 'UDOCKER':['ppc64le'],
-         'uname':['ppc64le'], 'file':['64-bit PowerPC', 'LSB executable'],
+         'uname':['ppc64le'], 'file':['64-bit PowerPC', 'LSB'],
          'readelf':['PowerPC64', 'little endian']},
         {'docker':['ppc64'], 'qemu':['ppc64'], 'UDOCKER':['ppc64'],
          'uname':['ppc64'], 'file':['PowerPC', '64-bit'],
