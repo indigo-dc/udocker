@@ -147,10 +147,13 @@ prepare_patchelf_source()
         return
     fi
 
-    #git clone --depth=1 --branch=0.9 https://github.com/NixOS/patchelf.git
-    git clone --branch udocker-1 --depth=1 https://github.com/jorge-lip/patchelf-udocker.git
-    /bin/rm -Rf "$BUILD_DIR/patchelf-udocker/.git"
-    /bin/mv patchelf-udocker "$PATCHELF_SOURCE_DIR"
+    #git clone --branch udocker-1 --depth=1 https://github.com/jorge-lip/patchelf-udocker.git
+    #/bin/rm -Rf "$BUILD_DIR/patchelf-udocker/.git"
+    #/bin/mv patchelf-udocker "$PATCHELF_SOURCE_DIR"
+
+    git clone --branch udocker-2 --depth=1 https://github.com/jorge-lip/patchelf-udocker-2.git
+    /bin/rm -Rf "$BUILD_DIR/patchelf-udocker-2/.git"
+    /bin/mv patchelf-udocker-2 "$PATCHELF_SOURCE_DIR"
 }
 
 prepare_fakechroot_glibc_source()
@@ -4639,8 +4642,8 @@ rocky8_setup()
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-	--forcearch="$OS_ARCH" \
-        autoconf m4 gcc-c++ automake gawk libtool
+	--forcearch="$OS_ARCH" --enablerepo=crb \
+        autoconf m4 gcc-c++ libstdc++-static glibc-static automake gawk libtool
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -4904,8 +4907,8 @@ rocky9_setup()
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-	--forcearch="$OS_ARCH" \
-        autoconf m4 gcc-c++ automake gawk libtool
+	--forcearch="$OS_ARCH" --enablerepo=crb \
+        autoconf m4 gcc-c++ libstdc++-static glibc-static automake gawk libtool
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -5163,14 +5166,14 @@ alma8_setup()
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
 	--setopt=module_platform_id=platform:el$OS_RELVER \
-	--forcearch="$OS_ARCH" \
+	--forcearch="$OS_ARCH"   --enablerepo=crb  \
         dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar \
 	python3 python2 gzip zlib diffutils file git which
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-	--forcearch="$OS_ARCH" \
-        autoconf m4 gcc-c++ automake gawk libtool
+	--forcearch="$OS_ARCH" --enablerepo=crb \
+        autoconf m4 gcc-c++ libstdc++-static glibc-static automake gawk libtool
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -5434,8 +5437,8 @@ alma9_setup()
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-	--forcearch="$OS_ARCH" \
-        autoconf m4 gcc-c++ automake gawk libtool
+	--forcearch="$OS_ARCH"  --enablerepo=crb  \
+        autoconf m4 gcc-c++ libstdc++-static glibc-static automake gawk libtool 
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -5444,6 +5447,52 @@ alma9_setup()
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
 }
 
+alma9_build_patchelf()
+{
+    echo "alma9_build_patchelf : $1"
+    local OS_ARCH="$1"
+    local PATCHELF_SOURCE_DIR="$2"
+    local OS_NAME="alma"
+    local OS_RELVER="9"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${PATCHELF_SOURCE_DIR}/patchelf-AlmaLinux-9" ] ; then
+        echo "patchelf binary already compiled : ${PATCHELF_SOURCE_DIR}/patchelf-AlmaLinux-9"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile patchelf
+    set -xv
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
+    $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
+                            /bin/bash <<'EOF_alma9_patchelf'
+cd /patchelf
+make clean
+# BUILD PATCHELF
+#bash bootstrap.sh
+bash ./configure
+make
+cp src/patchelf /patchelf/patchelf-AlmaLinux-9
+make clean
+EOF_alma9_patchelf
+    set +xv
+}
 
 alma9_build_fakechroot()
 {
@@ -8204,7 +8253,7 @@ create_package_tarball()
     copy_file proot-source-x86_64/proot-Fedora-25.bin                     bin/proot-x86_64
     copy_file proot-source-x86_64/proot-Fedora-30.bin                     bin/proot-x86_64-4_8_0
 
-    copy_file patchelf-source-x86_64/patchelf-Fedora-25                   bin/patchelf-x86_64
+    copy_file patchelf-source-x86_64/patchelf-Fedora-38                   bin/patchelf-x86_64
 
     copy_file runc-source-x86_64/runc-Ubuntu-22.bin                       bin/runc-x86_64
     copy_file crun-source-x86_64/crun-nix-latest                          bin/crun-x86_64
@@ -8332,7 +8381,7 @@ create_package_tarball()
     # arch64 / amd64 -----------------------------------------------------------------------------------------
     copy_file proot-source-aarch64/proot-Fedora-31.bin                      bin/proot-arm64-4_8_0
     link_file bin/proot-arm64-4_8_0                                         proot-arm64
-    copy_file patchelf-source-aarch64/patchelf-Fedora-31                    bin/patchelf-arm64
+    copy_file patchelf-source-aarch64/patchelf-AlmaLinux-9                  bin/patchelf-arm64
     copy_file runc-source-aarch64/runc-Ubuntu-22.bin                        bin/runc-arm64
 
     copy_file fakechroot-source-glibc-aarch64/libfakechroot-Fedora-36.so    lib/libfakechroot-Fedora-36-arm64.so
@@ -8364,13 +8413,16 @@ create_package_tarball()
     link_file lib/libfakechroot-AlmaLinux-9-arm64.so                        libfakechroot-Red-arm64.so
 
     # ppc64le ------------------------------------------------------------------------------------------------
-    copy_file patchelf-source-ppc64le/patchelf-CentOS-7                     bin/patchelf-ppc64le
+    copy_file patchelf-source-ppc64le/patchelf-AlmaLinux-9                  bin/patchelf-ppc64le
     copy_file runc-source-ppc64le/runc-Ubuntu-22.bin                        bin/runc-ppc64le
 
     copy_file fakechroot-source-glibc-ppc64le/libfakechroot-CentOS-7.so     lib/libfakechroot-CentOS-7-ppc64le.so
     copy_file fakechroot-source-glibc-ppc64le/libfakechroot-AlmaLinux-8.so  lib/libfakechroot-AlmaLinux-8-ppc64le.so
     copy_file fakechroot-source-glibc-ppc64le/libfakechroot-AlmaLinux-9.so  lib/libfakechroot-AlmaLinux-9-ppc64le.so
     copy_file fakechroot-source-glibc-ppc64le/libfakechroot-AlmaLinux-9.so  lib/libfakechroot-AlmaLinux-ppc64le.so
+
+    copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Fedora-38.so    lib/libfakechroot-Fedora-38-ppc64le.so
+    link_file lib/libfakechroot-Fedora-38-ppc64le.so                        libfakechroot-Fedora-ppc64le.so
 
     copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Ubuntu-22.so    lib/libfakechroot-Ubuntu-22-ppc64le.so
     link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-Ubuntu-ppc64le.so
@@ -8472,7 +8524,7 @@ prepare_runc_source "${BUILD_DIR}/runc-source-x86_64"
 
 fedora25_setup "x86_64"
 fedora25_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
-fedora25_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
+#fedora25_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
 fedora25_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "x86_64" "fedora" "25"
 #
@@ -8518,7 +8570,7 @@ fedora36_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #
 fedora38_setup "x86_64"
 #fedora38_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
-#fedora38_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
+fedora38_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
 fedora38_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "x86_64" "fedora" "38"
 
@@ -8660,7 +8712,7 @@ prepare_runc_source "${BUILD_DIR}/runc-source-aarch64"
 #
 fedora31_setup "aarch64"
 fedora31_build_proot "aarch64" "${BUILD_DIR}/proot-source-aarch64"
-fedora31_build_patchelf "aarch64" "${BUILD_DIR}/patchelf-source-aarch64"
+#fedora31_build_patchelf "aarch64" "${BUILD_DIR}/patchelf-source-aarch64"
 #ostree_delete "aarch64" "fedora" "31"
 #
 fedora36_setup "aarch64"
@@ -8669,6 +8721,7 @@ fedora36_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch6
 #
 fedora38_setup "aarch64"
 fedora38_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#fedora38_build_patchelf "aarch64" "${BUILD_DIR}/patchelf-source-aarch64"
 #ostree_delete "aarch64" "fedora" "38"
 #
 centos7_setup "aarch64"
@@ -8689,6 +8742,7 @@ alma8_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
 #
 alma9_setup "aarch64"
 alma9_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+alma9_build_patchelf "aarch64" "${BUILD_DIR}/patchelf-source-aarch64"
 #ostree_delete "aarch64" "alma" "9"
 
 ubuntu22_setup "arm64"
@@ -8705,13 +8759,12 @@ prepare_patchelf_source "${BUILD_DIR}/patchelf-source-ppc64le"
 prepare_fakechroot_glibc_source "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
 prepare_runc_source "${BUILD_DIR}/runc-source-ppc64le"
 #
-#fedora38_setup "ppc64le"
-#fedora38_build_fakechroot "ppc64le" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+fedora38_setup "ppc64le"
+fedora38_build_fakechroot "ppc64le" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
 #ostree_delete "ppc64le" "fedora" "38"
 #
 centos7_setup "ppc64le"
 centos7_build_fakechroot "ppc64le" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
-centos7_build_patchelf "ppc64le" "${BUILD_DIR}/patchelf-source-ppc64le"
 #ostree_delete "ppc64le" "centos" "7"
 #
 alma8_setup "ppc64le"
@@ -8720,6 +8773,7 @@ alma8_build_fakechroot "ppc64le" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
 #
 alma9_setup "ppc64le"
 alma9_build_fakechroot "ppc64le" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+alma9_build_patchelf "ppc64le" "${BUILD_DIR}/patchelf-source-ppc64le"
 #ostree_delete "ppc64le" "alma" "9"
 
 ubuntu22_setup "ppc64el"
