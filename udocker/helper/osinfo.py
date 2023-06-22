@@ -46,7 +46,7 @@ class OSInfo(ArchInfo):
             try:
                 if arch[0]:
                     return arch[0]
-            except KeyError:
+            except IndexError:
                 continue
         return ""
 
