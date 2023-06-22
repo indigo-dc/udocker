@@ -33,6 +33,8 @@ class FakechrootEngine(ExecutionEngineCommon):
     def select_fakechroot_so(self):
         """Select fakechroot sharable object library"""
         image_list = []
+        guest = OSInfo(self.container_root)
+        arch = guest.arch()
         if Config.conf['fakechroot_so']:
             if isinstance(Config.conf['fakechroot_so'], list):
                 image_list = Config.conf['fakechroot_so']
@@ -48,8 +50,6 @@ class FakechrootEngine(ExecutionEngineCommon):
             lib = "libfakechroot"
             deflib = "libfakechroot.so"
             image_list = [deflib, ]
-            guest = OSInfo(self.container_root)
-            arch = guest.arch()
             (distro, version) = guest.osdistribution()
             if "Alpine" not in distro:
                 version = version.split(".")[0]
@@ -61,7 +61,13 @@ class FakechrootEngine(ExecutionEngineCommon):
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
         if not os.path.exists(fakechroot_so):
-            Msg().err("Error: no libfakechroot found", image_list)
+            Msg().err("Error: libfakechroot not found", image_list)
+            Msg().out("Info: Host architecture might not be supported by",
+                      "this execution mode:", arch,
+                       "\n      specify path to libfakechroot.so with",
+                       "environment UDOCKER_FAKECHROOT_SO",
+                       "\n      or choose other execution mode with: udocker",
+                       "setup --execmode=<mode>", l=Msg.INF)
             sys.exit(1)
 
         Msg().out("Debug: fakechroot_so:", fakechroot_so, l=Msg.DBG)

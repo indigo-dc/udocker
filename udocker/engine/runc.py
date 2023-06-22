@@ -47,9 +47,9 @@ class RuncEngine(ExecutionEngineCommon):
         if self.executable != "UDOCKER" and not self.executable:
             self.executable = FileUtil("crun").find_exec()
 
+        arch = HostInfo().arch()
         if self.executable == "UDOCKER" or not self.executable:
             self.executable = ""
-            arch = HostInfo().arch()
             image_list = []
             eng = ["runc", "crun"]
             image_list = [eng[0]+"-"+arch, eng[0], eng[1]+"-"+arch, eng[1]]
@@ -58,7 +58,13 @@ class RuncEngine(ExecutionEngineCommon):
             self.executable = f_util.find_file_in_dir(image_list)
 
         if not os.path.exists(self.executable):
-            Msg().err("Error: runc/crun executable not found")
+            Msg().err("Error: runc or crun executable not found")
+            Msg().out("Info: Host architecture might not be supported by", 
+                      "this execution mode:", arch,
+                       "\n      specify path to runc or crun with environment",
+                       "UDOCKER_USE_RUNC_EXECUTABLE",
+                       "\n      or choose other execution mode with: udocker",
+                       "setup --execmode=<mode>", l=Msg.INF)
             sys.exit(1)
         if "crun" in os.path.basename(self.executable):
             self.engine_type = "crun"

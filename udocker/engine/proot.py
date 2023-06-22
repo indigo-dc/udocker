@@ -36,9 +36,9 @@ class PRootEngine(ExecutionEngineCommon):
         if self.executable != "UDOCKER" and not self.executable:
             self.executable = FileUtil("proot").find_exec()
 
+        arch = HostInfo().arch()
         if self.executable == "UDOCKER" or not self.executable:
             self.executable = ""
-            arch = HostInfo().arch()
             if HostInfo().oskernel_isgreater([4, 8, 0]):
                 image_list = ["proot-%s-4_8_0" % (arch), "proot-%s" % (arch), "proot"]
             else:
@@ -48,6 +48,12 @@ class PRootEngine(ExecutionEngineCommon):
 
         if not os.path.exists(self.executable):
             Msg().err("Error: proot executable not found")
+            Msg().out("Info: Host architecture might not be supported by",
+                      "this execution mode:", arch,
+                       "\n      specify path to proot with environment",
+                       "UDOCKER_USE_PROOT_EXECUTABLE",
+                       "\n      or choose other execution mode with: udocker",
+                       "setup --execmode=<mode>", l=Msg.INF)
             sys.exit(1)
 
         if Config.conf['proot_noseccomp'] is not None:
