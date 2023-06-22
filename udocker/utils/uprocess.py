@@ -50,6 +50,7 @@ class Uprocess(object):
 
     def check_output(self, *popenargs, **kwargs):
         """Select check_output implementation"""
+        Msg().out("Debug: check_output:", *popenargs, l=Msg.DBG)
         try:
             # if Python 3
             if sys.version_info[0] >= 3:
@@ -69,6 +70,7 @@ class Uprocess(object):
 
     def get_output(self, cmd, ignore_error=False):
         """Execute a shell command and get its output"""
+        Msg().out("Debug: get_output:", cmd, l=Msg.DBG)
         if not cmd[0].startswith("/"):
             path = Config.conf["root_path"] + ":" + os.getenv("PATH", "")
             cmd_path = self.find_inpath(cmd[0], path)
@@ -86,6 +88,7 @@ class Uprocess(object):
 
     def call(self, cmd, **kwargs):
         """Execute one shell command"""
+        Msg().out("Debug: call:", cmd, l=Msg.DBG)
         if not cmd[0].startswith("/"):
             path = Config.conf["root_path"] + ":" + os.getenv("PATH", "")
             cmd[0] = self.find_inpath(cmd[0], path)
@@ -95,6 +98,7 @@ class Uprocess(object):
 
     def pipe(self, cmd1, cmd2, **kwargs):
         """Pipe two shell commands"""
+        Msg().out("Debug: pipe:", cmd1, cmd2, l=Msg.DBG)
         path = Config.conf["root_path"] + ":" + os.getenv("PATH", "")
         if not cmd1[0].startswith("/"):
             cmd1[0] = self.find_inpath(cmd1[0], path)
