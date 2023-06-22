@@ -350,7 +350,7 @@ class FileUtil(object):
         try:
             with open(self.filename, mode) as filep:
                 buf = filep.read()
-            Msg().out("Debug: read buf", buf, l=Msg.DBG)
+            #Msg().out("Debug: read buf", buf, l=Msg.DBG)
             return buf
         except (IOError, OSError, TypeError):
             return ""
