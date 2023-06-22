@@ -42,17 +42,17 @@ class ElfPatcher(object):
     # ARCHNEW
     def select_patchelf(self):
         """Set patchelf executable"""
-        executable = Config.conf['use_patchelf_executable']
-        if not executable:
-            self.executable = FileUtil("patchelf").find_exec()
+        patchelf_exec = Config.conf['use_patchelf_executable']
+        if not patchelf_exec:
+            patchelf_exec = FileUtil("patchelf").find_exec()
 
         arch = HostInfo().arch()
-        if executable == "UDOCKER" or not executable:
+        if patchelf_exec == "UDOCKER" or not patchelf_exec:
             image_list = ["patchelf-%s" % (arch), "patchelf"]
             f_util = FileUtil(self.localrepo.bindir)
-            executable = f_util.find_file_in_dir(image_list)
+            patchelf_exec = f_util.find_file_in_dir(image_list)
 
-        if not os.path.exists(executable):
+        if not os.path.exists(patchelf_exec):
             Msg().err("Error: patchelf executable not found")
             Msg().out("Info: Host architecture might not be supported by",
                       "this execution mode:", arch,
@@ -62,7 +62,7 @@ class ElfPatcher(object):
                        "setup --execmode=<mode>", l=Msg.INF)
             sys.exit(1)
 
-        return executable
+        return patchelf_exec
 
     def _replace(self, cmd, path):
         """Replace #f in cmd[] by path"""
