@@ -41,10 +41,9 @@ class RuncEngine(ExecutionEngineCommon):
     def select_runc(self):
         """Set runc executable and related variables"""
         self.executable = Config.conf['use_runc_executable']
-        if self.executable != "UDOCKER" and not self.executable:
+        if not self.executable:
             self.executable = FileUtil("runc").find_exec()
-
-        if self.executable != "UDOCKER" and not self.executable:
+        if not self.executable:
             self.executable = FileUtil("crun").find_exec()
 
         arch = HostInfo().arch()

@@ -33,7 +33,7 @@ class PRootEngine(ExecutionEngineCommon):
     def select_proot(self):
         """Set proot executable and related variables"""
         self.executable = Config.conf['use_proot_executable']
-        if self.executable != "UDOCKER" and not self.executable:
+        if not self.executable:
             self.executable = FileUtil("proot").find_exec()
 
         arch = HostInfo().arch()

@@ -42,16 +42,27 @@ class ElfPatcher(object):
     # ARCHNEW
     def select_patchelf(self):
         """Set patchelf executable"""
-        arch = HostInfo().arch()
-        image_list = ["patchelf-%s" % (arch), "patchelf"]
+        executable = Config.conf['use_patchelf_executable']
+        if not executable:
+            self.executable = FileUtil("patchelf").find_exec()
 
-        f_util = FileUtil(self.localrepo.bindir)
-        patchelf_exec = f_util.find_file_in_dir(image_list)
-        if not os.path.exists(patchelf_exec):
+        arch = HostInfo().arch()
+        if executable == "UDOCKER" or not executable:
+            image_list = ["patchelf-%s" % (arch), "patchelf"]
+            f_util = FileUtil(self.localrepo.bindir)
+            executable = f_util.find_file_in_dir(image_list)
+
+        if not os.path.exists(executable):
             Msg().err("Error: patchelf executable not found")
+            Msg().out("Info: Host architecture might not be supported by",
+                      "this execution mode:", arch,
+                       "\n      specify path to patchelf with environment",
+                       "UDOCKER_USE_PATCHELF_EXECUTABLE",
+                       "\n      or choose other execution mode with: udocker",
+                       "setup --execmode=<mode>", l=Msg.INF)
             sys.exit(1)
 
-        return patchelf_exec
+        return executable
 
     def _replace(self, cmd, path):
         """Replace #f in cmd[] by path"""

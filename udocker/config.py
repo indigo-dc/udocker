@@ -117,6 +117,7 @@ class Config(object):
     # Force the use of specific executables
     # UDOCKER = use executable from the udocker binary distribution/tarball
     conf['use_proot_executable'] = "UDOCKER"
+    conf['use_patchelf_executable'] = "UDOCKER"
     conf['use_runc_executable'] = ""
     conf['use_singularity_executable'] = ""
 
@@ -261,6 +262,9 @@ class Config(object):
         Config.conf['use_singularity_executable'] = \
             os.getenv("UDOCKER_USE_SINGULARITY_EXECUTABLE",
                       Config.conf['use_singularity_executable'])
+        Config.conf['use_patchelf_executable'] = \
+            os.getenv("UDOCKER_USE_PATCHELF_EXECUTABLE",
+                      Config.conf['use_patchelf_executable'])
 
         Config.conf['fakechroot_expand_symlinks'] = \
             os.getenv("UDOCKER_FAKECHROOT_EXPAND_SYMLINKS",
