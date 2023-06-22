@@ -43,7 +43,12 @@ class OSInfo(ArchInfo):
                 continue
 
             (arch, dummy, dummy) = self.get_arch(sourcetype, fileinfo, target)
-            return arch[0] if arch[0] else ""
+            try:
+                if arch[0]:
+                    return arch[0]
+            except KeyError:
+                continue
+        return ""
 
     # ARCH NEW
     def is_same_arch(self, other_root_dir="/" ,target="UDOCKER"):
