@@ -81,6 +81,8 @@ class ArchInfo(object):
         arch_info is data previously produced by uname, file or readelf
         target_type can be docker, qemu, UDOCKER or ALL
         """
+        if "ASCII" in arch_info or "Error:" in arch_info:
+            return ([], [], [])
         found = False
         try:
             for arch_dict in self._arch_list:
