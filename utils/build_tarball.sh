@@ -5872,7 +5872,15 @@ ubuntu18_setup()
 
     SUDO=sudo
 
-    $SUDO debootstrap --arch="$OS_ARCH" --variant=buildd bionic "$OS_ROOTDIR" http://archive.ubuntu.com/ubuntu/
+    if [ "$OS_ARCH" = "amd64" ] || [ "$OS_ARCH" = "i386" ]; then
+        REPOSITORY_URL="http://archive.ubuntu.com/ubuntu/"
+        #REPOSITORY_URL="http://old-releases.ubuntu.com/ubuntu/"
+    else
+        REPOSITORY_URL="http://ports.ubuntu.com/ubuntu-ports/"
+        #REPOSITORY_URL="http://old-releases.ubuntu.com/ubuntu/"
+    fi
+
+    $SUDO debootstrap --arch="$OS_ARCH" --variant=buildd bionic "$OS_ROOTDIR" "$REPOSITORY_URL"
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
@@ -5897,6 +5905,8 @@ ubuntu18_build_fakechroot()
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5962,6 +5972,8 @@ ubuntu18_build_runc()
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6046,6 +6058,8 @@ ubuntu19_build_fakechroot()
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6111,6 +6125,8 @@ ubuntu19_build_runc()
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6202,6 +6218,8 @@ ubuntu20_build_fakechroot()
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6267,6 +6285,8 @@ ubuntu20_build_runc()
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6323,7 +6343,14 @@ ubuntu21_setup()
 
     SUDO=sudo
 
-    $SUDO debootstrap --arch="$OS_ARCH" --variant=buildd hirsute "$OS_ROOTDIR" http://old-releases.ubuntu.com/ubuntu/
+    if [ "$OS_ARCH" = "amd64" ] || [ "$OS_ARCH" = "i386" ]; then
+	#REPOSITORY_URL="http://archive.ubuntu.com/ubuntu/"
+	REPOSITORY_URL="http://old-releases.ubuntu.com/ubuntu/"
+    else
+	#REPOSITORY_URL="http://ports.ubuntu.com/ubuntu-ports/"
+	REPOSITORY_URL="http://old-releases.ubuntu.com/ubuntu/"
+    fi
+    $SUDO debootstrap --arch="$OS_ARCH" --variant=buildd hirsute "$OS_ROOTDIR" "$REPOSITORY_URL"
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
@@ -6352,6 +6379,8 @@ ubuntu21_build_fakechroot()
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6417,6 +6446,8 @@ ubuntu21_build_runc()
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6729,6 +6760,8 @@ ubuntu23_build_fakechroot()
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6794,6 +6827,8 @@ ubuntu23_build_runc()
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -8393,10 +8428,24 @@ create_package_tarball()
     copy_file fakechroot-source-glibc-aarch64/libfakechroot-AlmaLinux-8.so  lib/libfakechroot-AlmaLinux-8-arm64.so
     copy_file fakechroot-source-glibc-aarch64/libfakechroot-AlmaLinux-9.so  lib/libfakechroot-AlmaLinux-9-arm64.so
 
+    copy_file fakechroot-source-glibc-aarch64/libfakechroot-Ubuntu-22.so    lib/libfakechroot-Ubuntu-18-arm64.so
+    copy_file fakechroot-source-glibc-aarch64/libfakechroot-Ubuntu-22.so    lib/libfakechroot-Ubuntu-20-arm64.so
     copy_file fakechroot-source-glibc-aarch64/libfakechroot-Ubuntu-22.so    lib/libfakechroot-Ubuntu-22-arm64.so
+    link_file lib/libfakechroot-Ubuntu-18-arm64.so                          libfakechroot-Ubuntu-17-arm64.so
+    link_file lib/libfakechroot-Ubuntu-20-arm64.so                          libfakechroot-Ubuntu-19-arm64.so
+    link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-Ubuntu-21-arm64.so
     link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-Ubuntu-arm64.so
+
+    link_file lib/libfakechroot-Ubuntu-18-arm64.so                          libfakechroot-LinuxMint-17-arm64.so
+    link_file lib/libfakechroot-Ubuntu-18-arm64.so                          libfakechroot-LinuxMint-18-arm64.so
+    link_file lib/libfakechroot-Ubuntu-20-arm64.so                          libfakechroot-LinuxMint-19-arm64.so
+    link_file lib/libfakechroot-Ubuntu-20-arm64.so                          libfakechroot-LinuxMint-20-arm64.so
+    link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-LinuxMint-21-arm64.so
     link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-LinuxMint-22-arm64.so
     link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-LinuxMint-arm64.so
+
+    link_file lib/libfakechroot-Ubuntu-18-arm64.so                          libfakechroot-Debian-9-arm64.so
+    link_file lib/libfakechroot-Ubuntu-20-arm64.so                          libfakechroot-Debian-10-arm64.so
     link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-Debian-11-arm64.so
     link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-Debian-arm64.so
 
@@ -8424,10 +8473,24 @@ create_package_tarball()
     copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Fedora-38.so    lib/libfakechroot-Fedora-38-ppc64le.so
     link_file lib/libfakechroot-Fedora-38-ppc64le.so                        libfakechroot-Fedora-ppc64le.so
 
+    copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Ubuntu-18.so    lib/libfakechroot-Ubuntu-18-ppc64le.so
+    copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Ubuntu-20.so    lib/libfakechroot-Ubuntu-20-ppc64le.so
     copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Ubuntu-22.so    lib/libfakechroot-Ubuntu-22-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-18-ppc64le.so                        libfakechroot-Ubuntu-17-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-20-ppc64le.so                        libfakechroot-Ubuntu-19-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-Ubuntu-21-ppc64le.so
     link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-Ubuntu-ppc64le.so
+
+    link_file lib/libfakechroot-Ubuntu-18-ppc64le.so                        libfakechroot-LinuxMint-17-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-18-ppc64le.so                        libfakechroot-LinuxMint-18-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-20-ppc64le.so                        libfakechroot-LinuxMint-19-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-20-ppc64le.so                        libfakechroot-LinuxMint-20-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-LinuxMint-21-ppc64le.so
     link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-LinuxMint-22-ppc64le.so
     link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-LinuxMint-ppc64le.so
+
+    link_file lib/libfakechroot-Ubuntu-18-ppc64le.so                        libfakechroot-Debian-9-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-20-ppc64le.so                        libfakechroot-Debian-10-ppc64le.so
     link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-Debian-11-ppc64le.so
     link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-Debian-ppc64le.so
 
@@ -8745,6 +8808,14 @@ alma9_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
 alma9_build_patchelf "aarch64" "${BUILD_DIR}/patchelf-source-aarch64"
 #ostree_delete "aarch64" "alma" "9"
 
+ubuntu18_setup "arm64"
+ubuntu18_build_fakechroot "arm64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ostree_delete "arm64" "ubuntu" "18"
+
+ubuntu20_setup "arm64"
+ubuntu20_build_fakechroot "arm64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ostree_delete "arm64" "ubuntu" "20"
+
 ubuntu22_setup "arm64"
 ubuntu22_build_fakechroot "arm64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
 #ubuntu22_build_runc "arm64" "${BUILD_DIR}/runc-source-aarch64"
@@ -8775,6 +8846,14 @@ alma9_setup "ppc64le"
 alma9_build_fakechroot "ppc64le" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
 alma9_build_patchelf "ppc64le" "${BUILD_DIR}/patchelf-source-ppc64le"
 #ostree_delete "ppc64le" "alma" "9"
+
+ubuntu18_setup "ppc64el"
+ubuntu18_build_fakechroot "ppc64el" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+#ostree_delete "ppc64el" "ubuntu" "18"
+
+ubuntu20_setup "ppc64el"
+ubuntu20_build_fakechroot "ppc64el" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+#ostree_delete "ppc64el" "ubuntu" "20"
 
 ubuntu22_setup "ppc64el"
 ubuntu22_build_fakechroot "ppc64el" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
