@@ -29,7 +29,6 @@ class PRootEngine(ExecutionEngineCommon):
         self.proot_newseccomp = False            # New seccomp mode
         self._kernel = HostInfo().oskernel()     # Emulate kernel
 
-    # ARCHNEW
     def select_proot(self):
         """Set proot executable and related variables"""
         self.executable = Config.conf['use_proot_executable']
@@ -63,7 +62,6 @@ class PRootEngine(ExecutionEngineCommon):
         if self._is_seccomp_patched(self.executable):
             self.proot_newseccomp = True
 
-    # ARCHNEW
     def _is_seccomp_patched(self, executable):
         """Check if kernel has ptrace/seccomp fixes added
            on 4.8.0.
@@ -126,7 +124,6 @@ class PRootEngine(ExecutionEngineCommon):
             proot_netmap_list.extend(["-n", ])
         return proot_netmap_list
 
-    # ARCHNEW
     def _get_qemu_string(self):
         """Get the qemu string for container run command if emulation needed"""
         qemu_filename = self._get_qemu()

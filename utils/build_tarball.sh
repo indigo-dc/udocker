@@ -136,7 +136,7 @@ prepare_proot_source()
     /bin/mv proot-udocker "$PROOT_SOURCE_DIR"
 }
 
-prepare_patchelf_source()
+prepare_patchelf_source_v1()
 {
     echo "prepare_patchelf_source : $1"
     local PATCHELF_SOURCE_DIR="$1"
@@ -147,9 +147,21 @@ prepare_patchelf_source()
         return
     fi
 
-    #git clone --branch udocker-1 --depth=1 https://github.com/jorge-lip/patchelf-udocker.git
-    #/bin/rm -Rf "$BUILD_DIR/patchelf-udocker/.git"
-    #/bin/mv patchelf-udocker "$PATCHELF_SOURCE_DIR"
+    git clone --branch udocker-1 --depth=1 https://github.com/jorge-lip/patchelf-udocker.git
+    /bin/rm -Rf "$BUILD_DIR/patchelf-udocker/.git"
+    /bin/mv patchelf-udocker "$PATCHELF_SOURCE_DIR"
+}
+
+prepare_patchelf_source_v2()
+{
+    echo "prepare_patchelf_source : $1"
+    local PATCHELF_SOURCE_DIR="$1"
+    cd "$BUILD_DIR" || exit 1
+
+    if [ -d "$PATCHELF_SOURCE_DIR" ] ; then
+        echo "patchelf source already exists: $PATCHELF_SOURCE_DIR"
+        return
+    fi
 
     git clone --branch udocker-2 --depth=1 https://github.com/jorge-lip/patchelf-udocker-2.git
     /bin/rm -Rf "$BUILD_DIR/patchelf-udocker-2/.git"
@@ -8288,7 +8300,8 @@ create_package_tarball()
     copy_file proot-source-x86_64/proot-Fedora-25.bin                     bin/proot-x86_64
     copy_file proot-source-x86_64/proot-Fedora-30.bin                     bin/proot-x86_64-4_8_0
 
-    copy_file patchelf-source-x86_64/patchelf-Fedora-38                   bin/patchelf-x86_64
+    copy_file patchelf-source-x86_64/patchelf-Fedora-25                   bin/patchelf-x86_64
+   #copy_file patchelf-source-x86_64/patchelf-Fedora-38                   bin/patchelf-x86_64
 
     copy_file runc-source-x86_64/runc-Ubuntu-22.bin                       bin/runc-x86_64
     copy_file crun-source-x86_64/crun-nix-latest                          bin/crun-x86_64
@@ -8579,7 +8592,7 @@ fedora30_build_proot "i386" "${BUILD_DIR}/proot-source-x86"
 # x86_64
 # #######
 prepare_proot_source "${BUILD_DIR}/proot-source-x86_64"
-prepare_patchelf_source "${BUILD_DIR}/patchelf-source-x86_64"
+prepare_patchelf_source_v1 "${BUILD_DIR}/patchelf-source-x86_64"
 prepare_fakechroot_glibc_source "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 prepare_fakechroot_musl_source "${BUILD_DIR}/fakechroot-source-musl-x86_64"
 prepare_runc_source "${BUILD_DIR}/runc-source-x86_64"
@@ -8587,7 +8600,7 @@ prepare_runc_source "${BUILD_DIR}/runc-source-x86_64"
 
 fedora25_setup "x86_64"
 fedora25_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
-#fedora25_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
+fedora25_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
 fedora25_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "x86_64" "fedora" "25"
 #
@@ -8633,7 +8646,7 @@ fedora36_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #
 fedora38_setup "x86_64"
 #fedora38_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
-fedora38_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
+#fedora38_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
 fedora38_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "x86_64" "fedora" "38"
 
@@ -8769,7 +8782,7 @@ ubuntu23_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 # aarch64
 # #######
 prepare_proot_source "${BUILD_DIR}/proot-source-aarch64"
-prepare_patchelf_source "${BUILD_DIR}/patchelf-source-aarch64"
+prepare_patchelf_source_v2 "${BUILD_DIR}/patchelf-source-aarch64"
 prepare_fakechroot_glibc_source "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
 prepare_runc_source "${BUILD_DIR}/runc-source-aarch64"
 #
@@ -8826,7 +8839,7 @@ ubuntu22_build_runc_root "arm64" "${BUILD_DIR}/runc-source-aarch64"
 # ppc64le
 # #######
 prepare_proot_source "${BUILD_DIR}/proot-source-ppc64le"
-prepare_patchelf_source "${BUILD_DIR}/patchelf-source-ppc64le"
+prepare_patchelf_source_v2 "${BUILD_DIR}/patchelf-source-ppc64le"
 prepare_fakechroot_glibc_source "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
 prepare_runc_source "${BUILD_DIR}/runc-source-ppc64le"
 #

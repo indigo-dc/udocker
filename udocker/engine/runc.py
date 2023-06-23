@@ -37,7 +37,6 @@ class RuncEngine(ExecutionEngineCommon):
         self.execution_id = None
         self.engine_type = ""
 
-    # ARCHNEW
     def select_runc(self):
         """Set runc executable and related variables"""
         self.executable = Config.conf['use_runc_executable']

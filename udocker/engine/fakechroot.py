@@ -29,7 +29,6 @@ class FakechrootEngine(ExecutionEngineCommon):
         self._elfpatcher = None
         self._recommend_expand_symlinks = False
 
-    # ARCHNEW
     def select_fakechroot_so(self):
         """Select fakechroot sharable object library"""
         image_list = []
@@ -61,8 +60,8 @@ class FakechrootEngine(ExecutionEngineCommon):
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
         if fakechroot_so.count('-') != 3: 
-            Msg().out("Info: the OS or architecture might not be supported by",
-                      "this execution mode:", arch,
+            Msg().out("Info: this OS or architecture might not be supported by",
+                      "this execution mode",
                        "\n      specify path to libfakechroot.so with",
                        "environment UDOCKER_FAKECHROOT_SO",
                        "\n      or choose other execution mode with: udocker",
@@ -227,7 +226,6 @@ class FakechrootEngine(ExecutionEngineCommon):
             Msg().out("Warning: this execution mode does not support "
                       "-P --netcoop --publish-all", l=Msg.WAR)
 
-    # ARCHNEW
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non binary executables (scripts)"""
         (dummy, filetype) = OSInfo(self.container_root).get_filetype(exec_path)

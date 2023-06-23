@@ -27,7 +27,6 @@ class SingularityEngine(ExecutionEngineCommon):
         self.executable = None                   # singularity
         self.execution_id = None
 
-    # ARCHNEW
     def select_singularity(self):
         """Set singularity executable and related variables"""
         self.executable = Config.conf['use_singularity_executable']

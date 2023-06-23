@@ -14,7 +14,6 @@ class OSInfo(ArchInfo):
     def __init__(self, root_dir):
         self._root_dir = root_dir
 
-    # ARCH NEW
     def get_filetype(self, filename):
         """Get architecture information from binary using file and readelf"""
         if not filename.startswith(self._root_dir):
@@ -33,7 +32,6 @@ class OSInfo(ArchInfo):
                 return ("readelf", filetype)
         return ("", "")
 
-    # ARCH NEW
     def arch(self, target="UDOCKER"):
         """Get OS architecture"""
         for filename in self.get_binaries_list():
@@ -50,7 +48,6 @@ class OSInfo(ArchInfo):
                 continue
         return ""
 
-    # ARCH NEW
     def is_same_arch(self, other_root_dir="/" ,target="UDOCKER"):
         """Compare architectures for two system trees"""
         this_arch = self.arch(target)

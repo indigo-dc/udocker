@@ -23,7 +23,6 @@ class HostInfo(ArchInfo):
         except KeyError:
             return ""
 
-    # ARCHNEW
     def arch(self, target="UDOCKER"):
         """Get the host system architecture"""
         machine = platform.machine()
@@ -99,7 +98,6 @@ class HostInfo(ArchInfo):
             return "%s/%s" % parsed_platform[0:2]
         return parsed_platform[0]
 
-    # ARCHNEW
     def platform(self, return_str=True):
         """get docker platform os/architecture/variant"""
         architecture = self.arch("docker")

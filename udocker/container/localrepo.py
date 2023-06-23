@@ -753,7 +753,6 @@ class LocalRepository(object):
 
         return ("", layer_id)
 
-    # ARCHNEW
     def _verify_layer_file(self, structure, layer_id):
         """Verify layer file in repository"""
         (layer_algorithm, layer_hash) = self._split_layer_id(layer_id)

@@ -39,7 +39,6 @@ class ElfPatcher(object):
         self._shlib = re.compile(r"^lib\S+\.so(\.\d+)*$")
         self._uid = HostInfo.uid
 
-    # ARCHNEW
     def select_patchelf(self):
         """Set patchelf executable"""
         patchelf_exec = Config.conf['use_patchelf_executable']
