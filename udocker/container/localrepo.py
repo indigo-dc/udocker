@@ -34,6 +34,7 @@ class LocalRepository:
         self.topdir = topdir if topdir else Config.conf['topdir']
         self.bindir = Config.conf['bindir']
         self.libdir = Config.conf['libdir']
+        self.tardir = Config.conf['tardir']
         self.docdir = Config.conf['docdir']
         self.reposdir = Config.conf['reposdir']
         self.layersdir = Config.conf['layersdir']
@@ -44,6 +45,9 @@ class LocalRepository:
 
         if not self.libdir:
             self.libdir = self.topdir + "/lib"
+
+        if not self.tardir:
+            self.tardir = self.topdir + "/tar"
 
         if not self.docdir:
             self.docdir = self.topdir + "/doc"

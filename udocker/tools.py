@@ -384,17 +384,29 @@ class UdockerTools:
 
         return list_modules
 
-    def download_tarballs(self, list_uid):
+    def download_tarballs(self, list_uid, dst_dir, from_locat, force):
         """Download list of tarballs from the list of UIDs
         Check for default files based on the host OS and arch
         or download from the list of uids in list_uid"""
         lmodules = self._select_modules(list_uid)
-        # for modul in lmodules:
-        #     for url in modul['urls']:
-        #         LOG.info("install using: %s", url)
-        #         tarballfile = self._get_file(url)
+        for modul in lmodules:
+            locations = modul['urls']
+            tarballfile = dst_dir + "/" + modul['fname']
+            if from_locat:
+                locations = [from_locat + "/" + modul['fname']]
 
-        #     LOG.info('module downloaded: %s', modul)
+            for url in locations:
+                LOG.info("downloading: %s", url)
+                if not force and os.path.isfile(tarballfile):
+                    LOG.info("tarball already downloaded")
+                    break
+
+                tarballfile = self._get_file(url, dst_dir)
+                if tarballfile:
+                    LOG.info('module downloaded: %s - %s', modul, tarballfile)
+                    break
+
+                LOG.error("download failed: %s", modul)
 
         return True
 

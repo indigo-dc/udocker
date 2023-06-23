@@ -19,6 +19,7 @@ class Config:
     conf['installdir'] = conf['homedir']   # dir with exec engines bin and lib
     conf['bindir'] = None
     conf['libdir'] = None
+    conf['tardir'] = None
     conf['docdir'] = None
     conf['reposdir'] = None
     conf['layersdir'] = None
@@ -50,7 +51,6 @@ class Config:
         conf['metadata_url'].append(url + conf['metadata_json'])
 
     conf['metadata_file'] = conf['topdir'] + '/' + conf['metadata_json']
-    conf['tardir'] = conf['topdir'] + '/' + 'tar'
 
     # defaults for container execution
     conf['cmd'] = ["bash", "-i"]  # Comand to execute

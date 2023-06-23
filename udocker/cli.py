@@ -1444,18 +1444,20 @@ class UdockerCLI:
         """
         download: download modules and verifies sha256sum
         download [options] uid_module1 uid_module2
-        --from=<url>|<dir>         :URL or local directory with modules
-        --prefix=<directory>       :destination download directory
+        --force                    :Force the download
+        --from=<url>|<dir>         :URL or local directory with modules, no trailing /
+        --prefix=<directory>       :destination download directory, no trailing /
         """
         dst_dir = Config.conf['tardir']    # Destination dir for tarballs
         list_uid = [int(item) for item in cmdp.get("P*")]
+        force = cmdp.get("--force")
         chk_dir = cmdp.get("--prefix=")
         from_locat = cmdp.get("--from=")
         if chk_dir:
             dst_dir = chk_dir
 
         utools = UdockerTools(self.localrepo)
-        download = utools.download_tarballs(list_uid)  # Download list of modules
+        download = utools.download_tarballs(list_uid, dst_dir, from_locat, force)
         if download:
             return self.STATUS_OK
         else:
