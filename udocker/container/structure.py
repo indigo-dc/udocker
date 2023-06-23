@@ -44,6 +44,27 @@ class ContainerStructure(object):
 
         return (container_dir, container_json)
 
+    def get_container_platform_fmt(self):
+        """Get the container platform from the metadata"""
+        (dummy, container_json) = self.get_container_attr()
+        if not container_json:
+            return ""
+        try:
+            architecture = container_json["architecture"]
+        except KeyError:
+            return ""
+        try:
+            os = container_json["os"]
+        except KeyError:
+            os = "unknown"
+        try:
+            variant = container_json["variant"]
+        except KeyError:
+            variant = ""
+        if not variant:
+            return "%s/%s" % (os, architecture)
+        return "%s/%s/%s" % (os, architecture, variant)
+
     def _get_container_meta(self, param, default, cntjson):
         """Get the metadata configuration from the container"""
         cidx = ""

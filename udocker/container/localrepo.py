@@ -588,6 +588,27 @@ class LocalRepository(object):
 
         return (None, None)
 
+    def get_image_platform_fmt(self):
+        """Get the image platform from the metadata"""
+        (manifest_json, dummy) = self.get_image_attributes()
+        if not manifest_json:
+            return ""
+        try:  
+            architecture = manifest_json["architecture"]
+        except KeyError:
+            return ""
+        try:
+            os = manifest_json["os"]
+        except KeyError:
+            os = "unknown"
+        try:
+            variant = manifest_json["variant"]
+        except KeyError:
+            variant = ""
+        if not variant:
+            return "%s/%s" % (os, architecture)
+        return "%s/%s/%s" % (os, architecture, variant)
+
     def save_json(self, filename, data):
         """Save container json to a file in the image TAG directory
         that has been previously selected via cd_imagerepo()

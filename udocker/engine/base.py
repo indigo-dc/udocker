@@ -63,6 +63,9 @@ class ExecutionEngineCommon(object):
         self.exec_mode = exec_mode            # ExecutionMode instance
         self.mountp = None                    # MountPoint object
         self.executable = ""                  # Executable proot, runc, etc
+        self.container_os = ""                # Container operating system
+        self.container_architecture = ""      # Container architecture
+        self.container_variant = ""           # Container variant
 
     def _has_option(self, search_option, arg=None):
         """Check if executable has a given cli option"""
@@ -308,6 +311,12 @@ class ExecutionEngineCommon(object):
                     container_structure.get_container_meta("ExposedPorts", [], container_json))
                 self.opt["env"].extendif(
                     container_structure.get_container_meta("Env", [], container_json))
+
+                self.container_os = cstruc.get_container_meta("os", "", cntjson)
+                self.container_architecture = cstruc.get_container_meta("architecture",
+                                                                        "", cntjson)
+                self.container_variant = cstruc.get_container_meta("variant", "", cntjson)
+
         return (container_dir, container_json)
 
     def _select_auth_files(self):
