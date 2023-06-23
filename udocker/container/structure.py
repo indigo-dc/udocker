@@ -48,11 +48,11 @@ class ContainerStructure(object):
         """Get the container platform from the metadata"""
         (dummy, container_json) = self.get_container_attr()
         if not container_json:
-            return ""
+            return "unknown/unknown"
         try:
             p_architecture = container_json["architecture"]
         except KeyError:
-            return ""
+            p_architecture = "unknown"
         try:
             p_os = container_json["os"]
         except KeyError:
