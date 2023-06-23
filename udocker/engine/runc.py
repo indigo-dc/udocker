@@ -58,7 +58,7 @@ class RuncEngine(ExecutionEngineCommon):
 
         if not os.path.exists(self.executable):
             Msg().err("Error: runc or crun executable not found")
-            Msg().out("Info: Host architecture might not be supported by", 
+            Msg().out("Info: Host architecture might not be supported by",
                       "this execution mode:", arch,
                        "\n      specify path to runc or crun with environment",
                        "UDOCKER_USE_RUNC_EXECUTABLE",

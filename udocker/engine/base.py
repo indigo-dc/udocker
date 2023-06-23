@@ -63,9 +63,6 @@ class ExecutionEngineCommon(object):
         self.exec_mode = exec_mode            # ExecutionMode instance
         self.mountp = None                    # MountPoint object
         self.executable = ""                  # Executable proot, runc, etc
-        self.container_os = ""                # Container operating system
-        self.container_architecture = ""      # Container architecture
-        self.container_variant = ""           # Container variant
 
     def _has_option(self, search_option, arg=None):
         """Check if executable has a given cli option"""
@@ -211,7 +208,8 @@ class ExecutionEngineCommon(object):
                     self.opt["vol"].remove(vol)
                     found = True
             if not found:
-                Msg().err("Warning: --novol %s not in volumes list" % novolume, l=Msg.WAR)
+                Msg().err("Warning: --novol %s not in volumes list"
+                          % novolume, l=Msg.WAR)
         return self._check_volumes()
 
     def _check_paths(self):
@@ -311,11 +309,6 @@ class ExecutionEngineCommon(object):
                     container_structure.get_container_meta("ExposedPorts", [], container_json))
                 self.opt["env"].extendif(
                     container_structure.get_container_meta("Env", [], container_json))
-
-                self.container_os = cstruc.get_container_meta("os", "", cntjson)
-                self.container_architecture = cstruc.get_container_meta("architecture",
-                                                                        "", cntjson)
-                self.container_variant = cstruc.get_container_meta("variant", "", cntjson)
 
         return (container_dir, container_json)
 
@@ -636,7 +629,6 @@ class ExecutionEngineCommon(object):
 
         return exec_path
 
-    # ARCHNEW
     def _get_saved_osenv(self, filename):
         """get saved osenv from json file"""
         try:
@@ -644,7 +636,6 @@ class ExecutionEngineCommon(object):
         except (IOError, OSError, ValueError, TypeError):
             return {}
 
-    # ARCHNEW
     def _is_same_osenv(self, filename):
         """Check if the host has changed"""
         saved = self._get_saved_osenv(filename)
@@ -658,7 +649,6 @@ class ExecutionEngineCommon(object):
             pass
         return {}
 
-    # ARCHNEW
     def _save_osenv(self, filename, save=None):
         """Save host info for is_same_host()"""
         if save is None:
@@ -674,7 +664,6 @@ class ExecutionEngineCommon(object):
             pass
         return False
 
-    # ARCHNEW
     def _check_arch(self, fail=False):
         """Check if architecture is the same"""
         if not OSInfo(self.container_root).is_same_arch():
@@ -685,7 +674,6 @@ class ExecutionEngineCommon(object):
                       l=Msg.WAR)
         return True
 
-    # ARCHNEW
     def _get_qemu(self, return_path=False):
         """Get the qemu binary name if emulation needed"""
         container_qemu_arch = OSInfo(self.container_root).arch("qemu")

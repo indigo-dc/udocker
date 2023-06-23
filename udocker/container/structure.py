@@ -50,20 +50,20 @@ class ContainerStructure(object):
         if not container_json:
             return ""
         try:
-            architecture = container_json["architecture"]
+            p_architecture = container_json["architecture"]
         except KeyError:
             return ""
         try:
-            os = container_json["os"]
+            p_os = container_json["os"]
         except KeyError:
-            os = "unknown"
+            p_os = "unknown"
         try:
-            variant = container_json["variant"]
+            p_variant = container_json["variant"]
         except KeyError:
-            variant = ""
-        if not variant:
-            return "%s/%s" % (os, architecture)
-        return "%s/%s/%s" % (os, architecture, variant)
+            p_variant = ""
+        if not p_variant:
+            return "%s/%s" % (p_os, p_architecture)
+        return "%s/%s/%s" % (p_os, p_architecture, p_variant)
 
     def _get_container_meta(self, param, default, cntjson):
         """Get the metadata configuration from the container"""
