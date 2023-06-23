@@ -822,8 +822,10 @@ class UdockerCLI(object):
         images: list container images
         images [options]
         -l                         :long format
+        -p                         :print platform
         """
         verbose = cmdp.get("-l")
+        print_platform = cmdp.get("-p")
         dummy = cmdp.get("--no-trunc")
         dummy = cmdp.get("--all")
         if cmdp.missing_options():               # syntax error
@@ -833,9 +835,16 @@ class UdockerCLI(object):
         for (imagerepo, tag) in images_list:
             prot = (".", "P")[
                 self.localrepo.isprotected_imagerepo(imagerepo, tag)]
-            Msg().out("%s    %c" % (imagerepo + ":" + tag, prot))
+            imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
+
+            if print_platform:
+                platform = self.localrepo.get_image_platform_fmt()
+                Msg().out("%-18.18s %c %s" % (platform, prot, imagerepo + ":" + tag))
+            else:
+                Msg().out("%s    %c" % (imagerepo + ":" + tag, prot))
+
             if verbose:
-                imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
+                #imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
                 Msg().out(" %s" % (imagerepo_dir))
                 layers_list = self.localrepo.get_layers(imagerepo, tag)
                 if layers_list:
@@ -853,25 +862,30 @@ class UdockerCLI(object):
         ps: list containers
         -m                         :print execution mode
         -s                         :print size in MB
+        -p                         :print platform
         """
         print_mode = cmdp.get("-m")
         print_size = cmdp.get("-s")
+        print_platform = cmdp.get("-p")
         if cmdp.missing_options():               # syntax error
             return self.STATUS_ERROR
-        mod_h = size_h = ""
-        mod_l = size_l = "%0s"
+        mod_h = size_h = plat_h = ""
+        mod_l = size_l = plat_l = "%0s"
         if print_mode:
             mod_h = "MOD "
             mod_l = "%2.2s "
         if print_size:
             size_h = "SIZE "
             size_l = "%5.5s "
-        fmt = "%-36.36s %c %c " + mod_h + size_h + "%-18s %-20.20s"
+        if print_platform:
+            plat_h = "PLATFORM           "
+            plat_l = "%-18.18s "
+        fmt = "%-36.36s %c %c " + mod_h + size_h + plat_h + "%-18s %-20.20s"
         Msg().out(fmt % ("CONTAINER ID", 'P', 'M', "NAMES", "IMAGE"))
-        fmt = "%-36.36s %c %c " + mod_l + size_l + "%-18.100s %-20.100s"
-        line = [''] * 7
+        fmt = "%-36.36s %c %c " + mod_l + size_l + plat_l + "%-18.100s %-20.100s"
+        line = [''] * 8
         containers_list = self.localrepo.get_containers_list(False)
-        for (line[0], line[6], line[5]) in containers_list:
+        for (line[0], line[7], line[6]) in containers_list:
             container_id = line[0]
             exec_mode = ExecutionMode(self.localrepo, container_id)
             line[3] = exec_mode.get_mode() if print_mode else ""
@@ -880,6 +894,9 @@ class UdockerCLI(object):
             line[2] = ('R', 'W', 'N', 'D')[
                 self.localrepo.iswriteable_container(container_id)]
             line[4] = self.localrepo.get_size(container_id) if print_size else ""
+            platform = ContainerStructure(self.localrepo,
+                                          container_id).get_container_platform_fmt()
+            line[5] = platform if print_platform else ""
             Msg().out(fmt % tuple(line))
         return self.STATUS_OK
 
