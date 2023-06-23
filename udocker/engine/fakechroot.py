@@ -60,14 +60,15 @@ class FakechrootEngine(ExecutionEngineCommon):
 
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
-        if not os.path.exists(fakechroot_so):
-            Msg().err("Error: libfakechroot not found", image_list)
-            Msg().out("Info: Host architecture might not be supported by",
+        if fakechroot_so.count('-') != 3: 
+            Msg().out("Info: the OS or architecture might not be supported by",
                       "this execution mode:", arch,
                        "\n      specify path to libfakechroot.so with",
                        "environment UDOCKER_FAKECHROOT_SO",
                        "\n      or choose other execution mode with: udocker",
                        "setup --execmode=<mode>", l=Msg.INF)
+        if not os.path.exists(fakechroot_so):
+            Msg().err("Error: libfakechroot not found", image_list)
             sys.exit(1)
 
         Msg().out("Debug: fakechroot_so:", fakechroot_so, l=Msg.DBG)
