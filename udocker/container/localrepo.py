@@ -95,6 +95,9 @@ class LocalRepository:
             if not os.path.exists(self.libdir):
                 os.makedirs(self.libdir)
 
+            if not os.path.exists(self.tardir):
+                os.makedirs(self.tardir)
+
             if not os.path.exists(self.docdir):
                 os.makedirs(self.docdir)
 
