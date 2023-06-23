@@ -154,9 +154,9 @@ class UdockerTools:
         elif os.path.exists(url):
             LOG.debug("file %s exists.", url)
             filename = os.path.realpath(url)
-        elif fileout:
-            LOG.debug("copy file %s to %s.", url, fileout)
-            shutil.copy2(url, fileout)
+            if fileout:
+                LOG.debug("copy file %s to %s.", filename, fileout)
+                shutil.copy2(filename, fileout)
 
         if filename and os.path.isfile(filename):
             return filename

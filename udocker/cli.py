@@ -1456,6 +1456,7 @@ class UdockerCLI:
         if chk_dir:
             dst_dir = chk_dir
 
+        LOG.debug("download from %s to %s", from_locat, dst_dir)
         utools = UdockerTools(self.localrepo)
         download = utools.download_tarballs(list_uid, dst_dir, from_locat, force)
         if download:
