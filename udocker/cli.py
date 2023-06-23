@@ -1448,7 +1448,7 @@ class UdockerCLI:
         --from=<url>|<dir>         :URL or local directory with modules, no trailing /
         --prefix=<directory>       :destination download directory, no trailing /
         """
-        dst_dir = Config.conf['tardir']    # Destination dir for tarballs
+        dst_dir = self.localrepo.tardir    # Destination dir for tarballs
         list_uid = [int(item) for item in cmdp.get("P*")]
         force = cmdp.get("--force")
         chk_dir = cmdp.get("--prefix=")
@@ -1460,8 +1460,8 @@ class UdockerCLI:
         download = utools.download_tarballs(list_uid, dst_dir, from_locat, force)
         if download:
             return self.STATUS_OK
-        else:
-            return self.STATUS_ERROR
+
+        return self.STATUS_ERROR
 
     def do_showmod(self, cmdp):
         """

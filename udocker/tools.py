@@ -11,6 +11,7 @@ from udocker.config import Config
 from udocker.utils.curl import GetURL
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.hostinfo import HostInfo
+from udocker.utils.chksum import ChkSUM
 
 
 def _str(data):
@@ -336,7 +337,7 @@ class UdockerTools:
                 LOG.info("url metadata json of modules: %s", urlmeta)
                 mjson = self._get_file(urlmeta, fileout)
 
-            LOG.info("metadata json: %s", mjson)
+            LOG.debug("metadata json: %s", mjson)
             try:
                 with open(mjson, 'r') as filep:
                     metadict = json.load(filep)
@@ -384,6 +385,22 @@ class UdockerTools:
 
         return list_modules
 
+    def _verify_sha(self, lmodules, dst_dir):
+        """Verify if the list of downloaded modules have correct sha256sum"""
+        validation = True
+        for modul in lmodules:
+            tarballfile = dst_dir + "/" + modul['fname']
+            sha_metadata = modul['sha256sum']
+            sha_file = ChkSUM().sha256(tarballfile)
+            LOG.debug("sha256sum of %s match. Correct %s, Calculated %s",
+                     tarballfile, sha_metadata, sha_file)
+            if sha_metadata != sha_file:
+                LOG.error("sha256sum of %s does not match. Correct %s, Calculated %s",
+                          tarballfile, sha_metadata, sha_file)
+                validation = validation and False
+
+        return validation
+
     def download_tarballs(self, list_uid, dst_dir, from_locat, force):
         """Download list of tarballs from the list of UIDs
         Check for default files based on the host OS and arch
@@ -395,20 +412,26 @@ class UdockerTools:
             if from_locat:
                 locations = [from_locat + "/" + modul['fname']]
 
+            LOG.debug("locations: %s", locations)
+            LOG.debug("tarball output: %s", tarballfile)
             for url in locations:
-                LOG.info("downloading: %s", url)
+                LOG.debug("downloading: %s", url)
                 if not force and os.path.isfile(tarballfile):
                     LOG.info("tarball already downloaded")
                     break
 
-                tarballfile = self._get_file(url, dst_dir)
-                if tarballfile:
-                    LOG.info('module downloaded: %s - %s', modul, tarballfile)
+                outfile = self._get_file(url, tarballfile)
+                if outfile:
+                    LOG.info('module downloaded: %s - %s', modul['module'], outfile)
                     break
 
                 LOG.error("download failed: %s", modul)
 
-        return True
+        if self._verify_sha(lmodules, dst_dir):
+            return True
+
+        LOG.error("failure in one or more downloaded modules")
+        return False
 
     def show_metadata(self, force):
         """Show available modules and versions"""
