@@ -6,6 +6,7 @@ import tarfile
 import random
 import json
 import stat
+import shutil
 from udocker import __version__, LOG, MSG
 from udocker.config import Config
 from udocker.utils.curl import GetURL
@@ -148,9 +149,14 @@ class UdockerTools:
         fileout: full filename of downloaded file"""
         filename = ""
         if "://" in url:
+            LOG.debug("get %s from %s.", fileout, url)
             filename = self._download(url, fileout)
         elif os.path.exists(url):
+            LOG.debug("file %s exists.", url)
             filename = os.path.realpath(url)
+        elif fileout:
+            LOG.debug("copy file %s to %s.", url, fileout)
+            shutil.copy2(url, fileout)
 
         if filename and os.path.isfile(filename):
             return filename
@@ -339,7 +345,7 @@ class UdockerTools:
 
             LOG.debug("metadata json: %s", mjson)
             try:
-                with open(mjson, 'r') as filep:
+                with open(mjson, 'r', encoding='utf-8') as filep:
                     metadict = json.load(filep)
 
                 return metadict
@@ -365,7 +371,8 @@ class UdockerTools:
         else:
             for module in metadict:
                 tarname = module['fname']
-                if (tarname == 'libfakechroot.tgz') or (tarname == 'patchelf-x86_64.tgz'):
+                if tarname in ('libfakechroot.tgz', 'patchelf-x86_64.tgz'):
+                    LOG.debug('matched module: %s', module)
                     list_modules.append(module)
 
             hostinfo = HostInfo()
@@ -415,7 +422,7 @@ class UdockerTools:
             LOG.debug("locations: %s", locations)
             LOG.debug("tarball output: %s", tarballfile)
             for url in locations:
-                LOG.debug("downloading: %s", url)
+                LOG.debug("downloading from: %s", url)
                 if not force and os.path.isfile(tarballfile):
                     LOG.info("tarball already downloaded")
                     break
