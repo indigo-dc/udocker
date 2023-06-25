@@ -2,24 +2,30 @@
 
 ## udocker (1.3.10)
 
-* improved handling of container platform information
+* improved handling of container platform minformation
 * added support for QEMU on Pn modes enabling execution of containers
-  with architectures different than the host 
-* added support for QEMU on Fn modes enabling execution of containers
   with architectures different than the host 
 * selection of executable for Sn mode now defaults to apptainer and 
   in second place to singularity
-* the new command "manifest inspect" allows display of image manifests
+* the new command `manifest inspect` allows display of image manifests
   therefore enabling access to the catalogue of platforms supported by
   a given image
-* the new command "tag" enables changing the name of an existing image
+* the new command `tag` enables changing the name of an existing image
+* new option `pull --platform=os/architecture` enables pulling of images
+  of a given architecture possibly different from the host
+* new option run `--platform=os/architecture` enables pull and run of 
+  images of a given architecture possibly different from the host
+* new option `ps -p` enables list of the architectures of containers
+* new option `images -p` enables list of the architectures of containers
 * the udocker tools support for Fn now includes Ubuntu 23:04, Fedora 38,
   Alpine 3.17 and 3.18. 
-* limited Support for native Fn execution on arm64 for Fedora 36,
-  Fedora 37, Fedora 38, CentOS 7, AlmaLinux 8, AlmaLinux 9 and similar.
-* limited Support for native Fn execution on ppc64le for CentOS 7, 
-  AlmaLinux 8, AlmaLinux 9 and similar.
-* updated version of Pn engine for x86, x86_64 and arm64.
+* experimental support for native Fn execution on arm64 for Fedora 36,
+  Fedora 37, Fedora 38, CentOS 7, AlmaLinux 8, AlmaLinux 9 and Ubuntu 22,
+  Ubuntu 20, Ubuntu 18 and similar.
+* experimental support for native Fn execution on ppc64le for CentOS 7, 
+  AlmaLinux 8, AlmaLinux 9, Ubuntu 22, Ubuntu 20, Ubuntu 18 and similar.
+* experimental support for runc in arm64 and ppc64le 
+* updated version of Pn engines for x86, x86_64, arm64.
 
 ## udocker (1.3.9)
 
