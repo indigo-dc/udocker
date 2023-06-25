@@ -29,7 +29,7 @@ class Config(object):
 
     # udocker installation tarball the release is the minimum requirement
     # the actual tarball used in the installation can have a higher version
-    conf['tarball_release'] = "1.2.9"
+    conf['tarball_release'] = "1.2.10"
     conf['tarball'] = (
         "https://download.ncg.ingrid.pt/"
         "webdav/udocker/udocker-englib-1.2.10.tar.gz"
