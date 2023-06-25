@@ -666,7 +666,10 @@ class ExecutionEngineCommon(object):
 
     def _check_arch(self, fail=False):
         """Check if architecture is the same"""
-        if not OSInfo(self.container_root).is_same_arch():
+        same_arch = OSInfo(self.container_root).is_same_arch()
+        if same_arch is None:
+            return True
+        if not same_arch:
             if fail:
                 Msg().err("Error: host and container architectures mismatch")
                 return False

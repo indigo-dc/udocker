@@ -228,15 +228,16 @@ class FakechrootEngine(ExecutionEngineCommon):
 
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non binary executables (scripts)"""
-        (dummy, filetype) = OSInfo(self.container_root).get_filetype(exec_path)
-        if "ELF" in filetype and "rror" not in filetype:
+        relc_path = exec_path.split(self.container_root, 1)[-1]
+        if OSInfo(self.container_root).is_binary_executable(relc_path):
             self.opt["cmd"][0] = exec_path
             return []
+
         #env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
         #if env_exec:
         #    return [self.container_root + '/' + env_exec, ]
 
-        relc_path = exec_path.split(self.container_root, 1)[-1]
+
         real_path = FileUtil(self.container_root).cont2host(relc_path, self.opt["vol"])
         hashbang = FileUtil(real_path).get1stline()
         match = re.search("#! *([^ ]+)(.*)", hashbang.decode())

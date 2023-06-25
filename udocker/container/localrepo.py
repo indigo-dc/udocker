@@ -147,9 +147,9 @@ class LocalRepository(object):
         container_root = self.cd_container(container_id) + "/ROOT"
         if not os.path.exists(container_root):
             return 2
-        if not os.path.isdir(container_root):
+        if not FileUtil(container_root).isdir():
             return 3
-        if os.access(container_root, os.W_OK):
+        if FileUtil(container_root).iswriteable():
             return 1
         return 0
 

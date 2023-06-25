@@ -317,6 +317,20 @@ class FileUtil(object):
         for filename in tmptrash_copy:
             FileUtil(filename).remove(recursive=True)
 
+    def isexecutable(self):
+        """Check if execute bit is set"""
+        try: 
+            return os.access(self.filename, os.X_OK)
+        except (IOError, OSError, TypeError):
+            return False
+
+    def iswriteable(self):
+        """Check if execute bit is set"""
+        try: 
+            return os.access(self.filename, os.W_OK)
+        except (IOError, OSError, TypeError):
+            return False
+
     def isdir(self):
         """Is filename a directory"""
         try:
