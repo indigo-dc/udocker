@@ -666,7 +666,7 @@ class ExecutionEngineCommon(object):
 
     def _check_arch(self, fail=False):
         """Check if architecture is the same"""
-        same_arch = OSInfo(self.container_root).is_same_arch():
+        same_arch = OSInfo(self.container_root).is_same_arch()
         if same_arch is None:
             return True
         if not same_arch:
