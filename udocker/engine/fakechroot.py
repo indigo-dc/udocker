@@ -229,7 +229,7 @@ class FakechrootEngine(ExecutionEngineCommon):
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non binary executables (scripts)"""
         (dummy, filetype) = OSInfo(self.container_root).get_filetype(exec_path)
-        if "ELF" in filetype and ("static" in filetype or "dynamic" in filetype):
+        if "ELF" in filetype and "rror" not in filetype:
             self.opt["cmd"][0] = exec_path
             return []
         #env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
