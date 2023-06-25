@@ -33,6 +33,21 @@ class OSInfo(ArchInfo):
                 return ("file", filetype.split(":", 1)[1])
         return ("", "")
 
+    def is_binary_executable(self, filename):
+        """Check if file is a binary executable"""
+        filename = self._root_dir + '/' + filename
+        (sourcetype, filetype) = self.get_filetype(filename)
+        if sourcetype:
+            if ("ELF" in filetype and "rror" not in filetype):
+                return True
+        else:
+            elf_pattern = "\x7fELF".encode()
+            bin_head = FileUtil(filename).get1stline('rb')
+            if (elf_pattern == bin_head[0:4] and
+                    FileUtil(filename).isexecutable()):
+                return True
+        return False
+
     def arch_from_binaries(self, target="UDOCKER"):
         """Get OS architecture from binaries"""
         for filename in self.get_binaries_list():
