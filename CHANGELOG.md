@@ -2,7 +2,7 @@
 
 ## udocker (1.3.10)
 
-* improved handling of container platform minformation
+* improved handling of container platform information
 * added support for QEMU on Pn modes enabling execution of containers
   with architectures different than the host 
 * selection of executable for Sn mode now defaults to apptainer and 
@@ -13,8 +13,10 @@
 * the new command `tag` enables changing the name of an existing image
 * new option `pull --platform=os/architecture` enables pulling of images
   of a given architecture possibly different from the host
-* new option run `--platform=os/architecture` enables pull and run of 
+* new option `run --platform=os/architecture` enables pull and run of 
   images of a given architecture possibly different from the host
+* new option `import --platform=os/architecture` enables to specify
+  an architecture for the image 
 * new option `ps -p` enables list of the architectures of containers
 * new option `images -p` enables list of the architectures of containers
 * the udocker tools support for Fn now includes Ubuntu 23:04, Fedora 38,

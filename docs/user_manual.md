@@ -289,6 +289,7 @@ form Docker Hub, and/or load or imported from files.
 Options:
 
 * `-l` long format, display more information about the images and related layers
+* `-p` display the image platform including os, architecture and variant
 
 Examples:
 
@@ -343,6 +344,7 @@ Options:
 
 * `-m` show the current execution mode of each container
 * `-s` show current disk usage (container size in MB), can be very slow
+* `-p` display the image platform including os, architecture and variant
 
 Examples:
 
@@ -1455,6 +1457,7 @@ container is not being executed.
 * Docker <https://www.docker.com/>
 * PRoot <http://proot.me>
 * Fakechroot <https://github.com/dex4er/fakechroot/wiki>
+* Patchelf <https://github.com/NixOS/patchelf>
 * runC <https://runc.io/>
 * crun <https://github.com/containers/crun>
 * Singularity <http://singularity.lbl.gov>
