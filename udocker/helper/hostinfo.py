@@ -26,7 +26,7 @@ class HostInfo(ArchInfo):
     def arch(self, target="UDOCKER"):
         """Get the host system architecture"""
         machine = platform.machine()
-        (arch, dummy, dummy) = self.get_arch("uname", machine, target)
+        arch = self.get_arch("uname", machine, target)
         return arch[0] if arch[0] else ""
 
     def osversion(self):
