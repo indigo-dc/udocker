@@ -414,6 +414,8 @@ class DockerIoAPI(object):
 
         try:
             content_type = hdr.data['content-type']
+            if "application/json" in content_type:
+                return (hdr.data, json.loads(buf.getvalue().decode()))
             if "docker.distribution.manifest.v1" in content_type:
                 return (hdr.data, json.loads(buf.getvalue().decode()))
             if "docker.distribution.manifest.v2" in content_type:
