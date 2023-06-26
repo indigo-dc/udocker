@@ -42,7 +42,7 @@ class OSInfo(ArchInfo):
                 return True
         else:
             elf_pattern = "\x7fELF".encode()
-            bin_head = FileUtil(filename).get1stline('rb')
+            bin_head = FileUtil(filename).getdata('rb', 4)
             if (elf_pattern == bin_head[0:4] and
                     FileUtil(filename).isexecutable()):
                 return True

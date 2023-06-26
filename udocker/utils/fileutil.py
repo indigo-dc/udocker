@@ -359,11 +359,14 @@ class FileUtil(object):
         except (IOError, OSError, TypeError):
             return -1
 
-    def getdata(self, mode="rb"):
+    def getdata(self, mode="rb", size=-1):
         """Read file content to a buffer"""
         try:
             with open(self.filename, mode) as filep:
-                buf = filep.read()
+                if size == -1:
+                    buf = filep.read()
+                else:
+                    buf = filep.read(size)
             #Msg().out("Debug: read buf", buf, l=Msg.DBG)
             return buf
         except (IOError, OSError, TypeError):
