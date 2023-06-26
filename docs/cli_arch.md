@@ -26,8 +26,8 @@ udocker |GENERAL_OPTIONS| COMMAND |SPEC_OPTIONS and ARGS|
   * With config file or setting environment variables will install to custom directories
   * `--force`                Force installation of modules
   * `--upgrade`              Upgrade installed of modules
-  * `--from=<url>|<dir>`     URL or local directory with modules
-  * `--prefix=<directory>`   installation directory
+  * `--from=<url>|<dir>`     URL or local directory with modules tarball
+  * `--prefix=<directory>`   modules installation directory
   * `<module>`               positional args 1 or more
 
 * `delmod`: Delete one or more installed modules

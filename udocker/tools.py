@@ -470,3 +470,35 @@ class UdockerTools:
                 MSG.info("                %s", dep)
 
         return True
+
+    def install_modules(self, list_uid, top_dir, from_locat, force):
+        """Install modules"""
+        tar_dir = self.localrepo.tardir
+        if from_locat:
+            tar_dir = from_locat
+
+        if self.download_tarballs(list_uid, tar_dir, tar_dir, False):
+            lmodules = self._select_modules(list_uid)
+            for modul in lmodules:
+                tarballfile = tar_dir + '/' + modul['fname']
+                if modul['installdir'] == 'bin/' and not top_dir:
+                    mod_dir = self.localrepo.bindir
+                elif modul['installdir'] == 'lib/' and not top_dir:
+                    mod_dir = self.localrepo.libdir
+                elif top_dir:
+                    mod_dir = top_dir + '/' + modul['installdir']
+                else:
+                    LOG.error('unknown installation dir %s.', modul['installdir'])
+
+                LOG.info('tarfile: %s - module destination: %s', tarballfile, mod_dir)
+                try:
+                    with tarfile.open(tarballfile, "r:gz") as tar_file:
+                        tar_file.extractall(path=mod_dir)
+                except tarfile.TarError:
+                    LOG.error('failed to install module: %s.', tarballfile)
+                    continue
+
+            return True
+
+
+        return False

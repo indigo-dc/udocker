@@ -1389,8 +1389,8 @@ class UdockerCLI:
         install2 [options] module1 module2 ...: installs module1, module2, ...
         --force                    :force reinstall
         --upgrade                  :upgrade modules
-        --from=<url>|<dir>`        :URL or local directory with modules
-        --prefix=<directory>`      :installation directory
+        --from=<url>|<dir>`        :URL or local directory with modules tarball
+        --prefix=<directory>`      :modules installation directory
         <module>`                  :positional args 1 or more
         """
         list_uid = [int(item) for item in cmdp.get("P*")]
@@ -1398,18 +1398,23 @@ class UdockerCLI:
         upgrade = cmdp.get("--upgrade")
         chk_dir = cmdp.get("--prefix=")
         from_locat = cmdp.get("--from=")
-        dst_dir = self.localrepo.tardir
+        top_dir = self.localrepo.topdir
         if chk_dir:
-            dst_dir = chk_dir
+            top_dir = chk_dir
+
+        if not from_locat:
+            from_locat = self.localrepo.tardir
 
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
         utools = UdockerTools(self.localrepo)
-        if utools.install(force):
+        install_mods = utools.install_modules(list_uid, top_dir, from_locat, force)
+        if install_mods:
             return self.STATUS_OK
 
         return self.STATUS_ERROR
+
 
     def do_delmod(self, cmdp):
         """
