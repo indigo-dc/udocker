@@ -123,7 +123,7 @@ class UMain:
                 MSG.info(cmds[command].__doc__)
                 return self.STATUS_OK
 
-            if command in {"version", "showconf", "avail"}:
+            if command in {"version", "showconf", "availmod"}:
                 return cmds[command](self.cmdp)
 
             if command != "install":
