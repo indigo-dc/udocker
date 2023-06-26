@@ -25,37 +25,44 @@ udocker |GENERAL_OPTIONS| COMMAND |SPEC_OPTIONS and ARGS|
   * (DEFAULT no options or args) download and install default modules to udocker directory
   * With config file or setting environment variables will install to custom directories
   * `--force`                Force installation of modules
-  * `--purge`                Delete installed modules
   * `--upgrade`              Upgrade installed of modules
   * `--from=<url>|<dir>`     URL or local directory with modules
   * `--prefix=<directory>`   installation directory
   * `<module>`               positional args 1 or more
 
-* `availmod`: Show available modules in the catalog:
+* `delmod`: Delete one or more installed modules
+  * (DEFAULT no options or args) delete all modules
+  * `--prefix=<directory>`   destination install directory
+  * `<module>`               positional args one or more
+
+* `availmod`: Show available modules in the catalog - metadata.json:
   * (DEFAULT no options or args) downloads metadata.json if it doesn't exist already in `topdir`
   * `--force`                Force download of metadata.json
 
 * `delmeta`: Delete cached metadata.json
 
-* `downloadmod`  download tarball modules, so it can be installed offline
-  * (DEFAULT no options or args) download udocker and all modules to udocker_install directory
+* `downloadtar`: Download tarballs with modules and verifies sha256sum, so it can be installed
+  offline
+  * (DEFAULT no options or args) download tarballs proot for host arch and kernel, fakechroot and
+  its dependency patchelf.
   * With config file or setting environment variables will download to custom directory
-  * --force                  Force the download
-  * `--from=<url>|<dir>`     URL or local directory with modules
+  * `--force`                Force the download
+  * `--from=<url>|<dir>`     URL or local directory with modules, default is given in metadata.json.
+  * `--prefix=<directory>`   destination download directory, default is `topdir/tar`
+  * `<module>`               positional args one or more
+
+* `deltar`: Delete one or more tarballs
+  * (DEFAULT no options or args) delete all tarballs
   * `--prefix=<directory>`   destination download directory
-  * `<module>`               positional args 1 or more
+  * `<module>`               positional args one or more, module name corresponding to the tarball
 
-* `delmod`: Delete module
-  * (DEFAULT no options or args) delete all modules
-  * `--prefix=<directory>`   destination download directory
-  * `<module>`               positional args 1 or more
+* `showmod`: Show installed modules and all information from metadata.json.
 
-* `showmod`: Show installed modules, versions, URLS for download
-
-* `upgrademod: Upgrade module
+* `upgrademod: Upgrade one or more installed modules
   * (DEFAULT no options or args) upgrade all modules to udocker_install directory
-  * `--from=<url>|<dir>`     URL or local directory with modules
-  * `<module>`               positional args 1 or more
+  * `--from=<url>|<dir>`     URL or local directory with modules, default is `topdir/tar`
+  * `<module>`               positional args one or more
 
-* `verifymod`: Verify/checksum tarballs
-  * `--prefix=<directory>`   destination download directory
+* `verifytar`: Verify/checksum downloaded tarballs, sha256
+  * `--force`                Force the download
+  * `--prefix=<directory>`   Destination download directory, no trailing /

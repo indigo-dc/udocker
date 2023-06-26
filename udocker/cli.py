@@ -1389,14 +1389,12 @@ class UdockerCLI:
         install2 [options] module1 module2 ...: installs module1, module2, ...
         --force                    :force reinstall
         --upgrade                  :upgrade modules
-        --purge                    :remove modules (be careful)
         --from=<url>|<dir>`        :URL or local directory with modules
         --prefix=<directory>`      :installation directory
         <module>`                  :positional args 1 or more
         """
         list_uid = [int(item) for item in cmdp.get("P*")]
         force = cmdp.get("--force")
-        purge = cmdp.get("--purge")
         upgrade = cmdp.get("--upgrade")
         chk_dir = cmdp.get("--prefix=")
         from_locat = cmdp.get("--from=")
@@ -1408,17 +1406,23 @@ class UdockerCLI:
             return self.STATUS_ERROR
 
         utools = UdockerTools(self.localrepo)
-        if purge:
-            utools.purge()
-
         if utools.install(force):
             return self.STATUS_OK
 
         return self.STATUS_ERROR
 
+    def do_delmod(self, cmdp):
+        """
+        delmod: Delete one or more installed modules
+        (DEFAULT no options or args) delete all modules
+        --prefix=<directory>   :destination install directory
+        <module>               :positional args one or more
+        """
+        return self.STATUS_OK
+
     def do_availmod(self, cmdp):
         """
-        avail: Show available modules in the catalog
+        availmod: Show available modules in the catalog
         (DEFAULT no options or args) downloads metadata.json if it doesn't exist already in topdir
         --force                    :force download of metadata.json
         """
@@ -1444,9 +1448,11 @@ class UdockerCLI:
         LOG.info("removed: %s", f_path)
         return self.STATUS_OK
 
-    def do_downloadmod(self, cmdp):
+    def do_downloadtar(self, cmdp):
         """
-        download: download modules and verifies sha256sum
+        download: Download tarballs with modules and verifies sha256sum, so it can be installed
+        offline. (DEFAULT no options or args) download tarballs proot for host arch and kernel,
+        fakechroot and its dependency patchelf:
         download [options] uid_module1 uid_module2
         --force                    :Force the download
         --from=<url>|<dir>         :URL or local directory with modules, no trailing /
@@ -1468,15 +1474,17 @@ class UdockerCLI:
 
         return self.STATUS_ERROR
 
-    def do_delmod(self, cmdp):
+    def do_deltar(self, cmdp):
         """
-        delmod: Delete modules
+        deltar: Delete one or more tarballs. (DEFAULT no options or args) delete all tarballs
+        --prefix=<directory> :destination download directory
+        <module>             :positional args one or more, module name corresponding to the tarball
         """
         return self.STATUS_OK
 
     def do_showmod(self, cmdp):
         """
-        showmod: Show installed modules, versions, URLS for download
+        showmod: Show installed modules and all information from metadata.json.
         """
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
@@ -1485,15 +1493,18 @@ class UdockerCLI:
 
     def do_upgrademod(self, cmdp):
         """
-        upgrademod: Upgrade modules
+        upgrademod: Upgrade one or more installed modules. (DEFAULT no options or args) upgrade all
+        modules to udocker_install directory
+        --from=<url>|<dir>`     :URL or local directory with modules, default is `topdir/tar`
+        <module>`               :positional args one or more
         """
         return self.STATUS_OK
 
-    def do_verifymod(self, cmdp):
+    def do_verifytar(self, cmdp):
         """
-        verifymod: Verify modules, checksums sha256
+        verifymod: Verify/checksums downloaded tarballs, sha256
         --force                    :Force the download
-        --prefix=<directory>       :destination download directory, no trailing /
+        --prefix=<directory>       :Destination download directory, no trailing /
         """
         dst_dir = self.localrepo.tardir    # Destination dir for tarballs
         chk_dir = cmdp.get("--prefix=")
