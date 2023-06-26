@@ -1384,20 +1384,28 @@ class UdockerCLI:
 
     def do_install2(self, cmdp):
         """
-        install2: install modules
-        install2 [options] module1 module2
+        install2: Install modules, perform default modules installation: proot for host arch and
+        kernel, fakechroot and its dependency patchelf
+        install2 [options] module1 module2 ...: installs module1, module2, ...
         --force                    :force reinstall
         --upgrade                  :upgrade modules
         --purge                    :remove modules (be careful)
+        --from=<url>|<dir>`        :URL or local directory with modules
+        --prefix=<directory>`      :installation directory
+        <module>`                  :positional args 1 or more
         """
-        if cmdp is not None:
-            force = cmdp.get("--force")
-            purge = cmdp.get("--purge")
-            if cmdp.missing_options():  # syntax error
-                return self.STATUS_ERROR
-        else:
-            force = False
-            purge = False
+        list_uid = [int(item) for item in cmdp.get("P*")]
+        force = cmdp.get("--force")
+        purge = cmdp.get("--purge")
+        upgrade = cmdp.get("--upgrade")
+        chk_dir = cmdp.get("--prefix=")
+        from_locat = cmdp.get("--from=")
+        dst_dir = self.localrepo.tardir
+        if chk_dir:
+            dst_dir = chk_dir
+
+        if cmdp.missing_options():  # syntax error
+            return self.STATUS_ERROR
 
         utools = UdockerTools(self.localrepo)
         if purge:
@@ -1410,7 +1418,9 @@ class UdockerCLI:
 
     def do_availmod(self, cmdp):
         """
-        avail: Show available modules and versions
+        avail: Show available modules in the catalog
+        (DEFAULT no options or args) downloads metadata.json if it doesn't exist already in topdir
+        --force                    :force download of metadata.json
         """
         if cmdp is not None:
             force = cmdp.get("--force")
@@ -1426,18 +1436,12 @@ class UdockerCLI:
 
     def do_delmeta(self, cmdp):
         """
-        delmeta: Delete metadata.json
+        delmeta: Delete cached metadata.json
         """
         f_path = Config.conf['metadata_file']
         FileUtil(f_path).register_prefix()
         FileUtil(f_path).remove()
         LOG.info("removed: %s", f_path)
-        return self.STATUS_OK
-
-    def do_delmod(self, cmdp):
-        """
-        delmod: Delete modules
-        """
         return self.STATUS_OK
 
     def do_downloadmod(self, cmdp):
@@ -1464,9 +1468,15 @@ class UdockerCLI:
 
         return self.STATUS_ERROR
 
+    def do_delmod(self, cmdp):
+        """
+        delmod: Delete modules
+        """
+        return self.STATUS_OK
+
     def do_showmod(self, cmdp):
         """
-        showinst: Show installed modules and versions
+        showmod: Show installed modules, versions, URLS for download
         """
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
@@ -1481,9 +1491,29 @@ class UdockerCLI:
 
     def do_verifymod(self, cmdp):
         """
-        verifymod: Verify modules, checksums
+        verifymod: Verify modules, checksums sha256
+        --force                    :Force the download
+        --prefix=<directory>       :destination download directory, no trailing /
         """
-        return self.STATUS_OK
+        dst_dir = self.localrepo.tardir    # Destination dir for tarballs
+        chk_dir = cmdp.get("--prefix=")
+        force = cmdp.get("--force")
+        if chk_dir:
+            dst_dir = chk_dir
+
+        lmods = []
+        utools = UdockerTools(self.localrepo)
+        metadata = utools.get_metadata(force)
+        for modul in metadata:
+            tarballfile = dst_dir + "/" + modul['fname']
+            if os.path.isfile(tarballfile):
+                lmods.append(modul)
+
+        verify_sha256 = utools.verify_sha(lmods, dst_dir)
+        if verify_sha256:
+            return self.STATUS_OK
+
+        return self.STATUS_ERROR
 
 
 ################################ END new commands

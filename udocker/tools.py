@@ -334,7 +334,7 @@ class UdockerTools:
         LOG.error("installation of udockertools failed")
         return False
 
-    def _get_metadata(self, force):
+    def get_metadata(self, force):
         """Download metadata file with modules and versions and output json"""
         fileout = Config.conf['metadata_file']
         for urlmeta in self._get_mirrors(Config.conf['metadata_url']):
@@ -359,7 +359,7 @@ class UdockerTools:
     def _select_modules(self, list_uid):
         """Get the list of modules from a list of UIDs"""
         force = True
-        metadict = self._get_metadata(force)
+        metadict = self.get_metadata(force)
         list_modules = []
         if list_uid:
             LOG.debug('list of uids: %s', list_uid)
@@ -392,7 +392,7 @@ class UdockerTools:
 
         return list_modules
 
-    def _verify_sha(self, lmodules, dst_dir):
+    def verify_sha(self, lmodules, dst_dir):
         """Verify if the list of downloaded modules have correct sha256sum"""
         validation = True
         for modul in lmodules:
@@ -434,7 +434,7 @@ class UdockerTools:
 
                 LOG.error("download failed: %s", modul)
 
-        if self._verify_sha(lmodules, dst_dir):
+        if self.verify_sha(lmodules, dst_dir):
             return True
 
         LOG.error("failure in one or more downloaded modules")
@@ -442,7 +442,7 @@ class UdockerTools:
 
     def show_metadata(self, force):
         """Show available modules and versions"""
-        metadict = self._get_metadata(force)
+        metadict = self.get_metadata(force)
         if not metadict:
             return False
 
