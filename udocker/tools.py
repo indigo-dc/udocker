@@ -471,7 +471,7 @@ class UdockerTools:
 
         return True
 
-    def install_modules(self, list_uid, top_dir, from_locat, force):
+    def install_modules(self, list_uid, top_dir, from_locat, force=False):
         """Install modules"""
         tar_dir = self.localrepo.tardir
         if from_locat:
@@ -490,10 +490,23 @@ class UdockerTools:
                 else:
                     LOG.error('unknown installation dir %s.', modul['installdir'])
 
-                LOG.info('tarfile: %s - module destination: %s', tarballfile, mod_dir)
                 try:
                     with tarfile.open(tarballfile, "r:gz") as tar_file:
-                        tar_file.extractall(path=mod_dir)
+                        list_files = tar_file.getnames()
+                        mods_exists = False
+                        for tar_member in list_files:
+                            full_path = mod_dir + tar_member
+                            if not force and os.path.isfile(full_path):
+                                mods_exists = True
+                                LOG.debug('module already installed: %s', full_path)
+                            else:
+                                mods_exists = False
+                                break
+
+                        if not mods_exists:
+                            LOG.info('installing tarfile: %s - in: %s', tarballfile, mod_dir)
+                            tar_file.extractall(path=mod_dir)
+
                 except tarfile.TarError:
                     LOG.error('failed to install module: %s.', tarballfile)
                     continue
