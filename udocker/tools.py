@@ -477,7 +477,7 @@ class UdockerTools:
         if from_locat:
             tar_dir = from_locat
 
-        if self.download_tarballs(list_uid, tar_dir, tar_dir, False):
+        if self.download_tarballs(list_uid, tar_dir, "", False):
             lmodules = self._select_modules(list_uid)
             for modul in lmodules:
                 tarballfile = tar_dir + '/' + modul['fname']
