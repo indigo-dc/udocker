@@ -80,7 +80,6 @@ class CommonLocalFileApi(object):
         status = Uprocess().call(cmd, stderr=Msg.chlderr, close_fds=True)
         return not status
 
-    # ARCHNEW
     def create_container_meta(self, layer_id, platform=""):
         """Create metadata for a given container layer, used in import.
         A file for import is a tarball of a directory tree, does not contain
