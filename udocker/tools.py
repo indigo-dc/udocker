@@ -91,14 +91,16 @@ class UdockerTools:
 
         return int(version_int)
 
-    def _version_isok(self, version):
-        """Is version >= than the minimum required tarball release"""
-        if not (version and self._tarball_release):
-            return False
+    # This method is from the old install, in the new install there is download of metadata.json
+    # with latest tarball version
+    # def _version_isok(self, version):
+    #     """Is version >= than the minimum required tarball release"""
+    #     if not (version and self._tarball_release):
+    #         return False
 
-        tarball_version_int = self._version2int(version)
-        required_version_int = self._version2int(self._tarball_release)
-        return tarball_version_int >= required_version_int
+    #     tarball_version_int = self._version2int(version)
+    #     required_version_int = self._version2int(self._tarball_release)
+    #     return tarball_version_int >= required_version_int
 
     # TO BE Removed/deprecated, the other downloadtar methods already verify this
     # def is_available(self):
@@ -164,32 +166,33 @@ class UdockerTools:
 
         return ""
 
-    def _verify_version(self, tarball_file):
-        """verify the tarball version"""
-        if not (tarball_file and os.path.isfile(tarball_file)):
-            return (False, "")
+    # This method is from the old install, in the new install_mods the verification is the sha256sum
+    # def _verify_version(self, tarball_file):
+    #     """verify the tarball version"""
+    #     if not (tarball_file and os.path.isfile(tarball_file)):
+    #         return (False, "")
 
-        tmpdir = FileUtil("VERSION").mktmpdir()
-        if not tmpdir:
-            return (False, "")
+    #     tmpdir = FileUtil("VERSION").mktmpdir()
+    #     if not tmpdir:
+    #         return (False, "")
 
-        # (mdavid) redo this part
-        try:
-            tfile = tarfile.open(tarball_file, "r:gz")
-            for tar_in in tfile.getmembers():
-                if tar_in.name.startswith("udocker_dir/lib/VERSION"):
-                    tar_in.name = os.path.basename(tar_in.name)
-                    tfile.extract(tar_in, path=tmpdir)
+    #     # (mdavid) redo this part
+    #     try:
+    #         tfile = tarfile.open(tarball_file, "r:gz")
+    #         for tar_in in tfile.getmembers():
+    #             if tar_in.name.startswith("udocker_dir/lib/VERSION"):
+    #                 tar_in.name = os.path.basename(tar_in.name)
+    #                 tfile.extract(tar_in, path=tmpdir)
 
-            tfile.close()
-        except tarfile.TarError:
-            FileUtil(tmpdir).remove(recursive=True)
-            return (False, "")
+    #         tfile.close()
+    #     except tarfile.TarError:
+    #         FileUtil(tmpdir).remove(recursive=True)
+    #         return (False, "")
 
-        tarball_version = FileUtil(tmpdir + "/VERSION").getdata('r').strip()
-        status = self._version_isok(tarball_version)
-        FileUtil(tmpdir).remove(recursive=True)
-        return (status, tarball_version)
+    #     tarball_version = FileUtil(tmpdir + "/VERSION").getdata('r').strip()
+    #     status = self._version_isok(tarball_version)
+    #     FileUtil(tmpdir).remove(recursive=True)
+    #     return (status, tarball_version)
 
     def _clean_install(self, tfile):
         """Remove files before install"""
@@ -281,29 +284,30 @@ class UdockerTools:
 
     #         return self._install_json
 
-    def _install_logic(self, force=False):
-        """Obtain random mirror, download, verify and install"""
-        for url in self._get_mirrors(self._tarball):
-            LOG.info("install using: %s", url)
-            tarballfile = self._get_file(url)
-            (status, version) = self._verify_version(tarballfile)
-            if status:
-                LOG.info("installing udockertools %s", version)
-                status = self._install(tarballfile)
-            elif force:
-                LOG.info("forcing install of udockertools %s", version)
-                status = self._install(tarballfile)
-            else:
-                LOG.error("version is %s for %s", version, url)
+    # This method is from the old install and should removed
+    # def _install_logic(self, force=False):
+    #     """Obtain random mirror, download, verify and install"""
+    #     for url in self._get_mirrors(self._tarball):
+    #         LOG.info("install using: %s", url)
+    #         tarballfile = self._get_file(url)
+    #         (status, version) = self._verify_version(tarballfile)
+    #         if status:
+    #             LOG.info("installing udockertools %s", version)
+    #             status = self._install(tarballfile)
+    #         elif force:
+    #             LOG.info("forcing install of udockertools %s", version)
+    #             status = self._install(tarballfile)
+    #         else:
+    #             LOG.error("version is %s for %s", version, url)
 
-            if "://" in url and tarballfile:
-                FileUtil(tarballfile).remove()
-                LOG.debug("Removing tarfile: %s", tarballfile)
+    #         if "://" in url and tarballfile:
+    #             FileUtil(tarballfile).remove()
+    #             LOG.debug("Removing tarfile: %s", tarballfile)
 
-            if status:
-                return True
+    #         if status:
+    #             return True
 
-        return False
+    #     return False
 
     # This is the OLD method to be removed
     # def install_old(self, force=False):
