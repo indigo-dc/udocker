@@ -75,7 +75,6 @@ class UMain:
             "images": self.cli.do_images,
             "import": self.cli.do_import,
             "inspect": self.cli.do_inspect,
-            "install": self.cli.do_install,
             "load": self.cli.do_load,
             "login": self.cli.do_login,
             "logout": self.cli.do_logout,
@@ -97,7 +96,7 @@ class UMain:
             "verify": self.cli.do_verify,
             "version": self.cli.do_version,
             "help": self.cli.do_help,
-            "install2": self.cli.do_install2,
+            "install": self.cli.do_install,
             "delmod": self.cli.do_delmod,
             "availmod": self.cli.do_availmod,
             "delmeta": self.cli.do_delmeta,
@@ -123,7 +122,7 @@ class UMain:
                 MSG.info(cmds[command].__doc__)
                 return self.STATUS_OK
 
-            if command in {"version", "showconf", "availmod", "downloadtar", "install2"}:
+            if command in {"version", "showconf", "availmod", "downloadtar"}:
                 return cmds[command](self.cmdp)
 
             if command != "install":

@@ -100,11 +100,12 @@ class UdockerTools:
         required_version_int = self._version2int(self._tarball_release)
         return tarball_version_int >= required_version_int
 
-    def is_available(self):
-        """Are the tools already installed"""
-        version_file = self.localrepo.libdir + "/VERSION"
-        version = FileUtil(version_file).getdata('r').strip()
-        return self._version_isok(version)
+    # TO BE Removed/deprecated, the other downloadtar methods already verify this
+    # def is_available(self):
+    #     """Are the tools already installed"""
+    #     version_file = self.localrepo.libdir + "/VERSION"
+    #     version = FileUtil(version_file).getdata('r').strip()
+    #     return self._version_isok(version)
 
     def purge(self):
         """Remove existing files in bin, lib and doc"""
@@ -262,22 +263,23 @@ class UdockerTools:
 
         return mirrors
 
-    def get_installinfo(self):
-        """Get json containing installation info"""
-        LOG.info("searching for messages:")
-        for url in self._get_mirrors(self._installinfo):
-            infofile = self._get_file(url)
-            try:
-                with open(infofile, 'r') as filep:
-                    self._install_json = json.load(filep)
+    # This method has never been used, we may seek better way to give important info
+    # def get_installinfo(self):
+    #     """Get json containing installation info"""
+    #     LOG.info("searching for messages:")
+    #     for url in self._get_mirrors(self._installinfo):
+    #         infofile = self._get_file(url)
+    #         try:
+    #             with open(infofile, 'r', encoding='utf-8') as filep:
+    #                 self._install_json = json.load(filep)
 
-                for msg in self._install_json["messages"]:
-                    MSG.info(msg)
+    #             for msg in self._install_json["messages"]:
+    #                 MSG.info(msg)
 
-            except (KeyError, AttributeError, ValueError, OSError):
-                LOG.info("no messages: %s %s", infofile, url)
+    #         except (KeyError, AttributeError, ValueError, OSError):
+    #             LOG.info("no messages: %s %s", infofile, url)
 
-            return self._install_json
+    #         return self._install_json
 
     def _install_logic(self, force=False):
         """Obtain random mirror, download, verify and install"""
@@ -303,36 +305,39 @@ class UdockerTools:
 
         return False
 
-    def install(self, force=False):
-        """Get the udocker tools tarball and install the binaries"""
-        if self.is_available() and not force:
-            LOG.debug("tarball already installed, installation skipped")
-            return True
+    # This is the OLD method to be removed
+    # def install_old(self, force=False):
+        # """Get the udocker tools tarball and install the binaries"""
 
-        if not self._autoinstall and not force:
-            LOG.warning("installation missing and autoinstall disabled")
-            return None
+        # if self.is_available() and not force:
+        #     LOG.debug("tarball already installed, installation skipped")
+        #     return True
 
-        if not self._tarball:
-            LOG.info("UDOCKER_TARBALL not set, installation skipped")
-            return True
+        # Implemented in the new install_mods
+        # if not self._autoinstall and not force:
+        #     LOG.warning("installation missing and autoinstall disabled")
+        #     return None
 
-        LOG.info("udocker command line interface %s", __version__)
-        LOG.info("searching for udockertools %s", self._tarball_release)
-        retry = self._installretry
-        while retry:
-            if self._install_logic(force):
-                self.get_installinfo()
-                LOG.info("installation of udockertools successful")
-                return True
+        # if not self._tarball:
+        #     LOG.info("UDOCKER_TARBALL not set, installation skipped")
+        #     return True
 
-            retry = retry - 1
-            LOG.error("installation failure retrying ...")
+        # LOG.info("udocker command line interface %s", __version__)
+        # LOG.info("searching for udockertools %s", self._tarball_release)
+        # retry = self._installretry
+        # while retry:
+        #     if self._install_logic(force):
+        #         self.get_installinfo()
+        #         LOG.info("installation of udockertools successful")
+        #         return True
 
-        self._instructions()
-        self.get_installinfo()
-        LOG.error("installation of udockertools failed")
-        return False
+        #     retry = retry - 1
+        #     LOG.error("installation failure retrying ...")
+
+        # self._instructions()
+        # self.get_installinfo()
+        # LOG.error("installation of udockertools failed")
+        # return False
 
     def get_metadata(self, force):
         """Download metadata file with modules and versions and output json"""
@@ -356,11 +361,21 @@ class UdockerTools:
 
         return []
 
-    def _select_modules(self, list_uid):
-        """Get the list of modules from a list of UIDs"""
+    def _select_modules(self, list_uid, list_names):
+        """Get the list of modules from a list of UIDs, or a list of module names"""
         force = True
         metadict = self.get_metadata(force)
         list_modules = []
+        if list_names:
+            LOG.debug('list of module names: %s', list_names)
+            for name in list_names:
+                for module in metadict:
+                    if module['name'] == name:
+                        list_modules.append(module)
+                        break
+
+            return list_modules
+
         if list_uid:
             LOG.debug('list of uids: %s', list_uid)
             for uid in list_uid:
@@ -412,7 +427,7 @@ class UdockerTools:
         """Download list of tarballs from the list of UIDs
         Check for default files based on the host OS and arch
         or download from the list of uids in list_uid"""
-        lmodules = self._select_modules(list_uid)
+        lmodules = self._select_modules(list_uid, [])
         for modul in lmodules:
             locations = modul['urls']
             tarballfile = dst_dir + "/" + modul['fname']
@@ -471,47 +486,73 @@ class UdockerTools:
 
         return True
 
+    def _installmod_logic(self, list_uid, top_dir, tar_dir, force):
+        """Logics for installation of modules"""
+        lmodules = self._select_modules(list_uid, [])
+        for modul in lmodules:
+            tarballfile = tar_dir + '/' + modul['fname']
+            if modul['installdir'] == 'bin/' and not top_dir:
+                mod_dir = self.localrepo.bindir
+            elif modul['installdir'] == 'lib/' and not top_dir:
+                mod_dir = self.localrepo.libdir
+            elif top_dir:
+                mod_dir = top_dir + '/' + modul['installdir']
+            else:
+                LOG.error('unknown installation dir %s.', modul['installdir'])
+
+            try:
+                with tarfile.open(tarballfile, "r:gz") as tar_file:
+                    list_files = tar_file.getnames()
+                    mods_exists = False
+                    for tar_member in list_files:
+                        full_path = mod_dir + tar_member
+                        if not force and os.path.isfile(full_path):
+                            mods_exists = True
+                            LOG.debug('module already installed: %s', full_path)
+                        else:
+                            mods_exists = False
+                            break
+
+                    if not mods_exists:
+                        LOG.info('installing tarfile: %s - in: %s', tarballfile, mod_dir)
+                        tar_file.extractall(path=mod_dir)
+
+            except tarfile.TarError:
+                LOG.error('failed to install module: %s.', tarballfile)
+                continue
+
+        return True
+
     def install_modules(self, list_uid, top_dir, from_locat, force=False):
         """Install modules"""
         tar_dir = self.localrepo.tardir
         if from_locat:
             tar_dir = from_locat
 
-        if self.download_tarballs(list_uid, tar_dir, "", False):
-            lmodules = self._select_modules(list_uid)
-            for modul in lmodules:
-                tarballfile = tar_dir + '/' + modul['fname']
-                if modul['installdir'] == 'bin/' and not top_dir:
-                    mod_dir = self.localrepo.bindir
-                elif modul['installdir'] == 'lib/' and not top_dir:
-                    mod_dir = self.localrepo.libdir
-                elif top_dir:
-                    mod_dir = top_dir + '/' + modul['installdir']
-                else:
-                    LOG.error('unknown installation dir %s.', modul['installdir'])
+        # Get version of tarball from module "all"
+        mod_all = self._select_modules([], ['all'])
+        tools_version = mod_all[0]['version']
+        if not self._autoinstall and not force:
+            LOG.warning("installation missing and autoinstall disabled")
+            return None
 
-                try:
-                    with tarfile.open(tarballfile, "r:gz") as tar_file:
-                        list_files = tar_file.getnames()
-                        mods_exists = False
-                        for tar_member in list_files:
-                            full_path = mod_dir + tar_member
-                            if not force and os.path.isfile(full_path):
-                                mods_exists = True
-                                LOG.debug('module already installed: %s', full_path)
-                            else:
-                                mods_exists = False
-                                break
-
-                        if not mods_exists:
-                            LOG.info('installing tarfile: %s - in: %s', tarballfile, mod_dir)
-                            tar_file.extractall(path=mod_dir)
-
-                except tarfile.TarError:
-                    LOG.error('failed to install module: %s.', tarballfile)
-                    continue
-
+        if not self._tarball:
+            LOG.info("UDOCKER_TARBALL not set, installation skipped")
             return True
 
+        LOG.info("udocker command line interface %s", __version__)
+        LOG.info("searching for udockertools %s", tools_version)
+        retry = self._installretry
+        while retry:
+            flag_download = self.download_tarballs(list_uid, tar_dir, "", False)
+            flag_install = self._installmod_logic(list_uid, top_dir, tar_dir, force)
+            if flag_download and flag_install:
+                LOG.info("installation of udockertools successful")
+                return True
 
+            retry = retry - 1
+            LOG.error("installation failure retrying ...")
+
+        self._instructions()
+        LOG.error("installation of udockertools failed")
         return False

@@ -28,13 +28,17 @@ class Config:
     # udocker installation tarball the release is the minimum requirement
     # the actual tarball used in the installation can have a higher version
     conf['tarball_release'] = "1.2.10"
+
+    # These are to be deprecated this info will be exclusively in the new metadata.json
     base_tarurl = ["https://download.ncg.ingrid.pt/webdav/udocker/",
                    "https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/"]
     conf['tarball'] = []
     for url in base_tarurl:
         conf['tarball'].append(url + "udocker-englib-1.2.10.tar.gz")
 
-    conf['installinfo'] = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages"]
+    # Either remove, as not been used
+    # conf['installinfo'] = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages"]
+
     conf['installretry'] = 3
     conf['autoinstall'] = True
     conf['config'] = "udocker.conf"

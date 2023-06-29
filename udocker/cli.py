@@ -1338,30 +1338,30 @@ class UdockerCLI:
 
         return self.STATUS_OK
 
-    def do_install(self, cmdp):
-        """
-        install: install udocker and its tools
-        install [options]
-        --force                    :force reinstall
-        --purge                    :remove files (be careful)
-        """
-        if cmdp is not None:
-            force = cmdp.get("--force")
-            purge = cmdp.get("--purge")
-            if cmdp.missing_options():  # syntax error
-                return self.STATUS_ERROR
-        else:
-            force = False
-            purge = False
+    # def do_install_old(self, cmdp):
+    #     """
+    #     install: install udocker and its tools
+    #     install [options]
+    #     --force                    :force reinstall
+    #     --purge                    :remove files (be careful)
+    #     """
+    #     if cmdp is not None:
+    #         force = cmdp.get("--force")
+    #         purge = cmdp.get("--purge")
+    #         if cmdp.missing_options():  # syntax error
+    #             return self.STATUS_ERROR
+    #     else:
+    #         force = False
+    #         purge = False
 
-        utools = UdockerTools(self.localrepo)
-        if purge:
-            utools.purge()
+    #     utools = UdockerTools(self.localrepo)
+    #     if purge:
+    #         utools.purge()
 
-        if utools.install(force):
-            return self.STATUS_OK
+    #     if utools.install_old(force):
+    #         return self.STATUS_OK
 
-        return self.STATUS_ERROR
+    #     return self.STATUS_ERROR
 
     def do_showconf(self, cmdp):
         """
@@ -1382,13 +1382,14 @@ class UdockerCLI:
 
 ############ Here are the new commands of the CLI
 
-    def do_install2(self, cmdp):
+    def do_install(self, cmdp):
         """
-        install2: Install modules, perform default modules installation: proot for host arch and
+        install: Install modules, perform default modules installation: proot for host arch and
         kernel, fakechroot and its dependency patchelf
         install2 [options] module1 module2 ...: installs module1, module2, ...
         --force                    :force reinstall
         --upgrade                  :upgrade modules
+        --purge                    :remove all modules (be careful)
         --from=<url>|<dir>`        :URL or local directory with modules tarball
         --prefix=<directory>`      :modules installation directory
         <module>`                  :positional args 1 or more
@@ -1396,6 +1397,7 @@ class UdockerCLI:
         list_uid = [int(item) for item in cmdp.get("P*")]
         force = cmdp.get("--force")
         upgrade = cmdp.get("--upgrade")
+        purge = cmdp.get("--purge")
         chk_dir = cmdp.get("--prefix=")
         from_locat = cmdp.get("--from=")
         top_dir = self.localrepo.topdir
@@ -1409,6 +1411,9 @@ class UdockerCLI:
             return self.STATUS_ERROR
 
         utools = UdockerTools(self.localrepo)
+        if purge:
+            utools.purge()
+
         install_mods = utools.install_modules(list_uid, top_dir, from_locat, force)
         if install_mods:
             return self.STATUS_OK
