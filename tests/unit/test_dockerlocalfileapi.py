@@ -31,12 +31,13 @@ class DockerLocalFileAPITestCase(TestCase):
         dlocapi = DockerLocalFileAPI(self.local)
         self.assertEqual(dlocapi.localrepo, self.local)
 
+    @patch('udocker.docker.FileUtil.isfile')
     @patch('udocker.docker.os.listdir')
     @patch('udocker.docker.FileUtil.isdir')
-    def test_02__load_structure(self, mock_isdir, mock_ldir):
+    def test_02__load_structure(self, mock_isdir, mock_ldir, mock_isfile):
         """Test02 DockerLocalFileAPI()._load_structure()."""
         res = {'repoconfigs': {}, 'repolayers': {}}
-        mock_ldir.return_value = ["xx"]
+        mock_ldir.return_value = []
         dlocapi = DockerLocalFileAPI(self.local)
         structure = dlocapi._load_structure("/tmp")
         self.assertEqual(structure, res)
@@ -64,6 +65,7 @@ class DockerLocalFileAPITestCase(TestCase):
                                         "json_f": "/tmp/"+jfname}}}
         mock_isdir.return_value = False
         mock_ldir.return_value = [jfname, ]
+        mock_isfile.return_value = True
         self.local.load_json.return_value = {"k": "v"}
         dlocapi = DockerLocalFileAPI(self.local)
         structure = dlocapi._load_structure("/tmp")
@@ -73,6 +75,7 @@ class DockerLocalFileAPITestCase(TestCase):
         res = {"repolayers": {fname: {"VERSION": {"k": "v"}}},
                "repoconfigs": dict()}
         mock_isdir.return_value = True
+        mock_isfile.return_value = False 
         mock_ldir.side_effect = [[fname, ], ["VERSION", ], ]
         self.local.load_json.return_value = {"k": "v"}
         dlocapi = DockerLocalFileAPI(self.local)
@@ -85,6 +88,7 @@ class DockerLocalFileAPITestCase(TestCase):
                                       "json_f": fulllayer}},
                "repoconfigs": dict()}
         mock_isdir.return_value = True
+        mock_isfile.return_value = False 
         mock_ldir.side_effect = [[fname, ], ["json", ], ]
         self.local.load_json.return_value = {"k": "v"}
         dlocapi = DockerLocalFileAPI(self.local)
@@ -96,6 +100,7 @@ class DockerLocalFileAPITestCase(TestCase):
         res = {"repolayers": {fname: {"layer_f": fulllayer}},
                "repoconfigs": dict()}
         mock_isdir.return_value = True
+        mock_isfile.return_value = False 
         mock_ldir.side_effect = [[fname, ], ["layer1", ], ]
         self.local.load_json.return_value = {"k": "v"}
         dlocapi = DockerLocalFileAPI(self.local)

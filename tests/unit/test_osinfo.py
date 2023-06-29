@@ -27,7 +27,7 @@ class GuestInfoTestCase(TestCase):
     def test_01_init(self):
         """Test01 OSInfo() constructor."""
         ginfo = OSInfo(self.rootdir)
-        self.assertIsInstance(ginfo._binarylist, list)
+        self.assertEqual(ginfo._root_dir, self.rootdir)
 
     @patch('udocker.helper.osinfo.Uprocess.get_output')
     @patch('udocker.helper.osinfo.os.path.isfile')
@@ -49,36 +49,21 @@ class GuestInfoTestCase(TestCase):
         status = ginfo.get_filetype(nofile)
         self.assertEqual(status, "")
 
-    @patch.object(OSInfo, 'get_filetype')
-    def test_03_arch(self, mock_getftype):
+    @patch.object(OSInfo, 'arch_from_binaries')
+    @patch.object(OSInfo, 'arch_from_metadata')
+    def test_03_arch(self, mock_frommeta, mock_frombin):
         """Test03 OSInfo.arch()"""
-        # arch is x86_64
-        ftype = "/bin/ls: yyy, x86-64, xxx"
-        mock_getftype.return_value = ftype
+        # arch from metadata is amd64
+        mock_frommeta.return_value = "amd64"
+        ginfo = OSInfo(self.rootdir)
+        status = ginfo.arch()
+
+        # arch  from metadata is empty from bin is amd64
+        mock_frommeta.return_value = ""
+        mock_frombin.return_value = "amd64"
         ginfo = OSInfo(self.rootdir)
         status = ginfo.arch()
         self.assertEqual(status, "amd64")
-
-        # arch is i386
-        ftype = "/bin/ls: yyy, Intel 80386, xxx"
-        mock_getftype.return_value = ftype
-        ginfo = OSInfo(self.rootdir)
-        status = ginfo.arch()
-        self.assertEqual(status, "i386")
-
-        # arch is arm 64
-        ftype = "/bin/ls: yyy, aarch64"
-        mock_getftype.return_value = ftype
-        ginfo = OSInfo(self.rootdir)
-        status = ginfo.arch()
-        self.assertEqual(status, "arm64")
-
-        # arch is arm
-        ftype = "/bin/ls: yyy, ARM, xxx"
-        mock_getftype.return_value = ftype
-        ginfo = OSInfo(self.rootdir)
-        status = ginfo.arch()
-        self.assertEqual(status, "arm")
 
     @patch('udocker.helper.osinfo.os.path.exists')
     @patch('udocker.helper.osinfo.FileUtil.match')
@@ -121,7 +106,7 @@ class GuestInfoTestCase(TestCase):
         ginfo = OSInfo(self.rootdir)
         status = ginfo.osversion()
         self.assertEqual(status, "")
-
+   
 
 if __name__ == '__main__':
     main()

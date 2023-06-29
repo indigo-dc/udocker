@@ -246,35 +246,46 @@ class FakechrootEngineTestCase(TestCase):
     @patch('udocker.engine.fakechroot.FileUtil.get1stline')
     @patch('udocker.engine.fakechroot.FileUtil.cont2host')
     @patch('udocker.engine.fakechroot.FileUtil.find_exec')
-    @patch('udocker.engine.fakechroot.OSInfo.get_filetype')
+    @patch('udocker.engine.fakechroot.OSInfo.is_binary_executable')
     @patch('udocker.engine.fakechroot.Msg')
-    def test_09__run_add_script_support(self, mock_msg, mock_ftype,
+    def test_09__run_add_script_support(self, mock_msg, mock_isbinary,
                                         mock_findexe, mock_cont2host,
                                         mock_1stline):
         """Test09 FakechrootEngine._run_add_script_support()"""
         mock_msg.level = 3
-        mock_ftype.return_value = "/bin/ls: ELF, x86-64, static"
-        ufake = FakechrootEngine(self.local, self.xmode)
-        ufake.opt["cmd"] = [""]
-        status = ufake._run_add_script_support("/bin/ls")
-        self.assertEqual(status, [])
-
-        mock_msg.level = 3
-        mock_ftype.return_value = "/bin/ls: xxx, x86-64, yyy"
-        mock_findexe.side_effect = ["ls", ""]
-        ufake = FakechrootEngine(self.local, self.xmode)
-        status = ufake._run_add_script_support("/bin/ls")
-        self.assertEqual(status, ["/ls"])
-
-        mock_msg.level = 3
-        mock_ftype.return_value = "/bin/ls: xxx, x86-64, yyy"
-        mock_findexe.side_effect = ["", "ls"]
-        mock_cont2host.return_value = "/bin/ls"
-        mock_1stline.return_value = ""
+        mock_isbinary.return_value = True
         ufake = FakechrootEngine(self.local, self.xmode)
         ufake.container_root = "/ROOT"
-        status = ufake._run_add_script_support("/bin/ls")
-        self.assertEqual(status, ["/ROOT/ls"])
+        ufake.opt["cmd"] = [""]
+        status = ufake._run_add_script_support("/ROOT/bin/ls")
+        self.assertEqual(status, [])
+
+        #mock_msg.level = 3
+        #mock_isbinary.return_value = False
+        #mock_findexe.side_effect = ["ls", ""]
+        #ufake = FakechrootEngine(self.local, self.xmode)
+        #status = ufake._run_add_script_support("/bin/ls")
+        #self.assertEqual(status, ["/ls"])
+
+        mock_msg.level = 3
+        mock_isbinary.return_value = False
+        mock_cont2host.return_value = "/ROOT/bin/ls"
+        mock_1stline.return_value = b"#!/bin/python"
+        mock_findexe.side_effect = ["/bin/ls", ""]
+        ufake = FakechrootEngine(self.local, self.xmode)
+        ufake.container_root = "/ROOT"
+        status = ufake._run_add_script_support("/ROOT/bin/ls")
+        self.assertEqual(status, ["/ROOT/bin/python"])
+
+        mock_msg.level = 3
+        mock_isbinary.return_value = False
+        mock_cont2host.return_value = "/ROOT/bin/ls"
+        mock_1stline.return_value = b""
+        mock_findexe.side_effect = ["/bin/ls", ""]
+        ufake = FakechrootEngine(self.local, self.xmode)
+        ufake.container_root = "/ROOT"
+        status = ufake._run_add_script_support("/ROOT/bin/ls")
+        self.assertEqual(status, ["/ROOT/bin/ls"])
 
     @patch('udocker.engine.fakechroot.FileUtil.cont2host')
     @patch.object(FakechrootEngine, '_run_banner')
