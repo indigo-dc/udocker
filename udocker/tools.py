@@ -525,6 +525,8 @@ class UdockerTools:
                 LOG.error('failed to install module: %s.', tarballfile)
                 continue
 
+        FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+        FileUtil(self.localrepo.libdir).rchmod()
         return True
 
     def install_modules(self, list_uid, top_dir, from_locat, force=False):
