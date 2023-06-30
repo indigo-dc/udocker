@@ -447,8 +447,8 @@ of the installation manual.
 This work was performed in the framework of the H2020 project INDIGO-Datacloud
 (RIA 653549) and further developed with co-funding by the projects EOSC-hub
 (Horizon 2020) under Grant number 777536, DEEP-Hybrid-DataCloud
-(Horizon 2020) under Grant number 777435, DT-Geo (Horizon Europe) under Grant 
-number 101058129. Software Quality Assurance is performed with the support of 
+(Horizon 2020) under Grant number 777435, DT-Geo (Horizon Europe) under Grant
+number 101058129. Software Quality Assurance is performed with the support of
 by the project EOSC-Synergy (Horizon 2020).
 The authors wish to acknowleadge the support of INCD-Infraestrutura Nacional de
 Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER

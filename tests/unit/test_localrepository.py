@@ -213,12 +213,9 @@ class LocalRepositoryTestCase(TestCase):
     @patch.object(LocalRepository, 'cd_container')
     @patch('udocker.container.localrepo.FileUtil.isdir')
     @patch('udocker.container.localrepo.os.path.exists')
-    #@patch('udocker.container.localrepo.FileUtil')
     def test_12_iswriteable_container(self, mock_exists,
                                       mock_isdir, mock_cdcont, mock_iswrite):
         """Test12 LocalRepository().iswriteable_container()."""
-        #mock_fu.return_value.register_prefix.side_effect = \
-        #    [None, None, None]
         container_id = "d2578feb-acfc-37e0-8561-47335f85e46a"
         mock_exists.return_value = False
         mock_cdcont.return_value = "/home/u1/.udocker/containerid"
@@ -227,8 +224,6 @@ class LocalRepositoryTestCase(TestCase):
         self.assertEqual(status, 2)
         self.assertTrue(mock_exists.called)
 
-        #mock_fu.return_value.register_prefix.side_effect = \
-        #    [None, None, None]
         mock_exists.return_value = True
         mock_isdir.return_value = False
         mock_iswrite.return_value = True
@@ -238,8 +233,6 @@ class LocalRepositoryTestCase(TestCase):
         self.assertTrue(mock_isdir.called)
         self.assertEqual(status, 3)
 
-        #mock_fu.return_value.register_prefix.side_effect = \
-        #    [None, None, None]
         mock_exists.return_value = True
         mock_isdir.return_value = True
         mock_iswrite.return_value = True
@@ -249,8 +242,6 @@ class LocalRepositoryTestCase(TestCase):
         self.assertEqual(status, 1)
         self.assertTrue(mock_iswrite.called)
 
-        #mock_fu.return_value.register_prefix.side_effect = \
-        #    [None, None, None]
         mock_exists.return_value = True
         mock_isdir.return_value = True
         mock_iswrite.return_value = False

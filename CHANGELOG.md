@@ -4,8 +4,8 @@
 
 * improved handling of container platform information
 * added support for QEMU on Pn modes enabling execution of containers
-  with architectures different than the host 
-* selection of executable for Sn mode now defaults to apptainer and 
+  with architectures different than the host
+* selection of executable for Sn mode now defaults to apptainer and
   in second place to singularity
 * the new command `manifest inspect` allows display of image manifests
   therefore enabling access to the catalogue of platforms supported by
@@ -13,20 +13,20 @@
 * the new command `tag` enables changing the name of an existing image
 * new option `pull --platform=os/architecture` enables pulling of images
   of a given architecture possibly different from the host
-* new option `run --platform=os/architecture` enables pull and run of 
+* new option `run --platform=os/architecture` enables pull and run of
   images of a given architecture possibly different from the host
 * new option `import --platform=os/architecture` enables to specify
-  an architecture for the image 
+  an architecture for the image
 * new option `ps -p` enables list of the architectures of containers
 * new option `images -p` enables list of the architectures of containers
 * the udocker tools support for Fn now includes Ubuntu 23:04, Fedora 38,
-  Alpine 3.17 and 3.18. 
+  Alpine 3.17 and 3.18.
 * experimental support for native Fn execution on arm64 for Fedora 36,
   Fedora 37, Fedora 38, CentOS 7, AlmaLinux 8, AlmaLinux 9 and Ubuntu 22,
   Ubuntu 20, Ubuntu 18 and similar.
-* experimental support for native Fn execution on ppc64le for CentOS 7, 
+* experimental support for native Fn execution on ppc64le for CentOS 7,
   AlmaLinux 8, AlmaLinux 9, Ubuntu 22, Ubuntu 20, Ubuntu 18 and similar.
-* experimental support for runc in arm64 and ppc64le 
+* experimental support for runc in arm64 and ppc64le
 * updated version of Pn engines for x86, x86_64, arm64.
 
 ## udocker (1.3.9)

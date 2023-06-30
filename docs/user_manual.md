@@ -982,10 +982,10 @@ udocker tag SOURCEREPO/IMAGE:TAG  TARGETREPO/IMAGE:TAG
 
 Creates a new image tag from an existing source image. The newly created
 image tag is a replica of the source image. The source image can be removed
-or further updated via pull without affecting the newly created tag. A 
+or further updated via pull without affecting the newly created tag. A
 new tag does not occupy additional space as the image layers are shared.
 The image layers are only removed from the local udocker repository when
-no other image is referencing them. 
+no other image is referencing them.
 
 Example:
 
