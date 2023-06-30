@@ -47,10 +47,10 @@ class SingularityEngine(ExecutionEngineCommon):
         if not os.path.exists(self.executable):
             Msg().err("Error: apptainer or singularity executable not found")
             Msg().out("Info: Host might not be supported this execution mode",
-                       "specify path to\n      apptainer/singularity with",
-                       "environment UDOCKER_USE_SINGULARITY_EXECUTABLE",
-                       "\n      or choose other execution mode with: udocker",
-                       "setup --execmode=<mode>", l=Msg.INF)
+                      "specify path to\n      apptainer/singularity with",
+                      "environment UDOCKER_USE_SINGULARITY_EXECUTABLE",
+                      "\n      or choose other execution mode with: udocker",
+                      "setup --execmode=<mode>", l=Msg.INF)
             sys.exit(1)
 
     def _get_volume_bindings(self):

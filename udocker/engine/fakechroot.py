@@ -59,7 +59,7 @@ class FakechrootEngine(ExecutionEngineCommon):
 
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
-        if fakechroot_so.count('-') != 3: 
+        if fakechroot_so.count('-') != 3:
             Msg().out("Info: this OS or architecture might not be supported by",
                       "this execution mode",
                       "\n      specify path to libfakechroot.so with",
