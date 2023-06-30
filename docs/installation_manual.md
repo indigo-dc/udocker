@@ -479,8 +479,7 @@ For Centos 7 there are steps that system administrators may perform
 to enable user namespaces, such as:
 
 ```bash
-sudo grubby --update-kernel=ALL --args='namespace.unpriv_enable=1'
-sudo echo "user.max_user_namespaces=15076" >> /etc/sysctl.conf
+sudo echo "user.max_user_namespaces=10000" >> /etc/sysctl.conf
 ```
 
 ##### 7.3.1.4. Modes R2 and R3 specific restrictions
