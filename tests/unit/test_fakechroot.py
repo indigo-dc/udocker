@@ -275,7 +275,7 @@ class FakechrootEngineTestCase(TestCase):
         ufake = FakechrootEngine(self.local, self.xmode)
         ufake.container_root = "/ROOT"
         status = ufake._run_add_script_support("/ROOT/bin/ls")
-        self.assertEqual(status, ["/ROOT/bin/python"])
+        self.assertEqual(status, ["/ROOT//bin/python"])
 
         mock_msg.level = 3
         mock_isbinary.return_value = False
@@ -285,7 +285,7 @@ class FakechrootEngineTestCase(TestCase):
         ufake = FakechrootEngine(self.local, self.xmode)
         ufake.container_root = "/ROOT"
         status = ufake._run_add_script_support("/ROOT/bin/ls")
-        self.assertEqual(status, ["/ROOT/bin/ls"])
+        self.assertEqual(status, ["/ROOT//bin/ls"])
 
     @patch('udocker.engine.fakechroot.FileUtil.cont2host')
     @patch.object(FakechrootEngine, '_run_banner')

@@ -29,25 +29,36 @@ class GuestInfoTestCase(TestCase):
         ginfo = OSInfo(self.rootdir)
         self.assertEqual(ginfo._root_dir, self.rootdir)
 
+    @patch('udocker.helper.osinfo.os.path.islink')
     @patch('udocker.helper.osinfo.Uprocess.get_output')
     @patch('udocker.helper.osinfo.os.path.isfile')
-    def test_02_get_filetype(self, mock_isfile, mock_getout):
+    def test_02_get_filetype(self, mock_isfile, mock_getout, mock_islink):
         """Test02 OSInfo.get_filetype(filename)"""
+        # file does not exist
+        ftype = "/bin/ls: yyy, x86-64, xxx"
+        mock_islink.return_value = False
+        mock_isfile.return_value = False
+        mock_getout.return_value = ftype
+        ginfo = OSInfo(self.rootdir)
+        status = ginfo.get_filetype(self.file)
+        self.assertEqual(status, ("", ""))
+
         # full filepath exists
         ftype = "/bin/ls: yyy, x86-64, xxx"
+        mock_islink.return_value = False
         mock_isfile.return_value = True
         mock_getout.return_value = ftype
         ginfo = OSInfo(self.rootdir)
         status = ginfo.get_filetype(self.file)
-        self.assertEqual(status, ftype)
+        self.assertEqual(status, ("readelf", ftype))
 
-        # file does not exist
-        nofile = "ddd: cannot open"
+        # file type data not returned
         mock_isfile.return_value = False
-        mock_getout.return_value = nofile
+        mock_isfile.return_value = True
+        mock_getout.return_value = ""
         ginfo = OSInfo(self.rootdir)
-        status = ginfo.get_filetype(nofile)
-        self.assertEqual(status, "")
+        status = ginfo.get_filetype(self.file)
+        self.assertEqual(status, ("", ""))
 
     @patch.object(OSInfo, 'arch_from_binaries')
     @patch.object(OSInfo, 'arch_from_metadata')

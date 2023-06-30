@@ -37,31 +37,62 @@ class ElfPatcherTestCase(TestCase):
         self.assertTrue(mock_path.callled)
         self.assertEqual(elfp._uid, "1000")
 
+    @patch('udocker.helper.elfpatcher.FileUtil.find_exec')
     @patch('udocker.helper.elfpatcher.Msg')
     @patch('udocker.helper.elfpatcher.os.path.exists')
     @patch('udocker.helper.elfpatcher.HostInfo.arch')
     @patch('udocker.helper.elfpatcher.FileUtil.find_file_in_dir')
     @patch('udocker.helper.elfpatcher.os.path.realpath')
     def test_02_select_patchelf(self, mock_path, mock_find,
-                                mock_arch, mock_exists, mock_msg):
+                                mock_arch, mock_exists, mock_msg,
+                                mock_findexec):
         """Test02 ElfPatcher().select_patchelf()."""
         mock_msg.level = 0
-        mock_path.return_value = "/some_contdir"
+        Config.conf['use_patchelf_executable'] = ""
+        mock_findexec.return_value = "/home/user/.udocker/bin/patchelf"
         mock_arch.return_value = "arm"
-        mock_find.return_value = "runc-arm"
+        elfp = ElfPatcher(self.local, self.contid)
+        output = elfp.select_patchelf()
+        self.assertEqual(output, "/home/user/.udocker/bin/patchelf")
+
+        mock_msg.level = 0
+        Config.conf['use_patchelf_executable'] = \
+            "/home/user/.udocker/bin/patchelf"
+        mock_arch.return_value = "arm"
         mock_exists.return_value = True
         elfp = ElfPatcher(self.local, self.contid)
         output = elfp.select_patchelf()
-        self.assertEqual(output, "runc-arm")
+        self.assertEqual(output, "/home/user/.udocker/bin/patchelf")
 
-        mock_path.return_value = "/some_contdir"
+        mock_msg.level = 0
+        Config.conf['use_patchelf_executable'] = \
+            "/home/user/.udocker/bin/patchelf"
         mock_arch.return_value = "arm"
-        mock_find.return_value = ""
         mock_exists.return_value = False
         with self.assertRaises(SystemExit) as epexpt:
             elfp = ElfPatcher(self.local, self.contid)
             elfp.select_patchelf()
+            print(epexpt.exception.code)
             self.assertEqual(epexpt.exception.code, 1)
+
+        mock_msg.level = 0
+        Config.conf['use_patchelf_executable'] = "UDOCKER"
+        mock_arch.return_value = "arm"
+        mock_exists.return_value = True
+        mock_find.return_value = "/home/user/.udocker/bin/patchelf-arm"
+        elfp = ElfPatcher(self.local, self.contid)
+        output = elfp.select_patchelf()
+        self.assertEqual(output, "/home/user/.udocker/bin/patchelf-arm")
+
+        mock_msg.level = 0
+        Config.conf['use_patchelf_executable'] = ""
+        mock_findexec.return_value = ""
+        mock_arch.return_value = "arm"
+        mock_exists.return_value = True
+        mock_find.return_value = "/home/user/.udocker/bin/patchelf-arm"
+        elfp = ElfPatcher(self.local, self.contid)
+        output = elfp.select_patchelf()
+        self.assertEqual(output, "/home/user/.udocker/bin/patchelf-arm")
 
     @patch('udocker.helper.elfpatcher.os.path.realpath')
     def test_03__replace(self, mock_path):
