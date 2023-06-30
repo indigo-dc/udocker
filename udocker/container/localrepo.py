@@ -592,7 +592,7 @@ class LocalRepository(object):
         """Get the image platform from the metadata"""
         (manifest_json, dummy) = self.get_image_attributes()
         if not manifest_json:
-           return "unknown/unknown"
+            return "unknown/unknown"
         try:
             p_architecture = manifest_json["architecture"]
         except KeyError:

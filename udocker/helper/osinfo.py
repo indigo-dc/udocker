@@ -9,6 +9,7 @@ from udocker.utils.uprocess import Uprocess
 from udocker.utils.fileutil import FileUtil
 from udocker.helper.archinfo import ArchInfo
 
+
 class OSInfo(ArchInfo):
     """Get os information"""
 
@@ -107,7 +108,7 @@ class OSInfo(ArchInfo):
             architecture = self.arch_from_binaries(target)
         return architecture
 
-    def is_same_arch(self, other_root_dir="/" ,target="UDOCKER"):
+    def is_same_arch(self, other_root_dir="/", target="UDOCKER"):
         """Compare architectures for two system trees"""
         this_arch = self.arch(target)
         other_arch = OSInfo(other_root_dir).arch(target)
@@ -162,7 +163,7 @@ class OSInfo(ArchInfo):
         """Get guest operating system distribution"""
         (distribution, version) = self._osdistribution()
         if version.count(".") >= 2:
-            version = ".".join(version.split(".")[0:2]) 
+            version = ".".join(version.split(".")[0:2])
         else:
             version = version.split(".")[0]
         return(distribution, version)

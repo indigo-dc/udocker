@@ -382,14 +382,13 @@ class DockerIoAPI(object):
         try:
             for manifest in index_list["manifests"]:
                 manifest_p = manifest["platform"]
-                if (p_os and
-                    (manifest_p["os"]).lower() != p_os):
+                if (p_os and (manifest_p["os"]).lower() != p_os):
                     continue
                 if (p_architecture and
-                    (manifest_p["architecture"]).lower() != p_architecture):
+                        (manifest_p["architecture"]).lower() != p_architecture):
                     continue
                 if (p_variant and
-                    (manifest_p["variant"]).lower() != p_variant):
+                        (manifest_p["variant"]).lower() != p_variant):
                     continue
                 return manifest["digest"]
         except (KeyError, AttributeError, ValueError, TypeError):
@@ -423,7 +422,7 @@ class DockerIoAPI(object):
             if "oci.image.manifest.v1+json" in content_type:
                 return (hdr.data, json.loads(buf.getvalue().decode()))
             if ("docker.distribution.manifest.list.v2" in content_type
-                or "oci.image.index.v1+json" in content_type):
+                    or "oci.image.index.v1+json" in content_type):
                 image_index = json.loads(buf.getvalue().decode())
                 if not platform:
                     return (hdr.data, image_index)
@@ -713,7 +712,6 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             elif fname == "manifest.json":
                 structure["manifest"] = \
                         self.localrepo.load_json(f_path)
-            #elif len(fname) >= 69 and fname.endswith(".json"):
             elif fname.endswith(".json") and FileUtil(f_path).isfile():
                 structure["repoconfigs"][fname] = {}
                 structure["repoconfigs"][fname]["json"] = self.localrepo.load_json(f_path)

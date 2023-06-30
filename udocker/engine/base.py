@@ -680,7 +680,6 @@ class ExecutionEngineCommon(object):
     def _get_qemu(self, return_path=False):
         """Get the qemu binary name if emulation needed"""
         container_qemu_arch = OSInfo(self.container_root).arch("qemu")
-        #host_qemu_arch = OSInfo("/").arch("qemu")
         host_qemu_arch = HostInfo().arch("qemu")
         if not (container_qemu_arch and host_qemu_arch):
             return ""

@@ -34,7 +34,7 @@ class ExecutionModeTestCase(TestCase):
         Config().conf['osversion'] = "OSVERSION"
         Config().conf['arch'] = "ARCH"
         Config().conf['default_execution_mode'] = "P1"
-        Config().conf['override_default_execution_modes'] = {"arm":"P2", }
+        Config().conf['override_default_execution_modes'] = {"arm": "P2", }
         self.container_id = "CONTAINER_ID"
 
         str_local = 'udocker.container.localrepo.LocalRepository'

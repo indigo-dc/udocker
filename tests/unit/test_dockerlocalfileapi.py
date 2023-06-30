@@ -75,7 +75,7 @@ class DockerLocalFileAPITestCase(TestCase):
         res = {"repolayers": {fname: {"VERSION": {"k": "v"}}},
                "repoconfigs": dict()}
         mock_isdir.return_value = True
-        mock_isfile.return_value = False 
+        mock_isfile.return_value = False
         mock_ldir.side_effect = [[fname, ], ["VERSION", ], ]
         self.local.load_json.return_value = {"k": "v"}
         dlocapi = DockerLocalFileAPI(self.local)
@@ -88,7 +88,7 @@ class DockerLocalFileAPITestCase(TestCase):
                                       "json_f": fulllayer}},
                "repoconfigs": dict()}
         mock_isdir.return_value = True
-        mock_isfile.return_value = False 
+        mock_isfile.return_value = False
         mock_ldir.side_effect = [[fname, ], ["json", ], ]
         self.local.load_json.return_value = {"k": "v"}
         dlocapi = DockerLocalFileAPI(self.local)
@@ -100,7 +100,7 @@ class DockerLocalFileAPITestCase(TestCase):
         res = {"repolayers": {fname: {"layer_f": fulllayer}},
                "repoconfigs": dict()}
         mock_isdir.return_value = True
-        mock_isfile.return_value = False 
+        mock_isfile.return_value = False
         mock_ldir.side_effect = [[fname, ], ["layer1", ], ]
         self.local.load_json.return_value = {"k": "v"}
         dlocapi = DockerLocalFileAPI(self.local)

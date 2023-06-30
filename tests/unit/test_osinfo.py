@@ -117,7 +117,7 @@ class GuestInfoTestCase(TestCase):
         ginfo = OSInfo(self.rootdir)
         status = ginfo.osversion()
         self.assertEqual(status, "")
-   
+
 
 if __name__ == '__main__':
     main()

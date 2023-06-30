@@ -1007,8 +1007,6 @@ Example:
 udocker manifest inspect centos:centos7
 ```
 
-
-
 ## 4. Running MPI jobs
 
 In this section we will use the Lattice QCD simulation software openQCD to

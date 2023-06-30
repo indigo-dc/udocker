@@ -62,10 +62,10 @@ class FakechrootEngine(ExecutionEngineCommon):
         if fakechroot_so.count('-') != 3: 
             Msg().out("Info: this OS or architecture might not be supported by",
                       "this execution mode",
-                       "\n      specify path to libfakechroot.so with",
-                       "environment UDOCKER_FAKECHROOT_SO",
-                       "\n      or choose other execution mode with: udocker",
-                       "setup --execmode=<mode>", l=Msg.INF)
+                      "\n      specify path to libfakechroot.so with",
+                      "environment UDOCKER_FAKECHROOT_SO",
+                      "\n      or choose other execution mode with: udocker",
+                      "setup --execmode=<mode>", l=Msg.INF)
         if not os.path.exists(fakechroot_so):
             Msg().err("Error: libfakechroot not found", image_list)
             sys.exit(1)
@@ -233,10 +233,9 @@ class FakechrootEngine(ExecutionEngineCommon):
             self.opt["cmd"][0] = exec_path
             return []
 
-        #env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
-        #if env_exec:
-        #    return [self.container_root + '/' + env_exec, ]
-
+        # env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
+        # if env_exec:
+        #     return [self.container_root + '/' + env_exec, ]
 
         real_path = FileUtil(self.container_root).cont2host(relc_path, self.opt["vol"])
         hashbang = FileUtil(real_path).get1stline()

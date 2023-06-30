@@ -844,7 +844,6 @@ class UdockerCLI(object):
                 Msg().out("%s    %c" % (imagerepo + ":" + tag, prot))
 
             if verbose:
-                #imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
                 Msg().out(" %s" % (imagerepo_dir))
                 layers_list = self.localrepo.get_layers(imagerepo, tag)
                 if layers_list:

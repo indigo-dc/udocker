@@ -30,7 +30,6 @@ class HostInfoTestCase(TestCase):
         name = HostInfo().username()
         self.assertEqual(name, usr.pw_name)
 
-    #@patch('udocker.helper.hostinfo.get_arch')
     @patch('udocker.helper.hostinfo.platform.machine')
     def test_02_arch(self, mock_mach):
         """Test02 HostInfo().arch."""

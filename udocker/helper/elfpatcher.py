@@ -55,10 +55,10 @@ class ElfPatcher(object):
             Msg().err("Error: patchelf executable not found")
             Msg().out("Info: Host architecture might not be supported by",
                       "this execution mode:", arch,
-                       "\n      specify path to patchelf with environment",
-                       "UDOCKER_USE_PATCHELF_EXECUTABLE",
-                       "\n      or choose other execution mode with: udocker",
-                       "setup --execmode=<mode>", l=Msg.INF)
+                      "\n      specify path to patchelf with environment",
+                      "UDOCKER_USE_PATCHELF_EXECUTABLE",
+                      "\n      or choose other execution mode with: udocker",
+                      "setup --execmode=<mode>", l=Msg.INF)
             sys.exit(1)
 
         return patchelf_exec

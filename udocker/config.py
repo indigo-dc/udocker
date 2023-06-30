@@ -72,9 +72,9 @@ class Config(object):
     # container execution mode if not set via setup
     # Change it to P2 if execution problems occur
     conf['override_default_execution_mode'] = ""
-    conf['default_execution_modes'] = {'x86_64':"P1", 'x86':"P1",
-                                       'arm64':"P1", 'arm':"P2",
-                                       'ppc64le':"R1", 'DEFAULT':"R1"}
+    conf['default_execution_modes'] = {'x86_64': "P1", 'x86': "P1",
+                                       'arm64': "P1", 'arm': "P2",
+                                       'ppc64le': "R1", 'DEFAULT': "R1"}
 
     # PRoot override seccomp
     # conf['proot_noseccomp'] = True

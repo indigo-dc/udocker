@@ -49,10 +49,10 @@ class PRootEngine(ExecutionEngineCommon):
             Msg().err("Error: proot executable not found")
             Msg().out("Info: Host architecture might not be supported by",
                       "this execution mode:", arch,
-                       "\n      specify path to proot with environment",
-                       "UDOCKER_USE_PROOT_EXECUTABLE",
-                       "\n      or choose other execution mode with: udocker",
-                       "setup --execmode=<mode>", l=Msg.INF)
+                      "\n      specify path to proot with environment",
+                      "UDOCKER_USE_PROOT_EXECUTABLE",
+                      "\n      or choose other execution mode with: udocker",
+                      "setup --execmode=<mode>", l=Msg.INF)
             sys.exit(1)
 
         if Config.conf['proot_noseccomp'] is not None:
@@ -76,7 +76,6 @@ class PRootEngine(ExecutionEngineCommon):
             return False
 
         host_file = self.container_dir + "/osenv.json"
-        #host_info = self._is_same_osenv(host_file)
         host_info = self._get_saved_osenv(host_file)
         if host_info:
             if "PROOT_NEW_SECCOMP" in host_info:
@@ -127,7 +126,7 @@ class PRootEngine(ExecutionEngineCommon):
     def _get_qemu_string(self):
         """Get the qemu string for container run command if emulation needed"""
         qemu_filename = self._get_qemu()
-        return ["-q", qemu_filename ] if qemu_filename else []
+        return ["-q", qemu_filename] if qemu_filename else []
 
     def run(self, container_id):
         """Execute a Docker container using PRoot. This is the main method

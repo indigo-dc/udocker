@@ -260,13 +260,6 @@ class FakechrootEngineTestCase(TestCase):
         status = ufake._run_add_script_support("/ROOT/bin/ls")
         self.assertEqual(status, [])
 
-        #mock_msg.level = 3
-        #mock_isbinary.return_value = False
-        #mock_findexe.side_effect = ["ls", ""]
-        #ufake = FakechrootEngine(self.local, self.xmode)
-        #status = ufake._run_add_script_support("/bin/ls")
-        #self.assertEqual(status, ["/ls"])
-
         mock_msg.level = 3
         mock_isbinary.return_value = False
         mock_cont2host.return_value = "/ROOT/bin/ls"
