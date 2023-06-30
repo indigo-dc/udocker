@@ -466,7 +466,24 @@ hosts that may share the common location. Therefore if the original
 location pathname is `/sw/udocker/containers` then all hosts must
 also mount it at the same exact path `/sw/udocker/containers`.
 
-##### 7.3.1.3. Modes R2 and R3 restrictions
+##### 7.3.1.3. Modes R1, R2 and R3 general restrictions
+
+These modes make use of runc or crun and require that user namespaces
+are enabled in the kernel. Older distributions may either not have
+support for namespaces (e.g. CentOS 6) or may have the support for
+user namespaces disabled at the system level (e.g. CentOS 7). More
+recent releases of Linux distributions do have support for user
+namespaces (e.g. CentOS 8 and CentOS 9).
+
+For Centos 7 there are steps that system administrators may perform
+to enable user namespaces, such as:
+
+```bash
+sudo grubby --update-kernel=ALL --args='namespace.unpriv_enable=1'
+sudo echo "user.max_user_namespaces=15076" >> /etc/sysctl.conf
+```
+
+##### 7.3.1.4. Modes R2 and R3 specific restrictions
 
 Central installation from readonly location using any of the R modes
 requires udocker above v1.1.7.
