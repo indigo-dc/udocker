@@ -32,38 +32,27 @@ class PRootEngine(ExecutionEngineCommon):
     def select_proot(self):
         """Set proot executable and related variables"""
         self.executable = Config.conf['use_proot_executable']
-        if self.executable != "UDOCKER" and not self.executable:
+        if not self.executable:
             self.executable = FileUtil("proot").find_exec()
 
+        arch = HostInfo().arch()
         if self.executable == "UDOCKER" or not self.executable:
             self.executable = ""
-            arch = HostInfo().arch()
-            image_list = []
-            if arch == "amd64":
-                if HostInfo().oskernel_isgreater([4, 8, 0]):
-                    image_list = ["proot-x86_64-4_8_0", "proot-x86_64", "proot"]
-                else:
-                    image_list = ["proot-x86_64", "proot"]
-            elif arch == "i386":
-                if HostInfo().oskernel_isgreater([4, 8, 0]):
-                    image_list = ["proot-x86-4_8_0", "proot-x86", "proot"]
-                else:
-                    image_list = ["proot-x86", "proot"]
-            elif arch == "arm64":
-                if HostInfo().oskernel_isgreater([4, 8, 0]):
-                    image_list = ["proot-arm64-4_8_0", "proot-arm64", "proot"]
-                else:
-                    image_list = ["proot-arm64", "proot"]
-            elif arch == "arm":
-                if HostInfo().oskernel_isgreater([4, 8, 0]):
-                    image_list = ["proot-arm-4_8_0", "proot-arm", "proot"]
-                else:
-                    image_list = ["proot-arm", "proot"]
+            if HostInfo().oskernel_isgreater([4, 8, 0]):
+                image_list = ["proot-%s-4_8_0" % (arch), "proot-%s" % (arch), "proot"]
+            else:
+                image_list = ["proot-%s" % (arch), "proot"]
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
 
         if not os.path.exists(self.executable):
             Msg().err("Error: proot executable not found")
+            Msg().out("Info: Host architecture might not be supported by",
+                      "this execution mode:", arch,
+                      "\n      specify path to proot with environment",
+                      "UDOCKER_USE_PROOT_EXECUTABLE",
+                      "\n      or choose other execution mode with: udocker",
+                      "setup --execmode=<mode>", l=Msg.INF)
             sys.exit(1)
 
         if Config.conf['proot_noseccomp'] is not None:
@@ -85,8 +74,9 @@ class PRootEngine(ExecutionEngineCommon):
                 self.proot_noseccomp or
                 HostInfo().oskernel_isgreater([4, 8, 0])):
             return False
+
         host_file = self.container_dir + "/osenv.json"
-        host_info = self._is_same_osenv(host_file)
+        host_info = self._get_saved_osenv(host_file)
         if host_info:
             if "PROOT_NEW_SECCOMP" in host_info:
                 return True
@@ -133,6 +123,11 @@ class PRootEngine(ExecutionEngineCommon):
             proot_netmap_list.extend(["-n", ])
         return proot_netmap_list
 
+    def _get_qemu_string(self):
+        """Get the qemu string for container run command if emulation needed"""
+        qemu_filename = self._get_qemu()
+        return ["-q", qemu_filename] if qemu_filename else []
+
     def run(self, container_id):
         """Execute a Docker container using PRoot. This is the main method
         invoked to run the a container with PRoot.
@@ -178,6 +173,7 @@ class PRootEngine(ExecutionEngineCommon):
         cmd_l.append(self.executable)
         cmd_l.extend(proot_verbose)
         cmd_l.extend(proot_kill_on_exit)
+        cmd_l.extend(self._get_qemu_string())
         cmd_l.extend(self._get_volume_bindings())
         cmd_l.extend(self._set_uid_map())
         cmd_l.extend(["-k", self._kernel, ])

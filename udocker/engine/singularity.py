@@ -30,27 +30,27 @@ class SingularityEngine(ExecutionEngineCommon):
     def select_singularity(self):
         """Set singularity executable and related variables"""
         self.executable = Config.conf['use_singularity_executable']
-        if self.executable != "UDOCKER" and not self.executable:
+        if not self.executable:
+            self.executable = FileUtil("apptainer").find_exec()
+        if not self.executable:
             self.executable = FileUtil("singularity").find_exec()
 
         if self.executable == "UDOCKER" or not self.executable:
             self.executable = ""
             arch = HostInfo().arch()
-            image_list = []
-            if arch == "amd64":
-                image_list = ["singularity-x86_64", "singularity"]
-            elif arch == "i386":
-                image_list = ["singularity-x86", "singularity"]
-            elif arch == "arm64":
-                image_list = ["singularity-arm64", "singularity"]
-            elif arch == "arm":
-                image_list = ["singularity-arm", "singularity"]
+            image_list = ["apptainer-%s" % (arch), "apptainer",
+                          "singularity-%s" % (arch), "singularity"]
 
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
 
         if not os.path.exists(self.executable):
-            Msg().err("Error: singularity executable not found")
+            Msg().err("Error: apptainer or singularity executable not found")
+            Msg().out("Info: Host might not be supported this execution mode",
+                      "specify path to\n      apptainer/singularity with",
+                      "environment UDOCKER_USE_SINGULARITY_EXECUTABLE",
+                      "\n      or choose other execution mode with: udocker",
+                      "setup --execmode=<mode>", l=Msg.INF)
             sys.exit(1)
 
     def _get_volume_bindings(self):
@@ -145,6 +145,8 @@ class SingularityEngine(ExecutionEngineCommon):
         exec_path = self._run_init(container_id)
         if not exec_path:
             return 2
+
+        self._check_arch()
 
         self.opt["cmd"][0] = exec_path.replace(self.container_root + "/", "")
         self._run_invalid_options()

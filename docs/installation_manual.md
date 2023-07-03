@@ -32,18 +32,18 @@ udocker requires:
 Download a release tarball from <https://github.com/indigo-dc/udocker/releases>:
 
 ```bash
-wget https://github.com/indigo-dc/udocker/releases/download/1.3.9/udocker-1.3.9.tar.gz
-tar zxvf udocker-1.3.9.tar.gz
-export PATH=`pwd`/udocker-1.3.9/udocker:$PATH
+wget https://github.com/indigo-dc/udocker/releases/download/1.3.10/udocker-1.3.10.tar.gz
+tar zxvf udocker-1.3.10.tar.gz
+export PATH=`pwd`/udocker-1.3.10/udocker:$PATH
 ```
 
 Alternatively use `curl` instead of `wget` as follows:
 
 ```bash
-curl -L https://github.com/indigo-dc/udocker/releases/download/1.3.9/udocker-1.3.9.tar.gz \
-  > udocker-1.3.9.tar.gz
-tar zxvf udocker-1.3.9.tar.gz
-export PATH=`pwd`/udocker-1.3.9/udocker:$PATH
+curl -L https://github.com/indigo-dc/udocker/releases/download/1.3.10/udocker-1.3.10.tar.gz \
+  > udocker-1.3.10.tar.gz
+tar zxvf udocker-1.3.10.tar.gz
+export PATH=`pwd`/udocker-1.3.10/udocker:$PATH
 ```
 
 udocker executes containers using external tools and libraries that
@@ -345,8 +345,8 @@ The udocker tool should be installed as shown in section 2.1:
 
 ```bash
 cd /sw
-wget https://github.com/indigo-dc/udocker/releases/download/1.3.9/udocker-1.3.9.tar.gz
-tar zxvf udocker-1.3.9.tar.gz
+wget https://github.com/indigo-dc/udocker/releases/download/1.3.10/udocker-1.3.10.tar.gz
+tar zxvf udocker-1.3.10.tar.gz
 ```
 
 Directing users to the central udocker installation can be done using the
@@ -466,7 +466,23 @@ hosts that may share the common location. Therefore if the original
 location pathname is `/sw/udocker/containers` then all hosts must
 also mount it at the same exact path `/sw/udocker/containers`.
 
-##### 7.3.1.3. Modes R2 and R3 restrictions
+##### 7.3.1.3. Modes R1, R2 and R3 general restrictions
+
+These modes make use of runc or crun and require that user namespaces
+are enabled in the kernel. Older distributions may either not have
+support for namespaces (e.g. CentOS 6) or may have the support for
+user namespaces disabled at the system level (e.g. CentOS 7). More
+recent releases of Linux distributions do have support for user
+namespaces (e.g. CentOS 8 and CentOS 9).
+
+For Centos 7 there are steps that system administrators may perform
+to enable user namespaces, such as:
+
+```bash
+sudo echo "user.max_user_namespaces=10000" >> /etc/sysctl.conf
+```
+
+##### 7.3.1.4. Modes R2 and R3 specific restrictions
 
 Central installation from readonly location using any of the R modes
 requires udocker above v1.1.7.

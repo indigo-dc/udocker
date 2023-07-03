@@ -30,29 +30,28 @@ class HostInfoTestCase(TestCase):
         name = HostInfo().username()
         self.assertEqual(name, usr.pw_name)
 
-    @patch('udocker.helper.hostinfo.platform.architecture')
     @patch('udocker.helper.hostinfo.platform.machine')
-    def test_02_arch(self, mock_mach, mock_arch):
+    def test_02_arch(self, mock_mach):
         """Test02 HostInfo().arch."""
         mock_mach.return_value = "x86_64"
-        mock_arch.return_value = ('64bit', '')
         result = HostInfo().arch()
-        self.assertEqual(result, "amd64")
+        self.assertEqual(result, "x86_64")
 
         mock_mach.return_value = "x86_64"
-        mock_arch.return_value = ('32bit', '')
-        result = HostInfo().arch()
-        self.assertEqual(result, "i386")
+        result = HostInfo().arch("docker")
+        self.assertEqual(result, "amd64")
 
-        mock_mach.return_value = "arm"
-        mock_arch.return_value = ('64bit', '')
+        mock_mach.return_value = "i386"
+        result = HostInfo().arch()
+        self.assertEqual(result, "x86")
+
+        mock_mach.return_value = "aarch64"
         result = HostInfo().arch()
         self.assertEqual(result, "arm64")
 
-        mock_mach.return_value = "arm"
-        mock_arch.return_value = ('32bit', '')
-        result = HostInfo().arch()
-        self.assertEqual(result, "arm")
+        mock_mach.return_value = "aarch64"
+        result = HostInfo().arch("docker")
+        self.assertEqual(result, "arm64")
 
     @patch('udocker.helper.hostinfo.platform.system')
     def test_03_osversion(self, mock_sys):

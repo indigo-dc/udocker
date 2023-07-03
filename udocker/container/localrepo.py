@@ -147,9 +147,9 @@ class LocalRepository(object):
         container_root = self.cd_container(container_id) + "/ROOT"
         if not os.path.exists(container_root):
             return 2
-        if not os.path.isdir(container_root):
+        if not FileUtil(container_root).isdir():
             return 3
-        if os.access(container_root, os.W_OK):
+        if FileUtil(container_root).iswriteable():
             return 1
         return 0
 
@@ -335,6 +335,32 @@ class LocalRepository(object):
                     self.cur_tagdir = self.cur_repodir + "/" + tag
                     return self.cur_tagdir
         return ""
+
+    def tag(self, src_imagerepo, src_tag, new_imagerepo, new_tag):
+        """Change the repository tag name"""
+        src_tag_dir = self.cd_imagerepo(src_imagerepo, src_tag)
+        if (not src_tag_dir) or self.cd_imagerepo(new_imagerepo, new_tag):
+            return None
+
+        if not (self.setup_imagerepo(new_imagerepo) is not None
+                and self.setup_tag(new_tag)):
+            return False
+
+        new_tag_dir = self.cd_imagerepo(new_imagerepo, new_tag)
+        if not new_tag_dir:
+            return False
+
+        for fname in os.listdir(src_tag_dir):
+            filename = src_tag_dir + "/" + fname
+            if os.path.islink(filename):
+                if not self.add_image_layer(os.path.realpath(filename)):
+                    return False
+            elif fname == "TAG":
+                continue
+            elif os.path.isfile(filename):
+                if not FileUtil(filename).copyto(new_tag_dir + "/" + fname):
+                    return False
+        return True
 
     def _find(self, filename, in_dir):
         """is a specific layer filename referenced by another image TAG"""
@@ -562,6 +588,27 @@ class LocalRepository(object):
 
         return (None, None)
 
+    def get_image_platform_fmt(self):
+        """Get the image platform from the metadata"""
+        (manifest_json, dummy) = self.get_image_attributes()
+        if not manifest_json:
+            return "unknown/unknown"
+        try:
+            p_architecture = manifest_json["architecture"]
+        except KeyError:
+            p_architecture = "unknown"
+        try:
+            p_os = manifest_json["os"]
+        except KeyError:
+            p_os = "unknown"
+        try:
+            p_variant = manifest_json["variant"]
+        except KeyError:
+            p_variant = ""
+        if not p_variant:
+            return "%s/%s" % (p_os, p_architecture)
+        return "%s/%s/%s" % (p_os, p_architecture, p_variant)
+
     def save_json(self, filename, data):
         """Save container json to a file in the image TAG directory
         that has been previously selected via cd_imagerepo()
@@ -719,7 +766,8 @@ class LocalRepository(object):
                               os.readlink(layer_f)):
             Msg().err("Error: layer data file not found")
             return False
-        if "gzip" in OSInfo('/').get_filetype(layer_f):
+        (dummy, filetype) = OSInfo('/').get_filetype(layer_f)
+        if "gzip" in filetype:
             if not FileUtil(layer_f).verify_tar():
                 Msg().err("Error: layer tar verify failed:", layer_f)
                 return False

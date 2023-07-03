@@ -34,6 +34,7 @@ class ExecutionModeTestCase(TestCase):
         Config().conf['osversion'] = "OSVERSION"
         Config().conf['arch'] = "ARCH"
         Config().conf['default_execution_mode'] = "P1"
+        Config().conf['override_default_execution_modes'] = {"arm": "P2", }
         self.container_id = "CONTAINER_ID"
 
         str_local = 'udocker.container.localrepo.LocalRepository'
@@ -63,13 +64,22 @@ class ExecutionModeTestCase(TestCase):
                          ("P1", "P2", "F1", "F2",
                           "F3", "F4", "R1", "R2", "R3", "S1"))
 
+    @patch('udocker.engine.execmode.HostInfo.arch')
     @patch('udocker.engine.execmode.FileUtil.getdata')
-    def test_02_get_mode(self, mock_getdata):
+    def test_02_get_mode(self, mock_getdata, mock_arch):
         """Test02 ExecutionMode().get_mode."""
+        Config().conf['override_default_execution_mode'] = "P2"
         mock_getdata.return_value.strip.return_value = None
         uexm = ExecutionMode(self.local, self.container_id)
         status = uexm.get_mode()
-        self.assertEqual(status, "P1")
+        self.assertEqual(status, "P2")
+
+        Config().conf['override_default_execution_mode'] = ""
+        mock_getdata.return_value.strip.return_value = None
+        mock_arch.return_value = "arm"
+        uexm = ExecutionMode(self.local, self.container_id)
+        status = uexm.get_mode()
+        self.assertEqual(status, "P2")
 
         mock_getdata.return_value = "F3"
         uexm = ExecutionMode(self.local, self.container_id)

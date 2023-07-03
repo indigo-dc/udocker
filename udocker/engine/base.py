@@ -11,6 +11,7 @@ from udocker.msg import Msg
 from udocker.config import Config
 from udocker.helper.nixauth import NixAuthentication
 from udocker.helper.hostinfo import HostInfo
+from udocker.helper.osinfo import OSInfo
 from udocker.container.structure import ContainerStructure
 from udocker.utils.filebind import FileBind
 from udocker.utils.mountpoint import MountPoint
@@ -207,7 +208,8 @@ class ExecutionEngineCommon(object):
                     self.opt["vol"].remove(vol)
                     found = True
             if not found:
-                Msg().err("Warning: --novol %s not in volumes list" % novolume, l=Msg.WAR)
+                Msg().err("Warning: --novol %s not in volumes list"
+                          % novolume, l=Msg.WAR)
         return self._check_volumes()
 
     def _check_paths(self):
@@ -307,6 +309,7 @@ class ExecutionEngineCommon(object):
                     container_structure.get_container_meta("ExposedPorts", [], container_json))
                 self.opt["env"].extendif(
                     container_structure.get_container_meta("Env", [], container_json))
+
         return (container_dir, container_json)
 
     def _select_auth_files(self):
@@ -626,17 +629,23 @@ class ExecutionEngineCommon(object):
 
         return exec_path
 
+    def _get_saved_osenv(self, filename):
+        """get saved osenv from json file"""
+        try:
+            return json.loads(FileUtil(filename).getdata())
+        except (IOError, OSError, ValueError, TypeError):
+            return {}
+
     def _is_same_osenv(self, filename):
         """Check if the host has changed"""
+        saved = self._get_saved_osenv(filename)
         try:
-            saved = json.loads(FileUtil(filename).getdata())
             if (saved["osversion"] == HostInfo().osversion() and
                     saved["oskernel"] == HostInfo().oskernel() and
                     saved["arch"] == HostInfo().arch() and
-                    saved["osdistribution"] == str(HostInfo().osdistribution())):
+                    saved["osdistribution"] == str(OSInfo("/").osdistribution())):
                 return saved
-        except (IOError, OSError, AttributeError, ValueError, TypeError,
-                IndexError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         return {}
 
@@ -648,10 +657,37 @@ class ExecutionEngineCommon(object):
             save["osversion"] = HostInfo().osversion()
             save["oskernel"] = HostInfo().oskernel()
             save["arch"] = HostInfo().arch()
-            save["osdistribution"] = str(HostInfo().osdistribution())
+            save["osdistribution"] = str(OSInfo("/").osdistribution())
             if FileUtil(filename).putdata(json.dumps(save)):
                 return True
-        except (AttributeError, ValueError, TypeError,
-                IndexError, KeyError):
+        except (ValueError, TypeError, IndexError, KeyError):
             pass
         return False
+
+    def _check_arch(self, fail=False):
+        """Check if architecture is the same"""
+        same_arch = OSInfo(self.container_root).is_same_arch()
+        if same_arch is None:
+            return True
+        if not same_arch:
+            if fail:
+                Msg().err("Error: host and container architectures mismatch")
+                return False
+            Msg().err("Warning: host and container architectures mismatch",
+                      l=Msg.WAR)
+        return True
+
+    def _get_qemu(self, return_path=False):
+        """Get the qemu binary name if emulation needed"""
+        container_qemu_arch = OSInfo(self.container_root).arch("qemu")
+        host_qemu_arch = HostInfo().arch("qemu")
+        if not (container_qemu_arch and host_qemu_arch):
+            return ""
+        if container_qemu_arch == host_qemu_arch:
+            return ""
+        qemu_filename = "qemu-%s" % container_qemu_arch
+        qemu_path = FileUtil(qemu_filename).find_exec()
+        if not qemu_path:
+            Msg().err("Warning: qemu required but not available", l=Msg.WAR)
+            return ""
+        return qemu_path if return_path else qemu_filename

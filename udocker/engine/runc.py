@@ -40,32 +40,29 @@ class RuncEngine(ExecutionEngineCommon):
     def select_runc(self):
         """Set runc executable and related variables"""
         self.executable = Config.conf['use_runc_executable']
-        if self.executable != "UDOCKER" and not self.executable:
+        if not self.executable:
             self.executable = FileUtil("runc").find_exec()
-
-        if self.executable != "UDOCKER" and not self.executable:
+        if not self.executable:
             self.executable = FileUtil("crun").find_exec()
 
+        arch = HostInfo().arch()
         if self.executable == "UDOCKER" or not self.executable:
             self.executable = ""
-            arch = HostInfo().arch()
             image_list = []
             eng = ["runc", "crun"]
-            if arch == "amd64":
-                image_list = [eng[0]+"-x86_64", eng[0],
-                              eng[1]+"-x86_64", eng[1]]
-            elif arch == "i386":
-                image_list = [eng[0]+"-x86", eng[0], eng[1]+"-x86", eng[1]]
-            elif arch == "arm64":
-                image_list = [eng[0]+"-arm64", eng[0], eng[1]+"-arm64", eng[1]]
-            elif arch == "arm":
-                image_list = [eng[0]+"-arm", eng[0], eng[1]+"-arm", eng[1]]
+            image_list = [eng[0]+"-"+arch, eng[0], eng[1]+"-"+arch, eng[1]]
 
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
 
         if not os.path.exists(self.executable):
-            Msg().err("Error: runc/crun executable not found")
+            Msg().err("Error: runc or crun executable not found")
+            Msg().out("Info: Host architecture might not be supported by",
+                      "this execution mode:", arch,
+                      "\n      specify path to runc or crun with environment",
+                      "UDOCKER_USE_RUNC_EXECUTABLE",
+                      "\n      or choose other execution mode with: udocker",
+                      "setup --execmode=<mode>", l=Msg.INF)
             sys.exit(1)
         if "crun" in os.path.basename(self.executable):
             self.engine_type = "crun"
@@ -362,6 +359,7 @@ class RuncEngine(ExecutionEngineCommon):
         if not self._run_init(container_id):
             return 2
 
+        self._check_arch()
         self._run_invalid_options()
 
         self._container_specfile = "config.json"

@@ -117,14 +117,16 @@ class CommonLocalFileApiTestCase(TestCase):
         status = clfapi._untar_saved_container(tarfile, destdir)
         self.assertTrue(status)
 
+    @patch('udocker.commonlocalfile.HostInfo.parse_platform')
     @patch('udocker.commonlocalfile.FileUtil.size')
     @patch('udocker.commonlocalfile.HostInfo.osversion')
     @patch('udocker.commonlocalfile.HostInfo.arch')
     def test_06_create_container_meta(self, mock_arch, mock_version,
-                                      mock_size):
+                                      mock_size, mock_parseplatform):
         """Test06 CommonLocalFileApi().create_container_meta()."""
         layer_id = "12345"
-        comment = "created by my udocker"
+        comment = "created by udocker"
+        mock_parseplatform.return_value = ("", "", "")
         mock_arch.return_value = "x86_64"
         mock_version.return_value = "8"
         mock_size.return_value = 125

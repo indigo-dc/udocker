@@ -257,6 +257,7 @@ Options:
 * `--index=url` specify an index other than index.docker.io
 * `--registry=url` specify a registry other than registry-1.docker.io
 * `--httpproxy=proxy` specify a socks proxy for downloading
+* `--platform=os/architecture` specify a different platform to be pulled
 
 Examples:
 
@@ -273,6 +274,7 @@ udocker pull --httpproxy=socks4a://host:port busybox
 udocker pull --httpproxy=socks5h://host:port busybox
 udocker pull --httpproxy=socks4a://user:pass@host:port busybox
 udocker pull --httpproxy=socks5h://user:pass@host:port busybox
+udocker pull --platform=linux/arm64 fedora:latest
 ```
 
 ### 3.6. images
@@ -287,6 +289,7 @@ form Docker Hub, and/or load or imported from files.
 Options:
 
 * `-l` long format, display more information about the images and related layers
+* `-p` display the image platform including os, architecture and variant
 
 Examples:
 
@@ -341,6 +344,7 @@ Options:
 
 * `-m` show the current execution mode of each container
 * `-s` show current disk usage (container size in MB), can be very slow
+* `-p` display the image platform including os, architecture and variant
 
 Examples:
 
@@ -497,6 +501,7 @@ Options:
 * `--tocontainer` import directly into a container.
 * `--clone` import udocker container format with both metadata and container
 * `--name=ALIAS` with `--tocontainer` or `--clone` to give an alias to the container
+* `--platform=os/architecture` specify the architecture of the binaries in the tarball
 
 Examples:
 
@@ -632,6 +637,8 @@ Options:
 * `--bindhome` attempt to make the user home directory appear inside the container
 * `--kernel=KERNELID` use a specific kernel id to emulate useful when the host kernel is too old
 * `--location=DIR` execute a container in a given directory
+* `--platform=os/architecture` specify a different platform to be pulled
+* `--pull=missing|never|always` specify when to pull the image
 
 Options valid only in Pn execution modes:
 
@@ -965,6 +972,39 @@ Example:
 
 ```bash
 UDOCKER_DEFAULT_EXECUTION_MODE=P2 ./udocker run mycontainer /bin/ls
+```
+
+### 3.28. tag
+
+```bash
+udocker tag SOURCEREPO/IMAGE:TAG  TARGETREPO/IMAGE:TAG
+```
+
+Creates a new image tag from an existing source image. The newly created
+image tag is a replica of the source image. The source image can be removed
+or further updated via pull without affecting the newly created tag. A
+new tag does not occupy additional space as the image layers are shared.
+The image layers are only removed from the local udocker repository when
+no other image is referencing them.
+
+Example:
+
+```bash
+udocker tag centos:centos7  mycentos:mycentos7
+```
+
+### 3.29. manifest inspect
+
+```bash
+udocker manifest inspect REPO/IMAGE:TAG
+```
+
+Obtain and print information about an IMAGE manifest from a remote registry.
+
+Example:
+
+```bash
+udocker manifest inspect centos:centos7
 ```
 
 ## 4. Running MPI jobs
@@ -1415,6 +1455,7 @@ container is not being executed.
 * Docker <https://www.docker.com/>
 * PRoot <http://proot.me>
 * Fakechroot <https://github.com/dex4er/fakechroot/wiki>
+* Patchelf <https://github.com/NixOS/patchelf>
 * runC <https://runc.io/>
 * crun <https://github.com/containers/crun>
 * Singularity <http://singularity.lbl.gov>

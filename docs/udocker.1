@@ -1,7 +1,7 @@
 .\" Manpage for udocker
 .\" Contact udocker@lip.pt to correct errors or typos.
 .\" To read this man page use:   man -l udocker.1
-.TH udocker 1 "23 Jun 2021" "version 1.3.2" "udocker man page"
+.TH udocker 1 "30 Jun 2023" "version 1.3.10" "udocker man page"
 .SH NAME
 udocker \- execute Docker containers in user space without privileges
 .SH SYNOPSIS
@@ -44,22 +44,22 @@ Supported commands:
 .BR help
 Prints a usage summary. Further help for specific udocker commands can be obtained with "udocker COMMAND -h | --help".
 .TP
-.BR search " " [ " " \-a " " ] " " | " " [ " " \--list-tags " " ] " " | " " [ " " --registry=REGISTRY " " ] " " | " " STRING
+.BR search " " [ " " \-a " " ] " " | " " [ " " \--list-tags " " ] " " | " " [ " " \--registry=REGISTRY " " ] " " | " " STRING
 Search for IMAGES in a Docker registry. Not all registries support searching. The \-a option displays all matching entries without pausing. The \--list-tags option lists the tags for a given repository in this case STRING must be a repository name.
 .TP
-.BR pull " " [ " " \--httpproxy=PROXY " " | " " \--index=INDEX " " | " " \--registry=REGISTRY " " ] " " IMAGE
-Pull an IMAGE from Docker Hub or from a private repository. A socks4 or socks5 proxy can be specified with \--httpproxy the syntax of PROXY is socks[4|5|4a|5h]://user:pass@host:port. The --registry and --index options enable other repositories (beyond dockerhub) to be selected, it is an URL prefix (ex. https://myrepository.mydomain).
+.BR pull " " [ " " \--httpproxy=PROXY " " | " " \--index=INDEX " " | " " \--registry=REGISTRY " " | " " \--platform=OS/ARCH " " ] " " IMAGE
+Pull an IMAGE from Docker Hub or from a private repository. A socks4 or socks5 proxy can be specified with \--httpproxy the syntax of PROXY is socks[4|5|4a|5h]://user:pass@host:port. The --registry and --index options enable other repositories (beyond dockerhub) to be selected, it is an URL prefix (ex. https://myrepository.mydomain). If the image is multi-platform the operating system and architecture of the image to be pulled can be specified using \--platform.
 .TP
-.BR images " " [ " " \-l " " ]
+.BR images " " [ " " \-l " " ] " " | " " [ " " \-p " " ]
 Lists IMAGES available in the local udocker repository. The \-l option provides additional image details.
 .TP
 .BR create " " [ " " \--name=ALIAS " " | " " \--force " " ] " " IMAGE
 Creates a container for execution from an IMAGE stored in the local repository. Multiple containers can be extracted from a single image. Each created container is identified by a CONTAINER-ID which is printed upon successful extraction. The option --name allows an ALIAS name to be assigned to the newly created container to facilitate identification. The ALIAS can later be used instead of the CONTAINER-ID. The option --force enables the container creation even if the name already exists.
 .TP
-.BR ps " " [ " " \-m " " ] " " | " " [ " " \-s " " ]
+.BR ps " " [ " " \-m " " ] " " | " " [ " " \-s " " ] " " | " " [ " " \-p " " ]
 List containers in the local repository. These are containers produced with the command "create" and that can be executed with the command "run". The list contains the CONTAINER-ID, the protection flag against deletion, write status, ALIASEs, and the corresponding IMAGE. The command name "ps" has been kept for compatibility with the Docker command line, in udocker the command ps does not show running containers instead shows the created containers extracted to the filesystem that are ready to be executed. The option \-m adds the execution mode. The option \-s adds the size in MB.
 .TP
-.BR rm " " [ " " -f " " ] " " CONTAINER\-ID " " | " " ALIAS " " ...
+.BR rm " " [ " " \-f " " ] " " CONTAINER\-ID " " | " " ALIAS " " ...
 Delete containers using the CONTAINER\-ID or ALIAS. The flag -f forces the removal by changing the file protections.
 .TP
 .BR inspect " " IMAGE " " | " " [ " " \-p " " ] " " CONTAINER\-ID " " | " " [ " " \-p " " ] " " ALIAS
@@ -74,30 +74,30 @@ Remove an ALIAS. The CONTAINER itself is not affected and can be used via its CO
 .BR rename " " ALIAS " " NEWALIAS
 Change a given container ALIAS name.
 .TP
-.BR rmi " " [ " " -f " " ] " " IMAGE
+.BR rmi " " [ " " \-f " " ] " " IMAGE
 Delete an IMAGE in the local repository. Any related CONTAINERS previously extracted are NOT affected by the parent IMAGE removal. The option \-f forces the deletion, and can be used when the IMAGE structure is damaged.
 .TP
-.BR import " " [ " " --mv " " ] " " TARBALL " " IMAGE " " | " " - " " IMAGE 
+.BR import " " [ " " \--mv " " ] " " [ " " \--platform=OS/ARCH " " ] " " TARBALL " " IMAGE " " | " " - " " IMAGE 
 .TP
-.BR import " " --tocontainer " " --name=ALIAS " " TARBALL " " | " " --tocontainer " " --name=ALIAS " " - " "
+.BR import " " \--tocontainer " " \--name=ALIAS " " [ " " \--platform=OS/ARCH " " ] " " TARBALL " " | " " \--tocontainer " " \--name=ALIAS " " - " "
 .TP
 .BR import " " --clone " " --name=ALIAS " " TARBALL " " | " " --clone " " --name=ALIAS " " - " "
-Import a tarball from file or stdin. The tarball can be imported into a new image or container. The first form can be used to import a container exported by docker into a new image. The second form uses --tocontainer to import directly into a container without creating an image. The third form uses --clone to import a udocker container (e.g. exported with udocker export --clone) into a new container without creating an image, preserving the container metadata and execution modes. When importing to an image (default) the option --mv will try to move the tarball file into the repository instead of copying the content. When importing to a container the option --name can be used to provide a name alias to the created container.
+Import a tarball from file or stdin. The tarball can be imported into a new image or container. The first form can be used to import a container exported by docker into a new image. The second form uses --tocontainer to import directly into a container without creating an image. The third form uses --clone to import a udocker container (e.g. exported with udocker export --clone) into a new container without creating an image, preserving the container metadata and execution modes. When importing to an image (default) the option --mv will try to move the tarball file into the repository instead of copying the content. When importing to a container the option --name can be used to provide a name alias to the created container. The operating system and architecture of the tarball content can be specified with --platform.
 .TP
 .BR load " " - " "
 .TP
-.BR load " " -i " " IMAGE\-TARBALL
+.BR load " " \-i " " IMAGE\-TARBALL
 Load an IMAGE\-TARBALL previously saved by "docker save". The IMAGE\-TARBALL contains the several layers of a Docker layered filesystem plus the associated metadata. The image and its layers are loaded into the local images repository. The load command also supports loading of OCI container images (EXPERIMENTAL).
 .TP
-.BR save " " -o " " - " " IMAGE
+.BR save " " \-o " " - " " IMAGE
 .TP
-.BR save " " -o " " IMAGE\-TARBALL " " IMAGE
+.BR save " " \-o " " IMAGE\-TARBALL " " IMAGE
 Save an image stored in the local images repository to a tarball. The IMAGE\-TARBALL contains the several layers of a Docker layered filesystem plus the associated metadata. The tarball will contain the image metadata and all the individual layers that compose it. The saved tarball can be loaded into another repository using the command load. 
 .TP
 .BR verify " " IMAGE
 Verify the integrity of an IMAGE in the local repository.
 .TP
-.BR clone " " CONTAINER\-ID " " | " " --name=ALIAS " " CONTAINER\-ID
+.BR clone " " CONTAINER\-ID " " | " " \--name=ALIAS " " CONTAINER\-ID
 Duplicate an existing container creating a complete replica. The replica receives a different CONTAINER\-ID. An ALIAS can be assigned to the newly created container by using --name.
 .TP
 .BR protect " " IMAGE " " | " " CONTAINER\-ID " " | " " ALIAS
@@ -106,17 +106,23 @@ Protect an IMAGE or CONTAINER against accidental deletion by "udocker rm" or "ud
 .BR unprotect " " IMAGE " " | " " CONTAINER\-ID " " | " " ALIAS
 Remove a protection flag placed by "protect".
 .TP
+.BR manifest " " inspect " " IMAGE
+Obtain and print information about an IMAGE manifest from a remote registry.
+.TP
 .BR mkrepo " " DIRECTORY
 Setup a local repository in the host DIRECTORY. The required directory structure is created.
 .TP
-.BR login " " --username=USERNAME " " | " " --password=PASSWORD " " | " " --registry=REGISTRY
+.BR login " " \--username=USERNAME " " | " " \--password=PASSWORD " " | " " \--registry=REGISTRY
 Setup of authentication information for access to remote Docker registries. Enables "pull" of IMAGES from private registries. The option --registry can be used to access registries other than the default dockerhub. If USERNAME or PASSWORD are not provided in the command line, the user will be prompted to provide them.
 .TP
-.BR logout " " [ " " \-a " " ] " " | " " --registry=REGISTRY
+.BR logout " " [ " " \-a " " ] " " | " " \--registry=REGISTRY
 Remove authentication information created by "login". By default authentication is removed for the default REGISTRY. A specific REGISTRY can be specified with --registry. Alternatively ALL previously entered authentication information can be removed with the -a option.
 .TP
-.BR setup " "  --execmode=<Pn> " " | " " --execmode=<Fn> " " |  " " --execmode=<Rn> " " | " " --execmode=<Sn> " " | " " --force " " | " "  --nvidia " " | " " --purge " " CONTAINER\-ID
+.BR setup " "  \--execmode=<Pn> " " | " " \--execmode=<Fn> " " |  " " \--execmode=<Rn> " " | " " \--execmode=<Sn> " " | " " \--force " " | " "  \--nvidia " " | " " \--purge " " CONTAINER\-ID
 Change container execution settings. The option --execmode enables selection of an alternative execution engine. In certain cases when experiencing execution errors changing the execution mode to mode P2 may solve the problem. The option --force can be used with --execmode to force a given execution mode upon a setup error. The option --nvidia enables access to GPGPUs by adding the necessary host libraries to the container (EXPERIMENTAL). The option --force can also be used with --nvidia to force the setup of the nvidia environment. The option --purge cleans mountpoints and auxiliary files created by udocker.
+.TP
+.BR tag " " SOURCEIMAGE " " TARGETIMAGE
+Creates a new image tag from an existing source image. The newly created image tag is a replica of the source image. The source image can be removed or further updated via pull without affecting the newly created tag. A new tag does not occupy additional space as the image layers are shared. The image layers are only removed from the local udocker repository when no other image is referencing them.
 .TP
 .BR run " " [ " " RUNOPTIONS " " ] " " IMAGE " " | " " CONTAINER-ID " " | " " ALIAS " " [ " " COMMAND " " ARG1 " " ARG2 " " ... " " ]
 Execute a CONTAINER identified by CONTAINER-ID or ALIAS name. If an IMAGE name is provided instead of a CONTAINER-ID or ALIAS, then a CONTAINER will be automatically created from the specified IMAGE and executed. The "run" command will try to respect the execution information specified in the container or image metadata, if such information is not provided it will try to find a shell interpreter inside the container and execute it. Optionally a COMMAND to be executed inside the CONTAINER environment can be provided in the command line. The following RUNOPTIONS are available:
@@ -185,6 +191,12 @@ Do not print the startup banner.
 .TP
 --entrypoint="COMMAND"
 Override the container metadata entrypoint.
+.TP
+--platform=OS/ARCH
+Specify the operating system and/or architecture of the image to be pulled and executed.
+.TP
+--pull=WHEN
+Specify when to pull the image. The argument WHEN can take the values of "missing", "never" or "always".
 .RE
 
 .SH ENVIRONMENT

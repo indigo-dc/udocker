@@ -165,6 +165,7 @@ class PRootEngineTestCase(TestCase):
         status = prex._get_network_map()
         self.assertEqual(status, ['-p', '80:8080', '-p', '443:8443', '-n'])
 
+    @patch.object(PRootEngine, '_get_qemu_string')
     @patch('udocker.engine.proot.os.environ.update')
     @patch.object(PRootEngine, '_get_network_map')
     @patch('udocker.engine.nvidia.Msg')
@@ -183,7 +184,7 @@ class PRootEngineTestCase(TestCase):
                     mock_run_env_set,
                     mock_set_cpu_aff, mock_get_vol_bind, mock_set_uid_map,
                     mock_env_cleanup_dict, mock_run_banner, mock_isgreater,
-                    mock_msg, mock_netmap, mock_envupd):
+                    mock_msg, mock_netmap, mock_envupd, mock_getqemu):
         """Test07 PRootEngine().run()."""
         mock_run_init.return_value = False
         prex = PRootEngine(self.local, self.xmode)
@@ -205,6 +206,7 @@ class PRootEngineTestCase(TestCase):
         mock_call.return_value = 5
         mock_getenv.return_value = False
         mock_envupd.return_value = None
+        mock_getqemu.return_value = []
         prex = PRootEngine(self.local, self.xmode)
         prex.opt["kernel"] = "5.4.0"
         prex.opt["cmd"] = [""]

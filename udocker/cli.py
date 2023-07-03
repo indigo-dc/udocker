@@ -67,19 +67,24 @@ class UdockerCLI(object):
         self.localrepo.setup(topdir)
         return True
 
+    # ARCHNEW
     def _check_imagespec(self, imagespec, def_imagespec=None):
         """Check image:tag syntax"""
         if (not imagespec) and def_imagespec:
             imagespec = def_imagespec
 
         try:
-            (imagerepo, tag) = imagespec.rsplit(":", 1)
+            (imagerepo, tag) = imagespec.split("@", 1)
         except (ValueError, AttributeError):
-            imagerepo = imagespec
-            tag = "latest"
+            try:
+                (imagerepo, tag) = imagespec.split(":", 1)
+            except (ValueError, AttributeError):
+                imagerepo = imagespec
+                tag = "latest"
 
         if not (imagerepo and tag and
-                self.dockerioapi.is_repo_name(imagespec)):
+                (self.dockerioapi.is_repo_name(imagespec) or
+                 self.dockerioapi.is_layer_name(imagespec))):
             Msg().err("Error: must specify image:tag or repository/image:tag")
             return (None, None)
 
@@ -362,10 +367,12 @@ class UdockerCLI(object):
         --tocontainer             :import to container, no image is created
         --clone                   :import udocker container format with metadata
         --name=<container-name>   :with --tocontainer or --clone to add an alias
+        --platform=os/arch        :docker platform
         """
         move_tarball = cmdp.get("--mv")
         to_container = cmdp.get("--tocontainer")
         name = cmdp.get("--name=")
+        platform = cmdp.get("--platform=")
         clone = cmdp.get("--clone")
         from_stdin = cmdp.get('-')
         if from_stdin:
@@ -390,7 +397,7 @@ class UdockerCLI(object):
                 (imagerepo, tag) = self._check_imagespec(imagespec,
                                                          "IMPORTED:unknown")
                 container_id = self.localfileapi.import_tocontainer(
-                    tarfile, imagerepo, tag, name)
+                    tarfile, imagerepo, tag, name, platform)
             if container_id:
                 Msg().out(container_id)
                 return self.STATUS_OK
@@ -399,7 +406,7 @@ class UdockerCLI(object):
             if not imagerepo:
                 return self.STATUS_ERROR
             if self.localfileapi.import_toimage(tarfile, imagerepo, tag,
-                                                move_tarball):
+                                                move_tarball, platform):
                 return self.STATUS_OK
         Msg().err("Error: importing")
         return self.STATUS_ERROR
@@ -696,6 +703,10 @@ class UdockerCLI(object):
             "platform": {
                 "fl": ("--platform=",), "act": 'R',
                 "p2": "CMD_OPT", "p3": False
+            },
+            "pull": {
+                "fl": ("--pull="), "act": 'R',
+                "p2": "CMD_OPT", "p3": False
             }
         }
         for option, cmdp_args in list(cmd_options.items()):
@@ -742,6 +753,8 @@ class UdockerCLI(object):
         --location=<container-dir> :use container outside the repository
         --nobanner                 :don't print a startup banner
         --entrypoint               :override the container metadata entrypoint
+        --platform=os/arch         :pull image for OS and architecture
+        --pull=<when>              :when to pull (missing|never|always)
 
         Only available in Rn execution modes:
         --device=/dev/xxx          :pass device to container (R1 mode only)
@@ -761,8 +774,10 @@ class UdockerCLI(object):
         Config.conf['location'] = cmdp.get("--location=")
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
+        pull = cmdp.get("--pull=")
+        dummy = cmdp.get("--pull")  # if invoked without option
 
-        if cmdp.missing_options():   # syntax error
+        if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
         if Config.conf['location']:
@@ -777,7 +792,7 @@ class UdockerCLI(object):
                 if (imagerepo and
                         self.localrepo.cd_imagerepo(imagerepo, tag)):
                     container_id = self._create(imagerepo + ":" + tag)
-                if not container_id:
+                if pull != "never" and (not container_id or pull == "always"):
                     self.do_pull(cmdp)
                     if self.localrepo.cd_imagerepo(imagerepo, tag):
                         container_id = self._create(imagerepo + ":" + tag)
@@ -807,8 +822,10 @@ class UdockerCLI(object):
         images: list container images
         images [options]
         -l                         :long format
+        -p                         :print platform
         """
         verbose = cmdp.get("-l")
+        print_platform = cmdp.get("-p")
         dummy = cmdp.get("--no-trunc")
         dummy = cmdp.get("--all")
         if cmdp.missing_options():               # syntax error
@@ -818,9 +835,15 @@ class UdockerCLI(object):
         for (imagerepo, tag) in images_list:
             prot = (".", "P")[
                 self.localrepo.isprotected_imagerepo(imagerepo, tag)]
-            Msg().out("%s    %c" % (imagerepo + ":" + tag, prot))
+            imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
+
+            if print_platform:
+                platform = self.localrepo.get_image_platform_fmt()
+                Msg().out("%-18.18s %c %s" % (platform, prot, imagerepo + ":" + tag))
+            else:
+                Msg().out("%s    %c" % (imagerepo + ":" + tag, prot))
+
             if verbose:
-                imagerepo_dir = self.localrepo.cd_imagerepo(imagerepo, tag)
                 Msg().out(" %s" % (imagerepo_dir))
                 layers_list = self.localrepo.get_layers(imagerepo, tag)
                 if layers_list:
@@ -838,25 +861,30 @@ class UdockerCLI(object):
         ps: list containers
         -m                         :print execution mode
         -s                         :print size in MB
+        -p                         :print platform
         """
         print_mode = cmdp.get("-m")
         print_size = cmdp.get("-s")
+        print_platform = cmdp.get("-p")
         if cmdp.missing_options():               # syntax error
             return self.STATUS_ERROR
-        mod_h = size_h = ""
-        mod_l = size_l = "%0s"
+        mod_h = size_h = plat_h = ""
+        mod_l = size_l = plat_l = "%0s"
         if print_mode:
             mod_h = "MOD "
             mod_l = "%2.2s "
         if print_size:
             size_h = "SIZE "
             size_l = "%5.5s "
-        fmt = "%-36.36s %c %c " + mod_h + size_h + "%-18s %-20.20s"
+        if print_platform:
+            plat_h = "PLATFORM           "
+            plat_l = "%-18.18s "
+        fmt = "%-36.36s %c %c " + mod_h + size_h + plat_h + "%-18s %-20.20s"
         Msg().out(fmt % ("CONTAINER ID", 'P', 'M', "NAMES", "IMAGE"))
-        fmt = "%-36.36s %c %c " + mod_l + size_l + "%-18.100s %-20.100s"
-        line = [''] * 7
+        fmt = "%-36.36s %c %c " + mod_l + size_l + plat_l + "%-18.100s %-20.100s"
+        line = [''] * 8
         containers_list = self.localrepo.get_containers_list(False)
-        for (line[0], line[6], line[5]) in containers_list:
+        for (line[0], line[7], line[6]) in containers_list:
             container_id = line[0]
             exec_mode = ExecutionMode(self.localrepo, container_id)
             line[3] = exec_mode.get_mode() if print_mode else ""
@@ -865,6 +893,9 @@ class UdockerCLI(object):
             line[2] = ('R', 'W', 'N', 'D')[
                 self.localrepo.iswriteable_container(container_id)]
             line[4] = self.localrepo.get_size(container_id) if print_size else ""
+            platform = ContainerStructure(self.localrepo,
+                                          container_id).get_container_platform_fmt()
+            line[5] = platform if print_platform else ""
             Msg().out(fmt % tuple(line))
         return self.STATUS_OK
 
@@ -902,6 +933,40 @@ class UdockerCLI(object):
                 exit_status = self.STATUS_ERROR
 
         return exit_status
+
+    def do_tag(self, cmdp):
+        """
+        tag: create a new tag for a given image
+        tag <source repo/image:tag> <target repo/image:tag>
+        """
+        source_imagespec = str(cmdp.get("P1"))
+        target_imagespec = str(cmdp.get("P2"))
+        if cmdp.missing_options():               # syntax error
+            return self.STATUS_ERROR
+
+        (tgt_imagerepo, tgt_tag) = self._check_imagespec(target_imagespec)
+        if not (tgt_imagerepo and tgt_tag):
+            Msg().err("Error: target name is invalid")
+            return self.STATUS_ERROR
+
+        if self.localrepo.cd_imagerepo(tgt_imagerepo, tgt_tag):
+            Msg().err("Error: target already exists")
+            return self.STATUS_ERROR
+
+        (src_imagerepo, src_tag) = self._check_imagespec(source_imagespec)
+        if not self.localrepo.cd_imagerepo(src_imagerepo, src_tag):
+            Msg().err("Error: source does not exist")
+            return self.STATUS_ERROR
+
+        if self.localrepo.isprotected_imagerepo(src_imagerepo, src_tag):
+            Msg().err("Error: source repository is protected")
+            return self.STATUS_ERROR
+
+        if not self.localrepo.tag(src_imagerepo, src_tag, tgt_imagerepo, tgt_tag):
+            Msg().err("Error: creation of new image tag failed")
+            return self.STATUS_ERROR
+
+        return self.STATUS_OK
 
     def do_rmi(self, cmdp):
         """
@@ -1035,6 +1100,51 @@ class UdockerCLI(object):
             return self.STATUS_ERROR
 
         Msg().out("Info: container name: %s removed." % name)
+        return self.STATUS_OK
+
+    def do_manifest(self, cmdp):
+        """
+        manifest: commands for image manifests
+        manifest [options] inspect <repo/image:tag>
+        --httpproxy=socks4://user:pass@host:port        :use http proxy
+        --httpproxy=socks5://user:pass@host:port        :use http proxy
+        --httpproxy=socks4://host:port                  :use http proxy
+        --httpproxy=socks5://host:port                  :use http proxy
+        --httpproxy=socks4a://user:pass@host:port       :use http proxy
+        --httpproxy=socks5h://user:pass@host:port       :use http proxy
+        --httpproxy=socks4a://host:port                 :use http proxy
+        --httpproxy=socks5h://host:port                 :use http proxy
+        --index=https://index.docker.io/v1              :docker index
+        --registry=https://registry-1.docker.io         :docker registry
+        --platform=os/arch                              :docker platform
+
+        Examples:
+          manifest inspect quay.io/something/somewhere:latest
+        """
+        index_url = cmdp.get("--index=")
+        registry_url = cmdp.get("--registry=")
+        http_proxy = cmdp.get("--httpproxy=")
+        platform = cmdp.get("--platform=")
+        platform = "" if platform is False else platform
+        subcommand = cmdp.get("P1")
+
+        (imagerepo, tag) = self._check_imagespec(cmdp.get("P2"))
+        if (not imagerepo) or cmdp.missing_options() or subcommand != "inspect":
+            return self.STATUS_ERROR
+
+        self._set_repository(registry_url, index_url, imagerepo, http_proxy)
+        v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
+        self.dockerioapi.set_v2_login_token(v2_auth_token)
+        (dummy, manifest_json) = \
+            self.dockerioapi.get_manifest(imagerepo, tag, platform)
+
+        try:
+            Msg().out(json.dumps(manifest_json, sort_keys=True,
+                                 indent=4, separators=(',', ': ')))
+        except (IOError, OSError, AttributeError, ValueError, TypeError):
+            Msg().out(manifest_json)
+            return self.STATUS_ERROR
+
         return self.STATUS_OK
 
     def do_inspect(self, cmdp):
@@ -1263,6 +1373,7 @@ Commands:
   clone <container_id>          :Duplicate container
   rm  <container-id|name>       :Delete container
   rmi <repo/image:tag>          :Delete image
+  tag <repo/image:tag> <repo2/image2:tag2> :Tag image
 
   import <tar> <repo/image:tag> :Import tar file (exported by docker)
   import - <repo/image:tag>     :Import from stdin (exported by docker)
@@ -1272,8 +1383,13 @@ Commands:
   load                          :Load image from stdin (saved by docker)
   save -o <imagefile> <repo/image:tag>  :Save image with layers to file
 
-  inspect -p <repo/image:tag>   :Return low level information on image
+  inspect -p <repo/image:tag>   :Print image or container metadata
   verify <repo/image:tag>       :Verify a pulled image
+  manifest inspect <repo/image:tag> :Print manifest metadata
+
+  udocker manifest inspect centos/centos8
+  udocker pull --platform=linux/arm64 centos/centos8
+  udocker tag centos/centos8  mycentos/centos8:arm64
 
   protect <repo/image:tag>      :Protect repository
   unprotect <repo/image:tag>    :Unprotect repository
@@ -1299,6 +1415,10 @@ Examples:
   udocker ps -m -s
   udocker inspect mycontainer
   udocker inspect -p mycontainer
+
+  udocker manifest inspect centos/centos8
+  udocker pull --platform=linux/arm64 centos/centos8
+  udocker tag centos/centos8  mycentos/centos8:arm64
 
   udocker run  mycontainer  cat /etc/redhat-release
   udocker run --hostauth --hostenv --bindhome  mycontainer

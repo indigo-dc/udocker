@@ -28,8 +28,9 @@ __credits__ = [
     "runC https://runc.io",
     "crun https://github.com/containers/crun",
     "Fakechroot https://github.com/dex4er/fakechroot",
+    "Patchelf https://github.com/NixOS/patchelf",
     "Singularity http://singularity.lbl.gov"
     ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.3.9"
+__version__ = "1.3.10"
 __date__ = "2023"

@@ -12,6 +12,7 @@ from udocker.engine.runc import RuncEngine
 from udocker.engine.singularity import SingularityEngine
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.filebind import FileBind
+from udocker.helper.hostinfo import HostInfo
 
 
 class ExecutionMode(object):
@@ -46,7 +47,13 @@ class ExecutionMode(object):
         futil_xm = FileUtil(self.container_execmode)
         xmode = futil_xm.getdata('r').strip()
         if not xmode:
-            xmode = Config.conf['default_execution_mode']
+            xmode = Config.conf['override_default_execution_mode']
+        if not xmode:
+            try:
+                arch = HostInfo().arch()
+                xmode = Config.conf['default_execution_modes'][arch]
+            except KeyError:
+                xmode = Config.conf['default_execution_modes']["DEFAULT"]
         return xmode
 
     def set_mode(self, xmode, force=False):

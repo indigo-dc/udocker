@@ -96,6 +96,7 @@ but is still available
           pull <repo/image:tag>         :Pull container image from dockerhub
           create <repo/image:tag>       :Create container from a pulled image
           run <container>               :Execute container
+          run <repo/image:tag>          :Pull, create and execute container
 
           images -l                     :List container images
           ps -m -s                      :List created containers
@@ -105,6 +106,7 @@ but is still available
           clone <container_id>          :Duplicate container
           rm <container-id>             :Delete container
           rmi <repo/image:tag>          :Delete image
+          tag <repo/image:tag> <repo2/image2:tag2> :Tag image
 
           import <tar> <repo/image:tag> :Import tar file (exported by docker)
           import - <repo/image:tag>     :Import from stdin (exported by docker)
@@ -116,6 +118,7 @@ but is still available
 
           inspect -p <repo/image:tag>   :Return low level information on image
           verify <repo/image:tag>       :Verify a pulled or loaded image
+          manifest inspect <repo/image:tag> :Print manifest metadata
 
           protect <repo/image:tag>      :Protect repository
           unprotect <repo/image:tag>    :Unprotect repository
@@ -167,6 +170,14 @@ udocker search  quay.io/bio
 udocker search  --list-tags  quay.io/biocontainers/scikit-bio
 udocker pull    quay.io/biocontainers/scikit-bio:0.2.3--np112py35_0
 udocker images
+```
+
+Pull a different architecture such as arm64 instead of amd64.
+
+```bash
+udocker manifest inspect centos/centos8
+udocker pull --platform=linux/arm64 centos/centos8
+udocker tag centos/centos8  mycentos/centos8:arm64
 ```
 
 Create a container from a pulled image, assign a name to the created
@@ -419,6 +430,7 @@ of the installation manual.
 * Docker <https://www.docker.com/>
 * PRoot <https://proot-me.github.io/>
 * Fakechroot <https://github.com/dex4er/fakechroot/wiki>
+* Patchelf <https://github.com/NixOS/patchelf>
 * runC <https://runc.io/>
 * crun <https://github.com/containers/crun>
 * Singularity <https://www.sylabs.io/>
@@ -428,14 +440,16 @@ of the installation manual.
 * EOSC-hub <https://eosc-hub.eu>
 * EGI-ACE <https://www.egi.eu/projects/egi-ace/>
 * EOSC-Synergy <https://www.eosc-synergy.eu/>
+* DT-Geo <https://dtgeo.eu/>
 * LIP [https://www.lip.pt](https://www.lip.pt/?section=home&page=homepage&lang=en)
 * INCD [https://www.incd.pt](https://www.incd.pt/?lang=en)
 
 This work was performed in the framework of the H2020 project INDIGO-Datacloud
 (RIA 653549) and further developed with co-funding by the projects EOSC-hub
-(Horizon 2020) under Grant number 777536 and DEEP-Hybrid-DataCloud
-(Horizon 2020) under Grant number 777435. Software Quality Assurance is
-performed with the support of by the project EOSC-Synergy (Horizon 2020).
+(Horizon 2020) under Grant number 777536, DEEP-Hybrid-DataCloud
+(Horizon 2020) under Grant number 777435, DT-Geo (Horizon Europe) under Grant
+number 101058129. Software Quality Assurance is performed with the support of
+by the project EOSC-Synergy (Horizon 2020).
 The authors wish to acknowleadge the support of INCD-Infraestrutura Nacional de
 Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER
 under the project number 22153-01/SAICT/2016).

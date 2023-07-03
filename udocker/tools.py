@@ -290,7 +290,7 @@ class UdockerTools(object):
             return True
 
         Msg().out("Info: udocker command line interface", __version__)
-        Msg().out("Info: searching for udockertools", self._tarball_release, l=Msg.INF)
+        Msg().out("Info: searching for udockertools >=", self._tarball_release, l=Msg.INF)
         retry = self._installretry
         while retry:
             if self._install_logic(force):

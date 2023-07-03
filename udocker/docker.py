@@ -46,9 +46,17 @@ class DockerIoAPI(object):
         """Change docker index url"""
         self.index_url = index_url
 
+    # ARCHNEW
     def is_repo_name(self, imagerepo):
         """Check if name matches authorized characters for a docker repo"""
         if imagerepo and re.match("^[a-zA-Z0-9][a-zA-Z0-9-_./:]+$", imagerepo):
+            return True
+        return False
+
+    # ARCHNEW
+    def is_layer_name(self, layername):
+        """Check if name matches authorized characters for a docker layer"""
+        if layername and re.match("^[a-zA-Z0-9]+@[a-z0-9]+:[a-z0-9]+$", layername):
             return True
         return False
 
@@ -374,14 +382,13 @@ class DockerIoAPI(object):
         try:
             for manifest in index_list["manifests"]:
                 manifest_p = manifest["platform"]
-                if (p_os and
-                    (manifest_p["os"]).lower() != p_os):
+                if (p_os and (manifest_p["os"]).lower() != p_os):
                     continue
                 if (p_architecture and
-                    (manifest_p["architecture"]).lower() != p_architecture):
+                        (manifest_p["architecture"]).lower() != p_architecture):
                     continue
                 if (p_variant and
-                    (manifest_p["variant"]).lower() != p_variant):
+                        (manifest_p["variant"]).lower() != p_variant):
                     continue
                 return manifest["digest"]
         except (KeyError, AttributeError, ValueError, TypeError):
@@ -406,6 +413,8 @@ class DockerIoAPI(object):
 
         try:
             content_type = hdr.data['content-type']
+            if "application/json" in content_type:
+                return (hdr.data, json.loads(buf.getvalue().decode()))
             if "docker.distribution.manifest.v1" in content_type:
                 return (hdr.data, json.loads(buf.getvalue().decode()))
             if "docker.distribution.manifest.v2" in content_type:
@@ -413,8 +422,10 @@ class DockerIoAPI(object):
             if "oci.image.manifest.v1+json" in content_type:
                 return (hdr.data, json.loads(buf.getvalue().decode()))
             if ("docker.distribution.manifest.list.v2" in content_type
-                or "oci.image.index.v1+json" in content_type):
+                    or "oci.image.index.v1+json" in content_type):
                 image_index = json.loads(buf.getvalue().decode())
+                if not platform:
+                    return (hdr.data, image_index)
                 digest = self._get_v2_digest_from_image_index(image_index,
                                                               platform)
                 if not digest:
@@ -425,7 +436,7 @@ class DockerIoAPI(object):
                                                       digest, platform)
         except (OSError, KeyError, AttributeError, ValueError, TypeError):
             pass
-        return (hdr.data, [])
+        return (hdr.data, {})
 
     def get_v2_image_layer(self, imagerepo, layer_id):
         """Get one image layer data file (tarball)"""
@@ -599,6 +610,15 @@ class DockerIoAPI(object):
             self.localrepo.del_imagerepo(imagerepo, tag, False)
         return files
 
+    def get_manifest(self, imagerepo, tag, platform=""):
+        """Get image manifest"""
+        Msg().out("Debug: get manifest imagerepo: %s tag: %s"
+                  % (imagerepo, tag), l=Msg.DBG)
+        (dummy, remoterepo) = self._parse_imagerepo(imagerepo)
+        if self.is_v2():
+            return self.get_v2_image_manifest(remoterepo, tag, platform)
+        return ({}, {})
+
     def get_tags(self, imagerepo):
         """List tags from a v2 or v1 repositories"""
         Msg().out("Debug: get tags", imagerepo, l=Msg.DBG)
@@ -692,11 +712,11 @@ class DockerLocalFileAPI(CommonLocalFileApi):
             elif fname == "manifest.json":
                 structure["manifest"] = \
                         self.localrepo.load_json(f_path)
-            elif len(fname) >= 69 and fname.endswith(".json"):
+            elif fname.endswith(".json") and FileUtil(f_path).isfile():
                 structure["repoconfigs"][fname] = {}
                 structure["repoconfigs"][fname]["json"] = self.localrepo.load_json(f_path)
                 structure["repoconfigs"][fname]["json_f"] = f_path
-            elif len(fname) >= 64 and FileUtil(f_path).isdir():
+            elif FileUtil(f_path).isdir():
                 layer_id = fname
                 structure["repolayers"][layer_id] = {}
                 for layer_f in os.listdir(f_path):

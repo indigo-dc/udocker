@@ -317,10 +317,34 @@ class FileUtil(object):
         for filename in tmptrash_copy:
             FileUtil(filename).remove(recursive=True)
 
+    def isexecutable(self):
+        """Check if execute bit is set"""
+        try: 
+            return os.access(self.filename, os.X_OK)
+        except (IOError, OSError, TypeError):
+            return False
+
+    def iswriteable(self):
+        """Check if execute bit is set"""
+        try: 
+            return os.access(self.filename, os.W_OK)
+        except (IOError, OSError, TypeError):
+            return False
+
     def isdir(self):
         """Is filename a directory"""
         try:
             if os.path.isdir(self.filename):
+                return True
+        except (IOError, OSError, TypeError):
+            pass
+
+        return False
+
+    def isfile(self):
+        """Is filename a plain file"""
+        try:
+            if os.path.isfile(self.filename):
                 return True
         except (IOError, OSError, TypeError):
             pass
@@ -335,12 +359,15 @@ class FileUtil(object):
         except (IOError, OSError, TypeError):
             return -1
 
-    def getdata(self, mode="rb"):
+    def getdata(self, mode="rb", size=-1):
         """Read file content to a buffer"""
         try:
             with open(self.filename, mode) as filep:
-                buf = filep.read()
-            Msg().out("Debug: read buf", buf, l=Msg.DBG)
+                if size == -1:
+                    buf = filep.read()
+                else:
+                    buf = filep.read(size)
+            #Msg().out("Debug: read buf", buf, l=Msg.DBG)
             return buf
         except (IOError, OSError, TypeError):
             return ""
@@ -663,7 +690,7 @@ class FileUtil(object):
         return links
 
     def match(self):
-        """Find matching file with wildcard matching expression"""
+        """Find file with wildcard matching expression"""
         directory = os.path.dirname(self.filename)
         matching_expression = os.path.basename(self.filename)
         matching_files = []
@@ -673,5 +700,28 @@ class FileUtil(object):
         for f_name in os.listdir(directory):
             if re.match(matching_expression, f_name):
                 matching_files.append(directory + "/" + f_name)
+
+        return matching_files
+
+    def match_recursive(self, filetype='FL'):
+        """Recursively find file with wildcard matching expression"""
+        directory = os.path.dirname(self.filename)
+        matching_expression = os.path.basename(self.filename)
+        matching_files = []
+        if not os.path.isdir(directory):
+            return []
+
+        for dir_path, dirs, files in os.walk(directory):
+            f_list = []
+            if 'F' in filetype:
+                f_list += files
+            if 'D' in filetype:
+                f_list += dirs
+            for f_name in f_list:
+                f_path = dir_path + "/" + f_name
+                if os.path.islink(f_path) and 'L' not in filetype:
+                    continue
+                if re.match(matching_expression, f_name):
+                    matching_files.append(f_path)
 
         return matching_files
