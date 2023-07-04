@@ -626,9 +626,34 @@ class UdockerTools:
         LOG.error("installation of udockertools failed")
         return False
 
-    def manage_modules(self, list_uid, action):
-        """Manage installed modules through the file installed.json
+    def get_modules(self, list_uid, action):
+        """Get and manage installed modules through the file installed.json
         action = create, update, delete, show
         modules installed"""
+        mod_inst = []
+        new_mods = []
         install_json = Config.conf['installed_json']
         json_exists = os.path.isfile(install_json)
+        if json_exists:
+            try:
+                with open(install_json, 'r', encoding='utf-8') as filep:
+                    mod_inst = json.load(filep)
+
+            except (KeyError, AttributeError, ValueError, OSError):
+                LOG.error("reading file: %s", install_json)
+
+        if action in ('create', 'update'):
+            new_mods = self._select_modules(list_uid, [])
+            for nmod in new_mods:
+                if nmod not in mod_inst:
+                    mod_inst.append(nmod)
+                else:
+                    LOG.warning('module %s already installed', nmod)
+
+        if action == 'delete':
+            del_mods = self._select_modules(list_uid, [])
+            for dmod in del_mods:
+                if dmod in mod_inst:
+                    mod_inst.remove(dmod)
+                else:
+                    LOG.warning('module to be removed not installed: %s', dmod)
