@@ -1428,6 +1428,13 @@ class UdockerCLI:
         --prefix=<directory>   :destination install directory
         <module>               :positional args one or more
         """
+        list_uid = [int(item) for item in cmdp.get("P*")]
+        if cmdp.missing_options():  # syntax error
+            return self.STATUS_ERROR
+
+        utools = UdockerTools(self.localrepo)
+        metadata = utools.get_modules(list_uid, 'delete')
+        utools.show_metadata(metadata)
         return self.STATUS_OK
 
     def do_availmod(self, cmdp):
@@ -1445,7 +1452,8 @@ class UdockerCLI:
             return self.STATUS_ERROR
 
         utools = UdockerTools(self.localrepo)
-        utools.show_metadata(force)
+        metadata = utools.get_metadata(force)
+        utools.show_metadata(metadata)
         return self.STATUS_OK
 
     def do_delmeta(self, cmdp):
@@ -1499,6 +1507,9 @@ class UdockerCLI:
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
+        utools = UdockerTools(self.localrepo)
+        metadata = utools.get_modules([], '')
+        utools.show_metadata(metadata)
         return self.STATUS_OK
 
     def do_verifytar(self, cmdp):

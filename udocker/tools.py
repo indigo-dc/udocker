@@ -482,12 +482,8 @@ class UdockerTools:
         return False
 
 
-    def show_metadata(self, force):
+    def show_metadata(self, metadict):
         """Show available modules and versions"""
-        metadict = self.get_metadata(force)
-        if not metadict:
-            return False
-
         for module in metadict:
             MSG.info(120*"_")
             MSG.info("UID:            %s", module["uid"])
@@ -628,7 +624,7 @@ class UdockerTools:
 
     def get_modules(self, list_uid, action):
         """Get and manage installed modules through the file installed.json
-        action = create, update, delete, show
+        action = create, update, delete
         modules installed"""
         mod_inst = []
         new_mods = []
@@ -641,6 +637,7 @@ class UdockerTools:
 
             except (KeyError, AttributeError, ValueError, OSError):
                 LOG.error("reading file: %s", install_json)
+                return mod_inst
 
         if action in ('create', 'update'):
             new_mods = self._select_modules(list_uid, [])
@@ -657,3 +654,12 @@ class UdockerTools:
                     mod_inst.remove(dmod)
                 else:
                     LOG.warning('module to be removed not installed: %s', dmod)
+
+        try:
+            with open(install_json, 'w', encoding='utf-8') as filep:
+                json.dump(mod_inst, filep)
+
+        except (KeyError, AttributeError, ValueError, OSError):
+            LOG.error("writing file: %s", install_json)
+
+        return mod_inst
