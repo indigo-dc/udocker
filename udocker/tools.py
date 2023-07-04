@@ -625,3 +625,10 @@ class UdockerTools:
         self._instructions()
         LOG.error("installation of udockertools failed")
         return False
+
+    def manage_modules(self, list_uid, action):
+        """Manage installed modules through the file installed.json
+        action = create, update, delete, show
+        modules installed"""
+        install_json = Config.conf['installed_json']
+        json_exists = os.path.isfile(install_json)

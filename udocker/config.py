@@ -49,6 +49,7 @@ class Config:
     base_url = ["https://download.ncg.ingrid.pt/webdav/udocker/engines/",
                 "https://github.com/LIP-Computing/udocker_tools/raw/main/data/"]
 
+    conf['installed_json'] = conf['topdir'] + '/' + 'installed.json'
     conf['metadata_json'] = "metadata.json"
     conf['metadata_url'] = []
     for url in base_url:
