@@ -213,46 +213,46 @@ class UdockerTools:
                 FileUtil(f_path).register_prefix()
                 FileUtil(f_path).remove(recursive=True)
 
-    def _install(self, tarball_file):
-        """Install the tarball"""
-        if not (tarball_file and os.path.isfile(tarball_file)):
-            return False
+    # def _install(self, tarball_file):
+    #     """Install the tarball"""
+    #     if not (tarball_file and os.path.isfile(tarball_file)):
+    #         return False
 
-        FileUtil(self.localrepo.topdir).chmod()
-        self.localrepo.create_repo()
-        # (mdavid) redo this part
-        try:
-            tfile = tarfile.open(tarball_file, "r:gz")
-            FileUtil(self.localrepo.bindir).rchmod()
-            self._clean_install(tfile)
-            for tar_in in tfile.getmembers():
-                if tar_in.name.startswith("udocker_dir/bin/"):
-                    tar_in.name = os.path.basename(tar_in.name)
-                    LOG.debug("extracting %s", tar_in.name)
-                    tfile.extract(tar_in, self.localrepo.bindir)
+    #     FileUtil(self.localrepo.topdir).chmod()
+    #     self.localrepo.create_repo()
+    #     # (mdavid) redo this part
+    #     try:
+    #         tfile = tarfile.open(tarball_file, "r:gz")
+    #         FileUtil(self.localrepo.bindir).rchmod()
+    #         self._clean_install(tfile)
+    #         for tar_in in tfile.getmembers():
+    #             if tar_in.name.startswith("udocker_dir/bin/"):
+    #                 tar_in.name = os.path.basename(tar_in.name)
+    #                 LOG.debug("extracting %s", tar_in.name)
+    #                 tfile.extract(tar_in, self.localrepo.bindir)
 
-            FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-            FileUtil(self.localrepo.libdir).rchmod()
-            for tar_in in tfile.getmembers():
-                if tar_in.name.startswith("udocker_dir/lib/"):
-                    tar_in.name = os.path.basename(tar_in.name)
-                    LOG.debug("extracting %s", tar_in.name)
-                    tfile.extract(tar_in, self.localrepo.libdir)
+    #         FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    #         FileUtil(self.localrepo.libdir).rchmod()
+    #         for tar_in in tfile.getmembers():
+    #             if tar_in.name.startswith("udocker_dir/lib/"):
+    #                 tar_in.name = os.path.basename(tar_in.name)
+    #                 LOG.debug("extracting %s", tar_in.name)
+    #                 tfile.extract(tar_in, self.localrepo.libdir)
 
-            FileUtil(self.localrepo.libdir).rchmod()
-            FileUtil(self.localrepo.docdir).rchmod()
-            for tar_in in tfile.getmembers():
-                if tar_in.name.startswith("udocker_dir/doc/"):
-                    tar_in.name = os.path.basename(tar_in.name)
-                    LOG.debug("extrating %s", tar_in.name)
-                    tfile.extract(tar_in, self.localrepo.docdir)
+    #         FileUtil(self.localrepo.libdir).rchmod()
+    #         FileUtil(self.localrepo.docdir).rchmod()
+    #         for tar_in in tfile.getmembers():
+    #             if tar_in.name.startswith("udocker_dir/doc/"):
+    #                 tar_in.name = os.path.basename(tar_in.name)
+    #                 LOG.debug("extrating %s", tar_in.name)
+    #                 tfile.extract(tar_in, self.localrepo.docdir)
 
-            FileUtil(self.localrepo.docdir).rchmod()
-            tfile.close()
-        except tarfile.TarError:
-            return False
+    #         FileUtil(self.localrepo.docdir).rchmod()
+    #         tfile.close()
+    #     except tarfile.TarError:
+    #         return False
 
-        return True
+    #     return True
 
     def _get_mirrors(self, mirrors):
         """Get shuffled list of tarball mirrors"""
@@ -438,8 +438,7 @@ class UdockerTools:
             if from_locat:
                 locations = [from_locat + "/" + modul['fname']]
 
-            LOG.debug("locations: %s", locations)
-            LOG.debug("tarball output: %s", tarballfile)
+            LOG.debug("locations: %s - outuput: %s", locations, tarballfile)
             for url in locations:
                 LOG.debug("downloading from: %s", url)
                 if not force and os.path.isfile(tarballfile):
@@ -458,6 +457,30 @@ class UdockerTools:
 
         LOG.error("failure in one or more downloaded modules")
         return False
+
+    def download_licenses(self, dst_dir, from_locat, force):
+        """Download Licenses"""
+        mod_all = self._select_modules([], ['all'])
+        locations = mod_all[0]['docs_url']
+        tballfile = dst_dir + "/" + mod_all[0]['docs']
+        if from_locat:
+            locations = [from_locat + "/" + mod_all[0]['docs']]
+
+        LOG.debug("licenses locations: %s - outuput: %s", locations, tballfile)
+        for url in locations:
+            LOG.debug("downloading from: %s", url)
+            if not force and os.path.isfile(tballfile):
+                LOG.info("tarball with licenses already downloaded")
+                return True
+
+            outfile = self._get_file(url, tballfile)
+            if outfile:
+                LOG.info('licenses downloaded: %s', outfile)
+                return True
+
+        LOG.error("download failed: %s", tballfile)
+        return False
+
 
     def show_metadata(self, force):
         """Show available modules and versions"""
@@ -493,6 +516,7 @@ class UdockerTools:
     def _installmod_logic(self, list_uid, top_dir, tar_dir, force):
         """Logics for installation of modules"""
         lmodules = self._select_modules(list_uid, [])
+        mod_dir = ''
         for modul in lmodules:
             tarballfile = tar_dir + '/' + modul['fname']
             if modul['installdir'] == 'bin/' and not top_dir:
@@ -519,6 +543,7 @@ class UdockerTools:
 
                     if not mods_exists:
                         LOG.info('installing tarfile: %s - in: %s', tarballfile, mod_dir)
+                        self._clean_install(tar_file)
                         tar_file.extractall(path=mod_dir)
 
             except tarfile.TarError:
@@ -529,6 +554,37 @@ class UdockerTools:
         FileUtil(self.localrepo.libdir).rchmod()
         return True
 
+    def _install_licenses(self, mod_all, top_dir, tar_dir, force):
+        '''Install all licenses in docs directory'''
+        tarballfile = tar_dir + '/' + mod_all['docs']
+        doc_dir = self.localrepo.docdir
+        if top_dir:
+            doc_dir = top_dir + '/doc/'
+
+        try:
+            with tarfile.open(tarballfile, "r:gz") as tar_file:
+                list_files = tar_file.getnames()
+                licenses_exists = False
+                for tar_member in list_files:
+                    full_path = doc_dir + tar_member
+                    if not force and os.path.isfile(full_path):
+                        licenses_exists = True
+                        LOG.debug('licenses already installed: %s', full_path)
+                    else:
+                        licenses_exists = False
+                        break
+
+                if not licenses_exists:
+                    LOG.info('installing licenses: %s - in: %s', tarballfile, doc_dir)
+                    tar_file.extractall(path=doc_dir)
+
+        except tarfile.TarError:
+            LOG.error('failed to install licenses: %s.', tarballfile)
+            return False
+
+        FileUtil(self.localrepo.docdir).rchmod()
+        return True
+
     def install_modules(self, list_uid, top_dir, from_locat, force=False):
         """Install modules"""
         tar_dir = self.localrepo.tardir
@@ -536,7 +592,7 @@ class UdockerTools:
             tar_dir = from_locat
 
         # Get version of tarball from module "all"
-        mod_all = self._select_modules([], ['all'])
+        mod_all = self._select_modules([], ['all'])[0]
         tools_version = mod_all[0]['version']
         if not self._autoinstall and not force:
             LOG.warning("installation missing and autoinstall disabled")
@@ -551,7 +607,14 @@ class UdockerTools:
         retry = self._installretry
         while retry:
             flag_download = self.download_tarballs(list_uid, tar_dir, "", False)
+            flag_download_lic = self.download_licenses(tar_dir, "", False)
             flag_install = self._installmod_logic(list_uid, top_dir, tar_dir, force)
+            flag_licenses = self._install_licenses(mod_all, top_dir, tar_dir, force)
+            if flag_download_lic and flag_licenses:
+                LOG.info("licenses installed successful")
+            else:
+                LOG.error("install of licenses failed, check %s, or retry", mod_all['docs_url'])
+
             if flag_download and flag_install:
                 LOG.info("installation of udockertools successful")
                 return True
