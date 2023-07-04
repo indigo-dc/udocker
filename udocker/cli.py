@@ -1501,15 +1501,6 @@ class UdockerCLI:
 
         return self.STATUS_OK
 
-    def do_upgrademod(self, cmdp):
-        """
-        upgrademod: Upgrade one or more installed modules. (DEFAULT no options or args) upgrade all
-        modules to udocker_install directory
-        --from=<url>|<dir>`     :URL or local directory with modules, default is `topdir/tar`
-        <module>`               :positional args one or more
-        """
-        return self.STATUS_OK
-
     def do_verifytar(self, cmdp):
         """
         verifymod: Verify/checksums downloaded tarballs, sha256

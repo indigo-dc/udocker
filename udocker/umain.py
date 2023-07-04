@@ -103,7 +103,6 @@ class UMain:
             "downloadtar": self.cli.do_downloadtar,
             "deltar": self.cli.do_deltar,
             "showmod": self.cli.do_showmod,
-            "upgrademod": self.cli.do_upgrademod,
             "verifytar": self.cli.do_verifytar,
             "tag": self.cli.do_tag,
             "manifest": self.cli.do_manifest,
