@@ -1460,6 +1460,9 @@ class UdockerCLI:
         """
         delmeta: Delete cached metadata.json
         """
+        if cmdp.missing_options():  # syntax error
+            return self.STATUS_ERROR
+
         f_path = Config.conf['metadata_file']
         FileUtil(f_path).register_prefix()
         FileUtil(f_path).remove()
@@ -1508,7 +1511,7 @@ class UdockerCLI:
             return self.STATUS_ERROR
 
         utools = UdockerTools(self.localrepo)
-        metadata = utools.get_modules([], '')
+        metadata = utools.get_modules([], 'show')
         utools.show_metadata(metadata)
         return self.STATUS_OK
 

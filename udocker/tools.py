@@ -624,7 +624,7 @@ class UdockerTools:
 
     def get_modules(self, list_uid, action):
         """Get and manage installed modules through the file installed.json
-        action = create, update, delete
+        action = create, update, delete, show
         modules installed"""
         mod_inst = []
         new_mods = []
@@ -638,6 +638,9 @@ class UdockerTools:
             except (KeyError, AttributeError, ValueError, OSError):
                 LOG.error("reading file: %s", install_json)
                 return mod_inst
+
+        if action == 'show':
+            return mod_inst
 
         if action in ('create', 'update'):
             new_mods = self._select_modules(list_uid, [])
