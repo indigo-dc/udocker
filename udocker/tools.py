@@ -36,7 +36,6 @@ class UdockerTools:
         self.localrepo = localrepo        # LocalRepository object
         self._autoinstall = Config.conf['autoinstall']  # True / False
         self._tarball = Config.conf['tarball']  # URL or file
-        self._installinfo = Config.conf['installinfo']  # URL or file
         self._tarball_release = Config.conf['tarball_release']
         self._installretry = Config.conf['installretry']
         self._install_json = {}

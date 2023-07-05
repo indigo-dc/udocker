@@ -15,12 +15,9 @@ class Config:
     conf = {}
     conf['verbose_level'] = logging.INFO
     conf['homedir'] = os.path.expanduser("~") + "/.udocker"  # dir with keystore file
-    conf['topdir'] = conf['homedir']       # dir with images and containers
-    conf['installdir'] = conf['homedir']   # dir with exec engines bin and lib
-    conf['bindir'] = None
-    conf['libdir'] = None
+    conf['topdir'] = conf['homedir']      # dir with images and containers
+    conf['installdir'] = conf['topdir']   # dir with exec engines bin, lib and doc licenses
     conf['tardir'] = None
-    conf['docdir'] = None
     conf['reposdir'] = None
     conf['layersdir'] = None
     conf['containersdir'] = None
@@ -49,16 +46,20 @@ class Config:
     base_url = ["https://download.ncg.ingrid.pt/webdav/udocker/engines/",
                 "https://github.com/LIP-Computing/udocker_tools/raw/main/data/"]
 
-    conf['installed_json'] = conf['topdir'] + '/' + 'installed.json'
+    conf['installed_json'] = conf['installdir'] + '/' + 'installed.json'
     conf['metadata_json'] = "metadata.json"
     conf['metadata_url'] = []
     for url in base_url:
         conf['metadata_url'].append(url + conf['metadata_json'])
 
-    conf['metadata_file'] = conf['topdir'] + '/' + conf['metadata_json']
+    conf['metadata_file'] = conf['installdir'] + '/' + conf['metadata_json']
+    # The following will be DEPRECATED
+    # conf['bindir'] = conf['installdir'] + '/' + 'bin'
+    # conf['libdir'] = conf['installdir'] + '/' + 'lib'
+    # conf['docdir'] = conf['installdir'] + '/' + 'doc'
 
     # defaults for container execution
-    conf['cmd'] = ["bash", "-i"]  # Comand to execute
+    conf['cmd'] = ["bash", "-i"]  # Command to execute
 
     # default path for executables
     conf['root_path'] = "/usr/sbin:/sbin:/usr/bin:/bin"
@@ -131,16 +132,16 @@ class Config:
     conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
 
     # Containers execution defaults
-    conf['location'] = ""      # run container in this location
+    conf['location'] = ""                 # run container in this location
 
     # Curl settings
-    conf['http_proxy'] = ""    # ex. socks5://user:pass@127.0.0.1:1080
-    conf['timeout'] = 12       # default timeout (secs)
-    conf['download_timeout'] = 30 * 60  # file download timeout (secs)
-    conf['ctimeout'] = 6       # default TCP connect timeout (secs)
+    conf['http_proxy'] = ""               # ex. socks5://user:pass@127.0.0.1:1080
+    conf['timeout'] = 12                  # default timeout (secs)
+    conf['download_timeout'] = 30 * 60    # file download timeout (secs)
+    conf['ctimeout'] = 6                  # default TCP connect timeout (secs)
     conf['http_agent'] = ""
     conf['http_insecure'] = False
-    conf['use_curl_executable'] = ""  # force use of executable
+    conf['use_curl_executable'] = ""      # force use of executable
 
     # docker hub index
     conf['dockerio_index_url'] = "https://hub.docker.com"
@@ -205,9 +206,10 @@ class Config:
         Config.conf['verbose_level'] = int(os.getenv("UDOCKER_LOGLEVEL",
                                            Config.conf['verbose_level']))
         Config.conf['topdir'] = os.getenv("UDOCKER_DIR", Config.conf['topdir'])
-        Config.conf['bindir'] = os.getenv("UDOCKER_BIN", Config.conf['bindir'])
-        Config.conf['libdir'] = os.getenv("UDOCKER_LIB", Config.conf['libdir'])
-        Config.conf['docdir'] = os.getenv("UDOCKER_DOC", Config.conf['docdir'])
+        Config.conf['installdir'] = os.getenv("UDOCKER_INSTALL", Config.conf['installdir'])
+        # Config.conf['bindir'] = os.getenv("UDOCKER_BIN", Config.conf['bindir'])
+        # Config.conf['libdir'] = os.getenv("UDOCKER_LIB", Config.conf['libdir'])
+        # Config.conf['docdir'] = os.getenv("UDOCKER_DOC", Config.conf['docdir'])
         Config.conf['reposdir'] = os.getenv("UDOCKER_REPOS", Config.conf['reposdir'])
         Config.conf['layersdir'] = os.getenv("UDOCKER_LAYERS", Config.conf['layersdir'])
         Config.conf['containersdir'] = os.getenv("UDOCKER_CONTAINERS",
@@ -244,12 +246,3 @@ class Config:
         """Return all configuration variables"""
         self._file_override(user_cfile)  # Override with variables in conf file
         self._env_override()             # Override with variables in environment
-
-    # def container(self, user_cfile="u.conf"):
-    #     """
-    #     Load configuration for a container
-    #     Values should be in the form x = y
-    #     """
-    #     ignore_keys = ["topdir", "homedir", "reposdir", "layersdir",
-    #                    "containersdir", "location", ]
-    #     self._file_override(user_cfile, ignore_keys)
