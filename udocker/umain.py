@@ -23,7 +23,7 @@ class UMain:
         """Initialize variables of the class"""
         self.argv = argv
         self.cmdp = None
-        self.local = None
+        self.localrepo = None
         self.cli = None
 
     def _prepare_exec(self):
@@ -54,16 +54,16 @@ class UMain:
         if topdir:  # override repo root tree
             Config.conf['topdir'] = topdir
 
-        self.local = LocalRepository()
-        if not self.local.is_repo():
+        self.localrepo = LocalRepository()
+        if not self.localrepo.is_repo():
             if topdir:
                 LOG.error("invalid udocker repository: %s", topdir)
                 sys.exit(self.STATUS_ERROR)
             else:
                 LOG.info("creating repo: %s", Config.conf['topdir'])
-                self.local.create_repo()
+                self.localrepo.create_repo()
 
-        self.cli = UdockerCLI(self.local)
+        self.cli = UdockerCLI(self.localrepo)
 
     def execute(self):
         """Command parsing and selection"""

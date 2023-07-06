@@ -1470,15 +1470,16 @@ class UdockerCLI:
         return self.STATUS_OK
 
     def do_downloadtar(self, cmdp):
-        """
-        download: Download tarballs with modules and verifies sha256sum, so it can be installed
-        offline. (DEFAULT no options or args) download tarballs proot for host arch and kernel,
-        fakechroot and its dependency patchelf:
-        download [options] uid_module1 uid_module2
-        --force                    :Force the download
-        --from=<url>|<dir>         :URL or local directory with modules, no trailing /
-        --prefix=<directory>       :destination download directory, no trailing /
-        """
+        ''' download: Download tarballs with modules and verifies sha256sum, so it can be installed
+            offline. (DEFAULT no options or args) download tarballs proot for host arch and kernel,
+            fakechroot and its dependency patchelf:
+            download [options] uid_module1 uid_module2
+            --force                    :Force the download
+            --from=<url>|<dir>         :URL or local directory with modules, no trailing /
+            --prefix=<directory>       :destination download directory, no trailing /
+            <module>`                  :positional args 1 or more
+        '''
+
         dst_dir = self.localrepo.tardir    # Destination dir for tarballs
         list_uid = [int(item) for item in cmdp.get("P*")]
         force = cmdp.get("--force")

@@ -32,15 +32,15 @@ THIS_SCRIPT_NAME=$( basename "$0" )
 
 # Variables for the tests
 declare -a FAILED_TESTS
-DEFAULT_UDIR=$HOME/.udocker-tests
-TEST_UDIR=$HOME/.udocker-test-h45y7k9X
 TAR_IMAGE="centos7.tar"
 TAR_CONT="centos7-cont.tar"
 TAR_IMAGE_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_IMAGE}"
 TAR_CONT_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_CONT}"
+TAR_DIR=$HOME/.udocker_tar
 DOCKER_IMG="ubuntu:22.04"
 CONT="ubuntu"
-export UDOCKER_DIR=${DEFAULT_UDIR}
+UDOCKER_DIR=$HOME/.udocker_tests
+UDOCKER_INSTALL=$HOME/.udocker_install
 
 if [ -n "$1" ]
 then
@@ -78,9 +78,14 @@ function print_fail
 
 function clean
 {
-  if [ -d ${DEFAULT_UDIR} ]
+  if [ -d ${UDOCKER_DIR} ]
   then
-    echo "ERROR test directory exists, remove first: ${DEFAULT_UDIR}"
+    echo "ERROR test directory exists, remove first: ${UDOCKER_DIR}"
+    exit 1
+  fi
+  if [ -d ${UDOCKER_INSTALL} ]
+  then
+    echo "ERROR install directory exists, remove first: ${UDOCKER_INSTALL}"
     exit 1
   fi
 }
@@ -120,29 +125,55 @@ function udocker
   $PYTHON_CMD $UDOCKER_CMD $*
 }
 
+is_file_not_empty() {
+    [[ ! -f "${1}" || ! -s "${1}" ]] && return 1 || return 0
+}
+
 echo "==========================================================="
 echo "* This script tests udocker CLI and options for           *"
 echo "* install of modules, download modules, show modules, etc.*"
-echo "* except the run command and vol. mount options           *"
 echo "==========================================================="
 
-STRING="T001: udocker install"
+echo "Manually clean directories before the tests"
 clean
-udocker install && ls ${DEFAULT_UDIR}/bin/proot-x86_64; return=$?
+echo "rm -rf ${UDOCKER_DIR} ${UDOCKER_INSTALL} > /dev/null 2>&1"
+mkdir -p ${TAR_DIR}
+wget https://download.ncg.ingrid.pt/webdav/udocker/engines/tarballs/crun-x86_64.tgz -P ${TAR_DIR}
+
+touch ${UDOCKER_INSTALL}/metadata.json
+STRING="T001: udocker availmod --force"
+udocker availmod --force && is_file_not_empty ${UDOCKER_INSTALL}/metadata.json; return=$?
 result
 
-STRING="T002: udocker install --force"
-udocker install --force && \
-    ls ${DEFAULT_UDIR}/bin/proot-x86_64 >/dev/null 2>&1; return=$?
+STRING="T002: udocker availmod"
+udocker availmod >/dev/null 2>&1 && is_file_not_empty ${UDOCKER_INSTALL}/metadata.json; return=$?
+result
+
+STRING="T003: udocker downloadtar to default dir ${UDOCKER_INSTALL}/tar"
+udocker downloadtar && ls ${UDOCKER_INSTALL}/tar/libfakechroot.tgz; return=$?
+result
+
+STRING="T004: udocker downloadtar --prefix=${TAR_DIR}"
+udocker downloadtar --prefix=${TAR_DIR} && ls ${TAR_DIR}/libfakechroot.tgz; return=$?
+result
+
+STRING="T005: udocker downloadtar --from=${TAR_DIR} 1 (UID =1 is crun)"
+udocker downloadtar --from=${TAR_DIR} 1 && ls ${TAR_DIR}/crun-x86_64.tgz; return=$?
 result
 
 
-# Cleanup files containers and images used in the tests
-echo "Clean up files containers and images used in the tests"
-rm -rf myexportcont.tar "${TEST_UDIR}" "${TAR_IMAGE}" "${TAR_CONT}" > /dev/null 2>&1
-udocker rm mycont
-udocker rmi mycentos1
-echo "\____________________________________________________________________________________________________________________________________/"
+# STRING="T001: udocker install"
+# udocker install && ls ${UDOCKER_INSTALL}/bin/proot-x86_64; return=$?
+# result
+
+# STRING="T002: udocker install --force"
+# udocker install --force && \
+#     ls ${UDOCKER_INSTALL}/bin/proot-x86_64 >/dev/null 2>&1; return=$?
+# result
+
+echo "==========================================================="
+echo "* End of tests                                            *"
+echo "==========================================================="
 
 # Report failed tests
 if [ "${#FAILED_TESTS[*]}" -le 0 ]

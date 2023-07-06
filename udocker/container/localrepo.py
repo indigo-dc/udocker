@@ -33,17 +33,14 @@ class LocalRepository:
     def __init__(self, topdir=None):
         self.topdir = topdir if topdir else Config.conf['topdir']
         self.installdir = Config.conf['installdir']
-        self.bindir = Config.conf['installdir'] + "/bin"
-        self.libdir = Config.conf['installdir'] + "/lib"
-        self.docdir = Config.conf['installdir'] + "/doc"
-        self.tardir = Config.conf['tardir']
+        self.bindir = self.installdir + '/bin'
+        self.libdir = self.installdir + '/lib'
+        self.docdir = self.installdir + '/doc'
+        self.tardir = self.installdir + '/tar'
         self.reposdir = Config.conf['reposdir']
         self.layersdir = Config.conf['layersdir']
         self.containersdir = Config.conf['containersdir']
         self.homedir = Config.conf['homedir']
-        if not self.tardir:
-            self.tardir = self.topdir + "/tar"
-
         if not self.reposdir:
             self.reposdir = self.topdir + "/repos"
 
