@@ -1553,7 +1553,7 @@ class UdockerCLI:
 
         try:
             MSG.info("version: %s", __version__)
-            MSG.info("tarball: %s", Config.conf['tarball'])
+            # MSG.info("tarball: %s", Config.conf['tarball'])  ## TODO DEPRECATED
             MSG.info("tarball_release: %s", Config.conf['tarball_release'])
         except NameError:
             return self.STATUS_ERROR

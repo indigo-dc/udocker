@@ -27,32 +27,31 @@ class Config:
     conf['tarball_release'] = "1.2.10"
 
     # These are to be deprecated this info will be exclusively in the new metadata.json
-    base_tarurl = ["https://download.ncg.ingrid.pt/webdav/udocker/",
-                   "https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/"]
-    conf['tarball'] = []
-    for url in base_tarurl:
-        conf['tarball'].append(url + "udocker-englib-1.2.10.tar.gz")
+    # base_tarurl = ["https://download.ncg.ingrid.pt/webdav/udocker/",
+    #                "https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/"]
+    # conf['tarball'] = []
+    # for url in base_tarurl:
+    #     conf['tarball'].append(url + "udocker-englib-1.2.10.tar.gz")
 
     # Either remove, as not been used
     # conf['installinfo'] = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages"]
 
     conf['installretry'] = 3
     conf['autoinstall'] = True
-    conf['config'] = "udocker.conf"
-    conf['keystore'] = "keystore"
+    conf['config'] = 'udocker.conf'
+    conf['keystore'] = 'keystore'
     conf['tmpdir'] = os.getenv("TMPDIR", "/tmp")    # for tmp files only
 
     # new conf options and commands for install
-    base_url = ["https://download.ncg.ingrid.pt/webdav/udocker/engines/",
-                "https://github.com/LIP-Computing/udocker_tools/raw/main/data/"]
+    base_url = ['https://download.ncg.ingrid.pt/webdav/udocker/engines/',
+                'https://github.com/LIP-Computing/udocker_tools/raw/main/data/']
 
-    conf['installed_json'] = conf['installdir'] + '/' + 'installed.json'
-    conf['metadata_json'] = "metadata.json"
+    conf['installed_json'] = 'installed.json'
+    conf['metadata_json'] = 'metadata.json'
     conf['metadata_url'] = []
     for url in base_url:
         conf['metadata_url'].append(url + conf['metadata_json'])
 
-    conf['metadata_file'] = conf['installdir'] + '/' + conf['metadata_json']
     # The following will be DEPRECATED
     # conf['bindir'] = conf['installdir'] + '/' + 'bin'
     # conf['libdir'] = conf['installdir'] + '/' + 'lib'
@@ -62,8 +61,8 @@ class Config:
     conf['cmd'] = ["bash", "-i"]  # Command to execute
 
     # default path for executables
-    conf['root_path'] = "/usr/sbin:/sbin:/usr/bin:/bin"
-    conf['user_path'] = "/usr/local/bin:/usr/bin:/bin"
+    conf['root_path'] = '/usr/sbin:/sbin:/usr/bin:/bin'
+    conf['user_path'] = '/usr/local/bin:/usr/bin:/bin'
 
     # directories to be mapped in containers with: run --sysdirs
     conf['sysdirs_list'] = ("/dev", "/proc", "/sys", "/etc/resolv.conf",
@@ -218,7 +217,7 @@ class Config:
                                                       Config.conf['dockerio_index_url'])
         Config.conf['dockerio_registry_url'] = os.getenv("UDOCKER_REGISTRY",
                                                          Config.conf['dockerio_registry_url'])
-        Config.conf['tarball'] = os.getenv("UDOCKER_TARBALL", Config.conf['tarball'])
+        # Config.conf['tarball'] = os.getenv("UDOCKER_TARBALL", Config.conf['tarball'])  # TODO DEPRECATED
         Config.conf['default_execution_mode'] = os.getenv("UDOCKER_DEFAULT_EXECUTION_MODE",
                                                           Config.conf['default_execution_mode'])
         Config.conf['fakechroot_so'] = os.getenv("UDOCKER_FAKECHROOT_SO",

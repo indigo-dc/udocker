@@ -16,7 +16,7 @@ from udocker.utils.chksum import ChkSUM
 
 
 def _str(data):
-    """Safe str for Python 3"""
+    '''Safe str for Python 3'''
     try:
         return data.decode()
     except (UnicodeDecodeError, AttributeError):
@@ -26,23 +26,23 @@ def _str(data):
 
 
 class UdockerTools:
-    """Download and setup of the udocker supporting tools
-    Includes: proot and alternative python modules, these
-    are downloaded to facilitate the installation by the
-    end-user.
-    """
+    ''' Download and setup of the udocker supporting tools
+        Includes: proot and alternative python modules, these
+        are downloaded to facilitate the installation by the
+        end-user.
+    '''
 
     def __init__(self, localrepo):
-        self.localrepo = localrepo        # LocalRepository object
-        self._autoinstall = Config.conf['autoinstall']  # True / False
-        self._tarball = Config.conf['tarball']  # URL or file
+        self.localrepo = localrepo                       # LocalRepository object
+        self._autoinstall = Config.conf['autoinstall']   # True / False
         self._tarball_release = Config.conf['tarball_release']
         self._installretry = Config.conf['installretry']
         self._install_json = {}
         self.curl = GetURL()
 
+    # TODO Review instructions
     def _instructions(self):
-        """
+        '''
         Udocker installation instructions are available at:
 
           https://indigo-dc.github.io/udocker/installation_manual.html
@@ -69,15 +69,15 @@ class UdockerTools:
 
         3) once installed the binaries and containers will be placed
            by default under $HOME/.udocker
+        '''
 
-        """
         msgout = "udocker command line interface version: " + __version__
-        msgout = msgout + "\nrequires udockertools tarball release: " + self._tarball_release
+        msgout = msgout + "\nrequires udocker tool modules from: " + self._tarball_release
         MSG.info(self._instructions.__doc__)
         MSG.info(msgout)
 
     def _version2int(self, version):
-        """Convert version string to integer"""
+        '''Convert version string to integer'''
         version_int = 0
         factor = 1000 * 1000
         for vitem in _str(version).strip().split('.'):
@@ -89,24 +89,6 @@ class UdockerTools:
             factor = int(factor / 1000)
 
         return int(version_int)
-
-    # This method is from the old install, in the new install there is download of metadata.json
-    # with latest tarball version
-    # def _version_isok(self, version):
-    #     """Is version >= than the minimum required tarball release"""
-    #     if not (version and self._tarball_release):
-    #         return False
-
-    #     tarball_version_int = self._version2int(version)
-    #     required_version_int = self._version2int(self._tarball_release)
-    #     return tarball_version_int >= required_version_int
-
-    # TO BE Removed/deprecated, the other downloadtar methods already verify this
-    # def is_available(self):
-    #     """Are the tools already installed"""
-    #     version_file = self.localrepo.libdir + "/VERSION"
-    #     version = FileUtil(version_file).getdata('r').strip()
-    #     return self._version_isok(version)
 
     def purge(self):
         """Remove existing files in bin, lib and doc"""
@@ -128,16 +110,16 @@ class UdockerTools:
             FileUtil(f_path).remove(recursive=True)
             LOG.debug("removed file: %s", f_path)
 
-    def _download(self, url, fileout=""):
-        """Download a file """
+    def _download(self, url, fileout=''):
+        '''Download a file'''
         if fileout:
             download_file = fileout
         else:
-            download_file = FileUtil("udockertools").mktmp()
+            download_file = FileUtil('udockertools').mktmp()
 
         (hdr, dummy) = self.curl.get(url, ofile=download_file, follow=True)
         try:
-            if "200" in hdr.data["X-ND-HTTPSTATUS"]:
+            if '200' in hdr.data['X-ND-HTTPSTATUS']:
                 return download_file
         except (KeyError, TypeError, AttributeError):
             pass
@@ -146,115 +128,47 @@ class UdockerTools:
         return ""
 
     def _get_file(self, url, fileout=""):
-        """Get file from list of possible locations file or internet,
-        url: URL or local file
-        fileout: full filename of downloaded file"""
-        filename = ""
-        if "://" in url:
-            LOG.debug("get %s from %s.", fileout, url)
+        ''' Get file from list of possible locations file or internet,
+            url: URL or local file
+            fileout: full filename of downloaded file
+        '''
+        filename = ''
+        if '://' in url:
+            LOG.debug('get %s from %s.', fileout, url)
             filename = self._download(url, fileout)
         elif os.path.exists(url):
-            LOG.debug("file %s exists.", url)
+            LOG.debug('file %s exists.', url)
             filename = os.path.realpath(url)
             if fileout:
-                LOG.debug("copy file %s to %s.", filename, fileout)
+                LOG.debug('copy file %s to %s.', filename, fileout)
                 shutil.copy2(filename, fileout)
 
         if filename and os.path.isfile(filename):
             return filename
 
-        return ""
-
-    # This method is from the old install, in the new install_mods the verification is the sha256sum
-    # def _verify_version(self, tarball_file):
-    #     """verify the tarball version"""
-    #     if not (tarball_file and os.path.isfile(tarball_file)):
-    #         return (False, "")
-
-    #     tmpdir = FileUtil("VERSION").mktmpdir()
-    #     if not tmpdir:
-    #         return (False, "")
-
-    #     # (mdavid) redo this part
-    #     try:
-    #         tfile = tarfile.open(tarball_file, "r:gz")
-    #         for tar_in in tfile.getmembers():
-    #             if tar_in.name.startswith("udocker_dir/lib/VERSION"):
-    #                 tar_in.name = os.path.basename(tar_in.name)
-    #                 tfile.extract(tar_in, path=tmpdir)
-
-    #         tfile.close()
-    #     except tarfile.TarError:
-    #         FileUtil(tmpdir).remove(recursive=True)
-    #         return (False, "")
-
-    #     tarball_version = FileUtil(tmpdir + "/VERSION").getdata('r').strip()
-    #     status = self._version_isok(tarball_version)
-    #     FileUtil(tmpdir).remove(recursive=True)
-    #     return (status, tarball_version)
+        return ''
 
     def _clean_install(self, tfile):
-        """Remove files before install"""
+        '''Remove files before install'''
         for tar_in in tfile.getmembers():
             basename = os.path.basename(tar_in.name)
-            if tar_in.name.startswith("udocker_dir/bin/"):
+            if tar_in.name.startswith('udocker_dir/bin/'):
                 f_path = self.localrepo.bindir + '/' + basename
                 FileUtil(f_path).register_prefix()
                 FileUtil(f_path).remove(recursive=True)
 
-            if tar_in.name.startswith("udocker_dir/lib/"):
+            if tar_in.name.startswith('udocker_dir/lib/'):
                 f_path = self.localrepo.libdir + '/' + basename
                 FileUtil(f_path).register_prefix()
                 FileUtil(f_path).remove(recursive=True)
 
-            if tar_in.name.startswith("udocker_dir/doc/"):
+            if tar_in.name.startswith('udocker_dir/doc/'):
                 f_path = self.localrepo.docdir + '/' + basename
                 FileUtil(f_path).register_prefix()
                 FileUtil(f_path).remove(recursive=True)
 
-    # def _install(self, tarball_file):
-    #     """Install the tarball"""
-    #     if not (tarball_file and os.path.isfile(tarball_file)):
-    #         return False
-
-    #     FileUtil(self.localrepo.topdir).chmod()
-    #     self.localrepo.create_repo()
-    #     # (mdavid) redo this part
-    #     try:
-    #         tfile = tarfile.open(tarball_file, "r:gz")
-    #         FileUtil(self.localrepo.bindir).rchmod()
-    #         self._clean_install(tfile)
-    #         for tar_in in tfile.getmembers():
-    #             if tar_in.name.startswith("udocker_dir/bin/"):
-    #                 tar_in.name = os.path.basename(tar_in.name)
-    #                 LOG.debug("extracting %s", tar_in.name)
-    #                 tfile.extract(tar_in, self.localrepo.bindir)
-
-    #         FileUtil(self.localrepo.bindir).rchmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-    #         FileUtil(self.localrepo.libdir).rchmod()
-    #         for tar_in in tfile.getmembers():
-    #             if tar_in.name.startswith("udocker_dir/lib/"):
-    #                 tar_in.name = os.path.basename(tar_in.name)
-    #                 LOG.debug("extracting %s", tar_in.name)
-    #                 tfile.extract(tar_in, self.localrepo.libdir)
-
-    #         FileUtil(self.localrepo.libdir).rchmod()
-    #         FileUtil(self.localrepo.docdir).rchmod()
-    #         for tar_in in tfile.getmembers():
-    #             if tar_in.name.startswith("udocker_dir/doc/"):
-    #                 tar_in.name = os.path.basename(tar_in.name)
-    #                 LOG.debug("extrating %s", tar_in.name)
-    #                 tfile.extract(tar_in, self.localrepo.docdir)
-
-    #         FileUtil(self.localrepo.docdir).rchmod()
-    #         tfile.close()
-    #     except tarfile.TarError:
-    #         return False
-
-    #     return True
-
     def _get_mirrors(self, mirrors):
-        """Get shuffled list of tarball mirrors"""
+        '''Get shuffled list of tarball mirrors'''
         if isinstance(mirrors, str):
             mirrors = mirrors.split('\n')
 
@@ -265,93 +179,16 @@ class UdockerTools:
 
         return mirrors
 
-    # This method has never been used, we may seek better way to give important info
-    # def get_installinfo(self):
-    #     """Get json containing installation info"""
-    #     LOG.info("searching for messages:")
-    #     for url in self._get_mirrors(self._installinfo):
-    #         infofile = self._get_file(url)
-    #         try:
-    #             with open(infofile, 'r', encoding='utf-8') as filep:
-    #                 self._install_json = json.load(filep)
-
-    #             for msg in self._install_json["messages"]:
-    #                 MSG.info(msg)
-
-    #         except (KeyError, AttributeError, ValueError, OSError):
-    #             LOG.info("no messages: %s %s", infofile, url)
-
-    #         return self._install_json
-
-    # This method is from the old install and should removed
-    # def _install_logic(self, force=False):
-    #     """Obtain random mirror, download, verify and install"""
-    #     for url in self._get_mirrors(self._tarball):
-    #         LOG.info("install using: %s", url)
-    #         tarballfile = self._get_file(url)
-    #         (status, version) = self._verify_version(tarballfile)
-    #         if status:
-    #             LOG.info("installing udockertools %s", version)
-    #             status = self._install(tarballfile)
-    #         elif force:
-    #             LOG.info("forcing install of udockertools %s", version)
-    #             status = self._install(tarballfile)
-    #         else:
-    #             LOG.error("version is %s for %s", version, url)
-
-    #         if "://" in url and tarballfile:
-    #             FileUtil(tarballfile).remove()
-    #             LOG.debug("Removing tarfile: %s", tarballfile)
-
-    #         if status:
-    #             return True
-
-    #     return False
-
-    # This is the OLD method to be removed
-    # def install_old(self, force=False):
-        # """Get the udocker tools tarball and install the binaries"""
-
-        # if self.is_available() and not force:
-        #     LOG.debug("tarball already installed, installation skipped")
-        #     return True
-
-        # Implemented in the new install_mods
-        # if not self._autoinstall and not force:
-        #     LOG.warning("installation missing and autoinstall disabled")
-        #     return None
-
-        # if not self._tarball:
-        #     LOG.info("UDOCKER_TARBALL not set, installation skipped")
-        #     return True
-
-        # LOG.info("udocker command line interface %s", __version__)
-        # LOG.info("searching for udockertools %s", self._tarball_release)
-        # retry = self._installretry
-        # while retry:
-        #     if self._install_logic(force):
-        #         self.get_installinfo()
-        #         LOG.info("installation of udockertools successful")
-        #         return True
-
-        #     retry = retry - 1
-        #     LOG.error("installation failure retrying ...")
-
-        # self._instructions()
-        # self.get_installinfo()
-        # LOG.error("installation of udockertools failed")
-        # return False
-
     def get_metadata(self, force):
-        """Download metadata file with modules and versions and output json"""
-        fileout = Config.conf['metadata_file']
+        '''Download metadata file with modules and versions and output json'''
+        fileout = Config.conf['installdir'] + '/' + Config.conf['metadata_json']
         for urlmeta in self._get_mirrors(Config.conf['metadata_url']):
             mjson = fileout
             if force or not os.path.isfile(fileout):
-                LOG.info("url metadata json of modules: %s", urlmeta)
+                LOG.info('url metadata json of modules: %s', urlmeta)
                 mjson = self._get_file(urlmeta, fileout)
 
-            LOG.debug("metadata json: %s", mjson)
+            LOG.debug('metadata json: %s', mjson)
             try:
                 with open(mjson, 'r', encoding='utf-8') as filep:
                     metadict = json.load(filep)
@@ -359,13 +196,13 @@ class UdockerTools:
                 return metadict
 
             except (KeyError, AttributeError, ValueError, OSError):
-                LOG.error("reading file: %s", mjson)
+                LOG.error('reading file: %s', mjson)
                 continue
 
         return []
 
     def _select_modules(self, list_uid, list_names):
-        """Get the list of modules from a list of UIDs, or a list of module names"""
+        '''Get the list of modules from a list of UIDs, or a list of module names'''
         force = True
         metadict = self.get_metadata(force)
         list_modules = []
@@ -411,37 +248,37 @@ class UdockerTools:
         return list_modules
 
     def verify_sha(self, lmodules, dst_dir):
-        """Verify if the list of downloaded modules have correct sha256sum"""
+        '''Verify if the list of downloaded modules have correct sha256sum'''
         validation = True
         for modul in lmodules:
-            tarballfile = dst_dir + "/" + modul['fname']
-            sha_metadata = modul['sha256sum']
-            sha_file = ChkSUM().sha256(tarballfile)
-            LOG.debug("sha256sum of %s match. Correct %s, Calculated %s",
-                     tarballfile, sha_metadata, sha_file)
-            if sha_metadata != sha_file:
-                LOG.error("sha256sum of %s does not match. Correct %s, Calculated %s",
-                          tarballfile, sha_metadata, sha_file)
+            tarfile = dst_dir + '/' + modul['fname']
+            sha_meta = modul['sha256sum']
+            sha_file = ChkSUM().sha256(tarfile)
+            LOG.debug('sha256sum of %s match. Correct %s, Calc %s', tarfile, sha_meta, sha_file)
+            if sha_meta != sha_file:
+                LOG.error('sha256sum of %s does not match. Correct %s, Calc %s',
+                          tarfile, sha_meta, sha_file)
                 validation = validation and False
 
         return validation
 
     def download_tarballs(self, list_uid, dst_dir, from_locat, force):
-        """Download list of tarballs from the list of UIDs
-        Check for default files based on the host OS and arch
-        or download from the list of uids in list_uid"""
+        ''' Download list of tarballs from the list of UIDs
+            Check for default files based on the host OS and arch
+            or download from the list of uids in list_uid
+        '''
         lmodules = self._select_modules(list_uid, [])
         for modul in lmodules:
             locations = modul['urls']
             tarballfile = dst_dir + "/" + modul['fname']
             if from_locat:
-                locations = [from_locat + "/" + modul['fname']]
+                locations = [from_locat + '/' + modul['fname']]
 
-            LOG.debug("locations: %s - outuput: %s", locations, tarballfile)
+            LOG.debug('locations: %s - outuput: %s', locations, tarballfile)
             for url in locations:
-                LOG.debug("downloading from: %s", url)
+                LOG.debug('downloading from: %s', url)
                 if not force and os.path.isfile(tarballfile):
-                    LOG.info("tarball already downloaded")
+                    LOG.info('tarball already downloaded')
                     break
 
                 outfile = self._get_file(url, tarballfile)
@@ -449,27 +286,27 @@ class UdockerTools:
                     LOG.info('module downloaded: %s - %s', modul['module'], outfile)
                     break
 
-                LOG.error("download failed: %s", modul)
+                LOG.error('download failed: %s', modul)
 
         if self.verify_sha(lmodules, dst_dir):
             return True
 
-        LOG.error("failure in one or more downloaded modules")
+        LOG.error('failure in one or more downloaded modules')
         return False
 
     def download_licenses(self, dst_dir, from_locat, force):
-        """Download Licenses"""
+        '''Download Licenses'''
         mod_all = self._select_modules([], ['all'])
         locations = mod_all[0]['docs_url']
-        tballfile = dst_dir + "/" + mod_all[0]['docs']
+        tballfile = dst_dir + '/' + mod_all[0]['docs']
         if from_locat:
-            locations = [from_locat + "/" + mod_all[0]['docs']]
+            locations = [from_locat + '/' + mod_all[0]['docs']]
 
-        LOG.debug("licenses locations: %s - outuput: %s", locations, tballfile)
+        LOG.debug('licenses locations: %s - outuput: %s', locations, tballfile)
         for url in locations:
-            LOG.debug("downloading from: %s", url)
+            LOG.debug('downloading from: %s', url)
             if not force and os.path.isfile(tballfile):
-                LOG.info("tarball with licenses already downloaded")
+                LOG.info('tarball with licenses already downloaded')
                 return True
 
             outfile = self._get_file(url, tballfile)
@@ -477,12 +314,11 @@ class UdockerTools:
                 LOG.info('licenses downloaded: %s', outfile)
                 return True
 
-        LOG.error("download failed: %s", tballfile)
+        LOG.error('download failed: %s', tballfile)
         return False
 
-
     def show_metadata(self, metadict):
-        """Show available modules and versions"""
+        '''Show available modules and versions'''
         for module in metadict:
             MSG.info(120*"_")
             MSG.info("UID:            %s", module["uid"])
@@ -509,7 +345,7 @@ class UdockerTools:
         return True
 
     def _installmod_logic(self, list_uid, top_dir, tar_dir, force):
-        """Logics for installation of modules"""
+        '''Logics for installation of modules'''
         lmodules = self._select_modules(list_uid, [])
         mod_dir = ''
         for modul in lmodules:
@@ -524,7 +360,7 @@ class UdockerTools:
                 LOG.error('unknown installation dir %s.', modul['installdir'])
 
             try:
-                with tarfile.open(tarballfile, "r:gz") as tar_file:
+                with tarfile.open(tarballfile, 'r:gz') as tar_file:
                     list_files = tar_file.getnames()
                     mods_exists = False
                     for tar_member in list_files:
@@ -557,7 +393,7 @@ class UdockerTools:
             doc_dir = top_dir + '/doc/'
 
         try:
-            with tarfile.open(tarballfile, "r:gz") as tar_file:
+            with tarfile.open(tarballfile, 'r:gz') as tar_file:
                 list_files = tar_file.getnames()
                 licenses_exists = False
                 for tar_member in list_files:
@@ -581,7 +417,7 @@ class UdockerTools:
         return True
 
     def install_modules(self, list_uid, top_dir, from_locat, force=False):
-        """Install modules"""
+        '''Install modules'''
         tar_dir = self.localrepo.tardir
         if from_locat:
             tar_dir = from_locat
@@ -590,15 +426,11 @@ class UdockerTools:
         mod_all = self._select_modules([], ['all'])[0]
         tools_version = mod_all[0]['version']
         if not self._autoinstall and not force:
-            LOG.warning("installation missing and autoinstall disabled")
+            LOG.warning('installation missing and autoinstall disabled')
             return None
 
-        if not self._tarball:
-            LOG.info("UDOCKER_TARBALL not set, installation skipped")
-            return True
-
-        LOG.info("udocker command line interface %s", __version__)
-        LOG.info("searching for udockertools %s", tools_version)
+        LOG.info('udocker command line interface %s', __version__)
+        LOG.info('searching for udockertools %s', tools_version)
         retry = self._installretry
         while retry:
             flag_download = self.download_tarballs(list_uid, tar_dir, "", False)
@@ -606,28 +438,29 @@ class UdockerTools:
             flag_install = self._installmod_logic(list_uid, top_dir, tar_dir, force)
             flag_licenses = self._install_licenses(mod_all, top_dir, tar_dir, force)
             if flag_download_lic and flag_licenses:
-                LOG.info("licenses installed successful")
+                LOG.info('licenses installed successful')
             else:
-                LOG.error("install of licenses failed, check %s, or retry", mod_all['docs_url'])
+                LOG.error('install of licenses failed, check %s, or retry', mod_all['docs_url'])
 
             if flag_download and flag_install:
-                LOG.info("installation of udockertools successful")
+                LOG.info('installation of udockertools successful')
                 return True
 
             retry = retry - 1
-            LOG.error("installation failure retrying ...")
+            LOG.error('installation failure retrying ...')
 
         self._instructions()
-        LOG.error("installation of udockertools failed")
+        LOG.error('installation of udockertools failed')
         return False
 
     def get_modules(self, list_uid, action):
-        """Get and manage installed modules through the file installed.json
-        action = create, update, delete, show
-        modules installed"""
+        ''' Get and manage installed modules through the file installed.json
+            action = create, update, delete, show
+            modules installed
+        '''
         mod_inst = []
         new_mods = []
-        install_json = Config.conf['installed_json']
+        install_json = Config.conf['installdir'] + '/' + Config.conf['installed_json']
         json_exists = os.path.isfile(install_json)
         if json_exists:
             try:
@@ -635,7 +468,7 @@ class UdockerTools:
                     mod_inst = json.load(filep)
 
             except (KeyError, AttributeError, ValueError, OSError):
-                LOG.error("reading file: %s", install_json)
+                LOG.error('reading file: %s', install_json)
                 return mod_inst
 
         if action == 'show':
@@ -662,6 +495,6 @@ class UdockerTools:
                 json.dump(mod_inst, filep)
 
         except (KeyError, AttributeError, ValueError, OSError):
-            LOG.error("writing file: %s", install_json)
+            LOG.error('writing file: %s', install_json)
 
         return mod_inst
