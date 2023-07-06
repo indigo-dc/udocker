@@ -88,6 +88,11 @@ function clean
     echo "ERROR install directory exists, remove first: ${UDOCKER_INSTALL}"
     exit 1
   fi
+  if [ -d ${TAR_DIR} ]
+  then
+    echo "ERROR install directory exists, remove first: ${UDOCKER_INSTALL}"
+    exit 1
+  fi
 }
 
 function result
@@ -136,7 +141,7 @@ echo "==========================================================="
 
 echo "Manually clean directories before the tests"
 clean
-echo "rm -rf ${UDOCKER_DIR} ${UDOCKER_INSTALL} > /dev/null 2>&1"
+echo "rm -rf ${UDOCKER_DIR} ${UDOCKER_INSTALL} ${TAR_DIR} > /dev/null 2>&1"
 mkdir -p ${TAR_DIR}
 wget https://download.ncg.ingrid.pt/webdav/udocker/engines/tarballs/crun-x86_64.tgz -P ${TAR_DIR}
 
@@ -159,6 +164,14 @@ result
 
 STRING="T005: udocker downloadtar --from=${TAR_DIR} 1 (UID =1 is crun)"
 udocker downloadtar --from=${TAR_DIR} 1 && ls ${TAR_DIR}/crun-x86_64.tgz; return=$?
+result
+
+STRING="T006: udocker verifytar"
+udocker verifytar; return=$?
+result
+
+STRING="T007: udocker verifytar --prefix=${TAR_DIR}"
+udocker verifytar --prefix=${TAR_DIR}; return=$?
 result
 
 
