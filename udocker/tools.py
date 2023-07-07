@@ -210,7 +210,7 @@ class UdockerTools:
             LOG.debug('list of module names: %s', list_names)
             for name in list_names:
                 for module in metadict:
-                    if module['name'] == name:
+                    if module['module'] == name:
                         list_modules.append(module)
                         break
 
@@ -278,7 +278,7 @@ class UdockerTools:
             for url in locations:
                 LOG.debug('downloading from: %s', url)
                 if not force and os.path.isfile(tarballfile):
-                    LOG.info('tarball already downloaded')
+                    LOG.info('tarball already downloaded: %s', tarballfile)
                     break
 
                 outfile = self._get_file(url, tarballfile)
@@ -444,7 +444,7 @@ class UdockerTools:
         FileUtil(self.localrepo.docdir).rchmod()
         return True
 
-    def install_modules(self, list_uid, top_dir, from_locat, force=False):
+    def install_modules(self, list_uid, install_dir, from_locat, force=False):
         '''Install modules'''
         tar_dir = self.localrepo.tardir
         if from_locat:
@@ -452,7 +452,7 @@ class UdockerTools:
 
         # Get version of tarball from module "all"
         mod_all = self._select_modules([], ['all'])[0]
-        tools_version = mod_all[0]['version']
+        tools_version = mod_all['version']
         if not self._autoinstall and not force:
             LOG.warning('installation missing and autoinstall disabled')
             return None
@@ -463,8 +463,8 @@ class UdockerTools:
         while retry:
             flag_download = self.download_tarballs(list_uid, tar_dir, "", False)
             flag_download_lic = self.download_licenses(tar_dir, "", False)
-            flag_install = self._installmod_logic(list_uid, top_dir, tar_dir, force)
-            flag_licenses = self._install_licenses(mod_all, top_dir, tar_dir, force)
+            flag_install = self._installmod_logic(list_uid, install_dir, tar_dir, force)
+            flag_licenses = self._install_licenses(mod_all, install_dir, tar_dir, force)
             if flag_download_lic and flag_licenses:
                 LOG.info('licenses installed successful')
             else:

@@ -1399,9 +1399,9 @@ class UdockerCLI:
         purge = cmdp.get("--purge")
         chk_dir = cmdp.get("--prefix=")
         from_locat = cmdp.get("--from=")
-        top_dir = self.localrepo.topdir
+        install_dir = self.localrepo.installdir
         if chk_dir:
-            top_dir = chk_dir
+            install_dir = chk_dir
 
         if not from_locat:
             from_locat = self.localrepo.tardir
@@ -1413,7 +1413,7 @@ class UdockerCLI:
         if purge:
             utools.purge()
 
-        install_mods = utools.install_modules(list_uid, top_dir, from_locat, force)
+        install_mods = utools.install_modules(list_uid, install_dir, from_locat, force)
         if install_mods:
             return self.STATUS_OK
 

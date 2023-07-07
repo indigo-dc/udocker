@@ -23,12 +23,12 @@ class ChkSUM:
 
     def sha256(self, filename):
         """Call the actual implementation selected in __init__"""
-        LOG.info("sha256 calculation using hashlib")
+        LOG.info("sha256 calculation using hashlib: %s", filename)
         return self._hashlib(hashlib.sha256(), filename)
 
     def sha512(self, filename):
         """Call the actual implementation selected in __init__"""
-        LOG.info("sha512 calculation using hashlib")
+        LOG.info("sha512 calculation using hashlib: %s", filename)
         return self._hashlib(hashlib.sha512(), filename)
 
     def hash(self, filename, algorithm):
