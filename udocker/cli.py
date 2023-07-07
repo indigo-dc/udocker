@@ -1463,7 +1463,7 @@ class UdockerCLI:
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
-        f_path = Config.conf['metadata_file']
+        f_path = Config.conf['installdir'] + '/' + Config.conf['metadata_json']
         FileUtil(f_path).register_prefix()
         FileUtil(f_path).remove()
         LOG.info("removed: %s", f_path)
@@ -1471,7 +1471,8 @@ class UdockerCLI:
 
     def do_downloadtar(self, cmdp):
         ''' download: Download tarballs with modules and verifies sha256sum, so it can be installed
-            offline. (DEFAULT no options or args) download tarballs proot for host arch and kernel,
+            offline, it downloads the metadata.json if not existent. (DEFAULT no options or args)
+            download tarballs proot for host arch and kernel,
             fakechroot and its dependency patchelf:
             download [options] uid_module1 uid_module2
             --force                    :Force the download

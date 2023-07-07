@@ -69,47 +69,50 @@ class UMain:
         """Command parsing and selection"""
         self._prepare_exec()
         cmds = {
-            "clone": self.cli.do_clone,
-            "create": self.cli.do_create,
-            "export": self.cli.do_export,
-            "images": self.cli.do_images,
-            "import": self.cli.do_import,
-            "inspect": self.cli.do_inspect,
-            "load": self.cli.do_load,
-            "login": self.cli.do_login,
-            "logout": self.cli.do_logout,
-            "mkrepo": self.cli.do_mkrepo,
-            "name": self.cli.do_name,
-            "protect": self.cli.do_protect,
-            "ps": self.cli.do_ps,
-            "pull": self.cli.do_pull,
-            "rename": self.cli.do_rename,
-            "rm": self.cli.do_rm,
-            "rmi": self.cli.do_rmi,
-            "rmname": self.cli.do_rmname,
-            "run": self.cli.do_run,
-            "save": self.cli.do_save,
-            "search": self.cli.do_search,
-            "setup": self.cli.do_setup,
-            "showconf": self.cli.do_showconf,
-            "unprotect": self.cli.do_unprotect,
-            "verify": self.cli.do_verify,
-            "version": self.cli.do_version,
-            "help": self.cli.do_help,
-            "install": self.cli.do_install,
-            "delmod": self.cli.do_delmod,
-            "availmod": self.cli.do_availmod,
-            "delmeta": self.cli.do_delmeta,
-            "downloadtar": self.cli.do_downloadtar,
-            "deltar": self.cli.do_deltar,
-            "showmod": self.cli.do_showmod,
-            "verifytar": self.cli.do_verifytar,
-            "tag": self.cli.do_tag,
-            "manifest": self.cli.do_manifest,
+            'clone': self.cli.do_clone,
+            'create': self.cli.do_create,
+            'export': self.cli.do_export,
+            'images': self.cli.do_images,
+            'import': self.cli.do_import,
+            'inspect': self.cli.do_inspect,
+            'load': self.cli.do_load,
+            'login': self.cli.do_login,
+            'logout': self.cli.do_logout,
+            'mkrepo': self.cli.do_mkrepo,
+            'name': self.cli.do_name,
+            'protect': self.cli.do_protect,
+            'ps': self.cli.do_ps,
+            'pull': self.cli.do_pull,
+            'rename': self.cli.do_rename,
+            'rm': self.cli.do_rm,
+            'rmi': self.cli.do_rmi,
+            'rmname': self.cli.do_rmname,
+            'run': self.cli.do_run,
+            'save': self.cli.do_save,
+            'search': self.cli.do_search,
+            'setup': self.cli.do_setup,
+            'showconf': self.cli.do_showconf,
+            'unprotect': self.cli.do_unprotect,
+            'verify': self.cli.do_verify,
+            'version': self.cli.do_version,
+            'help': self.cli.do_help,
+            'install': self.cli.do_install,
+            'delmod': self.cli.do_delmod,
+            'availmod': self.cli.do_availmod,
+            'delmeta': self.cli.do_delmeta,
+            'downloadtar': self.cli.do_downloadtar,
+            'deltar': self.cli.do_deltar,
+            'showmod': self.cli.do_showmod,
+            'verifytar': self.cli.do_verifytar,
+            'tag': self.cli.do_tag,
+            'manifest': self.cli.do_manifest,
         }
 
+        cmd_no_install = ['help', 'version', 'showconf', 'availmod', 'downloadtar', 'verifytar',
+                          'delmeta', 'deltar']
+
         larg = len(self.argv)
-        if ((larg == 1) or self.cmdp.get("-h", "GEN_OPT") or self.cmdp.get("--help", "GEN_OPT")):
+        if ((larg == 1) or self.cmdp.get('-h', 'GEN_OPT') or self.cmdp.get('--help', 'GEN_OPT')):
             return self.cli.do_help(self.cmdp)
 
         if (self.cmdp.get("-V", "GEN_OPT") or self.cmdp.get("--version", "GEN_OPT")):
@@ -121,7 +124,7 @@ class UMain:
                 MSG.info(cmds[command].__doc__)
                 return self.STATUS_OK
 
-            if command in {"help", "version", "showconf", "availmod", "downloadtar", "verifytar"}:
+            if command in cmd_no_install:
                 return cmds[command](self.cmdp)
 
             if command != "install":

@@ -154,23 +154,27 @@ STRING="T002: udocker availmod"
 udocker availmod >/dev/null 2>&1 && is_file_not_empty ${UDOCKER_INSTALL}/metadata.json; return=$?
 result
 
-STRING="T003: udocker downloadtar to default dir ${UDOCKER_INSTALL}/tar"
+STRING="T003: udocker delmeta"
+udocker delmeta && ! is_file_not_empty ${UDOCKER_INSTALL}/metadata.json; return=$?
+result
+
+STRING="T004: udocker downloadtar to default dir ${UDOCKER_INSTALL}/tar"
 udocker downloadtar && ls ${UDOCKER_INSTALL}/tar/libfakechroot.tgz; return=$?
 result
 
-STRING="T004: udocker downloadtar --prefix=${TAR_DIR}"
+STRING="T005: udocker downloadtar --prefix=${TAR_DIR}"
 udocker downloadtar --prefix=${TAR_DIR} && ls ${TAR_DIR}/libfakechroot.tgz; return=$?
 result
 
-STRING="T005: udocker downloadtar --from=${TAR_DIR} 1 (UID =1 is crun)"
+STRING="T006: udocker downloadtar --from=${TAR_DIR} 1 (UID =1 is crun)"
 udocker downloadtar --from=${TAR_DIR} 1 && ls ${TAR_DIR}/crun-x86_64.tgz; return=$?
 result
 
-STRING="T006: udocker verifytar"
+STRING="T007: udocker verifytar"
 udocker verifytar; return=$?
 result
 
-STRING="T007: udocker verifytar --prefix=${TAR_DIR}"
+STRING="T008: udocker verifytar --prefix=${TAR_DIR}"
 udocker verifytar --prefix=${TAR_DIR}; return=$?
 result
 
