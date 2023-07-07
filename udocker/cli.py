@@ -1373,7 +1373,7 @@ class UdockerCLI:
 
         MSG.info(80*"_")
         MSG.info("\t\tConfiguration options")
-        for (var, value) in Config.conf.items().sort():
+        for (var, value) in sorted(Config.conf.items()):
             msgout = f'{var} = {value}'
             MSG.info(msgout)
 
