@@ -337,30 +337,38 @@ class UdockerTools:
         LOG.error('download failed: %s', tballfile)
         return False
 
-    def show_metadata(self, metadict):
+    def show_metadata(self, metadict, long=False):
         '''Show available modules and versions'''
+        if long:
+            for module in metadict:
+                MSG.info(120*"_")
+                MSG.info("UID:            %s", module["uid"])
+                MSG.info("Module:         %s", module["module"])
+                MSG.info("Filename:       %s", module["fname"])
+                MSG.info("Version:        %s", module["version"])
+                MSG.info("Architecture:   %s", module["arch"])
+                MSG.info("Operating Sys:  %s", module["os"])
+                MSG.info("OS version:     %s", module["os_ver"])
+                MSG.info("Kernel version: %s", module["kernel_ver"])
+                MSG.info("SHA256 sum:     %s", module["sha256sum"])
+                MSG.info("URLs:")
+                for url in module["urls"]:
+                    MSG.info("                %s", url)
+
+                MSG.info("Documentation:")
+                for url in module["docs_url"]:
+                    MSG.info("                %s", url)
+
+                MSG.info("Dependencies:")
+                for dep in module["dependencies"]:
+                    MSG.info("                %s", dep)
+
+            return True
+
         for module in metadict:
             MSG.info(120*"_")
-            MSG.info("UID:            %s", module["uid"])
-            MSG.info("Module:         %s", module["module"])
-            MSG.info("Filename:       %s", module["fname"])
-            MSG.info("Version:        %s", module["version"])
-            MSG.info("Architecture:   %s", module["arch"])
-            MSG.info("Operating Sys:  %s", module["os"])
-            MSG.info("OS version:     %s", module["os_ver"])
-            MSG.info("Kernel version: %s", module["kernel_ver"])
-            MSG.info("SHA256 sum:     %s", module["sha256sum"])
-            MSG.info("URLs:")
-            for url in module["urls"]:
-                MSG.info("                %s", url)
-
-            MSG.info("Documentation:")
-            for url in module["docs_url"]:
-                MSG.info("                %s", url)
-
-            MSG.info("Dependencies:")
-            for dep in module["dependencies"]:
-                MSG.info("                %s", dep)
+            MSG.info("UID = %s\tModule = %s\tFilename = %s",
+                     module["uid"], module["module"], module["fname"])
 
         return True
 

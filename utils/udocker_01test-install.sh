@@ -154,8 +154,8 @@ STRING="T002: udocker availmod"
 udocker availmod >/dev/null 2>&1 && is_file_not_empty ${UDOCKER_INSTALL}/metadata.json; return=$?
 result
 
-STRING="T003: udocker delmeta"
-udocker delmeta && ! is_file_not_empty ${UDOCKER_INSTALL}/metadata.json; return=$?
+STRING="T003: udocker rmmeta"
+udocker rmmeta && ! is_file_not_empty ${UDOCKER_INSTALL}/metadata.json; return=$?
 result
 
 STRING="T004: udocker downloadtar to default dir ${UDOCKER_INSTALL}/tar"
@@ -178,6 +178,13 @@ STRING="T008: udocker verifytar --prefix=${TAR_DIR}"
 udocker verifytar --prefix=${TAR_DIR}; return=$?
 result
 
+STRING="T009: udocker rmtar (Remove all tarballs from default dir ${UDOCKER_INSTALL}/tar)"
+udocker rmtar; return=$?
+result
+
+STRING="T010: udocker rmtar --prefix=${TAR_DIR} 1 (Remove crun from ${TAR_DIR})"
+udocker rmtar --prefix=${TAR_DIR} 1; return=$?
+result
 
 # STRING="T001: udocker install"
 # udocker install && ls ${UDOCKER_INSTALL}/bin/proot-x86_64; return=$?

@@ -1373,7 +1373,7 @@ class UdockerCLI:
 
         MSG.info(80*"_")
         MSG.info("\t\tConfiguration options")
-        for (var, value) in Config.conf.items():
+        for (var, value) in Config.conf.items().sort():
             msgout = f'{var} = {value}'
             MSG.info(msgout)
 
@@ -1438,19 +1438,18 @@ class UdockerCLI:
     def do_availmod(self, cmdp):
         ''' availmod: Show available modules in the catalog (DEFAULT no options or args) downloads
             metadata.json if it doesn't exist already in topdir
-            --force                    :force download of metadata.json
+            --force  :force download of metadata.json
+            -l       :Long format
         '''
-        if cmdp is not None:
-            force = cmdp.get("--force")
-        else:
-            force = False
+        force = cmdp.get("--force")
+        long = cmdp.get("-l")
 
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
         utools = UdockerTools(self.localrepo)
         metadata = utools.get_metadata(force)
-        utools.show_metadata(metadata)
+        utools.show_metadata(metadata, long)
         return self.STATUS_OK
 
     def do_rmmeta(self, cmdp):
@@ -1517,13 +1516,16 @@ class UdockerCLI:
         return self.STATUS_ERROR
 
     def do_showmod(self, cmdp):
-        ''' showmod: Show installed modules and all information from metadata.json.'''
+        ''' showmod: Show installed modules and all information from metadata.json.
+            -l       :Long format
+        '''
+        long = cmdp.get("-l")
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
         utools = UdockerTools(self.localrepo)
         metadata = utools.get_modules([], 'show')
-        utools.show_metadata(metadata)
+        utools.show_metadata(metadata, long)
         return self.STATUS_OK
 
     def do_verifytar(self, cmdp):
