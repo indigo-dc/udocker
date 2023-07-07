@@ -1383,17 +1383,16 @@ class UdockerCLI:
 ############ Here are the new commands of the CLI
 
     def do_install(self, cmdp):
-        """
-        install: Install modules, perform default modules installation: proot for host arch and
-        kernel, fakechroot and its dependency patchelf
-        install2 [options] module1 module2 ...: installs module1, module2, ...
-        --force                    :force reinstall
-        --upgrade                  :upgrade modules
-        --purge                    :remove all modules (be careful)
-        --from=<url>|<dir>`        :URL or local directory with modules tarball
-        --prefix=<directory>`      :modules installation directory
-        <module>`                  :positional args 1 or more
-        """
+        ''' install: Install modules, perform default modules installation: proot for host arch and
+            kernel, fakechroot and its dependency patchelf
+            install2 [options] module1 module2 ...: installs module1, module2, ...
+            --force                    :force reinstall
+            --upgrade                  :upgrade modules
+            --purge                    :remove all modules (be careful)
+            --from=<url>|<dir>`        :URL or local directory with modules tarball
+            --prefix=<directory>`      :modules installation directory
+            <module>`                  :positional args 1 or more
+        '''
         list_uid = [int(item) for item in cmdp.get("P*")]
         force = cmdp.get("--force")
         upgrade = cmdp.get("--upgrade")
@@ -1421,13 +1420,12 @@ class UdockerCLI:
         return self.STATUS_ERROR
 
 
-    def do_delmod(self, cmdp):
-        """
-        delmod: Delete one or more installed modules
-        (DEFAULT no options or args) delete all modules
-        --prefix=<directory>   :destination install directory
-        <module>               :positional args one or more
-        """
+    def do_rmmod(self, cmdp):
+        ''' rmmod: Remove one or more installed modules
+            (DEFAULT no options or args) remove all modules
+            --prefix=<directory>   :destination install directory
+            <module>               :positional args one or more
+        '''
         list_uid = [int(item) for item in cmdp.get("P*")]
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
@@ -1438,11 +1436,10 @@ class UdockerCLI:
         return self.STATUS_OK
 
     def do_availmod(self, cmdp):
-        """
-        availmod: Show available modules in the catalog
-        (DEFAULT no options or args) downloads metadata.json if it doesn't exist already in topdir
-        --force                    :force download of metadata.json
-        """
+        ''' availmod: Show available modules in the catalog (DEFAULT no options or args) downloads
+            metadata.json if it doesn't exist already in topdir
+            --force                    :force download of metadata.json
+        '''
         if cmdp is not None:
             force = cmdp.get("--force")
         else:
@@ -1456,17 +1453,20 @@ class UdockerCLI:
         utools.show_metadata(metadata)
         return self.STATUS_OK
 
-    def do_delmeta(self, cmdp):
-        """
-        delmeta: Delete cached metadata.json
-        """
+    def do_rmmeta(self, cmdp):
+        ''' rmmeta: Remove cached metadata.json '''
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
         f_path = Config.conf['installdir'] + '/' + Config.conf['metadata_json']
-        FileUtil(f_path).register_prefix()
-        FileUtil(f_path).remove()
-        LOG.info("removed: %s", f_path)
+        if os.path.exists(f_path):
+            try:
+                os.remove(f_path)
+                LOG.info("removed: %s", f_path)
+            except OSError as oserr:
+                LOG.error('could not remove: %s - %s.', oserr.filename, oserr.strerror)
+                return self.STATUS_ERROR
+
         return self.STATUS_OK
 
     def do_downloadtar(self, cmdp):
@@ -1497,12 +1497,11 @@ class UdockerCLI:
 
         return self.STATUS_ERROR
 
-    def do_deltar(self, cmdp):
-        """
-        deltar: Delete one or more tarballs. (DEFAULT no options or args) delete all tarballs
-        --prefix=<directory> :destination download directory, no trainling /
-        <module>             :positional args one or more, module name corresponding to the tarball
-        """
+    def do_rmtar(self, cmdp):
+        ''' deltar: Delete one or more tarballs. (DEFAULT no options or args) delete all tarballs
+            --prefix=<directory> :destination download directory, no trainling /
+            <module>          :positional args one or more, module name corresponding to the tarball
+        '''
         dst_dir = self.localrepo.tardir    # Destination dir for tarballs
         list_uid = [int(item) for item in cmdp.get("P*")]
         chk_dir = cmdp.get("--prefix=")
@@ -1518,9 +1517,7 @@ class UdockerCLI:
         return self.STATUS_ERROR
 
     def do_showmod(self, cmdp):
-        """
-        showmod: Show installed modules and all information from metadata.json.
-        """
+        ''' showmod: Show installed modules and all information from metadata.json.'''
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
@@ -1530,11 +1527,10 @@ class UdockerCLI:
         return self.STATUS_OK
 
     def do_verifytar(self, cmdp):
-        """
-        verifymod: Verify/checksums downloaded tarballs, sha256
-        --force                    :Force the download
-        --prefix=<directory>       :Destination download directory, no trailing /
-        """
+        ''' verifymod: Verify/checksums downloaded tarballs, sha256
+            --force                    :Force the download
+            --prefix=<directory>       :Destination download directory, no trailing /
+        '''
         dst_dir = self.localrepo.tardir    # Destination dir for tarballs
         chk_dir = cmdp.get("--prefix=")
         force = cmdp.get("--force")

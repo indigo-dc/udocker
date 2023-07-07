@@ -97,11 +97,11 @@ class UMain:
             'version': self.cli.do_version,
             'help': self.cli.do_help,
             'install': self.cli.do_install,
-            'delmod': self.cli.do_delmod,
+            'rmmod': self.cli.do_rmmod,
             'availmod': self.cli.do_availmod,
-            'delmeta': self.cli.do_delmeta,
+            'rmmeta': self.cli.do_rmmeta,
             'downloadtar': self.cli.do_downloadtar,
-            'deltar': self.cli.do_deltar,
+            'rmtar': self.cli.do_rmtar,
             'showmod': self.cli.do_showmod,
             'verifytar': self.cli.do_verifytar,
             'tag': self.cli.do_tag,
@@ -109,7 +109,7 @@ class UMain:
         }
 
         cmd_no_install = ['help', 'version', 'showconf', 'availmod', 'downloadtar', 'verifytar',
-                          'delmeta', 'deltar']
+                          'rmmeta', 'rmtar']
 
         larg = len(self.argv)
         if ((larg == 1) or self.cmdp.get('-h', 'GEN_OPT') or self.cmdp.get('--help', 'GEN_OPT')):
