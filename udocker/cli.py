@@ -1500,10 +1500,22 @@ class UdockerCLI:
     def do_deltar(self, cmdp):
         """
         deltar: Delete one or more tarballs. (DEFAULT no options or args) delete all tarballs
-        --prefix=<directory> :destination download directory
+        --prefix=<directory> :destination download directory, no trainling /
         <module>             :positional args one or more, module name corresponding to the tarball
         """
-        return self.STATUS_OK
+        dst_dir = self.localrepo.tardir    # Destination dir for tarballs
+        list_uid = [int(item) for item in cmdp.get("P*")]
+        chk_dir = cmdp.get("--prefix=")
+        if chk_dir:
+            dst_dir = chk_dir
+
+        LOG.debug('deleting %s', list_uid)
+        utools = UdockerTools(self.localrepo)
+        delete_tfiles = utools.delete_tarballs(list_uid, dst_dir)
+        if delete_tfiles:
+            return self.STATUS_OK
+
+        return self.STATUS_ERROR
 
     def do_showmod(self, cmdp):
         """

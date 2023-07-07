@@ -294,6 +294,26 @@ class UdockerTools:
         LOG.error('failure in one or more downloaded modules')
         return False
 
+    def delete_tarballs(self, list_uid, dst_dir):
+        ''' Delete tarballs corresponding to modules list_uid'''
+        ret_value = True
+        force = False
+        if list_uid:
+            lmodules = self._select_modules(list_uid, [])
+        else:
+            lmodules = self.get_metadata(force)
+
+        for module in lmodules:
+            if os.path.exists(dst_dir + '/' + module['fname']):
+                try:
+                    os.remove(dst_dir + '/' + module['fname'])
+                    LOG.info('module %s - file %s removed', module['uid'], module['fname'])
+                except OSError as oserr:
+                    LOG.error('Error: %s - %s.', oserr.filename, oserr.strerror)
+                    ret_value = False
+
+        return ret_value
+
     def download_licenses(self, dst_dir, from_locat, force):
         '''Download Licenses'''
         mod_all = self._select_modules([], ['all'])
