@@ -1380,7 +1380,7 @@ class UdockerCLI:
         MSG.info(80*"_")
         return self.STATUS_OK
 
-############ Here are the new commands of the CLI
+# Here are the new commands of the CLI
 
     def do_install(self, cmdp):
         ''' install: Install modules, perform default modules installation: proot for host arch and
@@ -1418,7 +1418,6 @@ class UdockerCLI:
             return self.STATUS_OK
 
         return self.STATUS_ERROR
-
 
     def do_rmmod(self, cmdp):
         ''' rmmod: Remove one or more installed modules

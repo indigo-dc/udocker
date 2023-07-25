@@ -180,7 +180,8 @@ class UdockerTools:
         return mirrors
 
     def get_metadata(self, force):
-        '''Download metadata file with modules and versions and output json'''
+        ''' Download metadata file with modules and versions and output json
+        '''
         fileout = Config.conf['installdir'] + '/' + Config.conf['metadata_json']
         for urlmeta in self._get_mirrors(Config.conf['metadata_url']):
             mjson = fileout

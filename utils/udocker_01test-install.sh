@@ -142,7 +142,7 @@ echo "==========================================================="
 echo "Manually clean directories before the tests"
 clean
 echo "rm -rf ${UDOCKER_DIR} ${UDOCKER_INSTALL} ${TAR_DIR} > /dev/null 2>&1"
-mkdir -p ${TAR_DIR}
+mkdir -p ${TAR_DIR} ${UDOCKER_INSTALL}/tar
 wget https://download.ncg.ingrid.pt/webdav/udocker/engines/tarballs/crun-x86_64.tgz -P ${TAR_DIR}
 
 touch ${UDOCKER_INSTALL}/metadata.json
