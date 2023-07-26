@@ -1437,9 +1437,20 @@ class UdockerCLI:
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
-        utools = UdockerTools(self.localrepo)
-        metadata = utools.get_modules(list_uid, 'delete')
-        utools.show_metadata(metadata)
+        if list_uid:
+            utools = UdockerTools(self.localrepo)
+            metadata = utools.get_modules(list_uid, 'delete')
+            utools.show_metadata(metadata)
+        else:
+            utools.purge()
+            metadata = utools.get_modules([], 'show')
+            all_uid = []
+            for module in metadata:
+                all_uid.append(module['uid'])
+
+            purge_mods = utools.get_modules(all_uid, 'delete')
+            utools.show_metadata(purge_mods)
+
         return self.STATUS_OK
 
     def do_availmod(self, cmdp):
