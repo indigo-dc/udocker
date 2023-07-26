@@ -216,11 +216,20 @@ udocker install --purge && ! is_file_not_empty ${UDOCKER_INSTALL}/bin/patchelf-x
   ! is_file_not_empty ${UDOCKER_INSTALL}/doc/LICENSE.udocker; return=$?
 result
 
+export UDOCKER_INSTALL=${UDOCKER_DIR}
 STRING="T016: udocker install --from=${TAR_DIR} --prefix=${UDOCKER_DIR}"
 udocker install  --from=${TAR_DIR} --prefix=${UDOCKER_DIR} && \
   is_file_not_empty ${UDOCKER_DIR}/bin/patchelf-x86_64 && \
   is_file_not_empty ${UDOCKER_DIR}/lib/libfakechroot-x86_64.so && \
   is_file_not_empty ${UDOCKER_DIR}/doc/LICENSE.udocker; return=$?
+result
+
+STRING="T017: udocker showmod"
+udocker showmod; return=$?
+result
+
+STRING="T018: udocker showmod -l"
+udocker showmod -l; return=$?
 result
 
 echo "==========================================================="

@@ -1415,7 +1415,8 @@ class UdockerCLI:
             for module in metadata:
                 all_uid.append(module['uid'])
 
-            utools.get_modules(all_uid, 'delete')
+            purge_mods = utools.get_modules(all_uid, 'delete')
+            utools.show_metadata(purge_mods)
             return self.STATUS_OK
 
         install_mods = utools.install_modules(list_uid, install_dir, from_locat, force)
