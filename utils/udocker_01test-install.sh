@@ -210,6 +210,12 @@ udocker install --force 1 && \
   [ $date_ini -ne $date_last ] ; return=$?
 result
 
+STRING="T015: udocker install --purge"
+udocker install --purge && ! is_file_not_empty ${UDOCKER_INSTALL}/bin/patchelf-x86_64 && \
+  ! is_file_not_empty ${UDOCKER_INSTALL}/lib/libfakechroot-x86_64.so && \
+  ! is_file_not_empty ${UDOCKER_INSTALL}/doc/LICENSE.udocker; return=$?
+result
+
 echo "==========================================================="
 echo "* End of tests                                            *"
 echo "==========================================================="
