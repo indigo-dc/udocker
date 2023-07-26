@@ -520,8 +520,6 @@ class DockerIoAPIv2:
             return []
 
 
-
-
 class DockerIoAPI:
     """Class to encapsulate the access to the Docker Hub service
     Allows to search and download images from Docker Hub

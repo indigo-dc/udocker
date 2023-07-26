@@ -1452,7 +1452,8 @@ class UdockerCLI:
         return self.STATUS_OK
 
     def do_rmmeta(self, cmdp):
-        ''' rmmeta: Remove cached metadata.json '''
+        ''' rmmeta: Remove cached metadata.json
+        '''
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
@@ -1552,8 +1553,7 @@ class UdockerCLI:
 
         return self.STATUS_ERROR
 
-
-################################ END new commands
+# END new commands
 
     def do_version(self, cmdp):
         """

@@ -39,8 +39,8 @@ TAR_CONT_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_CONT}"
 TAR_DIR=$HOME/.udocker_tar
 DOCKER_IMG="ubuntu:22.04"
 CONT="ubuntu"
-UDOCKER_DIR=$HOME/.udocker_tests
-UDOCKER_INSTALL=$HOME/.udocker_install
+export UDOCKER_DIR=$HOME/.udocker_tests
+export UDOCKER_INSTALL=$HOME/.udocker_install
 
 if [ -n "$1" ]
 then
@@ -145,50 +145,54 @@ echo "rm -rf ${UDOCKER_DIR} ${UDOCKER_INSTALL} ${TAR_DIR} > /dev/null 2>&1"
 mkdir -p ${TAR_DIR} ${UDOCKER_INSTALL}/tar
 wget https://download.ncg.ingrid.pt/webdav/udocker/engines/tarballs/crun-x86_64.tgz -P ${TAR_DIR}
 
+STRING="T001: udocker showconf"
+udocker showconf; return=$?
+result
+
 touch ${UDOCKER_INSTALL}/metadata.json
-STRING="T001: udocker availmod --force"
+STRING="T002: udocker availmod --force"
 udocker availmod --force && is_file_not_empty ${UDOCKER_INSTALL}/metadata.json; return=$?
 result
 
-STRING="T002: udocker availmod"
+STRING="T003: udocker availmod"
 udocker availmod >/dev/null 2>&1 && is_file_not_empty ${UDOCKER_INSTALL}/metadata.json; return=$?
 result
 
-STRING="T003: udocker rmmeta"
+STRING="T004: udocker rmmeta"
 udocker rmmeta && ! is_file_not_empty ${UDOCKER_INSTALL}/metadata.json; return=$?
 result
 
-STRING="T004: udocker downloadtar to default dir ${UDOCKER_INSTALL}/tar"
+STRING="T005: udocker downloadtar to default dir ${UDOCKER_INSTALL}/tar"
 udocker downloadtar && ls ${UDOCKER_INSTALL}/tar/libfakechroot.tgz; return=$?
 result
 
-STRING="T005: udocker downloadtar --prefix=${TAR_DIR}"
+STRING="T006: udocker downloadtar --prefix=${TAR_DIR}"
 udocker downloadtar --prefix=${TAR_DIR} && ls ${TAR_DIR}/libfakechroot.tgz; return=$?
 result
 
-STRING="T006: udocker downloadtar --from=${TAR_DIR} 1 (UID =1 is crun)"
+STRING="T007: udocker downloadtar --from=${TAR_DIR} 1 (UID =1 is crun)"
 udocker downloadtar --from=${TAR_DIR} 1 && ls ${TAR_DIR}/crun-x86_64.tgz; return=$?
 result
 
-STRING="T007: udocker verifytar"
+STRING="T008: udocker verifytar"
 udocker verifytar; return=$?
 result
 
-STRING="T008: udocker verifytar --prefix=${TAR_DIR}"
+STRING="T009: udocker verifytar --prefix=${TAR_DIR}"
 udocker verifytar --prefix=${TAR_DIR}; return=$?
 result
 
-STRING="T009: udocker rmtar (Remove all tarballs from default dir ${UDOCKER_INSTALL}/tar)"
+STRING="T010: udocker rmtar (Remove all tarballs from default dir ${UDOCKER_INSTALL}/tar)"
 udocker rmtar; return=$?
 result
 
-STRING="T010: udocker rmtar --prefix=${TAR_DIR} 1 (Remove crun from ${TAR_DIR})"
+STRING="T011: udocker rmtar --prefix=${TAR_DIR} 1 (Remove crun from ${TAR_DIR})"
 udocker rmtar --prefix=${TAR_DIR} 1; return=$?
 result
 
-# STRING="T001: udocker install"
-# udocker install && ls ${UDOCKER_INSTALL}/bin/proot-x86_64; return=$?
-# result
+STRING="T012: udocker install"
+udocker install && ls ${UDOCKER_INSTALL}/bin/proot-x86_64; return=$?
+result
 
 # STRING="T002: udocker install --force"
 # udocker install --force && \

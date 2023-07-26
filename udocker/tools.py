@@ -183,6 +183,7 @@ class UdockerTools:
         ''' Download metadata file with modules and versions and output json
         '''
         fileout = Config.conf['installdir'] + '/' + Config.conf['metadata_json']
+        LOG.debug('metadata full path: %s', fileout)
         for urlmeta in self._get_mirrors(Config.conf['metadata_url']):
             mjson = fileout
             if force or not os.path.isfile(fileout):

@@ -147,10 +147,6 @@ STRING="T005: udocker -h"
 udocker -h >/dev/null 2>&1 ; return=$?
 result
 
-STRING="T006: udocker showconf"
-udocker showconf; return=$?
-result
-
 STRING="T007: udocker version"
 udocker version; return=$?
 result
