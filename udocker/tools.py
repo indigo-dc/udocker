@@ -187,7 +187,7 @@ class UdockerTools:
         for urlmeta in self._get_mirrors(Config.conf['metadata_url']):
             mjson = fileout
             if force or not os.path.isfile(fileout):
-                LOG.info('url metadata json of modules: %s', urlmeta)
+                LOG.debug('url metadata json of modules: %s', urlmeta)
                 mjson = self._get_file(urlmeta, fileout)
 
             LOG.debug('metadata json: %s', mjson)
@@ -204,7 +204,8 @@ class UdockerTools:
         return []
 
     def _select_modules(self, list_uid, list_names):
-        '''Get the list of modules from a list of UIDs, or a list of module names'''
+        '''Get the list of modules from a list of UIDs, or a list of module names
+        '''
         force = True
         metadict = self.get_metadata(force)
         list_modules = []

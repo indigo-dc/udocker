@@ -1385,9 +1385,8 @@ class UdockerCLI:
     def do_install(self, cmdp):
         ''' install: Install modules, perform default modules installation: proot for host arch and
             kernel, fakechroot and its dependency patchelf
-            install2 [options] module1 module2 ...: installs module1, module2, ...
-            --force                    :force reinstall
-            --upgrade                  :upgrade modules
+            install [options] module1 module2 ...: installs module1, module2, ...
+            --force                    :force reinstall or upgrade 1 or more modules
             --purge                    :remove all modules (be careful)
             --from=<url>|<dir>`        :URL or local directory with modules tarball
             --prefix=<directory>`      :modules installation directory
@@ -1395,7 +1394,6 @@ class UdockerCLI:
         '''
         list_uid = [int(item) for item in cmdp.get("P*")]
         force = cmdp.get("--force")
-        upgrade = cmdp.get("--upgrade")
         purge = cmdp.get("--purge")
         chk_dir = cmdp.get("--prefix=")
         from_locat = cmdp.get("--from=")
@@ -1412,6 +1410,7 @@ class UdockerCLI:
         utools = UdockerTools(self.localrepo)
         if purge:
             utools.purge()
+            return self.STATUS_OK
 
         install_mods = utools.install_modules(list_uid, install_dir, from_locat, force)
         if install_mods:

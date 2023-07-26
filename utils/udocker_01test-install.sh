@@ -191,13 +191,24 @@ udocker rmtar --prefix=${TAR_DIR} 1; return=$?
 result
 
 STRING="T012: udocker install"
-udocker install && ls ${UDOCKER_INSTALL}/bin/proot-x86_64; return=$?
+udocker install && ls ${UDOCKER_INSTALL}/bin/patchelf-x86_64 && \
+  ls ${UDOCKER_INSTALL}/lib/libfakechroot-x86_64.so && \
+  ls ${UDOCKER_INSTALL}/doc/LICENSE.udocker; return=$?
 result
 
-# STRING="T002: udocker install --force"
-# udocker install --force && \
-#     ls ${UDOCKER_INSTALL}/bin/proot-x86_64 >/dev/null 2>&1; return=$?
-# result
+STRING="T013: udocker install 1 (Install crun)"
+udocker install 1 && ls ${UDOCKER_INSTALL}/bin/crun-x86_64; return=$?
+result
+date_ini=`stat --printf='%Z\n' ${UDOCKER_INSTALL}/bin/crun-x86_64`
+echo $date_ini
+sleep 1
+
+STRING="T014: udocker install --force 1"
+udocker install --force 1 && \
+  date_last=`stat --printf='%Z\n' ${UDOCKER_INSTALL}/bin/crun-x86_64` && \
+  echo $date_last && \
+  [ $date_ini -ne $date_last ] ; return=$?
+result
 
 echo "==========================================================="
 echo "* End of tests                                            *"
