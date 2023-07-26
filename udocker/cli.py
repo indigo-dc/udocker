@@ -1410,10 +1410,18 @@ class UdockerCLI:
         utools = UdockerTools(self.localrepo)
         if purge:
             utools.purge()
+            metadata = utools.get_modules([], 'show')
+            all_uid = []
+            for module in metadata:
+                all_uid.append(module['uid'])
+
+            utools.get_modules(all_uid, 'delete')
             return self.STATUS_OK
 
         install_mods = utools.install_modules(list_uid, install_dir, from_locat, force)
         if install_mods:
+            metadata = utools.get_modules(list_uid, 'update')
+            utools.show_metadata(metadata)
             return self.STATUS_OK
 
         return self.STATUS_ERROR

@@ -417,7 +417,8 @@ class UdockerTools:
         return True
 
     def _install_licenses(self, mod_all, top_dir, tar_dir, force):
-        '''Install all licenses in docs directory'''
+        ''' Install all licenses in docs directory
+        '''
         tarballfile = tar_dir + '/' + mod_all['docs']
         doc_dir = self.localrepo.docdir
         if top_dir:
@@ -448,7 +449,8 @@ class UdockerTools:
         return True
 
     def install_modules(self, list_uid, install_dir, from_locat, force=False):
-        '''Install modules'''
+        ''' Install modules
+        '''
         tar_dir = self.localrepo.tardir
         if from_locat:
             tar_dir = from_locat
@@ -486,8 +488,8 @@ class UdockerTools:
 
     def get_modules(self, list_uid, action):
         ''' Get and manage installed modules through the file installed.json
-            action = create, update, delete, show
-            modules installed
+            action = update, delete, show
+            installed modules, update also creates if the json does not exist
         '''
         mod_inst = []
         new_mods = []
@@ -505,7 +507,7 @@ class UdockerTools:
         if action == 'show':
             return mod_inst
 
-        if action in ('create', 'update'):
+        if action in ('update'):
             new_mods = self._select_modules(list_uid, [])
             for nmod in new_mods:
                 if nmod not in mod_inst:
