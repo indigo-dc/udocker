@@ -109,7 +109,7 @@ class UMain:
         }
 
         cmd_no_install = ['help', 'version', 'showconf', 'availmod', 'downloadtar', 'verifytar',
-                          'rmmeta', 'rmtar']
+                          'rmmeta', 'rmtar', 'showmod']
 
         larg = len(self.argv)
         if ((larg == 1) or self.cmdp.get('-h', 'GEN_OPT') or self.cmdp.get('--help', 'GEN_OPT')):
@@ -128,7 +128,7 @@ class UMain:
                 return cmds[command](self.cmdp)
 
             if command != "install":
-                self.cli.do_install(None)
+                self.cli.do_install(self.cmdp)
 
             exit_status = cmds[command](self.cmdp)  # executes command
             if self.cmdp.missing_options():

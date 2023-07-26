@@ -494,7 +494,7 @@ class UdockerTools:
         mod_inst = []
         new_mods = []
         install_json = Config.conf['installdir'] + '/' + Config.conf['installed_json']
-        LOG.info('action = %s\tlist of uids = %s', action, list_uid)
+        LOG.debug('action = %s\tlist of uids = %s', action, list_uid)
         json_exists = os.path.isfile(install_json)
         if json_exists:
             try:
