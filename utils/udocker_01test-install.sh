@@ -163,7 +163,7 @@ udocker rmmeta && ! is_file_not_empty ${UDOCKER_INSTALL}/metadata.json; return=$
 result
 
 STRING="T005: udocker downloadtar to default dir ${UDOCKER_INSTALL}/tar"
-udocker downloadtar && ls ${UDOCKER_INSTALL}/tar/libfakechroot.tgz; return=$?
+udocker downloadtar && is_file_not_empty ${UDOCKER_INSTALL}/tar/libfakechroot.tgz; return=$?
 result
 
 STRING="T006: udocker downloadtar --prefix=${TAR_DIR}"
@@ -191,9 +191,9 @@ udocker rmtar --prefix=${TAR_DIR} 1; return=$?
 result
 
 STRING="T012: udocker install"
-udocker install && ls ${UDOCKER_INSTALL}/bin/patchelf-x86_64 && \
-  ls ${UDOCKER_INSTALL}/lib/libfakechroot-x86_64.so && \
-  ls ${UDOCKER_INSTALL}/doc/LICENSE.udocker; return=$?
+udocker install && is_file_not_empty ${UDOCKER_INSTALL}/bin/patchelf-x86_64 && \
+  is_file_not_empty ${UDOCKER_INSTALL}/lib/libfakechroot-x86_64.so && \
+  is_file_not_empty ${UDOCKER_INSTALL}/doc/LICENSE.udocker; return=$?
 result
 
 STRING="T013: udocker install 1 (Install crun)"
@@ -214,6 +214,13 @@ STRING="T015: udocker install --purge"
 udocker install --purge && ! is_file_not_empty ${UDOCKER_INSTALL}/bin/patchelf-x86_64 && \
   ! is_file_not_empty ${UDOCKER_INSTALL}/lib/libfakechroot-x86_64.so && \
   ! is_file_not_empty ${UDOCKER_INSTALL}/doc/LICENSE.udocker; return=$?
+result
+
+STRING="T016: udocker install --from=${TAR_DIR} --prefix=${UDOCKER_DIR}"
+udocker install  --from=${TAR_DIR} --prefix=${UDOCKER_DIR} && \
+  is_file_not_empty ${UDOCKER_DIR}/bin/patchelf-x86_64 && \
+  is_file_not_empty ${UDOCKER_DIR}/lib/libfakechroot-x86_64.so && \
+  is_file_not_empty ${UDOCKER_DIR}/doc/LICENSE.udocker; return=$?
 result
 
 echo "==========================================================="
