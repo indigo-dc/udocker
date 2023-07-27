@@ -210,26 +210,40 @@ udocker install --force 1 && \
   [ $date_ini -ne $date_last ] ; return=$?
 result
 
-STRING="T015: udocker install --purge"
-udocker install --purge && ! is_file_not_empty ${UDOCKER_INSTALL}/bin/patchelf-x86_64 && \
+STRING="T016: udocker showmod --prefix=${UDOCKER_INSTALL}"
+udocker showmod --prefix=${UDOCKER_INSTALL}; return=$?
+result
+
+STRING="T017: udocker showmod -l --prefix=${UDOCKER_INSTALL}"
+udocker showmod -l --prefix=${UDOCKER_INSTALL}; return=$?
+result
+
+STRING="T018: udocker rmmod --prefix=${UDOCKER_INSTALL}"
+udocker rmmod --prefix=${UDOCKER_INSTALL} && \
+  ! is_file_not_empty ${UDOCKER_INSTALL}/bin/patchelf-x86_64 && \
   ! is_file_not_empty ${UDOCKER_INSTALL}/lib/libfakechroot-x86_64.so && \
   ! is_file_not_empty ${UDOCKER_INSTALL}/doc/LICENSE.udocker; return=$?
 result
 
 export UDOCKER_INSTALL=${UDOCKER_DIR}
-STRING="T016: udocker install --from=${TAR_DIR} --prefix=${UDOCKER_DIR}"
+STRING="T019: udocker install --from=${TAR_DIR} --prefix=${UDOCKER_DIR}"
 udocker install  --from=${TAR_DIR} --prefix=${UDOCKER_DIR} && \
   is_file_not_empty ${UDOCKER_DIR}/bin/patchelf-x86_64 && \
   is_file_not_empty ${UDOCKER_DIR}/lib/libfakechroot-x86_64.so && \
   is_file_not_empty ${UDOCKER_DIR}/doc/LICENSE.udocker; return=$?
 result
 
-STRING="T017: udocker showmod"
+STRING="T020: udocker install --from=${TAR_DIR} --prefix=${UDOCKER_DIR} 1 (Install crun)"
+udocker install  --from=${TAR_DIR} --prefix=${UDOCKER_DIR} 1 && \
+  is_file_not_empty ${UDOCKER_DIR}/bin/crun-x86_64; return=$?
+result
+
+STRING="T021: udocker showmod"
 udocker showmod; return=$?
 result
 
-STRING="T018: udocker showmod -l"
-udocker showmod -l; return=$?
+STRING="T022: udocker rmmod 1"
+udocker rmmod 1 && ! is_file_not_empty ${UDOCKER_DIR}/bin/crun-x86_64; return=$?
 result
 
 echo "==========================================================="

@@ -1386,15 +1386,13 @@ class UdockerCLI:
         ''' install: Install modules, perform default modules installation: proot for host arch and
             kernel, fakechroot and its dependency patchelf
             install [options] module1 module2 ...: installs module1, module2, ...
-            --force                    :force reinstall or upgrade 1 or more modules
-            --purge                    :remove all modules (be careful)
-            --from=<url>|<dir>`        :URL or local directory with modules tarball
-            --prefix=<directory>`      :modules installation directory
-            <module>`                  :positional args 1 or more
+            --force               :force reinstall or upgrade 1 or more modules
+            --from=<url>|<dir>    :URL or local directory with modules tarball
+            --prefix=<directory>  :modules installation directory
+            <module>`             :positional args 1 or more
         '''
         list_uid = [int(item) for item in cmdp.get("P*")]
         force = cmdp.get("--force")
-        purge = cmdp.get("--purge")
         chk_dir = cmdp.get("--prefix=")
         from_locat = cmdp.get("--from=")
         install_dir = self.localrepo.installdir
@@ -1408,20 +1406,9 @@ class UdockerCLI:
             return self.STATUS_ERROR
 
         utools = UdockerTools(self.localrepo)
-        if purge:
-            utools.purge()
-            metadata = utools.get_modules([], 'show')
-            all_uid = []
-            for module in metadata:
-                all_uid.append(module['uid'])
-
-            purge_mods = utools.get_modules(all_uid, 'delete')
-            utools.show_metadata(purge_mods)
-            return self.STATUS_OK
-
         install_mods = utools.install_modules(list_uid, install_dir, from_locat, force)
         if install_mods:
-            metadata = utools.get_modules(list_uid, 'update')
+            metadata = utools.get_modules(list_uid, 'update', install_dir)
             utools.show_metadata(metadata)
             return self.STATUS_OK
 
@@ -1430,25 +1417,30 @@ class UdockerCLI:
     def do_rmmod(self, cmdp):
         ''' rmmod: Remove one or more installed modules
             (DEFAULT no options or args) remove all modules
-            --prefix=<directory>   :destination install directory
+            --prefix=<directory>   :modules installation directory
             <module>               :positional args one or more
         '''
         list_uid = [int(item) for item in cmdp.get("P*")]
+        chk_dir = cmdp.get("--prefix=")
+        install_dir = self.localrepo.installdir
+        if chk_dir:
+            install_dir = chk_dir
+
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
+        utools = UdockerTools(self.localrepo)
         if list_uid:
-            utools = UdockerTools(self.localrepo)
-            metadata = utools.get_modules(list_uid, 'delete')
+            metadata = utools.get_modules(list_uid, 'delete', install_dir)
             utools.show_metadata(metadata)
         else:
             utools.purge()
-            metadata = utools.get_modules([], 'show')
+            metadata = utools.get_modules([], 'show', install_dir)
             all_uid = []
             for module in metadata:
                 all_uid.append(module['uid'])
 
-            purge_mods = utools.get_modules(all_uid, 'delete')
+            purge_mods = utools.get_modules(all_uid, 'delete', install_dir)
             utools.show_metadata(purge_mods)
 
         return self.STATUS_OK
@@ -1536,14 +1528,20 @@ class UdockerCLI:
 
     def do_showmod(self, cmdp):
         ''' showmod: Show installed modules and all information from metadata.json.
-            -l       :Long format
+            -l                     :Long format
+            --prefix=<directory>   :modules installation directory
         '''
         long = cmdp.get("-l")
+        chk_dir = cmdp.get("--prefix=")
+        install_dir = self.localrepo.installdir
+        if chk_dir:
+            install_dir = chk_dir
+
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
         utools = UdockerTools(self.localrepo)
-        metadata = utools.get_modules([], 'show')
+        metadata = utools.get_modules([], 'show', install_dir)
         utools.show_metadata(metadata, long)
         return self.STATUS_OK
 
