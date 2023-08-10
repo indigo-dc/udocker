@@ -163,11 +163,17 @@ udocker rmmeta && ! is_file_not_empty ${UDOCKER_INSTALL}/metadata.json; return=$
 result
 
 STRING="T005: udocker downloadtar to default dir ${UDOCKER_INSTALL}/tar"
-udocker downloadtar && is_file_not_empty ${UDOCKER_INSTALL}/tar/libfakechroot.tgz; return=$?
+udocker downloadtar && \
+  is_file_not_empty ${UDOCKER_INSTALL}/tar/libfakechroot-x86_64.tgz && \
+  is_file_not_empty ${UDOCKER_INSTALL}/tar/patchelf-x86_64.tgz && \
+  is_file_not_empty ${UDOCKER_INSTALL}/tar/proot-x86_64-4_8_0.tgz; return=$?
 result
 
 STRING="T006: udocker downloadtar --prefix=${TAR_DIR}"
-udocker downloadtar --prefix=${TAR_DIR} && ls ${TAR_DIR}/libfakechroot.tgz; return=$?
+udocker downloadtar --prefix=${TAR_DIR} && \
+  is_file_not_empty ${TAR_DIR}/libfakechroot-x86_64.tgz && \
+  is_file_not_empty ${TAR_DIR}/patchelf-x86_64.tgz && \
+  is_file_not_empty ${TAR_DIR}/proot-x86_64-4_8_0.tgz; return=$?
 result
 
 STRING="T007: udocker downloadtar --from=${TAR_DIR} 1 (UID =1 is crun)"
@@ -192,13 +198,14 @@ result
 
 STRING="T012: udocker install"
 udocker install && is_file_not_empty ${UDOCKER_INSTALL}/bin/patchelf-x86_64 && \
-  is_file_not_empty ${UDOCKER_INSTALL}/lib/libfakechroot-x86_64.so && \
+  is_file_not_empty ${UDOCKER_INSTALL}/lib/libfakechroot-Ubuntu-x86_64.so && \
   is_file_not_empty ${UDOCKER_INSTALL}/doc/LICENSE.udocker; return=$?
 result
 
 STRING="T013: udocker install 1 (Install crun)"
 udocker install 1 && ls ${UDOCKER_INSTALL}/bin/crun-x86_64; return=$?
 result
+
 date_ini=`stat --printf='%Z\n' ${UDOCKER_INSTALL}/bin/crun-x86_64`
 echo $date_ini
 sleep 1
@@ -229,7 +236,7 @@ export UDOCKER_INSTALL=${UDOCKER_DIR}
 STRING="T019: udocker install --from=${TAR_DIR} --prefix=${UDOCKER_DIR}"
 udocker install  --from=${TAR_DIR} --prefix=${UDOCKER_DIR} && \
   is_file_not_empty ${UDOCKER_DIR}/bin/patchelf-x86_64 && \
-  is_file_not_empty ${UDOCKER_DIR}/lib/libfakechroot-x86_64.so && \
+  is_file_not_empty ${UDOCKER_DIR}/lib/libfakechroot-Ubuntu-x86_64.so && \
   is_file_not_empty ${UDOCKER_DIR}/doc/LICENSE.udocker; return=$?
 result
 

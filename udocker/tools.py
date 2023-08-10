@@ -90,26 +90,6 @@ class UdockerTools:
 
         return int(version_int)
 
-    # def purge(self):
-    #     '''Remove existing files in bin, lib and doc'''
-    #     for f_name in os.listdir(self.localrepo.bindir):
-    #         f_path = self.localrepo.bindir + '/' + f_name
-    #         FileUtil(f_path).register_prefix()
-    #         FileUtil(f_path).remove(recursive=True)
-    #         LOG.debug("removed file: %s", f_path)
-
-    #     for f_name in os.listdir(self.localrepo.libdir):
-    #         f_path = self.localrepo.libdir + '/' + f_name
-    #         FileUtil(f_path).register_prefix()
-    #         FileUtil(f_path).remove(recursive=True)
-    #         LOG.debug("removed file: %s", f_path)
-
-    #     for f_name in os.listdir(self.localrepo.docdir):
-    #         f_path = self.localrepo.docdir + '/' + f_name
-    #         FileUtil(f_path).register_prefix()
-    #         FileUtil(f_path).remove(recursive=True)
-    #         LOG.debug("removed file: %s", f_path)
-
     def _download(self, url, fileout=''):
         '''Download a file'''
         if fileout:
@@ -227,6 +207,7 @@ class UdockerTools:
         else:
             hostinfo = HostInfo()
             arch = hostinfo.arch()
+            LOG.debug('arch = %s', arch)
             for module in metadict:
                 mod_module = module['module']
                 mod_arch = module['arch']
@@ -241,7 +222,7 @@ class UdockerTools:
                         LOG.debug('matched module: %s', module)
                         list_modules.append(module)
 
-                tarmatch = ('libfakechroot-' + mod_arch + '.tgz', 'patchelf-' + mod_arch + '.tgz')
+                tarmatch = ('libfakechroot-' + arch + '.tgz', 'patchelf-' + arch + '.tgz')
                 if tarname in tarmatch:
                     LOG.debug('matched module: %s', module)
                     list_modules.append(module)

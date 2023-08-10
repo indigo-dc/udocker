@@ -1338,31 +1338,6 @@ class UdockerCLI:
 
         return self.STATUS_OK
 
-    # def do_install_old(self, cmdp):
-    #     """
-    #     install: install udocker and its tools
-    #     install [options]
-    #     --force                    :force reinstall
-    #     --purge                    :remove files (be careful)
-    #     """
-    #     if cmdp is not None:
-    #         force = cmdp.get("--force")
-    #         purge = cmdp.get("--purge")
-    #         if cmdp.missing_options():  # syntax error
-    #             return self.STATUS_ERROR
-    #     else:
-    #         force = False
-    #         purge = False
-
-    #     utools = UdockerTools(self.localrepo)
-    #     if purge:
-    #         utools.purge()
-
-    #     if utools.install_old(force):
-    #         return self.STATUS_OK
-
-    #     return self.STATUS_ERROR
-
     def do_showconf(self, cmdp):
         """
         showconf: Print all configuration options
