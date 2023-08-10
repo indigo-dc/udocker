@@ -90,25 +90,25 @@ class UdockerTools:
 
         return int(version_int)
 
-    def purge(self):
-        """Remove existing files in bin, lib and doc"""
-        for f_name in os.listdir(self.localrepo.bindir):
-            f_path = self.localrepo.bindir + '/' + f_name
-            FileUtil(f_path).register_prefix()
-            FileUtil(f_path).remove(recursive=True)
-            LOG.debug("removed file: %s", f_path)
+    # def purge(self):
+    #     '''Remove existing files in bin, lib and doc'''
+    #     for f_name in os.listdir(self.localrepo.bindir):
+    #         f_path = self.localrepo.bindir + '/' + f_name
+    #         FileUtil(f_path).register_prefix()
+    #         FileUtil(f_path).remove(recursive=True)
+    #         LOG.debug("removed file: %s", f_path)
 
-        for f_name in os.listdir(self.localrepo.libdir):
-            f_path = self.localrepo.libdir + '/' + f_name
-            FileUtil(f_path).register_prefix()
-            FileUtil(f_path).remove(recursive=True)
-            LOG.debug("removed file: %s", f_path)
+    #     for f_name in os.listdir(self.localrepo.libdir):
+    #         f_path = self.localrepo.libdir + '/' + f_name
+    #         FileUtil(f_path).register_prefix()
+    #         FileUtil(f_path).remove(recursive=True)
+    #         LOG.debug("removed file: %s", f_path)
 
-        for f_name in os.listdir(self.localrepo.docdir):
-            f_path = self.localrepo.docdir + '/' + f_name
-            FileUtil(f_path).register_prefix()
-            FileUtil(f_path).remove(recursive=True)
-            LOG.debug("removed file: %s", f_path)
+    #     for f_name in os.listdir(self.localrepo.docdir):
+    #         f_path = self.localrepo.docdir + '/' + f_name
+    #         FileUtil(f_path).register_prefix()
+    #         FileUtil(f_path).remove(recursive=True)
+    #         LOG.debug("removed file: %s", f_path)
 
     def _download(self, url, fileout=''):
         '''Download a file'''
@@ -180,8 +180,7 @@ class UdockerTools:
         return mirrors
 
     def get_metadata(self, force):
-        ''' Download metadata file with modules and versions and output json
-        '''
+        '''Download metadata file with modules and versions and output json'''
         fileout = Config.conf['installdir'] + '/' + Config.conf['metadata_json']
         LOG.debug('metadata full path: %s', fileout)
         for urlmeta in self._get_mirrors(Config.conf['metadata_url']):
@@ -204,8 +203,7 @@ class UdockerTools:
         return []
 
     def _select_modules(self, list_uid, list_names):
-        '''Get the list of modules from a list of UIDs, or a list of module names
-        '''
+        '''Get the list of modules from a list of UIDs, or a list of module names'''
         force = True
         metadict = self.get_metadata(force)
         list_modules = []
@@ -227,18 +225,13 @@ class UdockerTools:
                         list_modules.append(module)
                         break
         else:
-            for module in metadict:
-                tarname = module['fname']
-                if tarname in ('libfakechroot.tgz', 'patchelf-x86_64.tgz'):
-                    LOG.debug('matched module: %s', module)
-                    list_modules.append(module)
-
             hostinfo = HostInfo()
             arch = hostinfo.arch()
             for module in metadict:
                 mod_module = module['module']
                 mod_arch = module['arch']
                 mod_krnver = module['kernel_ver']
+                tarname = module['tarball']
                 if (mod_module == 'proot') and (mod_arch == arch):
                     if hostinfo.oskernel_isgreater([4, 8, 0]) and (mod_krnver == '>=4.8.0'):
                         LOG.debug('matched module: %s', module)
@@ -248,13 +241,18 @@ class UdockerTools:
                         LOG.debug('matched module: %s', module)
                         list_modules.append(module)
 
+                tarmatch = ('libfakechroot-' + mod_arch + '.tgz', 'patchelf-' + mod_arch + '.tgz')
+                if tarname in tarmatch:
+                    LOG.debug('matched module: %s', module)
+                    list_modules.append(module)
+
         return list_modules
 
     def verify_sha(self, lmodules, dst_dir):
         '''Verify if the list of downloaded modules have correct sha256sum'''
         validation = True
         for modul in lmodules:
-            tarfile = dst_dir + '/' + modul['fname']
+            tarfile = dst_dir + '/' + modul['tarball']
             sha_meta = modul['sha256sum']
             sha_file = ChkSUM().sha256(tarfile)
             LOG.debug('sha256sum of %s match. Correct %s, Calc %s', tarfile, sha_meta, sha_file)
@@ -273,9 +271,9 @@ class UdockerTools:
         lmodules = self._select_modules(list_uid, [])
         for modul in lmodules:
             locations = modul['urls']
-            tarballfile = dst_dir + "/" + modul['fname']
+            tarballfile = dst_dir + "/" + modul['tarball']
             if from_locat:
-                locations = [from_locat + '/' + modul['fname']]
+                locations = [from_locat + '/' + modul['tarball']]
 
             LOG.debug('locations: %s - outuput: %s', locations, tarballfile)
             for url in locations:
@@ -298,7 +296,7 @@ class UdockerTools:
         return False
 
     def delete_tarballs(self, list_uid, dst_dir):
-        ''' Delete tarballs corresponding to modules list_uid'''
+        '''Delete tarballs corresponding to modules list_uid'''
         ret_value = True
         force = False
         if list_uid:
@@ -307,10 +305,10 @@ class UdockerTools:
             lmodules = self.get_metadata(force)
 
         for module in lmodules:
-            if os.path.exists(dst_dir + '/' + module['fname']):
+            if os.path.exists(dst_dir + '/' + module['tarball']):
                 try:
-                    os.remove(dst_dir + '/' + module['fname'])
-                    LOG.info('module %s - file %s removed', module['uid'], module['fname'])
+                    os.remove(dst_dir + '/' + module['tarball'])
+                    LOG.info('module %s - file %s removed', module['uid'], module['tarball'])
                 except OSError as oserr:
                     LOG.error('Error: %s - %s.', oserr.filename, oserr.strerror)
                     ret_value = False
@@ -347,6 +345,7 @@ class UdockerTools:
                 MSG.info(120*"_")
                 MSG.info("UID:            %s", module["uid"])
                 MSG.info("Module:         %s", module["module"])
+                MSG.info("Tarball:        %s", module["tarball"])
                 MSG.info("Filename:       %s", module["fname"])
                 MSG.info("Version:        %s", module["version"])
                 MSG.info("Architecture:   %s", module["arch"])
@@ -380,7 +379,7 @@ class UdockerTools:
         lmodules = self._select_modules(list_uid, [])
         mod_dir = ''
         for modul in lmodules:
-            tarballfile = tar_dir + '/' + modul['fname']
+            tarballfile = tar_dir + '/' + modul['tarball']
             if modul['installdir'] == 'bin/' and not top_dir:
                 mod_dir = self.localrepo.bindir
             elif modul['installdir'] == 'lib/' and not top_dir:
@@ -512,7 +511,7 @@ class UdockerTools:
         if action == 'show':
             return mod_inst
 
-        if action in ('update'):
+        if action == 'update':
             new_mods = self._select_modules(list_uid, [])
             for nmod in new_mods:
                 if nmod not in mod_inst:
@@ -536,3 +535,38 @@ class UdockerTools:
             LOG.error('writing file: %s', install_json)
 
         return mod_inst
+
+    def rm_module(self, list_uid, prefix):
+        ''' Remove/purges a list of modules
+            list_uid: List of UIds of modules to be removed/purged
+            prefix: directory where modules are installed
+        '''
+        ret_value = True
+        if list_uid:
+            lmodules = self._select_modules(list_uid, [])
+        else:
+            lmodules = self.get_modules(list_uid, 'show', prefix)
+            for f_name in os.listdir(self.localrepo.docdir):
+                f_path = self.localrepo.docdir + '/' + f_name
+                FileUtil(f_path).register_prefix()
+                FileUtil(f_path).remove(recursive=True)
+                LOG.debug("removed file: %s", f_path)
+
+        mod_dir = ''
+        for modul in lmodules:
+            if modul['installdir'] == 'bin/' and not prefix:
+                mod_dir = self.localrepo.bindir
+            elif modul['installdir'] == 'lib/' and not prefix:
+                mod_dir = self.localrepo.libdir
+            elif prefix:
+                mod_dir = prefix + '/' + modul['installdir']
+            else:
+                LOG.error('unknown installation dir %s.', modul['installdir'])
+                ret_value = False
+
+            f_path = mod_dir + modul['fname']
+            FileUtil(f_path).register_prefix()
+            FileUtil(f_path).remove(recursive=True)
+            LOG.debug("removed file: %s", f_path)
+
+        return ret_value

@@ -1416,7 +1416,7 @@ class UdockerCLI:
 
     def do_rmmod(self, cmdp):
         ''' rmmod: Remove one or more installed modules
-            (DEFAULT no options or args) remove all modules
+            (DEFAULT no options or args) remove/purge all modules
             --prefix=<directory>   :modules installation directory
             <module>               :positional args one or more
         '''
@@ -1430,11 +1430,11 @@ class UdockerCLI:
             return self.STATUS_ERROR
 
         utools = UdockerTools(self.localrepo)
+        ret_value = utools.rm_module(list_uid, install_dir)
         if list_uid:
             metadata = utools.get_modules(list_uid, 'delete', install_dir)
             utools.show_metadata(metadata)
         else:
-            utools.purge()
             metadata = utools.get_modules([], 'show', install_dir)
             all_uid = []
             for module in metadata:
@@ -1443,7 +1443,10 @@ class UdockerCLI:
             purge_mods = utools.get_modules(all_uid, 'delete', install_dir)
             utools.show_metadata(purge_mods)
 
-        return self.STATUS_OK
+        if ret_value:
+            return self.STATUS_OK
+
+        return self.STATUS_ERROR
 
     def do_availmod(self, cmdp):
         ''' availmod: Show available modules in the catalog (DEFAULT no options or args) downloads
@@ -1508,7 +1511,7 @@ class UdockerCLI:
         return self.STATUS_ERROR
 
     def do_rmtar(self, cmdp):
-        ''' deltar: Delete one or more tarballs. (DEFAULT no options or args) delete all tarballs
+        ''' rmtar: Remove one or more tarballs. (DEFAULT no options or args) delete all tarballs
             --prefix=<directory> :destination download directory, no trainling /
             <module>          :positional args one or more, module name corresponding to the tarball
         '''
@@ -1560,7 +1563,7 @@ class UdockerCLI:
         utools = UdockerTools(self.localrepo)
         metadata = utools.get_metadata(force)
         for modul in metadata:
-            tarballfile = dst_dir + "/" + modul['fname']
+            tarballfile = dst_dir + "/" + modul['tarball']
             if os.path.isfile(tarballfile):
                 lmods.append(modul)
 
