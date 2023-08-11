@@ -820,7 +820,7 @@ class UdockerCLI:
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
         pull = cmdp.get("--pull=")
-        dummy = cmdp.get("--pull") # if invoked without option
+        dummy = cmdp.get("--pull")   # if invoked without option
 
         if cmdp.missing_options():   # syntax error
             return self.STATUS_ERROR
@@ -881,7 +881,6 @@ class UdockerCLI:
         MSG.info("REPOSITORY")
         for (imagerepo, tag) in images_list:
             prot = (".", "P")[self.localrepo.isprotected_imagerepo(imagerepo, tag)]
-            ## msgout = "%-60.60s %c" % (imagerepo + ":" + tag, prot)  <- old %format
             msgout = f'{imagerepo}:{tag}    {prot}'
             MSG.info(msgout)
             if verbose:
@@ -1215,7 +1214,7 @@ class UdockerCLI:
             return self.STATUS_ERROR
 
         if container_id:
-            cstruct =  ContainerStructure(self.localrepo, container_id)
+            cstruct = ContainerStructure(self.localrepo, container_id)
             (container_dir, container_json) = cstruct.get_container_attr()
         else:
             (imagerepo, tag) = self._check_imagespec(container_or_image)

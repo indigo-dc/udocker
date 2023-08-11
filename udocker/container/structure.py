@@ -36,15 +36,15 @@ class ContainerStructure:
             container_dir = self.localrepo.cd_container(self.container_id)
             if not container_dir:
                 LOG.error("container id or name not found")
-                return(False, False)
+                return (False, False)
 
             fjson = container_dir + "/container.json"
             cntjson = self.localrepo.load_json(fjson)
             if not cntjson:
                 LOG.error("invalid container json metadata")
-                return(False, False)
+                return (False, False)
 
-        return(container_dir, cntjson)
+        return (container_dir, cntjson)
 
     def _get_container_meta(self, param, default, cntjson):
         """Get the metadata configuration from the container"""

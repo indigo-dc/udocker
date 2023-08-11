@@ -15,20 +15,19 @@ from udocker.helper.osinfo import OSInfo
 
 
 class LocalRepository:
-    """Implements a basic repository for images and containers.
-    The repository will be usually in the user home directory.
-    The repository has a simple directory structure:
-    1. layers    : one dir containing all image layers so that
-                   layers shared among images are not duplicated
-    2. containers: has inside one directory per container,
-                   each dir has a ROOT with the extracted image
-    3. repos:      has inside a directory tree of repos the
-                   leaf repo dirs are called tags and contain the
-                   image data (these are links both to layer tarballs
-                   and json metadata files.
-    4. bin:        contains executables (PRoot)
-    5. lib:        contains python libraries
-    """
+    ''' Implements a basic repository for images and containers.
+        The repository will be usually in the user home directory.
+        The repository has a simple directory structure:
+        1. layers: one dir containing all image layers so that layers shared among images are not
+                   duplicated
+        2. containers: has inside one directory per container, each dir has a ROOT with the
+                       extracted image
+        3. repos: has inside a directory tree of repos the leaf repo dirs are called tags and
+                  contain the image data (these are links both to layer tarballs and json metadata
+                  files.
+        4. bin: contains executables (PRoot)
+        5. lib: contains python libraries
+    '''
 
     def __init__(self, topdir=None):
         self.topdir = topdir if topdir else Config.conf['topdir']
@@ -50,21 +49,20 @@ class LocalRepository:
         if not self.containersdir:
             self.containersdir = self.topdir + "/containers"
 
-        self.cur_repodir = ""
-        self.cur_tagdir = ""
-        self.cur_containerdir = ""
+        self.cur_repodir = ''
+        self.cur_tagdir = ''
+        self.cur_containerdir = ''
         FileUtil(self.reposdir).register_prefix()
         FileUtil(self.layersdir).register_prefix()
         FileUtil(self.containersdir).register_prefix()
 
     def setup(self, topdir=None):
-        """change to a different localrepo"""
+        '''Change to a different localrepo'''
         self.__init__(topdir)
 
     def create_repo(self):
-        """creates properties with pathnames for easy
-        access to the several repository directories
-        """
+        ''' Creates properties with pathnames for easy access to the several repository directories
+        '''
         try:
             if not os.path.exists(self.topdir):
                 os.makedirs(self.topdir)
@@ -188,7 +186,7 @@ class LocalRepository:
         for fname in os.listdir(self.containersdir):
             container_dir = self.containersdir + '/' + fname
             if os.path.isdir(container_dir):
-                #TODO: (mdavid) )redo this part
+                # TODO: (mdavid) )redo this part
                 try:
                     filep = open(container_dir + "/imagerepo.name", 'r', encoding='utf-8')
                 except OSError:
@@ -319,7 +317,7 @@ class LocalRepository:
         if os.path.exists(container_dir):
             return ""
 
-        #TODO: (mdavid) )redo this part
+        # TODO: (mdavid) )redo this part
         try:
             os.makedirs(container_dir + "/ROOT")
             out_imagerepo = open(container_dir + "/imagerepo.name", 'w', encoding='utf-8')
@@ -523,7 +521,7 @@ class LocalRepository:
         to be invoked after setup_imagerepo()
         """
         directory = self.cur_repodir + "/" + tag
-        #TODO: (mdavid) )redo this part
+        # TODO: (mdavid) )redo this part
         try:
             if not os.path.exists(directory):
                 os.makedirs(directory)
@@ -670,7 +668,7 @@ class LocalRepository:
             out_filename = self.cur_tagdir + "/" + filename
 
         outfile = None
-        #TODO: (mdavid) )redo this part
+        # TODO: (mdavid) )redo this part
         try:
             outfile = open(out_filename, 'w')
             json.dump(data, outfile)

@@ -15,8 +15,9 @@ from udocker.utils.chksum import ChkSUM
 from udocker.helper.unique import Unique
 from udocker.helper.hostinfo import HostInfo
 
+
 class DockerIoAPIv1:
-    """API v1 for Docker Hub"""
+    '''API v1 for Docker Hub'''
 
     def __init__(self, dockerioapi):
         self.dockerioapi = dockerioapi
@@ -25,7 +26,7 @@ class DockerIoAPIv1:
         self.curl = dockerioapi.curl
 
     def is_valid(self):
-        """API v1 Check if registry is of type v1"""
+        '''API v1 Check if registry is of type v1'''
         for prefix in ("/v1", "/v1/_ping"):
             (hdr, dummy) = self.dockerioapi.get_url(self.dockerioapi.index_url + prefix)
             try:
@@ -38,7 +39,7 @@ class DockerIoAPIv1:
         return False
 
     def is_searchable(self, url=None):
-        """API v1 Check if registry has search capabilities"""
+        '''API v1 Check if registry has search capabilities'''
         if url is None:
             url = self.dockerioapi.index_url
 
@@ -53,7 +54,7 @@ class DockerIoAPIv1:
         return False
 
     def get_repo(self, imagerepo):
-        """API v1 Get list of images in a repo from Docker Hub"""
+        '''API v1 Get list of images in a repo from Docker Hub'''
         url = self.dockerioapi.index_url + "/v1/repositories/" + imagerepo + "/images"
         LOG.debug("repo url: %s", url)
         (hdr, buf) = self.dockerioapi.get_url(url, header=["X-Docker-Token: true"])
@@ -360,7 +361,7 @@ class DockerIoAPIv2:
             return []
 
     def _get_digest_from_image_index(self, image_index, platform):
-        """Get OCI or docker manifest from an image index"""
+        '''Get OCI or docker manifest from an image index'''
         if isinstance(image_index, dict):
             index_list = image_index
         else:
@@ -371,24 +372,22 @@ class DockerIoAPIv2:
         (p_os, p_architecture, p_variant) = HostInfo().parse_platform(platform)
         try:
             for manifest in index_list["manifests"]:
-                if (p_os and
-                    (manifest["platform"]["os"]).lower() != p_os):
+                if (p_os and (manifest["platform"]["os"]).lower() != p_os):
                     continue
                 if (p_architecture and
-                    (manifest["platform"]["architecture"]).lower() != p_architecture):
+                        (manifest["platform"]["architecture"]).lower() != p_architecture):
                     continue
-                if (p_variant and
-                    (manifest["platform"]["variant"]).lower() != p_variant):
+                if (p_variant and (manifest["platform"]["variant"]).lower() != p_variant):
                     continue
                 return manifest["digest"]
         except (KeyError, AttributeError, ValueError, TypeError):
             pass
-        return ""
+        return ''
 
     def get_image_manifest(self, imagerepo, tag, platform=""):
-        """API v2 Get the image manifest which contains JSON metadata
-        that is common to all layers in this image tag
-        """
+        ''' API v2 Get the image manifest which contains JSON metadata
+            that is common to all layers in this image tag
+        '''
         reqhdr = ['Accept: application/vnd.docker.distribution.manifest.v2+json',
                   'Accept: application/vnd.docker.distribution.manifest.v1+prettyjws',
                   'Accept: application/json',
@@ -407,7 +406,7 @@ class DockerIoAPIv2:
             if "oci.image.manifest.v1+json" in hdr.data['content-type']:
                 return (hdr.data, json.loads(buf.getvalue().decode()))
             if ("docker.distribution.manifest.list.v2" in hdr.data['content-type'] or
-                "oci.image.index.v1+json" in hdr.data['content-type']):
+                    "oci.image.index.v1+json" in hdr.data['content-type']):
                 image_index = json.loads(buf.getvalue().decode())
                 if not platform:
                     return (hdr.data, image_index)

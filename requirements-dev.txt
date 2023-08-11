@@ -1,6 +1,7 @@
 bandit
 build
 coverage
+flake8
 mock
 pip
 pycurl>=7.15.5

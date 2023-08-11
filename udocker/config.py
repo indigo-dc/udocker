@@ -8,10 +8,10 @@ from udocker import LOG
 
 
 class Config:
-    """Default configuration values for the whole application. Changes
-    to these values should be made via a configuration file read via
-    Config.init() and that can reside in ~/.udocker/udocker.conf
-    """
+    ''' Default configuration values for the whole application. Changes
+        to these values should be made via a configuration file read via
+        Config.init() and that can reside in ~/.udocker/udocker.conf
+    '''
     conf = {}
     conf['verbose_level'] = logging.INFO
     conf['homedir'] = os.path.expanduser("~") + "/.udocker"  # dir with keystore file
@@ -25,13 +25,6 @@ class Config:
     # udocker installation tarball the release is the minimum requirement
     # the actual tarball used in the installation can have a higher version
     conf['tarball_release'] = "1.2.10"
-
-    # These are to be deprecated this info will be exclusively in the new metadata.json
-    # base_tarurl = ["https://download.ncg.ingrid.pt/webdav/udocker/",
-    #                "https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/"]
-    # conf['tarball'] = []
-    # for url in base_tarurl:
-    #     conf['tarball'].append(url + "udocker-englib-1.2.10.tar.gz")
 
     # Either remove, as not been used
     # conf['installinfo'] = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages"]
@@ -51,11 +44,6 @@ class Config:
     conf['metadata_url'] = []
     for url in base_url:
         conf['metadata_url'].append(url + conf['metadata_json'])
-
-    # The following will be DEPRECATED
-    # conf['bindir'] = conf['installdir'] + '/' + 'bin'
-    # conf['libdir'] = conf['installdir'] + '/' + 'lib'
-    # conf['docdir'] = conf['installdir'] + '/' + 'doc'
 
     # defaults for container execution
     conf['cmd'] = ["bash", "-i"]  # Command to execute
@@ -131,16 +119,16 @@ class Config:
     conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ], ["taskset", "-c", "%s", ])
 
     # Containers execution defaults
-    conf['location'] = ""                 # run container in this location
+    conf['location'] = ''                # run container in this location
 
     # Curl settings
-    conf['http_proxy'] = ""               # ex. socks5://user:pass@127.0.0.1:1080
+    conf['http_proxy'] = ''               # ex. socks5://user:pass@127.0.0.1:1080
     conf['timeout'] = 12                  # default timeout (secs)
     conf['download_timeout'] = 30 * 60    # file download timeout (secs)
     conf['ctimeout'] = 6                  # default TCP connect timeout (secs)
-    conf['http_agent'] = ""
+    conf['http_agent'] = ''
     conf['http_insecure'] = False
-    conf['use_curl_executable'] = ""      # force use of executable
+    conf['use_curl_executable'] = ''      # force use of executable
 
     # docker hub index
     conf['dockerio_index_url'] = "https://hub.docker.com"
@@ -156,7 +144,7 @@ class Config:
     conf['nvi_etc_list'] = ['vulkan/icd.d/nvidia_icd.json', 'OpenCL/vendors/nvidia.icd']
 
     conf['nvi_bin_list'] = ['nvidia-bug-report.sh', 'nvidia-cuda-mps-control',
-                            'nvidia-cuda-mps-server','nvidia-debugdump', 'nvidia-installer',
+                            'nvidia-cuda-mps-server', 'nvidia-debugdump', 'nvidia-installer',
                             'nvidia-persistenced', 'nvidia-settings', 'nvidia-smi',
                             'nvidia-uninstall', 'nvidia-xconfig']
 
@@ -169,9 +157,7 @@ class Config:
     conf['nvi_dev_list'] = ['/dev/nvidia', ]
 
     def _conf_file_read(self, cfpath, ignore_keys=None):
-        """
-        Read config file
-        """
+        '''Read config file'''
         LOG.info('using config file: %s', cfpath)
         cfnparser = ConfigParser()
         cfnparser.read(cfpath)
@@ -182,9 +168,7 @@ class Config:
                 Config.conf[key] = val
 
     def _file_override(self, user_cfile, ignore_keys=None):
-        """
-        Override values from config file
-        """
+        '''Override values from config file'''
         if os.path.exists('/etc/' + Config.conf['config']):
             self._conf_file_read('/etc/' + Config.conf['config'], ignore_keys)
 
@@ -201,14 +185,11 @@ class Config:
             self._conf_file_read(user_cfile, ignore_keys)
 
     def _env_override(self):
-        """Override config with environment"""
+        '''Override config with environment'''
         Config.conf['verbose_level'] = int(os.getenv("UDOCKER_LOGLEVEL",
                                            Config.conf['verbose_level']))
         Config.conf['topdir'] = os.getenv("UDOCKER_DIR", Config.conf['topdir'])
         Config.conf['installdir'] = os.getenv("UDOCKER_INSTALL", Config.conf['installdir'])
-        # Config.conf['bindir'] = os.getenv("UDOCKER_BIN", Config.conf['bindir'])
-        # Config.conf['libdir'] = os.getenv("UDOCKER_LIB", Config.conf['libdir'])
-        # Config.conf['docdir'] = os.getenv("UDOCKER_DOC", Config.conf['docdir'])
         Config.conf['reposdir'] = os.getenv("UDOCKER_REPOS", Config.conf['reposdir'])
         Config.conf['layersdir'] = os.getenv("UDOCKER_LAYERS", Config.conf['layersdir'])
         Config.conf['containersdir'] = os.getenv("UDOCKER_CONTAINERS",
@@ -217,7 +198,6 @@ class Config:
                                                       Config.conf['dockerio_index_url'])
         Config.conf['dockerio_registry_url'] = os.getenv("UDOCKER_REGISTRY",
                                                          Config.conf['dockerio_registry_url'])
-        # Config.conf['tarball'] = os.getenv("UDOCKER_TARBALL", Config.conf['tarball'])  # TODO DEPRECATED
         Config.conf['default_execution_mode'] = os.getenv("UDOCKER_DEFAULT_EXECUTION_MODE",
                                                           Config.conf['default_execution_mode'])
         Config.conf['fakechroot_so'] = os.getenv("UDOCKER_FAKECHROOT_SO",
@@ -242,6 +222,6 @@ class Config:
                                                 Config.conf['tmpdir'])
 
     def getconf(self, user_cfile="u.conf"):
-        """Return all configuration variables"""
+        '''Return all configuration variables'''
         self._file_override(user_cfile)  # Override with variables in conf file
         self._env_override()             # Override with variables in environment

@@ -190,8 +190,8 @@ class FakechrootEngine(ExecutionEngineCommon):
             self.opt["cmd"][0] = exec_path
             return []
 
-        #env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
-        #if env_exec:
+        # env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
+        # if env_exec:
         #    return [self.container_root + '/' + env_exec, ]
 
         relc_path = exec_path.split(self.container_root, 1)[-1]

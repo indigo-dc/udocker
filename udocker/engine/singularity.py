@@ -16,6 +16,7 @@ from udocker.utils.filebind import FileBind
 from udocker.helper.unique import Unique
 from udocker.helper.hostinfo import HostInfo
 
+
 class SingularityEngine(ExecutionEngineCommon):
     """Docker container execution engine using singularity
     Provides a namespaces based user space container.
@@ -130,7 +131,7 @@ class SingularityEngine(ExecutionEngineCommon):
           * options:  many via self.opt see the help
         """
         if os.path.isdir(FileBind(self.localrepo, container_id).container_orig_dir):
-            FileBind(self.localrepo, container_id).restore() # legacy 1.1.3
+            FileBind(self.localrepo, container_id).restore()   # legacy 1.1.3
 
         Config.conf['sysdirs_list'] = ("/etc/resolv.conf", "/etc/host.conf", "/lib/modules",)
         exec_path = self._run_init(container_id)  # setup execution

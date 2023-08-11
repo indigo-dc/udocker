@@ -300,7 +300,7 @@ class ExecutionEngineCommon:
             cstruc = ContainerStructure(self.localrepo, container_id)
             (cont_dir, cntjson) = cstruc.get_container_attr()
             if not cont_dir:
-                return(None, None)
+                return (None, None)
 
             # load metadata from container
             if not self.opt["nometa"]:
@@ -334,7 +334,7 @@ class ExecutionEngineCommon:
                                                                         "", cntjson)
                 self.container_variant = cstruc.get_container_meta("variant", "", cntjson)
 
-        return(cont_dir, cntjson)
+        return (cont_dir, cntjson)
 
     def _select_auth_files(self):
         """select authentication files to use /etc/passwd /etc/group"""

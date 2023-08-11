@@ -9,6 +9,7 @@ import platform
 from udocker.utils.uprocess import Uprocess
 from udocker.helper.archinfo import ArchInfo
 
+
 class HostInfo(ArchInfo):
     """Get information from the host system"""
     uid = os.getuid()

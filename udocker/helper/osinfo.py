@@ -47,7 +47,7 @@ class OSInfo(ArchInfo):
             (arch, dummy, dummy) = self.get_arch(sourcetype, fileinfo, target)
             return arch[0] if arch[0] else ""
 
-    def is_same_arch(self, other_root_dir="/" ,target="UDOCKER"):
+    def is_same_arch(self, other_root_dir="/", target="UDOCKER"):
         """Compare architectures for two system trees"""
         this_arch = self.arch(target)
         other_arch = OSInfo(other_root_dir).arch(target)
