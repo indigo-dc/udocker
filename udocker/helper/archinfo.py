@@ -3,12 +3,12 @@
 
 
 class ArchInfo:
-    """Common object for architecture information"""
-
-    # { 'docker':['docker_arch'], 'qemu':['qemu_arch'],
-    #   'UDOCKER':['udocker_arch'], 'uname':['uname string]',
-    #   'file':['file string'], 'readelf':['readelf string']
-    # }
+    ''' Common object for architecture information. Data structure
+        {'docker':['docker_arch'], 'qemu':['qemu_arch'],
+         'UDOCKER':['udocker_arch'], 'uname':['uname string]',
+         'file':['file string'], 'readelf':['readelf string']
+        }
+    '''
 
     _arch_list = [
         {'docker': ['amd64'], 'qemu': ['x86_64'], 'UDOCKER': ['x86_64'],
@@ -50,7 +50,6 @@ class ArchInfo:
 
     # binaries from which to get architecture information using
     # host tools such as "readelf -h" and "file"
-
     _binaries_list = ["/lib64/ld-linux-x86-64.so",
                       "/lib64/ld-linux-x86-64.so.2",
                       "/lib64/ld-linux-x86-64.so.3",
@@ -67,12 +66,11 @@ class ArchInfo:
         return self._binaries_list
 
     def get_arch(self, source_type, arch_info, target_type="UDOCKER"):
-        """
-        Return (docker_arch, qemu_arch, udocker_arch) by source type
-        source can be "uname", "file" or "readelf"
-        arch_info is data previously produced by uname, file or readelf
-        target_type can be docker, qemu, UDOCKER or ALL
-        """
+        ''' Return (docker_arch, qemu_arch, udocker_arch) by source type
+            source can be "uname", "file" or "readelf"
+            arch_info is data previously produced by uname, file or readelf
+            target_type can be docker, qemu, UDOCKER or ALL
+        '''
         found = False
         try:
             for arch_dict in self._arch_list:
@@ -91,10 +89,9 @@ class ArchInfo:
         return ([], [], [])
 
     def translate_arch(self, source_arch, source_type, target_type):
-        """
-        For a source architecture return the matching target architecture
-        Example: translate_arch("ppc64le" "docker", "udocker")
-        """
+        ''' For a source architecture return the matching target architecture
+            Example: translate_arch("ppc64le" "docker", "udocker")
+        '''
         try:
             for arch_dict in self._arch_list:
                 for arch_expression in arch_dict[source_type]:
