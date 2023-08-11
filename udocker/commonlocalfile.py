@@ -86,14 +86,14 @@ class CommonLocalFileApi:
         return not status
 
     def create_container_meta(self, layer_id, platform=""):
-        """Create metadata for a given container layer, used in import.
-        A file for import is a tarball of a directory tree, does not contain
-        metadata. This method creates minimal metadata.
-        """
+        ''' Create metadata for a given container layer, used in import.
+            A file for import is a tarball of a directory tree, does not contain
+            metadata. This method creates minimal metadata.
+        '''
         (p_os, p_arch, p_variant) = HostInfo().parse_platform(platform)
         container_json = {}
         container_json["id"] = layer_id
-        container_json["comment"] = comment = "created by udocker"
+        container_json["comment"] = "created by udocker"
         container_json["created"] = time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z")
         container_json["architecture"] = \
             p_arch if p_arch else HostInfo().arch("docker")

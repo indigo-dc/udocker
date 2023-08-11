@@ -1,10 +1,11 @@
 [flake8]
-extend-ignore = E402, F841, F821, E722
+extend-ignore = F841
 max-line-length = 101
 exclude =
     build,
     dist,
     dockercicd,
+    docker_sqaaastools,
     docs/,
     .etc,
     .git,

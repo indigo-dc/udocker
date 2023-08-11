@@ -20,11 +20,10 @@ limitations under the License.
 """
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
-
 from udocker.umain import UMain
 from udocker import LOG
 from udocker.utils.fileutil import FileUtil
+sys.path.append(os.path.dirname(os.path.abspath(sys.argv[0])) + '/../')
 
 
 def main():
@@ -42,10 +41,6 @@ def main():
             exit_status = int(error.args[0])
         except (ValueError, TypeError):
             exit_status = 1
-    except:
-        FileUtil().cleanup()
-        exit_status = 1
-        raise
     else:
         FileUtil().cleanup()
 
