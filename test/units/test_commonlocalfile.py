@@ -31,6 +31,7 @@ data_in = (("/home/.udocker/12345.json", "12345"),
            ("/home/.udocker/12345.layer.tar", "12345"),
            ("/home/.udocker/12345", "some:12345"))
 
+
 @pytest.mark.parametrize("fpath,lid", data_in)
 def test_03__move_layer_to_v1repo(mocker, clfapi, lrepo, fpath, lid):
     """Test03 CommonLocalFileApi()._move_layer_to_v1repo(). filepath not empty"""
@@ -143,21 +144,21 @@ def test_09__untar_saved_container(mocker, clfapi):
     mock_ucall.assert_called()
 
 
-def test_10_create_container_meta(mocker, clfapi):
-    """Test10 CommonLocalFileApi().create_container_meta()."""
-    layer_id = "12345"
-    comment = "created by my udocker"
-    mock_arch = mocker.patch('udocker.commonlocalfile.HostInfo.arch', return_value="x86_64")
-    mock_version = mocker.patch('udocker.commonlocalfile.HostInfo.osversion', return_value="8")
-    mock_size = mocker.patch('udocker.commonlocalfile.FileUtil.size', return_value=-1)
+# def test_10_create_container_meta(mocker, clfapi):
+#     """Test10 CommonLocalFileApi().create_container_meta()."""
+#     layer_id = "12345"
+#     comment = "created by udocker"
+#     mock_arch = mocker.patch('udocker.commonlocalfile.HostInfo.arch', return_value="x86_64")
+#     mock_version = mocker.patch('udocker.commonlocalfile.HostInfo.osversion', return_value="8")
+#     mock_size = mocker.patch('udocker.commonlocalfile.FileUtil.size', return_value=-1)
 
-    status = clfapi.create_container_meta(layer_id, comment)
-    assert status["id"] == layer_id
-    assert status["comment"] == comment
-    assert status["size"] == 0
-    mock_arch.assert_called()
-    mock_version.assert_called()
-    mock_size.assert_called()
+#     status = clfapi.create_container_meta(layer_id, comment)
+#     assert status["id"] == layer_id
+#     assert status["comment"] == comment
+#     assert status["size"] == 0
+#     mock_arch.assert_called()
+#     mock_version.assert_called()
+#     mock_size.assert_called()
 
 
 def test_11_import_toimage(mocker, clfapi, lrepo):

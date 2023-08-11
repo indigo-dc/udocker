@@ -634,6 +634,8 @@ We are now supporting unit tests with pytest, you can run as follows:
 
 ```bash
 pytest
+# Or
+PYTHONPATH=. pytest-3
 ```
 
 If you want to see what lines of code are not covered:

@@ -161,8 +161,7 @@ class CommonLocalFileApi:
         }
         return container_json
 
-    def import_toimage(self, tarfile, imagerepo, tag, move_tarball=True,
-                       platform=""):
+    def import_toimage(self, tarfile, imagerepo, tag, move_tarball=True, platform=""):
         """Import a tar file containing a simple directory tree possibly
         created with Docker export and create local image"""
         if not os.path.exists(tarfile) and tarfile != '-':

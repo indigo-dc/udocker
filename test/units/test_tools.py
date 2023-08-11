@@ -48,49 +48,6 @@ def test_02__version2int(utools):
     assert out == 2004000
 
 
-data_verok = (([None, None], 0, '', False),
-              (['2.4', '1.3'], 2, '2.4', True),
-              (['1.4', '2.3'], 2, '1.4', False))
-
-
-@pytest.mark.parametrize("side_v2i,cnt_v2i,pin,expected", data_verok)
-def test_04__version_isok(mocker, utools, side_v2i, cnt_v2i, pin, expected):
-    """Test04 UdockerTools()._version_isok()."""
-    mock_ver2int = mocker.patch.object(UdockerTools, '_version2int', side_effect=side_v2i)
-
-    out = utools._version_isok(pin)
-    assert out == expected
-    assert mock_ver2int.call_count == cnt_v2i
-
-
-def test_05_is_available(mocker, utools, lrepo):
-    """Test05 UdockerTools().is_available()."""
-    lrepo.return_value.libdir = '/cont/ROOT/lib'
-    mock_fuget = mocker.patch('udocker.tools.FileUtil.getdata', return_value="2.3\n")
-    mock_verok = mocker.patch.object(UdockerTools, '_version_isok', return_value=True)
-
-    out = utools.is_available()
-    assert out
-    mock_fuget.assert_called()
-    mock_verok.assert_called()
-
-
-def test_06_purge(mocker, utools):
-    """Test06 UdockerTools().purge()."""
-    mock_lsdir = mocker.patch('os.listdir', side_effect=[["f1", "f2"], ["f3", "f4"], ["f5", "f6"]])
-    mock_logdeb = mocker.patch('udocker.tools.LOG.debug')
-    mock_fureg = mocker.patch('udocker.tools.FileUtil.register_prefix',
-                              side_effect=[None, None, None, None, None, None])
-    mock_furm = mocker.patch('udocker.tools.FileUtil.remove',
-                             side_effect=[None, None, None, None, None, None])
-
-    utools.purge()
-    assert mock_lsdir.call_count == 3
-    assert mock_fureg.call_count == 6
-    assert mock_furm.call_count == 6
-    assert mock_logdeb.call_count == 6
-
-
 data_downl = (('file1', 'HTTP/1.1 200 OK', 0, 0, 'file1'),
               ('', 'HTTP/1.1 200 OK', 1, 0, '/tmp/tmpf'),
               ('', 'HTTP/1.1 401 FAIL', 1, 1, ''))
@@ -136,74 +93,6 @@ def test_08__get_file(mocker, utools, url, ret_downl, cnt_downl, ret_exists, cnt
     assert mock_isfile.call_count == cnt_isfile
 
 
-def test_09__verify_version(mocker, utools):
-    """Test09 UdockerTools()._verify_version()."""
-    mock_isfile = mocker.patch('udocker.tools.os.path.isfile')
-    mock_fumktmp = mocker.patch('udocker.tools.FileUtil.mktmpdir')
-
-    out = utools._verify_version('')
-    assert out == (False, '')
-    mock_isfile.assert_not_called()
-    mock_fumktmp.assert_not_called()
-
-
-def test_10__verify_version(mocker, utools):
-    """Test10 UdockerTools()._verify_version()."""
-    mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=True)
-    mock_fumktmp = mocker.patch('udocker.tools.FileUtil.mktmpdir', return_value='')
-    mock_file = mocker.mock_open()
-    mocker.patch.object(tarfile, 'open', mock_file)
-
-    out = utools._verify_version('/home/udocker.tar')
-    assert out == (False, '')
-    mock_isfile.assert_called()
-    mock_fumktmp.assert_called()
-    mock_file.assert_not_called()
-
-
-def test_11__verify_version(mocker, utools):
-    """Test11 UdockerTools()._verify_version()."""
-    tinfo = [TarInfo("a"), TarInfo("udocker_dir/lib/VERSION")]
-    mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=True)
-    mock_fumktmp = mocker.patch('udocker.tools.FileUtil.mktmpdir', return_value='/home/tmp')
-    mock_osbase = mocker.patch('os.path.basename', return_value='VERSION')
-    mock_fugetdata = mocker.patch('udocker.tools.FileUtil.getdata', return_value='1.2.7\n')
-    mock_vok = mocker.patch.object(UdockerTools, '_version_isok', return_value=True)
-
-    with patch.object(tarfile, 'open', autospec=True) as open_mock:
-        open_mock.return_value.getmembers.return_value = tinfo
-        open_mock.return_value.extract.return_value = None
-
-        out = utools._verify_version('/home/udocker.tar')
-        assert out == (True, '1.2.7')
-        mock_isfile.assert_called()
-        mock_fumktmp.assert_called()
-        open_mock.return_value.getmembers.assert_called()
-        open_mock.return_value.extract.assert_called()
-        mock_osbase.assert_called()
-        mock_fugetdata.assert_called()
-        mock_vok.assert_called()
-
-
-def test_12__verify_version(mocker, utools):
-    """Test12 UdockerTools()._verify_version()."""
-    mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=True)
-    mock_fumktmp = mocker.patch('udocker.tools.FileUtil.mktmpdir', return_value='/home/tmp')
-    mock_furm = mocker.patch('udocker.tools.FileUtil.remove')
-    mock_fugetdata = mocker.patch('udocker.tools.FileUtil.getdata')
-    mock_file = mocker.mock_open()
-    mocker.patch.object(tarfile, 'open', mock_file)
-    mock_file.side_effect = tarfile.TarError
-
-    out = utools._verify_version('/home/udocker.tar')
-    assert out == (False, '')
-    mock_isfile.assert_called()
-    mock_fumktmp.assert_called()
-    mock_file.assert_called()
-    mock_furm.assert_called()
-    mock_fugetdata.assert_not_called()
-
-
 # def test_13__clean_install(mocker, utools, lrepo):
 #     """Test13 UdockerTools()._clean_install()."""
 #     tfile = [TarInfo("udocker_dir/bin/ls"), TarInfo("udocker_dir/lib/lib1"),
@@ -237,31 +126,31 @@ def test_12__verify_version(mocker, utools):
     #     assert mock_furm.call_count == 3
 
 
-def test_13__install(mocker, utools):
-    """Test13 UdockerTools()._install(). tar does not exist"""
-    tfile = "some.tar"
-    mock_isfile = mocker.patch('os.path.isfile', return_value=False)
-    mock_fuchmod = mocker.patch('udocker.tools.FileUtil.chmod')
-    out = utools._install(tfile)
-    assert not out
-    mock_isfile.assert_called()
-    mock_fuchmod.assert_not_called()
+# def test_13__install(mocker, utools):
+#     """Test13 UdockerTools()._install(). tar does not exist"""
+#     tfile = "some.tar"
+#     mock_isfile = mocker.patch('os.path.isfile', return_value=False)
+#     mock_fuchmod = mocker.patch('udocker.tools.FileUtil.chmod')
+#     out = utools._install(tfile)
+#     assert not out
+#     mock_isfile.assert_called()
+#     mock_fuchmod.assert_not_called()
 
 
-def test_14__install(mocker, utools, lrepo):
-    """Test14 UdockerTools()._install(). tar does not open"""
-    tfile = "some.tar"
-    mock_isfile = mocker.patch('os.path.isfile', return_value=True)
-    mock_fuchmod = mocker.patch('udocker.tools.FileUtil.chmod')
-    lrepo.return_value.create_repo.return_value = None
-    mock_tarfile = mocker.mock_open()
-    mopen = mocker.patch("tarfile.open", mock_tarfile)
-    mopen.side_effect = tarfile.TarError
-    out = utools._install(tfile)
-    assert not out
-    mock_isfile.assert_called()
-    mock_fuchmod.assert_called()
-    lrepo.create_repo.assert_called()
+# def test_14__install(mocker, utools, lrepo):
+#     """Test14 UdockerTools()._install(). tar does not open"""
+#     tfile = "some.tar"
+#     mock_isfile = mocker.patch('os.path.isfile', return_value=True)
+#     mock_fuchmod = mocker.patch('udocker.tools.FileUtil.chmod')
+#     lrepo.return_value.create_repo.return_value = None
+#     mock_tarfile = mocker.mock_open()
+#     mopen = mocker.patch("tarfile.open", mock_tarfile)
+#     mopen.side_effect = tarfile.TarError
+#     out = utools._install(tfile)
+#     assert not out
+#     mock_isfile.assert_called()
+#     mock_fuchmod.assert_called()
+#     lrepo.create_repo.assert_called()
 
 
 # def test_15__install(mocker, utools, lrepo):

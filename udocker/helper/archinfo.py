@@ -18,7 +18,7 @@ class ArchInfo:
         {'docker': ['arm64'], 'qemu': ['aarch64'], 'UDOCKER': ['arm64'],
          'uname': ['aarch64'], 'file': ['aarch64'], 'readelf': ['AArch64']},
         {'docker': ['arm'], 'qemu': ['arm'], 'UDOCKER': ['arm'],
-         'uname': ['arm'], 'file': [' ARM'], 'readelf': [' ARM']},
+         'uname': ['arm'], 'file': ['ARM'], 'readelf': ['ARM']},
         {'docker': ['ppc64le'], 'qemu': ['ppc64le'], 'UDOCKER': ['ppc64le'],
          'uname': ['ppc64le'], 'file': ['64-bit PowerPC', 'LSB executable'],
          'readelf': ['PowerPC64', 'little endian']},
