@@ -39,7 +39,7 @@ def test_02_get_arch(source_type, arch_info, target_type, expected):
     assert output == expected
 
 
-# data_trsl = (('ppc64le', 'docker', 'udocker', 'x86_64'),
+# data_trsl = (('amd64', 'docker', 'udocker', 'x86_64'),
 #              )
 
 
