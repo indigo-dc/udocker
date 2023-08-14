@@ -55,10 +55,10 @@ class HostInfo(ArchInfo):
                 return (p_os, p_architecture, p_variant)
             except ValueError:
                 try:
-                    (p_os, p_architecture) = platform_in.split("/")
+                    (p_os, p_architecture) = platform_in.lower().split("/")
                     return (p_os, p_architecture, "")
                 except ValueError:
-                    return (platform_in.strip(), "", "")
+                    return (platform_in.lower().strip(), "", "")
         return ("", "", "")
 
     def platform_to_str(self, platform_in):
