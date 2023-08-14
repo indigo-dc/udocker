@@ -42,8 +42,6 @@ def test_03_get_filetype(osinfo, mocker):
     """Test03 OSInfo.get_filetype(filename) file exists is readelf"""
     mock_isfile = mocker.patch('os.path.isfile', return_value=False)
     mock_islnk = mocker.patch('os.path.islink', return_value=False)
-    mock_getout = mocker.patch('udocker.helper.osinfo.Uprocess.get_output',
-                               side_effect=[False, 'x86'])
     status = osinfo.get_filetype('')
     assert status == ('', '')
     mock_isfile.assert_called()
