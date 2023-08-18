@@ -33,3 +33,9 @@ def test_03_hash256_nofile():
         mock_file.side_effect = OSError()
         ret_function = ChkSUM().hash("some_file", "sha256")
         assert ret_function == ""
+
+
+def test_04_hash256_noalgo():
+    """Test04 ChkSUM().hash no algo."""
+    ret_function = ChkSUM().hash('some_file', '')
+    assert ret_function == ''
