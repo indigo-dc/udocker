@@ -48,74 +48,54 @@ def test_03_setup(fbind, mocker):
     mock_futil.assert_called()
 
 
+def test_04_restore(fbind, mocker):
+    """Test04 FileBind().restore()."""
+    mock_isdir = mocker.patch('os.path.isdir', return_value=False)
+    fbind.restore()
+    mock_isdir.assert_called()
 
-# @patch('udocker.utils.filebind.os.path.isdir')
-# @patch('udocker.utils.filebind.os.path.islink')
-# @patch('udocker.utils.filebind.os.path.isfile')
-# @patch('udocker.utils.filebind.os.path.realpath')
-# @patch('udocker.utils.filebind.os.listdir')
-# @patch('udocker.utils.filebind.FileUtil')
-# def test_03_restore(self, mock_futil, mock_listdir,
-#                     mock_realpath, mock_isfile,
-#                     mock_islink, mock_isdir):
-#     """Test03 FileBind().restore()."""
-#     container_id = "CONTAINERID"
-#     mock_realpath.return_value = "/tmp"
-#     mock_listdir.return_value = []
-#     mock_futil.return_value.remove.return_value = True
 
-#     mock_isdir.return_value = False
-#     fbind = FileBind(self.local, container_id)
-#     fbind.restore()
-#     self.assertFalse(mock_listdir.called)
+def test_05_restore(fbind, mocker):
+    """Test05 FileBind().restore()."""
+    mock_isdir = mocker.patch('os.path.isdir', return_value=True)
+    mock_listdir = mocker.patch('os.listdir', return_value=["is_file1", "is_dir", "is_file2"])
+    mock_isfile = mocker.patch('os.path.isfile', side_effect=[True, False, True])
+    mock_islink = mocker.patch('os.path.islink', side_effect=[True, False, False])
+    mock_futil = mocker.patch('udocker.utils.filebind.FileUtil')
+    mock_futil.return_value.register_prefix.side_effect = [None, None, None]
+    mock_futil.return_value.remove.side_effect = [None, None, None, None, None]
+    mock_futil.return_value.rename.side_effect = [True, False, False]
+    fbind.restore()
+    mock_isdir.assert_called()
+    mock_listdir.assert_called()
+    mock_islink.assert_called()
+    mock_isfile.assert_called()
+    mock_futil.return_value.register_prefix.assert_called()
+    assert mock_futil.return_value.rename.call_count == 2
 
-#     mock_isdir.return_value = True
-#     fbind = FileBind(self.local, container_id)
-#     fbind.restore()
-#     self.assertTrue(mock_listdir.called)
 
-#     mock_listdir.return_value = ["is_file1", "is_dir", "is_file2"]
-#     mock_isfile.side_effect = [True, False, True]
-#     mock_islink.side_effect = [True, False, False]
-#     fbind = FileBind(self.local, container_id)
-#     fbind.restore()
-#     self.assertTrue(mock_isfile.called)
-#     self.assertTrue(mock_islink.called)
+def test_06_start(fbind, mocker):
+    """Test06 FileBind().start()."""
+    mock_setup = mocker.patch.object(FileBind, 'setup', return_value=None)
+    mock_setl = mocker.patch.object(FileBind, 'set_list', return_value=None)
+    files_list = ["file1", "dir1", "file2"]
+    mock_futil = mocker.patch('udocker.utils.filebind.FileUtil')
+    mock_futil.return_value.mktmpdir.return_value = 'tmpDir'
+    resout = fbind.start(files_list)
+    assert resout == ('tmpDir', '/.bind_host_files')
+    mock_setup.assert_called()
+    mock_setl.assert_called()
+    mock_futil.return_value.mktmpdir.assert_called()
 
-# @patch.object(FileBind, 'setup')
-# @patch('udocker.utils.filebind.FileUtil.mktmpdir')
-# @patch('udocker.utils.filebind.os.path.realpath')
-# @patch('udocker.utils.filebind.os.path.isfile')
-# @patch('udocker.utils.filebind.os.path.exists')
-# def test_04_start(self, mock_exists, mock_isfile,
-#                     mock_realpath, mock_mktmp, mock_setup):
-#     """Test04 FileBind().start()."""
-#     container_id = "CONTAINERID"
-#     mock_realpath.return_value = "/tmp"
-#     mock_setup.return_value = None
-#     files_list = ["file1", "dir1", "file2"]
-#     mock_mktmp.return_value = "tmpDir"
-#     fbind = FileBind(self.local, container_id)
-#     fbind.start(files_list)
-#     self.assertTrue(mock_mktmp.called)
 
-#     mock_isfile.side_effect = [True, False, True]
-#     mock_setup.return_value = None
-#     fbind = FileBind(self.local, container_id)
-#     self.assertTrue(mock_isfile.called)
-#     self.assertTrue(mock_exists.called)
-#     self.assertIsInstance(fbind.start(files_list), tuple)
+def test_07_set_list(fbind, mocker):
+    """Test07 FileBind().set_list()."""
+    flist = ['f1', 'f2']
+    mock_setfile = mocker.patch.object(FileBind, 'set_file', side_effect=[None, None])
+    fbind.set_list(flist)
+    assert mock_setfile.call_count == 2
 
-# @patch('udocker.utils.filebind.os.path.realpath')
-# @patch.object(FileBind, 'set_file')
-# def test_05_set_list(self, mock_setfile, mock_realpath):
-#     """Test05 FileBind().set_list()."""
-#     container_id = "CONTAINERID"
-#     flist = ['f1', 'f2']
-#     mock_realpath.return_value = "/tmp"
-#     mock_setfile.side_effect = [None, None]
-#     FileBind(self.local, container_id).set_list(flist)
-#     self.assertTrue(mock_setfile.called)
+
 
 # @patch('udocker.utils.filebind.FileUtil.copyto')
 # @patch('udocker.utils.filebind.os.symlink')
