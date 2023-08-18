@@ -117,7 +117,7 @@ data_ver = [(("Ubuntu", "20"), 'linux'),
 @pytest.mark.parametrize("osver,expected", data_ver)
 def test_07_osversion(osinfo, osver, expected, mocker):
     """Test07 OSInfo.osversion()"""
-    mock_osdist = mocker.patch.object(OSInfo, 'osdistribution', return_value = osver)
+    mock_osdist = mocker.patch.object(OSInfo, 'osdistribution', return_value=osver)
     status = osinfo.osversion()
     assert status == expected
     mock_osdist.assert_called()
