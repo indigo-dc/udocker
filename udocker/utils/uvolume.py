@@ -11,7 +11,7 @@ class Uvolume:
 
     def cleanpath(self, path):
         """Remove duplicate and trailing slashes"""
-        clean_path = ""
+        clean_path = ''
         p_char = ''
         for char in str(path):
             if not clean_path:

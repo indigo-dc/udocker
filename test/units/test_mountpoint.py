@@ -14,7 +14,8 @@ def lrepo(mocker):
 
 @pytest.fixture
 def mpoint(mocker, lrepo):
-    return MountPoint(lrepo, 'contID123')
+    mock_realpath = mocker.patch('os.path.realpath', return_value='/home/.udocker/containers/123')
+    return MountPoint(lrepo, '123')
 
 
 data_setup = ((True, False, True, 0),
@@ -34,7 +35,7 @@ def test_01_setup(mpoint, mocker, isdir, ismkdir, mkdircall, expected):
     assert mock_mkdir.call_count == mkdircall
 
 
-data_add = (('/.udocker/contID123/ROOT/mycpath', 'mycpath', '/.udocker/contID123/ROOT/mycpath'),)
+data_add = (('/.udocker/123/ROOT/mycpath', 'mycpath', '/.udocker/123/ROOT/mycpath'),)
 
 
 @pytest.mark.parametrize('vpath,cpath,expected', data_add)

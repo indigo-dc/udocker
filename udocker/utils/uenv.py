@@ -6,6 +6,7 @@ import string
 
 from udocker import LOG
 
+
 def get_pair(envstr):
     """Split env=var into key and val"""
     if not (isinstance(envstr, str) and envstr):
