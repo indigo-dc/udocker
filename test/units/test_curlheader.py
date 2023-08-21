@@ -42,27 +42,24 @@ def test_03_write(curl_header):
 
 def test_04_setvalue_from_file(curl_header, mocker):
     """Test04 CurlHeader().setvalue_from_file()."""
-    fakedata = StringIO('XXXX')
-    with patch('builtins.open') as mopen:
-        mopen.return_value = fakedata
-        curl_header = CurlHeader()
-        self.assertTrue(curl_header.setvalue_from_file("filename"))
-        self.assertTrue(mock_write.called_with('XXXX'))
+    fakedata = 'XXXX'
+    mock_write = mocker.patch.object(CurlHeader, 'write')
+    mock_file = mocker.mock_open(read_data=str(fakedata))
+    mocker.patch("builtins.open", mock_file)
+    assert curl_header.setvalue_from_file('filename')
+    mock_write.assert_called_with('XXXX')
 
 
-# @patch.object(CurlHeader, 'write')
-# def test_03_setvalue_from_file(self, mock_write):
-#     """Test03 CurlHeader().setvalue_from_file()."""
-#     fakedata = StringIO('XXXX')
-#     with patch('builtins.open') as mopen:
-#         mopen.return_value = fakedata
-#         curl_header = CurlHeader()
-#         self.assertTrue(curl_header.setvalue_from_file("filename"))
-#         self.assertTrue(mock_write.called_with('XXXX'))
+def test_05_setvalue_from_file(curl_header, mocker):
+    """Test05 CurlHeader().setvalue_from_file()."""
+    mock_write = mocker.patch.object(CurlHeader, 'write')
+    mock_file = mocker.mock_open()
+    mock_file.side_effect = OSError
+    assert not curl_header.setvalue_from_file('filename')
 
 
-def test_05_getvalue(curl_header):
-    """Test05 CurlHeader().getvalue()."""
+def test_06_getvalue(curl_header):
+    """Test06 CurlHeader().getvalue()."""
     curl_header.data = "XXXX"
     resout = curl_header.getvalue()
     assert resout == curl_header.data
