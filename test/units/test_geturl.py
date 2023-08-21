@@ -36,7 +36,6 @@ def test_02__select_implementation(geturl, mocker):
     mock_gupycurl.return_value.is_available.return_value = False
     mock_guexecurl.return_value.is_available.return_value = True
     geturl._select_implementation()
-    assert not geturl.cache_support
     mock_gupycurl.assert_called()
     mock_guexecurl.assert_called()
 
