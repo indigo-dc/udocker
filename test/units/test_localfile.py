@@ -34,7 +34,7 @@ def test_02_load(mocker, lfileapi):
     mock_exists = mocker.patch('os.path.exists', return_value=True)
     mock_futilmktmp = mocker.patch('udocker.localfile.FileUtil.mktmp', return_value='/tmp/imgdir')
     mock_mkdir = mocker.patch('os.makedirs', side_effect=OSError)
-    mock_untar = mocker.patch.object(LocalFileAPI, '_untar_saved_container', return_value = False)
+    mock_untar = mocker.patch.object(LocalFileAPI, '_untar_saved_container', return_value=False)
 
     status = lfileapi.load('imgfile')
     assert not status

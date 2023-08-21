@@ -16,7 +16,6 @@ def test_01__verify_keystore(mocker, kstore):
     mock_fu_uid = mocker.patch('udocker.helper.keystore.FileUtil.uid', return_value=1001)
     mock_hi = mocker.patch('udocker.helper.keystore.HostInfo')
     mock_pdir = mocker.patch('os.path.dirname')
-
     pytest.raises(OSError, kstore._verify_keystore)
     assert mock_fu_uid.call_count == 1
     mock_hi.assert_not_called()
@@ -31,7 +30,6 @@ def test_02__verify_keystore(mocker, kstore):
     mock_hi.uid = 10
     mock_pdir = mocker.patch('os.path.dirname', return_value="somedir/filename")
     mock_stat = mocker.patch('udocker.helper.keystore.os.stat')
-
     pytest.raises(OSError, kstore._verify_keystore)
     assert mock_fu.return_value.uid.call_count == 2
     mock_pdir.assert_called()
@@ -46,7 +44,6 @@ def test_03__verify_keystore(mocker, kstore):
     mock_pdir = mocker.patch('os.path.dirname', return_value="somedir/filename")
     mock_stat = mocker.patch('udocker.helper.keystore.os.stat')
     mock_stat.return_value.st_mode = 0o077
-
     pytest.raises(OSError, kstore._verify_keystore)
     assert mock_fu_uid.call_count == 2
     mock_pdir.assert_called()
@@ -63,7 +60,6 @@ def test_04__read_all(mocker, kstore):
     mock_jfile = mocker.mock_open(read_data=str(credentials))
     mocker.patch("builtins.open", mock_jfile)
     mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
-
     out = kstore._read_all()
     assert out == credentials
     mock_jload.assert_called()
@@ -76,7 +72,6 @@ def test_05__read_all(mocker, kstore):
     mock_jfile = mocker.mock_open()
     mock_jfile.side_effect = OSError
     mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
-
     out = kstore._read_all()
     assert out == {}
     mock_jload.assert_not_called()
@@ -89,7 +84,6 @@ def test_06__shred(mocker, kstore):
     mock_size = mocker.patch('udocker.helper.keystore.FileUtil.size', return_value=123)
     mock_file = mocker.mock_open()
     mocker.patch("builtins.open", mock_file)
-
     out = kstore._shred()
     assert out == 0
     mock_verks.assert_called()
@@ -103,7 +97,6 @@ def test_07__shred(mocker, kstore):
     mock_size = mocker.patch('udocker.helper.keystore.FileUtil.size', side_effect=OSError('fail'))
     mock_file = mocker.mock_open()
     mocker.patch("builtins.open", mock_file)
-
     out = kstore._shred()
     assert out == 1
     mock_verks.assert_called()
@@ -118,7 +111,6 @@ def test_08__write_all(mocker, kstore):
     mock_jdump = mocker.patch('json.dump')
     mock_file = mocker.mock_open()
     mocker.patch("builtins.open", mock_file)
-
     out = kstore._write_all('{auth}')
     assert out == 0
     mock_verks.assert_called()
@@ -135,7 +127,6 @@ def test_09__write_all(mocker, kstore):
     mock_file = mocker.mock_open()
     mopen = mocker.patch("builtins.open", mock_file)
     mopen.side_effect = OSError
-
     out = kstore._write_all('{auth}')
     assert out == 1
     mock_verks.assert_called()
@@ -151,7 +142,6 @@ def test_10_get(mocker, kstore):
     auth = 'xxx'
     credentials = {url: {'email': email, 'auth': auth}}
     mock_readall = mocker.patch.object(KeyStore, '_read_all', return_value=credentials)
-
     out = kstore.get(url)
     assert out == auth
     mock_readall.assert_called()
@@ -160,7 +150,6 @@ def test_10_get(mocker, kstore):
 def test_11_get(mocker, kstore):
     """Test11 KeyStore().get()."""
     mock_readall = mocker.patch.object(KeyStore, '_read_all', return_value={})
-
     out = kstore.get('')
     assert out == ''
     mock_readall.assert_called()
@@ -169,7 +158,6 @@ def test_11_get(mocker, kstore):
 def test_12_put(mocker, kstore):
     """Test12 KeyStore().put()."""
     mock_readall = mocker.patch.object(KeyStore, '_read_all')
-
     out = kstore.put("", "", "")
     assert out == 1
     mock_readall.assert_not_called()
@@ -185,7 +173,6 @@ def test_13_put(mocker, kstore):
     mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
     mock_shred = mocker.patch.object(KeyStore, '_shred', return_value=0)
     mock_writeall = mocker.patch.object(KeyStore, '_write_all', return_value=0)
-
     out = kstore.put(url, auth, email)
     assert out == 0
     mock_readall.assert_called()
@@ -205,7 +192,6 @@ def test_14_delete(mocker, kstore):
     mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
     mock_shred = mocker.patch.object(KeyStore, '_shred', return_value=0)
     mock_writeall = mocker.patch.object(KeyStore, '_write_all', return_value=0)
-
     out = kstore.delete(url)
     assert out == 0
     mock_verks.assert_called()
@@ -222,7 +208,6 @@ def test_15_delete(mocker, kstore):
     mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
     mock_shred = mocker.patch.object(KeyStore, '_shred')
     mock_writeall = mocker.patch.object(KeyStore, '_write_all')
-
     out = kstore.delete('')
     assert out == 1
     mock_verks.assert_called()
@@ -238,7 +223,6 @@ def test_16_erase(mocker, kstore):
     mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
     mock_shred = mocker.patch.object(KeyStore, '_shred', return_value=0)
     mock_unlink = mocker.patch('os.unlink')
-
     out = kstore.erase()
     assert out == 0
     mock_verks.assert_called()
@@ -253,7 +237,6 @@ def test_17_erase(mocker, kstore):
     mock_loginfo = mocker.patch('udocker.helper.keystore.LOG.info')
     mock_shred = mocker.patch.object(KeyStore, '_shred', return_value=0)
     mock_unlink = mocker.patch('os.unlink', side_effect=OSError)
-
     out = kstore.erase()
     assert out == 1
     mock_verks.assert_called()
