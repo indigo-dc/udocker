@@ -191,7 +191,7 @@ class GetURLpyCurl(GetURL):
         else:
             pyc.setopt(pyc.VERBOSE, False)
 
-        self._url = ""
+        self._url = ''
 
     def _mkpycurl(self, pyc, hdr, buf, *args, **kwargs):
         """Prepare curl command line according to invocation options"""
@@ -245,7 +245,7 @@ class GetURLpyCurl(GetURL):
                 pyc.setopt(pyc.RESUME_FROM, FileUtil(output_file).size())
                 openflags = "ab"
 
-            #TODO: (mdavid) )redo this part
+            # TODO: (mdavid) )redo this part
             try:
                 filep = open(output_file, openflags)
             except OSError:

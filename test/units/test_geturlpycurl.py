@@ -4,6 +4,7 @@
 """
 udocker unit tests: GetURLpyCurl
 """
+from io import BytesIO as strio
 import pytest
 from udocker.utils.curl import GetURLpyCurl
 
@@ -36,61 +37,35 @@ def test_03__select_implementation(geturl):
     assert geturl._select_implementation() is None
 
 
-# @patch.object(GetURLpyCurl, 'is_available')
-# @patch('udocker.utils.curl.pycurl.Curl')
-# @patch('udocker.utils.curl.CurlHeader')
-# def test_04__set_defaults(self, mock_hdr, mock_pyc, mock_selinsec):
-#     """Test04 GetURLpyCurl()._set_defaults()."""
-#     mock_selinsec.return_value = True
-#     geturl = GetURLpyCurl()
-#     geturl._set_defaults(mock_pyc, mock_hdr)
-#     self.assertTrue(mock_pyc.setopt.called)
+def test_04__set_defaults(geturl, mocker):
+    """Test04 GetURLpyCurl()._set_defaults()."""
+    mock_pyc = mocker.patch('udocker.utils.curl.pycurl.Curl')
+    mock_hdr = mocker.patch('udocker.utils.curl.CurlHeader')
+    geturl._set_defaults(mock_pyc, mock_hdr)
+    assert geturl._url == ''
+    assert mock_pyc.setopt.call_count == 9
 
-#     # when insecure
-#     geturl = GetURLpyCurl()
-#     geturl._set_defaults(mock_pyc, mock_hdr)
-#     self.assertEqual(mock_pyc.setopt.call_count, 18)
 
-#     mock_selinsec.return_value = True
-#     # when secure
-#     geturl = GetURLpyCurl()
-#     geturl._set_defaults(mock_pyc, mock_hdr)
-#     self.assertEqual(mock_pyc.setopt.call_count, 27)
+def test_05__mkpycurl(geturl, mocker):
+    """Test05 GetURLpyCurl()._mkpycurl()."""
+    argl = 'http://host'
+    kargl = {"follow": True, "post": "pst1", "sizeonly": True,
+             "proxy": "http://proxy", "ctimeout": 1000,
+             "header": "Authorization: Bearer", "v": True,
+             "nobody": True, "timeout": 50, }
+    buff = strio()
+    mock_pyc = mocker.patch('udocker.utils.curl.pycurl.Curl')
+    mock_hdr = mocker.patch('udocker.utils.curl.CurlHeader')
+    mock_file = mocker.mock_open()
+    mocker.patch("builtins.open", mock_file)
+    resout = geturl._mkpycurl(mock_pyc, mock_hdr, buff, 'http://host',
+                              follow=True, post='pst1', sizeonly=True, proxy="http://proxy",
+                              ctimeout=1000, header="Authorization: Bearer", v=True, nobody=True,
+                              timeout=50, ofile='somefile', resume=True)
+    assert resout == ('somefile', mock_file.return_value)
+    assert mock_hdr.sizeonly
+    mock_pyc.setopt.assert_called()
 
-# @patch('udocker.utils.curl.json.dumps')
-# def test_05__mkpycurl(self, mock_jdump):
-#     """Test05 GetURLpyCurl()._mkpycurl()."""
-#     curl_patch = patch("udocker.utils.curl.CurlHeader")
-#     curlhdr = curl_patch.start()
-#     mock_curlhdr = Mock()
-#     curlhdr.return_value = mock_curlhdr
-
-#     pyc_patch = patch("udocker.utils.curl.pycurl.Curl")
-#     pycurl = pyc_patch.start()
-#     mock_pycurl = Mock()
-#     pycurl.return_value = mock_pycurl
-
-#     buff = strio()
-#     argl = ["http://host"]
-
-#     geturl = GetURLpyCurl()
-#     status = geturl._mkpycurl(pycurl, curlhdr, buff, argl)
-#     self.assertTrue(pycurl.setopt.called)
-#     self.assertEqual(status, ("", None))
-
-#     kargl = {"post":  "pst1", "sizeonly": True,
-#                 "proxy": "http://proxy", "ctimeout": 1000,
-#                 "header": "Authorization: Bearer", "v": True,
-#                 "nobody": True, "timeout": 50, }
-#     mock_jdump.return_value = {"post": "pst1"}
-#     geturl = GetURLpyCurl()
-#     status = geturl._mkpycurl(pycurl, curlhdr, buff, argl, kargl)
-#     self.assertTrue(pycurl.setopt.called)
-#     self.assertTrue(curlhdr.sizeonly)
-#     self.assertEqual(status, ("", None))
-
-#     curlhdr = curl_patch.stop()
-#     pycurl = pyc_patch.stop()
 
 # ## Needs works
 # @patch.object(GetURLpyCurl, 'is_available')
