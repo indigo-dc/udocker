@@ -67,6 +67,12 @@ def test_05__mkpycurl(geturl, mocker):
     mock_pyc.setopt.assert_called()
 
 
+# def test_06_get(geturl, mocker):
+#     """Test06 GetURLpyCurl().get() generic get."""
+#     geturl._geturl = type('test', (object,), {})()
+#     resout = geturl.get("http://host")
+
+
 # ## Needs works
 # @patch.object(GetURLpyCurl, 'is_available')
 # def test_06_get(self, mock_sel):
