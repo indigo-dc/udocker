@@ -48,11 +48,6 @@ def test_04__set_defaults(geturl, mocker):
 
 def test_05__mkpycurl(geturl, mocker):
     """Test05 GetURLpyCurl()._mkpycurl()."""
-    argl = 'http://host'
-    kargl = {"follow": True, "post": "pst1", "sizeonly": True,
-             "proxy": "http://proxy", "ctimeout": 1000,
-             "header": "Authorization: Bearer", "v": True,
-             "nobody": True, "timeout": 50, }
     buff = strio()
     mock_pyc = mocker.patch('udocker.utils.curl.pycurl.Curl')
     mock_hdr = mocker.patch('udocker.utils.curl.CurlHeader')

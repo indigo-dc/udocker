@@ -425,7 +425,7 @@ class GetURLexeCurl(GetURL):
         if "header" in kwargs:
             hdr.data["X-ND-HEADERS"] = kwargs["header"]
 
-        if status_code == 401: # needs authentication
+        if status_code == 401:   # needs authentication
             pass
         elif 300 <= status_code <= 308:  # redirect
             pass
