@@ -46,13 +46,12 @@ class FileUtil:
         else:
             prefix = os.path.realpath(prefix)
         if prefix not in FileUtil.safe_prefixes:
-            filename = prefix
-            if os.path.isdir(filename) and not filename.endswith('/'):
-                FileUtil.safe_prefixes.append(filename + '/')
-                FileUtil.safe_prefixes.append(os.path.realpath(filename) + '/')
+            if os.path.isdir(prefix) and not prefix.endswith('/'):
+                FileUtil.safe_prefixes.append(prefix + '/')
+                FileUtil.safe_prefixes.append(os.path.realpath(prefix) + '/')
             else:
-                FileUtil.safe_prefixes.append(filename)
-                FileUtil.safe_prefixes.append(os.path.realpath(filename))
+                FileUtil.safe_prefixes.append(prefix)
+                FileUtil.safe_prefixes.append(os.path.realpath(prefix))
 
     def register_prefix(self):
         """Register directory prefixes where remove() is allowed"""
