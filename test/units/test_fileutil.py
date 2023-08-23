@@ -35,13 +35,6 @@ def is_writable_file(obj):
 
 
 @pytest.fixture
-def futilini(mocker):
-    mock_absp = mocker.patch('os.path.abspath')
-    mock_base = mocker.patch('os.path.basename')
-    return FileUtil('somefile')
-
-
-@pytest.fixture
 def futil(mocker):
     mock_absp = mocker.patch('os.path.abspath', return_value='/dir/somefile')
     mock_base = mocker.patch('os.path.basename', return_value='somefile')
@@ -89,7 +82,7 @@ def test_03_register_prefix(mocker, ftype, abspath, rpathsd, risdir, rislink, ex
     """Test03 FileUtil.register_prefix()."""
     mock_absp = mocker.patch('os.path.abspath', return_value=abspath)
     mock_base = mocker.patch('os.path.basename', return_value=ftype)
-    mock_rpath = mocker.patch('udocker.utils.fileutil.os.path.realpath', side_effect=rpathsd)
+    mock_rpath = mocker.patch('os.path.realpath', side_effect=rpathsd)
     mock_isdir = mocker.patch('os.path.isdir', return_value=risdir)
     mock_islink = mocker.patch('os.path.islink', return_value=rislink)
     fileutil = FileUtil(ftype)
@@ -102,81 +95,49 @@ def test_03_register_prefix(mocker, ftype, abspath, rpathsd, risdir, rislink, ex
     mock_islink.assert_called()
 
 
-# @patch('udocker.utils.fileutil.os.path.isdir')
-# @patch('udocker.utils.fileutil.os.path.realpath')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# def test_02__register_prefix(self, mock_base, mock_absp, mock_rpath, mock_isdir):
-#     """Test02 FileUtil._register_prefix()."""
-#     prefix = "/dir"
-#     res = ['/tmp', '/dir/', '/dir/', '/dir/', '/dir/']
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_rpath.side_effect = ["/dir", "/dir", "/dir", "/dir"]
-#     mock_isdir.return_value = True
-#     futil = FileUtil('filename.txt')
-#     futil._register_prefix(prefix)
-#     self.assertEqual(futil.safe_prefixes, res)
+def test_04_umask(futil, mocker):
+    """Test04 FileUtil.umask()."""
+    mock_umask = mocker.patch('os.umask', return_value=0)
+    resout = futil.umask()
+    assert resout
+    mock_umask.assert_called()
 
-#     prefix = "/file"
-#     res = ['/tmp', '/dir/', '/dir/', '/dir/', '/dir/', '/file', '/file']
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_rpath.side_effect = ["/file", "/file", "/file", "/file"]
-#     mock_isdir.return_value = False
-#     futil = FileUtil('filename2.txt')
-#     futil._register_prefix(prefix)
-#     self.assertEqual(futil.safe_prefixes, res)
 
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_03_register_prefix(self, mock_regpre, mock_base, mock_absp):
-#     """Test03 FileUtil.register_prefix()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     futil = FileUtil('filename.txt')
-#     futil.register_prefix()
-#     self.assertTrue(mock_regpre.called)
+def test_05_umask(futil, mocker):
+    """Test05 FileUtil.umask()."""
+    mock_umask = mocker.patch('os.umask', return_value=1)
+    resout = futil.umask(1)
+    assert resout
+    assert futil.orig_umask == 1
+    mock_umask.assert_called()
 
-# @patch('udocker.utils.fileutil.os.umask')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_04_umask(self, mock_regpre, mock_base, mock_absp, mock_umask):
-#     """Test04 FileUtil.umask()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_umask.return_value = 0
-#     futil = FileUtil("somedir")
-#     status = futil.umask()
-#     self.assertTrue(status)
 
-#     mock_umask.return_value = 0
-#     futil = FileUtil("somedir")
-#     FileUtil.orig_umask = 0
-#     status = futil.umask(1)
-#     self.assertTrue(status)
-#     self.assertEqual(FileUtil.orig_umask, 0)
+def test_06_umask(futil, mocker):
+    """Test06 FileUtil.umask()."""
+    mock_umask = mocker.patch('os.umask', side_effect=TypeError('fail'))
+    resout = futil.umask()
+    assert not resout
+    mock_umask.assert_called()
 
-#     mock_umask.return_value = 0
-#     futil = FileUtil("somedir")
-#     FileUtil.orig_umask = None
-#     status = futil.umask(1)
-#     self.assertTrue(status)
-#     self.assertEqual(FileUtil.orig_umask, 0)
 
-#     mock_umask.side_effect = TypeError("fail")
-#     futil = FileUtil("somedir")
-#     status = futil.umask(1)
-#     self.assertFalse(status)
+def test_07_umask(futil, mocker):
+    """Test07 FileUtil.umask()."""
+    mock_umask = mocker.patch('os.umask', side_effect=TypeError('fail'))
+    resout = futil.umask(1)
+    assert not resout
+    mock_umask.assert_called()
 
-#     mock_umask.side_effect = TypeError("fail")
-#     futil = FileUtil("somedir")
-#     status = futil.umask()
-#     self.assertFalse(status)
+
+def test_08_mktmp(futil, mocker):
+    """Test08 FileUtil.mktmp()."""
+    mock_uniqf = mocker.patch('udocker.utils.fileutil.Unique.filename', return_value='fname213')
+    mock_exists = mocker.patch('os.path.exists', return_value=False)
+    resout = futil.mktmp()
+    assert resout == '/tmp/fname213'
+    assert futil.tmptrash['/tmp/fname213']
+    mock_uniqf.assert_called()
+    mock_exists.assert_called()
+
 
 # @patch('udocker.utils.fileutil.os.path.abspath')
 # @patch('udocker.utils.fileutil.os.path.basename')
