@@ -139,53 +139,38 @@ def test_08_mktmp(futil, mocker):
     mock_exists.assert_called()
 
 
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_05_mktmp(self, mock_regpre, mock_base, mock_absp):
-#     """Test05 FileUtil.mktmp()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename2.txt'
-#     mock_absp.return_value = '/tmp/filename2.txt'
-#     Config().conf['tmpdir'] = '/somewhere'
-#     tmp_file = FileUtil('filename2.txt').mktmp()
-#     self.assertTrue(tmp_file.endswith('-filename2.txt'))
-#     self.assertTrue(tmp_file.startswith('/somewhere/udocker-'))
-#     self.assertGreater(len(tmp_file.strip()), 68)
+def test_09_mkdir(futil, mocker):
+    """Test09 FileUtil.mkdir()"""
+    mock_mkdirs = mocker.patch('os.makedirs')
+    resout = futil.mkdir()
+    assert resout
+    mock_mkdirs.assert_called()
 
-# @patch('udocker.utils.fileutil.os.makedirs')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_06_mkdir(self, mock_regpre, mock_base, mock_absp, mock_mkdirs):
-#     """Test06 FileUtil.mkdir()"""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_mkdirs.return_value = True
-#     status = FileUtil("somedir").mkdir()
-#     self.assertTrue(status)
 
-#     mock_mkdirs.side_effect = OSError("fail")
-#     status = FileUtil("somedir").mkdir()
-#     self.assertFalse(status)
+def test_10_mkdir(futil, mocker):
+    """Test10 FileUtil.mkdir()"""
+    mock_mkdirs = mocker.patch('os.makedirs', side_effect=OSError('fail'))
+    resout = futil.mkdir()
+    assert not resout
+    mock_mkdirs.assert_called()
 
-# @patch('udocker.utils.fileutil.os.rmdir')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_07_rmdir(self, mock_regpre, mock_base, mock_absp, mock_rmdir):
-#     """Test07 FileUtil.rmdir()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_rmdir.return_value = None
-#     status = FileUtil("somedir").rmdir()
-#     self.assertTrue(status)
 
-#     mock_rmdir.side_effect = OSError("fail")
-#     status = FileUtil("somedir").rmdir()
-#     self.assertFalse(status)
+def test_11_rmdir(futil, mocker):
+    """Test11 FileUtil.rmdir()"""
+    mock_rmdir = mocker.patch('os.rmdir')
+    resout = futil.rmdir()
+    assert resout
+    mock_rmdir.assert_called()
+
+
+def test_12_rmdir(futil, mocker):
+    """Test12 FileUtil.rmdir()"""
+    mock_rmdir = mocker.patch('os.rmdir', side_effect=OSError('fail'))
+    resout = futil.rmdir()
+    assert not resout
+    mock_rmdir.assert_called()
+
+
 
 # @patch.object(FileUtil, 'mktmp')
 # @patch.object(FileUtil, 'mkdir')
