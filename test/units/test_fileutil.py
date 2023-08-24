@@ -202,78 +202,58 @@ def test_15_uid(futil, mocker):
     assert resout == -1
 
 
-# @patch('udocker.utils.fileutil.os.path.isdir')
-# @patch('udocker.utils.fileutil.os.path.realpath')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_10__is_safe_prefix(self, mock_regpre, mock_base, mock_absp, mock_rpath, mock_isdir):
-#     """Test10 FileUtil._is_safe_prefix()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_rpath.return_value = '/tmp/filename.txt'
-#     futil = FileUtil("somedir")
-#     FileUtil.safe_prefixes = []
-#     status = futil._is_safe_prefix("/AAA")
-#     self.assertFalse(status)
+data_spref = (('/bin', ['/bin'], ['/bin', '/bin'], True, False, True),
+              ('ls', ['/bin/ls'], ['/bin/ls', '/bin/ls'], False, False, True),
+              ('link', ['/bin/link'], ['/bin/link', '/bin/link'], False, True, True))
 
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_rpath.return_value = '/tmp/filename.txt'
-#     mock_isdir.return_value = True
-#     futil = FileUtil("somedir")
-#     FileUtil.safe_prefixes = ["/tmp"]
-#     status = futil._is_safe_prefix("/tmp/AAA")
-#     self.assertTrue(status)
 
-# @patch('udocker.utils.fileutil.os.walk')
-# @patch('udocker.utils.fileutil.os.lchown')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_11_chown(self, mock_regpre, mock_base, mock_absp, mock_lchown, mock_walk):
-#     """Test11 FileUtil.chown()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_walk.return_value = [("/tmp", ["dir"], ["file"]), ]
-#     mock_lchown.side_effect = [None, None, None, None]
-#     futil = FileUtil("somedir")
-#     FileUtil.safe_prefixes = ["/tmp"]
-#     status = futil.chown(0, 0, False)
-#     self.assertTrue(status)
-#     self.assertFalse(mock_walk.called)
+@pytest.mark.parametrize("fname,safep,rpathsd,risdir,rislink,expected", data_spref)
+def test_16__is_safe_prefix(futil, mocker, fname, safep, rpathsd, risdir, rislink, expected):
+    """Test16 FileUtil._is_safe_prefix()."""
+    mock_base = mocker.patch('os.path.basename', return_value=fname)
+    mock_rpath = mocker.patch('os.path.realpath', side_effect=rpathsd)
+    mock_isdir = mocker.patch('os.path.isdir', return_value=risdir)
+    mock_islink = mocker.patch('os.path.islink', return_value=rislink)
+    futil.safe_prefixes = safep
+    resout = futil._is_safe_prefix(fname)
+    assert resout == expected
+    mock_rpath.assert_called()
+    mock_isdir.assert_called()
+    mock_islink.assert_called()
 
-#     mock_walk.return_value = [("/tmp", ["dir"], ["file"]), ]
-#     mock_lchown.side_effect = [None, None, None, None]
-#     futil = FileUtil("somedir")
-#     FileUtil.safe_prefixes = ["/tmp"]
-#     status = futil.chown(0, 0, True)
-#     self.assertTrue(status)
-#     self.assertTrue(mock_walk.called)
-#     self.assertTrue(mock_lchown.called)
 
-#     mock_lchown.side_effect = OSError("fail")
-#     futil = FileUtil("filename.txt")
-#     status = futil.chown(0, 0, False)
-#     self.assertFalse(status)
+def test_17_chown(futil, mocker):
+    """Test17 FileUtil.chown()."""
+    mock_lchown = mocker.patch('os.lchown')
+    resout = futil.chown(0, 0, False)
+    assert resout
+    mock_lchown.assert_called()
 
-# @patch.object(FileUtil, 'chown')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_12_rchown(self, mock_regpre, mock_base, mock_absp, mock_fuchown):
-#     """Test12 FileUtil.rchown()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_fuchown.return_value = True
-#     futil = FileUtil("somedir")
-#     FileUtil.safe_prefixes = ["/tmp"]
-#     status = futil.rchown()
-#     self.assertTrue(status)
+
+def test_18_chown(futil, mocker):
+    """Test18 FileUtil.chown()."""
+    mock_lchown = mocker.patch('os.lchown', side_effect=[None, None, None, None])
+    mock_walk = mocker.patch('os.walk', return_value=[("/tmp", ["dir"], ["file"]), ])
+    resout = futil.chown(0, 0, True)
+    assert resout
+    mock_lchown.assert_called()
+    mock_walk.assert_called()
+
+
+def test_19_chown(futil, mocker):
+    """Test19 FileUtil.chown()."""
+    mock_lchown = mocker.patch('os.lchown', side_effect=OSError("fail"))
+    resout = futil.chown(0, 0, False)
+    assert not resout
+    mock_lchown.assert_called()
+
+
+def test_20_rchown(futil, mocker):
+    """Test20 FileUtil.rchown()."""
+    mock_fuchown = mocker.patch.object(FileUtil, 'chown', return_value=True)
+    assert futil.rchown()
+    mock_fuchown.assert_called()
+
 
 # @patch('udocker.utils.fileutil.stat')
 # @patch('udocker.utils.fileutil.os.chmod')
