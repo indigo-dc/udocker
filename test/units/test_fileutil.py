@@ -171,47 +171,36 @@ def test_12_rmdir(futil, mocker):
     mock_rmdir.assert_called()
 
 
+data_mk = ((True, 'somedir'),
+           (False, None))
 
-# @patch.object(FileUtil, 'mktmp')
-# @patch.object(FileUtil, 'mkdir')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_08_mktmpdir(self, mock_regpre, mock_base, mock_absp, mock_mkdir, mock_mktmp):
-#     """Test08 FileUtil.mktmpdir()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_mktmp.return_value = "/dir"
-#     mock_mkdir.return_value = True
-#     status = FileUtil("somedir").mktmpdir()
-#     self.assertEqual(status, "/dir")
 
-#     mock_mktmp.return_value = "/dir"
-#     mock_mkdir.return_value = False
-#     status = FileUtil("somedir").mktmpdir()
-#     self.assertEqual(status, None)
+@pytest.mark.parametrize("rmkdir,expected", data_mk)
+def test_13_mktmpdir(futil, mocker, rmkdir, expected):
+    """Test13 FileUtil.mktmpdir()."""
+    mock_mkdir = mocker.patch.object(FileUtil, 'mkdir', return_value=rmkdir)
+    mock_mktmp = mocker.patch.object(FileUtil, 'mktmp', return_value='somedir')
+    resout = futil.mktmpdir()
+    assert resout == expected
+    mock_mkdir.assert_called()
+    mock_mktmp.assert_called()
 
-# @patch('udocker.utils.fileutil.os.lstat')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_09_uid(self, mock_regpre, mock_base, mock_absp, mock_stat):
-#     """Test09 FileUtil.uid()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_stat.return_value.st_uid = 1234
-#     Config().conf['tmpdir'] = "/tmp"
-#     futil = FileUtil("filename.txt")
-#     uid = futil.uid()
-#     self.assertEqual(uid, 1234)
 
-#     mock_stat.side_effect = OSError("fail")
-#     Config().conf['tmpdir'] = "/tmp"
-#     futil = FileUtil("filename.txt")
-#     uid = futil.uid()
-#     self.assertEqual(uid, -1)
+def test_14_uid(futil, mocker):
+    """Test14 FileUtil.uid()."""
+    mock_lstat = mocker.patch('os.lstat')
+    mock_lstat.return_value.st_uid = 1234
+    resout = futil.uid()
+    assert resout == 1234
+    mock_lstat.assert_called()
+
+
+def test_15_uid(futil, mocker):
+    """Test15 FileUtil.uid()."""
+    mock_lstat = mocker.patch('os.lstat', side_effect=OSError('fail'))
+    resout = futil.uid()
+    assert resout == -1
+
 
 # @patch('udocker.utils.fileutil.os.path.isdir')
 # @patch('udocker.utils.fileutil.os.path.realpath')
