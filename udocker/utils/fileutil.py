@@ -184,6 +184,7 @@ class FileUtil:
                     for f_name in dirs:
                         self._chmod(dir_path + '/' + f_name, None, dirmode, mask)
 
+            # TODO: should be an else here, but needs test and confirmation
             self._chmod(self.filename, filemode, dirmode, mask)
         except OSError:
             return False

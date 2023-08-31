@@ -255,86 +255,64 @@ def test_20_rchown(futil, mocker):
     mock_fuchown.assert_called()
 
 
-# @patch('udocker.utils.fileutil.stat')
-# @patch('udocker.utils.fileutil.os.chmod')
-# @patch('udocker.utils.fileutil.os.lstat')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_13__chmod(self, mock_regpre, mock_base, mock_absp, mock_lstat, mock_chmod, mock_stat):
-#     """Test13 FileUtil._chmod()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
+# def test_21__chmod(futil, mocker):
+#     """Test21 FileUtil._chmod()."""
+#     mock_lstat = mocker.patch('os.lstat')
+#     mock_stat = mocker.patch('stat')
+#     mock_chmod = mocker.patch('os.chmod')
 #     mock_lstat.return_value.st_mode = 33277
-#     mock_chmod.return_value = None
 #     mock_stat.return_value.S_ISREG = True
+#     mock_stat.return_value.S_ISDIR = False
+#     mock_stat.return_value.S_ISLNK = False
 #     mock_stat.return_value.S_IMODE = 509
-#     futil = FileUtil("somedir")
 #     futil._chmod("somefile")
-#     self.assertTrue(mock_lstat.called)
-#     self.assertTrue(mock_stat.S_ISREG.called)
-#     self.assertTrue(mock_stat.S_IMODE.called)
+#     mock_lstat.assert_called()
+#     mock_stat.S_ISREG.assert_called()
+#     mock_stat.S_IMODE.assert_called()
 
-#     mock_lstat.return_value.st_mode = 33277
-#     mock_chmod.return_value = None
-#     mock_stat.return_value.S_ISREG = False
-#     mock_stat.return_value.S_ISDIR = True
-#     mock_stat.return_value.S_IMODE = 509
-#     futil = FileUtil("somedir")
-#     futil._chmod("somefile")
-#     self.assertTrue(mock_chmod.called)
-#     self.assertTrue(mock_stat.S_IMODE.called)
 
-# @patch.object(FileUtil, '_chmod')
-# @patch('udocker.utils.fileutil.os.walk')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test14_chmod(self, mock_regpre, mock_base, mock_absp, mock_walk, mock_fuchmod):
-#     """Test14 FileUtil.chmod()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_walk.return_value = [("/tmp", ["dir"], ["file"]), ]
-#     mock_fuchmod.return_value = None
-#     futil = FileUtil("somedir")
-#     FileUtil.safe_prefixes = ["/tmp"]
-#     status = futil.chmod(0o600, 0o700, 0o755, False)
-#     self.assertTrue(status)
-#     self.assertTrue(mock_fuchmod.called)
-#     self.assertFalse(mock_walk.called)
+def test_22__chmod(futil, mocker):
+    """Test22 FileUtil._chmod()."""
+    mock_lstat = mocker.patch('os.lstat', side_effect=OSError('fail'))
+    futil._chmod("somefile")
+    mock_lstat.assert_called()
 
-#     mock_walk.return_value = [("/tmp", ["dir"], ["file"]), ]
-#     mock_fuchmod.side_effect = [None, None, None, None]
-#     futil = FileUtil("somedir")
-#     FileUtil.safe_prefixes = ["/tmp"]
-#     status = futil.chmod(0o600, 0o700, 0o755, True)
-#     self.assertTrue(status)
-#     self.assertTrue(mock_fuchmod.called)
-#     self.assertTrue(mock_walk.called)
 
-#     mock_walk.return_value = [("/tmp", ["dir"], ["file"]), ]
-#     mock_fuchmod.side_effect = OSError("fail")
-#     futil = FileUtil("somedir")
-#     FileUtil.safe_prefixes = ["/tmp"]
-#     status = futil.chmod(0o600, 0o700, 0o755, False)
-#     self.assertFalse(status)
+def test23_chmod(futil, mocker):
+    """Test23 FileUtil.chmod()."""
+    mock_walk = mocker.patch('os.walk', return_value=[("/tmp", ["dir"], ["file"]), ])
+    mock_fuchmod = mocker.patch.object(FileUtil, '_chmod', side_effect=[None, None, None, None])
+    futil.safe_prefixes = ["/tmp"]
+    resout = futil.chmod(0o600, 0o700, 0o755, True)
+    assert resout
+    mock_fuchmod.assert_called()
+    mock_walk.assert_called()
 
-# @patch.object(FileUtil, 'chmod')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_15_rchmod(self, mock_regpre, mock_base, mock_absp, mock_fuchmod):
-#     """Test15 FileUtil.rchmod()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_fuchmod.return_value = True
-#     futil = FileUtil("somedir")
-#     FileUtil.safe_prefixes = ["/tmp"]
-#     futil.rchmod()
-#     self.assertTrue(mock_fuchmod.called)
+
+def test24_chmod(futil, mocker):
+    """Test24 FileUtil.chmod()."""
+    mock_walk = mocker.patch('os.walk', return_value=[("/tmp", ["dir"], ["file"]), ])
+    mock_fuchmod = mocker.patch.object(FileUtil, '_chmod', return_value=None)
+    futil.safe_prefixes = ["/tmp"]
+    resout = futil.chmod(0o600, 0o700, 0o755, False)
+    assert resout
+    mock_fuchmod.assert_called()
+    mock_walk.assert_not_called()
+
+
+def test25_chmod(futil, mocker):
+    """Test25 FileUtil.chmod()."""
+    mock_fuchmod = mocker.patch.object(FileUtil, '_chmod', side_effect=OSError('fail'))
+    resout = futil.chmod()
+    assert not resout
+
+
+def test26_rchmod(futil, mocker):
+    """Test26 FileUtil.rchmod()."""
+    mock_fuchmod = mocker.patch.object(FileUtil, 'chmod', return_value=True)
+    futil.rchmod()
+    mock_fuchmod.assert_called()
+
 
 # @patch('udocker.utils.fileutil.os.rmdir')
 # @patch('udocker.utils.fileutil.os.unlink')
