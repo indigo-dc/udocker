@@ -314,6 +314,28 @@ def test26_rchmod(futil, mocker):
     mock_fuchmod.assert_called()
 
 
+def test_27__removedir(futil, mocker):
+    """Test27 FileUtil._removedir()."""
+    mock_walk = mocker.patch('os.walk', return_value=[("/tmp", ["dir"], ["file"]), ])
+    mock_islink = mocker.patch('os.path.islink', side_effect=[False, True, True, True])
+    mock_chmod = mocker.patch('os.chmod', side_effect=[None, None, None, None])
+    mock_unlink = mocker.patch('os.unlink', side_effect=[None, None, None, None])
+    mock_rmdir = mocker.patch('os.rmdir', side_effect=[None, None, None, None])
+    resout = futil._removedir()
+    assert resout
+    mock_walk.assert_called()
+    mock_islink.assert_called()
+    mock_chmod.assert_called()
+    mock_rmdir.assert_called()
+
+
+def test_28__removedir(futil, mocker):
+    """Test28 FileUtil._removedir()."""
+    mock_walk = mocker.patch('os.walk', side_effect=OSError('fail'))
+    resout = futil._removedir()
+    assert not resout
+
+
 # @patch('udocker.utils.fileutil.os.rmdir')
 # @patch('udocker.utils.fileutil.os.unlink')
 # @patch('udocker.utils.fileutil.os.chmod')
