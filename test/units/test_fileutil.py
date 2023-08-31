@@ -336,141 +336,53 @@ def test_28__removedir(futil, mocker):
     assert not resout
 
 
-# @patch('udocker.utils.fileutil.os.rmdir')
-# @patch('udocker.utils.fileutil.os.unlink')
-# @patch('udocker.utils.fileutil.os.chmod')
-# @patch('udocker.utils.fileutil.os.walk')
-# @patch('udocker.utils.fileutil.os.path.islink')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_16__removedir(self, mock_regpre, mock_base, mock_absp, mock_islink, mock_walk,
-#                         mock_chmod, mock_unlink, mock_rmdir):
-#     """Test16 FileUtil._removedir()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_walk.return_value = [("/tmp", ["dir"], ["file"]), ]
-#     mock_islink.side_effect = [False, True, True, True]
-#     mock_chmod.side_effect = [None, None, None, None]
-#     mock_unlink.side_effect = [None, None, None, None]
-#     mock_rmdir.side_effect = [None, None, None, None]
-#     # remove directory under /tmp OK
-#     futil = FileUtil("/tmp/directory")
-#     status = futil._removedir()
-#     self.assertTrue(mock_walk.called)
-#     self.assertTrue(mock_islink.call_count, 2)
-#     self.assertTrue(mock_chmod.call_count, 3)
-#     self.assertTrue(status)
+#           force, recursive, mhinfo, muid, msafe, mfile, mdir,  mrmd,  fname, expected
+data_rm = ((False, False,     100,    100,  False, False, False, False, '/f4', False),
+           (False, False,     100,    101,  False, False, False, False, '/dir/f4', False),
+           (False, False,     100,    100,  False, True,  False, False, '/dir/f4', False),
+           (True,  False,     100,    100,  True,  True,  False, False, '/dir/f4', True),
+           (False, True,      100,    100,  True,  False, True,  True,  '/dir/f4', True),
+           (False, False,     100,    100,  True,  False, True,  True,  '/dir/f4', True),
+           (False, False,     100,    100,  True,  False, True,  False, '/dir/f4', False),
+           )
 
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_walk.return_value = list()
-#     mock_chmod.side_effect = OSError("fail")
-#     futil = FileUtil("/directory")
-#     status = futil._removedir()
-#     self.assertFalse(status)
 
-# @patch.object(FileUtil, '_removedir')
-# @patch('udocker.utils.fileutil.HostInfo')
-# @patch('udocker.utils.fileutil.os.path.realpath')
-# @patch('udocker.utils.fileutil.os.path.lexists')
-# @patch('udocker.utils.fileutil.os.remove')
-# @patch('udocker.utils.fileutil.os.path.islink')
-# @patch('udocker.utils.fileutil.os.path.isfile')
-# @patch('udocker.utils.fileutil.os.path.isdir')
-# @patch.object(FileUtil, 'uid')
-# @patch.object(FileUtil, '_is_safe_prefix')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_17_remove(self, mock_regpre, mock_base, mock_absp, mock_safe, mock_uid, mock_isdir,
-#                     mock_isfile, mock_islink, mock_remove, mock_exists, mock_realpath,
-#                     mock_hinfo, mock_furmdir):
-#     """Test17 FileUtil.remove()."""
+@pytest.mark.parametrize('force,recursive,mhinfo,muid,msafe,mfile,mdir,mrmd,fname,expected', data_rm)
+def test_29_remove(futil, mocker, force, recursive, mhinfo, muid, msafe, mfile, mdir, mrmd, fname,
+                   expected):
+    """Test29 FileUtil.remove()."""
+    mock_exists = mocker.patch('os.path.lexists', return_value=True)
+    mock_hinfo = mocker.patch('udocker.utils.fileutil.HostInfo')
+    mock_hinfo.uid = mhinfo
+    mock_uid = mocker.patch.object(FileUtil, 'uid', return_value=muid)
+    mock_safe = mocker.patch.object(FileUtil, '_is_safe_prefix', return_value=msafe)
+    mock_isfile = mocker.patch('os.path.isfile', return_value=mfile)
+    mock_islink = mocker.patch('os.path.islink', return_value=mfile)
+    mock_isdir = mocker.patch('os.path.isdir', return_value=mdir)
+    mock_remove = mocker.patch('os.remove')
+    mock_furmdir = mocker.patch.object(FileUtil, '_removedir', return_value=mrmd)
+    mock_furmd = mocker.patch.object(FileUtil, 'rmdir', return_value=mrmd)
+    futil.filename = fname
+    futil.tmptrash = {}
+    resout = futil.remove(force, recursive)
+    assert resout == expected
 
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename4.txt'
-#     mock_absp.return_value = '/filename4.txt'
 
-#     mock_exists.return_value = True
-#     futil = FileUtil("filename4.txt")
-#     status = futil.remove()
-#     self.assertFalse(status)
+def test_30_remove(futil, mocker):
+    """Test30 FileUtil.remove()."""
+    mock_exists = mocker.patch('os.path.lexists', return_value=True)
+    mock_hinfo = mocker.patch('udocker.utils.fileutil.HostInfo')
+    mock_hinfo.uid = 100
+    mock_uid = mocker.patch.object(FileUtil, 'uid', return_value=100)
+    mock_safe = mocker.patch.object(FileUtil, '_is_safe_prefix', return_value=False)
+    mock_isfile = mocker.patch('os.path.isfile', return_value=True)
+    mock_islink = mocker.patch('os.path.islink', return_value=True)
+    mock_remove = mocker.patch('os.remove', side_effect=OSError('fail'))
+    futil.filename = '/dir/f4'
+    resout = futil.remove()
+    assert not resout
 
-#     mock_base.return_value = 'filename4.txt'
-#     mock_absp.return_value = '/tmp/somedir/filename4.txt'
-#     mock_exists.return_value = True
-#     mock_hinfo.return_value.uid = 1001
-#     mock_uid.return_value = 1000
-#     futil = FileUtil("/tmp/somedir/filename4.txt")
-#     status = futil.remove()
-#     self.assertFalse(status)
 
-#     mock_base.return_value = 'filename4.txt'
-#     mock_absp.return_value = '/tmp/somedir/filename4.txt'
-#     mock_exists.return_value = True
-#     mock_hinfo.uid = 1001
-#     mock_uid.return_value = 1001
-#     mock_safe.return_value = False
-#     futil = FileUtil("/tmp/somedir/filename4.txt")
-#     status = futil.remove(False)
-#     self.assertFalse(status)
-
-#     mock_base.return_value = 'filename4.txt'
-#     mock_absp.return_value = '/tmp/somedir/filename4.txt'
-#     mock_exists.return_value = True
-#     mock_hinfo.uid = 1001
-#     mock_uid.return_value = 1001
-#     mock_safe.return_value = True
-#     mock_isfile.return_value = True
-#     mock_remove.return_value = None
-#     futil = FileUtil("/tmp/somedir/filename4.txt")
-#     status = futil.remove(True)
-#     self.assertTrue(status)
-
-#     mock_base.return_value = 'filename4.txt'
-#     mock_absp.return_value = '/tmp/somedir/filename4.txt'
-#     mock_exists.return_value = True
-#     mock_hinfo.uid = 1001
-#     mock_uid.return_value = 1001
-#     mock_safe.return_value = True
-#     mock_isfile.return_value = True
-#     mock_remove.side_effect = OSError("fail")
-#     futil = FileUtil("/tmp/somedir/filename4.txt")
-#     status = futil.remove(True)
-#     self.assertFalse(status)
-
-#     mock_base.return_value = 'filename4.txt'
-#     mock_absp.return_value = '/tmp/somedir/filename4.txt'
-#     mock_exists.return_value = True
-#     mock_hinfo.uid = 1001
-#     mock_uid.return_value = 1001
-#     mock_safe.return_value = True
-#     mock_isfile.return_value = False
-#     mock_islink.return_value = False
-#     mock_isdir.return_value = True
-#     mock_remove.return_value = None
-#     mock_furmdir.return_value = True
-#     futil = FileUtil("/tmp/somedir/filename4.txt")
-#     status = futil.remove(True, True)
-#     self.assertTrue(status)
-
-#     mock_base.return_value = 'filename4.txt'
-#     mock_absp.return_value = '/tmp/somedir/filename4.txt'
-#     mock_exists.return_value = True
-#     mock_hinfo.uid = 1001
-#     mock_uid.return_value = 1001
-#     mock_safe.return_value = True
-#     mock_isfile.return_value = False
-#     mock_islink.return_value = False
-#     mock_isdir.return_value = True
-#     mock_remove.return_value = None
-#     mock_furmdir.return_value = False
-#     futil = FileUtil("/tmp/somedir/filename4.txt")
-#     status = futil.remove(True, True)
-#     self.assertFalse(status)
 
 # @patch('udocker.utils.fileutil.Uprocess.call')
 # @patch('udocker.utils.fileutil.os.path.isfile')
