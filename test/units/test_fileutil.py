@@ -383,96 +383,72 @@ def test_30_remove(futil, mocker):
     assert not resout
 
 
+data_tarver = ((True, False, True), (True, True, False), (False, False, False))
 
-# @patch('udocker.utils.fileutil.Uprocess.call')
-# @patch('udocker.utils.fileutil.os.path.isfile')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_18_verify_tar(self, mock_regpre, mock_base, mock_absp, mock_isfile, mock_call):
-#     """Test18 FileUtil.verify_tar()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_isfile.return_value = False
-#     mock_call.return_value = 0
-#     status = FileUtil("tarball.tar").verify_tar()
-#     self.assertFalse(status)
 
-#     mock_isfile.return_value = True
-#     mock_call.return_value = 0
-#     status = FileUtil("tarball.tar").verify_tar()
-#     self.assertTrue(status)
+@pytest.mark.parametrize('misfile,boolcal,expected', data_tarver)
+def test_31_verify_tar(futil, mocker, misfile, boolcal, expected):
+    """Test31 FileUtil.verify_tar()."""
+    mock_isfile = mocker.patch('os.path.isfile', return_value=misfile)
+    mock_stderr = mocker.patch('udocker.utils.fileutil.Uprocess.get_stderr', return_value='stder')
+    mock_call = mocker.patch('udocker.utils.fileutil.Uprocess.call', return_value=boolcal)
+    resout = futil.verify_tar()
+    assert resout == expected
+    mock_isfile.assert_called()
 
-#     mock_isfile.return_value = True
-#     mock_call.return_value = 1
-#     status = FileUtil("tarball.tar").verify_tar()
-#     self.assertFalse(status)
 
-# @patch('udocker.utils.fileutil.Uprocess.call')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_19_tar(self, mock_regpre, mock_base, mock_absp, mock_call):
-#     """Test19 FileUtil.tar()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_call.return_value = 1
-#     status = FileUtil("tarball.tar").tar("tarball.tar")
-#     self.assertFalse(status)
+data_tar = ((False, True), (True, False))
 
-#     mock_call.return_value = 0
-#     status = FileUtil("tarball.tar").tar("tarball.tar")
-#     self.assertTrue(status)
 
-# @patch('udocker.utils.fileutil.Uprocess.pipe')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_20_copydir(self, mock_regpre, mock_base, mock_absp, mock_call):
-#     """Test20 FileUtil.copydir()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_call.return_value = 1
-#     status = FileUtil("filename.txt").copydir("/dir1")
-#     self.assertEqual(status, 1)
+@pytest.mark.parametrize('boolcal,expected', data_tar)
+def test_32_tar(futil, mocker, boolcal, expected):
+    """Test32 FileUtil.tar()."""
+    mock_stderr = mocker.patch('udocker.utils.fileutil.Uprocess.get_stderr', return_value='stder')
+    mock_call = mocker.patch('udocker.utils.fileutil.Uprocess.call', return_value=boolcal)
+    resout = futil.tar('t.tar')
+    assert resout == expected
+    mock_stderr.assert_called()
+    mock_call.assert_called()
 
-#     mock_call.return_value = 0
-#     status = FileUtil("filename.txt").copydir("/dir1")
-#     self.assertEqual(status, 0)
 
-# @patch.object(FileUtil, 'remove')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_21_cleanup(self, mock_regpre, mock_base, mock_absp, mock_remove):
-#     """Test21 FileUtil.cleanup()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     Config().conf['tmpdir'] = "/tmp"
-#     FileUtil.tmptrash = {'file1.txt': None, 'file2.txt': None}
-#     FileUtil("").cleanup()
-#     self.assertEqual(mock_remove.call_count, 2)
+data_cpdir = ((True, True), (False, False))
 
-# @patch('udocker.utils.fileutil.os.path.isdir')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_22_isdir(self, mock_regpre, mock_base, mock_absp, mock_isdir):
-#     """Test22 FileUtil.isdir()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_isdir.return_value = True
-#     status = FileUtil("filename.txt").isdir()
-#     self.assertTrue(status)
 
-#     mock_isdir.return_value = False
-#     status = FileUtil("filename.txt").isdir()
-#     self.assertFalse(status)
+@pytest.mark.parametrize('mpipe,expected', data_cpdir)
+def test_33_copydir(futil, mocker, mpipe, expected):
+    """Test33 FileUtil.copydir()."""
+    mock_pipe = mocker.patch('udocker.utils.fileutil.Uprocess.pipe', return_value=mpipe)
+    resout = futil.copydir('/dir')
+    assert resout == expected
+    mock_pipe.assert_called()
+
+
+def test_34_cleanup(futil, mocker):
+    """Test34 FileUtil.cleanup()."""
+    mock_remove = mocker.patch.object(FileUtil, 'remove')
+    futil.tmptrash = {'file1.txt': None, 'file2.txt': None}
+    futil.cleanup()
+    mock_remove.assert_called()
+
+
+@pytest.mark.parametrize('misdir,expected', data_cpdir)
+def test_35_isdir(futil, mocker, misdir, expected):
+    """Test35 FileUtil.isdir()."""
+    mock_isdir = mocker.patch('os.path.isdir', return_value=misdir)
+    resout = futil.isdir()
+    assert resout == expected
+    mock_isdir.assert_called()
+
+
+@pytest.mark.parametrize('misfile,expected', data_cpdir)
+def test_36_isfile(futil, mocker, misfile, expected):
+    """Test36 FileUtil.isfile()."""
+    mock_isfile = mocker.patch('os.path.isfile', return_value=misfile)
+    resout = futil.isfile()
+    assert resout == expected
+    mock_isfile.assert_called()
+
+
 
 # @patch('udocker.utils.fileutil.os.stat')
 # @patch('udocker.utils.fileutil.os.path.abspath')
