@@ -336,8 +336,8 @@ def test_28__removedir(futil, mocker):
     assert not resout
 
 
-#           force, recursive, mhinfo, muid, msafe, mfile, mdir,  mrmd,  fname, expected
-data_rm = ((False, False,     100,    100,  False, False, False, False, '/f4', False),
+#           force, recursive, mhinfo, muid, msafe, mfile, mdir,  mrmd,  fname,     expected
+data_rm = ((False, False,     100,    100,  False, False, False, False, '/f4',     False),
            (False, False,     100,    101,  False, False, False, False, '/dir/f4', False),
            (False, False,     100,    100,  False, True,  False, False, '/dir/f4', False),
            (True,  False,     100,    100,  True,  True,  False, False, '/dir/f4', True),
@@ -449,95 +449,91 @@ def test_36_isfile(futil, mocker, misfile, expected):
     mock_isfile.assert_called()
 
 
+def test_37_size(futil, mocker):
+    """Test37 FileUtil.size()."""
+    mock_stat = mocker.patch('os.stat')
+    mock_stat.return_value.st_size = 4321
+    size = futil.size()
+    assert size == 4321
+    mock_stat.assert_called()
 
-# @patch('udocker.utils.fileutil.os.stat')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_23_size(self, mock_regpre, mock_base, mock_absp, mock_stat):
-#     """Test23 FileUtil.size()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_stat.return_value.st_size = 4321
-#     size = FileUtil("somefile").size()
-#     self.assertEqual(size, 4321)
 
-#     mock_stat.side_effect = OSError("fail")
-#     size = FileUtil("somefile").size()
-#     self.assertEqual(size, -1)
+def test_38_size(futil, mocker):
+    """Test38 FileUtil.size()."""
+    mock_stat = mocker.patch('os.stat', side_effect = OSError('fail'))
+    size = futil.size()
+    assert size == -1
 
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_24_getdata(self, mock_regpre, mock_base, mock_absp):
-#     """Test24 FileUtil.getdata()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     with patch(BUILTINS + '.open', mock_open(read_data='qwerty')):
-#         data = FileUtil("somefile").getdata()
-#         self.assertEqual(data, 'qwerty')
 
-#     # mock_open.side_effect = OSError("fail")
-#     # status = FileUtil("somefile").getdata()
-#     # self.assertEqual(status, b'')
+def test_39_getdata(futil, mocker):
+    """Test39 FileUtil.getdata()."""
+    mock_file = mocker.mock_open(read_data='qwerty')
+    mocker.patch("builtins.open", mock_file)
+    resout = futil.getdata()
+    assert resout == 'qwerty'
+    mock_file.assert_called()
 
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_25_get1stline(self, mock_regpre, mock_base, mock_absp):
-#     """Test25 FileUtil.get1stline()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     with patch(BUILTINS + '.open', mock_open(read_data='qwerty')):
-#         data = FileUtil("somefile").get1stline()
-#         self.assertEqual(data, 'qwerty')
 
-#     # mock_open.side_effect = OSError("fail")
-#     # status = FileUtil("somefile").get1stline()
-#     # self.assertEqual(status, b'')
+def test_40_getdata(futil, mocker):
+    """Test40 FileUtil.getdata()."""
+    mock_file = mocker.mock_open()
+    mock_file.side_effect = OSError     
+    resout = futil.getdata()
+    assert resout == ''
 
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_26_putdata(self, mock_regpre, mock_base, mock_absp):
-#     """Test26 FileUtil.putdata()"""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     with patch(BUILTINS + '.open', mock_open()):
-#         data = FileUtil("somefile").putdata("qwerty")
-#         self.assertEqual(data, 'qwerty')
 
-#     mock_open.side_effect = OSError("fail")
-#     status = FileUtil("somefile").putdata("qwerty")
-#     self.assertEqual(status, "")
+def test_41_get1stline(futil, mocker):
+    """Test41 FileUtil.get1stline()."""
+    mock_file = mocker.mock_open(read_data='qwerty')
+    mocker.patch("builtins.open", mock_file)
+    resout = futil.get1stline()
+    assert resout == 'qwerty'
+    mock_file.assert_called()
 
-# @patch('udocker.utils.fileutil.os.path.split')
-# @patch('udocker.utils.fileutil.os.path.exists')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_27_getvalid_path(self, mock_regpre, mock_base, mock_absp, mock_exists, mock_split):
-#     """Test27 FileUtil.getvalid_path()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = "somefile"
-#     mock_absp.return_value = "somefile"
-#     mock_exists.return_value = True
-#     futil = FileUtil("somefile")
-#     status = futil.getvalid_path()
-#     self.assertEqual(status, "somefile")
 
-#     mock_regpre.return_value = None
-#     mock_base.return_value = "somefile"
-#     mock_absp.return_value = "somefile"
-#     mock_exists.side_effect = [False, True]
-#     mock_split.return_value = ("somefile", "/dir")
-#     futil = FileUtil("somefile")
-#     status = futil.getvalid_path()
-#     self.assertEqual(status, "somefile")
+def test_42_get1stline(futil, mocker):
+    """Test42 FileUtil.get1stline()."""
+    mock_file = mocker.mock_open()
+    mock_file.side_effect = OSError     
+    resout = futil.get1stline()
+    assert resout == ''
+
+
+def test_43_putdata(futil, mocker):
+    """Test43 FileUtil.putdata()."""
+    mock_file = mocker.mock_open()
+    mocker.patch("builtins.open", mock_file)
+    resout = futil.putdata('qwerty')
+    assert resout == 'qwerty'
+    mock_file.assert_called()
+
+
+def test_44_putdata(futil, mocker):
+    """Test44 FileUtil.putdata()."""
+    mock_file = mocker.mock_open()
+    mock_file.side_effect = OSError
+    resout = futil.putdata('qwerty')
+    assert resout == ''
+
+
+def test_45_getvalid_path(futil, mocker):
+    """Test45 FileUtil.getvalid_path()."""
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    resout = futil.getvalid_path()
+    assert resout == '/dir/somefile'
+    mock_exists.assert_called()
+
+
+def test_46_getvalid_path(futil, mocker):
+    """Test46 FileUtil.getvalid_path()."""
+    mock_exists = mocker.patch('os.path.exists', side_effect=[False, True])
+    mock_split = mocker.patch('os.path.split', return_value=('somefile', '/dir'))
+    resout = futil.getvalid_path()
+    assert resout == 'somefile'
+    assert mock_exists.call_count == 2
+    mock_split.assert_called()
+
+
 
 # @patch('udocker.utils.fileutil.os.path.islink')
 # @patch('udocker.utils.fileutil.os.path.normpath')

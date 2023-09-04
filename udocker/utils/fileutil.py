@@ -356,7 +356,7 @@ class FileUtil:
 
     def get1stline(self, mode="rb"):
         """Read file 1st line to a buffer"""
-        #TODO: (mdavid) refactor this part
+        # TODO: (mdavid) refactor this part
         try:
             filep = open(self.filename, mode)
         except (OSError, TypeError):
