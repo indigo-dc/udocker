@@ -785,94 +785,72 @@ def test_68__link_restore(futil, mocker, mrlnk, orig_path, force, expected):
     mock_readlink.assert_called()
 
 
+def test_69_links_conv(futil, mocker):
+    """Test69 FileUtil.links_conv()."""
+    mock_is_safe_prefix = mocker.patch.object(FileUtil, '_is_safe_prefix', return_value=False)
+    mock_walk = mocker.patch('udocker.utils.fileutil.os.walk')
+    mock_realpath = mocker.patch('udocker.utils.fileutil.os.path.realpath', return_value='/ROOT')
+    futil.filename = '/ROOT'
+    resout = futil.links_conv()
+    assert resout == []
+    mock_realpath.assert_called()
+    mock_is_safe_prefix.assert_called()
+    mock_walk.assert_not_called()
 
 
-# @patch.object(FileUtil, '_link_restore')
-# @patch.object(FileUtil, '_link_set')
-# @patch.object(FileUtil, '_is_safe_prefix')
-# @patch('udocker.utils.fileutil.os.lstat')
-# @patch('udocker.utils.fileutil.os.path.islink')
-# @patch('udocker.utils.fileutil.os.walk')
-# @patch('udocker.utils.fileutil.os.path.realpath')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_41_links_conv(self, mock_regpre, mock_base, mock_absp, mock_realpath, mock_walk,
-#                         mock_islink, mock_lstat, mock_is_safe_prefix, mock_link_set,
-#                         mock_link_restore):
-#     """Test41 FileUtil.links_conv()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_realpath.return_value = "/ROOT"
-#     mock_is_safe_prefix.return_value = False
-#     futil = FileUtil("/ROOT")
-#     status = futil.links_conv(False, True, "")
-#     self.assertEqual(status, None)
+def test_70_links_conv(futil, mocker):
+    """Test70 FileUtil.links_conv()."""
+    mock_link_restore = mocker.patch.object(FileUtil, '_link_restore', side_effect=[False, False])
+    mock_link_set = mocker.patch.object(FileUtil, '_link_set', side_effect=[False, True])
+    mock_is_safe_prefix = mocker.patch.object(FileUtil, '_is_safe_prefix', return_value=True)
+    mock_lstat = mocker.patch('os.lstat')
+    mock_lstat.return_value.st_uid = 1234
+    mock_hinfo = mocker.patch('udocker.utils.fileutil.HostInfo')
+    mock_hinfo.uid = 1234
+    mock_islink = mocker.patch('udocker.utils.fileutil.os.path.islink', side_effect=[False, True])
+    mock_walk = mocker.patch('udocker.utils.fileutil.os.walk',
+                             return_value=[('/ROOT', [], ["F1", "L2"]), ])
+    mock_realpath = mocker.patch('udocker.utils.fileutil.os.path.realpath', return_value='/ROOT')
+    futil.filename = '/ROOT'
+    resout = futil.links_conv()
+    assert resout == []
+    mock_realpath.assert_called()
+    mock_is_safe_prefix.assert_called()
+    mock_walk.assert_called()
+    mock_link_restore.assert_not_called()
+    mock_link_set.assert_called()
+    mock_islink.assert_called()
 
-#     mock_realpath.return_value = "/ROOT"
-#     mock_is_safe_prefix.return_value = True
-#     mock_walk.return_value = []
-#     mock_islink.return_value = True
-#     futil = FileUtil("/ROOT")
-#     status = futil.links_conv(False, True, "")
-#     self.assertEqual(status, [])
 
-#     mock_realpath.return_value = "/ROOT"
-#     mock_is_safe_prefix.return_value = True
-#     mock_walk.return_value = [("/", [], []), ]
-#     futil = FileUtil("/ROOT")
-#     status = futil.links_conv(False, True, "")
-#     self.assertEqual(status, [])
+def test_71_match(futil, mocker):
+    """Test71 FileUtil.match()."""
+    mock_isdir = mocker.patch('udocker.utils.fileutil.os.path.isdir', return_value=False)
+    mock_lsdir = mocker.patch('udocker.utils.fileutil.os.listdir', return_value=[])
+    mock_dname = mocker.patch('udocker.utils.fileutil.os.path.dirname', return_value='/con/fil*')
+    mock_base = mocker.patch('udocker.utils.fileutil.os.path.basename', return_value='/con/filet')
+    futil.filename = '/con/filename.txt'
+    resout = futil.match()
+    assert resout == []
+    mock_isdir.assert_called()
+    mock_lsdir.assert_not_called()
+    mock_dname.assert_called()
+    mock_base.assert_called()
 
-#     mock_realpath.return_value = "/ROOT"
-#     mock_is_safe_prefix.return_value = True
-#     mock_islink = False
-#     mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
-#     futil = FileUtil("/ROOT")
-#     status = futil.links_conv(False, True, "")
-#     self.assertEqual(status, [])
 
-#     mock_realpath.return_value = "/ROOT"
-#     mock_is_safe_prefix.return_value = True
-#     mock_islink = True
-#     mock_lstat.return_value.st_uid = 1
-#     Config().conf['uid'] = 0
-#     mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
-#     futil = FileUtil("/ROOT")
-#     status = futil.links_conv(False, True, "")
-#     self.assertEqual(status, [])
+def test_72_match(futil, mocker):
+    """Test72 FileUtil.match()."""
+    mock_isdir = mocker.patch('udocker.utils.fileutil.os.path.isdir', return_value=True)
+    mock_lsdir = mocker.patch('udocker.utils.fileutil.os.listdir', return_value=['file1', 'file2'])
+    mock_dname = mocker.patch('udocker.utils.fileutil.os.path.dirname', return_value='/con')
+    mock_base = mocker.patch('udocker.utils.fileutil.os.path.basename', return_value='fil*')
+    futil.filename = '/con/fil*'
+    resout = futil.match()
+    assert resout == ['/con/file1', '/con/file2']
+    mock_isdir.assert_called()
+    mock_lsdir.assert_called()
+    mock_dname.assert_called()
+    mock_base.assert_called()
 
-#     mock_realpath.return_value = "/ROOT"
-#     mock_is_safe_prefix.return_value = True
-#     mock_islink = True
-#     mock_lstat.return_value.st_uid = 1
-#     mock_link_set.reset_mock()
-#     mock_link_restore.reset_mock()
-#     Config().conf['uid'] = 1
-#     mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
-#     futil = FileUtil("/ROOT")
-#     status = futil.links_conv(False, True, "")
-#     self.assertFalse(mock_link_restore.called)
-
-#     mock_realpath.return_value = "/ROOT"
-#     mock_is_safe_prefix.return_value = True
-#     mock_islink = True
-#     mock_lstat.return_value.st_uid = 1
-#     mock_link_set.reset_mock()
-#     mock_link_restore.reset_mock()
-#     Config().conf['uid'] = 1
-#     mock_walk.return_value = [("/", [], ["F1", "F2"]), ]
-#     futil = FileUtil("/ROOT")
-#     status = futil.links_conv(False, False, "")
-#     self.assertFalse(mock_link_set.called)
-
-# @patch('udocker.utils.fileutil.os.path.isdir')
-# @patch('udocker.utils.fileutil.os.listdir')
-# @patch('udocker.utils.fileutil.os.path.dirname')
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
 # def test_42_match(self, mock_regpre, mock_base, mock_absp, mock_dname, mock_lsdir, mock_isdir):
 #     """Test42 FileUtil.match()."""
 #     mock_regpre.return_value = None

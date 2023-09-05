@@ -645,7 +645,7 @@ class FileUtil:
         links = []
         if not self._is_safe_prefix(root_path):
             LOG.error("links convertion outside of dir tree: %s", root_path)
-            return None
+            return links     # DONE: return target, changed by mdavid
 
         for dir_path, dirs, files in os.walk(root_path):
             for f_name in files + dirs:
