@@ -749,88 +749,43 @@ def test_67__link_change_apply(futil, mocker):
     mock_symlink.assert_called()
 
 
-# @patch('udocker.utils.fileutil.os.readlink')
-# @patch.object(FileUtil, '_link_change_apply', return_value=None)
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_39__link_set(self, mock_regpre, mock_base, mock_absp, mock_lnchange, mock_readlink):
-#     """Test39 FileUtil._link_set()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_readlink.return_value = "X"
-#     futil = FileUtil("/con")
-#     status = futil._link_set("/con/lnk", "", "/con", False)
-#     self.assertFalse(status)
+data_lnkset = (('X', False, False),
+               ('/con', False, False),
+               ('/HOST/DIR', False, True),
+               ('/HOST/DIR', True, True))
 
-#     mock_readlink.return_value = "/con"
-#     futil = FileUtil("/con")
-#     status = futil._link_set("/con/lnk", "", "/con", False)
-#     self.assertFalse(status)
 
-#     mock_readlink.return_value = "/HOST/DIR"
-#     futil = FileUtil("/con")
-#     status = futil._link_set("/con/lnk", "", "/con", False)
-#     self.assertTrue(mock_lnchange.called)
-#     self.assertTrue(status)
+@pytest.mark.parametrize('mrlnk,force,expected', data_lnkset)
+def test_68__link_set(futil, mocker, mrlnk, force, expected):
+    """Test68 FileUtil._link_set()."""
+    mock_readlink = mocker.patch('udocker.utils.fileutil.os.readlink', return_value=mrlnk)
+    mock_lnchange = mocker.patch.object(FileUtil, '_link_change_apply')
+    futil.filename = '/con'
+    resout = futil._link_set('/con/lnk', '', '/con', force)
+    assert resout == expected
+    mock_readlink.assert_called()
 
-#     mock_readlink.return_value = "/HOST/DIR"
-#     futil = FileUtil("/con")
-#     status = futil._link_set("/con/lnk", "", "/con", True)
-#     self.assertTrue(mock_lnchange.called)
-#     self.assertTrue(status)
 
-#     mock_readlink.return_value = "/HOST/DIR"
-#     futil = FileUtil("/con")
-#     status = futil._link_set("/con/lnk", "", "/con", True)
-#     self.assertTrue(mock_lnchange.called)
-#     self.assertTrue(status)
+data_lnkrest = (('/con/AAA', '/con', False, True),
+                ('/con/BBB', '/con', False, True),
+                ('/XXX', '/con', False, False),
+                ('/root/BBB', '/con', True, True),
+                ('BBB', '/con', True, False),
+                ('/dir/containers/ROOT', '', True, False))
 
-# @patch('udocker.utils.fileutil.os.readlink')
-# @patch.object(FileUtil, '_link_change_apply', return_value=None)
-# @patch('udocker.utils.fileutil.os.path.abspath')
-# @patch('udocker.utils.fileutil.os.path.basename')
-# @patch.object(FileUtil, '_register_prefix')
-# def test_40__link_restore(self, mock_regpre, mock_base, mock_absp, mock_lnchange, mock_rlink):
-#     """Test40 FileUtil._link_restore()."""
-#     mock_regpre.return_value = None
-#     mock_base.return_value = 'filename.txt'
-#     mock_absp.return_value = '/tmp/filename.txt'
-#     mock_rlink.return_value = "/con/AAA"
-#     futil = FileUtil("/con")
-#     status = futil._link_restore("/con/lnk", "/con", "/root", False)
-#     self.assertTrue(status)
 
-#     mock_rlink.return_value = "/con/AAA"
-#     futil = FileUtil("/con")
-#     status = futil._link_restore("/con/lnk", "/con", "/root", False)
-#     self.assertTrue(mock_lnchange.called)
-#     self.assertTrue(status)
+@pytest.mark.parametrize('mrlnk,orig_path,force,expected', data_lnkrest)
+def test_68__link_restore(futil, mocker, mrlnk, orig_path, force, expected):
+    """Test68 FileUtil._link_restore()."""
+    mock_readlink = mocker.patch('udocker.utils.fileutil.os.readlink', return_value=mrlnk)
+    mock_lnchange = mocker.patch.object(FileUtil, '_link_change_apply')
+    futil.filename = '/con'
+    resout = futil._link_restore('/con/lnk', orig_path, '/root', force)
+    assert resout == expected
+    mock_readlink.assert_called()
 
-#     mock_rlink.return_value = "/root/BBB"
-#     futil = FileUtil("/con")
-#     status = futil._link_restore("/con/lnk", "/con", "/root", False)
-#     self.assertTrue(mock_lnchange.called)
-#     self.assertTrue(status)
 
-#     mock_rlink.return_value = "/XXX"
-#     futil = FileUtil("/con")
-#     status = futil._link_restore("/con/lnk", "/con", "/root", False)
-#     self.assertTrue(mock_lnchange.called)
-#     self.assertFalse(status)
 
-#     mock_rlink.return_value = "/root/BBB"
-#     futil = FileUtil("/con")
-#     status = futil._link_restore("/con/lnk", "/con", "/root", True)
-#     self.assertTrue(mock_lnchange.called)
-#     self.assertTrue(status)
-
-#     mock_rlink.return_value = "/root/BBB"
-#     futil = FileUtil("/con")
-#     status = futil._link_restore("/con/lnk", "", "/root", True)
-#     self.assertTrue(mock_lnchange.called)
-#     self.assertTrue(status)
 
 # @patch.object(FileUtil, '_link_restore')
 # @patch.object(FileUtil, '_link_set')
