@@ -356,7 +356,7 @@ class FileUtil:
 
     def get1stline(self, mode="rb"):
         """Read file 1st line to a buffer"""
-        #TODO: (mdavid) refactor this part
+        # TODO: (mdavid) refactor this part
         try:
             filep = open(self.filename, mode)
         except (OSError, TypeError):
@@ -645,7 +645,7 @@ class FileUtil:
         links = []
         if not self._is_safe_prefix(root_path):
             LOG.error("links convertion outside of dir tree: %s", root_path)
-            return None
+            return links     # DONE: return target, changed by mdavid
 
         for dir_path, dirs, files in os.walk(root_path):
             for f_name in files + dirs:

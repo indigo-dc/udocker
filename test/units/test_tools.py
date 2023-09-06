@@ -3,7 +3,6 @@
 udocker unit tests: UdockerTools
 """
 import pytest
-from unittest.mock import patch
 import tarfile
 from tarfile import TarInfo
 from udocker.config import Config
@@ -37,7 +36,6 @@ def cnf():
 def test_01__instructions(mocker, utools):
     """Test01 UdockerTools()._instructions()."""
     mock_msg = mocker.patch('udocker.tools.MSG.info')
-
     utools._instructions()
     assert mock_msg.call_count == 2
 
