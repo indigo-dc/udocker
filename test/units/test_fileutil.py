@@ -309,6 +309,7 @@ def test25_chmod(futil, mocker):
     mock_fuchmod = mocker.patch.object(FileUtil, '_chmod', side_effect=OSError('fail'))
     resout = futil.chmod()
     assert not resout
+    mock_fuchmod.assert_called()
 
 
 def test26_rchmod(futil, mocker):

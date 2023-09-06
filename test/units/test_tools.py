@@ -4,7 +4,7 @@ udocker unit tests: UdockerTools
 """
 import pytest
 import tarfile
-from tarfile import TarInfo
+from tarfile import TarFile, TarInfo
 from udocker.config import Config
 from udocker.utils.curl import CurlHeader
 from udocker.tools import UdockerTools
@@ -59,7 +59,6 @@ def test_03__download(mocker, utools, get_url, fout, hdr_status, cnt_mktmp, cnt_
     mock_fumktmp = mocker.patch('udocker.tools.FileUtil.mktmp', return_value="/tmp/tmpf")
     get_url.return_value.get.return_value = (hdr, "content type...")
     mock_furm = mocker.patch('udocker.tools.FileUtil.remove')
-
     out = utools._download("https://down/file1", fout)
     assert out == expected
     assert mock_fumktmp.call_count == cnt_mktmp
@@ -67,128 +66,205 @@ def test_03__download(mocker, utools, get_url, fout, hdr_status, cnt_mktmp, cnt_
     assert mock_furm.call_count == cnt_rm
 
 
-data_getfile = (('', None, 0, False, 1, None, 0, False, 0, ''),
-                ('https://down/f1', 'f1', 1, False, 0, None, 0, True, 1, 'f1'),
-                ('/tmp/f1', '', 0, True, 1, 'f1', 1, True, 1, 'f1'))
+data_getfile = (('', None, 0, False, 1, None, 0, False, 0, 0, '', ''),
+                ('https://down/f1', 'f1', 1, False, 0, None, 0, True, 1, 0, '', 'f1'),
+                ('/tmp/f1', '', 0, True, 1, 'f1', 1, True, 1, 0, '', 'f1'),
+                ('/tmp/f1', '', 0, True, 1, 'f1', 1, True, 1, 1, 'someout', 'f1')
+                )
 
 
-PARAM = ("url,ret_downl,cnt_downl,ret_exists,cnt_exists,ret_rpath,"
-         "cnt_rpath,ret_isfile,cnt_isfile,expected")
-@pytest.mark.parametrize(PARAM, data_getfile)
-def test_08__get_file(mocker, utools, url, ret_downl, cnt_downl, ret_exists, cnt_exists,
-                      ret_rpath, cnt_rpath, ret_isfile, cnt_isfile, expected):
-    """Test08 UdockerTools()._get_file()."""
-    mock_downl = mocker.patch.object(UdockerTools, '_download', return_value=ret_downl)
-    mock_exists = mocker.patch('udocker.tools.os.path.exists', return_value=ret_exists)
-    mock_rpath = mocker.patch('udocker.tools.os.path.realpath', return_value=ret_rpath)
-    mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=ret_isfile)
-
-    out = utools._get_file(url)
+@pytest.mark.parametrize('url,mdownl,cdownl,mexists,cexists,mrpath,crpath,misfile,cisfile,cshucp,fout,expected', data_getfile)
+def test_04__get_file(mocker, utools, url, mdownl, cdownl, mexists, cexists, mrpath, crpath,
+                      misfile, cisfile, cshucp, fout, expected):
+    """Test04 UdockerTools()._get_file()."""
+    mock_downl = mocker.patch.object(UdockerTools, '_download', return_value=mdownl)
+    mock_exists = mocker.patch('udocker.tools.os.path.exists', return_value=mexists)
+    mock_rpath = mocker.patch('udocker.tools.os.path.realpath', return_value=mrpath)
+    mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=misfile)
+    mock_shucp = mocker.patch('udocker.tools.shutil.copy2')
+    out = utools._get_file(url, fout)
     assert out == expected
-    assert mock_downl.call_count == cnt_downl
-    assert mock_exists.call_count == cnt_exists
-    assert mock_rpath.call_count == cnt_rpath
-    assert mock_isfile.call_count == cnt_isfile
+    assert mock_downl.call_count == cdownl
+    assert mock_exists.call_count == cexists
+    assert mock_rpath.call_count == crpath
+    assert mock_isfile.call_count == cisfile
+    assert mock_shucp.call_count == cshucp
 
 
-# def test_13__clean_install(mocker, utools, lrepo):
-#     """Test13 UdockerTools()._clean_install()."""
-#     tfile = [TarInfo("udocker_dir/bin/ls"), TarInfo("udocker_dir/lib/lib1"),
-#              TarInfo("udocker_dir/doc/f.txt")]
+# def test_05__clean_install(mocker, utools, lrepo):
+#     """Test05 UdockerTools()._clean_install()."""
 #     lrepo.bindir.return_value = '/bin'
 #     lrepo.libdir.return_value = '/lib'
 #     lrepo.docdir.return_value = '/doc'
-#     mock_osbase = mocker.patch('os.path.basename',
-#                                side_effect=['udocker_dir', 'udocker_dir', 'udocker_dir'])
+#     # mock_osbase = mocker.patch('udocker.tools.os.path.basename',
+#     #                            side_effect=['udocker_dir', 'udocker_dir', 'udocker_dir'])
 #     mock_furegpref = mocker.patch('udocker.tools.FileUtil.register_prefix',
 #                                   side_effect=[None, None, None])
-#     mock_furm = mocker.patch('udocker.tools.FileUtil.remove',
-#                              side_effect=[None, None, None])
+#     mock_furm = mocker.patch('udocker.tools.FileUtil.remove', side_effect=[None, None, None])
+#     with tarfile.TarFile('', mode='w') as tfile:
+#         tfile.add('udocker_dir/bin/crun', arcname='crun')
+#         tfile.add('udocker_dir/lib/libfchroot.so', arcname='libfchroot.so')
+#         tfile.add('udocker_dir/doc/license.txt', arcname='license.txt')
 
 #     utools._clean_install(tfile)
-#     assert mock_osbase.call_count == 3
+#     # assert mock_osbase.call_count == 3
 #     lrepo.bindir.assert_called()
 #     lrepo.libdir.assert_called()
 #     lrepo.docdir.assert_called()
 #     assert mock_furegpref.call_count == 3
 #     assert mock_furm.call_count == 3
 
-    # with patch.object(tarfile, 'open', autospec=True) as open_mock:
-    #     open_mock.side_effect = tfile
-    #     utools._clean_install(open_mock)
-    #     assert mock_osbase.call_count == 3
-    #     lrepo.bindir.assert_called()
-    #     lrepo.libdir.assert_called()
-    #     lrepo.docdir.assert_called()
-    #     assert mock_furegpref.call_count == 3
-    #     assert mock_furm.call_count == 3
+
+#     # tfile = TarFile(name='sometar')
+#     # tfile.addfile(TarInfo("udocker_dir/bin/crun"))
+#     # tfile.addfile(TarInfo("udocker_dir/lib/libfchroot.so"))
+#     # tfile.addfile(TarInfo("udocker_dir/doc/license.txt"))
+
+#     tfile = [TarInfo("udocker_dir/bin/crun"), TarInfo("udocker_dir/lib/libfchroot.so"),
+#              TarInfo("udocker_dir/doc/license.txt")]
+
+#     # mock_tfile = mocker.patch('udocker.tools.tarfile.TarFile.getmembers', return_value=tfile)
+
+#     lrepo.bindir.return_value = '/bin'
+#     lrepo.libdir.return_value = '/lib'
+#     lrepo.docdir.return_value = '/doc'
+#     mock_osbase = mocker.patch('udocker.tools.os.path.basename',
+#                                side_effect=['udocker_dir', 'udocker_dir', 'udocker_dir'])
+#     mock_furegpref = mocker.patch('udocker.tools.FileUtil.register_prefix',
+#                                   side_effect=[None, None, None])
+#     mock_furm = mocker.patch('udocker.tools.FileUtil.remove', side_effect=[None, None, None])
 
 
-# def test_13__install(mocker, utools):
-#     """Test13 UdockerTools()._install(). tar does not exist"""
-#     tfile = "some.tar"
-#     mock_isfile = mocker.patch('os.path.isfile', return_value=False)
-#     mock_fuchmod = mocker.patch('udocker.tools.FileUtil.chmod')
-#     out = utools._install(tfile)
-#     assert not out
-#     mock_isfile.assert_called()
-#     mock_fuchmod.assert_not_called()
+#     # utools._clean_install(mock_tfile)
+#     # assert mock_osbase.call_count == 3
+#     # lrepo.bindir.assert_called()
+#     # lrepo.libdir.assert_called()
+#     # lrepo.docdir.assert_called()
+#     # assert mock_furegpref.call_count == 3
+#     # assert mock_furm.call_count == 3
+
+#     with mocker.patch.object(tarfile, 'open', autospec=True) as open_mock:
+#         open_mock.return_value.getmembers.return_value = tfile
+#         utools._clean_install(open_mock)
+#         assert mock_osbase.call_count == 3
+#         lrepo.bindir.assert_called()
+#         lrepo.libdir.assert_called()
+#         lrepo.docdir.assert_called()
+#         assert mock_furegpref.call_count == 3
+#         assert mock_furm.call_count == 3
 
 
-# def test_14__install(mocker, utools, lrepo):
-#     """Test14 UdockerTools()._install(). tar does not open"""
-#     tfile = "some.tar"
-#     mock_isfile = mocker.patch('os.path.isfile', return_value=True)
-#     mock_fuchmod = mocker.patch('udocker.tools.FileUtil.chmod')
-#     lrepo.return_value.create_repo.return_value = None
-#     mock_tarfile = mocker.mock_open()
-#     mopen = mocker.patch("tarfile.open", mock_tarfile)
-#     mopen.side_effect = tarfile.TarError
-#     out = utools._install(tfile)
-#     assert not out
-#     mock_isfile.assert_called()
-#     mock_fuchmod.assert_called()
-#     lrepo.create_repo.assert_called()
-
-
-# def test_15__install(mocker, utools, lrepo):
-#     """Test15 UdockerTools()._install(). tar exists and opens"""
-#     tfile = "some.tar"
-#     mock_isfile = mocker.patch('os.path.isfile', return_value=True)
-#     mock_fuchmod = mocker.patch('udocker.tools.FileUtil.chmod')
-#     lrepo.return_value.create_repo.return_value = None
-#     mock_tarfile = mocker.mock_open()
-#     mopen = mocker.patch("tarfile.open", mock_tarfile)
-
-#     out = utools._install(tfile)
-#     assert not out
-#     mock_isfile.assert_called()
-#     mock_fuchmod.assert_called()
-#     lrepo.create_repo.assert_called()
-
-
-def test_16__get_mirrors(mocker, utools):
-    """Test16 UdockerTools()._get_mirrors()."""
+def test_06__get_mirrors(mocker, utools):
+    """Test06 UdockerTools()._get_mirrors()."""
     mirrors = "https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz"
     out = utools._get_mirrors(mirrors)
     assert out == [mirrors]
 
-# @patch.object(UdockerTools, '_get_file')
-# @patch.object(UdockerTools, '_get_mirrors')
-# @patch('udocker.tools.json.load')
-# def test_12_get_installinfo(self, mock_jload, mock_mirr, mock_getf):
-#     """Test12 UdockerTools().get_installinfo()."""
-#     Config.conf['installinfo'] = "/home/info.json"
-#     res = {"tarversion": "1.2.7"}
-#     mock_jload.return_value = {"tarversion": "1.2.7"}
-#     mock_mirr.return_value = ["/home/info.json"]
-#     mock_getf.return_value = "info.json"
-#     subuid_line = StringIO('{"tarversion": "1.2.7"}')
-#     with patch(BOPEN) as mopen:
-#         mopen.return_value.__iter__ = (lambda self: iter(subuid_line.readline, ''))
-#         utools = UdockerTools(self.local)
-#         status = utools.get_installinfo()
-#         self.assertEqual(status, res)
+
+def test_07_get_metadata(mocker, utools):
+    """Test07 UdockerTools().get_metadata()."""
+    mirrors = ['https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz']
+    metajson = [
+            {
+                "uid": 1,
+                "module": "crun",
+                "tarball": "crun-x86_64.tgz",
+                "version": "1.6",
+                "arch": "x86_64",
+                "sha256sum": "4907b4005436686e453297f7e011ddb655c410429f711d787546f5ecceb03048",
+                "installdir": "bin/",
+                "fname": "crun-x86_64",
+                "docs_url": [
+                    "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/COPYING.crun",
+                    "https://github.com/LIP-Computing/udocker_tools/raw/main/docs/COPYING.crun"
+                ]
+            },
+        ]
+
+    mock_fjson = mocker.mock_open(read_data=str(metajson))
+    mocker.patch("builtins.open", mock_fjson)
+    mock_getmirr = mocker.patch.object(UdockerTools, '_get_mirrors', return_value=mirrors)
+    mock_isfile = mocker.patch('udocker.tools.os.path.isfile')
+    mock_jload = mocker.patch('udocker.tools.json.load', return_value=metajson)
+    mock_getfile = mocker.patch.object(UdockerTools, '_get_file', return_value=mock_fjson)
+    resout = utools.get_metadata(True)
+    assert resout == metajson
+    mock_getmirr.assert_called()
+    mock_jload.assert_called()
+    mock_getfile.assert_called()
+
+
+def test_08_get_metadata(mocker, utools):
+    """Test08 UdockerTools().get_metadata()."""
+    mirrors = ['https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz']
+    mock_fjson = mocker.mock_open()
+    mock_fjson.side_effect = OSError
+    mock_getmirr = mocker.patch.object(UdockerTools, '_get_mirrors', return_value=mirrors)
+    mock_isfile = mocker.patch('udocker.tools.os.path.isfile')
+    mock_getfile = mocker.patch.object(UdockerTools, '_get_file')
+    resout = utools.get_metadata(True)
+    assert resout == []
+    mock_getmirr.assert_called()
+    mock_getfile.assert_called()
+
+
+mod1 = {
+            "uid": 1,
+            "module": "crun",
+            "tarball": "crun-x86_64.tgz",
+            "version": "1.6",
+            "arch": "x86_64",
+            "kernel_ver": "",
+            "fname": "crun-x86_64",
+       }
+
+mod2 = {
+            "uid": 9,
+            "module": "proot",
+            "tarball": "proot-x86_64-4_8_0.tgz",
+            "version": "5.1.1",
+            "arch": "x86_64",
+            "kernel_ver": ">=4.8.0",
+            "fname": "proot-x86_64-4_8_0",
+       }
+
+mod3 = {
+            "uid": 13,
+            "module": "patchelf",
+            "tarball": "patchelf-x86_64.tgz",
+            "version": "0.9",
+            "arch": "x86_64",
+            "kernel_ver": "",
+            "fname": "patchelf-x86_64",
+       }
+
+mod4 = {
+            "uid": 16,
+            "module": "libfakechroot",
+            "tarball": "libfakechroot-x86_64.tgz",
+            "version": "2.18",
+            "arch": "x86_64",
+            "kernel_ver": "",
+            "fname": "",
+       }
+
+
+data_sel = (([1], [], [False, False], [mod1]),
+            ([], ['proot'], [False, True], [mod2]),
+            ([], [], [True, False], [mod2, mod3, mod4]))
+
+
+@pytest.mark.parametrize('list_uid,list_names,sekgreat,expected', data_sel)
+def test_09__select_modules(mocker, utools, list_uid, list_names, sekgreat, expected):
+    """Test09 UdockerTools()._select_modules()."""
+    metajson = [mod1, mod2, mod3, mod4]
+    mock_getmeta = mocker.patch.object(UdockerTools, 'get_metadata', return_value=metajson)
+    mock_hinfo = mocker.patch('udocker.tools.HostInfo')
+    mock_hinfo.return_value.arch.return_value = 'x86_64'
+    mock_hinfo.return_value.oskernel_isgreater.side_effect = sekgreat
+    resout = utools._select_modules(list_uid, list_names)
+    assert resout == expected
+
 
 # @patch.object(UdockerTools, '_install')
 # @patch.object(UdockerTools, '_verify_version')
