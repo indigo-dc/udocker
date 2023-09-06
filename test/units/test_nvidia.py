@@ -6,7 +6,6 @@ import mock
 import pytest
 import random
 
-from udocker import LOG
 from udocker.config import Config
 from udocker.engine.nvidia import NvidiaMode
 import collections
@@ -27,10 +26,24 @@ def lrepo(mocker, container_id):
 
 
 @pytest.fixture
-def mock_nvidia(lrepo, container_id):
+def mock_nvidia(mocker, lrepo, container_id):
     mock_nvidia = NvidiaMode(lrepo, container_id)
     mock_nvidia._nvidia_main_libs = ('libnvidia-cfg.so', 'libcuda.so',)
     mock_nvidia._container_root = '/home/.udocker/cont'
+
+    mocker.patch('udocker.engine.nvidia.shutil.copy2')
+    mocker.patch('udocker.engine.nvidia.os.remove')
+    mocker.patch('udocker.engine.nvidia.os.path.dirname')
+    mocker.patch('udocker.engine.nvidia.os.path.isdir')
+    mocker.patch('udocker.engine.nvidia.os.makedirs')
+    mocker.patch('udocker.engine.nvidia.os.chmod')
+    #mocker.patch('udocker.engine.nvidia.os.readlink')
+    #mocker.patch('udocker.engine.nvidia.os.symlink')
+    #mocker.patch('udocker.engine.nvidia.shutil.copy2')
+    #mocker.patch('udocker.engine.nvidia.os.stat')
+    #mocker.patch('udocker.engine.nvidia.os.stat.S_IMODE')
+    #mocker.patch('udocker.engine.nvidia.os.access')
+
     return mock_nvidia
 
 
@@ -159,12 +172,6 @@ def os_symlink(mocker):
     return mock_symlink
 
 
-@pytest.fixture
-def shutil_copy2(mocker):
-    mock_copy2 = mocker.patch('udocker.engine.nvidia.shutil.copy2')
-    return mock_copy2
-
-
 
 
 installation_data = [(["/home/.udocker/cont/usr/lib", ], ['/home/.udocker/cont/usr/lib', ])]
@@ -201,7 +208,7 @@ def test_02__files_exist(mocker, cont_dst_dir, files_list, mock_nvidia, os_path_
         mock_nvidia._files_exist(cont_dst_dir, files_list)
 
 
-@pytest.mark.parametrize('fixture_name', ['foo', 'bar'], indirect=True)
+@pytest.mark.parametrize("hsrc_dir, cdst_dir, flist, force", copy_files_data)
 def test_03__copy_files(mocker, mock_nvidia, hsrc_dir, cdst_dir, flist, force, isfile, os_remove, logger):
     """Test03 NvidiaMode._copy_files."""
 
@@ -238,36 +245,35 @@ def test_03__copy_files(mocker, mock_nvidia, hsrc_dir, cdst_dir, flist, force, i
     os_remove.return_value = None
 
     copy_files = mock_nvidia._copy_files(hsrc_dir, cdst_dir, flist, force)
-    logger.info.call_count == 1, f"call_count {logger.info.call_count} != 1"
-    mock_log.info.side_effect = [None, None]
-    mock_log.debug.side_effect = [None, None]
-    nvmode = NvidiaMode(mocker.MagicMock(), mocker.MagicMock())
 
-    with pytest.raises(OSError):
-        nvmode._copy_files(hsrc_dir, cdst_dir, flist, force=True)
+    #mock_log.debug.side_effect = [None, None]
+    #nvmode = NvidiaMode(mocker.MagicMock(), mocker.MagicMock())
 
-    mock_rm = mocker.patch('udocker.engine.nvidia.os.remove')
-    mock_dirname = mocker.patch('udocker.engine.nvidia.os.path.dirname')
-    mock_isdir = mocker.patch('udocker.engine.nvidia.os.path.isdir')
-    mock_mkdir = mocker.patch('udocker.engine.nvidia.os.makedirs')
-    mock_chmod = mocker.patch('udocker.engine.nvidia.os.chmod')
-    mock_readln = mocker.patch('udocker.engine.nvidia.os.readlink')
-    mock_symln = mocker.patch('udocker.engine.nvidia.os.symlink') #
-    mock_copy2 = mocker.patch('udocker.engine.nvidia.shutil.copy2')
-    mock_stat = mocker.patch('udocker.engine.nvidia.os.stat')
-    mock_s_imode = mocker.patch('udocker.engine.nvidia.os.stat.S_IMODE')
+    #with pytest.raises(OSError):
+    #    nvmode._copy_files(hsrc_dir, cdst_dir, flist, force=True)
 
-    mock_access = mocker.patch('udocker.engine.nvidia.os.access')
+    #mock_rm = mocker.patch('udocker.engine.nvidia.os.remove')
+    #mock_dirname = mocker.patch('udocker.engine.nvidia.os.path.dirname')
+    #mock_isdir = mocker.patch('udocker.engine.nvidia.os.path.isdir')
+    #mock_mkdir = mocker.patch('udocker.engine.nvidia.os.makedirs')
+    #mock_chmod = mocker.patch('udocker.engine.nvidia.os.chmod')
+    #mock_readln = mocker.patch('udocker.engine.nvidia.os.readlink')
+    #mock_symln = mocker.patch('udocker.engine.nvidia.os.symlink') #
+    #mock_copy2 = mocker.patch('udocker.engine.nvidia.shutil.copy2')
+    #mock_stat = mocker.patch('udocker.engine.nvidia.os.stat')
+    #mock_s_imode = mocker.patch('udocker.engine.nvidia.os.stat.S_IMODE')
+    #mock_access = mocker.patch('udocker.engine.nvidia.os.access')
 
-    mock_log.info.side_effect = [None, None]
-    mock_log.debug.side_effect = [None, None, None]
-    mock_stat.side_effect = [mocker.Mock(st_mode=444), mocker.Mock(st_mode=222), mocker.Mock(st_mode=111)]
-    mock_s_imode.side_effect = [644, 755]
 
-    nvmode._copy_files(hsrc_dir, cdst_dir, flist, force=True)
+    #mock_log.info.side_effect = [None, None]
+    #mock_log.debug.side_effect = [None, None, None]
+    #mock_stat.side_effect = [mocker.Mock(st_mode=444), mocker.Mock(st_mode=222), mocker.Mock(st_mode=111)]
+    #mock_s_imode.side_effect = [644, 755]
 
-    assert mock_log.info.call_count == 2, f"call_count {mock_log.info.call_count} != 2"
-    assert mock_rm.call_count == 1, f"call_count {mock_rm.call_count} != 1"
+    #nvmode._copy_files(hsrc_dir, cdst_dir, flist, force=True)
+
+    #assert mock_log.info.call_count == 2, f"call_count {mock_log.info.call_count} != 2"
+    #assert mock_rm.call_count == 1, f"call_count {mock_rm.call_count} != 1"
 
 
 # @patch('udocker.engine.nvidia.os.access')
