@@ -52,8 +52,8 @@ data_downl = (('file1', 'HTTP/1.1 200 OK', 0, 0, 'file1'),
 
 
 @pytest.mark.parametrize("fout,hdr_status,cnt_mktmp,cnt_rm,expected", data_downl)
-def test_07__download(mocker, utools, get_url, fout, hdr_status, cnt_mktmp, cnt_rm, expected):
-    """Test07 UdockerTools()._download()."""
+def test_03__download(mocker, utools, get_url, fout, hdr_status, cnt_mktmp, cnt_rm, expected):
+    """Test03 UdockerTools()._download()."""
     hdr = CurlHeader()
     hdr.data["X-ND-HTTPSTATUS"] = hdr_status
     mock_fumktmp = mocker.patch('udocker.tools.FileUtil.mktmp', return_value="/tmp/tmpf")

@@ -17,7 +17,6 @@ def test_01_user_in_subuid(mocker):
     mock_userfile = mocker.patch.object(NixAuthentication, '_get_user_from_file',
                                         return_value=uinfo)
     mock_userhost = mocker.patch.object(NixAuthentication, '_get_user_from_host')
-
     auth = NixAuthentication(passwd_file='/etc/passwd', group_file='/etc/group',
                              subuid_file=sub_file)
     out = auth.user_in_subuid('user2')
@@ -37,7 +36,6 @@ def test_02_user_in_subuid(mocker):
     mock_userfile = mocker.patch.object(NixAuthentication, '_get_user_from_file')
     mock_userhost = mocker.patch.object(NixAuthentication, '_get_user_from_host',
                                         return_value=uinfo)
-
     auth = NixAuthentication(subuid_file=sub_file)
     out = auth.user_in_subuid('user2')
     assert out == [("165536", "65536")]
@@ -56,7 +54,6 @@ def test_03_user_in_subuid(mocker):
     mock_userfile = mocker.patch.object(NixAuthentication, '_get_user_from_file')
     mock_userhost = mocker.patch.object(NixAuthentication, '_get_user_from_host',
                                         return_value=uinfo)
-
     auth = NixAuthentication(subuid_file=sub_file)
     out = auth.user_in_subuid('user2')
     assert out == []
@@ -68,7 +65,6 @@ def test_04_user_in_subgid(mocker):
     """Test04 NixAuthentication().user_in_subgid."""
     mock_subid = mocker.patch.object(NixAuthentication, '_user_in_subid',
                                      return_value=[("165536", "65536")])
-
     auth = NixAuthentication()
     out = auth.user_in_subgid('user2')
     assert out == [("165536", "65536")]
@@ -80,7 +76,6 @@ def test_09_add_user(mocker):
     uinfo = "root:pw:0:0:gecos:/home:/bin/bash\n"
     mock_get = mocker.patch('udocker.helper.nixauth.FileUtil.getdata', return_value=uinfo)
     mock_put = mocker.patch('udocker.helper.nixauth.FileUtil.putdata')
-
     auth = NixAuthentication()
     out = auth.add_user("root", "pw", 0, 0, "gecos", "/home", "/bin/bash")
     assert out
@@ -94,7 +89,6 @@ def test_10_add_user(mocker):
     uput = "root:pw:0:0:gecos:/home:/bin/bash\n"
     mock_get = mocker.patch('udocker.helper.nixauth.FileUtil.getdata', return_value=uget)
     mock_put = mocker.patch('udocker.helper.nixauth.FileUtil.putdata', return_value=uput)
-
     auth = NixAuthentication()
     out = auth.add_user("root", "pw", 0, 0, "gecos", "/home", "/bin/bash")
     assert out == uput
@@ -107,7 +101,6 @@ def test_11_add_group(mocker):
     uinfo = "group1:x:1001:user1,user2,\n"
     mock_get = mocker.patch('udocker.helper.nixauth.FileUtil.getdata', return_value=uinfo)
     mock_put = mocker.patch('udocker.helper.nixauth.FileUtil.putdata')
-
     auth = NixAuthentication()
     out = auth.add_group("group1", 1001, users=["user1", "user2"])
     assert out
@@ -121,7 +114,6 @@ def test_12_add_group(mocker):
     uput = "group2:x:1002:user3,user4,\n"
     mock_get = mocker.patch('udocker.helper.nixauth.FileUtil.getdata', return_value=uget)
     mock_put = mocker.patch('udocker.helper.nixauth.FileUtil.putdata', return_value=uput)
-
     auth = NixAuthentication()
     out = auth.add_group("group2", 1002, users=["user3", "user4"])
     assert out == uput
@@ -134,9 +126,8 @@ def test_13_get_user(mocker):
     usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr", "/root", "/bin/bash"])
     usr_tuple = (usr.pw_name, str(usr.pw_uid), str(usr.pw_gid),
                  usr.pw_gecos, usr.pw_dir, usr.pw_shell)
-    mock_getpwuid = mocker.patch('pwd.getpwuid', return_value=usr)
-    mock_getpwnam = mocker.patch('pwd.getpwnam')
-
+    mock_getpwuid = mocker.patch('udocker.helper.nixauth.pwd.getpwuid', return_value=usr)
+    mock_getpwnam = mocker.patch('udocker.helper.nixauth.pwd.getpwnam')
     auth = NixAuthentication()
     out = auth.get_user(0)
     assert out == usr_tuple
@@ -148,9 +139,8 @@ def test_14_get_user(mocker):
     """Test14 NixAuthentication().get_user(). From host uid not exist"""
     usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr", "/root", "/bin/bash"])
     usr_tuple = ("", "", "", "", "", "")
-    mock_getpwuid = mocker.patch('pwd.getpwuid', side_effect=OSError)
-    mock_getpwnam = mocker.patch('pwd.getpwnam')
-
+    mock_getpwuid = mocker.patch('udocker.helper.nixauth.pwd.getpwuid', side_effect=OSError)
+    mock_getpwnam = mocker.patch('udocker.helper.nixauth.pwd.getpwnam')
     auth = NixAuthentication()
     out = auth.get_user(1001)
     assert out == usr_tuple
@@ -163,9 +153,8 @@ def test_15_get_user(mocker):
     usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr", "/root", "/bin/bash"])
     usr_tuple = (usr.pw_name, str(usr.pw_uid), str(usr.pw_gid),
                  usr.pw_gecos, usr.pw_dir, usr.pw_shell)
-    mock_getpwuid = mocker.patch('pwd.getpwuid')
-    mock_getpwnam = mocker.patch('pwd.getpwnam', return_value=usr)
-
+    mock_getpwuid = mocker.patch('udocker.helper.nixauth.pwd.getpwuid')
+    mock_getpwnam = mocker.patch('udocker.helper.nixauth.pwd.getpwnam', return_value=usr)
     auth = NixAuthentication()
     out = auth.get_user('root')
     assert out == usr_tuple
@@ -177,9 +166,8 @@ def test_16_get_user(mocker):
     """Test16 NixAuthentication().get_user(). From host name not exist"""
     usr = pwd.struct_passwd(["root", "*", "0", "0", "root usr", "/root", "/bin/bash"])
     usr_tuple = ("", "", "", "", "", "")
-    mock_getpwuid = mocker.patch('pwd.getpwuid')
-    mock_getpwnam = mocker.patch('pwd.getpwnam', side_effect=OSError)
-
+    mock_getpwuid = mocker.patch('udocker.helper.nixauth.pwd.getpwuid')
+    mock_getpwnam = mocker.patch('udocker.helper.nixauth.pwd.getpwnam', side_effect=OSError)
     auth = NixAuthentication()
     out = auth.get_user('user')
     assert out == usr_tuple
@@ -193,7 +181,6 @@ def test_17_get_user(mocker):
     usr_tuple = ('root', '0', '0', 'root user', '/root', '/bin/bash')
     mock_file = mocker.mock_open(read_data=pwd_file)
     mocker.patch("builtins.open", mock_file)
-
     auth = NixAuthentication(passwd_file=pwd_file)
     out = auth.get_user(0)
     assert out == usr_tuple
@@ -206,7 +193,6 @@ def test_18_get_user(mocker):
     usr_tuple = ("", "", "", "", "", "")
     mock_file = mocker.mock_open(read_data=pwd_file)
     mocker.patch("builtins.open", mock_file)
-
     auth = NixAuthentication(passwd_file=pwd_file)
     out = auth.get_user(1001)
     assert out == usr_tuple
@@ -219,7 +205,6 @@ def test_19_get_user(mocker):
     usr_tuple = ('root', '0', '0', 'root user', '/root', '/bin/bash')
     mock_file = mocker.mock_open(read_data=pwd_file)
     mocker.patch("builtins.open", mock_file)
-
     auth = NixAuthentication(passwd_file=pwd_file)
     out = auth.get_user('root')
     assert out == usr_tuple
@@ -232,7 +217,6 @@ def test_20_get_user(mocker):
     usr_tuple = ("", "", "", "", "", "")
     mock_file = mocker.mock_open(read_data=pwd_file)
     mocker.patch("builtins.open", mock_file)
-
     auth = NixAuthentication(passwd_file=pwd_file)
     out = auth.get_user('user')
     assert out == usr_tuple
@@ -245,7 +229,6 @@ def test_21_get_user(mocker):
     usr_tuple = ("", "", "", "", "", "")
     mock_file = mocker.mock_open()
     mock_file.side_effect = OSError
-
     auth = NixAuthentication(passwd_file=pwd_file)
     out = auth.get_user('')
     assert out == usr_tuple
@@ -256,9 +239,8 @@ def test_22_get_group(mocker):
     """Test22 NixAuthentication().get_group(). From host gid exist"""
     grp_struct = grp.struct_group(["root", "*", "0", str(['root', 'admin'])])
     grp_tuple = (grp_struct.gr_name, str(grp_struct.gr_gid), grp_struct.gr_mem)
-    mock_getgrgid = mocker.patch('grp.getgrgid', return_value=grp_struct)
-    mock_getgrnam = mocker.patch('grp.getgrnam')
-
+    mock_getgrgid = mocker.patch('udocker.helper.nixauth.grp.getgrgid', return_value=grp_struct)
+    mock_getgrnam = mocker.patch('udocker.helper.nixauth.grp.getgrnam')
     auth = NixAuthentication()
     out = auth.get_group(0)
     assert out == grp_tuple
@@ -270,9 +252,8 @@ def test_23_get_group(mocker):
     """Test23 NixAuthentication().get_group(). From host gid not exist"""
     grp_struct = grp.struct_group(["root", "*", "0", str(['root', 'admin'])])
     grp_tuple = ("", "", "")
-    mock_getgrgid = mocker.patch('grp.getgrgid', side_effect=OSError)
-    mock_getgrnam = mocker.patch('grp.getgrnam')
-
+    mock_getgrgid = mocker.patch('udocker.helper.nixauth.grp.getgrgid', side_effect=OSError)
+    mock_getgrnam = mocker.patch('udocker.helper.nixauth.grp.getgrnam')
     auth = NixAuthentication()
     out = auth.get_group(1000)
     assert out == grp_tuple
@@ -284,9 +265,8 @@ def test_24_get_group(mocker):
     """Test24 NixAuthentication().get_group(). From host groupname exist"""
     grp_struct = grp.struct_group(["root", "*", "0", str(['root', 'admin'])])
     grp_tuple = (grp_struct.gr_name, str(grp_struct.gr_gid), grp_struct.gr_mem)
-    mock_getgrgid = mocker.patch('grp.getgrgid')
-    mock_getgrnam = mocker.patch('grp.getgrnam', return_value=grp_struct)
-
+    mock_getgrgid = mocker.patch('udocker.helper.nixauth.grp.getgrgid')
+    mock_getgrnam = mocker.patch('udocker.helper.nixauth.grp.getgrnam', return_value=grp_struct)
     auth = NixAuthentication()
     out = auth.get_group('root')
     assert out == grp_tuple
@@ -298,9 +278,8 @@ def test_25_get_group(mocker):
     """Test25 NixAuthentication().get_group(). From host groupname not exist"""
     grp_struct = grp.struct_group(["root", "*", "0", str(['root', 'admin'])])
     grp_tuple = ("", "", "")
-    mock_getgrgid = mocker.patch('grp.getgrgid')
-    mock_getgrnam = mocker.patch('grp.getgrnam', side_effect=OSError)
-
+    mock_getgrgid = mocker.patch('udocker.helper.nixauth.grp.getgrgid')
+    mock_getgrnam = mocker.patch('udocker.helper.nixauth.grp.getgrnam', side_effect=OSError)
     auth = NixAuthentication()
     out = auth.get_group('user')
     assert out == grp_tuple
@@ -314,7 +293,6 @@ def test_26_get_group(mocker):
     grp_tuple = ('root', '0', 'root,admin')
     mock_file = mocker.mock_open(read_data=grp_file)
     mocker.patch("builtins.open", mock_file)
-
     auth = NixAuthentication(group_file=grp_file)
     out = auth.get_group(0)
     assert out == grp_tuple
@@ -327,7 +305,6 @@ def test_27_get_group(mocker):
     grp_tuple = ('', '', '')
     mock_file = mocker.mock_open(read_data=grp_file)
     mocker.patch("builtins.open", mock_file)
-
     auth = NixAuthentication(group_file=grp_file)
     out = auth.get_group(1000)
     assert out == grp_tuple
@@ -340,7 +317,6 @@ def test_28_get_group(mocker):
     grp_tuple = ('root', '0', 'root,admin')
     mock_file = mocker.mock_open(read_data=grp_file)
     mocker.patch("builtins.open", mock_file)
-
     auth = NixAuthentication(group_file=grp_file)
     out = auth.get_group('root')
     assert out == grp_tuple
@@ -353,7 +329,6 @@ def test_29_get_group(mocker):
     grp_tuple = ('', '', '')
     mock_file = mocker.mock_open(read_data=grp_file)
     mocker.patch("builtins.open", mock_file)
-
     auth = NixAuthentication(group_file=grp_file)
     out = auth.get_group('group')
     assert out == grp_tuple
@@ -366,7 +341,6 @@ def test_30_get_group(mocker):
     grp_tuple = ('', '', '')
     mock_file = mocker.mock_open()
     mock_file.side_effect = OSError
-
     auth = NixAuthentication(group_file=grp_file)
     out = auth.get_group('')
     assert out == grp_tuple
@@ -377,7 +351,6 @@ def test_31_get_home(mocker):
     """Test31 NixAuthentication().get_home()."""
     uinfo = ('root', '0', '0', 'root', '/root', '/bin/bash')
     mock_user = mocker.patch.object(NixAuthentication, 'get_user', return_value=uinfo)
-
     auth = NixAuthentication()
     out = auth.get_home()
     assert out == '/root'
@@ -388,7 +361,6 @@ def test_32_get_home(mocker):
     """Test32 NixAuthentication().get_home()."""
     uinfo = ('', '', '', '', '', '')
     mock_user = mocker.patch.object(NixAuthentication, 'get_user', return_value=uinfo)
-
     auth = NixAuthentication()
     out = auth.get_home()
     assert out == ''

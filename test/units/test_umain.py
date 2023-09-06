@@ -27,9 +27,8 @@ def test_01__prepare_exec(mocker, config):
     """Test01 UMain()._prepare_exec() userid=0."""
     argv = ["udocker", "-h"]
     mock_cmdp = mocker.patch('udocker.umain.CmdParser')
-    mock_getuid = mocker.patch('os.geteuid', return_value=0)
+    mock_getuid = mocker.patch('udocker.umain.os.geteuid', return_value=0)
     mock_logerr = mocker.patch('udocker.umain.LOG.error')
-
     with patch('sys.exit') as mock_exit:
         UMain(argv)._prepare_exec()
         mock_exit.assert_called()
@@ -42,8 +41,7 @@ def test_02__prepare_exec(mocker, config):
     """Test02 UMain()._prepare_exec() userid=2000."""
     argv = ["udocker", "-h"]
     mock_cmdp = mocker.patch('udocker.umain.CmdParser')
-    mock_getuid = mocker.patch('os.geteuid', return_value=2000)
-
+    mock_getuid = mocker.patch('udocker.umain.os.geteuid', return_value=2000)
     with patch('sys.exit') as mock_exit:
         UMain(argv)._prepare_exec()
         mock_exit.assert_called()
@@ -56,7 +54,6 @@ def test_03_execute(config, mock_lrepo, mock_ucli):
     argv = ['udocker', '--allow-root', '-h']
     mock_lrepo.return_value.is_repo.return_value = True
     mock_ucli.return_value.do_help.return_value = 0
-
     status = UMain(argv).execute()
     assert status == 0
     mock_ucli.assert_called()
@@ -69,7 +66,6 @@ def test_04_execute(config, mock_lrepo, mock_ucli):
     argv = ['udocker', '--allow-root', '--version']
     mock_lrepo.return_value.is_repo.return_value = True
     mock_ucli.return_value.do_version.return_value = 0
-
     status = UMain(argv).execute()
     assert status == 0
     mock_ucli.return_value.do_version.assert_called()
@@ -80,7 +76,6 @@ def test_05_execute(mocker, config, mock_lrepo, mock_ucli):
     argv = ['udocker', '--allow-root', 'install', '--help']
     mock_msginfo = mocker.patch('udocker.umain.MSG.info')
     mock_lrepo.return_value.is_repo.return_value = True
-
     status = UMain(argv).execute()
     assert status == 0
     mock_msginfo.assert_called()
@@ -91,7 +86,6 @@ def test_06_execute(config, mock_lrepo, mock_ucli):
     argv = ['udocker', '--allow-root', 'version']
     mock_lrepo.return_value.is_repo.return_value = True
     mock_ucli.return_value.do_version.return_value = 0
-
     status = UMain(argv).execute()
     assert status == 0
     mock_ucli.return_value.do_version.assert_called()
@@ -102,7 +96,6 @@ def test_07_execute(config, mock_lrepo, mock_ucli):
     argv = ['udocker', '--allow-root', 'showconf']
     mock_lrepo.return_value.is_repo.return_value = True
     mock_ucli.return_value.do_showconf.return_value = 0
-
     status = UMain(argv).execute()
     assert status == 0
     mock_ucli.return_value.do_showconf.assert_called()
@@ -113,7 +106,6 @@ def test_08_execute(config, mock_lrepo, mock_ucli):
     argv = ['udocker', '--allow-root', 'install']
     mock_lrepo.return_value.is_repo.return_value = True
     mock_ucli.return_value.do_install.return_value = 0
-
     status = UMain(argv).execute()
     assert status == 0
     mock_ucli.return_value.do_install.assert_called()
@@ -124,7 +116,6 @@ def test_09_execute(config, mock_lrepo, mock_ucli):
     argv = ['udocker', '--allow-root', 'rm']
     mock_lrepo.return_value.is_repo.return_value = True
     mock_ucli.return_value.do_rm.return_value = 0
-
     status = UMain(argv).execute()
     assert status == 0
     mock_ucli.return_value.do_rm.assert_called()
@@ -135,6 +126,5 @@ def test_10_execute(config, mock_lrepo, mock_ucli):
     argv = ['udocker', '--allow-root', 'faking']
     mock_lrepo.return_value.is_repo.return_value = True
     mock_lrepo.return_value.create_repo.return_value = None
-
     status = UMain(argv).execute()
     assert status == 1

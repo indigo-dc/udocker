@@ -19,7 +19,7 @@ def hinfo(mocker):
 def test_01_username(hinfo, mocker):
     """Test01 HostInfo().username. With user"""
     usr = pwd.struct_passwd(["user", "*", "1000", "1000", "User", "/home/user", "/bin/bash"])
-    mock_getpwuid = mocker.patch('pwd.getpwuid', return_value=usr)
+    mock_getpwuid = mocker.patch('udocker.helper.hostinfo.pwd.getpwuid', return_value=usr)
     name = hinfo.username()
     assert name == usr.pw_name
     mock_getpwuid.assert_called()
@@ -27,7 +27,8 @@ def test_01_username(hinfo, mocker):
 
 def test_02_username(hinfo, mocker):
     """Test02 HostInfo().username. NO user"""
-    mock_getpwuid = mocker.patch('pwd.getpwuid', side_effect=KeyError("fail"))
+    mock_getpwuid = mocker.patch('udocker.helper.hostinfo.pwd.getpwuid',
+                                 side_effect=KeyError("fail"))
     name = hinfo.username()
     assert name == ''
     mock_getpwuid.assert_called()
@@ -41,7 +42,7 @@ data_arch = (('UDOCKER', 'x86_64', (['amd64'], ['x86_64'], ['x86_64']), 'amd64')
 @pytest.mark.parametrize("target,mach,arch,expected", data_arch)
 def test_03_arch(mocker, hinfo, target, mach, arch, expected):
     """Test03 HostInfo().arch. With mach and arch"""
-    mock_mach = mocker.patch('platform.machine', return_value=mach)
+    mock_mach = mocker.patch('udocker.helper.hostinfo.platform.machine', return_value=mach)
     mock_arch = mocker.patch.object(HostInfo, 'get_arch', return_value=arch)
     result = hinfo.arch(target)
     assert result == expected
@@ -51,7 +52,7 @@ def test_03_arch(mocker, hinfo, target, mach, arch, expected):
 
 def test_04_osversion(mocker, hinfo):
     """Test04 HostInfo().osversion. With osversion"""
-    mock_osversion = mocker.patch('platform.system', return_value="linux")
+    mock_osversion = mocker.patch('udocker.helper.hostinfo.platform.system', return_value="linux")
     result = hinfo.osversion()
     assert result == "linux"
     mock_osversion.assert_called()
@@ -59,7 +60,8 @@ def test_04_osversion(mocker, hinfo):
 
 def test_05_osversion(hinfo, mocker):
     """Test05 HostInfo().osversion. NO osversion"""
-    mock_osversion = mocker.patch('platform.system', side_effect=NameError('fail'))
+    mock_osversion = mocker.patch('udocker.helper.hostinfo.platform.system',
+                                  side_effect=NameError('fail'))
     res_osversion = hinfo.osversion()
     assert res_osversion == ''
     mock_osversion.assert_called()
@@ -129,7 +131,7 @@ def test_09_is_same_platform(hinfo, mocker, parplat, plat_host, expected):
 
 def test_10_oskernel(mocker, hinfo):
     """Test10 HostInfo().oskernel. With oskernel"""
-    mock_oskernel = mocker.patch('platform.release', return_value="3.2.1")
+    mock_oskernel = mocker.patch('udocker.helper.hostinfo.platform.release', return_value="3.2.1")
     result = hinfo.oskernel()
     assert result == "3.2.1"
     mock_oskernel.assert_called()
@@ -137,7 +139,8 @@ def test_10_oskernel(mocker, hinfo):
 
 def test_11_oskernel(hinfo, mocker):
     """Test11 HostInfo().oskernel. NO oskernel"""
-    mock_oskernel = mocker.patch('platform.release', side_effect=NameError("fail"))
+    mock_oskernel = mocker.patch('udocker.helper.hostinfo.platform.release',
+                                 side_effect=NameError("fail"))
     res_oskernel = hinfo.oskernel()
     assert res_oskernel == "6.1.1"
     mock_oskernel.assert_called()
