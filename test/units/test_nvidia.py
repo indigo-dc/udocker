@@ -89,7 +89,7 @@ def test_02__files_exist(mocker, cont_dst_dir, files_list, mock_nvidia):
 @pytest.mark.parametrize("hsrc_dir,cdst_dir,flist,force", copy_files_data)
 def test_03__copy_files(mocker, mock_nvidia, hsrc_dir, cdst_dir, flist, force, logger):
     """Test03 NvidiaMode._copy_files."""
-
+    # FIXME: this test need to be rebuild
     mock_nvidia.container_root = '/home/.udocker/cont/ROOT'
     dstname = mock_nvidia.container_root + '/' + cdst_dir + '/' + flist[0]
     srcname = hsrc_dir + '/' + flist[0]
@@ -305,7 +305,7 @@ set_mode_data = (
     (False, None, "nvidia set mode container dir not found", [set(), {"/usr/lib"}], [""], 1, 0, False),
     (False, "/home/.udocker/cont", "host nvidia libraries not found", [set(), {"/usr/lib"}], [""], 1, 0, False),
     (False, "/home/.udocker/cont", "destination dir for nvidia libs not found", [{"/usr/lib"}], [""], 1, 0, False),
-    (False, "/home/.udocker/cont","nvidia install already exists, --force to overwrite", [{"/usr/lib"}], ["/dir"],
+    (False, "/home/.udocker/cont", "nvidia install already exists, --force to overwrite", [{"/usr/lib"}], ["/dir"],
      1, 0, False),
     (True, "/home/.udocker/cont", "nvidia mode set", [{"/usr/lib"}], ["/dir"],
      0, 1, True)
