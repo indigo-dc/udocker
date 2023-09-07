@@ -14,7 +14,8 @@ def lrepo(mocker):
 
 @pytest.fixture
 def mpoint(mocker, lrepo):
-    mock_realpath = mocker.patch('os.path.realpath', return_value='/home/.udocker/containers/123')
+    mock_realpath = mocker.patch('udocker.utils.mountpoint.os.path.realpath',
+                                 return_value='/home/.udocker/containers/123')
     return MountPoint(lrepo, '123')
 
 
@@ -27,7 +28,7 @@ data_setup = ((True, False, True, 0),
 @pytest.mark.parametrize('isdir,ismkdir,expected,mkdircall', data_setup)
 def test_01_setup(mpoint, mocker, isdir, ismkdir, mkdircall, expected):
     """Test01 MountPoint().setup()."""
-    mock_isdir = mocker.patch('os.path.isdir', return_value=isdir)
+    mock_isdir = mocker.patch('udocker.utils.mountpoint.os.path.isdir', return_value=isdir)
     mock_mkdir = mocker.patch('udocker.utils.mountpoint.FileUtil.mkdir', return_value=ismkdir)
     resout = mpoint.setup()
     assert resout == expected
@@ -51,10 +52,11 @@ def test_02_add(mpoint, mocker, vpath, cpath, expected):
 
 def test_03_delete(mpoint, mocker):
     """Test03 MountPoint().delete()."""
-    mock_rpath = mocker.patch('os.path.realpath', return_value='/tmp')
-    mock_npath = mocker.patch('os.path.normpath',
+    mock_rpath = mocker.patch('udocker.utils.mountpoint.os.path.realpath', return_value='/tmp')
+    mock_npath = mocker.patch('udocker.utils.mountpoint.os.path.normpath',
                               side_effect=['/controot/cont_path', '/controot/cont_path'])
-    mock_dirname = mocker.patch('os.path.dirname', return_value='/ROOT/tmp')
+    mock_dirname = mocker.patch('udocker.utils.mountpoint.os.path.dirname',
+                                return_value='/ROOT/tmp')
     mock_furm = mocker.patch('udocker.utils.mountpoint.FileUtil.remove', return_value=True)
     mpoint.mountpoints = {'cont_path': '/cont/bin'}
     resout = mpoint.delete('cont_path')
@@ -73,8 +75,8 @@ def test_04_delete(mpoint, mocker):
 
 def test_05_delete_all(mpoint, mocker):
     """Test05 MountPoint().delete_all()."""
-    mock_rpath = mocker.patch('os.path.realpath', return_value='/tmp')
-    mock_npath = mocker.patch('os.path.normpath',
+    mock_rpath = mocker.patch('udocker.utils.mountpoint.os.path.realpath', return_value='/tmp')
+    mock_npath = mocker.patch('udocker.utils.mountpoint.os.path.normpath',
                               side_effect=['/controot/cont_path', '/controot/cont_path'])
     mpoint.mountpoints = {'cont_path': '/cont/bin'}
     mpoint.delete_all()
@@ -105,13 +107,13 @@ def test_05_delete_all(mpoint, mocker):
 
 def test_07_create(mpoint, mocker):
     """Test07 MountPoint().create()."""
-    mock_exists = mocker.patch('os.path.exists', return_value=False)
+    mock_exists = mocker.patch('udocker.utils.mountpoint.os.path.exists', return_value=False)
     mock_add = mocker.patch.object(MountPoint, 'add', return_value=None)
-    mock_isfile = mocker.patch('os.path.isfile', side_effect=[True, True])
+    mock_isfile = mocker.patch('udocker.utils.mountpoint.os.path.isfile', side_effect=[True, True])
     mock_mkdir = mocker.patch('udocker.utils.mountpoint.FileUtil.mkdir', return_value=None)
     mock_putdata = mocker.patch('udocker.utils.mountpoint.FileUtil.putdata', return_value=None)
-    mock_islink = mocker.patch('os.path.islink', return_value=True)
-    mock_isdir = mocker.patch('os.path.isdir', return_value=False)
+    mock_islink = mocker.patch('udocker.utils.mountpoint.os.path.islink', return_value=True)
+    mock_isdir = mocker.patch('udocker.utils.mountpoint.os.path.isdir', return_value=False)
     mock_del = mocker.patch.object(MountPoint, 'delete', return_value=True)
     resout = mpoint.create('/bin', '/ROOT/bin')
     assert resout
@@ -127,13 +129,13 @@ def test_07_create(mpoint, mocker):
 
 def test_08_create(mpoint, mocker):
     """Test08 MountPoint().create()."""
-    mock_exists = mocker.patch('os.path.exists', return_value=False)
+    mock_exists = mocker.patch('udocker.utils.mountpoint.os.path.exists', return_value=False)
     mock_add = mocker.patch.object(MountPoint, 'add', return_value=None)
-    mock_isfile = mocker.patch('os.path.isfile', side_effect=[True, False])
+    mock_isfile = mocker.patch('udocker.utils.mountpoint.os.path.isfile', side_effect=[True, False])
     mock_mkdir = mocker.patch('udocker.utils.mountpoint.FileUtil.mkdir', return_value=None)
     mock_putdata = mocker.patch('udocker.utils.mountpoint.FileUtil.putdata', return_value=None)
-    mock_islink = mocker.patch('os.path.islink', return_value=False)
-    mock_isdir = mocker.patch('os.path.isdir', return_value=False)
+    mock_islink = mocker.patch('udocker.utils.mountpoint.os.path.islink', return_value=False)
+    mock_isdir = mocker.patch('udocker.utils.mountpoint.os.path.isdir', return_value=False)
     mock_del = mocker.patch.object(MountPoint, 'delete', return_value=True)
     resout = mpoint.create('/bin', '/ROOT/bin')
     assert not resout
@@ -149,13 +151,13 @@ def test_08_create(mpoint, mocker):
 
 def test_09_create(mpoint, mocker):
     """Test09 MountPoint().create()."""
-    mock_exists = mocker.patch('os.path.exists', return_value=False)
+    mock_exists = mocker.patch('udocker.utils.mountpoint.os.path.exists', return_value=False)
     mock_add = mocker.patch.object(MountPoint, 'add', return_value=None)
-    mock_isfile = mocker.patch('os.path.isfile', return_value=False)
+    mock_isfile = mocker.patch('udocker.utils.mountpoint.os.path.isfile', return_value=False)
     mock_mkdir = mocker.patch('udocker.utils.mountpoint.FileUtil.mkdir', return_value=True)
     mock_putdata = mocker.patch('udocker.utils.mountpoint.FileUtil.putdata', return_value=None)
-    mock_islink = mocker.patch('os.path.islink', return_value=None)
-    mock_isdir = mocker.patch('os.path.isdir', return_value=True)
+    mock_islink = mocker.patch('udocker.utils.mountpoint.os.path.islink', return_value=None)
+    mock_isdir = mocker.patch('udocker.utils.mountpoint.os.path.isdir', return_value=True)
     mock_del = mocker.patch.object(MountPoint, 'delete', return_value=True)
     resout = mpoint.create('/bin', '/ROOT/bin')
     assert resout
@@ -178,8 +180,8 @@ def test_10_save(mpoint):
 
 def test_11_save(mpoint, mocker):
     """Test11 MountPoint().save()."""
-    mock_exists = mocker.patch('os.path.exists', return_value=False)
-    mock_symlink = mocker.patch('os.symlink', return_value=None)
+    mock_exists = mocker.patch('udocker.utils.mountpoint.os.path.exists', return_value=False)
+    mock_symlink = mocker.patch('udocker.utils.mountpoint.os.symlink', return_value=None)
     mpoint.mountpoints = {'cont_path': '/cont/bin'}
     resout = mpoint.save('cont_path')
     assert resout
@@ -189,8 +191,9 @@ def test_11_save(mpoint, mocker):
 
 def test_12_save(mpoint, mocker):
     """Test12 MountPoint().save()."""
-    mock_exists = mocker.patch('os.path.exists', side_effect=OSError("fail"))
-    mock_symlink = mocker.patch('os.symlink', return_value=None)
+    mock_exists = mocker.patch('udocker.utils.mountpoint.os.path.exists',
+                               side_effect=OSError("fail"))
+    mock_symlink = mocker.patch('udocker.utils.mountpoint.os.symlink', return_value=None)
     mpoint.mountpoints = {'cont_path': '/cont/bin'}
     resout = mpoint.save('cont_path')
     assert not resout
@@ -209,8 +212,9 @@ def test_13_save_all(mpoint, mocker):
 def test_14_load_all(mpoint, mocker):
     """Test14 MountPoint().load_all()."""
     result = {'/dir1': '/dir1', '/dir2': '/dir2'}
-    mock_ldir = mocker.patch('os.listdir', return_value=['/dir1', '/dir2'])
-    mock_readl = mocker.patch('os.readlink', side_effect=['/dir1', '/dir2'])
+    mock_ldir = mocker.patch('udocker.utils.mountpoint.os.listdir', return_value=['/dir1', '/dir2'])
+    mock_readl = mocker.patch('udocker.utils.mountpoint.os.readlink',
+                              side_effect=['/dir1', '/dir2'])
     mpoint.load_all()
     assert mpoint.mountpoints == result
     mock_ldir.assert_called()

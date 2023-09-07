@@ -28,8 +28,7 @@ def test_01__load_structure(mocker, ociapi, load_json):
     """Test01 OciLocalFileAPI()._load_structure. Structure empty"""
     tmpdir = '/ROOT'
     load_json.side_effect = [[], []]
-    mock_oslist = mocker.patch('os.listdir')
-
+    mock_oslist = mocker.patch('udocker.oci.os.listdir')
     status = ociapi._load_structure(tmpdir)
     assert status == {}
     assert load_json.call_count == 2
@@ -40,7 +39,7 @@ def test_02__load_structure(mocker, ociapi, load_json):
     """Test02 OciLocalFileAPI()._load_structure. Structure not empty"""
     tmpdir = '/ROOT'
     load_json.side_effect = ['oci_lay1', 'idx1']
-    mock_oslist = mocker.patch('os.listdir', side_effect=[['f1'], ['f2']])
+    mock_oslist = mocker.patch('udocker.oci.os.listdir', side_effect=[['f1'], ['f2']])
     mock_isdir = mocker.patch('udocker.oci.FileUtil.isdir', return_value=True)
     out_res = {'repolayers': {'f1:f2': {'layer_a': 'f1',
                                         'layer_f': '/ROOT/blobs/f1/f2',
@@ -48,7 +47,6 @@ def test_02__load_structure(mocker, ociapi, load_json):
                'manifest': {},
                'oci-layout': 'oci_lay1',
                'index': 'idx1'}
-
     status = ociapi._load_structure(tmpdir)
     assert status == out_res
     assert load_json.call_count == 2
@@ -71,7 +69,6 @@ def test_04__get_from_manifest(ociapi):
                                             'config': {'digest': 'dgt'}}}}}
     lay_out = ['d2', 'd1']
     conf_out = 'dgt'
-
     status = ociapi._get_from_manifest(struct, imgtag)
     assert status == (conf_out, lay_out)
 
@@ -113,7 +110,6 @@ def test_07__load_repositories(mocker, ociapi):
     struct = {'index': {'manifests': manifest}}
     mock_loadmanif = mocker.patch.object(OciLocalFileAPI, '_load_manifest',
                                          return_value=['123'])
-
     status = ociapi._load_repositories(struct)
     assert status == [['123']]
     mock_loadmanif.assert_called()
@@ -139,7 +135,6 @@ def test_08__load_image_step2(mocker, ociapi):
     mock_mvv1 = mocker.patch.object(OciLocalFileAPI, '_move_layer_to_v1repo',
                                     side_effect=[True, False, False])
     mock_logerr = mocker.patch('udocker.LOG.error')
-
     status = ociapi._load_image_step2(struct, imgrepo, imgtag)
     assert status == []
     mock_getmanif.assert_called()
@@ -166,9 +161,8 @@ def test_09__load_image_step2(mocker, ociapi):
                                         return_value=out_manif)
     mock_mvv1 = mocker.patch.object(OciLocalFileAPI, '_move_layer_to_v1repo',
                                     side_effect=[True, True, True])
-    mock_logerr = mocker.patch('udocker.LOG.error')
+    mock_logerr = mocker.patch('udocker.oci.LOG.error')
     mock_sjson = mocker.patch('udocker.container.localrepo.LocalRepository.save_json')
-
     status = ociapi._load_image_step2(struct, imgrepo, imgtag)
     assert status == ['/somerepo:123']
     mock_getmanif.assert_called()
@@ -183,7 +177,6 @@ def test_10_load(mocker, ociapi):
     imgrepo = 'somerepo'
     mock_loadstruct = mocker.patch.object(OciLocalFileAPI, '_load_structure', return_value={})
     mock_loadrepo = mocker.patch.object(OciLocalFileAPI, '_load_repositories')
-
     status = ociapi.load(tmpdir, imgrepo)
     assert status == []
     mock_loadstruct.assert_called()
@@ -204,7 +197,6 @@ def test_11_load(mocker, ociapi):
     mock_loadstruct = mocker.patch.object(OciLocalFileAPI, '_load_structure', return_value=struct)
     mock_loadrepo = mocker.patch.object(OciLocalFileAPI, '_load_repositories',
                                         return_value=['r1', 'r2'])
-
     status = ociapi.load(tmpdir, imgrepo)
     assert status == ['r1', 'r2']
     mock_loadstruct.assert_called()

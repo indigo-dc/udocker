@@ -107,7 +107,7 @@ class UdockerTools:
         FileUtil(download_file).remove()
         return ""
 
-    def _get_file(self, url, fileout=""):
+    def _get_file(self, url, fileout=''):
         ''' Get file from list of possible locations file or internet,
             url: URL or local file
             fileout: full filename of downloaded file
