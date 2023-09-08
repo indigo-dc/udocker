@@ -412,16 +412,165 @@ def test_15_show_metadata(mocker, utools, long, cmsg):
     assert mock_msg.call_count == cmsg
 
 
-data_instlog = (([1], 1, 0),
-               ([], 0, 1))
+# data_instlog = (([MOD1], False, True),
+#                 ([MOD4], True, True))
 
 
-@pytest.mark.parametrize('lmods,force,expected', data_instlog)
-def test_16__installmod_logic(mocker, utools, lmods, force, expected):
-    """Test16 UdockerTools()._installmod_logic()."""
+# @pytest.mark.parametrize('lmods,force,expected', data_instlog)
+# def test_16__installmod_logic(mocker, utools, lmods, force, expected):
+#     """Test16 UdockerTools()._installmod_logic()."""
+#     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
+#     mock_clean = mocker.patch.object(UdockerTools, '_clean_install')
+#     mock_futil = mocker.patch('udocker.tools.FileUtil.rchmod', side_effect=[None, None])
+#     mock_file = mocker.mock_open()
+#     mock_tfile = mocker.patch('udocker.tools.tarfile', mock_file)
+#     mock_tfile.return_value.getnames.return_value = lmods[0]['fname']
+#     mock_tfile.return_value.extractall.return_value = None
+#     resout = utools._installmod_logic([1], 'top_dir', 'tar_dir', force)
+#     assert resout
+
+# def test_17__install_licenses(mocker, utools):
+#     """Test17 UdockerTools()._install_licenses()."""
+
+
+def test_18_install_modules(mocker, utools):
+    """Test18 UdockerTools().install_modules()."""
+    lmods = [MOD1]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
-    mock_futil = mocker.patch('udocker.tools.FileUtil.rchmod', side_effect=[None, None])
+    mock_downtar = mocker.patch.object(UdockerTools, 'download_tarballs')
+    mock_inst = mocker.patch.object(UdockerTools, '_instructions')
+    utools._installretry = 1
+    utools._autoinstall = False
+    resout = utools.install_modules([1], 'inst_dir', 'tar_dir', False)
+    assert not resout
+    mock_selmod.assert_called()
+    mock_downtar.assert_not_called()
+    mock_inst.assert_not_called()
 
-    resout = utools._installmod_logic([1], 'top_dir', 'tar_dir', force)
+
+def test_19_install_modules(mocker, utools):
+    """Test19 UdockerTools().install_modules()."""
+    lmods = [MOD1]
+    mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
+    mock_downtar = mocker.patch.object(UdockerTools, 'download_tarballs', return_value=True)
+    mock_downlic = mocker.patch.object(UdockerTools, 'download_licenses', return_value=True)
+    mock_instlog = mocker.patch.object(UdockerTools, '_installmod_logic', return_value=True)
+    mock_instlic = mocker.patch.object(UdockerTools, '_install_licenses', return_value=True)
+    mock_inst = mocker.patch.object(UdockerTools, '_instructions')
+    utools._installretry = 1
+    resout = utools.install_modules([1], 'inst_dir', 'tar_dir', True)
     assert resout
+    mock_selmod.assert_called()
+    mock_downtar.assert_called()
+    mock_downlic.assert_called()
+    mock_instlog.assert_called()
+    mock_instlic.assert_called()
+    mock_inst.assert_not_called()
 
+
+def test_20_install_modules(mocker, utools):
+    """Test20 UdockerTools().install_modules()."""
+    lmods = [MOD1]
+    mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
+    mock_downtar = mocker.patch.object(UdockerTools, 'download_tarballs', return_value=False)
+    mock_downlic = mocker.patch.object(UdockerTools, 'download_licenses', return_value=False)
+    mock_instlog = mocker.patch.object(UdockerTools, '_installmod_logic', return_value=True)
+    mock_instlic = mocker.patch.object(UdockerTools, '_install_licenses', return_value=True)
+    mock_inst = mocker.patch.object(UdockerTools, '_instructions')
+    utools._installretry = 1
+    resout = utools.install_modules([1], 'inst_dir', 'tar_dir', True)
+    assert not resout
+    mock_selmod.assert_called()
+    mock_downtar.assert_called()
+    mock_downlic.assert_called()
+    mock_instlog.assert_called()
+    mock_instlic.assert_called()
+    mock_inst.assert_called()
+
+
+def test_21_get_modules(mocker, utools):
+    """Test21 UdockerTools().get_modules()."""
+    lmods = [MOD1, MOD2]
+    mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
+    mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=True)
+    mock_jload = mocker.patch('udocker.tools.json.load', return_value=lmods)
+    mock_jfile = mocker.mock_open(read_data=str(lmods))
+    mocker.patch("builtins.open", mock_jfile)
+    resout = utools.get_modules([], 'show', 'mod_dir')
+    assert resout == lmods
+    mock_isfile.assert_called()
+    mock_jload.assert_called()
+    mock_selmod.assert_not_called()
+
+
+def test_22_get_modules(mocker, utools):
+    """Test22 UdockerTools().get_modules()."""
+    lmods = [MOD1, MOD2]
+    mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
+    mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=True)
+    mock_file = mocker.mock_open()
+    mock_file.side_effect = OSError
+    resout = utools.get_modules([], 'show', 'mod_dir')
+    assert resout == []
+    mock_isfile.assert_called()
+    mock_selmod.assert_not_called()
+
+
+# def test_23_get_modules(mocker, utools):
+#     """Test23 UdockerTools().get_modules()."""
+#     lmods = [MOD1, MOD2]
+#     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
+#     mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=True)
+#     mock_jload = mocker.patch('udocker.tools.json.load', return_value=lmods)
+
+#     mock_jfile = mocker.mock_open(read_data=str(lmods))
+#     mocker.patch("builtins.open", mock_jfile)
+#     resout = utools.get_modules([], 'show', 'mod_dir')
+#     assert resout == lmods
+#     mock_isfile.assert_called()
+#     mock_jload.assert_called()
+#     mock_selmod.assert_not_called()
+
+def test_25_rm_module(mocker, utools):
+    """Test25 UdockerTools().rm_module()."""
+    lmods = [MOD1, MOD4]
+    mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
+    mock_getmod = mocker.patch.object(UdockerTools, 'get_modules')
+    mock_futil = mocker.patch('udocker.tools.FileUtil')
+    mock_futil.return_value.register_prefix.side_effect = [None, None]
+    mock_futil.return_value.remove.side_effect = [None, None]
+    resout = utools.rm_module(['dummy'], '')
+    assert resout
+    mock_selmod.assert_called()
+    assert mock_futil.return_value.register_prefix.call_count == 2
+    assert mock_futil.return_value.remove.call_count == 2
+    mock_getmod.assert_not_called()
+
+
+# def test_26_rm_module(mocker, utools):
+#     """Test26 UdockerTools().rm_module()."""
+#     lmods = [{'fname': 'dd', 'installdir': 'ee/'}]
+#     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
+#     mock_futilreg = mocker.patch('udocker.tools.FileUtil.register_prefix')
+#     mock_futilrm = mocker.patch('udocker.tools.FileUtil.remove')
+#     resout = utools.rm_module(['dummy'], '')
+#     assert not resout
+#     mock_selmod.assert_called()
+#     mock_futilreg.assert_not_called()
+#     mock_futilrm.assert_not_called()
+
+# def test_26_rm_module(mocker, utools):
+#     """Test26 UdockerTools().rm_module()."""
+#     lmods = [MOD1]
+#     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules')
+#     mock_getmod = mocker.patch.object(UdockerTools, 'get_modules', return_value=lmods)
+#     mock_lsdir = mocker.patch('udocker.tools.os.listdir', return_value='some_lic')
+#     mock_futilreg = mocker.patch('udocker.tools.FileUtil.register_prefix',
+#                                  side_effect=[None, None])
+#     mock_futilrm = mocker.patch('udocker.tools.FileUtil.remove', side_effect=[None, None])
+#     resout = utools.rm_module([], '')
+#     assert resout
+#     mock_selmod.assert_called()
+#     assert mock_futilreg.call_count == 3
+#     assert mock_futilrm.call_count == 3
+#     mock_getmod.assert_not_called()

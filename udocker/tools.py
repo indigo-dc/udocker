@@ -440,7 +440,7 @@ class UdockerTools:
         tools_version = mod_all['version']
         if not self._autoinstall and not force:
             LOG.warning('installation missing and autoinstall disabled')
-            return None
+            return False
 
         LOG.info('udocker command line interface %s', __version__)
         LOG.info('searching for udockertools %s', tools_version)
