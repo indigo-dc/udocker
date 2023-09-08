@@ -10,6 +10,97 @@ from udocker.utils.curl import CurlHeader
 from udocker.tools import UdockerTools
 
 
+MOD1 = {
+        "uid": 1,
+        "module": "crun",
+        "tarball": "crun-x86_64.tgz",
+        "version": "1.6",
+        "arch": "x86_64",
+        "kernel_ver": "",
+        "sha256sum": "4907b4005436686e453297f7e011ddb655c410429f711d787546f5ecceb03048",
+        "installdir": "bin/",
+        "fname": "crun-x86_64",
+        "docs": "COPYING.crun",
+        "urls": [
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/tarballs/crun-x86_64.tgz",
+            "https://github.com/LIP-Computing/udocker_tools/raw/main/tarballs/crun-x86_64.tgz"
+        ],
+        "dependencies": [],
+        "docs_url": [
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/COPYING.crun",
+            "https://github.com/LIP-Computing/udocker_tools/raw/main/docs/COPYING.crun"
+        ]
+       }
+
+MOD2 = {
+        "uid": 9,
+        "module": "proot",
+        "tarball": "proot-x86_64-4_8_0.tgz",
+        "version": "5.1.1",
+        "arch": "x86_64",
+        "kernel_ver": ">=4.8.0",
+        "sha256sum": "1a926182aa16cc7ba77e278851a62f33995e2515e01c7a99932bb6e7f853b0a9",
+        "installdir": "bin/",
+        "fname": "proot-x86_64-4_8_0",
+        "docs": "COPYING.proot",
+        "urls": [
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/tarballs/proot-x86_64-4_8_0.tgz",
+            "https://github.com/LIP-Computing/udocker_tools/raw/main/tarballs/proot-x86_64-4_8_0.tgz"
+        ],
+        "dependencies": [],
+        "docs_url": [
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/COPYING.proot",
+            "https://github.com/LIP-Computing/udocker_tools/raw/main/docs/COPYING.proot"
+        ]
+       }
+
+MOD3 = {
+        "uid": 13,
+        "module": "patchelf",
+        "tarball": "patchelf-x86_64.tgz",
+        "version": "0.9",
+        "arch": "x86_64",
+        "kernel_ver": "",
+        "sha256sum": "9acf2db637365bf10379bc3e51658a6f0d3303156457f7827b04d3f9f32f7e6a",
+        "installdir": "bin/",
+        "fname": "patchelf-x86_64",
+        "docs": "COPYING.patchelf",
+        "urls": [
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/tarballs/patchelf-x86_64.tgz",
+            "https://github.com/LIP-Computing/udocker_tools/raw/main/tarballs/patchelf-x86_64.tgz"
+        ],
+        "dependencies": [],
+        "docs_url": [
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/COPYING.patchelf",
+            "https://github.com/LIP-Computing/udocker_tools/raw/main/docs/COPYING.patchelf"
+        ]
+       }
+
+MOD4 = {
+        "uid": 16,
+        "module": "libfakechroot",
+        "tarball": "libfakechroot-x86_64.tgz",
+        "version": "2.18",
+        "arch": "x86_64",
+        "kernel_ver": "",
+        "sha256sum": "c4280e0e3b3fa5ba6d94be0d43a2379d9d4390f08c96adc83cf4ba6be939d757",
+        "installdir": "lib/",
+        "fname": "",
+        "docs": "LIC-COPY-fakechroot.tgz",
+        "urls": [
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/tarballs/libfakechroot-x86_64.tgz",
+            "https://github.com/LIP-Computing/udocker_tools/raw/main/tarballs/libfakechroot-x86_64.tgz"
+        ],
+        "dependencies": [
+            "patchelf-x86_64.tgz"
+        ],
+        "docs_url": [
+            "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/LIC-COPY-fakechroot.tgz",
+            "https://github.com/LIP-Computing/udocker_tools/raw/main/docs/LIC-COPY-fakechroot.tgz"
+        ]
+       }
+
+
 @pytest.fixture
 def lrepo(mocker):
     mock_lrepo = mocker.patch('udocker.container.localrepo.LocalRepository')
@@ -31,6 +122,12 @@ def utools(mocker, lrepo, get_url):
 def cnf():
     Config().getconf()
     return Config()
+
+
+@pytest.fixture
+def logger(mocker):
+    mock_log = mocker.patch('udocker.engine.nvidia.LOG')
+    return mock_log
 
 
 def test_01__instructions(mocker, utools):
@@ -164,22 +261,7 @@ def test_06__get_mirrors(mocker, utools):
 def test_07_get_metadata(mocker, utools):
     """Test07 UdockerTools().get_metadata()."""
     mirrors = ['https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz']
-    metajson = [
-            {
-                "uid": 1,
-                "module": "crun",
-                "tarball": "crun-x86_64.tgz",
-                "version": "1.6",
-                "arch": "x86_64",
-                "sha256sum": "4907b4005436686e453297f7e011ddb655c410429f711d787546f5ecceb03048",
-                "installdir": "bin/",
-                "fname": "crun-x86_64",
-                "docs_url": [
-                    "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/COPYING.crun",
-                    "https://github.com/LIP-Computing/udocker_tools/raw/main/docs/COPYING.crun"
-                ]
-            },
-        ]
+    metajson = [MOD1]
 
     mock_fjson = mocker.mock_open(read_data=str(metajson))
     mocker.patch("builtins.open", mock_fjson)
@@ -208,62 +290,54 @@ def test_08_get_metadata(mocker, utools):
     mock_getfile.assert_called()
 
 
-mod1 = {
-            "uid": 1,
-            "module": "crun",
-            "tarball": "crun-x86_64.tgz",
-            "version": "1.6",
-            "arch": "x86_64",
-            "kernel_ver": "",
-            "fname": "crun-x86_64",
-       }
-
-mod2 = {
-            "uid": 9,
-            "module": "proot",
-            "tarball": "proot-x86_64-4_8_0.tgz",
-            "version": "5.1.1",
-            "arch": "x86_64",
-            "kernel_ver": ">=4.8.0",
-            "fname": "proot-x86_64-4_8_0",
-       }
-
-mod3 = {
-            "uid": 13,
-            "module": "patchelf",
-            "tarball": "patchelf-x86_64.tgz",
-            "version": "0.9",
-            "arch": "x86_64",
-            "kernel_ver": "",
-            "fname": "patchelf-x86_64",
-       }
-
-mod4 = {
-            "uid": 16,
-            "module": "libfakechroot",
-            "tarball": "libfakechroot-x86_64.tgz",
-            "version": "2.18",
-            "arch": "x86_64",
-            "kernel_ver": "",
-            "fname": "",
-       }
-
-
-data_sel = (([1], [], [False, False], [mod1]),
-            ([], ['proot'], [False, True], [mod2]),
-            ([], [], [True, False], [mod2, mod3, mod4]))
+data_sel = (([1], [], [False, False], [MOD1]),
+            ([], ['proot'], [False, True], [MOD2]),
+            ([], [], [True, False], [MOD2, MOD3, MOD4]))
 
 
 @pytest.mark.parametrize('list_uid,list_names,sekgreat,expected', data_sel)
 def test_09__select_modules(mocker, utools, list_uid, list_names, sekgreat, expected):
     """Test09 UdockerTools()._select_modules()."""
-    metajson = [mod1, mod2, mod3, mod4]
+    metajson = [MOD1, MOD2, MOD3, MOD4]
     mock_getmeta = mocker.patch.object(UdockerTools, 'get_metadata', return_value=metajson)
     mock_hinfo = mocker.patch('udocker.tools.HostInfo')
     mock_hinfo.return_value.arch.return_value = 'x86_64'
     mock_hinfo.return_value.oskernel_isgreater.side_effect = sekgreat
     resout = utools._select_modules(list_uid, list_names)
     assert resout == expected
+
+
+data_vsha = (([MOD1, MOD2], [MOD1["sha256sum"], MOD2["sha256sum"]], True),
+             ([MOD1, MOD2], [MOD1["sha256sum"], 'xxxx'], False))
+
+
+@pytest.mark.parametrize('lmods,lsha,expected', data_vsha)
+def test_10_verify_sha(mocker, utools, lmods, lsha, expected):
+    """Test10 UdockerTools().verify_sha()."""
+    mock_sha = mocker.patch('udocker.tools.ChkSUM.sha256', side_effect=lsha)
+    resout = utools.verify_sha(lmods, 'udocker/tar')
+    assert resout == expected
+    assert mock_sha.call_count == 2
+
+
+data_dtar = ((True, True, 2, True),
+             (False, False, 0, False))
+
+
+@pytest.mark.parametrize('vsha,force,cgetfile,expected', data_dtar)
+def test_11_download_tarballs(mocker, utools, vsha, force, cgetfile, expected):
+    """Test11 UdockerTools().download_tarballs()."""
+    lmods = [MOD1, MOD2]
+    mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
+    mock_getfile = mocker.patch.object(UdockerTools, '_get_file',
+                                       side_effect=[False, True, False, False])
+    mock_vsha = mocker.patch.object(UdockerTools, 'verify_sha', return_value=vsha)
+    mock_isfile = mocker.patch('udocker.tools.os.path.isfile', side_effect=[True, True, True, True])
+    resout = utools.download_tarballs('dumlist', 'dstdir', 'srcloc', force)
+    assert resout == expected
+    mock_selmod.assert_called()
+    mock_vsha.assert_called()
+    assert mock_getfile.call_count == cgetfile
 
 
 # @patch.object(UdockerTools, '_install')

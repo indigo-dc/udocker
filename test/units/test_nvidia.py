@@ -4,12 +4,8 @@ udocker unit tests: NVIDIA mode
 """
 import pytest
 import random
-
 from udocker.config import Config
 from udocker.engine.nvidia import NvidiaMode
-import collections
-
-collections.Callable = collections.abc.Callable
 
 
 @pytest.fixture
