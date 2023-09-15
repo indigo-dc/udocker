@@ -8,14 +8,13 @@ import pytest
 import random
 
 from udocker.config import Config
-from udocker.engine.base import ExecutionEngineCommon
 from udocker.engine.execmode import ExecutionMode
 from udocker.engine.proot import PRootEngine
 from contextlib import nullcontext as does_not_raise
 
-
 KERNEL_VERSIONS = ["4.8.13", "4.8.0", "4.5.0"]
 EXECUTABLE = ["UDOCKER", "proot", "proot-x86_64-4_8_13", "proot-x86_64-4_8_0", "proot-x86_64-4_5_0"]
+XMODE = ["P1", "P2"]
 
 
 @pytest.fixture
@@ -31,25 +30,27 @@ def localrepo(mocker, container_id):
     return mocker_localrepo
 
 
-@pytest.fixture(params=KERNEL_VERSIONS)
-def mock_hostinfo_oskernel(mocker):
-    mocker_hostinfo_kernel = mocker.patch('udocker.engine.proot.HostInfo.oskernel', return_value=KERNEL_VERSIONS)
+@pytest.fixture(autouse=True)
+def mock_hostinfo_oskernel(mocker, kernel):
+    mocker_hostinfo_kernel = mocker.patch('udocker.engine.proot.HostInfo.oskernel', return_value=kernel)
     return mocker_hostinfo_kernel
 
 
-@pytest.fixture
-def mock_exec_mode(localrepo, container_id):
+@pytest.fixture(autouse=True)
+@pytest.mark.parametrize('xmode', XMODE)
+def mock_exec_mode(localrepo, container_id, xmode):
     mocker_exec_mode = ExecutionMode(localrepo, container_id)
+    mocker_exec_mode.force_mode = xmode
     return mocker_exec_mode
 
 
 @pytest.fixture(autouse=True)
-def mock_proot(localrepo, mock_exec_mode, mock_hostinfo_oskernel):
+def mock_proot(localrepo, mock_exec_mode):
     mocker_proot = PRootEngine(localrepo, mock_exec_mode)
     return mocker_proot
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_os_exists(mocker):
     mocker_os_exists = mocker.patch('udocker.engine.proot.os.path.exists')
     return mocker_os_exists
@@ -60,10 +61,12 @@ def logger(mocker):
     mocker_logger = mocker.patch('udocker.engine.proot.LOG')
     return mocker_logger
 
-@pytest.fixture
-def mock_kernel_isgreater(mocker):
-    mocker_os_kernel_isgreater = mocker.patch('udocker.engine.proot.HostInfo.oskernel_isgreater')
-    return mocker_os_kernel_isgreater
+
+@pytest.fixture(autouse=True)
+def mock_hostinfo_oskernel_isgreater(mocker):
+    mocker_hostinfo = mocker.patch('udocker.helper.hostinfo.HostInfo')
+    mocker_hostinfo.return_value.oskernel_isgreater.return_value = False
+    return mocker_hostinfo
 
 
 @pytest.fixture
@@ -79,34 +82,59 @@ def mock_fileutil_find_file_in_dir(mocker):
     return mocker_fileutil_find_file_in_dir
 
 
+@pytest.fixture
+def mock_fileutil_find_exec(mocker):
+    mocker_fileutil_find_exec = mocker.patch('udocker.engine.proot.FileUtil.find_exec',
+                                             return_value="/some/executable/proot")
+    return mocker_fileutil_find_exec
 
-def test_01_init(mock_proot, mock_hostinfo_oskernel):
+
+@pytest.fixture
+def mock_is_seccomp_patched(mocker):
+    return mocker.patch('udocker.engine.proot.PRootEngine._is_seccomp_patched')
+
+
+@pytest.fixture
+def mock_get_saved_osenv(mocker):
+    mocker_hostinfo_get_saved_osenv = mocker.patch('udocker.engine.proot.PRootEngine._get_saved_osenv')
+    return mocker_hostinfo_get_saved_osenv
+
+
+@pytest.fixture
+def mock_get_output(mocker):
+    mocker_get_output = mocker.patch('udocker.engine.proot.Uprocess.get_output')
+    return mocker_get_output
+
+
+@pytest.mark.parametrize('kernel', KERNEL_VERSIONS)
+@pytest.mark.parametrize('xmode', ['P1', 'P2'])
+def test_01_init(mock_proot, mock_hostinfo_oskernel, kernel):
     """Test01 PRootEngine() constructor."""
     assert mock_proot.executable is None
     assert mock_proot.proot_noseccomp is False
     assert mock_proot.proot_newseccomp is False
-    assert mock_proot._kernel == mock_hostinfo_oskernel.return_value
+    assert mock_proot._kernel == kernel
 
 
 select_proot_data = (
-    (True, 0, "", does_not_raise(), "UDOCKER", "/some/path/proot"),
-    (True, 0, "", does_not_raise(), "PROOT", "/some/path/proot"),
-    (True, 0, "", does_not_raise(), None, "/some/path/proot"),
-    (False, 0, "", pytest.raises(SystemExit), "PROOT", "/some/path/proot"),
-    (False, 1, "proot executable not found", pytest.raises(SystemExit), "PROOT", "/some/path/proot"),
+    (True, 0, "", does_not_raise(), "UDOCKER", "/some/path/proot", KERNEL_VERSIONS),
+    (True, 0, "", does_not_raise(), "PROOT", "PROOT", KERNEL_VERSIONS),
+    (True, 0, "", does_not_raise(), "", "/some/path/proot", KERNEL_VERSIONS),
+    (True, 0, "", does_not_raise(), None, "/some/path/proot", KERNEL_VERSIONS),
+    (False, 0, "", pytest.raises(SystemExit), "PROOT", "/some/path/proot", KERNEL_VERSIONS),
+    (False, 1, "proot executable not found", pytest.raises(SystemExit), "PROOT", "/some/path/proot", KERNEL_VERSIONS),
 )
 
 
-
-@pytest.mark.parametrize('pathexists,logcount,msg,error,exec,pathexec', select_proot_data)
-def test_02_select_proot(mock_proot, mock_os_exists, mock_kernel_isgreater,
+@pytest.mark.parametrize('xmode', XMODE)
+@pytest.mark.parametrize('pathexists,logcount,msg,error,exec,pathexec,kernel', select_proot_data)
+def test_02_select_proot(mock_proot, mock_os_exists, mock_hostinfo_oskernel_isgreater,
                          mock_exec_mode, mock_fileutil_find_file_in_dir,
                          logger,
-                         pathexists, logcount, msg, error, exec, pathexec, ):
+                         pathexists, logcount, msg, error, exec, pathexec, xmode, kernel):
     """Test02 PRootEngine().select_proot()."""
-    executable = Config.conf['use_proot_executable']
+    Config.conf['use_proot_executable'] = exec
     mock_os_exists.return_value = pathexists
-    mock_kernel_isgreater.return_value = [True, False]
     mock_fileutil.return_value = "proot"
     mock_fileutil_find_file_in_dir.return_value = "/some/path/proot"
 
@@ -115,8 +143,100 @@ def test_02_select_proot(mock_proot, mock_os_exists, mock_kernel_isgreater,
         mock_proot.select_proot()
         assert pathexec == mock_proot.executable
         assert logger.error.called == logcount
+        if xmode == 'P2':
+            assert mock_proot.proot_noseccomp is True
+        else:
+            assert mock_proot.proot_noseccomp is False
 
 
+is_seccomp_patched_data = (
+    ('PROOT_NEW_SECCOMP', {}, "4.8.0", [], True),
+    ('PROOT_NO_SECCOMP', {}, "4.8.0", [], False),
+    (None, {}, "4.8.0", [], False),
+    (None, {"PROOT_NEW_SECCOMP": "1"}, "4.8.0", [], False),
+    (None, {"PROOT_NEW_SECCOMP": "1"}, "4.1.0", [], True),
+    (None, {"NOT_PROOT": "1"}, "4.1.0", [], False),
+    (None, {}, "4.1.0", ["proot", ""], False),
+    (None, {}, "4.1.0", ["", "proot"], True),
+)
+
+
+@pytest.mark.parametrize('xmode', XMODE)
+@pytest.mark.parametrize('os_env,saved_os,kernel,output,expected', is_seccomp_patched_data)
+def test_03__is_seccomp_patched(mock_proot, mock_hostinfo_oskernel_isgreater, mock_get_saved_osenv, mock_get_output,
+                                expected, os_env, saved_os, kernel, output):
+    """Test03 PRootEngine()._is_seccomp_patched()."""
+
+    # cleanup environment
+    os.environ.pop('PROOT_NEW_SECCOMP', None)
+    os.environ.pop('PROOT_NO_SECCOMP', None)
+
+    mock_get_output.side_effect = output
+    mock_get_saved_osenv.return_value = saved_os
+
+    # set additional variable to environment
+    if os_env:
+        os.environ[os_env] = os_env
+
+    assert mock_proot._is_seccomp_patched("/bin/sec") == expected
+
+
+set_uid_map_data = (
+    ("0", "1001", ['-0']),
+    ("1001", "0", ['-i', '1001:0']),
+    ("1000", "1001", ['-i', '1000:1001']),
+)
+
+
+@pytest.mark.parametrize('xmode', ['P1', 'P2'])
+@pytest.mark.parametrize('kernel', ['4.8.13'])
+@pytest.mark.parametrize('uid,gid,expected', set_uid_map_data)
+def test_03__set_uid_map(mock_proot, uid, gid, expected):
+    """Test03 PRootEngine()._set_uid_map()."""
+    mock_proot.opt['uid'] = uid
+    mock_proot.opt["gid"] = gid
+    assert mock_proot._set_uid_map() == expected
+
+
+@pytest.mark.parametrize('kernel', KERNEL_VERSIONS)
+@pytest.mark.parametrize('xmode', ['P1', 'P2'])
+def test_04__create_mountpoint(mock_proot):
+    """Test04 PRootEngine()._create_mountpoint()."""
+    assert mock_proot._create_mountpoint("", "") is True
+
+
+get_volume_bindings_data = (
+    ((), []),
+    (("/tmp", "/bbb",), ['-b', '/tmp:/tmp', '-b', '/bbb:/bbb']),
+    (("/tmp",), ['-b', '/tmp:/tmp']),
+)
+
+
+@pytest.mark.parametrize('xmode', ['P1'])
+@pytest.mark.parametrize('kernel', ['4.8.13'])
+@pytest.mark.parametrize("vol,expected", get_volume_bindings_data)
+def test_05__get_volume_bindings(mock_proot, vol, expected):
+    """Test05 PRootEngine()._get_volume_bindings()."""
+    mock_proot.opt["vol"] = vol
+    assert mock_proot._get_volume_bindings() == expected
+
+
+get_network_map_data = (
+    (None, {}, []),
+    (None, {80: 8080}, ["-p", "80:8080"]),
+    (None, {80: 8080, 443: 8443}, ["-p", "80:8080", "-p", "443:8443"]),
+    (True, {80: 8080, 443: 8443, 53: 53}, ["-p", "80:8080", "-p", "443:8443", "-p", "53:53", "-n"]),
+)
+
+
+@pytest.mark.parametrize('xmode', ['P1'])
+@pytest.mark.parametrize('kernel', ['4.8.13'])
+@pytest.mark.parametrize("netcoop,portsmap,expected", get_network_map_data)
+def test_06__get_network_map(mock_proot, netcoop, portsmap, expected):
+    """Test06 PRootEngine()._get_network_map()."""
+    mock_proot.opt["netcoop"] = netcoop
+    mock_proot._get_portsmap = lambda: portsmap
+    assert mock_proot._get_network_map() == expected
 
 
 # from unittest import TestCase, main
