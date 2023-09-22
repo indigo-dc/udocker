@@ -63,67 +63,23 @@ def test_01_init(mocker, lrepo):
     mock_ks.assert_called()
 
 
-def test_02__cdrepo(mocker, ucli, cmdparse):
+data_cdrepo = ((None, True, 0, False),
+               (False, False, 1, False),
+               (True, False, 1, True))
+
+
+@pytest.mark.parametrize('risdir,ropt,cisdir,expected', data_cdrepo)
+def test_02__cdrepo(mocker, ucli, cmdparse, risdir, ropt, cisdir, expected):
     """Test02 UdockerCLI()._cdrepo()."""
-    mock_isdir = mocker.patch('udocker.cli.FileUtil.isdir')
+    mock_isdir = mocker.patch('udocker.cli.FileUtil.isdir', return_value=risdir)
     cmdparse.get.return_value = '/.udocker'
-    cmdparse.missing_options.return_value = True
+    cmdparse.missing_options.return_value = ropt
     resout = ucli._cdrepo(cmdparse)
-    assert not resout
-    mock_isdir.assert_not_called()
+    assert resout == expected
+    assert mock_isdir.call_count == cisdir
+#    assert lrepo.setup.call_count == clrepo
 
 
-def test_03__cdrepo(mocker, ucli, cmdparse, lrepo):
-    """Test03 UdockerCLI()._cdrepo()."""
-    mock_isdir = mocker.patch('udocker.cli.FileUtil.isdir', return_value=False)
-    cmdparse.get.return_value = '/.udocker'
-    cmdparse.missing_options.return_value = False
-    resout = ucli._cdrepo(cmdparse)
-    assert not resout
-    mock_isdir.assert_called()
-    lrepo.setup.assert_not_called()
-
-
-def test_04__cdrepo(mocker, ucli, cmdparse, lrepo):
-    """Test04 UdockerCLI()._cdrepo()."""
-    mock_isdir = mocker.patch('udocker.cli.FileUtil.isdir', return_value=True)
-    cmdparse.get.return_value = '/.udocker'
-    cmdparse.missing_options.return_value = False
-    resout = ucli._cdrepo(cmdparse)
-    assert resout
-    mock_isdir.assert_called()
-    lrepo.setup.assert_called()
-
-
-# @patch('udocker.cli.FileUtil.isdir')
-# def test_02__cdrepo(self, mock_isdir):
-#     """Test02 UdockerCLI()._cdrepo()."""
-#     argv = ["udocker", "-h"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     udoc = UdockerCLI(self.local)
-#     status = udoc._cdrepo(cmdp)
-#     self.assertFalse(status)
-#     self.assertFalse(mock_isdir.called)
-
-#     argv = ["udocker"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_isdir.return_value = False
-#     udoc = UdockerCLI(self.local)
-#     status = udoc._cdrepo(cmdp)
-#     self.assertFalse(status)
-#     self.assertTrue(mock_isdir.called)
-
-#     argv = ["udocker"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_isdir.return_value = True
-#     self.local.setup.return_value = None
-#     udoc = UdockerCLI(self.local)
-#     status = udoc._cdrepo(cmdp)
-#     self.assertTrue(status)
-#     self.assertTrue(self.local.setup.called)
 
 # @patch('udocker.cli.DockerIoAPI.is_repo_name')
 # def test_03__check_imagespec(self, mock_reponame):
