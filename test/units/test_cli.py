@@ -80,40 +80,32 @@ def test_02__cdrepo(mocker, ucli, cmdparse, risdir, ropt, cisdir, expected):
 #    assert lrepo.setup.call_count == clrepo
 
 
-def test_03__check_imagespec(mocker, ucli, dioapi):
+data_imgspec = ((False, '', None, (None, None)),
+                (True, '', 'AAA', ('AAA', 'latest')),
+                (True, 'AAA:45', None, ('AAA', '45')))
+
+
+@pytest.mark.parametrize('rdioapi,inprmt1,inprmt2,expected', data_imgspec)
+def test_03__check_imagespec(mocker, ucli, dioapi, rdioapi, inprmt1, inprmt2, expected):
     """Test03 UdockerCLI()._check_imagespec()."""
-    dioapi.is_repo_name.return_value = False
-    resout = ucli._check_imagespec('')
-    assert resout == (None, None)
+    dioapi.is_repo_name.return_value = rdioapi
+    resout = ucli._check_imagespec(inprmt1, inprmt2)
+    assert resout == expected
 
 
-def test_04__check_imagespec(mocker, ucli, dioapi):
+data_imgrepo = ((False, '', None, None),
+                (True, '', 'AAA', 'AAA'),
+                (True, 'AAA:45', None, 'AAA:45'))
+
+
+@pytest.mark.parametrize('rdioapi,inprmt1,inprmt2,expected', data_imgrepo)
+def test_04__check_imagerepo(mocker, ucli, dioapi, rdioapi, inprmt1, inprmt2, expected):
     """Test04 UdockerCLI()._check_imagespec()."""
-    dioapi.is_repo_name.return_value = True
-    resout = ucli._check_imagespec('', 'AAA')
-    assert resout == ('AAA', 'latest')
+    dioapi.is_repo_name.return_value = rdioapi
+    resout = ucli._check_imagerepo(inprmt1, inprmt2)
+    assert resout == expected
 
 
-def test_05__check_imagespec(mocker, ucli, dioapi):
-    """Test05 UdockerCLI()._check_imagespec()."""
-    dioapi.is_repo_name.return_value = True
-    resout = ucli._check_imagespec('AAA:45')
-    assert resout == ('AAA', '45')
-
-
-
-# @patch('udocker.cli.DockerIoAPI.is_repo_name')
-# def test_04__check_imagerepo(self, mock_reponame):
-#     """Test04 UdockerCLI()._check_imagerepo()."""
-#     mock_reponame.return_value = False
-#     udoc = UdockerCLI(self.local)
-#     status = udoc._check_imagerepo("")
-#     self.assertEqual(status, None)
-
-#     mock_reponame.return_value = True
-#     udoc = UdockerCLI(self.local)
-#     status = udoc._check_imagerepo("AAA")
-#     self.assertEqual(status, "AAA")
 
 # @patch('udocker.cli.DockerIoAPI.set_index')
 # @patch('udocker.cli.DockerIoAPI.set_registry')
