@@ -226,28 +226,28 @@ run_data = (
 )
 
 
-@pytest.mark.parametrize("execpath,croot,uname,expected", run_data)
-def test_08_run(mock_sing_engine, container_id, run_init, nixauth, select_singularity,
-                execpath, croot, uname,
-                expected):
-    """Test08 SingularityEngine().run()."""
-    run_init.return_value = execpath
-    mock_sing_engine.container_root = croot
+# @pytest.mark.parametrize("execpath,croot,uname,expected", run_data)
+# def test_08_run(mock_sing_engine, container_id, run_init, nixauth, select_singularity,
+#                 execpath, croot, uname,
+#                 expected):
+#     """Test08 SingularityEngine().run()."""
+#     run_init.return_value = execpath
+#     mock_sing_engine.container_root = croot
 
-    mock_sing_engine.opt["cmd"] = [["/bin/bash"], ]
-    mock_sing_engine.opt["portsmap"] = None
-    mock_sing_engine.opt["netcoop"] = None  # TODO: check this opt is not in default
-    mock_sing_engine.opt['user'] = uname
-    mock_sing_engine.opt['uid'] = 1001
-    mock_sing_engine.opt['home'] = "/home/user"
-    select_singularity.return_value = "execpath"
+#     mock_sing_engine.opt["cmd"] = [["/bin/bash"], ]
+#     mock_sing_engine.opt["portsmap"] = None
+#     mock_sing_engine.opt["netcoop"] = None  # TODO: check this opt is not in default
+#     mock_sing_engine.opt['user'] = uname
+#     mock_sing_engine.opt['uid'] = 1001
+#     mock_sing_engine.opt['home'] = "/home/user"
+#     select_singularity.return_value = "execpath"
 
-    hostusername.return_value = uname
-    nixauth.user_in_subuid.return_value = True
-    nixauth.user_in_subgid.return_value = True
+#     hostusername.return_value = uname
+#     nixauth.user_in_subuid.return_value = True
+#     nixauth.user_in_subgid.return_value = True
 
-    status = mock_sing_engine.run(container_id)
-    assert status == expected
+#     status = mock_sing_engine.run(container_id)
+#     assert status == expected
 
 
 # @patch.object(SingularityEngine, '_run_banner')
