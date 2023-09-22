@@ -106,54 +106,37 @@ def test_04__check_imagerepo(mocker, ucli, dioapi, rdioapi, inprmt1, inprmt2, ex
     assert resout == expected
 
 
+data_setrepo = (('registry.io', 'dockerhub.io', 'dockerhub.io/myimg:1.2', 'http://proxy', True),
+                ('', '', 'https://dockerhub.io/myimg:1.2', 'http://proxy', True),
+                ('', '', 'dockerhub', 'http://proxy', False))
 
-# @patch('udocker.cli.DockerIoAPI.set_index')
-# @patch('udocker.cli.DockerIoAPI.set_registry')
-# @patch('udocker.cli.DockerIoAPI.set_proxy')
-# def test_05__set_repository(self, mock_proxy, mock_reg, mock_idx):
-#     """Test05 UdockerCLI()._set_repository()."""
-#     regist = "registry.io"
-#     idxurl = "dockerhub.io"
-#     imgrepo = "dockerhub.io/myimg:1.2"
-#     mock_proxy.return_value = None
-#     mock_reg.side_effect = [None, None, None, None]
-#     mock_idx.side_effect = [None, None, None, None]
-#     udoc = UdockerCLI(self.local)
-#     status = udoc._set_repository(regist, idxurl, imgrepo, True)
-#     self.assertTrue(status)
-#     self.assertTrue(mock_proxy.called)
-#     self.assertTrue(mock_reg.called)
-#     self.assertTrue(mock_idx.called)
 
-#     regist = ""
-#     idxurl = ""
-#     imgrepo = "https://dockerhub.io/myimg:1.2"
-#     mock_proxy.return_value = None
-#     mock_reg.side_effect = [None, None, None, None]
-#     mock_idx.side_effect = [None, None, None, None]
-#     udoc = UdockerCLI(self.local)
-#     status = udoc._set_repository(regist, idxurl, imgrepo, False)
-#     self.assertTrue(status)
+@pytest.mark.parametrize('regist,idxurl,imgrepo,http_proxy,expected', data_setrepo)
+def test_05__set_repository(mocker, ucli, dioapi, regist, idxurl, imgrepo, http_proxy, expected):
+    """Test05 UdockerCLI()._set_repository()."""
+    dioapi.set_proxy.return_value = None
+    dioapi.set_registry.side_effect = [None, None, None, None]
+    dioapi.set_index.side_effect = [None, None, None, None]
+    resout = ucli._set_repository(regist, idxurl, imgrepo, http_proxy)
+    assert resout == expected
+    dioapi.return_value.set_proxy.assert_called()
+    # dioapi.return_value.set_registry.assert_called()
+    # dioapi.return_value.set_index.assert_called()
 
-# def test_06__split_imagespec(self):
-#     """Test06 UdockerCLI()._split_imagespec()."""
-#     imgrepo = ""
-#     res = ("", "", "", "")
-#     udoc = UdockerCLI(self.local)
-#     status = udoc._split_imagespec(imgrepo)
-#     self.assertEqual(status, res)
 
-#     imgrepo = "dockerhub.io/myimg:1.2"
-#     res = ("", "dockerhub.io", "myimg", "1.2")
-#     udoc = UdockerCLI(self.local)
-#     status = udoc._split_imagespec(imgrepo)
-#     self.assertEqual(status, res)
+data_setimg = (('', ('', '', '', '')),
+               ('dockerhub.io/myimg:1.2', ('', 'dockerhub.io', 'myimg', '1.2')),
+               ('https://dockerhub.io/myimg:1.2', ('https:', 'dockerhub.io', 'myimg', '1.2')),
+               ('https://dockerhub/myimg:1.2', ('https:', '', 'dockerhub/myimg', '1.2')))
 
-#     imgrepo = "https://dockerhub.io/myimg:1.2"
-#     res = ("https:", "dockerhub.io", "myimg", "1.2")
-#     udoc = UdockerCLI(self.local)
-#     status = udoc._split_imagespec(imgrepo)
-#     self.assertEqual(status, res)
+
+@pytest.mark.parametrize('imgrepo,expected', data_setimg)
+def test_06__split_imagespec(mocker, ucli, imgrepo, expected):
+    """Test06 UdockerCLI()._split_imagespec()."""
+    resout = ucli._split_imagespec(imgrepo)
+    assert resout == expected
+
+
 
 # @patch('udocker.cli.os.path.exists')
 # def test_07_do_mkrepo(self, mock_exists):
