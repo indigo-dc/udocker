@@ -189,8 +189,14 @@ def test_10_do_mkrepo(mocker, ucli, cmdparse, lrepo):
     lrepo.create_repo.assert_called()
 
 
-# # def test_08__search_print_lines(self):
-# #     """Test08 UdockerCLI()._search_print_lines()."""
+# def test_11__search_print_lines(mocker, ucli):
+#     """Test11 UdockerCLI()._search_print_lines()."""
+#     fmt = "%-55.80s %8.8s %-70.70s %5.5s"
+#     repo_list = {'results': ['repo1', 'repo2']}
+#     lines = 'line1 \n line2 \n'
+#     mock_msg = mocker.patch('udocker.cli.MSG')
+#     ucli._search_print_lines(repo_list, lines, fmt)
+#     mock_msg.assert_called()
 
 # @patch('udocker.cli.DockerIoAPI.search_get_page')
 # @patch('udocker.cli.HostInfo.termsize')
