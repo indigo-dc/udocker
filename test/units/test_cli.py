@@ -137,41 +137,57 @@ def test_06__split_imagespec(mocker, ucli, imgrepo, expected):
     assert resout == expected
 
 
+def test_07_do_mkrepo(mocker, ucli, cmdparse):
+    """Test07 UdockerCLI().do_mkrepo()."""
+    cmdparse.get.return_value = '/.udocker'
+    cmdparse.missing_options.return_value = True
+    mock_exists = mocker.patch('udocker.cli.os.path.exists')
+    resout = ucli.do_mkrepo(cmdparse)
+    assert resout == ucli.STATUS_ERROR
+    mock_exists.assert_not_called()
 
-# @patch('udocker.cli.os.path.exists')
-# def test_07_do_mkrepo(self, mock_exists):
-#     """Test07 UdockerCLI().do_mkrepo()."""
-#     argv = ["udocker", "-h"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_exists.return_value = True
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_mkrepo(cmdp)
-#     self.assertEqual(status, 1)
-#     self.assertFalse(mock_exists.called)
 
-#     argv = ["udocker", "mkrepo"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_exists.return_value = False
-#     self.local.setup.return_value = None
-#     self.local.create_repo.return_value = False
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_mkrepo(cmdp)
-#     self.assertEqual(status, 1)
-#     self.assertTrue(mock_exists.called)
-#     self.assertTrue(self.local.setup.called)
-#     self.assertTrue(self.local.create_repo.called)
+def test_08_do_mkrepo(mocker, ucli, cmdparse, lrepo):
+    """Test08 UdockerCLI().do_mkrepo()."""
+    cmdparse.get.return_value = '/.udocker'
+    cmdparse.missing_options.return_value = False
+    mock_exists = mocker.patch('udocker.cli.os.path.exists', return_value=False)
+    lrepo.setup.return_value = None
+    lrepo.create_repo.return_value = False
+    resout = ucli.do_mkrepo(cmdparse)
+    assert resout == ucli.STATUS_ERROR
+    mock_exists.assert_called()
+    lrepo.setup.assert_called()
+    lrepo.create_repo.assert_called()
 
-#     argv = ["udocker", "mkrepo"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_exists.return_value = False
-#     self.local.setup.return_value = None
-#     self.local.create_repo.return_value = True
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_mkrepo(cmdp)
-#     self.assertEqual(status, 0)
+
+def test_09_do_mkrepo(mocker, ucli, cmdparse, lrepo):
+    """Test09 UdockerCLI().do_mkrepo()."""
+    cmdparse.get.return_value = '/.udocker'
+    cmdparse.missing_options.return_value = False
+    mock_exists = mocker.patch('udocker.cli.os.path.exists', return_value=True)
+    lrepo.setup.return_value = None
+    lrepo.create_repo.return_value = False
+    resout = ucli.do_mkrepo(cmdparse)
+    assert resout == ucli.STATUS_ERROR
+    mock_exists.assert_called()
+    lrepo.setup.assert_not_called()
+    lrepo.create_repo.assert_not_called()
+
+
+def test_10_do_mkrepo(mocker, ucli, cmdparse, lrepo):
+    """Test10 UdockerCLI().do_mkrepo()."""
+    cmdparse.get.return_value = '/.udocker'
+    cmdparse.missing_options.return_value = False
+    mock_exists = mocker.patch('udocker.cli.os.path.exists', return_value=False)
+    lrepo.setup.return_value = None
+    lrepo.create_repo.return_value = True
+    resout = ucli.do_mkrepo(cmdparse)
+    assert resout == ucli.STATUS_OK
+    mock_exists.assert_called()
+    lrepo.setup.assert_called()
+    lrepo.create_repo.assert_called()
+
 
 # # def test_08__search_print_lines(self):
 # #     """Test08 UdockerCLI()._search_print_lines()."""
