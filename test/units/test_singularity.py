@@ -164,7 +164,7 @@ def test_05__make_container_dirs(mock_sing_engine, mkdir):
 
 invalid_options_data = (
     ("netcoop", "portsmap", 2, [mock.call("this execution mode does not support -p --publish"),
-                     mock.call("Warning: this exec mode does not support -P --netcoop --publish-all")]),
+                                mock.call("Warning: this exec mode does not support -P --netcoop --publish-all")]),
     (None, None, 0, []),
 )
 
@@ -221,7 +221,7 @@ def select_singularity(mocker):
 
 
 run_data = (
-    #("", 2),
+    # ("", 2),
     ("/home/user/execpath", "/home/user/container", "root", 2),
 )
 
@@ -248,7 +248,6 @@ def test_08_run(mock_sing_engine, container_id, run_init, nixauth, select_singul
 
     status = mock_sing_engine.run(container_id)
     assert status == expected
-
 
 # @patch.object(SingularityEngine, '_run_banner')
 #     @patch.object(SingularityEngine, '_run_env_cleanup_dict')

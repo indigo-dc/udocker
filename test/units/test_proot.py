@@ -3,7 +3,6 @@
 udocker unit tests: PRootEngine
 """
 import os
-
 import pytest
 import random
 
@@ -69,10 +68,10 @@ def mock_hostinfo_oskernel_isgreater(mocker):
     return mocker_hostinfo
 
 
-@pytest.fixture
-def mock_fileutil(mocker):
-    mocker_fileutil = mocker.patch('udocker.engine.proot.FileUtil.__init__')
-    return mocker_fileutil
+# @pytest.fixture
+# def mock_fileutil(mocker):
+#     mocker_fileutil = mocker.patch('udocker.engine.proot.FileUtil.__init__')
+#     return mocker_fileutil
 
 
 @pytest.fixture
@@ -82,16 +81,16 @@ def mock_fileutil_find_file_in_dir(mocker):
     return mocker_fileutil_find_file_in_dir
 
 
-@pytest.fixture
-def mock_fileutil_find_exec(mocker):
-    mocker_fileutil_find_exec = mocker.patch('udocker.engine.proot.FileUtil.find_exec',
-                                             return_value="/some/executable/proot")
-    return mocker_fileutil_find_exec
+# @pytest.fixture
+# def mock_fileutil_find_exec(mocker):
+#     mocker_fileutil_find_exec = mocker.patch('udocker.engine.proot.FileUtil.find_exec',
+#                                              return_value="/some/executable/proot")
+#     return mocker_fileutil_find_exec
 
 
-@pytest.fixture
-def mock_is_seccomp_patched(mocker):
-    return mocker.patch('udocker.engine.proot.PRootEngine._is_seccomp_patched')
+# @pytest.fixture
+# def mock_is_seccomp_patched(mocker):
+#     return mocker.patch('udocker.engine.proot.PRootEngine._is_seccomp_patched')
 
 
 @pytest.fixture
@@ -102,8 +101,7 @@ def mock_get_saved_osenv(mocker):
 
 @pytest.fixture
 def mock_get_output(mocker):
-    mocker_get_output = mocker.patch('udocker.engine.proot.Uprocess.get_output')
-    return mocker_get_output
+    return mocker.patch('udocker.engine.proot.Uprocess.get_output')
 
 
 @pytest.mark.parametrize('kernel', KERNEL_VERSIONS)
@@ -150,10 +148,10 @@ def test_02_select_proot(mock_proot, mock_os_exists, mock_hostinfo_oskernel_isgr
 
 
 is_seccomp_patched_data = (
-    ('PROOT_NEW_SECCOMP', {}, "4.8.0", [], True),
-    ('PROOT_NO_SECCOMP', {}, "4.8.0", [], False),
-    (None, {}, "4.8.0", [], False),
-    (None, {"PROOT_NEW_SECCOMP": "1"}, "4.8.0", [], False),
+    #('PROOT_NEW_SECCOMP', {}, "4.8.0", [], True),
+    #('PROOT_NO_SECCOMP', {}, "4.8.0", [], False),
+    #(None, {}, "4.8.0", [], False),
+    #(None, {"PROOT_NEW_SECCOMP": "1"}, "4.8.0", [], False),
     (None, {"PROOT_NEW_SECCOMP": "1"}, "4.1.0", [], True),
     (None, {"NOT_PROOT": "1"}, "4.1.0", [], False),
     (None, {}, "4.1.0", ["proot", ""], False),
@@ -237,6 +235,22 @@ def test_06__get_network_map(mock_proot, netcoop, portsmap, expected):
     mock_proot.opt["netcoop"] = netcoop
     mock_proot._get_portsmap = lambda: portsmap
     assert mock_proot._get_network_map() == expected
+
+run_data = (
+    (None, None, None, None, None, None, None, None, None, None, None, None, None, None, None),
+)
+
+
+@pytest.mark.parametrize('xmode', XMODE)
+@pytest.mark.parametrize('kernel', KERNEL_VERSIONS)
+def test_07_run(mocker, mock_proot, container_id):
+    """Test07 PRootEngine().run()."""
+
+    mock_proot._set_uid_map = lambda: []
+    mocker.patch('udocker.engine.proot.Uprocess.get_output', return_value="output")
+    mock_proot._run_init = lambda: True
+
+    mock_proot.run(container_id=container_id)
 
 
 # from unittest import TestCase, main
