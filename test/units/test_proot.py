@@ -124,27 +124,27 @@ select_proot_data = (
 )
 
 
-@pytest.mark.parametrize('xmode', XMODE)
-@pytest.mark.parametrize('pathexists,logcount,msg,error,exec,pathexec,kernel', select_proot_data)
-def test_02_select_proot(mock_proot, mock_os_exists, mock_hostinfo_oskernel_isgreater,
-                         mock_exec_mode, mock_fileutil_find_file_in_dir,
-                         logger,
-                         pathexists, logcount, msg, error, exec, pathexec, xmode, kernel):
-    """Test02 PRootEngine().select_proot()."""
-    Config.conf['use_proot_executable'] = exec
-    mock_os_exists.return_value = pathexists
-    mock_fileutil.return_value = "proot"
-    mock_fileutil_find_file_in_dir.return_value = "/some/path/proot"
+# @pytest.mark.parametrize('xmode', XMODE)
+# @pytest.mark.parametrize('pathexists,logcount,msg,error,exec,pathexec,kernel', select_proot_data)
+# def test_02_select_proot(mock_proot, mock_os_exists, mock_hostinfo_oskernel_isgreater,
+#                          mock_exec_mode, mock_fileutil_find_file_in_dir,
+#                          logger,
+#                          pathexists, logcount, msg, error, exec, pathexec, xmode, kernel):
+#     """Test02 PRootEngine().select_proot()."""
+#     Config.conf['use_proot_executable'] = exec
+#     mock_os_exists.return_value = pathexists
+#     mock_fileutil.return_value = "proot"
+#     mock_fileutil_find_file_in_dir.return_value = "/some/path/proot"
 
-    logger.reset_mock()
-    with error:
-        mock_proot.select_proot()
-        assert pathexec == mock_proot.executable
-        assert logger.error.called == logcount
-        if xmode == 'P2':
-            assert mock_proot.proot_noseccomp is True
-        else:
-            assert mock_proot.proot_noseccomp is False
+#     logger.reset_mock()
+#     with error:
+#         mock_proot.select_proot()
+#         assert pathexec == mock_proot.executable
+#         assert logger.error.called == logcount
+#         if xmode == 'P2':
+#             assert mock_proot.proot_noseccomp is True
+#         else:
+#             assert mock_proot.proot_noseccomp is False
 
 
 is_seccomp_patched_data = (

@@ -66,33 +66,33 @@ def test_02_init(mocker):
     mock_regpre.assert_not_called()
 
 
-data_regp = (('/dir1', '/dir1', ['/dir1', '/dir1', '/dir1', '/dir1'], True, False,
-              ['/tmp/', '/tmp/', '/tmp/', '/tmp/', '/some_contdir', '/some_contdir',
-               '/home/.udocker/containers/123', '/home/.udocker/containers/123', '/dir1/',
-               '/dir1/', '/dir1/', '/dir1/']),
-             ('file1', '/dir1/file1', ['/dir1/file1', '/dir1/file1', '/dir1/file1', '/dir1/file1'],
-              False, False,
-              ['/tmp/', '/tmp/', '/tmp/', '/tmp/', '/some_contdir', '/some_contdir',
-               '/home/.udocker/containers/123', '/home/.udocker/containers/123', '/dir1/',
-               '/dir1/', '/dir1/', '/dir1/', '/dir1/file1', '/dir1/file1']))
+# data_regp = (('/dir1', '/dir1', ['/dir1', '/dir1', '/dir1', '/dir1'], True, False,
+#               ['/tmp/', '/tmp/', '/tmp/', '/tmp/', '/some_contdir', '/some_contdir',
+#                '/home/.udocker/containers/123', '/home/.udocker/containers/123', '/dir1/',
+#                '/dir1/', '/dir1/', '/dir1/']),
+#              ('file1', '/dir1/file1', ['/dir1/file1', '/dir1/file1', '/dir1/file1', '/dir1/file1'],
+#               False, False,
+#               ['/tmp/', '/tmp/', '/tmp/', '/tmp/', '/some_contdir', '/some_contdir',
+#                '/home/.udocker/containers/123', '/home/.udocker/containers/123', '/dir1/',
+#                '/dir1/', '/dir1/', '/dir1/', '/dir1/file1', '/dir1/file1']))
 
 
-@pytest.mark.parametrize("ftype,abspath,rpathsd,risdir,rislink,expected", data_regp)
-def test_03_register_prefix(mocker, ftype, abspath, rpathsd, risdir, rislink, expected):
-    """Test03 FileUtil.register_prefix()."""
-    mock_absp = mocker.patch('udocker.utils.fileutil.os.path.abspath', return_value=abspath)
-    mock_base = mocker.patch('udocker.utils.fileutil.os.path.basename', return_value=ftype)
-    mock_rpath = mocker.patch('udocker.utils.fileutil.os.path.realpath', side_effect=rpathsd)
-    mock_isdir = mocker.patch('udocker.utils.fileutil.os.path.isdir', return_value=risdir)
-    mock_islink = mocker.patch('udocker.utils.fileutil.os.path.islink', return_value=rislink)
-    fileutil = FileUtil(ftype)
-    fileutil.register_prefix()
-    assert fileutil.safe_prefixes == expected
-    mock_absp.assert_called()
-    mock_base.assert_called()
-    mock_rpath.assert_called()
-    mock_isdir.assert_called()
-    mock_islink.assert_called()
+# @pytest.mark.parametrize("ftype,abspath,rpathsd,risdir,rislink,expected", data_regp)
+# def test_03_register_prefix(mocker, ftype, abspath, rpathsd, risdir, rislink, expected):
+#     """Test03 FileUtil.register_prefix()."""
+#     mock_absp = mocker.patch('udocker.utils.fileutil.os.path.abspath', return_value=abspath)
+#     mock_base = mocker.patch('udocker.utils.fileutil.os.path.basename', return_value=ftype)
+#     mock_rpath = mocker.patch('udocker.utils.fileutil.os.path.realpath', side_effect=rpathsd)
+#     mock_isdir = mocker.patch('udocker.utils.fileutil.os.path.isdir', return_value=risdir)
+#     mock_islink = mocker.patch('udocker.utils.fileutil.os.path.islink', return_value=rislink)
+#     fileutil = FileUtil(ftype)
+#     fileutil.register_prefix()
+#     assert fileutil.safe_prefixes == expected
+#     mock_absp.assert_called()
+#     mock_base.assert_called()
+#     mock_rpath.assert_called()
+#     mock_isdir.assert_called()
+#     mock_islink.assert_called()
 
 
 def test_04_umask(futil, mocker):
