@@ -119,9 +119,11 @@ class PRootEngine(ExecutionEngineCommon):
         proot_netmap_list = []
         for (cont_port, host_port) in list(self._get_portsmap().items()):
             proot_netmap_list.extend(["-p", "%d:%d" % (cont_port, host_port)])
-        if self.opt["netcoop"]:
+        if self.opt["netcoop"] and self._has_option("--netcoop"):
             proot_netmap_list.extend(["-n", ])
-        return proot_netmap_list
+        if proot_netmap_list and self._has_option("--port"):
+            return proot_netmap_list
+        return []
 
     def _get_qemu_string(self):
         """Get the qemu string for container run command if emulation needed"""
@@ -162,6 +164,12 @@ class PRootEngine(ExecutionEngineCommon):
         else:
             proot_verbose = []
 
+        if (Config.conf['proot_link2symlink'] and
+                self._has_option("--link2symlink")):
+            proot_link2symlink = ["--link2symlink", ]
+        else:
+            proot_link2symlink = []
+
         if (Config.conf['proot_killonexit'] and
                 self._has_option("--kill-on-exit")):
             proot_kill_on_exit = ["--kill-on-exit", ]
@@ -173,6 +181,7 @@ class PRootEngine(ExecutionEngineCommon):
         cmd_l.append(self.executable)
         cmd_l.extend(proot_verbose)
         cmd_l.extend(proot_kill_on_exit)
+        cmd_l.extend(proot_link2symlink)
         cmd_l.extend(self._get_qemu_string())
         cmd_l.extend(self._get_volume_bindings())
         cmd_l.extend(self._set_uid_map())
