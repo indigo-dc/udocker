@@ -3,7 +3,7 @@
 ## udocker (1.3.11)
 
 * add support for hard link to symbolic link conversion in Pn modes
-  has hard links cannot be created by unprivileged users - partially
+  as hard links cannot be created by unprivileged users - partially
   addresses: #388
 * check of availability of network extensions for port mapping and
   netcoop in Pn modes and only use them if supported by the proot
