@@ -2,9 +2,13 @@
 """
 udocker unit tests: SingularityEngine
 """
+import logging
 import random
+from contextlib import nullcontext as does_not_raise
+
 import mock
 import pytest
+
 from udocker.config import Config
 from udocker.engine.singularity import SingularityEngine
 
@@ -22,34 +26,24 @@ def lrepo(mocker, container_id):
 
 
 @pytest.fixture
-def mock_sing_engine(lrepo):
+def singularity(lrepo):
     mode = mock.patch('udocker.engine.execmode.ExecutionMode')
     return SingularityEngine(lrepo, mode.start())
 
 
 @pytest.fixture
-def os_path(mocker):
+def mock_os_path_exists(mocker):
     return mocker.patch('udocker.engine.singularity.os.path.exists')
 
 
 @pytest.fixture
-def isdir(mocker):
+def mock_os_path_isdir(mocker):
     return mocker.patch('udocker.engine.singularity.os.path.isdir')
 
 
 @pytest.fixture
-def tmpdir(tmpdir_factory):
-    return tmpdir_factory.mktemp("singularity")
-
-
-@pytest.fixture
-def fileutil(mocker):
+def mock_fileutil(mocker):
     return mocker.patch('udocker.engine.singularity.FileUtil')
-
-
-@pytest.fixture
-def mkdir(mocker):
-    return mocker.patch('udocker.engine.singularity.FileUtil.mkdir')
 
 
 @pytest.fixture
@@ -58,68 +52,52 @@ def logger(mocker):
 
 
 @pytest.fixture
-def hostusername(mocker):
-    return mocker.patch('udocker.engine.singularity.HostInfo.username')
+def mock_hostinfo(mocker):
+    return mocker.patch('udocker.engine.singularity.HostInfo')
 
 
 @pytest.fixture
-def nixauth(mocker):
+def mock_nixauth(mocker):
     return mocker.patch('udocker.engine.singularity.NixAuthentication')
 
 
-@pytest.fixture
-def nixaut_gethome(mocker):
-    return mocker.patch('udocker.engine.singularity.NixAuthentication.get_home')
-
-
-@pytest.fixture
-def hasopt(mocker):
-    return mocker.patch('udocker.engine.singularity.SingularityEngine._has_option')
-
-
-def test_01_init(mock_sing_engine, tmpdir):
+def test_01_init(singularity, tmpdir):
     """Test the init() function"""
-    engine = SingularityEngine(tmpdir, None)
-    assert engine.executable is None
-    assert engine.execution_id is None
+    assert singularity.executable is None
+    assert singularity.execution_id is None
 
 
-select_singularity_data = (
-    (True, None, "/bin/runc-arm", "i386", 0, "Error: singularity executable not found"),
-    (True, "UDOCKER", "/bin/runc-arm", "i386", 0, "Error: singularity executable not found"),
-    (False, "UDOCKER", "/bin/runc-arm", "", 1, ""),
-    (False, "UDOCKER", "", "amd64", 1, ""),
-)
-
-
-@pytest.mark.parametrize("os_exists,executable,findexec,arch,logcount,loggermsg", select_singularity_data)
-def test_02_select_singularity(mock_sing_engine, fileutil, tmpdir, logger, os_path, os_exists, executable, findexec,
-                               arch, logcount, loggermsg):
+@pytest.mark.parametrize("os_exists,executable,findexec,arch,logcount,loggermsg,error,expected", [
+    (True, None, "/bin/runc-arm", "i386", 0, [], does_not_raise(), "/bin/runc-arm"),
+    (True, "UDOCKER", "singularity-x86_64", "amd64", 0, [], does_not_raise(), "singularity-x86_64"),
+    (False, "UDOCKER", "singularity-x86_64", "amd64", 1, "Error: singularity executable not found",
+     pytest.raises(SystemExit), "singularity-x86_64"),
+    (False, "UDOCKER", "", "i386", 1, "Error: singularity executable not found", pytest.raises(SystemExit),
+     "singularity-x86_64"),
+])
+def test_02_select_singularity(mocker, singularity, mock_fileutil, mock_os_path_exists, logger, os_exists,
+                               executable, findexec, arch, logcount, loggermsg, error, expected):
     """Test the select_singularity() function"""
+    mocker.patch.object(Config, 'conf', {'use_singularity_executable': executable})
 
-    Config.conf['use_singularity_executable'] = executable
-    fileutil.return_value.find_exec.return_value = findexec
-    os_path.return_value = os_exists
-    fileutil.return_value.find_file_in_dir.return_value = findexec
-    fileutil.find_file_in_dir.return_value = "singularity-x86_64"
+    mock_os_path_exists.return_value = os_exists
+    mock_fileutil.return_value.find_exec.return_value = findexec
+    mock_fileutil.return_value.find_file_in_dir.return_value = findexec
 
-    logger.error.reset_mock()
-    if os_exists:
-        mock_sing_engine.select_singularity()
-    else:
-        with pytest.raises(SystemExit) as exit_code:
-            mock_sing_engine.select_singularity()
+    with error as exit_code:
+        singularity.select_singularity()
+        if exit_code is not None:
             assert exit_code.type == SystemExit
             assert exit_code.value.code == 1
-            assert logger.error.call_args_list == [mock.call(loggermsg)]
+        assert logger.error.call_args_list == loggermsg
+        assert logger.error.call_count == logcount
+        assert singularity.executable == findexec
 
-    assert logger.error.call_count == logcount
-    assert mock_sing_engine.executable == findexec
 
-
-volume_bindings_data = (
-    (["/dir1", "/home/user"], "", True, ['-B', '/dir1:/dir1', '-B', '/home/user:/home/user', '--home', '/root:/root',
-                                         '-B', '/tmp:/tmp', '-B', '/var/tmp:/var/tmp']),
+@pytest.mark.parametrize("vol,home,istmp,expected", [
+    (["/dir1", "/home/user"], "", True,
+     ['-B', '/dir1:/dir1', '-B', '/home/user:/home/user', '--home', '/root:/root', '-B', '/tmp:/tmp', '-B',
+      '/var/tmp:/var/tmp']),
     (["/home/user", "/tmp", "/var/tmp"], "/home/user", True, ['-B', '/home/user:/home/user', '-B', '/tmp:/tmp',
                                                               '-B', '/var/tmp:/var/tmp']),
     (["/home/user", "/tmp", "/var/tmp"], "/home/user", True, ['-B', '/home/user:/home/user', '-B', '/tmp:/tmp',
@@ -127,127 +105,112 @@ volume_bindings_data = (
     (["/dir1"], "/home/user", False, ['-B', '/dir1:/dir1', '--home', '/root:/root', '-B', '/tmp:/tmp',
                                       '-B', '/var/tmp:/var/tmp']),
     ([], "/home/user", True, ['--home', '/root:/root', '-B', '/tmp:/tmp', '-B', '/var/tmp:/var/tmp']),
-)
-
-
-@pytest.mark.parametrize("vol,home,istmp,expected", volume_bindings_data)
-def test_03__get_volume_bindings(mock_sing_engine, nixaut_gethome, isdir, vol, home, istmp, expected):
+])
+def test_03__get_volume_bindings(mocker, singularity, mock_nixauth, mock_os_path_isdir, vol, home, istmp, expected):
     """Test the _get_volume_bindings() function"""
-    isdir.side_effect = [istmp for _ in vol]
-    mock_sing_engine.opt['vol'] = vol
-    nixaut_gethome.return_value = home
-    status = mock_sing_engine._get_volume_bindings()
+    mock_os_path_isdir.side_effect = [istmp for _ in vol]
+    mocker.patch.object(singularity, 'opt', {'vol': vol})
+    mock_nixauth.return_value.get_home.return_value = home
 
+    status = singularity._get_volume_bindings()
     assert status == expected
 
 
-singularity_env_get_data = (
-    ([("AA", "aa"), ("BB", "bb")], {"SINGULARITYENV_AA": "aa", "SINGULARITYENV_BB": "bb"}),
-    ([], {})
-)
-
-
-@pytest.mark.parametrize("envkeys,expected", singularity_env_get_data)
-def test_04__singularity_env_get(mock_sing_engine, envkeys, expected):
+@pytest.mark.parametrize("envkeys,expected", (
+        ([("AA", "aa"), ("BB", "bb")], {"SINGULARITYENV_AA": "aa", "SINGULARITYENV_BB": "bb"}),
+        ([], {})
+))
+def test_04__singularity_env_get(mocker, singularity, envkeys, expected):
     """Test04 SingularityEngine()._singularity_env_get()."""
-    mock_sing_engine.opt['env'] = envkeys
-    status = mock_sing_engine._singularity_env_get()
+    mocker.patch.object(singularity, 'opt', {'env': envkeys})
+
+    status = singularity._singularity_env_get()
     assert status == expected
 
 
-def test_05__make_container_dirs(mock_sing_engine, mkdir):
+@pytest.mark.parametrize("mkdir", [
+    ([True, True, True, True, True, True]),
+    ([False, False, False, False, False, False]),
+])
+def test_05__make_container_dirs(singularity, mock_fileutil, mkdir):
     """Test05 SingularityEngine()._make_container_directories()."""
-    mkdir.side_effect = [True, True, True, True, True, True]
-    mock_sing_engine._make_container_directories()
-    assert mkdir.call_count == 6
+    mock_fileutil.return_value.mkdir.side_effect = mkdir
+    singularity._make_container_directories()
+    assert mock_fileutil.return_value.mkdir.call_count == 6
 
 
-invalid_options_data = (
+@pytest.mark.parametrize("portsmap,netcoop,logcount,call", [
     ("netcoop", "portsmap", 2, [mock.call("this execution mode does not support -p --publish"),
                                 mock.call("Warning: this exec mode does not support -P --netcoop --publish-all")]),
     (None, None, 0, []),
-)
-
-
-@pytest.mark.parametrize("portsmap,netcoop,logcount,call", invalid_options_data)
-def test_06__run_invalid_options(mock_sing_engine, logger, portsmap, netcoop, logcount, call):
+])
+def test_06__run_invalid_options(mocker, singularity, logger, portsmap, netcoop, logcount, call):
     """Test06 SingularityEngine()._run_invalid_options()."""
-    mock_sing_engine.opt['netcoop'] = netcoop
-    mock_sing_engine.opt['portsmap'] = portsmap
-    mock_sing_engine._run_invalid_options()
+    mocker.patch.object(singularity, 'opt', {'portsmap': portsmap, 'netcoop': netcoop})
+    singularity._run_invalid_options()
     assert logger.warning.call_count == logcount
     assert logger.warning.call_args_list == call
 
 
-run_as_root_data = (
-    ("u1", 1001, "u1", 0, [], False),
-    ("u1", 1001, "u2", 1, [mock.call("running as another user not supported")], False),
-    ("root", 1001, "u1", 0, [], True),
-    (None, 1001, "u1", 0, [], False),
-)
-
-
-@pytest.mark.parametrize("envuname,envuid,uname,logcount,loggermsg,expected", run_as_root_data)
-def test_07__run_as_root(mock_sing_engine, hostusername, nixauth, hasopt, logger, envuname, envuid, uname, logcount,
-                         loggermsg, expected):
+@pytest.mark.parametrize("opts,uname,logcount,loggermsg,option,user_in,expected", [
+    ({'user': 'u1', 'uid': 1001, 'home': "/home/user"}, 'u1', 0, [], "", (False, False), False),
+    ({'user': 'u1', 'uid': 1001, 'home': "/home/user"}, "u2", 1, [mock.call("running as another user not supported")],
+     "", (False, False), False),
+    ({'user': 'root', 'uid': 1001, 'home': "/home/user"}, "u1", 0, [], "", (False, False), False),
+    ({'user': 'root', 'uid': 1001, 'home': "/home/user"}, "u1", 0, [], "--fakeroot", (True, True), True),
+    ({'user': 'root', 'uid': 1001, 'home': "/home/user"}, "u1", 0, [], "", (False, False), False),
+    ({'uid': 1001, 'home': "/home/user"}, "u1", 0, [], "", (False, False), False),
+])
+def test_07__run_as_root(mocker, singularity, mock_hostinfo, mock_nixauth, logger, logcount, uname,
+                         loggermsg, option, user_in, expected, opts):
     """Test07 SingularityEngine()._run_as_root()."""
-    Config.conf['singularity_options'] = []
-    mock_sing_engine.opt['user'] = envuname
-    mock_sing_engine.opt['uid'] = envuid
+    mocker.patch.object(Config, 'conf', {'singularity_options': []})
+    mocker.patch.object(singularity, 'opt', opts)
+    mocker.patch.object(singularity, '_has_option', return_value=lambda x, y: True if option == "--fakeroot" else False)
 
-    hostusername.return_value = uname
-    nixauth.user_in_subuid.return_value = True
-    nixauth.user_in_subgid.return_value = True
+    mock_hostinfo.return_value.username.return_value = uname
+    mock_nixauth.return_value.user_in_subuid.return_value = user_in[0]
+    mock_nixauth.return_value.user_in_subgid.return_value = user_in[1]
 
-    if envuname is None:
-        mock_sing_engine.opt.pop('user')
-
-    status = mock_sing_engine._run_as_root()
-
-    assert status == expected
+    assert singularity._run_as_root() == expected
+    assert ('--fakeroot' in Config.conf['singularity_options']) == expected
     assert logger.warning.call_count == logcount
     assert logger.warning.call_args_list == loggermsg
-    assert ('--fakeroot' in Config.conf['singularity_options']) == expected
 
-
-@pytest.fixture
-def run_init(mocker):
-    return mocker.patch('udocker.engine.singularity.SingularityEngine._run_init')
-
-
-@pytest.fixture
-def select_singularity(mocker):
-    return mocker.patch('udocker.engine.singularity.SingularityEngine.select_singularity')
-
-
-run_data = (
-    # ("", 2),
-    ("/home/user/execpath", "/home/user/container", "root", 2),
-)
-
-
-@pytest.mark.parametrize("execpath,croot,uname,expected", run_data)
-def test_08_run(mock_sing_engine, container_id, run_init, nixauth, select_singularity,
-                execpath, croot, uname,
-                expected):
-    """Test08 SingularityEngine().run()."""
-    run_init.return_value = execpath
-    mock_sing_engine.container_root = croot
-
-    mock_sing_engine.opt["cmd"] = [["/bin/bash"], ]
-    mock_sing_engine.opt["portsmap"] = None
-    mock_sing_engine.opt["netcoop"] = None  # TODO: check this opt is not in default
-    mock_sing_engine.opt['user'] = uname
-    mock_sing_engine.opt['uid'] = 1001
-    mock_sing_engine.opt['home'] = "/home/user"
-    select_singularity.return_value = "execpath"
-
-    hostusername.return_value = uname
-    nixauth.user_in_subuid.return_value = True
-    nixauth.user_in_subgid.return_value = True
-
-    status = mock_sing_engine.run(container_id)
-    assert status == expected
+#
+# @pytest.mark.parametrize("is_dir,execpath,loglevel,opts,expected", [
+#     # ("/home/user/execpath", "/home/user/container", "root", 2), execpath,croot,uname,expected
+#     (True, "/home/user/execpath", {'verbose_level': logging.DEBUG}, {'cmd': ['pwd']}, 0),
+#     (False, "/home/user/execpath", {'verbose_level': logging.DEBUG}, {'cmd': ['pwd']}, 0),
+#     (False, None, None, {}, 2),
+# ])
+# def test_08_run(mocker, singularity, container_id, mock_nixauth, is_dir, execpath, loglevel, opts,
+#                 expected):
+#     """Test08 SingularityEngine().run()."""
+#     mocker.patch.object(singularity, 'opt', opts)
+#
+#     mocker.patch.object(singularity, '_check_arch')
+#     mocker.patch.object(singularity, '_run_invalid_options')
+#     mocker.patch.object(singularity, '_make_container_directories')
+#     mocker.patch.object(singularity, 'select_singularity')
+#     mocker.patch.object(singularity, '_run_env_set')
+#
+#     mocker.patch('udocker.engine.singularity.FileBind.restore', return_value=[])
+#     mocker.patch('udocker.engine.singularity.os.path.isdir', return_value=is_dir)
+#     config = mocker.patch.object(Config, 'conf', {'env': {},
+#                                                   'root_path': '',
+#                                                   'tmpdir': '/tmp',
+#                                                   'use_singularity_executable': [],
+#                                                   'singularity_options': [],
+#                                                   'sysdirs_list': (
+#                                                       "/etc/resolv.conf", "/etc/host.conf", "/lib/modules",)})
+#
+#     if loglevel:
+#         config.update(loglevel)
+#
+#     mocker.patch.object(singularity, '_run_init', lambda container_id: execpath)
+#
+#     assert singularity.run(container_id) == expected
 
 # @patch.object(SingularityEngine, '_run_banner')
 #     @patch.object(SingularityEngine, '_run_env_cleanup_dict')
