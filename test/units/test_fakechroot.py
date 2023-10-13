@@ -90,21 +90,18 @@ def test_01__init(ufake):
 
 
 @pytest.mark.parametrize('xmode', XMODE)
-@pytest.mark.parametrize('fakechroot_so,os_exist,os_info,error,expected', (
-        ("", [True, True, True, True, True, True], ("linux", "4.8.1"), does_not_raise(),
-         "/tmp/libfakechroot.so"),
-        ("", [False, True, True, True, True, True], ("linux", "4.8.1"), does_not_raise(),
-         "/tmp/libfakechroot.so"),
-        ("", [False, False, False, False, False, False], ("linux", "4.8.1"), pytest.raises(SystemExit),
-         "/tmp/libfakechroot.so"),
-        ("/s/fake1", [False, True, True, True, True, True], ("linux", "4.8.1"), does_not_raise(),
-         "/tmp/libfakechroot.so"),
-        ("/s/fake1", [True, True, True, True, True, True], ("linux", "4.8.1"), does_not_raise(), "/s/fake1"),
-        (["/s/fake1", ], [False, True, True, True, True, True], ("linux", "4.8.1"), pytest.raises(SystemExit),
-         "/tmp/libfakechroot.so"),
-        (["/s/fake1", ], [False, True, True, True, True, True], ("Alpine", "4.8.1"), pytest.raises(SystemExit),
-         "/tmp/libfakechroot.so"),
-))
+@pytest.mark.parametrize('fakechroot_so,os_exist,os_info,error,expected', [
+    ("", [True, True, True, True, True, True], ("linux", "4.8.1"), does_not_raise(), "/tmp/libfakechroot.so"),
+    ("", [False, True, True, True, True, True], ("linux", "4.8.1"), does_not_raise(), "/tmp/libfakechroot.so"),
+    ("", [False, False, False, False, False, False], ("linux", "4.8.1"), pytest.raises(SystemExit),
+     "/tmp/libfakechroot.so"),
+    ("/s/fake1", [False, True, True, True, True, True], ("linux", "4.8.1"), does_not_raise(), "/tmp/libfakechroot.so"),
+    ("/s/fake1", [True, True, True, True, True, True], ("linux", "4.8.1"), does_not_raise(), "/s/fake1"),
+    (["/s/fake1", ], [False, True, True, True, True, True], ("linux", "4.8.1"), pytest.raises(SystemExit),
+     "/tmp/libfakechroot.so"),
+    (["/s/fake1", ], [False, True, True, True, True, True], ("Alpine", "4.8.1"), pytest.raises(SystemExit),
+     "/tmp/libfakechroot.so"),
+])
 def test_02_select_fakechroot_so(ufake, mock_os_path_exists, mock_fileutil, mock_osinfo,
                                  fakechroot_so, os_exist, os_info, error, expected):
     """Test02 FakechrootEngine.select_fakechroot_so."""
