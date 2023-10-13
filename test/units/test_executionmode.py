@@ -131,9 +131,9 @@ def test_03_set_mode(mocker, exec_mode, logger, mock_elfp, mock_fileutil, mode, 
     ("R3", RuncEngine),
     ("S1", SingularityEngine),
 ])
-def test_04_get_engine(mocker, execution_mode, mode, expected):
+def test_04_get_engine(mocker, exec_mode, mode, expected):
     """Test04 ExecutionMode().get_engine."""
-    mocker.patch.object(execution_mode, 'get_mode', return_value=mode)
-    exec_engine = execution_mode.get_engine()
+    mocker.patch.object(exec_mode, 'get_mode', return_value=mode)
+    exec_engine = exec_mode.get_engine()
     assert isinstance(exec_engine, expected)
-    assert execution_mode.exec_engine == exec_engine
+    assert exec_mode.exec_engine == exec_engine
