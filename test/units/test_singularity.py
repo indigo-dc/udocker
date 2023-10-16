@@ -177,89 +177,46 @@ def test_07__run_as_root(mocker, singularity, mock_hostinfo, mock_nixauth, logge
     assert logger.warning.call_count == logcount
     assert logger.warning.call_args_list == loggermsg
 
-#
-# @pytest.mark.parametrize("is_dir,execpath,loglevel,opts,expected", [
-#     # ("/home/user/execpath", "/home/user/container", "root", 2), execpath,croot,uname,expected
-#     (True, "/home/user/execpath", {'verbose_level': logging.DEBUG}, {'cmd': ['pwd']}, 0),
-#     (False, "/home/user/execpath", {'verbose_level': logging.DEBUG}, {'cmd': ['pwd']}, 0),
-#     (False, None, None, {}, 2),
-# ])
-# def test_08_run(mocker, singularity, container_id, mock_nixauth, is_dir, execpath, loglevel, opts,
-#                 expected):
-#     """Test08 SingularityEngine().run()."""
-#     mocker.patch.object(singularity, 'opt', opts)
-#
-#     mocker.patch.object(singularity, '_check_arch')
-#     mocker.patch.object(singularity, '_run_invalid_options')
-#     mocker.patch.object(singularity, '_make_container_directories')
-#     mocker.patch.object(singularity, 'select_singularity')
-#     mocker.patch.object(singularity, '_run_env_set')
-#
-#     mocker.patch('udocker.engine.singularity.FileBind.restore', return_value=[])
-#     mocker.patch('udocker.engine.singularity.os.path.isdir', return_value=is_dir)
-#     config = mocker.patch.object(Config, 'conf', {'env': {},
-#                                                   'root_path': '',
-#                                                   'tmpdir': '/tmp',
-#                                                   'use_singularity_executable': [],
-#                                                   'singularity_options': [],
-#                                                   'sysdirs_list': (
-#                                                       "/etc/resolv.conf", "/etc/host.conf", "/lib/modules",)})
-#
-#     if loglevel:
-#         config.update(loglevel)
-#
-#     mocker.patch.object(singularity, '_run_init', lambda container_id: execpath)
-#
-#     assert singularity.run(container_id) == expected
 
-# @patch.object(SingularityEngine, '_run_banner')
-#     @patch.object(SingularityEngine, '_run_env_cleanup_dict')
-#     @patch.object(SingularityEngine, '_get_volume_bindings')
-#     @patch.object(SingularityEngine, '_run_env_set')
-#     @patch.object(SingularityEngine, '_run_as_root')
-#     @patch.object(SingularityEngine, 'select_singularity')
-#     @patch.object(SingularityEngine, '_make_container_directories')
-#     @patch.object(SingularityEngine, '_run_invalid_options')
-#     @patch.object(SingularityEngine, '_run_init')
-#     @patch('udocker.engine.singularity.subprocess.call')
-#     @patch('udocker.engine.singularity.Unique.uuid')
-#     @patch('udocker.engine.singularity.FileBind')
-#     @patch('udocker.engine.singularity.os.path.isdir')
-#     def test_08_run(self, mock_isdir, mock_fbind, mock_uuid, mock_call, mock_rinit, mock_rinvopt,
-#                     mock_mkcontdir, mock_selsing, mock_runroot, mock_renvset, mock_getvolbind,
-#                     mock_renvclean, mock_rbann):
-#         """Test08 SingularityEngine().run()."""
-#         mock_isdir.return_value = True
-#         mock_fbind.return_value.container_orig_dir.return_value = "/d1"
-#         mock_fbind.return_value.restore.return_value = None
-#         mock_rinit.return_value = False
-#         sing = SingularityEngine(self.local, self.xmode)
-#         status = sing.run("CONTAINERID")
-#         self.assertEqual(status, 2)
-#
-#         mock_isdir.return_value = True
-#         mock_fbind.return_value.container_orig_dir.return_value = "/d1"
-#         mock_fbind.return_value.restore.return_value = None
-#         mock_rinit.return_value = "/cont/"
-#         mock_rinvopt.return_value = None
-#         mock_mkcontdir.return_value = None
-#         mock_selsing.return_value = None
-#         mock_runroot.return_value = None
-#         mock_renvset.return_value = None
-#         self.local.bindir = "/cont/bin"
-#         mock_getvolbind.return_value = ['-B', '/home/user:/home/user',
-#                                         '-B', '/tmp:/tmp',
-#                                         '-B', '/var/tmp:/var/tmp']
-#         mock_uuid.return_value = "EXECUTION_ID"
-#         mock_renvclean.return_value = None
-#         mock_rbann.return_value = None
-#         mock_call.return_value = 0
-#         sing = SingularityEngine(self.local, self.xmode)
-#         sing.executable = "/bin/sing"
-#         sing.opt["cmd"] = [""]
-#         status = sing.run("CONTAINERID")
-#         self.assertEqual(status, 0)
-#
-#
-# if __name__ == '__main__':
-#     main()
+@pytest.mark.parametrize("is_dir,execpath,loglevel,opts,has_option,executable,expected", [
+    (True, "/home/user/execpath", {'verbose_level': logging.DEBUG}, {'cmd': ['pwd'], 'cwd': 'ps', 'env': ''},
+     [True, True], '/home/user/execpath', 0),
+    (True, "/home/user/execpath", {'verbose_level': None}, {'cmd': ['pwd'], 'cwd': 'ps', 'env': ''},
+     [True, False], '/home/user/execpath', 0),
+    (True, "/home/user/execpath", {'verbose_level': None}, {'cmd': ['pwd'], 'cwd': 'ps', 'env': ''},
+     [False, True], '/home/user/execpath', 0),
+    (False, "/home/user/execpath", {'verbose_level': None}, {'cmd': ['pwd'], 'cwd': '', 'env': ''},
+     [False, False], '/home/user/execpath', 0),
+    (False, None, None, {}, [False, False], '', 2),
+])
+def test_08_run(mocker, singularity, container_id, mock_nixauth, is_dir, execpath, loglevel, opts, has_option,
+                executable, expected):
+    """Test08 SingularityEngine().run()."""
+    mocker.patch.object(singularity, 'opt', opts)
+
+    mocker.patch.object(singularity, '_check_arch')
+    mocker.patch.object(singularity, '_run_invalid_options')
+    mocker.patch.object(singularity, '_make_container_directories')
+    mocker.patch.object(singularity, 'select_singularity')
+    mocker.patch.object(singularity, '_run_env_set')
+    mocker.patch.object(singularity, '_run_env_cleanup_dict')
+    mocker.patch.object(singularity, '_run_banner')
+    mocker.patch.object(singularity, 'executable', return_value=executable)
+    mocker.patch.object(singularity, '_get_volume_bindings', return_value=[])
+    mocker.patch.object(singularity, '_set_cpu_affinity', return_value=[])
+    mocker.patch.object(singularity, '_has_option', side_effect=has_option)
+
+    mocker.patch('udocker.engine.singularity.FileBind.restore', return_value=[])
+    mocker.patch('udocker.engine.singularity.os.path.isdir', return_value=is_dir)
+    config = mocker.patch.object(Config, 'conf', {'env': {}, 'root_path': '', 'tmpdir': '/tmp',
+                                                  'use_singularity_executable': [], 'singularity_options': [],
+                                                  'sysdirs_list': (
+                                                      "/etc/resolv.conf", "/etc/host.conf", "/lib/modules",)})
+
+    if loglevel:
+        config.update(loglevel)
+
+    mocker.patch.object(singularity, '_run_init', lambda x: execpath)
+
+    with mocker.patch('subprocess.call', return_value=0):
+        assert singularity.run(container_id) == expected

@@ -2,13 +2,39 @@
 """
 udocker unit tests: ExecutionEngineCommon
 """
-# from unittest import TestCase, main
-# from unittest.mock import Mock, patch
-# from udocker.engine.base import ExecutionEngineCommon, LOG
-# from udocker.utils.uenv import Uenv
-# from udocker.config import Config
-#
-#
+import random
+import pytest
+
+from udocker.engine.base import ExecutionEngineCommon
+from contextlib import nullcontext as does_not_raise
+
+
+@pytest.fixture
+def container_id():
+    return str(random.randint(1, 1000))
+
+
+@pytest.fixture
+def localrepo(mocker, container_id):
+    return mocker.patch('udocker.container.localrepo.LocalRepository')
+
+
+@pytest.fixture
+def engine(localrepo, container_id, xmode):
+    mocker_exec_mode = ExecutionEngineCommon(localrepo, xmode)
+    return mocker_exec_mode
+
+
+@pytest.fixture
+def logger(mocker):
+    return mocker.patch('udocker.engine.base.LOG')
+
+
+@pytest.fixture
+def mocker_hostinfo(mocker):
+    return mocker.patch('udocker.engine.base.HostInfo')
+
+
 # class ExecutionEngineCommonTestCase(TestCase):
 #     """Test ExecutionEngineCommon().
 #     Parent class for containers execution.
@@ -41,48 +67,77 @@ udocker unit tests: ExecutionEngineCommon
 #     def tearDown(self):
 #         self.lrepo.stop()
 #         self.execmode.stop()
-#
-#     def test_01_init(self):
-#         """Test01 ExecutionEngineCommon() constructor"""
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         self.assertEqual(ex_eng.container_id, "")
-#         self.assertEqual(ex_eng.container_root, "")
-#         self.assertEqual(ex_eng.container_names, [])
-#         self.assertEqual(ex_eng.localrepo, self.local)
-#         self.assertEqual(ex_eng.exec_mode, self.xmode)
-#         self.assertEqual(ex_eng.opt["nometa"], False)
-#         self.assertEqual(ex_eng.opt["nosysdirs"], False)
-#         self.assertEqual(ex_eng.opt["dri"], False)
-#         self.assertEqual(ex_eng.opt["bindhome"], False)
-#         self.assertEqual(ex_eng.opt["hostenv"], False)
-#         self.assertEqual(ex_eng.opt["hostauth"], False)
-#         self.assertEqual(ex_eng.opt["novol"], [])
-#         self.assertEqual(ex_eng.opt["vol"], [])
-#         self.assertEqual(ex_eng.opt["cpuset"], "")
-#         self.assertEqual(ex_eng.opt["user"], "")
-#         self.assertEqual(ex_eng.opt["cwd"], "")
-#         self.assertEqual(ex_eng.opt["entryp"], "")
-#         self.assertEqual(ex_eng.opt["hostname"], "")
-#         self.assertEqual(ex_eng.opt["domain"], "")
-#         self.assertEqual(ex_eng.opt["volfrom"], [])
-#
-#     @patch('udocker.engine.base.HostInfo.cmd_has_option')
-#     def test_02__has_option(self, mock_hinfocmd):
-#         """Test02 ExecutionEngineCommon()._has_option()."""
-#         mock_hinfocmd.return_value = True
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._has_option("opt1")
-#         self.assertTrue(status)
-#         self.assertTrue(mock_hinfocmd.called)
-#
-#     def test_03__get_portsmap(self):
-#         """Test03 ExecutionEngineCommon()._get_portsmap()."""
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["portsmap"] = ["1024:1024", "2048:2048"]
-#         status = ex_eng._get_portsmap()
-#         self.assertEqual(status, {1024: 1024, 2048: 2048})
-#
-#     @patch('udocker.engine.base.HostInfo')
+@pytest.mark.parametrize("opts", [
+    {'nometa': False, 'nosysdirs': False, 'dri': False, 'bindhome': False, 'hostenv': False, 'hostauth': False,
+     'novol': [], 'vol': [], 'cpuset': '', 'user': '', 'cwd': '', 'entryp': '', 'hostname': '', 'domain': '',
+     'volfrom': [], 'portsmap': [], 'portsexp': [], 'portsexp': [], 'devices': [], 'nobanner': False}
+])
+@pytest.mark.parametrize("xmode", ["P1", "P2", "F1", "F2"])
+def test_01_init(engine, localrepo, container_id, xmode, opts):
+    """Test01 ExecutionEngineCommon() constructor"""
+    assert engine.container_id == ""
+    assert engine.container_root == ""
+    assert engine.container_names == []
+    assert engine.localrepo == localrepo
+    assert engine.exec_mode == xmode
+    assert opts.items() <= engine.opt.items()
+
+
+@pytest.mark.parametrize("has_option", [True, False])
+@pytest.mark.parametrize("xmode", ["P1", "P2", "F1", "F2"])
+def test_02__has_option(mocker, engine, xmode, has_option):
+    """Test02 ExecutionEngineCommon()._has_option()."""
+    mock_has_option = mocker.patch('udocker.engine.base.HostInfo.cmd_has_option', return_value=has_option)
+    assert engine._has_option("opt1") == has_option
+    assert mock_has_option.called
+
+
+@pytest.mark.parametrize("by_container", [True, False])
+@pytest.mark.parametrize("portsmap,error,expected", [
+    (['1024:1024', '2048:2048'], (does_not_raise(), does_not_raise()), {1024: 1024, 2048: 2048}),
+    ([':1024', '2048:2048'], (pytest.raises(IndexError), does_not_raise()), {1024: 1024, 2048: 2048}),
+    (['INVALID', '2048:2048', '1024:1024'], (pytest.raises(IndexError), does_not_raise()), {1024: 1024, 2048: 2048}),
+    (['INVALID', 'INVALID', 'INVALID'],
+     (pytest.raises(IndexError), pytest.raises(ValueError), pytest.raises(ValueError)), {}),
+
+])
+@pytest.mark.parametrize("xmode", ["P1", "P2", "F1", "F2"])
+def test_03__get_portsmap(mocker, engine, xmode, by_container, portsmap, error, expected):
+    """Test03 ExecutionEngineCommon()._get_portsmap()."""
+    mocker.patch.object(engine, 'opt', {'portsmap': portsmap})
+
+    # FIXME: this does not test the second try
+    with error[0]:
+        with error[1]:
+            ports = engine._get_portsmap(by_container)
+            assert ports == expected
+
+
+@pytest.mark.parametrize("xmode", ["P1", "P2", "F1", "F2"])
+@pytest.mark.parametrize("ports,portsexp,uid,logmsg,expected", [
+    ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 1000,[],  False),
+    ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 0,[],  True),
+
+])
+def test_04__check_exposed_ports(mocker, engine, xmode, logger, ports, portsexp, uid, logmsg, expected):
+    """Test04 ExecutionEngineCommon()._check_exposed_ports()."""
+    mocker.patch.object(engine, '_get_portsmap', return_value=ports)
+    mocker.patch.object(engine, 'opt', {'portsexp': portsexp})
+    mocker.patch('udocker.engine.base.HostInfo.uid', uid)
+
+    exposed_port = engine._check_exposed_ports()
+    assert exposed_port == expected
+    # assert logger.warning.called == expected
+    # assert logger.error.called == expected
+
+    # mock_getports.return_value = {22: 22, 2048: 2048}
+    # mock_hinfo.uid = 0
+    # ex_eng = ExecutionEngineCommon(self.local, self.xmode)
+    # ex_eng.opt["portsexp"] = ("22", "2048/tcp")
+    # status = ex_eng._check_exposed_ports()
+    # assert status
+
+#     @patch('udocker.engine.base.HostInfo')k
 #     @patch.object(ExecutionEngineCommon, '_get_portsmap')
 #     def test_04__check_exposed_ports(self, mock_getports, mock_hinfo):
 #         """Test04 ExecutionEngineCommon()._check_exposed_ports()."""
