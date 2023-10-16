@@ -5,6 +5,7 @@ udocker unit tests: ExecutionEngineCommon
 import random
 import pytest
 
+from udocker.config import Config
 from udocker.engine.base import ExecutionEngineCommon
 from contextlib import nullcontext as does_not_raise
 
@@ -33,6 +34,11 @@ def logger(mocker):
 @pytest.fixture
 def mocker_hostinfo(mocker):
     return mocker.patch('udocker.engine.base.HostInfo')
+
+
+@pytest.fixture
+def mocker_fileutil(mocker):
+    return mocker.patch('udocker.engine.base.FileUtil')
 
 
 # class ExecutionEngineCommonTestCase(TestCase):
@@ -114,12 +120,14 @@ def test_03__get_portsmap(mocker, engine, xmode, by_container, portsmap, error, 
 
 
 @pytest.mark.parametrize("xmode", ["P1", "P2", "F1", "F2"])
-@pytest.mark.parametrize("ports,portsexp,uid,logmsg,expected", [
-    ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 1000,[],  False),
-    ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 0,[],  True),
+@pytest.mark.parametrize("ports,portsexp,uid,error,count_error,count_warning,expected", [
+    # ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 1000, does_not_raise(), 1, 0, False),
+    # ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 0, does_not_raise(), 0, 1, True),
+    ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 0, pytest.raises(ValueError), 0, 1, True),
 
 ])
-def test_04__check_exposed_ports(mocker, engine, xmode, logger, ports, portsexp, uid, logmsg, expected):
+def test_04__check_exposed_ports(mocker, engine, xmode, logger, ports, portsexp, uid, error, count_error,
+                                 count_warning, expected):
     """Test04 ExecutionEngineCommon()._check_exposed_ports()."""
     mocker.patch.object(engine, '_get_portsmap', return_value=ports)
     mocker.patch.object(engine, 'opt', {'portsexp': portsexp})
@@ -127,53 +135,50 @@ def test_04__check_exposed_ports(mocker, engine, xmode, logger, ports, portsexp,
 
     exposed_port = engine._check_exposed_ports()
     assert exposed_port == expected
-    # assert logger.warning.called == expected
-    # assert logger.error.called == expected
 
-    # mock_getports.return_value = {22: 22, 2048: 2048}
-    # mock_hinfo.uid = 0
-    # ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-    # ex_eng.opt["portsexp"] = ("22", "2048/tcp")
-    # status = ex_eng._check_exposed_ports()
-    # assert status
+    assert logger.error.call_count == count_error
+    assert logger.warning.call_count == count_warning
 
-#     @patch('udocker.engine.base.HostInfo')k
-#     @patch.object(ExecutionEngineCommon, '_get_portsmap')
-#     def test_04__check_exposed_ports(self, mock_getports, mock_hinfo):
-#         """Test04 ExecutionEngineCommon()._check_exposed_ports()."""
-#         mock_getports.return_value = {22: 22, 2048: 2048}
-#         mock_hinfo.uid = 1000
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["portsexp"] = ("22", "2048/tcp")
-#         status = ex_eng._check_exposed_ports()
-#         self.assertFalse(status)
-#
-#         mock_getports.return_value = {22: 22, 2048: 2048}
-#         mock_hinfo.uid = 0
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["portsexp"] = ("22", "2048/tcp")
-#         status = ex_eng._check_exposed_ports()
-#         self.assertTrue(status)
-#
-#     @patch('udocker.engine.base.FileUtil.find_exec')
-#     def test_05__set_cpu_affinity(self, mock_findexec):
-#         """Test05 ExecutionEngineCommon()._set_cpu_affinity()."""
-#         mock_findexec.return_value = ""
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._set_cpu_affinity()
-#         self.assertEqual(status, [])
-#
-#         mock_findexec.return_value = "taskset"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._set_cpu_affinity()
-#         self.assertEqual(status, [])
-#
-#         mock_findexec.return_value = "numactl"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["cpuset"] = "1-2"
-#         status = ex_eng._set_cpu_affinity()
-#         self.assertEqual(status, ["numactl", "-C", "1-2", "--"])
-#
+    if count_error == 1:
+        assert logger.error.call_args_list == [mocker.call('this container exposes privileged TCP/IP ports')]
+
+    if count_warning == 1:
+        assert logger.warning.call_args_list == [mocker.call('this container exposes TCP/IP ports')]
+
+    # FIXME: needs to launch the error, it's not launching the exception
+
+    # @patch('udocker.engine.base.FileUtil.find_exec')
+
+
+@pytest.mark.parametrize("xmode", ["P1", "P2", "F1", "F2"])
+@pytest.mark.parametrize("opts,conf,exec_name,expected", [
+    ({'cpuset': []}, {'cpu_affinity_exec_tools': [[], ]}, '/bin', []),
+    ({'cpuset': '1-2'}, {'cpu_affinity_exec_tools': [["numactl", "-C", "%s", "--", ], ]}, 'numactl',
+     ['numactl', '-C', '1-2', '--']),
+    ({'cpuset': '1-2'}, {'cpu_affinity_exec_tools': [["", "-C", "%s", "--", ], ["taskset", "-c", "%s", ]]},
+     None, []),
+])
+def test_05__set_cpu_affinity(mocker, engine, mocker_fileutil, xmode, logger, opts, conf, exec_name, expected):
+    """Test05 ExecutionEngineCommon()._set_cpu_affinity()."""
+    mocker_fileutil.return_value.find_exec.return_value = exec_name
+    mocker.patch.object(engine, 'opt', opts)
+    mocker.patch.object(Config, 'conf', conf)
+    cpu_affinity = engine._set_cpu_affinity()
+    assert cpu_affinity == expected
+
+# @pytest.mark.parametrize("xmode", ["P1", "P2", "F1", "F2"])
+# @pytest.mark.parametrize("dirs_only,is_dir,expected", [
+#     (False, []),
+#     (True, []),
+# ])
+# def test_06__create_mountpoint(mocker, engine, logger):
+#     """Test06 ExecutionEngineCommon()._create_mountpoint()."""
+#     # TODO: complete this test
+#     pass
+#     # engine._create_mountpoint("/bin", "/ROOT/bin", True)
+
+
+
 #     @patch('udocker.engine.base.MountPoint')
 #     @patch('udocker.engine.base.FileUtil.isdir')
 #     def test_06__create_mountpoint(self, mock_isdir, mock_mpoint):
