@@ -3,11 +3,14 @@
 udocker unit tests: ExecutionEngineCommon
 """
 import random
+from contextlib import nullcontext as does_not_raise
+
 import pytest
 
 from udocker.config import Config
+from udocker.container.structure import ContainerStructure
 from udocker.engine.base import ExecutionEngineCommon
-from contextlib import nullcontext as does_not_raise
+from udocker.utils.fileutil import FileUtil
 
 
 @pytest.fixture
@@ -41,38 +44,6 @@ def mocker_fileutil(mocker):
     return mocker.patch('udocker.engine.base.FileUtil')
 
 
-# class ExecutionEngineCommonTestCase(TestCase):
-#     """Test ExecutionEngineCommon().
-#     Parent class for containers execution.
-#     """
-#
-#     def setUp(self):
-#         LOG.setLevel(100)
-#         Config().getconf()
-#         Config().conf['hostauth_list'] = ("/etc/passwd", "/etc/group")
-#         Config().conf['cmd'] = "/bin/bash"
-#         Config().conf['cpu_affinity_exec_tools'] = (["numactl", "-C", "%s", "--", ],
-#                                                     ["taskset", "-c", "%s", ])
-#         Config().conf['location'] = ""
-#         Config().conf['uid'] = 1000
-#         Config().conf['sysdirs_list'] = ["/", ]
-#         Config().conf['root_path'] = "/usr/sbin:/sbin:/usr/bin:/bin"
-#         Config().conf['user_path'] = "/usr/bin:/bin:/usr/local/bin"
-#         str_local = 'udocker.container.localrepo.LocalRepository'
-#         self.lrepo = patch(str_local)
-#         self.local = self.lrepo.start()
-#         self.mock_lrepo = Mock()
-#         self.local.return_value = self.mock_lrepo
-#
-#         str_exmode = 'udocker.engine.execmode.ExecutionMode'
-#         self.execmode = patch(str_exmode)
-#         self.xmode = self.execmode.start()
-#         self.mock_execmode = Mock()
-#         self.xmode.return_value = self.mock_execmode
-#
-#     def tearDown(self):
-#         self.lrepo.stop()
-#         self.execmode.stop()
 @pytest.mark.parametrize("opts", [
     {'nometa': False, 'nosysdirs': False, 'dri': False, 'bindhome': False, 'hostenv': False, 'hostauth': False,
      'novol': [], 'vol': [], 'cpuset': '', 'user': '', 'cwd': '', 'entryp': '', 'hostname': '', 'domain': '',
@@ -121,8 +92,8 @@ def test_03__get_portsmap(mocker, engine, xmode, by_container, portsmap, error, 
 
 @pytest.mark.parametrize("xmode", ["P1", "P2", "F1", "F2"])
 @pytest.mark.parametrize("ports,portsexp,uid,error,count_error,count_warning,expected", [
-    # ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 1000, does_not_raise(), 1, 0, False),
-    # ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 0, does_not_raise(), 0, 1, True),
+    ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 1000, does_not_raise(), 1, 0, False),
+    ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 0, does_not_raise(), 0, 1, True),
     ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 0, pytest.raises(ValueError), 0, 1, True),
 
 ])
@@ -166,290 +137,228 @@ def test_05__set_cpu_affinity(mocker, engine, mocker_fileutil, xmode, logger, op
     cpu_affinity = engine._set_cpu_affinity()
     assert cpu_affinity == expected
 
-# @pytest.mark.parametrize("xmode", ["P1", "P2", "F1", "F2"])
-# @pytest.mark.parametrize("dirs_only,is_dir,expected", [
-#     (False, []),
-#     (True, []),
-# ])
-# def test_06__create_mountpoint(mocker, engine, logger):
-#     """Test06 ExecutionEngineCommon()._create_mountpoint()."""
-#     # TODO: complete this test
-#     pass
-#     # engine._create_mountpoint("/bin", "/ROOT/bin", True)
+
+@pytest.mark.parametrize("xmode", ["P1", "F1"])
+@pytest.mark.parametrize("dirs_only,is_dir,create,expected", [
+    (False, False, None, False),
+    (False, True, None, False),
+    (True, False, None, True),
+    (True, True, False, False),
+    (True, True, True, True),
+])
+def test_06__create_mountpoint(mocker, engine, logger, dirs_only, is_dir, create, expected):
+    """Test06 ExecutionEngineCommon()._create_mountpoint()."""
+    cont_path = "/ROOT/bin"
+    host_path = "/bin"
+
+    mocker.patch('udocker.engine.base.FileUtil.isdir', return_value=is_dir)
+    mocker.patch.object(engine, 'mountp', return_value='/home/user/')
+    mocker.patch.object(engine.mountp, 'create', return_value=create)
+
+    mountpoint = engine._create_mountpoint(host_path, cont_path, dirs_only)
+    assert mountpoint == expected
+
+    if not dirs_only or is_dir:
+        engine.mountp.create.assert_called_once_with(host_path, cont_path)
+    else:
+        engine.mountp.create.assert_not_called()
+
+    if create and (not dirs_only or is_dir):
+        engine.mountp.save.assert_called_once_with(cont_path)
+    else:
+        engine.mountp.save.assert_not_called()
 
 
+# , "F1"
 
-#     @patch('udocker.engine.base.MountPoint')
-#     @patch('udocker.engine.base.FileUtil.isdir')
-#     def test_06__create_mountpoint(self, mock_isdir, mock_mpoint):
-#         """Test06 ExecutionEngineCommon()._create_mountpoint()."""
-#         hpath = "/bin"
-#         cpath = "/ROOT/bin"
-#         mock_isdir.return_value = False
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._create_mountpoint(hpath, cpath, True)
-#         self.assertTrue(status)
-#         self.assertTrue(mock_isdir.called)
-#
-#         hpath = "/bin"
-#         cpath = "/ROOT/bin"
-#         mock_isdir.return_value = True
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.mountp = mock_mpoint
-#         ex_eng.mountp.create.return_value = True
-#         ex_eng.mountp.save.return_value = None
-#         status = ex_eng._create_mountpoint(hpath, cpath, True)
-#         self.assertTrue(status)
-#         self.assertTrue(ex_eng.mountp.save.called)
-#
-#         hpath = "/bin"
-#         cpath = "/ROOT/bin"
-#         mock_isdir.return_value = True
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.mountp = mock_mpoint
-#         ex_eng.mountp.create.return_value = False
-#         ex_eng.mountp.save.return_value = None
-#         status = ex_eng._create_mountpoint(hpath, cpath, True)
-#         self.assertFalse(status)
-#
-#     @patch.object(ExecutionEngineCommon, '_create_mountpoint')
-#     @patch('udocker.engine.base.os.path.exists')
-#     @patch('udocker.engine.base.Uvolume.split')
-#     def test_07__check_volumes(self, mock_uvolsplit, mock_exists, mock_crmpoint):
-#         """Test07 ExecutionEngineCommon()._check_volumes()."""
-#         mock_uvolsplit.return_value = ("HOSTDIR", "CONTDIR")
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["vol"] = list()
-#         ex_eng.opt["vol"].append("HOSTDIR:CONTDIR")
-#         status = ex_eng._check_volumes()
-#         self.assertFalse(status)
-#         self.assertTrue(mock_uvolsplit.called)
-#
-#         mock_uvolsplit.return_value = ("/HOSTDIR", "CONTDIR")
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["vol"] = list()
-#         ex_eng.opt["vol"].append("/HOSTDIR:CONTDIR")
-#         status = ex_eng._check_volumes()
-#         self.assertFalse(status)
-#
-#         Config.conf['sysdirs_list'] = ["/HOSTDIR"]
-#         mock_exists.return_value = False
-#         mock_uvolsplit.return_value = ("/HOSTDIR", "/CONTDIR")
-#         mock_crmpoint.return_value = False
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["vol"] = list()
-#         ex_eng.opt["vol"].append("/HOSTDIR:/CONTDIR")
-#         status = ex_eng._check_volumes()
-#         self.assertTrue(status)
-#         self.assertEqual(ex_eng.opt["vol"], list())
-#         self.assertTrue(mock_exists.called)
-#
-#         Config.conf['sysdirs_list'] = ["/sys"]
-#         mock_exists.return_value = False
-#         mock_uvolsplit.return_value = ("/HOSTDIR", "/CONTDIR")
-#         mock_crmpoint.return_value = False
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["vol"] = list()
-#         ex_eng.opt["vol"].append("/HOSTDIR:/CONTDIR")
-#         status = ex_eng._check_volumes()
-#         self.assertFalse(status)
-#         self.assertTrue(mock_exists.called)
-#
-#         Config.conf['sysdirs_list'] = ["/sys"]
-#         mock_exists.return_value = True
-#         mock_uvolsplit.return_value = ("/HOSTDIR", "/CONTDIR")
-#         mock_crmpoint.return_value = True
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["vol"] = list()
-#         ex_eng.opt["vol"].append("/HOSTDIR:/CONTDIR")
-#         status = ex_eng._check_volumes()
-#         self.assertTrue(status)
-#
-#     @patch('udocker.engine.base.NixAuthentication.get_home')
-#     def test_08__get_bindhome(self, mock_gethome):
-#         """Test08 ExecutionEngineCommon()._get_bindhome()."""
-#         mock_gethome.return_value = ""
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["bindhome"] = False
-#         status = ex_eng._get_bindhome()
-#         self.assertEqual(status, "")
-#
-#         mock_gethome.return_value = "/home/user"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["bindhome"] = True
-#         status = ex_eng._get_bindhome()
-#         self.assertEqual(status, "/home/user")
-#         self.assertTrue(mock_gethome.called)
-#
-#     @patch('udocker.engine.base.Uvolume.cleanpath')
-#     @patch('udocker.engine.base.Uvolume.split')
-#     def test_09__is_volume(self, mock_uvolsplit, mock_uvolclean):
-#         """Test09 ExecutionEngineCommon()._is_volume()."""
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["vol"] = list()
-#         status = ex_eng._is_volume("/tmp")
-#         self.assertEqual(status, "")
-#
-#         mock_uvolsplit.return_value = ("/tmp", "/CONTDIR")
-#         mock_uvolclean.return_value = "/tmp"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["vol"] = list()
-#         ex_eng.opt["vol"].append("/tmp:/CONTDIR")
-#         status = ex_eng._is_volume("/tmp")
-#         self.assertEqual(status, "/CONTDIR")
-#
-#     @patch('udocker.engine.base.Uvolume.cleanpath')
-#     @patch('udocker.engine.base.Uvolume.split')
-#     def test_10__is_mountpoint(self, mock_uvolsplit, mock_uvolclean):
-#         """Test10 ExecutionEngineCommon()._is_mountpoint()."""
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["vol"] = list()
-#         status = ex_eng._is_mountpoint("/tmp")
-#         self.assertEqual(status, "")
-#
-#         mock_uvolsplit.return_value = ("/tmp", "/CONTDIR")
-#         mock_uvolclean.return_value = "/CONTDIR"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["vol"] = list()
-#         ex_eng.opt["vol"].append("/tmp:/CONTDIR")
-#         status = ex_eng._is_mountpoint("/tmp")
-#         self.assertEqual(status, "/tmp")
-#
-#     @patch.object(ExecutionEngineCommon, '_check_volumes')
-#     @patch.object(ExecutionEngineCommon, '_get_bindhome')
-#     def test_11__set_volume_bindings(self, mock_bindhome, mock_chkvol):
-#         """Test11 ExecutionEngineCommon()._set_volume_bindings()."""
-#         Config.conf['sysdirs_list'] = ["/sys"]
-#         Config.conf['dri_list'] = ["/dri"]
-#         mock_bindhome.return_value = "/home/user"
-#         mock_chkvol.return_value = False
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["vol"] = list()
-#         ex_eng.opt["hostauth"] = "/etc/passwd"
-#         ex_eng.opt["nosysdirs"] = False
-#         ex_eng.opt["dri"] = True
-#         ex_eng.opt["novol"] = list()
-#         status = ex_eng._set_volume_bindings()
-#         self.assertFalse(status)
-#         self.assertTrue(mock_bindhome.called)
-#         self.assertTrue(mock_chkvol.called)
-#
-#         Config.conf['sysdirs_list'] = ["/sys"]
-#         Config.conf['dri_list'] = ["/dri"]
-#         mock_bindhome.return_value = "/home/user"
-#         mock_chkvol.return_value = True
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["vol"] = list()
-#         ex_eng.opt["hostauth"] = "/etc/passwd"
-#         ex_eng.opt["nosysdirs"] = False
-#         ex_eng.opt["dri"] = True
-#         ex_eng.opt["novol"] = ["/sys", "/dri", "/home/user"]
-#         status = ex_eng._set_volume_bindings()
-#         self.assertTrue(status)
-#
-#     @patch('udocker.engine.base.Uenv')
-#     @patch('udocker.engine.base.os.path.isdir')
-#     @patch('udocker.engine.base.FileUtil.cont2host')
-#     def test_12__check_paths(self, mock_fuc2h, mock_isdir, mock_uenv):
-#         """Test12 ExecutionEngineCommon()._check_paths()."""
-#         Config.conf['root_path'] = "/sbin"
-#         Config.conf['user_path'] = "/bin"
-#         mock_fuc2h.return_value = "/container/bin"
-#         mock_isdir.return_value = False
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["uid"] = "0"
-#         ex_eng.opt["cwd"] = ""
-#         ex_eng.opt["home"] = "/home/user"
-#         ex_eng.opt["env"] = mock_uenv
-#         ex_eng.opt["env"].getenv.return_value = "/sbin"
-#         status = ex_eng._check_paths()
-#         self.assertFalse(status)
-#         self.assertEqual(ex_eng.opt["cwd"], ex_eng.opt["home"])
-#
-#         Config.conf['root_path'] = "/sbin"
-#         Config.conf['user_path'] = "/bin"
-#         mock_fuc2h.return_value = "/container/bin"
-#         mock_isdir.return_value = True
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["uid"] = "0"
-#         ex_eng.opt["cwd"] = "/home/user"
-#         ex_eng.opt["home"] = "/home/user"
-#         ex_eng.opt["env"] = mock_uenv
-#         ex_eng.opt["env"].getenv.return_value = ""
-#         status = ex_eng._check_paths()
-#         self.assertTrue(status)
-#         self.assertTrue(mock_fuc2h.called)
-#         self.assertTrue(mock_isdir.called)
-#
-#     @patch('udocker.engine.base.FileUtil.find_exec')
-#     @patch('udocker.engine.base.Uenv')
-#     def test_13__check_executable(self, mock_uenv, mock_fufindexe):
-#         """Test13 ExecutionEngineCommon()._check_executable()."""
-#         Config.conf['cmd'] = "/bin/ls"
-#         mock_fufindexe.return_value = ""
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["env"] = mock_uenv
-#         ex_eng.opt["env"].getenv.return_value = ""
-#         ex_eng.opt["entryp"] = "/bin/ls -a -l"
-#         ex_eng.container_root = "/containers/123/ROOT"
-#         status = ex_eng._check_executable()
-#         self.assertEqual(status, "")
-#         self.assertTrue(mock_fufindexe.called)
-#
-#         Config.conf['cmd'] = "/bin/ls"
-#         mock_fufindexe.return_value = "/bin/ls"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["env"] = mock_uenv
-#         ex_eng.opt["env"].getenv.return_value = ""
-#         ex_eng.opt["entryp"] = "/bin/ls -a -l"
-#         ex_eng.container_root = "/containers/123/ROOT"
-#         status = ex_eng._check_executable()
-#         self.assertEqual(status, "/containers/123/ROOT//bin/ls")
-#
-#         Config.conf['cmd'] = "/bin/ls"
-#         mock_fufindexe.return_value = "/bin/ls"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["env"] = mock_uenv
-#         ex_eng.opt["env"].getenv.return_value = ""
-#         ex_eng.opt["entryp"] = ["/bin/ls", "-a", "-l"]
-#         ex_eng.container_root = "/containers/123/ROOT"
-#         status = ex_eng._check_executable()
-#         self.assertEqual(status, "/containers/123/ROOT//bin/ls")
-#
-#     @patch('udocker.engine.base.ContainerStructure.get_container_meta')
-#     @patch('udocker.engine.base.ContainerStructure.get_container_attr')
-#     def test_14__run_load_metadata(self, mock_attr, mock_meta):
-#         """Test14 ExecutionEngineCommon()._run_load_metadata()."""
-#         Config().conf['location'] = "/tmp/container"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._run_load_metadata("123")
-#         self.assertEqual(status, ("", []))
-#
-#         Config().conf['location'] = ""
-#         mock_attr.return_value = (None, None)
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._run_load_metadata("123")
-#         self.assertEqual(status, (None, None))
-#         self.assertTrue(mock_attr.called)
-#
-#         Config().conf['location'] = ""
-#         mock_attr.return_value = ("/x", [])
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["nometa"] = True
-#         status = ex_eng._run_load_metadata("123")
-#         self.assertEqual(status, ("/x", []))
-#
-#         Config().conf['location'] = ""
-#         mock_attr.return_value = ("/x", [])
-#         mock_meta.side_effects = ["user1", "cont/ROOT", "host1", "mydomain",
-#                                   "ls", "/bin/sh", "vol1", "8443", None]
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["nometa"] = False
-#         ex_eng.opt["portsexp"] = list()
-#         status = ex_eng._run_load_metadata("123")
-#         self.assertEqual(status, ("/x", []))
-#         self.assertTrue(mock_meta.call_count, 9)
-#
+@pytest.mark.parametrize("vol,dri_list,sysdirs_list,os_exists,create,log,expected", [
+    (["invalid_host:/cont"], [], [], [False], [True], (1, "invalid host volume path: %s"), False),
+    (["/host:/"], [], [], True, True, (1, 'invalid container volume path: %s'), False),  # Invalid container volume path
+    (["/nonexistent_host:/cont"], [], [], [False], [True], (1, 'invalid host volume path: %s'), False),
+    (["/host_in_dri:/cont"], ["/host_in_dri"], [], [False], [True], (0, None), True),  # Non-existent but in dri_list
+    (["/host:/cont"], [], [], [True], [False], (1, 'creating mountpoint: %s:%s'), False),  # create_mountpoint fails
+    (["/existing_host:/cont"], [], [], [True], [True], (0, None), True),
+])
+@pytest.mark.parametrize("xmode", ["P1"])
+def test_07__check_volumes(mocker, engine, logger, vol, dri_list, sysdirs_list, os_exists, create, log, expected):
+    """Test07 ExecutionEngineCommon()._check_volumes()."""
+    mocker.patch('udocker.engine.base.os.path.exists', side_effect=os_exists)
+    mocker.patch.object(engine, '_create_mountpoint', side_effect=create)
+    mocker.patch.object(Config, 'conf', {'dri_list': dri_list, 'sysdirs_list': sysdirs_list})
+    mocker.patch.object(engine, 'opt', {'vol': vol})
+
+    check_volumes = engine._check_volumes()
+    assert check_volumes == expected
+    assert logger.error.call_count == log[0]
+
+    if log[0] == 1:
+        log_message = logger.error.call_args_list[0][0][0]
+        assert log_message == log[1]
+
+
+@pytest.mark.parametrize("opt,count_called,nix_home,expected", [
+    ({"bindhome": True}, 1, "/home/user", "/home/user"),
+    ({"bindhome": True}, 1, "/root", "/root"),
+    ({"bindhome": False}, 0, "/home/user", ""),
+    ({"bindhome": False}, 0, "/root", "")
+])
+@pytest.mark.parametrize("xmode", ["P1", "F1"])
+def test_08__get_bindhome(mocker, engine, opt, count_called, nix_home, expected):
+    """Test08 ExecutionEngineCommon()._get_bindhome()."""
+
+    mocker.patch.object(engine, 'opt', opt)
+    mocker_ngix_auth = mocker.patch('udocker.engine.base.NixAuthentication.get_home', return_value=nix_home)
+    assert engine._get_bindhome() == expected
+    assert mocker_ngix_auth.call_count == count_called
+
+
+@pytest.mark.parametrize("path,vol,expected", [
+    ("/home/user", ["/home/user:/cont1"], "/cont1"),
+    ("/root", ["/home/user:/cont1", "/root:/cont2"], "/cont2"),
+    ("/nonexistent", ["/home/user:/cont1", "/root:/cont2"], ""),
+    ("/home/user", [], ""),  # No volumes defined
+])
+@pytest.mark.parametrize("xmode", ["P1", "F1"])
+def test_09__is_volume(mocker, engine, path, vol, expected):
+    """Test09 ExecutionEngineCommon()._is_volume()."""
+    mocker.patch.object(engine, 'opt', {"vol": vol})
+    mocker.patch('udocker.engine.base.Uvolume.cleanpath', side_effect=lambda x: x)
+    assert engine._is_volume(path) == expected
+
+
+@pytest.mark.parametrize("path,vol,expected", [
+    ("/cont1", ["/home/user:/cont1"], "/home/user"),  # cont_path exists
+    ("/cont2", ["/home/user:/cont1", "/root:/cont2"], "/root"),  # Multiple paths, cont_path exists
+    ("/nonexistent", ["/home/user:/cont1", "/root:/cont2"], ""),  # cont_path doesn't exist
+    ("/cont1", [], ""),  # No volumes defined
+])
+@pytest.mark.parametrize("xmode", ["P1", "F1"])
+def test_10__is_mountpoint(mocker, engine, path, vol, expected):
+    """Test10 ExecutionEngineCommon()._is_mountpoint()."""
+    mocker.patch.object(engine, 'opt', {"vol": vol})
+    mocker.patch('udocker.engine.base.Uvolume.cleanpath', side_effect=lambda x: x)
+    assert engine._is_mountpoint(path) == expected
+
+
+@pytest.mark.parametrize("opts,bindhome,expected_vol,log_count,expected", [
+    ({'vol': list(), 'nosysdirs': False, 'hostauth': "/etc/passwd", 'dri': ["/dri"], 'novol': list()}, "/home/user",
+     ['/sys', '/dri', '/home/user'], 0, True),
+    ({'vol': list(), 'nosysdirs': False, 'hostauth': "/etc/passwd", 'dri': ["/dri"],
+      'novol': ["/sys", "/dri", "/home/user"]}, "/home/user",
+     [], 0, True),
+    ({'vol': list(), 'nosysdirs': False, 'hostauth': "/etc/passwd", 'dri': ["/dri"],
+      'novol': ["/bin", "/dri", "/home/user"]}, "/home/user",
+     ['/sys'], 1, False),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_11__set_volume_bindings(mocker, engine, logger, opts, bindhome, expected_vol, log_count, expected):
+    """Test11 ExecutionEngineCommon()._set_volume_bindings()."""
+    mocker.patch.object(engine, 'opt', opts)
+    mocker.patch.object(Config, 'conf', {'sysdirs_list': ["/sys"], 'dri_list': ["/dri"]})
+
+    # mocker.patch.object(obj, 'hostauth_list', hostauth_list)
+    mocker.patch.object(engine, '_get_bindhome', return_value=bindhome)
+    mocker.patch.object(engine, '_check_volumes', return_value=expected)
+
+    assert engine._set_volume_bindings() == expected
+    assert engine.opt['vol'] == expected_vol
+    assert logger.warning.call_count == log_count
+
+    if log_count == 1:
+        assert logger.warning.call_args_list == [mocker.call('--novol %s not in volumes list', mocker.ANY)]
+
+    # clean
+    engine.opt['vol'] = list()
+
+
+@pytest.mark.parametrize("env,uid,config_paths,cwd,isdir,expected", [
+    (None, "0", {'root_path': '/sbin', 'user_path': '/bin', 'tmpdir': '/tmp'}, False, True, True),
+    ("/some/path", "0", {'root_path': '/sbin', 'user_path': '/bin', 'tmpdir': '/tmp'}, True, True, True),
+    (None, "1000", {'root_path': '/sbin', 'user_path': '/bin', 'tmpdir': '/tmp'}, True, False, False),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_12__check_paths(mocker, engine, logger, env, uid, config_paths, cwd, isdir, expected):
+    """Test12 ExecutionEngineCommon()._check_paths()."""
+
+    mocker.patch.object(engine, 'opt', {'uid': uid,
+                                        'cwd': "/some/cwd" if cwd else None,
+                                        'env': mocker.Mock(),
+                                        'home': '/home/user',
+                                        'vol': list()})
+
+    mocker.patch.object(engine.opt["env"], 'getenv', return_value=env)
+    mocker.patch.object(Config, 'conf', config_paths)
+    mocker.patch('udocker.engine.base.os.path.isdir', return_value=isdir)
+    mocker.patch('udocker.engine.base.FileUtil.cont2host', return_value="/container/bin")
+
+    assert engine._check_paths() == expected
+    if not expected:
+        assert logger.error.call_args_list == [mocker.call('invalid working directory: %s', mocker.ANY)]
+
+
+@pytest.mark.parametrize("entryp,cmd,exec_name,path,find_exec_path,expected", [
+    (None, ["/bin/ls"], "ls", "/user/bin", "bin", "/container_dir/bin"),
+    ("/bin/ls -a -l", None, "ls", "/user/bin", "bin", "/container_dir/bin"),
+    (["/bin/ls -a -l"], None, "ls", "/user/bin", "bin", "/container_dir/bin"),
+    (["bin/ls -a -l"], ["/bin/ls"], "ls", "/user/bin", "bin", "/container_dir/bin"),
+    (None, None, "default_cmd", "/user/bin", "default_path", "/container_dir/default_path"),
+    (None, ["./bin/ls"], "ls", "/user/bin", "bin", "/container_dir/bin"),
+    (None, ["../bin/ls"], "ls", "/user/bin", "bin", "/container_dir/bin"),
+    (None, ["/bin/ls"], "ls", "/user/bin", None, ""),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_13__check_executable(mocker, engine, logger, entryp, cmd, exec_name, path, find_exec_path, expected):
+    """Test13 ExecutionEngineCommon()._check_executable()."""
+
+    mocker.patch.object(engine, 'container_root', "/container_dir")
+    mocker.patch.object(engine, 'opt', {"entryp": entryp, "cmd": cmd,
+                                        "env": mocker.Mock(), "cwd": "some_cwd", "vol": list()})
+
+    mocker.patch.object(FileUtil, 'find_exec', return_value=find_exec_path)
+
+    assert engine._check_executable() == expected
+    if not exec_name:
+        assert logger.error.call_args_list == [mocker.call('command not found/no execute bit set: %s', mocker.ANY)]
+
+
+@pytest.mark.parametrize("location,cont_dir,opts,cntjson,expected", [
+    (True, "",
+     {"nometa": False, "user": None, "cwd": None, "hostname": None, "domain": None, "entryp": False, "cmd": None}, [],
+     ("", [])),
+    (False, None,
+     {"nometa": False, "user": None, "cwd": None, "hostname": None, "domain": None, "entryp": False, "cmd": None}, [],
+     (None, None)),
+    (False, "cont_dir",
+     {"nometa": False, "user": None, "cwd": None, "hostname": None, "domain": None, "entryp": False, "cmd": None,
+      'portsexp': [], 'Volumes': None}, [],
+     ('cont_dir', [])),
+    (False, "cont_dir",
+     {"nometa": False, "user": None, "cwd": None, "hostname": None, "domain": None, "entryp": "", "cmd": None,
+      'portsexp': [], 'Volumes': None}, [],
+     ('cont_dir', [])),
+    (False, "cont_dir",
+     {"nometa": False, "user": None, "cwd": None, "hostname": None, "domain": None, "entryp": "ls", "cmd": None,
+      'portsexp': [], 'Volumes': None}, [],
+     ('cont_dir', [])),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_14__run_load_metadata(mocker, engine, logger, location, cont_dir, opts, cntjson, expected):
+    """Test14 ExecutionEngineCommon()._run_load_metadata()."""
+    mocker.patch.object(Config, 'conf', {"location": location})
+    mocker.patch.object(engine, 'opt', {"nometa": opts.get("nometa", False), "user": opts.get("user", None),
+                                        "cwd": opts.get("cwd", None), "hostname": opts.get("hostname", None),
+                                        "domain": opts.get("domain", None), "entryp": opts.get("entryp", False),
+                                        "cmd": opts.get("cmd", None), 'portsexp': opts.get('portsexp', []),
+                                        'Volumes': opts.get('Volumes', None), 'env': mocker.Mock(), })
+
+    mocker.patch.object(ContainerStructure, 'get_container_attr', return_value=(cont_dir, cntjson))
+    mocker.patch.object(ContainerStructure, 'get_container_meta',
+                        side_effect=lambda *args: cntjson.get(args[0], args[1]) if isinstance(args[2], dict) else args[
+                            1])
+
+    result = engine._run_load_metadata(container_id)
+    assert result == expected
+
 #     @patch('udocker.engine.base.os.path.isfile')
 #     @patch('udocker.engine.base.os.path.islink')
 #     @patch('udocker.engine.base.FileBind')
