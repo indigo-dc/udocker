@@ -435,7 +435,7 @@ def test_16__validate_user_str(engine, user_input, expected_output):
     ("user1", ("user1", "1000", "1000", "gecos1", "/home/user1", "/bin/bash"), None, True,
      {"user": "user1", "uid": "1000", "gid": "1000", "gecos": "gecos1", "home": "/home/user1", "shell": "/bin/bash"},
      (True, {'user': 'user1'})),
-    ("user2", ("user2", "2000", "2000", "gecos2", "/home/user2", "/bin/bash"), False, True,
+    ("user2", None, ("user2", "2000", "2000", "gecos2", "/home/user2", "/bin/bash"), False,
      {"user": "user2", "uid": "2000", "gid": "2000", "gecos": "gecos2", "home": "/home/user2", "shell": "/bin/bash"},
      (True, {'user': 'user2'})),
 ])
