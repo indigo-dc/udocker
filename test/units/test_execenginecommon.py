@@ -44,6 +44,16 @@ def mocker_fileutil(mocker):
     return mocker.patch('udocker.engine.base.FileUtil')
 
 
+@pytest.fixture
+def mocker_filebind(mocker):
+    return mocker.patch('udocker.engine.base.FileBind')
+
+
+@pytest.fixture
+def mocker_nixauth(mocker):
+    return mocker.patch('udocker.engine.base.NixAuthentication', return_value=mocker.Mock())
+
+
 @pytest.mark.parametrize("opts", [
     {'nometa': False, 'nosysdirs': False, 'dri': False, 'bindhome': False, 'hostenv': False, 'hostauth': False,
      'novol': [], 'vol': [], 'cpuset': '', 'user': '', 'cwd': '', 'entryp': '', 'hostname': '', 'domain': '',
@@ -342,7 +352,7 @@ def test_13__check_executable(mocker, engine, logger, entryp, cmd, exec_name, pa
      ('cont_dir', [])),
 ])
 @pytest.mark.parametrize("xmode", ["F1", "P1"])
-def test_14__run_load_metadata(mocker, engine, logger, location, cont_dir, opts, cntjson, expected):
+def test_14__run_load_metadata(mocker, engine, location, cont_dir, opts, cntjson, expected):
     """Test14 ExecutionEngineCommon()._run_load_metadata()."""
     mocker.patch.object(Config, 'conf', {"location": location})
     mocker.patch.object(engine, 'opt', {"nometa": opts.get("nometa", False), "user": opts.get("user", None),
@@ -359,66 +369,103 @@ def test_14__run_load_metadata(mocker, engine, logger, location, cont_dir, opts,
     result = engine._run_load_metadata(container_id)
     assert result == expected
 
-#     @patch('udocker.engine.base.os.path.isfile')
-#     @patch('udocker.engine.base.os.path.islink')
-#     @patch('udocker.engine.base.FileBind')
-#     @patch.object(ExecutionEngineCommon, '_is_mountpoint')
-#     def test_15__select_auth_files(self, mock_ismpoint, mock_fbind, mock_islink, mock_isfile):
-#         """Test15 ExecutionEngineCommon()._select_auth_files()."""
-#         resp = "/fbdir/#etc#passwd"
-#         resg = "/fbdir/#etc#group"
-#         mock_fbind.return_value.orig_dir = "/fbdir"
-#         mock_islink.side_effect = [True, True]
-#         mock_isfile.side_effect = [True, True]
-#         mock_ismpoint.side_effect = ["", "", "", ""]
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._select_auth_files()
-#         self.assertTrue(mock_islink.call_count, 2)
-#         self.assertTrue(mock_isfile.call_count, 2)
-#         self.assertTrue(mock_ismpoint.call_count, 2)
-#         # self.assertEqual(status, resp)
-#
-#         resp = "/etc/passwd"
-#         resg = "/etc/group"
-#         mock_fbind.orig_dir.side_effect = ["/fbdir", "/fbdir"]
-#         mock_islink.side_effect = [False, False]
-#         mock_isfile.side_effect = [False, False]
-#         mock_ismpoint.side_effect = ["", "", "", ""]
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._select_auth_files()
-#         self.assertEqual(status, (resp, resg))
-#
-#         resp = "/d/etc/passwd"
-#         resg = "/d/etc/group"
-#         mock_fbind.orig_dir.side_effect = ["/fbdir", "/fbdir"]
-#         mock_islink.side_effect = [False, False]
-#         mock_isfile.side_effect = [False, False]
-#         mock_ismpoint.side_effect = ["/d/etc/passwd", "/d/etc/passwd",
-#                                      "/d/etc/group", "/d/etc/group"]
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._select_auth_files()
-#         self.assertTrue(mock_ismpoint.call_count, 4)
-#         self.assertEqual(status, (resp, resg))
-#
-#     def test_16__validate_user_str(self):
-#         """Test16 ExecutionEngineCommon()._validate_user_str()."""
-#         userstr = ""
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._validate_user_str(userstr)
-#         self.assertEqual(status, dict())
-#
-#         userstr = "user1"
-#         res = {"user": userstr}
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._validate_user_str(userstr)
-#         self.assertEqual(status, res)
-#
-#         userstr = "1000:1000"
-#         res = {"uid": "1000", "gid": "1000"}
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._validate_user_str(userstr)
-#         self.assertEqual(status, res)
-#
+
+@pytest.mark.parametrize(
+    "passwd_islink,passwd_isfile,group_islink,group_isfile,passwd_mount,group_mount,ismount,expected", [
+        (False, False, False, False, False, False, ["", ""],
+         ('container/ROOT/etc/passwd', 'container/ROOT/etc/group')),
+        (True, False, False, False, False, False, ["", ""],
+         ('container/ROOT/etc/passwd', 'container/ROOT/etc/group')),
+        (True, True, False, False, False, False, ["", ""],
+         ('container/.orig_dir/#etc#passwd', 'container/ROOT/etc/group')),
+        (False, False, True, False, False, False, ["", ""],
+         ('container/ROOT/etc/passwd', 'container/ROOT/etc/group')),
+        (False, False, True, True, False, False, ["", ""],
+         ('container/ROOT/etc/passwd', 'container/.orig_dir/#etc#group')),
+        (False, False, False, False, True, False, ["mounted_path", "mounted_path", False],
+         ('mounted_path', 'container/ROOT/etc/group')),
+        (False, False, False, False, False, True, [False, "mounted_path", "mounted_path"],
+         ('container/ROOT/etc/passwd', 'mounted_path')),
+        (False, False, False, False, True, True, ["mounted_path"] * 4,
+         ('mounted_path', 'mounted_path')),
+    ])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_15__select_auth_files(mocker, engine, passwd_islink, passwd_isfile, group_islink,
+                               group_isfile, passwd_mount, group_mount, ismount, expected):
+    """Test15 ExecutionEngineCommon()._select_auth_files()."""
+
+    mocker.patch('udocker.engine.base.FileBind.bind_dir', new_callable=mocker.PropertyMock, return_value='/.bind_dir')
+    mocker.patch('udocker.engine.base.FileBind.orig_dir', new_callable=mocker.PropertyMock, return_value='/.orig_dir')
+
+    mocker.patch.object(engine, 'container_root', "container/ROOT")
+    mocker.patch.object(engine, 'container_dir', "container")
+
+    mocker.patch('os.path.islink',
+                 side_effect=lambda x: (x.endswith('passwd') and passwd_islink) or (
+                         x.endswith('group') and group_islink))
+    mocker.patch('os.path.isfile',
+                 side_effect=lambda x: (x.endswith('passwd') and passwd_isfile) or (
+                         x.endswith('group') and group_isfile))
+
+    mocker.patch.object(engine, '_is_mountpoint', side_effect=ismount)
+
+    assert engine._select_auth_files() == expected
+
+
+@pytest.mark.parametrize("user_input,expected_output", [
+    (None, {}),
+    ("123:", {}),
+    (":123", {}),
+    ("user@name", {}),
+    ("123user", {}),
+    ("username", {"user": "username"}),
+    ("user_name", {"user": "user_name"}),
+    ("123:456", {"uid": "123", "gid": "456"}),
+    ("123", {"uid": "123"}),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_16__validate_user_str(engine, user_input, expected_output):
+    """Test16 ExecutionEngineCommon()._validate_user_str()."""
+    result = engine._validate_user_str(user_input)
+    assert result == expected_output
+
+
+@pytest.mark.parametrize("user,hostauth_return,container_auth_return,opt_hostauth,expected_validity,expected", [
+    ("123:", None, None, False, False, (False, {})),
+    ("user1", ("user1", "1000", "1000", "gecos1", "/home/user1", "/bin/bash"), None, True,
+     {"user": "user1", "uid": "1000", "gid": "1000", "gecos": "gecos1", "home": "/home/user1", "shell": "/bin/bash"},
+     (True, {'user': 'user1'})),
+    ("user2", ("user2", "2000", "2000", "gecos2", "/home/user2", "/bin/bash"), False, True,
+     {"user": "user2", "uid": "2000", "gid": "2000", "gecos": "gecos2", "home": "/home/user2", "shell": "/bin/bash"},
+     (True, {'user': 'user2'})),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_17__user_from_str(mocker, engine, user, hostauth_return, container_auth_return, opt_hostauth,
+                           expected_validity, expected):
+    """Test16 ExecutionEngineCommon()._validate_user_str()."""
+    mock_nixauth_instance = mocker.Mock()
+
+    mocker.patch.object(engine, 'opt', {"hostauth": opt_hostauth})
+
+    if hostauth_return:
+        mock_nixauth_instance.get_user.return_value = hostauth_return
+        assert engine._user_from_str(user, host_auth=mock_nixauth_instance) == expected
+
+    if container_auth_return:
+        mock_nixauth_instance.get_user.return_value = container_auth_return
+        assert engine._user_from_str(user, container_auth=mock_nixauth_instance) == expected
+
+    if not hostauth_return and not container_auth_return:
+        assert engine._user_from_str(user) == expected
+
+    if expected_validity:
+        assert engine.opt["user"] == expected_validity["user"]
+        assert engine.opt["uid"] == expected_validity["uid"]
+        assert engine.opt["gid"] == expected_validity["gid"]
+        assert engine.opt["gecos"] == expected_validity["gecos"]
+        assert engine.opt["home"] == expected_validity["home"]
+        assert engine.opt["shell"] == expected_validity["shell"]
+
 #     def test_17__user_from_str(self):
 #         """Test17 ExecutionEngineCommon()._user_from_str()."""
 #         userstr = ""
