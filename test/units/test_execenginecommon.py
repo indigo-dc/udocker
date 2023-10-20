@@ -6,14 +6,12 @@ import os
 import random
 from contextlib import nullcontext as does_not_raise
 
-import mock
 import pytest
 
 from udocker import MSG
 from udocker.config import Config
 from udocker.container.structure import ContainerStructure
 from udocker.engine.base import ExecutionEngineCommon
-from udocker.engine.execmode import ExecutionMode
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uenv import Uenv
 
@@ -476,108 +474,92 @@ def test_17__user_from_str(mocker, engine, user, hostauth_return, container_auth
         assert engine.opt["gecos"] == expected_validity["gecos"]
         assert engine.opt["home"] == expected_validity["home"]
         assert engine.opt["shell"] == expected_validity["shell"]
+        # (None, True, "1001", "1001", "username", "username", False, True, True, False, True),
+        # ("invuser", False, "100", "50", "username", "username", False, False, False, False, False),
+        # ("root", True, "0", "0", "root", "root", False, True, True, False, True),
+        # ("u1", True, "1001", "1001", "u1", "u1", True, True, True, False, True),
+        # ("", True, "1001", "1001", "", "udoc1001", False, False, False, False, True),
+        # (None, True, "1001", "1001", None, None, False, True, False, True, False),
+        # (None, True, "1002", "1002", None, "udoc1002", False, False, False, False, True),
 
 
+@pytest.mark.parametrize(
+    "user_input,validity,uid,gid,username,expected_username,ismountpoint,hostauth,containerauth,not_found,"
+    "expected_uid,expected_gid,expected",
+    [
+        (None, True, "1001", "1001", "username", "username", False, True, True, False, "1001", "1001", True),
+        ("invuser", False, "100", "50", "username", "username", False, False, False, False, "100", "50", False),
+        ("root", True, "0", "0", "root", "root", False, True, True, False, "0", "0", True),
+        ("u1", True, "1001", "1001", "u1", "u1", True, True, True, False, "1001", "1001", True),
+        ("", True, "1001", "1001", "", "root", False, False, False, False, "", "", True),
+        (None, True, "1001", "1001", None, None, False, True, False, True, "1001", "1001", False),
+        (None, True, "1002", "1002", None, "root", False, False, False, False, "", "", True),
+    ]
+)
 @pytest.mark.parametrize("xmode", ["F1", "P1"])
-def test_18__setup_container_user(mocker, engine):
+def test_18__setup_container_user(mocker, engine, logger, mocker_nixauth, mocker_hostinfo,
+                                  user_input, validity, uid, gid, username, expected_username, ismountpoint,
+                                  hostauth, containerauth, not_found, expected_uid, expected_gid, expected):
     """Test18 ExecutionEngineCommon()._setup_container_user()."""
+    mocker_hostinfo.return_value.username.return_value = user_input
+    mocker_hostinfo.uid = uid
+    mocker_hostinfo.gid = gid
+    mocker.patch.object(engine, '_user_from_str', return_value=(validity, uid))
+    mocker.patch.object(engine, '_is_mountpoint', return_value=ismountpoint)
+    mocker.patch.object(engine, '_create_user')
+    # FIXME: if the hostauth is false the _create_user need to be mocker or added fileutil mock as in create_user
+    #  also the behavious of _user_from_str since user_id can be a bool or dictionary from _validate_user_str
 
-    mock_nixauth_instance = mocker.Mock()
+    engine.opt = {
+        "user": username,
+        "hostauth": hostauth,
+        "containerauth": containerauth,
+        "vol": list(),
+        'bindhome': False,
+        'home': '/home/user',
+        'shell': '/bin/sh',
+        'gecos': '*udocker*',
+        'uid': uid,
+        'gid': gid,
+    }
 
-    result = engine._setup_container_user("user")
+    assert engine._setup_container_user(user_input) == expected
+    assert engine.opt["user"] == expected_username
+    assert engine.opt["uid"] == expected_uid
+    assert engine.opt["gid"] == expected_gid
+    # assert engine.opt["hostauth"] == hostauth
+    # assert engine.opt["containerauth"] == containerauth
+    # FIXME: asserts for hostauth and containerauth depends on the _create_user if mocked can be done otherwhise
+    #       hostauth and containerauth can be changed inside the function - need further debugging
 
-    pytest.fail("Not implemented")
+    if not validity:
+        assert logger.error.call_args_list == [
+            mocker.call('invalid syntax for user; %s', mocker.ANY)]  # FIXME: this should be changed :
 
-
-#     @patch('udocker.engine.base.HostInfo')
-#     @patch('udocker.engine.base.NixAuthentication')
-#     @patch.object(ExecutionEngineCommon, '_create_user')
-#     @patch.object(ExecutionEngineCommon, '_is_mountpoint')
-#     @patch.object(ExecutionEngineCommon, '_user_from_str')
-#     @patch.object(ExecutionEngineCommon, '_select_auth_files')
-#     def test_18__setup_container_user(self, mock_selauth, mock_ustr, mock_ismpoint, mock_cruser,
-#                                       mock_auth, mock_hinfo):
-#         """Test18 ExecutionEngineCommon()._setup_container_user()."""
-#         user = "invuser"
-#         mock_selauth.return_value = ("/etc/passwd", "/etc/group")
-#         mock_ustr.return_value = (False, {"uid": "100", "gid": "50"})
-#         mock_auth.side_effect = [None, None]
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._setup_container_user(user)
-#         self.assertFalse(status)
-#
-#         user = ""
-#         mock_selauth.return_value = ("/etc/passwd", "/etc/group")
-#         mock_ustr.return_value = (True, {"uid": "0", "gid": "0"})
-#         mock_auth.side_effect = [None, None]
-#         mock_hinfo.return_value.username.return_value = "root"
-#         mock_hinfo.uid = 0
-#         mock_hinfo.gid = 0
-#         mock_ismpoint.side_effect = [True, True]
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._setup_container_user(user)
-#         self.assertTrue(status)
-#
-#         user = ""
-#         mock_selauth.return_value = ("/etc/passwd", "/etc/group")
-#         mock_ustr.return_value = (True, {"uid": "0", "gid": "0"})
-#         mock_auth.side_effect = [None, None]
-#         mock_hinfo.return_value.username.return_value = "root"
-#         mock_hinfo.uid = 0
-#         mock_hinfo.gid = 0
-#         mock_ismpoint.side_effect = [False, False]
-#         mock_cruser.return_value = None
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["user"] = ""
-#         ex_eng.opt["hostauth"] = True
-#         status = ex_eng._setup_container_user(user)
-#         self.assertFalse(status)
-#         self.assertFalse(mock_cruser.called)
-#
-#         user = ""
-#         mock_selauth.return_value = ("/etc/passwd", "/etc/group")
-#         mock_ustr.return_value = (True, {"uid": "0", "gid": "0"})
-#         mock_auth.side_effect = [None, None]
-#         mock_hinfo.return_value.username.return_value = "root"
-#         mock_hinfo.uid = 0
-#         mock_hinfo.gid = 0
-#         mock_ismpoint.side_effect = [False, False]
-#         mock_cruser.return_value = None
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["user"] = ""
-#         ex_eng.opt["hostauth"] = False
-#         ex_eng.opt["containerauth"] = False
-#         status = ex_eng._setup_container_user(user)
-#         self.assertTrue(status)
-#         self.assertTrue(mock_cruser.called)
-#
-#     @patch('udocker.engine.base.HostInfo')
-#     @patch('udocker.engine.base.NixAuthentication')
-#     @patch.object(ExecutionEngineCommon, '_create_user')
-#     @patch.object(ExecutionEngineCommon, '_is_mountpoint')
-#     @patch.object(ExecutionEngineCommon, '_user_from_str')
-#     @patch.object(ExecutionEngineCommon, '_select_auth_files')
+    if not_found:
+        assert logger.error.call_args_list == [mocker.call('user not found')]
 
 
 @pytest.mark.parametrize(
     "user_input,validity,uid,gid,username,expected_username,ismountpoint,hostauth,containerauth,not_found,expected", [
         (None, True, "1001", "1001", "username", "username", False, True, True, False, True),
         ("invuser", False, "100", "50", "username", "username", False, False, False, False, False),
-        ("root", True, "1001", "1001", "root", "root", False, True, True, False, True),
+        ("root", True, "0", "0", "root", "root", False, True, True, False, True),
         ("u1", True, "1001", "1001", "u1", "u1", True, True, True, False, True),
         ("", True, "1001", "1001", "", "udoc1001", False, False, False, False, True),
         (None, True, "1001", "1001", None, None, False, True, False, True, False),
-        (None, True, "1001", "1001", None, "udoc1001", False, False, False, False, True),
+        (None, True, "1002", "1002", None, "udoc1002", False, False, False, False, True),
     ])
 @pytest.mark.parametrize("xmode", ["F1", "P1"])
 def test_19__set_cont_user_noroot(mocker, engine, logger, mocker_hostinfo, user_input, validity, uid, gid, username,
-                                  expected_username, ismountpoint, hostauth, containerauth, not_found, expected, ):
+                                  expected_username, ismountpoint, hostauth, containerauth, not_found, expected):
     """Test19 ExecutionEngineCommon()._setup_container_user_noroot()."""
     mocker_hostinfo.return_value.username.return_value = username
     mocker_hostinfo.uid = uid
     mocker_hostinfo.gid = gid
     mocker.patch.object(engine, '_user_from_str', return_value=(validity, uid))
     mocker.patch.object(engine, '_is_mountpoint', return_value=ismountpoint)
+    # mocker.patch.object(engine, '_create_user')
 
     engine.opt = {
         "user": username,
@@ -596,6 +578,10 @@ def test_19__set_cont_user_noroot(mocker, engine, logger, mocker_hostinfo, user_
     assert engine.opt["user"] == expected_username
     assert engine.opt["uid"] == uid
     assert engine.opt["gid"] == gid
+    # assert engine.opt["hostauth"] == (False if ismountpoint is True else hostauth)
+    # assert engine.opt["containerauth"] == (False if ismountpoint is True else containerauth)
+    # FIXME: asserts for hostauth and containerauth depends on the _create_user if mocked can be done otherwhise
+    #       hostauth and containerauth can be changed inside the function
 
     if not validity:
         assert logger.error.call_args_list == [mocker.call('invalid syntax for user: %s', mocker.ANY)]
@@ -603,9 +589,6 @@ def test_19__set_cont_user_noroot(mocker, engine, logger, mocker_hostinfo, user_
     if not_found:
         assert logger.error.call_args_list == [mocker.call('user not found on host')]
 
-#
-#     @patch('udocker.engine.base.HostInfo')
-#     @patch('udocker.engine.base.NixAuthentication')
 
 @pytest.mark.parametrize("initial_opts, expected_opts", [
     ({'uid': None, 'gid': None, 'user': None, 'home': None, 'shell': None, 'gecos': None, 'bindhome': True},
@@ -678,56 +661,6 @@ def test_21__create_user(mocker, engine, logger, mocker_nixauth, containerauth, 
     if not containerauth:
         FileUtil.mktmp.assert_called()
         assert engine.hostauth_list == ('/tmp/passwd:/etc/passwd', '/tmp/passwd:/etc/group')
-
-
-#         cont_auth = mock_nix
-#         host_auth = mock_nix
-#         cont_auth.passwd_file.return_value = "/c/etc/passwd"
-#         cont_auth.group_file.return_value = "/c/etc/grpup"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["containerauth"] = True
-#         status = ex_eng._create_user(cont_auth, host_auth)
-#         self.assertTrue(status)
-#         self.assertFalse(ex_eng.opt["hostauth"])
-#
-#         cont_auth = mock_nix
-#         host_auth = mock_nix
-#         res = ("/tmp/passwd:/etc/passwd", "/tmp/group:/etc/group")
-#         cont_auth.passwd_file.return_value = "/c/etc/passwd"
-#         cont_auth.group_file.return_value = "/c/etc/group"
-#         mock_umask.side_effect = [None, None]
-#         mock_mktmp.side_effect = ["/tmp/passwd", "/tmp/group"]
-#         mock_cpto.side_effect = [None, None]
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["containerauth"] = False
-#         ex_eng.opt["hostauth"] = True
-#         status = ex_eng._create_user(cont_auth, host_auth)
-#         self.assertTrue(status)
-#         self.assertTrue(ex_eng.opt["hostauth"])
-#         self.assertEqual(ex_eng.hostauth_list, res)
-#
-#         cont_auth = mock_nix
-#         host_auth = mock_nix
-#         res = ("/tmp/passwd:/etc/passwd", "/tmp/group:/etc/group")
-#         cont_auth.passwd_file.return_value = "/c/etc/passwd"
-#         cont_auth.group_file.return_value = "/c/etc/group"
-#         mock_umask.side_effect = [None, None]
-#         mock_mktmp.side_effect = ["/tmp/passwd", "/tmp/group"]
-#         mock_cpto.side_effect = [None, None]
-#         mock_fillu.return_value = None
-#         mock_nix.add_user.return_value = None
-#         host_auth.get_group.return_value = ("", "x1", "x2")
-#         mock_nix.add_group.return_value = None
-#         mock_getgrp.return_value = [1000]
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["containerauth"] = False
-#         ex_eng.opt["hostauth"] = False
-#         status = ex_eng._create_user(cont_auth, host_auth)
-#         self.assertTrue(status)
-#         self.assertTrue(ex_eng.opt["hostauth"])
-#         self.assertEqual(ex_eng.hostauth_list, res)
-#
-#     @patch('udocker.engine.base.os.path.basename')
 
 
 @pytest.mark.parametrize("cmd,container_id,nobanner,expected", [
@@ -889,89 +822,40 @@ def test_26__run_env_cmdoptions(mocker, engine, mocker_fileutil, envfile_content
     assert set(uenv_instance.list()) == expected
 
 
-#
-#     @patch('udocker.engine.base.MountPoint')
-#     @patch.object(ExecutionEngineCommon, '_check_exposed_ports')
-#     @patch.object(ExecutionEngineCommon, '_set_volume_bindings')
-#     @patch.object(ExecutionEngineCommon, '_check_executable')
-#     @patch.object(ExecutionEngineCommon, '_check_paths')
-#     @patch.object(ExecutionEngineCommon, '_setup_container_user')
-#     @patch.object(ExecutionEngineCommon, '_run_env_cmdoptions')
-#     @patch.object(ExecutionEngineCommon, '_run_load_metadata')
+@pytest.mark.parametrize(
+    "error,container_dir,config_location,setup_result,volume,paths,executable,expected",
+    [
+        (ValueError, None, None, True, True, True, "/bin/exec", ""),
+        (None, None, None, True, True, True, "/bin/exec", ""),
+        (None, "/path/to/container", None, True, True, True, "/bin/exec", "/path/to/container/exec"),
+        (None, "/another/container/path", None, False, True, True, "/bin/exec", ""),
+        (None, "/yet/another/path", None, True, False, True, "/bin/exec", ""),
+        (None, "/some/path", None, True, True, False, "/bin/exec", ""),
+        (None, "/final/path", None, True, True, True, "/bin/exec", "/final/path/exec"),
+    ])
 @pytest.mark.parametrize("xmode", ["F1", "P1"])
-def test_27__run_init(mocker, engine):
+def test_27__run_init(mocker, engine, error, container_dir, config_location, setup_result, volume, paths, executable,
+                      expected):
     """Test27 ExecutionEngineCommon()._run_init()."""
-    pytest.fail("Not implemented")
+    if error:
+        mocker.patch.object(engine, '_run_load_metadata', side_effect=error)
+    else:
+        mocker.patch.object(engine, '_run_load_metadata', return_value=(container_dir, None))
+    mocker.patch.object(engine, '_check_platform')
+    mocker.patch.object(engine, '_run_env_cmdoptions')
+    mocker.patch.object(engine, '_check_exposed_ports')
+    mocker.patch.object(engine, '_setup_container_user', return_value=setup_result)
+    mocker.patch.object(engine, '_set_volume_bindings', return_value=volume)
+    mocker.patch.object(engine, '_check_paths', return_value=paths)
+    if container_dir:
+        mocker.patch.object(engine, '_check_executable', return_value=container_dir + '/' + 'exec')
+    else:
+        mocker.patch.object(engine, '_check_executable', return_value=executable)
 
+    mocker.patch.object(Config, 'conf', {'location': config_location, 'tmpdir': '/tmp', })
 
-#         # mock_getcname.return_value = "cname"
-#         Config.conf['location'] = ""
-#         mock_loadmeta.return_value = ("", "dummy",)
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._run_init("2717add4-e6f6-397c-9019-74fa67be439f")
-#         self.assertEqual(status, "")
-#         self.assertTrue(mock_loadmeta.called)
-#
-#         Config.conf['location'] = "/container_dir"
-#         mock_loadmeta.return_value = ("/container_dir", "dummy",)
-#         mock_envcmd.return_value = None
-#         mock_chkports.return_value = None
-#         mock_setupuser.return_value = False
-#         self.local.get_container_name.return_value = "cont_name"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._run_init("2717add4-e6f6-397c-9019-74fa67be439f")
-#         self.assertEqual(status, "")
-#         self.assertTrue(mock_envcmd.called)
-#         self.assertTrue(self.local.get_container_name.called)
-#         self.assertTrue(mock_chkports.called)
-#
-#         Config.conf['location'] = "/container_dir"
-#         mock_loadmeta.return_value = ("/container_dir", "dummy",)
-#         mock_envcmd.return_value = None
-#         mock_chkports.return_value = None
-#         mock_setupuser.return_value = True
-#         mock_mpoint.return_value = None
-#         mock_setvol.return_value = False
-#         self.local.get_container_name.return_value = "cont_name"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._run_init("2717add4-e6f6-397c-9019-74fa67be439f")
-#         self.assertEqual(status, "")
-#         self.assertTrue(mock_chkports.called)
-#         self.assertTrue(mock_mpoint.called)
-#         self.assertTrue(mock_setvol.called)
-#
-#         Config.conf['location'] = "/container_dir"
-#         mock_loadmeta.return_value = ("/container_dir", "dummy",)
-#         mock_envcmd.return_value = None
-#         mock_chkports.return_value = None
-#         mock_setupuser.return_value = True
-#         mock_mpoint.return_value = None
-#         mock_setvol.return_value = True
-#         mock_chkpaths.return_value = False
-#         self.local.get_container_name.return_value = "cont_name"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._run_init("2717add4-e6f6-397c-9019-74fa67be439f")
-#         self.assertEqual(status, "")
-#         self.assertTrue(mock_chkpaths.called)
-#
-#         Config.conf['location'] = "/container_dir"
-#         mock_loadmeta.return_value = ("/container_dir", "dummy",)
-#         mock_envcmd.return_value = None
-#         mock_chkports.return_value = None
-#         mock_setupuser.return_value = True
-#         mock_mpoint.return_value = None
-#         mock_setvol.return_value = True
-#         mock_chkpaths.return_value = True
-#         mock_chkexec.return_value = "/bin/ls"
-#         self.local.get_container_name.return_value = "cont_name"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._run_init("2717add4-e6f6-397c-9019-74fa67be439f")
-#         self.assertEqual(status, "/bin/ls")
-#         self.assertTrue(mock_chkexec.called)
-#
-#     @patch('udocker.engine.base.HostInfo')
-#     @patch('udocker.engine.base.json.loads')
-#     @patch('udocker.engine.base.FileUtil.getdata')
+    result = engine._run_init("2717add4-e6f6-397c-9019-74fa67be439f")
+    assert result == expected
 
 
 @pytest.mark.parametrize("file_contents,osversion,oskernel,arch,osdistribution,expected", [
