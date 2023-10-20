@@ -2,15 +2,20 @@
 """
 udocker unit tests: ExecutionEngineCommon
 """
+import os
 import random
 from contextlib import nullcontext as does_not_raise
 
+import mock
 import pytest
 
+from udocker import MSG
 from udocker.config import Config
 from udocker.container.structure import ContainerStructure
 from udocker.engine.base import ExecutionEngineCommon
+from udocker.engine.execmode import ExecutionMode
 from udocker.utils.fileutil import FileUtil
+from udocker.utils.uenv import Uenv
 
 
 @pytest.fixture
@@ -34,8 +39,14 @@ def logger(mocker):
     return mocker.patch('udocker.engine.base.LOG')
 
 
+def mocker_msg(mocker):
+    return mocker.patch.object(MSG, 'info')
+
+
 @pytest.fixture
 def mocker_hostinfo(mocker):
+    # mock_instance = mocker.Mock()
+    # return mocker.patch('udocker.engine.base.HostInfo', return_value=mock_instance)
     return mocker.patch('udocker.engine.base.HostInfo')
 
 
@@ -466,55 +477,18 @@ def test_17__user_from_str(mocker, engine, user, hostauth_return, container_auth
         assert engine.opt["home"] == expected_validity["home"]
         assert engine.opt["shell"] == expected_validity["shell"]
 
-#     def test_17__user_from_str(self):
-#         """Test17 ExecutionEngineCommon()._user_from_str()."""
-#         userstr = ""
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._user_from_str(userstr)
-#         self.assertEqual(status, (False, dict()))
-#
-#         userstr = "user1"
-#         res = {"user": userstr}
-#         str_exmode = 'udocker.helper.nixauth.NixAuthentication'
-#         nixauth = patch(str_exmode)
-#         auth = nixauth.start()
-#         mock_auth = Mock()
-#         auth.return_value = mock_auth
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["hostauth"] = True
-#         auth.get_user.return_value = ("user1", "1000", "1000", "usr", "/home/user", "/bin/bash")
-#         status = ex_eng._user_from_str(userstr, host_auth=auth)
-#         self.assertEqual(status, (True, res))
-#         auth = nixauth.stop()
-#
-#         userstr = "user1"
-#         res = {"user": userstr}
-#         str_exmode = 'udocker.helper.nixauth.NixAuthentication'
-#         nixauth = patch(str_exmode)
-#         auth = nixauth.start()
-#         mock_auth = Mock()
-#         auth.return_value = mock_auth
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["hostauth"] = False
-#         auth.get_user.return_value = ("user1", "1000", "1000", "usr", "/home/user", "/bin/bash")
-#         status = ex_eng._user_from_str(userstr, container_auth=auth)
-#         self.assertEqual(status, (True, res))
-#         auth = nixauth.stop()
-#
-#         userstr = "1000:1000"
-#         res = {"uid": "1000", "gid": "1000"}
-#         str_exmode = 'udocker.helper.nixauth.NixAuthentication'
-#         nixauth = patch(str_exmode)
-#         auth = nixauth.start()
-#         mock_auth = Mock()
-#         auth.return_value = mock_auth
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["hostauth"] = True
-#         auth.get_user.return_value = ("user1", "1000", "1000", "usr", "/home/user", "/bin/bash")
-#         status = ex_eng._user_from_str(userstr, host_auth=auth)
-#         self.assertEqual(status, (True, res))
-#         auth = nixauth.stop()
-#
+
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_18__setup_container_user(mocker, engine):
+    """Test18 ExecutionEngineCommon()._setup_container_user()."""
+
+    mock_nixauth_instance = mocker.Mock()
+
+    result = engine._setup_container_user("user")
+
+    pytest.fail("Not implemented")
+
+
 #     @patch('udocker.engine.base.HostInfo')
 #     @patch('udocker.engine.base.NixAuthentication')
 #     @patch.object(ExecutionEngineCommon, '_create_user')
@@ -583,9 +557,46 @@ def test_17__user_from_str(mocker, engine, user, hostauth_return, container_auth
 #     @patch.object(ExecutionEngineCommon, '_is_mountpoint')
 #     @patch.object(ExecutionEngineCommon, '_user_from_str')
 #     @patch.object(ExecutionEngineCommon, '_select_auth_files')
-#     def test_19__set_cont_user_noroot(self, mock_selauth, mock_ustr, mock_ismpoint, mock_cruser,
-#                                       mock_auth, mock_hinfo):
-#         """Test19 ExecutionEngineCommon()._setup_container_user_noroot()."""
+
+
+@pytest.mark.parametrize("user_input,validity,uid,gid,username,ismountpoint,hostauth,containerauth,expected", [
+    (None, True, "1001", "1001", "username", False, True, True, True),
+    ("wrong_user", False, "1001", "1001", "username", False, False, False, False),
+    ("root", True, "1001", "1001", "root", False, True, True, True),
+    ("username", True, "1001", "1001", "username", True, True, True, True),
+    ("", True, "1001", "1001", "udoc1001", False, False, False, True),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_19__set_cont_user_noroot(mocker, engine, logger, user_input, validity, uid, gid, username, ismountpoint,
+                                  hostauth,
+                                  containerauth, expected, mocker_hostinfo):
+    """Test19 ExecutionEngineCommon()._setup_container_user_noroot()."""
+    mocker_hostinfo.return_value.username.return_value = username
+    mocker_hostinfo.uid = uid
+    mocker_hostinfo.gid = gid
+    mocker.patch.object(engine, '_user_from_str', return_value=(validity, uid))
+
+    engine.opt = {
+        "user": username,
+        "hostauth": hostauth,
+        "containerauth": containerauth,
+        "vol": list(),
+        'bindhome': False,
+        'home': '/home/user',
+        'shell': '/bin/sh',
+        'gecos': '*udocker*',
+    }
+
+    assert engine._setup_container_user_noroot(user_input) == expected
+
+    if validity:
+        assert engine.opt["user"] == username
+        assert engine.opt["uid"] == uid
+        assert engine.opt["gid"] == gid
+    else:
+        assert logger.error.call_args_list == [mocker.call('invalid syntax for user: %s', mocker.ANY)]
+
+
 #         user = "invuser"
 #         mock_selauth.return_value = ("/etc/passwd", "/etc/group")
 #         mock_ustr.return_value = (False, {"uid": "100", "gid": "50"})
@@ -641,34 +652,80 @@ def test_17__user_from_str(mocker, engine, user, hostauth_return, container_auth
 #
 #     @patch('udocker.engine.base.HostInfo')
 #     @patch('udocker.engine.base.NixAuthentication')
-#     def test_20__fill_user(self, mock_auth, mock_hinfo):
-#         """Test20 ExecutionEngineCommon()._fill_user()."""
-#         mock_auth.return_value.get_home.return_value = "/home/u1"
-#         mock_hinfo.uid = 1000
-#         mock_hinfo.gid = 1000
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["user"] = ""
-#         ex_eng.opt["uid"] = ""
-#         ex_eng.opt["gid"] = ""
-#         ex_eng.opt["bindhome"] = True
-#         ex_eng.opt["shell"] = ""
-#         ex_eng.opt["gecos"] = ""
-#         ex_eng._fill_user()
-#         self.assertEqual(ex_eng.opt["user"], "udoc1000")
-#         self.assertEqual(ex_eng.opt["uid"], "1000")
-#         self.assertEqual(ex_eng.opt["gid"], "1000")
-#         self.assertEqual(ex_eng.opt["shell"], "/bin/sh")
-#         self.assertEqual(ex_eng.opt["gecos"], "*UDOCKER*")
-#
-#     @patch.object(ExecutionEngineCommon, '_fill_user')
-#     @patch('udocker.engine.base.os.getgroups')
-#     @patch('udocker.engine.base.FileUtil.copyto')
-#     @patch('udocker.engine.base.FileUtil.mktmp')
-#     @patch('udocker.engine.base.FileUtil.umask')
-#     @patch('udocker.engine.base.NixAuthentication')
-#     def test_21__create_user(self, mock_nix, mock_umask, mock_mktmp,
-#                              mock_cpto, mock_getgrp, mock_fillu):
-#         """Test21 ExecutionEngineCommon()._create_user()."""
+
+@pytest.mark.parametrize("initial_opts, expected_opts", [
+    ({'uid': None, 'gid': None, 'user': None, 'home': None, 'shell': None, 'gecos': None, 'bindhome': True},
+     {'uid': '0', 'gid': '0', 'user': 'udoc0', 'home': '/home/user', 'shell': '/bin/sh', 'gecos': '*udocker*',
+      'bindhome': True}),
+    ({'uid': None, 'gid': None, 'user': None, 'home': None, 'shell': None, 'gecos': None, 'bindhome': False},
+     {'uid': '0', 'gid': '0', 'user': 'udoc0', 'home': '/', 'shell': '/bin/sh', 'gecos': '*udocker*',
+      'bindhome': False}),
+    ({'uid': '0', 'gid': '0', 'user': 'udoc0', 'home': '/', 'shell': '/bin/sh', 'gecos': '*udocker*',
+      'bindhome': False},
+     {'uid': '0', 'gid': '0', 'user': 'udoc0', 'home': '/', 'shell': '/bin/sh', 'gecos': '*udocker*',
+      'bindhome': False}),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_20__fill_user(mocker, engine, initial_opts, expected_opts):
+    """Test20 ExecutionEngineCommon()._fill_user()."""
+
+    mocker.patch('udocker.engine.base.HostInfo.uid', expected_opts['uid'])
+    mocker.patch('udocker.engine.base.HostInfo.gid', expected_opts['gid'])
+    mocker.patch('udocker.engine.base.NixAuthentication.get_home', side_effect=['/home/user'])
+
+    mocker.patch.object(engine, 'opt', initial_opts)
+    engine._fill_user()
+
+    assert engine.opt == expected_opts
+
+
+@pytest.mark.parametrize("containerauth,hostauth,expected_hostauth,log_warning,passwd_exists,group_exists", [
+    (True, True, False, False, True, True),
+    (True, False, False, False, True, True),
+    (False, True, True, False, True, True),
+    (False, False, True, True, False, False),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_21__create_user(mocker, engine, logger, mocker_nixauth, containerauth, hostauth, expected_hostauth,
+                         log_warning, passwd_exists,
+                         group_exists):
+    """Test21 ExecutionEngineCommon()._create_user()."""
+
+    mocker.patch.object(FileUtil, 'umask')
+    mocker.patch.object(FileUtil, 'mktmp', return_value="/tmp/passwd")
+    mocker.patch.object(FileUtil, 'copyto')
+    mocker.patch('os.getgroups', return_value=[1001, 1002])
+
+    mock_nix_auth_instance = mocker_nixauth.return_value
+    mock_nix_auth_instance.add_user.return_value = True
+    mock_nix_auth_instance.add_group.return_value = True
+    mock_nix_auth_instance.passwd_file = "/c/etc/passwd"
+    mock_nix_auth_instance.group_file = "/c/etc/grpup"
+
+    mock_host_auth = mocker.Mock()
+    mock_host_auth.get_group.return_value = ("", "x1", "x2")
+
+    engine.opt = {
+        "containerauth": containerauth,
+        "hostauth": hostauth,
+        'uid': 1001,
+        'gid': 1001,
+        'user': 'user',
+        'bindhome': True,
+        'home': '/home/user',
+        'shell': '/bin/sh',
+        'gecos': '*udocker*',
+    }
+
+    assert engine._create_user(mock_nix_auth_instance, mock_host_auth) is True
+    assert engine.opt["hostauth"] == expected_hostauth
+    assert logger.warning.called == log_warning
+
+    if not containerauth:
+        FileUtil.mktmp.assert_called()
+        assert engine.hostauth_list == ('/tmp/passwd:/etc/passwd', '/tmp/passwd:/etc/group')
+
+
 #         cont_auth = mock_nix
 #         host_auth = mock_nix
 #         cont_auth.passwd_file.return_value = "/c/etc/passwd"
@@ -717,43 +774,134 @@ def test_17__user_from_str(mocker, engine, user, hostauth_return, container_auth
 #         self.assertEqual(ex_eng.hostauth_list, res)
 #
 #     @patch('udocker.engine.base.os.path.basename')
-#     def test_22__run_banner(self, mock_base):
-#         """Test22 ExecutionEngineCommon()._run_banner()."""
-#         mock_base.return_value = "ls"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng._run_banner("/bin/bash")
-#         ex_eng.container_id = "CONTAINERID"
-#         self.assertTrue(mock_base.called_once_with("/bin/bash"))
+
+
+@pytest.mark.parametrize("cmd,container_id,nobanner,expected", [
+    ("/bin/ls", "container1234", False,
+     '############################################################################\n'
+     '|                                                                          '
+     '|\n'
+     '|                          starting container1234                          '
+     '|\n'
+     '|                                                                          '
+     '|\n'
+     '############################################################################\n'
+     '\n'
+     'executing: ls\n'
+     '____________________________________________________________________________\n',),
+    ("/bin/ls", "container1234", True, None),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_22__run_banner(mocker, engine, cmd, container_id, nobanner, expected):
+    """Test22 ExecutionEngineCommon()._run_banner()."""
+
+    mock_msg_info = mocker.patch('udocker.engine.base.MSG.info')
+    engine.container_id = container_id
+    engine.opt = {"nobanner": nobanner}
+
+    engine._run_banner(cmd)
+
+    if not nobanner:
+        mock_msg_info.assert_called_once_with(expected)
+    else:
+        assert not mock_msg_info.called
+
+
+@pytest.mark.parametrize("initial_env,invalid_host_env,valid_host_env,hostenv_opt,expected", [
+    ({'HOME': '/', 'USERNAME': 'user', }, ("USERNAME",), ("HOME",), False, {'HOME': '/'}),
+    ({'HOME': '/', 'USERNAME': 'user', }, ("USERNAME", "HOME",), (), False, {}),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_23__run_env_cleanup_dict(mocker, engine, initial_env, invalid_host_env, valid_host_env, hostenv_opt, expected):
+    """Test23 ExecutionEngineCommon()._run_env_cleanup_dict()."""
+
+    mocker.patch.dict(os.environ, initial_env)
+    mocker.patch.object(Config, 'conf', {'invalid_host_env': invalid_host_env, 'valid_host_env': valid_host_env})
+    engine.opt = {"hostenv": hostenv_opt}
+
+    engine._run_env_cleanup_dict()
+
+    assert os.environ == expected
+
+
+@pytest.mark.parametrize("initial_env,invalid_host_env,valid_host_env,container_env,hostenv_opt,expected", [
+    ({'HOME': '/', 'USERNAME': 'user', }, ("USERNAME",), ("HOME",), {'PATH': '/usr/bin'}, False,
+     {'HOME': '/', 'USERNAME': 'user'}),
+    ({'HOME': '/', 'USERNAME': 'user', 'PATH': '/user/bin'}, ("USERNAME",), ("HOME",), {'PATH': '/usr/bin'}, True,
+     {'HOME': '/', 'USERNAME': 'user', 'PATH': '/user/bin', }),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_24__run_env_cleanup_list(mocker, engine, initial_env, invalid_host_env, valid_host_env, container_env,
+                                  hostenv_opt, expected):
+    """Test24 ExecutionEngineCommon()._run_env_cleanup_list()."""
+    uenv_instance = Uenv()  # this can be done with magickmock
+    for key, value in initial_env.items():
+        uenv_instance.append(f"{key}={value}")
+
+    mocker.patch.object(Config, 'conf', {
+        'invalid_host_env': invalid_host_env,
+        'valid_host_env': valid_host_env
+    })
+
+    mocker.patch.object(os.environ, 'items', return_value=initial_env.items())
+    mocker.patch.dict('os.environ', initial_env)
+
+    engine.opt = {
+        "env": uenv_instance,
+        "hostenv": hostenv_opt
+    }
+
+    engine._run_env_cleanup_list()
+
+    assert engine.opt["env"].dict() == expected
+
+
 #
-#     @patch('udocker.engine.base.os.environ.copy')
-#     @patch('udocker.engine.base.os.environ')
-#     def test_23__run_env_cleanup_dict(self, mock_osenv, mock_osenvcp):
-#         """Test23 ExecutionEngineCommon()._run_env_cleanup_dict()."""
-#         res = {'HOME': '/', }
-#         Config.conf['valid_host_env'] = ("HOME",)
-#         Config.conf['invalid_host_env'] = ("USERNAME",)
-#         mock_osenvcp.return_value = {'HOME': '/', 'USERNAME': 'user', }
-#         mock_osenv.return_value = {'HOME': '/', }
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["hostenv"] = {'HOME': '/', }
-#         ex_eng._run_env_cleanup_dict()
-#         self.assertEqual(mock_osenv.return_value, res)
-#
-#     @patch('udocker.engine.base.os.environ')
-#     def test_24__run_env_cleanup_list(self, mock_osenv):
-#         """Test24 ExecutionEngineCommon()._run_env_cleanup_list()."""
-#         Config.conf['valid_host_env'] = ("HOME",)
-#         Config.conf['invalid_host_env'] = ("USERNAME",)
-#         mock_osenv.return_value = {'HOME': '/', 'USERNAME': 'user', }
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["hostenv"] = "HOME"
-#         ex_eng.opt["env"] = Uenv()
-#         ex_eng._run_env_cleanup_list()
-#         self.assertEqual(ex_eng.opt["env"].env, dict())
-#
-#     @patch('udocker.engine.base.HostInfo.username')
-#     def test_25__run_env_set(self, mock_hiuname):
-#         """Test25 ExecutionEngineCommon()._run_env_set()."""
+@pytest.mark.parametrize("username,uid,expected_ps1", [
+    ("root", "0", "2717add4 #"),
+    ("user1", "1000", "2717add4 \\$"),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_25__run_env_set(mocker, engine, xmode, mocker_hostinfo, username, uid, expected_ps1):
+    """Test25 ExecutionEngineCommon()._run_env_set()."""
+    uenv_instance = Uenv()
+    mocker.patch.object(uenv_instance, 'appendif', side_effect=uenv_instance.appendif)
+    mocker.patch.object(uenv_instance, 'append', side_effect=uenv_instance.append)
+
+    mocker_hostinfo.return_value.username.return_value = username
+
+    engine.opt = {
+        "env": uenv_instance,
+        "home": f"/home/{username}",
+        "user": username,
+        "uid": uid
+    }
+    engine.container_id = "2717add4-e6f6-397c-9019-74fa67be439f"
+    engine.container_root = "/mocked/container/root"
+    engine.container_names = ['cna[]me', ]
+
+    mock_exec_mode = mocker.Mock()
+    mock_exec_mode.get_mode.return_value = xmode
+    engine.exec_mode = mock_exec_mode
+
+    expected = [
+        "home=" + f"/home/{username}",
+        "user=" + username,
+        "logname=" + username,
+        "username=" + username,
+        "ps1=" + expected_ps1,
+        "shlvl=0",
+        "container_ruser=" + username,
+        "container_root=/mocked/container/root",
+        "container_uuid=2717add4-e6f6-397c-9019-74fa67be439f",
+        "container_execmode=" + xmode,
+        "container_names=cname",
+    ]
+
+    engine._run_env_set()
+    assert set(uenv_instance.list()) == set(expected)
+
+
 #         mock_hiuname.return_value = "user1"
 #         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
 #         ex_eng.opt["home"] = "/"
@@ -770,14 +918,23 @@ def test_17__user_from_str(mocker, engine, user, hostauth_return, container_auth
 #         self.assertEqual(ex_eng.opt["env"].env["SHLVL"], "0")
 #
 #     @patch('udocker.engine.base.FileUtil.getdata')
-#     def test_26__run_env_cmdoptions(self, mock_getdata):
-#         """Test26 ExecutionEngineCommon()._run_env_cmdoptions()."""
-#         mock_getdata.return_value = "USER=user1\nSHLVL=0"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["envfile"] = ["/dir/env"]
-#         ex_eng.opt["env"] = Uenv()
-#         ex_eng._run_env_cmdoptions()
-#         self.assertEqual(ex_eng.opt["env"].env["USER"], "user1")
+
+@pytest.mark.parametrize("envfile_content, expected", [
+    ("", set()),
+    ("HOME=/home/user\nUSERNAME=user\nSHLVL=0", {"HOME=/home/user", "USERNAME=user", "SHLVL=0"}),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_26__run_env_cmdoptions(mocker, engine, mocker_fileutil, envfile_content, expected):
+    """Test26 ExecutionEngineCommon()._run_env_cmdoptions()."""
+    uenv_instance = Uenv()
+    mocker.patch.object(uenv_instance, 'appendif', side_effect=uenv_instance.appendif)
+    mocker_fileutil.return_value = mocker.Mock(getdata=mocker.Mock(return_value=envfile_content))
+    mocker.patch.object(engine, 'opt', {"envfile": ["/dir/env"], "env": uenv_instance})
+    engine._run_env_cmdoptions()
+
+    assert set(uenv_instance.list()) == expected
+
+
 #
 #     @patch('udocker.engine.base.MountPoint')
 #     @patch.object(ExecutionEngineCommon, '_check_exposed_ports')
@@ -787,9 +944,12 @@ def test_17__user_from_str(mocker, engine, user, hostauth_return, container_auth
 #     @patch.object(ExecutionEngineCommon, '_setup_container_user')
 #     @patch.object(ExecutionEngineCommon, '_run_env_cmdoptions')
 #     @patch.object(ExecutionEngineCommon, '_run_load_metadata')
-#     def test_27__run_init(self, mock_loadmeta, mock_envcmd, mock_setupuser, mock_chkpaths,
-#                           mock_chkexec, mock_setvol, mock_chkports, mock_mpoint):
-#         """Test27 ExecutionEngineCommon()._run_init()."""
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_27__run_init(mocker, engine):
+    """Test27 ExecutionEngineCommon()._run_init()."""
+    pytest.fail("Not implemented")
+
+
 #         # mock_getcname.return_value = "cname"
 #         Config.conf['location'] = ""
 #         mock_loadmeta.return_value = ("", "dummy",)
@@ -858,37 +1018,54 @@ def test_17__user_from_str(mocker, engine, user, hostauth_return, container_auth
 #     @patch('udocker.engine.base.HostInfo')
 #     @patch('udocker.engine.base.json.loads')
 #     @patch('udocker.engine.base.FileUtil.getdata')
-#     def test_28__is_same_osenv(self, mock_getdata, mock_jload, mock_hinfo):
-#         """Test28 ExecutionEngineCommon()._is_same_osenv()."""
-#         mock_getdata.return_value = dict()
-#         mock_jload.return_value = dict()
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._is_same_osenv("somefile")
-#         self.assertEqual(status, dict())
-#
-#         mock_getdata.return_value = {"osversion": "linux", "oskernel": "3.2.1", "arch": "amd64"}
-#         mock_jload.return_value = {"osversion": "linux", "oskernel": "3.2.1", "arch": "amd64"}
-#         mock_hinfo.return_value.osversion.return_value = "linux"
-#         mock_hinfo.return_value.oskernel.return_value = "3.2.1"
-#         mock_hinfo.return_value.arch.return_value = "amd64"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._is_same_osenv("somefile")
-#         self.assertEqual(status, {"osversion": "linux", "oskernel": "3.2.1", "arch": "amd64"})
-#
-#     @patch('udocker.engine.base.HostInfo')
-#     @patch('udocker.engine.base.json.dumps')
-#     @patch('udocker.engine.base.FileUtil.putdata')
-#     def test_29__save_osenv(self, mock_putdata, mock_jdump, mock_hinfo):
-#         """Test29 ExecutionEngineCommon()._save_osenv()."""
-#         mock_putdata.return_value = {"osversion": "linux", "oskernel": "3.2.1", "arch": "amd64"}
-#         mock_jdump.return_value = {"osversion": "linux", "oskernel": "3.2.1", "arch": "amd64"}
-#         mock_hinfo.return_value.osversion.return_value = "linux"
-#         mock_hinfo.return_value.oskernel.return_value = "3.2.1"
-#         mock_hinfo.return_value.arch.return_value = "amd64"
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._save_osenv("somefile")
-#         self.assertTrue(status)
-#
-#
-# if __name__ == '__main__':
-#     main()
+
+
+@pytest.mark.parametrize("file_contents,osversion,oskernel,arch,osdistribution,expected", [
+    ('{}', "", "", "", "", {}),
+    # ('not_a_valid_json', "", "", "", "", {}), # FIXME: This test fails since there is no exception handling if
+    #                                              # json.loads() fails
+    ('{"osversion": "linux", "oskernel": "", "arch": ""}', "linux", "3.2.1", "amd64", "ubuntu", {}),
+    ('{"osversion": "linux", "oskernel": "3.2.1", "arch": "amd64", "osdistribution": "ubuntu"}', "linux", "3.2.1",
+     "amd64", "ubuntu", {'arch': 'amd64', 'osdistribution': 'ubuntu', 'oskernel': '3.2.1', 'osversion': 'linux'}),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_28__is_same_osenv(mocker, engine, file_contents, osversion, oskernel, arch, osdistribution, expected):
+    """Test28 ExecutionEngineCommon()._is_same_osenv()."""
+
+    mocker.patch('udocker.engine.base.HostInfo.osversion', return_value=osversion)
+    mocker.patch('udocker.engine.base.HostInfo.oskernel', return_value=oskernel)
+    mocker.patch('udocker.engine.base.HostInfo.arch', return_value=arch)
+    mocker.patch('udocker.engine.base.OSInfo.osdistribution', return_value=osdistribution)
+
+    mocker.patch('udocker.engine.base.FileUtil.getdata', return_value=file_contents)
+    result = engine._is_same_osenv("dummy_filename")
+    assert result == expected
+
+
+@pytest.mark.parametrize("osversion,oskernel,arch,osdistribution,putdata_return,error,expected", [
+    ("linux", "3.2.1", "amd64", "ubuntu", True, does_not_raise(), True),
+    ("linux", "3.2.1", "amd64", "ubuntu", False, does_not_raise(), False),
+    (ValueError("Error"), "3.2.1", "amd64", "ubuntu", True, does_not_raise(), False),
+    (None, "3.2.1", "amd64", "ubuntu", False, does_not_raise(), False),
+    (None, "3.2.1", "amd64", "ubuntu", False, does_not_raise(), False),
+])
+@pytest.mark.parametrize("xmode", ["F1", "P1"])
+def test_29__save_osenv(mocker, engine, osversion, oskernel, arch, osdistribution, putdata_return, error, expected):
+    """Test29 ExecutionEngineCommon()._save_osenv()."""
+
+    mocker.patch('udocker.engine.base.HostInfo.osversion', return_value=osversion)
+    mocker.patch('udocker.engine.base.HostInfo.oskernel', return_value=oskernel)
+    mocker.patch('udocker.engine.base.HostInfo.arch', return_value=arch)
+    mocker.patch('udocker.engine.base.OSInfo.osdistribution', return_value=osdistribution)
+    mocker.patch('udocker.engine.base.FileUtil.putdata', return_value=putdata_return)
+
+    with error:
+        assert engine._save_osenv("dummy_filename") == expected
+
+    if expected is True:
+        save = dict()
+        engine._save_osenv("dummy_filename", save) == expected
+        assert save["osversion"] == osversion
+        assert save["oskernel"] == oskernel
+        assert save["arch"] == arch
+        assert save["osdistribution"] == osdistribution
