@@ -313,7 +313,7 @@ def test_09__run_add_script_support(ufake, mocker, mock_fileutil, mock_logger, x
                                     expected_result, raise_error, msg_log):
     """Test09 FakechrootEngine._run_add_script_support()"""
     ufake.container_root = "/ROOT"
-    ufake.opt["cmd"] = ["fds"]
+    ufake.opt["cmd"] = ["ls"]
 
     mock_fileutil_instance = mock_fileutil.return_value
     mock_fileutil_instance.find_exec.return_value = find_exec_result
@@ -355,6 +355,8 @@ def test_10_run(ufake, mocker, container_id, xmode, mock_elphpatcher, mock_logge
 
     with mocker.patch('subprocess.call', return_value=0):
         result = ufake.run(container_id)
+
+    # FIXME: cmd_l.append(container_loader) is not called
 
     assert mock_logger.debug.call_count == log_count
     assert result == expected
