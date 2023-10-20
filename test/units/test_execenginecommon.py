@@ -559,22 +559,25 @@ def test_18__setup_container_user(mocker, engine):
 #     @patch.object(ExecutionEngineCommon, '_select_auth_files')
 
 
-@pytest.mark.parametrize("user_input,validity,uid,gid,username,ismountpoint,hostauth,containerauth,expected", [
-    (None, True, "1001", "1001", "username", False, True, True, True),
-    ("wrong_user", False, "1001", "1001", "username", False, False, False, False),
-    ("root", True, "1001", "1001", "root", False, True, True, True),
-    ("username", True, "1001", "1001", "username", True, True, True, True),
-    ("", True, "1001", "1001", "udoc1001", False, False, False, True),
-])
+@pytest.mark.parametrize(
+    "user_input,validity,uid,gid,username,expected_username,ismountpoint,hostauth,containerauth,not_found,expected", [
+        (None, True, "1001", "1001", "username", "username", False, True, True, False, True),
+        ("invuser", False, "100", "50", "username", "username", False, False, False, False, False),
+        ("root", True, "1001", "1001", "root", "root", False, True, True, False, True),
+        ("u1", True, "1001", "1001", "u1", "u1", True, True, True, False, True),
+        ("", True, "1001", "1001", "", "udoc1001", False, False, False, False, True),
+        (None, True, "1001", "1001", None, None, False, True, False, True, False),
+        (None, True, "1001", "1001", None, "udoc1001", False, False, False, False, True),
+    ])
 @pytest.mark.parametrize("xmode", ["F1", "P1"])
-def test_19__set_cont_user_noroot(mocker, engine, logger, user_input, validity, uid, gid, username, ismountpoint,
-                                  hostauth,
-                                  containerauth, expected, mocker_hostinfo):
+def test_19__set_cont_user_noroot(mocker, engine, logger, mocker_hostinfo, user_input, validity, uid, gid, username,
+                                  expected_username, ismountpoint, hostauth, containerauth, not_found, expected, ):
     """Test19 ExecutionEngineCommon()._setup_container_user_noroot()."""
     mocker_hostinfo.return_value.username.return_value = username
     mocker_hostinfo.uid = uid
     mocker_hostinfo.gid = gid
     mocker.patch.object(engine, '_user_from_str', return_value=(validity, uid))
+    mocker.patch.object(engine, '_is_mountpoint', return_value=ismountpoint)
 
     engine.opt = {
         "user": username,
@@ -585,70 +588,21 @@ def test_19__set_cont_user_noroot(mocker, engine, logger, user_input, validity, 
         'home': '/home/user',
         'shell': '/bin/sh',
         'gecos': '*udocker*',
+        'uid': uid,
+        'gid': gid,
     }
 
     assert engine._setup_container_user_noroot(user_input) == expected
+    assert engine.opt["user"] == expected_username
+    assert engine.opt["uid"] == uid
+    assert engine.opt["gid"] == gid
 
-    if validity:
-        assert engine.opt["user"] == username
-        assert engine.opt["uid"] == uid
-        assert engine.opt["gid"] == gid
-    else:
+    if not validity:
         assert logger.error.call_args_list == [mocker.call('invalid syntax for user: %s', mocker.ANY)]
 
+    if not_found:
+        assert logger.error.call_args_list == [mocker.call('user not found on host')]
 
-#         user = "invuser"
-#         mock_selauth.return_value = ("/etc/passwd", "/etc/group")
-#         mock_ustr.return_value = (False, {"uid": "100", "gid": "50"})
-#         mock_auth.side_effect = [None, None]
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._setup_container_user_noroot(user)
-#         self.assertFalse(status)
-#
-#         user = ""
-#         mock_selauth.return_value = ("/etc/passwd", "/etc/group")
-#         mock_ustr.return_value = (True, {"uid": "1000", "gid": "1000"})
-#         mock_auth.side_effect = [None, None]
-#         mock_hinfo.return_value.username.return_value = "u1"
-#         mock_hinfo.uid = 0
-#         mock_hinfo.gid = 0
-#         mock_ismpoint.side_effect = [True, True]
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         status = ex_eng._setup_container_user_noroot(user)
-#         self.assertTrue(status)
-#
-#         user = ""
-#         mock_selauth.return_value = ("/etc/passwd", "/etc/group")
-#         mock_ustr.return_value = (True, {"uid": "1000", "gid": "1000"})
-#         mock_auth.side_effect = [None, None]
-#         mock_hinfo.return_value.username.return_value = "u1"
-#         mock_hinfo.uid = 0
-#         mock_hinfo.gid = 0
-#         mock_ismpoint.side_effect = [False, False]
-#         mock_cruser.return_value = None
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["user"] = ""
-#         ex_eng.opt["hostauth"] = True
-#         status = ex_eng._setup_container_user_noroot(user)
-#         self.assertFalse(status)
-#         self.assertFalse(mock_cruser.called)
-#
-#         user = ""
-#         mock_selauth.return_value = ("/etc/passwd", "/etc/group")
-#         mock_ustr.return_value = (True, {"uid": "1000", "gid": "1000"})
-#         mock_auth.side_effect = [None, None]
-#         mock_hinfo.return_value.username.return_value = "u1"
-#         mock_hinfo.uid = 0
-#         mock_hinfo.gid = 0
-#         mock_ismpoint.side_effect = [False, False]
-#         mock_cruser.return_value = None
-#         ex_eng = ExecutionEngineCommon(self.local, self.xmode)
-#         ex_eng.opt["user"] = ""
-#         ex_eng.opt["hostauth"] = False
-#         ex_eng.opt["containerauth"] = False
-#         status = ex_eng._setup_container_user_noroot(user)
-#         self.assertTrue(status)
-#         self.assertTrue(mock_cruser.called)
 #
 #     @patch('udocker.engine.base.HostInfo')
 #     @patch('udocker.engine.base.NixAuthentication')
