@@ -1581,7 +1581,7 @@ def test_35_add_image_layer(mocker, localrepo, cur_tagdir, filename, linkname, f
 #     @patch('udocker.container.localrepo.os.makedirs')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_36_setup_imagerepo(self, mock_fu, mock_exists, mock_mkdirs):
+def test_36_setup_imagerepo():
     """Test36 LocalRepository().setup_imagerepo()."""
 
 
@@ -1610,7 +1610,7 @@ def test_36_setup_imagerepo(self, mock_fu, mock_exists, mock_mkdirs):
 #     @patch('udocker.container.localrepo.os.makedirs')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_37_setup_tag(self, mock_fu, mock_exists, mock_mkdirs):
+def test_37_setup_tag():
     """Test37 LocalRepository().setup_tag()."""
 
 
@@ -1629,7 +1629,7 @@ def test_37_setup_tag(self, mock_fu, mock_exists, mock_mkdirs):
 #     @patch('udocker.container.localrepo.os.listdir')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_38_set_version(self, mock_fu, mock_exists, mock_listdir):
+def test_38_set_version():
     """Test38 LocalRepository().set_version()."""
 
 
@@ -1682,7 +1682,7 @@ def test_38_set_version(self, mock_fu, mock_exists, mock_listdir):
 #     @patch.object(LocalRepository, 'load_json')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_39__get_image_attr_v1(self, mock_fu, mock_exists, mock_loadjson):
+def test_39__get_image_attr_v1():
     """Test39 LocalRepository()._get_image_attributes_v1()."""
 
 
@@ -1709,7 +1709,7 @@ def test_39__get_image_attr_v1(self, mock_fu, mock_exists, mock_loadjson):
 #     @patch('udocker.container.localrepo.json.loads')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_40__get_image_attr_v2_s1(self, mock_fu, mock_exists, mock_jload):
+def test_40__get_image_attr_v2_s1():
     """Test40 LocalRepository()._get_image_attributes_v2_s1()."""
 
 
@@ -1738,7 +1738,7 @@ def test_40__get_image_attr_v2_s1(self, mock_fu, mock_exists, mock_jload):
 #     @patch('udocker.container.localrepo.json.loads')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_41__get_image_attr_v2_s2(self, mock_fu, mock_exists, mock_jload):
+def test_41__get_image_attr_v2_s2():
     """Test41 LocalRepository()._get_image_attributes_v2_s2()."""
 
 
@@ -1771,7 +1771,7 @@ def test_41__get_image_attr_v2_s2(self, mock_fu, mock_exists, mock_jload):
 #     @patch.object(LocalRepository, 'load_json')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_42_get_image_attributes(self, mock_fu, mock_exists, mock_loadjson, mock_attrv1, mock_attrv1s1, mock_attrv1s2):
+def test_42_get_image_attributes():
     """Test42 LocalRepository().get_image_attributes()."""
 
     #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
@@ -1825,7 +1825,7 @@ def test_42_get_image_attributes(self, mock_fu, mock_exists, mock_loadjson, mock
     #     @patch('udocker.container.localrepo.FileUtil')
 
 
-def test_43_save_json(self, mock_fu, mock_exists):
+def test_43_save_json():
     """Test43 LocalRepository().save_json()."""
 
 
@@ -1878,7 +1878,7 @@ def test_43_save_json(self, mock_fu, mock_exists):
 #
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_44_load_json(self, mock_fu, mock_exists):
+def test_44_load_json():
     """Test44 LocalRepository().load_json()."""
 
 
@@ -1932,7 +1932,7 @@ def test_44_load_json(self, mock_fu, mock_exists):
 #     @patch.object(LocalRepository, 'load_json')
 #     @patch('udocker.container.localrepo.os.listdir')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_45__load_structure(self, mock_fu, mock_listdir, mock_json):
+def test_45__load_structure():
     """Test45 LocalRepository()._load_structure().
 #         Scan the repository structure of a given image tag.
     """
@@ -1955,7 +1955,7 @@ def test_45__load_structure(self, mock_fu, mock_listdir, mock_json):
 #         self.assertEqual(status, res)
 #
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_46__find_top_layer_id(self, mock_fu):
+def test_46__find_top_layer_id():
     """Test46 LocalRepository()._find_top_layer_id"""
 
 
@@ -1975,14 +1975,14 @@ def test_46__find_top_layer_id(self, mock_fu):
 #         status = lrepo._find_top_layer_id(struct, lid)
 #         self.assertEqual(status, "123")
 #
-def test_47__sorted_layers(self):
+def test_47__sorted_layers():
     """Test47 LocalRepository()._sorted_layers"""
     pass
 
 
 #
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_48__split_layer_id(self, mock_fu):
+def test_48__split_layer_id():
     """Test48 LocalRepository()._split_layer_id"""
 #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
 #         lid = ("524b0c1e57f8ee5fee01a1decba2f301c324a6513ca3551021264e3aa7341ebc")
