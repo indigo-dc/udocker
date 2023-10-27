@@ -2,6 +2,7 @@
 """
 udocker unit tests: LocalRepository
 """
+import json
 import os
 import random
 
@@ -47,7 +48,7 @@ def logger(mocker):
 
 @pytest.fixture
 def mock_fileutil(mocker):
-    return mocker.patch('udocker.container.localrepo.FileUtil')
+    return mocker.patch('udocker.container.localrepo.FileUtil', autospec=True)
 
 
 # from unittest import TestCase, main
@@ -282,10 +283,11 @@ def test_05_is_container_id(localrepo, cont_id, expected):
 #     @patch.object(LocalRepository, '_protect')
 #     @patch('udocker.container.localrepo.FileUtil')
 
-@pytest.mark.parametrize("container_id,protected,expected", [
-    ("d2578feb-acfc-37e0-8561-47335f85e46a", True, True),
-    ("d2578feb", False, False)
+@pytest.mark.parametrize("protected,expected", [
+    (True, True),
+    (False, False)
 ])
+@pytest.mark.parametrize("container_id", ("d2578feb-acfc-37e0-8561-47335f85e46a",))
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
 def test_06_protect_container(mocker, localrepo, container_id, protected, expected):
     """Test06 LocalRepository().protect_container()."""
@@ -307,10 +309,11 @@ def test_06_protect_container(mocker, localrepo, container_id, protected, expect
 #     @patch.object(LocalRepository, '_unprotect')
 #     @patch('udocker.container.localrepo.FileUtil')
 
-@pytest.mark.parametrize("container_id,unprotect,expected", [
-    ("d2578feb-acfc-37e0-8561-47335f85e46a", True, True),
-    ("d2578feb", False, False)
+@pytest.mark.parametrize("unprotect,expected", [
+    (True, True),
+    (False, False)
 ])
+@pytest.mark.parametrize("container_id", ("d2578feb-acfc-37e0-8561-47335f85e46a",))
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
 def test_07_unprotect_container(mocker, localrepo, container_id, unprotect, expected):
     """Test07 LocalRepository().unprotect_container()."""
@@ -332,10 +335,11 @@ def test_07_unprotect_container(mocker, localrepo, container_id, unprotect, expe
 #     @patch.object(LocalRepository, '_isprotected')
 #     @patch('udocker.container.localrepo.FileUtil')
 
-@pytest.mark.parametrize("container_id,isprotected,expected", [
-    ("d2578feb-acfc-37e0-8561-47335f85e46a", True, True),
-    ("d2578feb", False, False)
+@pytest.mark.parametrize("isprotected,expected", [
+    (True, True),
+    (False, False)
 ])
+@pytest.mark.parametrize("container_id", ("d2578feb-acfc-37e0-8561-47335f85e46a",))
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
 def test_08_isprotected_container(mocker, localrepo, container_id, isprotected, expected):
     """Test08 LocalRepository().isprotected_container()."""
@@ -355,13 +359,15 @@ def test_08_isprotected_container(mocker, localrepo, container_id, isprotected, 
 #         self.assertTrue(mock_isprot.called)
 #
 #     @patch('udocker.container.localrepo.FileUtil')
-@pytest.mark.parametrize("directory,file_created,expected", [
-    ("/home/u1/.udocker/contid", True, True),
-    ("/home/u1/.udocker/contid", False, False)
+@pytest.mark.parametrize("file_created,expected", [
+    (True, True),
+    (False, False)
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_09__protect(mocker, localrepo, directory, file_created, expected):
+def test_09__protect(mocker, localrepo, file_created, expected):
     """Test09 LocalRepository()._protect()."""
+    directory = 'home/u1/.udocker/contid'
+
     if file_created:
         mock_open = mocker.mock_open()
         mocker.patch('builtins.open', mock_open)
@@ -383,14 +389,14 @@ def test_09__protect(mocker, localrepo, directory, file_created, expected):
 #
 #     @patch('udocker.container.localrepo.FileUtil')
 
-@pytest.mark.parametrize("directory,file_removal_outcome,expected", [
-    ("/home/u1/.udocker/contid/", True, True),
-    ("/home/u1/.udocker/contid/", False, False),
+@pytest.mark.parametrize("file_removal_outcome,expected", [
+    (True, True),
+    (False, False),
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_10__unprotect(localrepo, mock_fileutil, directory, file_removal_outcome, expected):
+def test_10__unprotect(localrepo, mock_fileutil, file_removal_outcome, expected):
     """Test10 LocalRepository()._unprotect()."""
-    # FIXME: probably droping the use of mock_fileutil and mock method directly can simplify the test, need to check other tests using that logic
+    directory = 'home/u1/.udocker/contid'
     mock_fileutil.return_value.remove.return_value = file_removal_outcome
     result = localrepo._unprotect(directory)
     assert result == expected
@@ -409,14 +415,15 @@ def test_10__unprotect(localrepo, mock_fileutil, directory, file_removal_outcome
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
 
-@pytest.mark.parametrize("directory,protect_exists,expected", [
-    ("/home/u1/.udocker/contid/", True, True),
-    ("/home/u1/.udocker/contid/", False, False),
+@pytest.mark.parametrize("protect_exists,expected", [
+    (True, True),
+    (False, False),
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_11__isprotected(mocker, localrepo, directory, protect_exists, expected):
+def test_11__isprotected(mocker, localrepo, protect_exists, expected):
     """Test11 LocalRepository()._isprotected()."""
-    mocker.patch.object(os.path, 'exists', return_value=protect_exists)
+    directory = 'home/u1/.udocker/contid'
+    mocker.patch.object(os.path, 'exists', return_value=protect_exists, autospec=True)
     result = localrepo._isprotected(directory)
     assert result == expected
     os.path.exists.assert_called_once_with(directory + "/PROTECT")
@@ -447,17 +454,21 @@ def test_11__isprotected(mocker, localrepo, directory, protect_exists, expected)
 def test_12_iswriteable_container(mocker, container_id, localrepo, path_exists, is_dir, is_writable, expected):
     """Test12 LocalRepository().iswriteable_container()."""
     container = "/home/u1/.udocker/containerid"
+    container_root = container + "/ROOT"
 
     mocker.patch.object(localrepo, 'cd_container', return_value=container)
-
-    mocker_os_path_exists = mocker.patch.object(os.path, 'exists', return_value=path_exists)
-    mocker.patch.object(os.path, 'isdir', return_value=is_dir)
-    mocker.patch.object(os, 'access', return_value=is_writable)
+    mocker_ospath_exists = mocker.patch('os.path.exists', return_value=path_exists)
+    mocker_ospath_isdir = mocker.patch('os.path.isdir', return_value=is_dir)
+    mocker_osaccess = mocker.patch('os.access', return_value=is_writable)
 
     assert localrepo.iswriteable_container(container_id) == expected
-    mocker_os_path_exists.assert_called_once_with(container + "/ROOT")
 
-    # FIXME: add test calls for other mocked methods
+    if expected == 2:
+        mocker_ospath_exists.assert_called_once_with(container_root)
+    elif expected == 3:
+        mocker_ospath_isdir.assert_called_once_with(container_root)
+    elif expected == 1:
+        mocker_osaccess.assert_called_once_with(container_root, mocker.ANY)
 
 
 #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
@@ -501,8 +512,8 @@ def test_12_iswriteable_container(mocker, container_id, localrepo, path_exists, 
 #     @patch('udocker.container.localrepo.Uprocess.get_output')
 #     @patch('udocker.container.localrepo.FileUtil')
 
-@pytest.mark.parametrize("du_output, expected_size", [
-    ("1234\t/mock/path/to/container/ROOT", 1234),
+@pytest.mark.parametrize("du_output,expected_size", [
+    ("1234\tdd", 1234),
     ("invalid_output", -1),
     ("", -1),
 ])
@@ -510,12 +521,13 @@ def test_12_iswriteable_container(mocker, container_id, localrepo, path_exists, 
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
 def test_13_get_size(container_id, du_output, expected_size, localrepo, mocker):
     """Test13 LocalRepository().get_size()."""
-    mock_container_root = "/mock/path/to/container/ROOT"
-    mocker.patch.object(localrepo, 'cd_container', return_value=mock_container_root[:-5])
+    container = "/home/u1/.udocker/containerid"
+    container_root = container + "/ROOT"
+    mocker.patch.object(localrepo, 'cd_container', return_value=container)
     mock_uprocess = mocker.patch.object(Uprocess, 'get_output', return_value=du_output)
 
     assert localrepo.get_size(container_id) == expected_size
-    mock_uprocess.assert_called_once_with(["du", "-s", "-m", "-x", mock_container_root])
+    mock_uprocess.assert_called_once_with(["du", "-s", "-m", "-x", container_root])
 
 
 #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
@@ -538,28 +550,32 @@ def test_13_get_size(container_id, du_output, expected_size, localrepo, mocker):
 #     @patch('udocker.container.localrepo.os.listdir')
 #     @patch('udocker.container.localrepo.os.path.isdir')
 #     @patch('udocker.container.localrepo.FileUtil')
-@pytest.mark.parametrize("isdir,listdir,file_contents,dir_only,expected", [
-    (False, [], None, True, []),
-    (True, [], None, True, []),
-    (True, ['container1'], "some_repo_name", True, ['/home/u1/.udocker/containers/container1']),
-    (True, ['container1'], None, True, ['/home/u1/.udocker/containers/container1']),
-    (True, ['container1'], "some_repo_name", False, [('container1', 'some_repo_name', 'container_name')]),
-    (True, ['a'], None, True, ['/home/u1/.udocker/containers/a']),
-    (True, ['a'], None, False, [('a', '', 'container_name')]),
+@pytest.mark.parametrize("isdir,listdir,file_contents,dir_only,container_name,expected", [
+    (False, [], None, True, "container_name", []),
+    (True, [], None, True, "container_name", []),
+    (True, ['container1'], "some_repo_name", True, "container_name", ['/home/u1/.udocker/containers/container1']),
+    (True, ['container1'], None, True, "container_name", ['/home/u1/.udocker/containers/container1']),
+    (True, ['container1'], "some_repo_name", False, "container_name",
+     [('container1', 'some_repo_name', 'container_name')]),
+    (True, ['container1'], "some_repo_name", False, "",
+     [('container1', 'some_repo_name', '')]),
+    (True, ['a'], None, True, "container_name", ['/home/u1/.udocker/containers/a']),
+    (True, ['a'], None, False, "container_name", [('a', '', 'container_name')]),
 ])
-@pytest.mark.parametrize("container_id", ("d2578feb-acfc-37e0-8561-47335f85e46a",))
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_14_get_containers_list(mocker, localrepo, container_id, isdir, listdir, file_contents, dir_only, expected):
+def test_14_get_containers_list(mocker, localrepo, container_id, isdir, listdir, file_contents, dir_only,
+                                container_name, expected):
     """Test14 LocalRepository().get_containers_list()."""
     mocker.patch('os.path.isdir', return_value=isdir)
     mocker.patch('os.listdir', return_value=listdir)
+    mocker.patch('os.path.islink', return_value=False)
 
     if file_contents is not None:
         mocker.patch('builtins.open', mocker.mock_open(read_data=file_contents))
     else:
         mocker.patch('builtins.open', side_effect=OSError)
 
-    mocker.patch.object(localrepo, 'get_container_name', return_value="container_name")
+    mocker.patch.object(localrepo, 'get_container_name', return_value=container_name)
     mocker.patch.object(localrepo, 'containersdir', '/home/u1/.udocker/containers')
 
     assert localrepo.get_containers_list(dir_only) == expected
@@ -610,14 +626,13 @@ def test_14_get_containers_list(mocker, localrepo, container_id, isdir, listdir,
 #     @patch.object(LocalRepository, 'get_container_name')
 #     @patch.object(LocalRepository, 'get_containers_list')
 #     @patch('udocker.container.localrepo.FileUtil')
-@pytest.mark.parametrize("container_dir,in_list,container_name, remove, force, expected", [
+@pytest.mark.parametrize("container_dir,in_list,container_name,remove,force,expected", [
     (None, False, [], False, False, False),
     ("/home/u1/.udocker/containers", False, [], False, False, False),
     ("/home/u1/.udocker/containers", True, ["mycont"], False, False, False),
     ("/home/u1/.udocker/containers", True, ["mycont"], True, False, True),
     ("/home/u1/.udocker/containers", True, ["mycont"], True, True, True),
 ])
-@pytest.mark.parametrize("container_id", ("d2578feb-acfc-37e0-8561-47335f85e46a",))
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
 def test_15_del_container(mocker, localrepo, mock_fileutil, container_dir, topdir, container_id, in_list,
                           container_name, remove, force, expected):
@@ -672,19 +687,17 @@ def test_15_del_container(mocker, localrepo, mock_fileutil, container_dir, topdi
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
 
-@pytest.mark.parametrize("os_exists,in_list,container_list,expected", [
-    (False, False, [], ""),
-    (True, False, [], ""),
-    (True, True, ["/home/u1/.udocker/containers/d2578feb-acfc-37e0-8561-47335f85e46a"],
+@pytest.mark.parametrize("os_exists,container_list,expected", [
+    (False, [], ""),
+    (True, [], ""),
+    (True, ["/home/u1/.udocker/containers/d2578feb-acfc-37e0-8561-47335f85e46a"],
      "/home/u1/.udocker/containers/d2578feb-acfc-37e0-8561-47335f85e46a"),
-    (True, False, ["/home/u1/.udocker/containers/random_id"], ""),
+    (True, ["/home/u1/.udocker/containers/random_id"], ""),
 ])
 @pytest.mark.parametrize("container_id", ("d2578feb-acfc-37e0-8561-47335f85e46a",))
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_16_cd_container(mocker, localrepo, topdir, container_id, os_exists, in_list, container_list, expected):
+def test_16_cd_container(mocker, localrepo, topdir, container_id, os_exists, container_list, expected):
     """Test16 LocalRepository().cd_container()."""
-
-    # FIXME: remove container_list and use in_list instead to build return value
     mocker.patch('os.path.exists', return_value=os_exists)
     mocker.patch.object(localrepo, 'get_containers_list', return_value=container_list)
     assert localrepo.cd_container(container_id) == expected
@@ -717,8 +730,8 @@ def test_16_cd_container(mocker, localrepo, topdir, container_id, os_exists, in_
 
 @pytest.mark.parametrize("os_exists,symlink_success,log_debug,expected", [
     (True, False, [], False),
-    (False, True, ['set name through link: %s LINKFILE', 'container name set OK'], True),
-    (False, False, ['set name through link: %s LINKFILE'], False),
+    (False, True, ['set name through link: %s', 'container name set OK'], True),
+    (False, False, ['set name through link: %s'], False),
 ])
 @pytest.mark.parametrize("container_id", ("d2578feb-acfc-37e0-8561-47335f85e46a",))
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
@@ -731,10 +744,8 @@ def test_17__symlink(mocker, localrepo, logger, container_id, os_exists, symlink
         mock_os_symlink.side_effect = OSError
 
     assert localrepo._symlink("EXISTINGFILE", "LINKFILE") == expected
-
-    # FIXME: fix the logger calls
-    # for debug_message in log_debug:
-    #     assert debug_message in logger.debug.call_args_list
+    logged_messages = [call_args[0][0] for call_args in logger.debug.call_args_list]
+    assert logged_messages == log_debug
 
 
 #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
@@ -753,7 +764,7 @@ def test_17__symlink(mocker, localrepo, logger, container_id, os_exists, symlink
 #
 #     @patch('udocker.container.localrepo.FileUtil')
 
-@pytest.mark.parametrize("name,expected", [
+@pytest.mark.parametrize("container_name,expected", [
     ("lzskjghdlak", True),
     ("lzskjghd/lak", False),
     (".lzsklak", False),
@@ -764,13 +775,12 @@ def test_17__symlink(mocker, localrepo, logger, container_id, os_exists, symlink
     ("a" * 2049, False),
     ("a" * 2048, True)
 ])
-@pytest.mark.parametrize("container_id", ("d2578feb-acfc-37e0-8561-47335f85e46a",))
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_18__name_is_valid(localrepo, topdir, container_id, name, expected):
+def test_18__name_is_valid(localrepo, topdir, container_id, container_name, expected):
     """Test18 LocalRepository()._name_is_valid().
     Check name alias validity.
     """
-    assert localrepo._name_is_valid(name) == expected
+    assert localrepo._name_is_valid(container_name) == expected
 
 
 #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
@@ -819,23 +829,24 @@ def test_18__name_is_valid(localrepo, topdir, container_id, name, expected):
 #     @patch.object(LocalRepository, 'cd_container')
 #     @patch('udocker.container.localrepo.FileUtil')
 
-@pytest.mark.parametrize("name,container_id,is_valid,exists,expected", [
-    ("WRONG[/", "d2578feb-acfc-37e0-8561-47335f85e46a", False, False, False),
-    ("RIGHT", "d2578feb", True, False, False),
-    ("RIGHT", "d2578feb-acfc-37e0-8561-47335f85e46a", True, True, False),
-    ("RIGHT", "d2578feb-acfc-37e0-8561-47335f85e46a", True, False, False),  # debug this case
+@pytest.mark.parametrize("container_name,is_valid,exists,expected", [
+    ("WRONG[/", False, False, False),
+    ("RIGHT", True, False, True),
+    ("RIGHT", True, True, False),
+    ("RIGHT", True, False, True),
 ])
+@pytest.mark.parametrize("container_id", ("d2578feb-acfc-37e0-8561-47335f85e46a",))
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_18_set_container_name(mocker, localrepo, logger, name, container_id, is_valid, exists, expected):
+def test_18_set_container_name(mocker, localrepo, logger, container_name, container_id, is_valid, exists, expected):
     """Test18 LocalRepository().set_container_name()."""
     mocker.patch.object(localrepo, '_name_is_valid', return_value=is_valid)
     mocker.patch.object(localrepo, 'cd_container',
-                        return_value="/home/u1/.udocker/containers" if container_id == "RIGHT" else "")
+                        return_value="/home/u1/.udocker/containers" if container_name == "RIGHT" else "")
     mocker.patch('os.path.exists', return_value=exists)
     mocker.patch.object(localrepo, '_symlink', return_value=not exists)
 
-    # FIXME: add check to logger calls
-    assert localrepo.set_container_name(container_id, name) == expected
+    # FIXME: add check to logger calls, os_exists does not cover all cases
+    assert localrepo.set_container_name(container_id, container_name) == expected
 
 
 #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
@@ -1581,8 +1592,30 @@ def test_35_add_image_layer(mocker, localrepo, cur_tagdir, filename, linkname, f
 #     @patch('udocker.container.localrepo.os.makedirs')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_36_setup_imagerepo():
+
+@pytest.mark.parametrize("imagerepo,exists,raises_oserror,expected_return,expected_cur_repodir", [
+    ("repo1", False, False, True, "/tmp/repo1"),
+    ("repo2", True, False, False, "/tmp/repo2"),
+    ("repo3", False, True, None, ''),
+    (None, False, False, None, ''),
+    ("", True, False, None, ''),
+])
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_36_setup_imagerepo(mocker, localrepo, imagerepo, exists, raises_oserror, expected_return,
+                            expected_cur_repodir):
     """Test36 LocalRepository().setup_imagerepo()."""
+
+    mocker.patch.object(localrepo, 'reposdir', '/tmp')
+    mocker.patch('os.path.exists', return_value=exists)
+    makedirs_mock = mocker.patch('os.makedirs', side_effect=OSError if raises_oserror else mocker.Mock())
+
+    assert localrepo.setup_imagerepo(imagerepo) == expected_return
+    assert localrepo.cur_repodir == expected_cur_repodir
+
+    if (imagerepo and not exists) or raises_oserror:
+        makedirs_mock.assert_called_once_with("/tmp/" + imagerepo)
+    else:
+        makedirs_mock.assert_not_called()
 
 
 #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
@@ -1610,8 +1643,27 @@ def test_36_setup_imagerepo():
 #     @patch('udocker.container.localrepo.os.makedirs')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_37_setup_tag():
+
+@pytest.mark.parametrize("tag,exists,makedirs_error,open_error,expected_tag,expected", [
+    ("NEWTAG1", False, None, None, "/tmp/IMAGE/NEWTAG1", True),
+    ("NEWTAG2", True, None, None, "/tmp/IMAGE/NEWTAG2", True),
+    ("NEWTAG3", True, None, OSError, "/tmp/IMAGE/NEWTAG3", False),  # directory created but file not created
+    ("NEWTAG4", False, OSError, None, "", False),
+])
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_37_setup_tag(mocker, localrepo, tag, exists, makedirs_error, open_error, expected_tag, expected):
     """Test37 LocalRepository().setup_tag()."""
+    mocker.patch.object(localrepo, 'cur_repodir', "/tmp/IMAGE")
+    mocker.patch('os.path.exists', return_value=exists)
+    mocker.patch('os.makedirs', side_effect=makedirs_error)
+    open_mock = mocker.mock_open()
+    if open_error:
+        open_mock.side_effect = open_error
+
+    mocker.patch("builtins.open", open_mock)
+
+    assert localrepo.setup_tag(tag) == expected
+    assert localrepo.cur_tagdir == expected_tag
 
 
 #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
@@ -1629,8 +1681,59 @@ def test_37_setup_tag():
 #     @patch('udocker.container.localrepo.os.listdir')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_38_set_version():
+# @pytest.mark.parametrize("cur_repodir, cur_tagdir, repo_exists, tag_exists, version, file_version_exists, listdir_result, expected", [
+#     # (None, None, False, False, "v1", False, [], False),
+#     # ('/tmp/repodir/IMAGE', '/tmp/repodir/IMAGE/TAG', True, True, "v1", False, [], True),
+#     ('/tmp/repodir/IMAGE', '/tmp/repodir/IMAGE/TAG', True, True, "v1", True, ["v1"], True),
+#     ('/tmp/repodir/IMAGE', '/tmp/repodir/IMAGE/TAG', False, True, "v1", False, [], False),
+#     ('/tmp/repodir/IMAGE', '/tmp/repodir/IMAGE/TAG', True, False, "v2", True, ["v2"], False),
+#     ('/tmp/repodir/IMAGE', '/tmp/repodir/IMAGE/TAG', True, True, "v1", True, ["v1", "otherfile"], True),  # Directory not empty after remove
+# ])
+@pytest.mark.parametrize(
+    "cur_repodir, cur_tagdir, repo_exists, tag_exists, version, v1_exists, v2_exists, removal_successful, creation_successful, expected",
+    [
+        # (None, None, False, False, "v1", False, False, True, True, False),
+        ("/tmp/repodir/IMAGE", "/tmp/repodir/IMAGE/TAG", True, True, "v1", False, False, True, True, True),
+        ("/tmp/repodir/IMAGE", "/tmp/repodir/IMAGE/TAG", False, True, "v1", False, False, True, True, False),
+        ("/tmp/repodir/IMAGE", "/tmp/repodir/IMAGE/TAG", True, False, "v1", False, False, True, True, False),
+        ("/tmp/repodir/IMAGE", "/tmp/repodir/IMAGE/TAG", True, True, "v1", True, False, True, True, True),
+        ("/tmp/repodir/IMAGE", "/tmp/repodir/IMAGE/TAG", True, True, "v2", False, True, True, True, True),
+        # ("/tmp/repodir/IMAGE", "/tmp/repodir/IMAGE/TAG", True, True, "v1", True, False, False, True, False),
+        # ("/tmp/repodir/IMAGE", "/tmp/repodir/IMAGE/TAG", True, True, "v1", False, False, True, False, False),
+    ])
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_38_set_version(mocker, localrepo, cur_repodir, cur_tagdir, repo_exists, tag_exists, version, v1_exists,
+                        v2_exists, removal_successful, creation_successful, expected):
     """Test38 LocalRepository().set_version()."""
+    mocker.patch.object(localrepo, 'cur_repodir', cur_repodir)
+    mocker.patch.object(localrepo, 'cur_tagdir', cur_tagdir)
+
+    # FIXME: NEED TO BE REDONE
+    mocker.patch.object(FileUtil, "remove")
+
+    # mocker.patch('os.path.exists', side_effect=lambda x: {
+    #     "/tmp/repodir/IMAGE": repo_exists,
+    #     "/tmp/repodir/IMAGE/TAG": tag_exists,
+    #     "/tmp/repodir/IMAGE/TAG/v1": file_version_exists if version == "v1" else False,
+    #     "/tmp/repodir/IMAGE/TAG/v2": file_version_exists if version == "v2" else False,
+    # }[x])
+    path_exists_side_effect = {
+        cur_repodir: repo_exists,
+        cur_tagdir: tag_exists,
+        os.path.join(cur_tagdir, "v1"): v1_exists,
+        os.path.join(cur_tagdir, "v2"): v2_exists,
+    }
+    mocker.patch('os.path.exists', side_effect=lambda x: path_exists_side_effect.get(x, False))
+    #
+    # mocker.patch('os.listdir', return_value=listdir_result)
+    listdir_mock = mocker.Mock(return_value=['v1'] if v1_exists else ['v2'] if v2_exists else [])
+    mocker.patch('os.listdir', listdir_mock)
+    open_mock = mocker.mock_open()
+    mock_file = mocker.patch("builtins.open", open_mock)
+    assert localrepo.set_version(version) == expected
+
+    if expected and version in ["v1", "v2"]:
+        mock_file.assert_called_with(f"/tmp/repodir/IMAGE/TAG/{version}", 'a', encoding='utf-8')
 
 
 #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
@@ -1682,8 +1785,30 @@ def test_38_set_version():
 #     @patch.object(LocalRepository, 'load_json')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_39__get_image_attr_v1():
+
+@pytest.mark.parametrize("ancestry_exists,layer_exists,json_exists,expected", [
+    (None, False, False, (None, None)),
+    ([['layer1', 'layer2']], False, False, (None, None)),
+    ([['layer1', 'layer2']], True, False, (None, None)),
+    ([['layer1', 'layer2'], ['layer1', 'layer2']], True, True,
+     (['layer1', 'layer2'], ['/udocker/test/directory/layer1.layer', '/udocker/test/directory/layer2.layer'])),
+])
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_39__get_image_attr_v1(mocker, localrepo, ancestry_exists, layer_exists, json_exists, expected):
     """Test39 LocalRepository()._get_image_attributes_v1()."""
+    directory = '/udocker/test/directory'
+
+    mocker.patch.object(localrepo, 'load_json', side_effect=ancestry_exists)
+    mocker.patch('os.path.exists', side_effect=lambda x: (layer_exists if x.endswith('.layer') else json_exists))
+    mock_open = mocker.mock_open(read_data=json.dumps({"data": "json"}))
+    mocker.patch('builtins.open', mock_open)
+
+    container_json, files = localrepo._get_image_attributes_v1(directory)
+
+    if expected != (None, None):
+        assert (container_json, sorted(files)) == (expected[0], sorted(expected[1]))
+    else:
+        assert (container_json, files) == expected
 
 
 #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
@@ -1709,8 +1834,30 @@ def test_39__get_image_attr_v1():
 #     @patch('udocker.container.localrepo.json.loads')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_40__get_image_attr_v2_s1():
+
+@pytest.mark.parametrize("manifest_data, layer_file_exists, expected", [
+    ({"fsLayers": [{"blobSum": "foolayername"}, {"blobSum": "foolayername2"}],
+      "history": [{"v1Compatibility": '{"data":"json"}'}]},
+     False, (None, None)),
+    ({"fsLayers": [{"blobSum": "foolayername"}, {"blobSum": "foolayername2"}],
+      "history": [{"v1Compatibility": '{"data":"json"}'}]},
+     True, ({"data": "json"}, ['/udocker/test/directory/foolayername', '/udocker/test/directory/foolayername2'])),
+    ({"fsLayers": [{"blobSum": "foolayername"}, {"blobSum": "foolayername2"}], "history": []}, True,
+     (None, ['/udocker/test/directory/foolayername', '/udocker/test/directory/foolayername2'])),
+])
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_40__get_image_attr_v2_s1(mocker, localrepo, manifest_data, layer_file_exists, expected):
     """Test40 LocalRepository()._get_image_attributes_v2_s1()."""
+
+    directory = '/udocker/test/directory'
+    mocker.patch('os.path.exists', return_value=layer_file_exists)
+
+    attributes = localrepo._get_image_attributes_v2_s1(directory, manifest_data)
+
+    if attributes != (None, None):
+        assert (attributes[0], sorted(attributes[1])) == (expected[0], sorted(expected[1]))
+    else:
+        assert attributes == expected
 
 
 #         manifest = {
@@ -1738,8 +1885,27 @@ def test_40__get_image_attr_v2_s1():
 #     @patch('udocker.container.localrepo.json.loads')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_41__get_image_attr_v2_s2():
+
+@pytest.mark.parametrize("manifest_data,layer_files_exist,config_file_data,raise_exception,expected", [
+    ({"layers": [{"digest": "layer1"}, {"digest": "layer2"}], "config": {"digest": "config"}},
+     True, ['{"data":"json"}'], None,
+     ({"data": "json"}, ['/udocker/test/directory/layer1', '/udocker/test/directory/layer2'])),
+    ({"layers": ({"digest": "foolayername"},), "config": ({"digest": '["foojsonstring"]'})},
+     True, ['{"data":"json"}'], None, ({'data': 'json'}, ['/udocker/test/directory/foolayername'])),
+    ({"layers": ({"digest": "foolayername"},), "config": ({"digest": '["foojsonstring"]'})},
+     False, ['{"data":"json"}'], None, (None, None)),
+    ({"layers": [{"digest": "layer1"}, {"digest": "layer2"}], "config": {"digest": "config"}},
+     True, [None], OSError, (None, ['/udocker/test/directory/layer1', '/udocker/test/directory/layer2'])),
+])
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_41__get_image_attr_v2_s2(mocker, localrepo, manifest_data, layer_files_exist, config_file_data, expected,
+                                  raise_exception):
     """Test41 LocalRepository()._get_image_attributes_v2_s2()."""
+    directory = '/udocker/test/directory'
+    mocker.patch('os.path.exists', return_value=layer_files_exist)
+    mocker.patch.object(FileUtil, 'getdata', side_effect=config_file_data if not raise_exception else raise_exception)
+
+    assert localrepo._get_image_attributes_v2_s2(directory, manifest_data) == expected
 
 
 #         manifest = {
@@ -1771,8 +1937,23 @@ def test_41__get_image_attr_v2_s2():
 #     @patch.object(LocalRepository, 'load_json')
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_42_get_image_attributes():
+
+@pytest.mark.parametrize("os_exists,directory_content, manifest_content, expected_result", [
+    ([True, True], ["v1"], None, ("v1_result", ["layer1", "layer2"])),
+    ([False, True], ["v2"], {"fsLayers": [...]}, ("v2_s1_result", ["layer1", "layer2"])),
+    ([False, True], ["v2"], {"layers": [...]}, ("v2_s2_result", ["layer1", "layer2"])),
+    ([False, False], [], None, (None, None)),
+])
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_42_get_image_attributes(mocker, localrepo, os_exists, directory_content, manifest_content, expected_result):
     """Test42 LocalRepository().get_image_attributes()."""
+    mocker.patch('os.path.exists', side_effect=os_exists)
+    mocker.patch.object(localrepo, 'load_json', side_effect=[manifest_content])
+    mocker.patch.object(localrepo, '_get_image_attributes_v1', return_value=("v1_result", ["layer1", "layer2"]))
+    mocker.patch.object(localrepo, '_get_image_attributes_v2_s1', return_value=("v2_s1_result", ["layer1", "layer2"]))
+    mocker.patch.object(localrepo, '_get_image_attributes_v2_s2', return_value=("v2_s2_result", ["layer1", "layer2"]))
+
+    assert localrepo.get_image_attributes() == expected_result
 
     #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
     #         mock_exists.side_effect = [False, False]
@@ -1825,8 +2006,34 @@ def test_42_get_image_attributes():
     #     @patch('udocker.container.localrepo.FileUtil')
 
 
-def test_43_save_json():
+@pytest.mark.parametrize("filename,starts_with_slash,repodir_exists,tagdir_exists,os_exists,raise_error,expected", [
+    ("/absolute/path.json", True, False, False, [True], None, True),  # absolute path
+    ("relative/path.json", False, True, True, [True, True], None, True),  # relative path with valid directories
+    ("relative/no_repodir.json", False, False, True, [False, True], None, False),  # missing cur_repodir
+    ("relative/no_tagdir.json", False, True, False, [True, False], None, False),  # missing cur_tagdir
+    ("relative/no_tagdir_no_repodir.json", False, False, False, [False, False], None, False),
+    # miss both directories
+    ("relative/repodir.json", False, True, True, [True, False], None, False),  # only cur_repodir exists
+    ("relative/tagdir.json", False, True, True, [False, True], None, False),  # only cur_tagdir exists
+    ("/absolute/exception.json", True, False, False, [True], OSError, False),  # exception with absolute path
+    ("relative/exception.json", False, True, True, [True, True], OSError, False),  # exception with relative path
+])
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_43_save_json(mocker, localrepo, filename, starts_with_slash, repodir_exists, tagdir_exists, os_exists,
+                      raise_error, expected):
     """Test43 LocalRepository().save_json()."""
+    mocker.patch.object(localrepo, 'cur_repodir', '/tmp/repodir' if repodir_exists else None)
+    mocker.patch.object(localrepo, 'cur_tagdir', '/tmp/repodir' if tagdir_exists else None)
+
+    mocker.patch('os.path.exists', side_effect=os_exists)
+
+    mock_file = mocker.mock_open()
+    mocker.patch("builtins.open", side_effect=OSError if raise_error else mock_file)
+
+    assert localrepo.save_json(filename, {"data": "test"}) == expected
+
+    # TODO: asssert call the open file
+    # mock_file.assert_called_once_with(localrepo.cur_tagdir + "/" + filename, 'w')
 
 
 #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
@@ -1878,8 +2085,42 @@ def test_43_save_json():
 #
 #     @patch('udocker.container.localrepo.os.path.exists')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_44_load_json():
+@pytest.mark.parametrize(
+    "filename,starts_with_slash,repodir_exists,tagdir_exists,os_exists,file_exists,raise_error,expected", [
+        ("/absolute/path.json", True, False, False, [True, None], True, None, {"test": "data"}),  # absolute path
+        ("relative/path.json", False, True, True, [True, True], True, None, {"test": "data"}),  # relative path with valid directories
+        ("relative/no_repodir.json", False, False, True, [False, True], True, False, False),  # missing cur_repodir
+        ("relative/no_tagdir.json", False, True, False, [True, False], True, False, False),  # missing cur_tagdir
+
+        # TODO: fix this parameters
+        # ("relative/no_tagdir_no_repodir.json", False, False, False, [False, False], None, False),
+        # # miss both directories
+        # ("relative/repodir.json", False, True, True, [True, False], None, False),  # only cur_repodir exists
+        # ("relative/tagdir.json", False, True, True, [False, True], None, False),  # only cur_tagdir exists
+
+        ("/absolute/no_file.json", True, False, False, [True], False, False, None),  # exception with absolute path
+        ("relative/exception.json", False, True, True, [True, True], True, True, None),  # exception with relative path
+    ])
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_44_load_json(mocker, localrepo, filename, starts_with_slash, repodir_exists, tagdir_exists, os_exists,
+                      file_exists,
+                      raise_error, expected):
     """Test44 LocalRepository().load_json()."""
+    mocker.patch.object(localrepo, 'cur_repodir', '/tmp/repodir' if repodir_exists else None)
+    mocker.patch.object(localrepo, 'cur_tagdir', '/tmp/repodir' if tagdir_exists else None)
+
+    mocker.patch('os.path.exists', side_effect=os_exists)
+
+    mock_file = mocker.mock_open(read_data='{"test": "data"}' if file_exists else "")
+    mocker.patch("builtins.open", side_effect=OSError if raise_error else mock_file)
+
+    if file_exists:
+        mocker.patch("json.load", return_value={"test": "data"})
+
+    assert localrepo.load_json(filename) == expected
+
+    # TODO: add assert for open file
+    # mock_file.assert_called_once_with(filename if starts_with_slash else localrepo.cur_tagdir + "/" + filename, 'r')
 
 
 #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
@@ -1932,9 +2173,11 @@ def test_44_load_json():
 #     @patch.object(LocalRepository, 'load_json')
 #     @patch('udocker.container.localrepo.os.listdir')
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_45__load_structure():
+
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_45__load_structure(mocker, localrepo):
     """Test45 LocalRepository()._load_structure().
-#         Scan the repository structure of a given image tag.
+    Scan the repository structure of a given image tag.
     """
 
 
@@ -1955,7 +2198,9 @@ def test_45__load_structure():
 #         self.assertEqual(status, res)
 #
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_46__find_top_layer_id():
+
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_46__find_top_layer_id(mocker, localrepo):
     """Test46 LocalRepository()._find_top_layer_id"""
 
 
@@ -1975,15 +2220,26 @@ def test_46__find_top_layer_id():
 #         status = lrepo._find_top_layer_id(struct, lid)
 #         self.assertEqual(status, "123")
 #
-def test_47__sorted_layers():
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_47__sorted_layers(mocker, localrepo):
     """Test47 LocalRepository()._sorted_layers"""
     pass
 
 
 #
 #     @patch('udocker.container.localrepo.FileUtil')
-def test_48__split_layer_id():
+@pytest.mark.parametrize("files_in_dir, load_json_return, expected_structure", [
+    ([], {}, {"repolayers": {}}),
+    (["ancestry", "manifest", "1234567890abcdef.json", "1234567890abcdef.layer", "unknown_file"],
+     {"ancestry": {"ancestry_data"}, "manifest": {"manifest_data"}, "1234567890abcdef.json": {"layer_json_data"}},
+     {"repolayers": {"1234567890abcdef": {"json": {"layer_json_data"}, "json_f": "dir/1234567890abcdef.json",
+                                          "layer_f": "dir/1234567890abcdef.layer"}},
+      "ancestry": {"ancestry_data"}, "manifest": {"manifest_data"}, "has_json_f": True}),
+])
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_48__split_layer_id(mocker, localrepo, mock_fileutil, files_in_dir, load_json_return, expected_structure):
     """Test48 LocalRepository()._split_layer_id"""
+
 #         mock_fu.return_value.register_prefix.side_effect = [None, None, None]
 #         lid = ("524b0c1e57f8ee5fee01a1decba2f301c324a6513ca3551021264e3aa7341ebc")
 #         lidsha = "sha256:" + lid

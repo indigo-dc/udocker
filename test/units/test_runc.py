@@ -487,7 +487,6 @@ def test_16__add_volume_bindings(mocker, runc, logger, volumes, isdir, isfile, s
     """Test16 RuncEngine()._add_volume_bindings()."""
     mocker.patch.object(runc, '_filebind', autospec=True)
 
-    # call count for each method is checked at the end of the test
     mock_isdir = mocker.patch('os.path.isdir', return_value=isdir)
     mock_isfile = mocker.patch('os.path.isfile', return_value=isfile)
     mock_add_mount_spec = mocker.patch.object(runc, '_add_mount_spec')
@@ -506,7 +505,6 @@ def test_16__add_volume_bindings(mocker, runc, logger, volumes, isdir, isfile, s
         logger.error.assert_called_once_with(log_error[1], mocker.ANY)
 
     for method_name, call_count in expected_method_calls:
-        print(f"method_name: {method_name}, call_count: {call_count}")
         assert locals()[f'mock_{method_name}'].call_count == call_count
 
 
