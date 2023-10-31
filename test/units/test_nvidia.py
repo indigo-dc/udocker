@@ -2,6 +2,7 @@
 """
 udocker unit tests: NVIDIA mode
 """
+import os
 import random
 from contextlib import nullcontext as does_not_raise
 
@@ -104,13 +105,11 @@ def test_03__copy_files(mocker, nvidia, logger, params_dict):
     hsrc_dir = '/usr/lib'
     cdst_dir = 'lib'
 
-    # mock function calls
     mocker.patch('udocker.engine.nvidia.shutil.copy2')
     mocker.patch('udocker.engine.nvidia.os.readlink')
     mocker.patch('udocker.engine.nvidia.os.symlink')
 
-    # mock function call with side effects parametrized
-    mocker.patch('udocker.engine.nvidia.os.path.islink', side_effect=params_dict['is_link'])
+    mocker.patch.object(os.path, 'islink', side_effect=params_dict['is_link'])
     mocker.patch('udocker.engine.nvidia.os.path.isfile', side_effect=params_dict['is_file'])
     mocker.patch('udocker.engine.nvidia.os.remove', side_effect=params_dict['os_remove'])
     mocker.patch('udocker.engine.nvidia.os.path.isdir', side_effect=params_dict['is_dir'])

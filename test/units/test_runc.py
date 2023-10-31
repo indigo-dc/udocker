@@ -8,6 +8,7 @@ import os
 import random
 import stat
 import subprocess
+import sys
 from contextlib import nullcontext as does_not_raise
 
 import pytest
@@ -66,16 +67,6 @@ def mock_exec_mode(localrepo, container_id, xmode):
 
 
 @pytest.fixture
-def mock_os_exists(mocker):
-    return mocker.patch('udocker.engine.runc.os.path.exists')
-
-
-@pytest.fixture
-def mock_os_basename(mocker):
-    return mocker.patch('udocker.engine.runc.os.path.basename')
-
-
-@pytest.fixture
 def mock_fileutil(mocker):
     return mocker.patch('udocker.engine.runc.FileUtil', autospec=True)
 
@@ -123,7 +114,7 @@ def test_01_init(runc, localrepo):
     ]
 )
 @pytest.mark.parametrize('xmode', XMODE)
-def test_02_select_runc(mocker, runc, logger, mock_os_exists, mock_os_basename, conf, runc_path, crun_path, arch,
+def test_02_select_runc(mocker, runc, logger, conf, runc_path, crun_path, arch,
                         find_file, os_exists, error, expected_exec, expected_type):
     """Test02 RuncEngine().select_runc()."""
     mocker.patch.object(runc, 'executable', conf)
@@ -131,8 +122,8 @@ def test_02_select_runc(mocker, runc, logger, mock_os_exists, mock_os_basename, 
     mocker.patch('udocker.engine.runc.HostInfo.arch', return_value=arch)
     mocker.patch('udocker.engine.runc.FileUtil.find_file_in_dir', return_value=find_file)
 
-    mock_os_exists.return_value = os_exists
-    mock_os_basename.return_value = expected_exec
+    mocker.patch.object(os.path, 'exists', return_value=os_exists)
+    mocker.patch.object(os.path, 'basename', return_value=expected_exec)
 
     with error:
         runc.select_runc()
@@ -323,10 +314,10 @@ def test_09__add_capabilities_spec(mocker, runc, capabilities, expected):
     ("/dev/zero", True, [], stat.S_IFCHR, "", 0o666, True),
 ])
 @pytest.mark.parametrize('xmode', XMODE)
-def test_10__add_device_spec(mocker, runc, logger, mock_os_exists, mock_hostinfo, dev_path, os_exists, logger_msg,
+def test_10__add_device_spec(mocker, runc, logger, mock_hostinfo, dev_path, os_exists, logger_msg,
                              st_mode, mode, expected_filemode, expected_return):
     """Test10 RuncEngine()._add_device_spec()."""
-    mock_os_exists.return_value = os_exists
+    mocker.patch.object(os.path, 'exists', return_value=os_exists)
     mocker.patch('os.minor', return_value=0)
     mocker.patch('os.major', return_value=6)
     mocked_stat = os.stat_result((st_mode, 0, 0, 0, 0, 0, 0, 0, 0, 0))
@@ -537,14 +528,14 @@ def test_17__run_invalid_options(mocker, runc, logger, options, expected_logs):
     ("R2", "/bin/exec", True, [], ['/.udocker/bin/custom_folder', '-0', 'ls -la'], True),
     ("R3", "/bin/exec", True, ['PROOT_NO_SECCOMP=1'], ['/.udocker/bin/custom_folder', '-0', 'ls -la'], True),
 ])
-def test_18__proot_overlay(mocker, runc, mock_fileutil, mock_os_basename, xmode, executable, proot_noseccomp,
+def test_18__proot_overlay(mocker, runc, mock_fileutil, xmode, executable, proot_noseccomp,
                            expected_env,
                            expected_cont_specjson,
                            expected):
     """Test18 RuncEngine()._proot_overlay()."""
     runc.exec_mode.get_mode = mocker.Mock(return_value=xmode)
 
-    mock_os_basename.return_value = "custom_folder"
+    mocker.patch.object(os.path, 'basename', return_value="custom_folder")
     mock_preng = mocker.Mock()
     mock_preng.exec_mode.force_mode = mocker.Mock()
     mock_preng.select_proot = mocker.Mock()
@@ -575,25 +566,29 @@ def test_18__proot_overlay(mocker, runc, mock_fileutil, mock_os_basename, xmode,
         assert runc._create_mountpoint.call_count == 1
 
 
-@pytest.mark.parametrize("init_result,container_dir,iswriteable_container,expect_return,expected_call", [
-    (False, None, True, 2, None),
-    (True, None, True, 0, "_load_spec"),
-    (False, "/.udocker/containers/aaaaaa", True, 2, None),
-    (True, "/.udocker/containers/aaaaaa", True, 0, "_load_spec"),
-    (False, None, False, 2, None),
-    (True, None, False, 0, "_load_spec"),
-    (False, "/.udocker/containers/aaaaaa", False, 2, None),
-    (True, "/.udocker/containers/aaaaaa", False, 0, "_load_spec"),
-])
+@pytest.mark.parametrize(
+    "logging_level,init_result,load_spec,load_spec_new, container_dir,iswriteable_container,is_tty,expected,call",
+    [
+        (logging.NOTSET, False, True, False, None, True, False, 2, []),
+        (logging.NOTSET, True, True, True, True, True, False, 0, ["_load_spec"]),
+        (logging.NOTSET, True, True, False, "/.udocker/containers/aaaaaa", True, False, 4, []),
+        (logging.NOTSET, False, True, False, "/.udocker/containers/aaaaaa", True, False, 2, []),
+        (logging.NOTSET, False, True, False, None, False, False, 2, []),
+        (logging.NOTSET, True, True, True, None, False, False, 0, ["_load_spec"]),
+        (logging.NOTSET, False, True, True, "/.udocker/containers/aaaaaa", False, False, 2, []),
+        (logging.NOTSET, True, True, True, "/.udocker/containers/aaaaaa", False, False, 0, ["_load_spec"]),
+        (logging.DEBUG, True, True, True, "/.udocker/containers/aaaaaa", True, False, 0, ["_load_spec"]),
+        (logging.NOTSET, True, True, True, "/.udocker/containers/aaaaaa", True, False, 0, ["_load_spec"]),
+        (logging.NOTSET, True, True, True, "/.udocker/containers/aaaaaa", True, True, 0, ["_load_spec", "run_pty"]),
+    ])
 @pytest.mark.parametrize('xmode', XMODE)
-def test_19_run(mocker, runc, init_result, container_dir, iswriteable_container, expect_return, expected_call):
+def test_19_run(mocker, runc, logging_level, init_result, load_spec, load_spec_new, container_dir,
+                iswriteable_container, is_tty, expected, call):
     """Test19 RuncEngine().run()."""
-    # FIXME: still need some work
-
     mocker.patch.object(runc, '_run_init', return_value=init_result)
     mocker.patch.object(runc, '_check_arch')
     mocker.patch.object(runc, '_run_invalid_options')
-    mocker.patch.object(runc, '_load_spec', return_value=init_result)
+    mocker.patch.object(runc, '_load_spec', side_effect=lambda new: load_spec_new if new else load_spec)
     mocker.patch.object(runc, '_run_env_cleanup_list')
     mocker.patch.object(runc, '_run_env_set')
     mocker.patch.object(runc, '_set_spec')
@@ -606,6 +601,7 @@ def test_19_run(mocker, runc, init_result, container_dir, iswriteable_container,
     mocker.patch.object(runc, '_mod_mount_spec')
     mocker.patch.object(runc, '_proot_overlay')
     mocker.patch.object(runc, '_save_spec')
+    mocker.patch.object(sys.stdout, 'isatty', return_value=is_tty)
     mocker.patch.object(runc, 'run_pty', return_value=0)
     mocker.patch.object(runc, 'run_nopty', return_value=0)
     mocker.patch.object(runc, '_uid_check')
@@ -615,15 +611,15 @@ def test_19_run(mocker, runc, init_result, container_dir, iswriteable_container,
 
     mocker.patch.object(runc, 'opt', {'cmd': ['ls', '-la']})
     mocker.patch.object(Config, 'conf', {'runc_nomqueue': True, 'tmpdir': '/tmp', 'use_runc_executable': True,
-                                         'verbose_level': logging.DEBUG})
+                                         'verbose_level': logging_level})
 
     mocker.patch.object(runc.localrepo, 'iswriteable_container', return_value=iswriteable_container)
     mocker.patch.object(runc, 'container_dir', return_value="/.udocker/containers/aaaaaa")
 
     result = runc.run("acdea16-8264a08-f9aaca0d-fc82ff34")
+    assert result == expected
 
-    assert result == expect_return
-    if expected_call:
+    for expected_call in call:
         mocker_method = getattr(runc, expected_call)
         mocker_method.assert_called_once()
 
@@ -633,21 +629,26 @@ def test_19_run(mocker, runc, init_result, container_dir, iswriteable_container,
 def test_20_run_pty(mocker, runc, subprocess_return, expected):
     """Test20 RuncEngine().run_pty()."""
     mocker.patch.object(runc, '_filebind', return_value=mocker.Mock())
+    mocker.patch('subprocess.call', return_value=expected)
 
-    with mocker.patch('subprocess.call', return_value=expected):
-        assert runc.run_pty(["CONTAINERID"]) == expected
-        runc._filebind.finish.assert_called_once()
+    assert runc.run_pty(["CONTAINERID"]) == expected
+    runc._filebind.finish.assert_called_once()
 
 
 @pytest.mark.parametrize("poll_return,select_return,read_raises,terminate_raises,expected", [
     (0, ([1, ], [], []), False, False, 0),
-    (None, ([], [], [1, ]), False, False, None), # this return should not be none, the status is not correctly set on terminate
+    (0, ([1, ], [], []), False, True, 0),
+    (None, ([], [], [1, ]), False, False, None),
     (None, ([1, ], [], []), True, False, None),
+], ids=[
+    "process ends normally, data read without any errors",
+    "process termination throws an exception,returns normal code",
+    "process is ongoing without any data to read and no errors",
+    "process is running, data is available, but an error occurs when attempting to read it",
 ])
 @pytest.mark.parametrize('xmode', XMODE)
 def test_21_run_nopty(mocker, runc, poll_return, select_return, read_raises, terminate_raises, expected):
     """Test21 RuncEngine().run_nopty()."""
-    # FIXME: still need some work
 
     mocked_process = mocker.Mock(spec=subprocess.Popen)
     mocked_process.poll.return_value = [poll_return, 0]
