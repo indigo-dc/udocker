@@ -2,8 +2,10 @@
 """
 udocker unit tests: NVIDIA mode
 """
+import glob
 import os
 import random
+import shutil
 from contextlib import nullcontext as does_not_raise
 
 import pytest
@@ -51,13 +53,13 @@ def test_01_init(nvidia, lrepo, container_id):
     assert nvidia._nvidia_main_libs == ("libnvidia-cfg.so", "libcuda.so",)
 
 
-@pytest.mark.parametrize("cont_dst_dir,files_list,os_exists,error", [
+@pytest.mark.parametrize("cont_dst_dir, files_list, os_exists, error", [
     ('some_dir', ['a', 'b'], False, does_not_raise()),
     ('some_dir', ['a', 'b'], True, pytest.raises(OSError)),
 ])
 def test_02__files_exist(nvidia, mocker, cont_dst_dir, files_list, os_exists, error):
     """Test02 NvidiaMode._files_exist."""
-    os_path_exists = mocker.patch('udocker.engine.nvidia.os.path.exists', return_value=os_exists)
+    os_path_exists = mocker.patch.object(os.path, 'exists', return_value=os_exists)
 
     with error:
         nvidia._files_exist(cont_dst_dir, files_list)
@@ -101,25 +103,23 @@ def test_02__files_exist(nvidia, mocker, cont_dst_dir, files_list, os_exists, er
         "is link does not exists, force is true, destination dir does not exist, create dir"])
 def test_03__copy_files(mocker, nvidia, logger, params_dict):
     """Test03 NvidiaMode._copy_files."""
-
     hsrc_dir = '/usr/lib'
     cdst_dir = 'lib'
 
-    mocker.patch('udocker.engine.nvidia.shutil.copy2')
-    mocker.patch('udocker.engine.nvidia.os.readlink')
-    mocker.patch('udocker.engine.nvidia.os.symlink')
+    mocker.patch.object(shutil, 'copy2')
+    mocker.patch.object(os, 'readlink')
+    mocker.patch.object(os, 'symlink')
 
     mocker.patch.object(os.path, 'islink', side_effect=params_dict['is_link'])
-    mocker.patch('udocker.engine.nvidia.os.path.isfile', side_effect=params_dict['is_file'])
-    mocker.patch('udocker.engine.nvidia.os.remove', side_effect=params_dict['os_remove'])
-    mocker.patch('udocker.engine.nvidia.os.path.isdir', side_effect=params_dict['is_dir'])
-    mocker.patch('udocker.engine.nvidia.os.makedirs', side_effect=params_dict['makedirs'])
-    mocker.patch('udocker.engine.nvidia.os.chmod', side_effect=params_dict['os_chmod'])
-    mocker.patch('udocker.engine.nvidia.os.access', side_effect=params_dict['os_access'])
+    mocker.patch.object(os.path, 'isfile', side_effect=params_dict['is_file'])
+    mocker.patch.object(os, 'remove', side_effect=params_dict['os_remove'])
+    mocker.patch.object(os.path, 'isdir', side_effect=params_dict['is_dir'])
+    mocker.patch.object(os, 'makedirs', side_effect=params_dict['makedirs'])
+    mocker.patch.object(os, 'chmod', side_effect=params_dict['os_chmod'])
+    mocker.patch.object(os, 'access', side_effect=params_dict['os_access'])
 
-    # mock function call with side effects with default values
-    mocker.patch('udocker.engine.nvidia.os.stat', side_effect=[mocker.Mock(st_mode=444), mocker.Mock(st_mode=644)])
-    mocker.patch('udocker.engine.nvidia.os.stat.S_IMODE', side_effect=[644, 777])
+    mocker.patch.object(os, 'stat', side_effect=[mocker.Mock(st_mode=444), mocker.Mock(st_mode=644)])
+    mocker.patch.object(os.stat, 'S_IMODE', side_effect=[644, 777])
 
     copy_files = nvidia._copy_files(hsrc_dir, cdst_dir, params_dict['flist'], params_dict['force'])
     assert copy_files == params_dict['expected']
@@ -129,68 +129,60 @@ def test_03__copy_files(mocker, nvidia, logger, params_dict):
     assert logger.info.call_count == params_dict['info_count']
     assert logger.error.call_count == params_dict['error_count']
 
-    logger.reset_mock()
 
-
-@pytest.mark.parametrize("nvi_lib_list,glob,expected", [
+@pytest.mark.parametrize("nvi_lib_list, glob_value, expected", [
     (['/lib/libnvidia.so'], ['/lib/libnvidia.so'], ['/lib/libnvidia.so']),
     ([], [], []),
 ])
-def test_04__get_nvidia_libs(mocker, nvidia, logger, nvi_lib_list, glob, expected):
+def test_04__get_nvidia_libs(mocker, nvidia, logger, nvi_lib_list, glob_value, expected):
     """Test04 NvidiaMode._get_nvidia_libs."""
     host_dir = '/usr/lib'
-
     mocker.patch.object(Config, 'conf', {'nvi_lib_list': nvi_lib_list})
-    mocker.patch('udocker.engine.nvidia.glob.glob', return_value=['/lib/libnvidia.so'])
+    mocker.patch.object(glob, 'glob', return_value=glob_value)
 
     nvidia_libs = nvidia._get_nvidia_libs(host_dir)
-    assert nvidia_libs == expected
 
-    # check loggers
+    assert nvidia_libs == expected
     assert logger.debug.call_count == 1
     assert logger.debug.call_args_list == [mocker.call('list nvidia libs: %s', nvidia_libs)]
 
 
-@pytest.mark.parametrize("arch,expected", [
+@pytest.mark.parametrize("arch, expected", [
     ('x86-64', {'/lib/x86_64-linux-gnu/'}),
     ('', {'/lib/x86_64-linux-gnu/'}),
     ('i386', set()),
 ])
 def test_05__find_host_dir_ldconfig(mocker, nvidia, logger, arch, expected):
     """Test05 NvidiaMode._find_host_dir_ldconfig."""
-
-    mocker.patch('udocker.engine.nvidia.os.path.realpath', return_value="/lib/x86_64-linux-gnu", autospec=True)
-    mocker.patch('udocker.engine.nvidia.os.path.dirname', return_value="/lib/x86_64-linux-gnu", autospec=True)
-
+    mocker.patch.object(os.path, 'realpath', return_value="/lib/x86_64-linux-gnu", autospec=True)
+    mocker.patch.object(os.path, 'dirname', return_value="/lib/x86_64-linux-gnu", autospec=True)
     mocker.patch.object(Uprocess, 'get_output', return_value=(
         ' libnvidia-cfg.so (libc6,x86-64) => /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so\n,'
         ' libcuda.so (libc6,x86-64) => /usr/lib/x86_64-linux-gnu/libcuda.so\n'))
 
     find_host_dir_ldconfig = nvidia._find_host_dir_ldconfig(arch)
-    assert find_host_dir_ldconfig == expected
 
-    # check loggers
+    assert find_host_dir_ldconfig == expected
     assert logger.debug.call_count == 1
     assert logger.debug.call_args_list == [mocker.call('list nvidia libs via ldconfig: %s', find_host_dir_ldconfig)]
 
 
-@pytest.mark.parametrize("library_path,expected", [
+@pytest.mark.parametrize("library_path, expected", [
     ("/usr/lib:/lib/x86_64-linux-gnu", {"/usr/lib/", "/usr/lib/x86_64-linux-gnu/"}),
     ("", set())
 ])
 def test_06__find_host_dir_ldpath(mocker, nvidia, logger, library_path, expected):
     """Test06 NvidiaMode._find_host_dir_ldpath."""
-    mocker.patch('udocker.engine.nvidia.glob.glob', return_value=library_path)
+    mocker.patch.object(glob, 'glob', return_value=library_path)
 
     host_dir_ldpath = nvidia._find_host_dir_ldpath(library_path)
-    assert host_dir_ldpath == expected
 
-    # check loggers
+    assert host_dir_ldpath == expected
     assert logger.debug.call_count == 1
     assert logger.debug.call_args_list == [mocker.call('list nvidia libs via path: %s', host_dir_ldpath)]
 
 
-@pytest.mark.parametrize("lib_dirs,ldpath,ldconfig,expected", [
+@pytest.mark.parametrize("lib_dirs, ldpath, ldconfig, expected", [
     ({'lib_dirs_list_x86_64': ['/usr/lib', '/lib/x86_64-linux-gnu']}, [{'/lib/x86_64-linux-gnu/', "/usr/lib/"},
                                                                        {'/lib64/x86_64-linux-gnu'}],
      {'/lib64/x86_64-linux-gnu'}, {'/lib/x86_64-linux-gnu/', '/usr/lib/', '/lib64/x86_64-linux-gnu'}),
@@ -200,43 +192,40 @@ def test_06__find_host_dir_ldpath(mocker, nvidia, logger, library_path, expected
 def test_07__find_host_dir(mocker, nvidia, logger, lib_dirs, ldpath, ldconfig, expected):
     """Test07 NvidiaMode._find_host_dir."""
     mocker.patch.object(Config, 'conf', lib_dirs)
-
     mocker.patch.object(nvidia, '_find_host_dir_ldpath', side_effect=ldpath)
     mocker.patch.object(nvidia, '_find_host_dir_ldconfig', side_effect=lambda: ldconfig)
     mocker.patch.dict('os.environ', {'LD_LIBRARY_PATH': '/lib64/x86_64-linux-gnu'})
 
     find_host_dir = nvidia._find_host_dir()
-    assert find_host_dir == expected
 
-    # check loggers
+    assert find_host_dir == expected
     assert logger.debug.call_count == 1
     assert logger.debug.call_args_list == [mocker.call('host location nvidia: %s', find_host_dir)]
 
 
-@pytest.mark.parametrize("is_dir,debug_log,expected", [
+@pytest.mark.parametrize("is_dir, log_debug, expected", [
     ([True], 1, '/usr/lib/x86_64-linux-gnu'),
     ([False, True], 1, '/usr/lib64'),
     ([False, False], 0, ''),
 ])
-def test_08__find_cont_dir(mocker, nvidia, logger, is_dir, debug_log, expected):
+def test_08__find_cont_dir(mocker, nvidia, logger, is_dir, log_debug, expected):
     """Test08 NvidiaMode._find_cont_dir."""
-    mocker.patch('udocker.engine.nvidia.os.path.isdir', side_effect=is_dir)
+    mocker.patch.object(os.path, 'isdir', side_effect=is_dir)
 
     find_cont_dir = nvidia._find_cont_dir()
-    assert find_cont_dir == expected
 
-    # check loggers
-    if debug_log == 1:
+    assert find_cont_dir == expected
+    if log_debug == 1:
         assert logger.debug.call_count == 1
         assert logger.debug.call_args_list == [mocker.call('cont. location nvidia: %s', find_cont_dir)]
 
 
-@pytest.mark.parametrize("host_dir,cont_dir,file_exists,info_log,expected", [
+@pytest.mark.parametrize("host_dir,cont_dir,file_exists,log_info,expected", [
     (['/home/.udocker/cont/usr/lib'], '/home/.udocker/cont/usr/lib', [True, True, True], 1, False),
     ([], '/home/.udocker/cont/usr/lib', [True, True], 1, False),
     (['/home/.udocker/cont/usr/lib'], '/home/.udocker/cont/usr/lib', [OSError], 0, True),
 ])
-def test_09__installation_exists(mocker, nvidia, logger, host_dir, cont_dir, file_exists, info_log, expected):
+def test_09__installation_exists(mocker, nvidia, logger, host_dir, cont_dir, file_exists, log_info, expected):
     """Test09 NvidiaMode._installation_exists."""
     mocker.patch.object(nvidia, '_files_exist', side_effect=file_exists)
 
@@ -246,10 +235,8 @@ def test_09__installation_exists(mocker, nvidia, logger, host_dir, cont_dir, fil
     if not expected:
         assert logger.info.call_args_list == [mocker.call('container has files from previous nvidia install')]
 
-    logger.reset_mock()
 
-
-@pytest.mark.parametrize("force,cdir,msg,find_host_dir,find_cont_dir,debug_count,info_count,expected", [
+@pytest.mark.parametrize("force, cdir, msg, find_host_dir, find_cont_dir, debug_count, info_count, expected", [
     (False, None, "nvidia set mode container dir not found", [set(), {"/usr/lib"}], [""], 1, 0, False),
     (False, "/home/.udocker/cont", "host nvidia libraries not found", [set(), {"/usr/lib"}], [""], 1, 0, False),
     (False, "/home/.udocker/cont", "destination dir for nvidia libs not found", [{"/usr/lib"}], [""], 1, 0, False),
@@ -266,49 +253,43 @@ def test_10_set_mode(mocker, nvidia, logger, force, cdir, msg, find_host_dir, fi
     mocker.patch.object(nvidia, '_copy_files', side_effect=[True] if expected is False else [True, True, True])
     mocker.patch.object(nvidia, 'container_dir', cdir)
 
-    assert nvidia.set_mode(force=force) == expected
+    set_mode = nvidia.set_mode(force=force)
+
+    assert set_mode == expected
     assert logger.error.call_count == debug_count
     assert logger.info.call_count == info_count
-    if debug_count > 0:
-        assert logger.error.call_args_list == [mocker.call(msg)]
-    if info_count > 0:
-        assert logger.info.call_args_list == [mocker.call(msg)]
+    assert logger.error.call_args_list == [mocker.call(msg)] if debug_count > 0 else logger.error.call_args_list == []
+    assert logger.info.call_args_list == [mocker.call(msg)] if info_count > 0 else logger.info.call_args_list == []
 
-    logger.reset_mock()
-
-
-@pytest.mark.parametrize("os_exists,os_exists_counts,container,expected", [
+@pytest.mark.parametrize("os_exists, os_exists_counts, container, expected", [
     (True, 1, '/home/.udocker/container/nvidia', True),
     (False, 1, '', False)
 ])
 def test_11_get_mode(mocker, nvidia, os_exists, os_exists_counts, container, expected):
     """Test11 NvidiaMode.get_mode()."""
-
-    mock_os_path_exists = mocker.patch('udocker.engine.nvidia.os.path.exists', return_value=os_exists)
+    mock_os_path_exists = mocker.patch.object(os.path, 'exists', return_value=os_exists)
     mocker.patch.object(nvidia, '_container_nvidia_set', container)
 
-    assert nvidia.get_mode() == expected
+    get_mode = nvidia.get_mode()
 
-    # check loggers
+    assert get_mode == expected
     assert mock_os_path_exists.call_count == os_exists_counts
     assert mock_os_path_exists.called
     assert mock_os_path_exists.call_args_list == [mocker.call(nvidia._container_nvidia_set)]
 
 
-@pytest.mark.parametrize("dev_list,glob,glob_count,expected", [
+@pytest.mark.parametrize("dev_list,glob_value,glob_count,expected", [
     (['/dev/nvidia'], ['/dev/nvidia'], 1, ['/dev/nvidia']),
     ([], ['/dev/nvidia'], 0, []),
 ])
-def test_12_get_devices(mocker, nvidia, logger, dev_list, glob, glob_count, expected):
+def test_12_get_devices(mocker, nvidia, logger, dev_list, glob_value, glob_count, expected):
     """Test12 NvidiaMode.get_devices()."""
-    glob = mocker.patch('udocker.engine.nvidia.glob.glob', return_value=glob)
+    mocked_glob = mocker.patch.object(glob, 'glob', return_value=glob_value)
     mocker.patch.object(Config, 'conf', {"nvi_dev_list": dev_list})
 
     devices = nvidia.get_devices()
 
     assert devices == expected
-    assert glob.call_count == glob_count
-
-    # check loggers
+    assert mocked_glob.call_count == glob_count
     assert logger.debug.call_count == 1
     assert logger.debug.call_args_list == [mocker.call('nvidia device list: %s', dev_list)]
