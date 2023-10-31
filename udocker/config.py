@@ -79,7 +79,8 @@ class Config(object):
     # PRoot override seccomp
     # conf['proot_noseccomp'] = True
     conf['proot_noseccomp'] = None
-    conf['proot_killonexit'] = True   # PRoot kill-on-exit
+    conf['proot_killonexit'] = True   # PRoot --kill-on-exit
+    conf['proot_link2symlink'] = True   # PRoot --link2symlink
 
     # fakechroot engine get ld_library_paths from ld.so.cache
     conf['ld_so_cache'] = "/etc/ld.so.cache"

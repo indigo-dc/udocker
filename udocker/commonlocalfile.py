@@ -11,6 +11,7 @@ from udocker.container.structure import ContainerStructure
 from udocker.engine.execmode import ExecutionMode
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uprocess import Uprocess
+from udocker.utils.chksum import ChkSUM
 
 
 class CommonLocalFileApi(object):
@@ -100,6 +101,11 @@ class CommonLocalFileApi(object):
         container_json["size"] = FileUtil(layer_file).size()
         if container_json["size"] == -1:
             container_json["size"] = 0
+        layer_chksum = ChkSUM().hash(layer_file, "sha256")
+        if layer_chksum:
+            container_json["rootfs"] = {}
+            container_json["rootfs"]["type"] = "layers"
+            container_json["rootfs"]["diff_ids"] = [ "sha256:" + layer_chksum, ]
         container_json["container_config"] = {
             "Hostname": "",
             "Domainname": "",
