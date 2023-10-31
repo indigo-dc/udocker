@@ -5,7 +5,9 @@ udocker unit tests: RuncEngine
 import copy
 import logging
 import os
+import platform
 import random
+import select
 import stat
 import subprocess
 import sys
@@ -15,7 +17,10 @@ import pytest
 
 from udocker.config import Config
 from udocker.engine.execmode import ExecutionMode
+from udocker.engine.nvidia import NvidiaMode
 from udocker.engine.runc import RuncEngine
+from udocker.helper.hostinfo import HostInfo
+from udocker.utils.fileutil import FileUtil
 
 XMODE = ["P1", "P2"]
 
@@ -49,11 +54,6 @@ def runc(localrepo, container_id):
 
 
 @pytest.fixture
-def mock_nvidia_mode(mocker):
-    return mocker.patch('udocker.engine.runc.NvidiaMode')
-
-
-@pytest.fixture
 def logger(mocker):
     return mocker.patch('udocker.engine.runc.LOG')
 
@@ -64,21 +64,6 @@ def mock_exec_mode(localrepo, container_id, xmode):
     mocker_exec_mode = ExecutionMode(localrepo, container_id)
     mocker_exec_mode.force_mode = xmode
     return mocker_exec_mode
-
-
-@pytest.fixture
-def mock_fileutil(mocker):
-    return mocker.patch('udocker.engine.runc.FileUtil', autospec=True)
-
-
-@pytest.fixture
-def mock_realpath(mocker):
-    return mocker.patch('udocker.engine.runc.os.path.realpath')
-
-
-@pytest.fixture
-def mock_hostinfo(mocker):
-    return mocker.patch('udocker.engine.runc.HostInfo')
 
 
 @pytest.fixture(scope='function')
@@ -101,7 +86,7 @@ def test_01_init(runc, localrepo):
 
 
 @pytest.mark.parametrize(
-    "conf,runc_path,crun_path,arch,find_file,os_exists,error,expected_exec,expected_type",
+    "conf, runc_path, crun_path, arch, find_file, os_exists, error, expected_exec, expected_type",
     [
         ("UDOCKER", None, None, "x86_64", None, False, pytest.raises(SystemExit), None, None),
         (None, "/bin/runc-arm", None, "x86_64", None, True, does_not_raise(), "/bin/runc-arm", "runc"),
@@ -118,20 +103,22 @@ def test_02_select_runc(mocker, runc, logger, conf, runc_path, crun_path, arch,
                         find_file, os_exists, error, expected_exec, expected_type):
     """Test02 RuncEngine().select_runc()."""
     mocker.patch.object(runc, 'executable', conf)
-    mocker.patch('udocker.engine.runc.FileUtil.find_exec', side_effect=[runc_path, crun_path])
-    mocker.patch('udocker.engine.runc.HostInfo.arch', return_value=arch)
-    mocker.patch('udocker.engine.runc.FileUtil.find_file_in_dir', return_value=find_file)
-
+    mocker.patch.object(FileUtil, 'find_exec', side_effect=[runc_path, crun_path])
+    mocker.patch.object(FileUtil, 'find_exec', side_effect=[runc_path, crun_path])
+    mocker.patch.object(HostInfo, 'arch', return_value=arch)
+    mocker.patch.object(FileUtil, 'find_file_in_dir', return_value=find_file)
     mocker.patch.object(os.path, 'exists', return_value=os_exists)
     mocker.patch.object(os.path, 'basename', return_value=expected_exec)
 
     with error:
         runc.select_runc()
+        logger.error.assert_called_once_with(
+            "runc/crun executable not found") if not os_exists else logger.error.assert_not_called()
         assert runc.executable == expected_exec
         assert runc.engine_type == expected_type
 
 
-@pytest.mark.parametrize("verbose,new,size,subprocess,read_json,error,expected", [
+@pytest.mark.parametrize("verbose, new,size, subprocess, read_json, error, expected", [
     (logging.DEBUG, None, 0, 0, True, does_not_raise(), {'container': 'cxxx', 'parent': 'dyyy'}),
     (logging.NOTSET, False, -1, None, True, does_not_raise(), {"container": "cxxx", "parent": "dyyy"}),
     (logging.NOTSET, False, 0, 0, True, does_not_raise(), {"container": "cxxx", "parent": "dyyy"}),
@@ -144,25 +131,23 @@ def test_02_select_runc(mocker, runc, logger, conf, runc_path, crun_path, arch,
     (logging.DEBUG, True, -1, 0, None, does_not_raise(), None)
 ])
 @pytest.mark.parametrize('xmode', XMODE)
-def test_03__load_spec(mocker, runc, mock_fileutil, verbose, new, size, subprocess, read_json, error, expected):
+def test_03__load_spec(mocker, runc, verbose, new, size, subprocess, read_json, error, expected):
     """Test03 RuncEngine()._load_spec()."""
 
-    mocker.patch.object(Config, 'conf', {'verbose_level': verbose})
-    mock_fileutil.return_value.size.return_value = size
+    mocker.patch.object(Config, 'conf', {'verbose_level': verbose, 'tmpdir': '/tmp'})
+    mocker.patch.object(FileUtil, 'size', return_value=size)
     mocker.patch("subprocess.call", return_value=subprocess)
     mocker.patch.object(runc, '_cont_specjson')
-
-    mock_fileutil.return_value.register_prefix.return_value = None
-    mock_fileutil.return_value.remove.return_value = None
+    mocker.patch.object(FileUtil, 'register_prefix')
+    mocker.patch.object(FileUtil, 'remove')
 
     jload = '{"container": "cxxx", "parent": "dyyy"}'
-    if read_json:
-        mocker.patch("builtins.open", mocker.mock_open(read_data=jload))
-    else:
-        mocker.patch("builtins.open", side_effect=OSError)
+    mocker.patch("builtins.open", mocker.mock_open(read_data=jload)) if read_json else (
+        mocker.patch("builtins.open", side_effect=OSError))
 
     with error:
-        assert runc._load_spec(new) == expected
+        load_spec = runc._load_spec(new)
+        assert load_spec == expected
 
 
 @pytest.mark.parametrize("error,exception,expected", [
@@ -178,10 +163,11 @@ def test_04__save_spec(mocker, runc, error, exception, expected):
     mocker.patch("json.dump", side_effect=exception)
 
     with error:
-        assert runc._save_spec() == expected
+        save_spec = runc._save_spec()
+        assert save_spec == expected
 
 
-@pytest.mark.parametrize("engine_type,isatty,opt,expected", [
+@pytest.mark.parametrize("engine_type, isatty, opt, expected", [
     ("crun", True, {"hostname": "node.domain", "cwd": "/", "env": [], "cmd": "bash"},
      {'hostname': 'node.domain', 'process': {'args': 'bash', 'cwd': '/', 'env': [], 'terminal': False},
       'root': {'path': '/.udocker/containers/aaaaaa/ROOT', 'readonly': False}}),
@@ -201,11 +187,11 @@ def test_04__save_spec(mocker, runc, error, exception, expected):
       'root': {'path': '/.udocker/containers/aaaaaa/ROOT', 'readonly': False}}),
 ])
 @pytest.mark.parametrize('xmode', XMODE)
-def test_05__set_spec(mocker, runc, mock_realpath, engine_type, isatty, opt, expected):
+def test_05__set_spec(mocker, runc, engine_type, isatty, opt, expected):
     """Test05 RuncEngine()._set_spec()."""
-    mock_realpath.return_value = "/.udocker/containers/aaaaaa/ROOT"
-    mocker.patch('udocker.engine.runc.platform.node', return_value="nodename.local")
-    mocker.patch('sys.stdout.isatty', return_value=isatty)
+    mocker.patch.object(os.path, 'realpath', return_value="/.udocker/containers/aaaaaa/ROOT")
+    mocker.patch.object(platform, 'node', return_value="nodename.local")
+    mocker.patch.object(sys.stdout, 'isatty', return_value=isatty)
     mocker.patch.object(runc, 'engine_type', engine_type)
     mocker.patch.object(runc, '_cont_specjson', {
         "root": {},
@@ -215,10 +201,11 @@ def test_05__set_spec(mocker, runc, mock_realpath, engine_type, isatty, opt, exp
     mocker.patch.object(runc, 'opt', opt)
 
     set_spec_json = runc._set_spec()
+
     assert set_spec_json == expected
 
 
-@pytest.mark.parametrize("specjson,expected", [
+@pytest.mark.parametrize("specjson, expected", [
     ({"linux": {}}, {"linux": {"uidMappings": [{"containerID": 0, "hostID": 1000, "size": 1}],
                                "gidMappings": [{"containerID": 0, "hostID": 1001, "size": 1}]}}),
     ({"linux": {"uidMappings": [{"containerID": 0, "size": 1}]}}, {
@@ -235,14 +222,16 @@ def test_05__set_spec(mocker, runc, mock_realpath, engine_type, isatty, opt, exp
 @pytest.mark.parametrize('xmode', XMODE)
 def test_06__set_id_mappings(mocker, runc, specjson, expected):
     """Test06 RuncEngine()._set_id_mappings()."""
-    mocker.patch("udocker.engine.runc.HostInfo.uid", 1000)
-    mocker.patch("udocker.engine.runc.HostInfo.gid", 1001)
-    runc._cont_specjson = specjson
+    mocker.patch.object(HostInfo, 'uid', 1000)
+    mocker.patch.object(HostInfo, 'gid', 1001)
+    mocker.patch.object(runc, '_cont_specjson', specjson)
+
     runc._set_id_mappings()
+
     assert runc._cont_specjson == expected
 
 
-@pytest.mark.parametrize("initial_specjson,namespace_to_remove,error,expected", [
+@pytest.mark.parametrize("initial_specjson, namespace_to_remove, error, expected", [
     ({"linux": {"namespaces": [{"type": "network"}, {"type": "docker"}]}}, "network", does_not_raise(),
      {"linux": {"namespaces": [{"type": "docker"}]}}),
     ({"linux": {"namespaces": [{"type": "network"}]}}, "docker", does_not_raise(),
@@ -259,7 +248,7 @@ def test_07__del_namespace_spec(runc, initial_specjson, namespace_to_remove, err
         assert runc._cont_specjson == expected
 
 
-@pytest.mark.parametrize("opts,log_warning", [
+@pytest.mark.parametrize("opts, log_warning", [
     ({'user': "1000"}, True),
     ({'user': "0"}, False),
     ({'user': "root"}, False),
@@ -269,22 +258,20 @@ def test_07__del_namespace_spec(runc, initial_specjson, namespace_to_remove, err
 def test_08__uid_check(mocker, runc, logger, opts, log_warning):
     """Test08 RuncEngine()._uid_check()."""
     mocker.patch.object(runc, 'opt', opts)
+
     runc._uid_check()
 
-    if log_warning:
-        logger.warning.assert_called_once_with("this engine only supports execution as root")
-    else:
-        logger.warning.assert_not_called()
+    logger.warning.assert_called_once_with(
+        "this engine only supports execution as root") if log_warning else logger.warning.assert_not_called()
 
 
-@pytest.mark.parametrize("capabilities,expected", [
+@pytest.mark.parametrize("capabilities, expected", [
     (["CAP_KILL", "CAP_NET_BIND_SERVICE", "CAP_CHOWN"], ["CAP_KILL", "CAP_NET_BIND_SERVICE", "CAP_CHOWN"]),
     (None, None),
 ])
 @pytest.mark.parametrize('xmode', XMODE)
 def test_09__add_capabilities_spec(mocker, runc, capabilities, expected):
     """Test09 RuncEngine()._add_capabilities_spec()."""
-
     mocker.patch.object(Config, "conf", {"runc_capabilities": capabilities})
     mocker.patch.object(runc, '_cont_specjson', {"process": {
         "capabilities": {
@@ -297,6 +284,7 @@ def test_09__add_capabilities_spec(mocker, runc, capabilities, expected):
     }})
 
     runc._add_capabilities_spec()
+
     for capability_type in ["ambient", "bounding", "effective", "inheritable", "permitted"]:
         if expected:
             assert runc._cont_specjson["process"]["capabilities"][capability_type] == expected
@@ -304,7 +292,7 @@ def test_09__add_capabilities_spec(mocker, runc, capabilities, expected):
             assert not runc._cont_specjson["process"]["capabilities"][capability_type]
 
 
-@pytest.mark.parametrize("dev_path,os_exists,logger_msg,st_mode,mode,expected_filemode,expected_return", [
+@pytest.mark.parametrize("dev_path, os_exists, logger_msg, st_mode, mode, expected_filemode, expected_return", [
     ("/fakepath", False, ["device not found: %s"], stat.S_IFREG, "r", None, False),
     ("/fakepath/notdev/", True, ["device not found: %s"], stat.S_IFREG, "r", None, False),
     ("/dev/zero", True, ["not a device: %s"], stat.S_IFREG, "r", None, False),
@@ -314,17 +302,17 @@ def test_09__add_capabilities_spec(mocker, runc, capabilities, expected):
     ("/dev/zero", True, [], stat.S_IFCHR, "", 0o666, True),
 ])
 @pytest.mark.parametrize('xmode', XMODE)
-def test_10__add_device_spec(mocker, runc, logger, mock_hostinfo, dev_path, os_exists, logger_msg,
-                             st_mode, mode, expected_filemode, expected_return):
+def test_10__add_device_spec(mocker, runc, logger, dev_path, os_exists, logger_msg, st_mode, mode, expected_filemode,
+                             expected_return):
     """Test10 RuncEngine()._add_device_spec()."""
     mocker.patch.object(os.path, 'exists', return_value=os_exists)
-    mocker.patch('os.minor', return_value=0)
-    mocker.patch('os.major', return_value=6)
+    mocker.patch.object(os, 'minor', return_value=0)
+    mocker.patch.object(os, 'major', return_value=6)
     mocked_stat = os.stat_result((st_mode, 0, 0, 0, 0, 0, 0, 0, 0, 0))
-    mocker.patch('os.stat', return_value=mocked_stat)
+    mocker.patch.object(os, 'stat', return_value=mocked_stat)
     mocker.patch.object(runc, '_cont_specjson', {"linux": {"mocked_field": []}})
-    mock_hostinfo.uid = 1000
-    mock_hostinfo.gid = 0
+    mocker.patch.object(HostInfo, 'uid', 1000)
+    mocker.patch.object(HostInfo, 'gid', 0)
 
     assert runc._add_device_spec(dev_path, mode) == expected_return
 
@@ -337,20 +325,19 @@ def test_10__add_device_spec(mocker, runc, logger, mock_hostinfo, dev_path, os_e
         logger.error.assert_called_once_with(logger_msg[0], dev_path)
 
 
-@pytest.mark.parametrize("devices,nvidia_mode_return,nvidia_devices,expected_added", [
+@pytest.mark.parametrize("devices, nvidia_mode_return, nvidia_devices, expected_added", [
     ({'devices': ["/dev/open-mx", "/dev/myri0"]}, False, [], ["/dev/open-mx", "/dev/myri0"]),
     ({'devices': []}, True, ["/dev/nvidia"], ["/dev/nvidia"]),
     ({'devices': ["/dev/nvidia"]}, True, ["/dev/myri0", "/dev/open-mx"], ["/dev/myri0", "/dev/open-mx"]),
     ({'devices': ["/dev/nvidiactl"]}, True, ["/dev/open-mx", "/dev/myri0"], []),
 ])
 @pytest.mark.parametrize('xmode', XMODE)
-def test_11__add_devices(mocker, runc, mock_nvidia_mode, devices, nvidia_mode_return, nvidia_devices, expected_added):
+def test_11__add_devices(mocker, runc, devices, nvidia_mode_return, nvidia_devices, expected_added):
     """Test11 RuncEngine()._add_devices()."""
     add_device_spec = mocker.patch.object(runc, "_add_device_spec", return_value=True)
-
     mocker.patch.object(runc, 'opt', devices)
-    mock_nvidia_mode.return_value.get_mode.return_value = nvidia_mode_return
-    mock_nvidia_mode.return_value.get_devices.return_value = nvidia_devices
+    mocker.patch.object(NvidiaMode, 'get_mode', return_value=nvidia_mode_return)
+    mocker.patch.object(NvidiaMode, 'get_devices', return_value=nvidia_devices)
 
     runc._add_devices()
 
@@ -358,7 +345,7 @@ def test_11__add_devices(mocker, runc, mock_nvidia_mode, devices, nvidia_mode_re
     add_device_spec.assert_has_calls(calls, any_order=True)
 
 
-@pytest.mark.parametrize("rwmode,options,expected", [
+@pytest.mark.parametrize("rwmode, options, expected", [
     (True, None, {'destination': '/CONTDIR', 'options': ['rbind', 'nosuid', 'nodev', 'rw'], 'source': '/HOSTDIR',
                   'type': 'fstype'}),
     (False, None, {'destination': '/CONTDIR', 'options': ['rbind', 'nosuid', 'nodev', 'ro'], 'source': '/HOSTDIR',
@@ -378,12 +365,11 @@ def test_12__add_mount_spec(mocker, runc, rwmode, options, expected):
     cont_dest = "/CONTDIR"
     fstype = 'fstype'
 
-    if rwmode is None:
-        runc._add_mount_spec(host_source, cont_dest)
-        assert runc._cont_specjson["mounts"][0] == expected
-    else:
-        runc._add_mount_spec(host_source, cont_dest, rwmode=rwmode, fstype=fstype, options=options)
-        assert runc._cont_specjson["mounts"][0] == expected
+    runc._add_mount_spec(host_source, cont_dest) if rwmode is None else runc._add_mount_spec(
+        host_source, cont_dest, rwmode=rwmode, fstype=fstype, options=options)
+
+    add_mount_spec = runc._cont_specjson["mounts"][0]
+    assert add_mount_spec == expected
 
 
 @pytest.mark.parametrize("index,initial_mount,host_source,cont_dest,expected", [
@@ -403,7 +389,7 @@ def test_13__del_mount_spec(mocker, runc, index, initial_mount, host_source, con
     # FIXME: this test needs changes in the code, also using more than one mode is affecting the results
 
 
-@pytest.mark.parametrize("mount,host_source,cont_dest,expected", [
+@pytest.mark.parametrize("mount, host_source, cont_dest, expected", [
     ([{"destination": "/CONTDIR", "type": "none", "source": "/XXX"}], "/HOSTDIR", "/CONTDIR", None),
     ([{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR"}, ], "/HOSTDIR", "/CONTDIR", 0),
     ([{"destination": "/CONTDIR", "type": "none", "source": "/XXXX"},
@@ -413,7 +399,8 @@ def test_13__del_mount_spec(mocker, runc, index, initial_mount, host_source, con
 def test_14__sel_mount_spec(mocker, runc, mount, host_source, cont_dest, expected):
     """Test14 RuncEngine()._sel_mount_spec()."""
     mocker.patch.object(runc, '_cont_specjson', {"mounts": mount})
-    assert runc._sel_mount_spec(host_source, cont_dest) == expected
+    sel_mount_spec = runc._sel_mount_spec(host_source, cont_dest)
+    assert sel_mount_spec == expected
 
 
 # FIXME: this test fails, need to be fixed
@@ -455,70 +442,72 @@ def test_15__mod_mount_spec(mocker, fresh_runc, mount, host_source, cont_dest, n
     # self.assertEqual(len(rcex._container_specjson["mounts"]), 1)
 
 
-@pytest.mark.parametrize("volumes,isdir,isfile,sysdirs_list,log_warning,log_error,expected_method_calls", [
-    ([], False, False, [], (0, ""), (0, ""),
-     [('add_mount_spec', 1)]),
-    (['/HOSTDIR:/CONTDIR'], False, False, [], (0, ""), (0, ""), [('isdir', 1), ('isfile', 1)]),
-    (['/HOSTDIR:/CONTDIR'], True, False, [], (0, ""), (0, ""), [('isdir', 1), ('isfile', 0), ('add_mount_spec', 2)]),
-    (['/dev'], True, False, [], (0, ""), (0, ""), [('isdir', 1), ('isfile', 0), ('add_mount_spec', 1)]),
-    (['/HOSTDIR:/CONTDIR'], False, True, ["/HOSTDIR"], (0, ""), (0, ""),
-     [('isdir', 1), ('isfile', 1), ('add_mount_spec', 1), ('add_file', 1)]),
-    (['/HOSTDIR:/CONTDIR'], False, True, ["/HOSTDIR"], (0, ""), (0, ""),
-     [('isdir', 1), ('isfile', 1), ('add_mount_spec', 1), ('add_file', 1)]),
-    (['/dev:/CONTDIR'], True, False, ["/HOSTDIR"], (1, "engine does not support -v %s"),
-     (0, ""),
-     [('isdir', 1), ('isfile', 0), ('add_mount_spec', 1), ('add_file', 0)]),
-    (['/dev:/CONTDIR'], False, True, ["/HOSTDIR"], (0, ""),
-     (1, "engine does not support file mounting: %s"),
-     [('isdir', 1), ('isfile', 1), ('add_mount_spec', 1), ('add_file', 0)]),
-])
+@pytest.mark.parametrize(
+    "volumes, isdir, isfile, sysdirs_list, log_warning, log_error, expected_method_calls", [
+        ([], False, False, [], (0, ""), (0, ""),
+         [('add_mount_spec', 1)]),
+        (['/HOSTDIR:/CONTDIR'], False, False, [], (0, ""), (0, ""), [('isdir', 1), ('isfile', 1)]),
+        (
+                ['/HOSTDIR:/CONTDIR'], True, False, [], (0, ""), (0, ""),
+                [('isdir', 1), ('isfile', 0), ('add_mount_spec', 2)]),
+        (['/dev'], True, False, [], (1, 'engine does not support -v %s'), (0, ""),
+         [('isdir', 1), ('isfile', 0), ('add_mount_spec', 1)]),
+        (['/HOSTDIR:/CONTDIR'], False, True, ["/HOSTDIR"], (0, ""), (0, ""),
+         [('isdir', 1), ('isfile', 1), ('add_mount_spec', 1), ('add_file', 1)]),
+        (['/HOSTDIR:/CONTDIR'], False, True, ["/HOSTDIR"], (0, ""), (0, ""),
+         [('isdir', 1), ('isfile', 1), ('add_mount_spec', 1), ('add_file', 1)]),
+        (['/dev:/CONTDIR'], True, False, ["/HOSTDIR"], (1, 'engine does not support -v %s'),
+         (0, ""),
+         [('isdir', 1), ('isfile', 0), ('add_mount_spec', 1), ('add_file', 0)]),
+        (['/dev:/CONTDIR'], False, True, ["/HOSTDIR"], (0, ""),
+         (1, 'engine does not support file mounting: %s'),
+         [('isdir', 1), ('isfile', 1), ('add_mount_spec', 1), ('add_file', 0)]),
+    ])
 @pytest.mark.parametrize('xmode', XMODE)
 def test_16__add_volume_bindings(mocker, runc, logger, volumes, isdir, isfile, sysdirs_list, log_warning, log_error,
                                  expected_method_calls):
     """Test16 RuncEngine()._add_volume_bindings()."""
     mocker.patch.object(runc, '_filebind', autospec=True)
-
     mock_isdir = mocker.patch('os.path.isdir', return_value=isdir)
     mock_isfile = mocker.patch('os.path.isfile', return_value=isfile)
     mock_add_mount_spec = mocker.patch.object(runc, '_add_mount_spec')
     mock_add_file = mocker.patch.object(runc._filebind, 'add_file')
-
     mocker.patch.object(Config, 'conf', {'sysdirs_list': sysdirs_list, 'mountpoint_prefixes': []})
     mocker.patch.object(runc, 'opt', {'vol': volumes})
-
     mocker.patch.object(runc._filebind, 'start', return_value=("/HOSTDIR", "/CONTDIR"))
+
     runc._add_volume_bindings()
 
-    if log_warning[0] > 0:
-        logger.warning.assert_called_once_with(log_warning[1], mocker.ANY)
+    logger.warning.assert_called_once_with(
+        log_warning[1], mocker.ANY) if log_warning[0] > 0 else logger.warning.assert_not_called()
 
-    if log_error[0]:
-        logger.error.assert_called_once_with(log_error[1], mocker.ANY)
+    logger.error.assert_called_once_with(
+        log_error[1], mocker.ANY) if log_error[0] > 0 else logger.error.assert_not_called()
 
     for method_name, call_count in expected_method_calls:
         assert locals()[f'mock_{method_name}'].call_count == call_count
 
 
 #
-@pytest.mark.parametrize("options,expected_logs", [
+@pytest.mark.parametrize("options, expected_logs", [
     ({"portsmap": None, 'netcoop': None}, []),
-    ({"portsmap": True, 'netcoop': None}, ["this execution mode does not support -p --publish"]),
-    ({"portsmap": None, "netcoop": True}, ["this exec mode does not support -P --netcoop --publish-all"]),
-    ({"portsmap": True, "netcoop": True}, ["this execution mode does not support -p --publish",
-                                           "this exec mode does not support -P --netcoop --publish-all"])
+    ({"portsmap": True, 'netcoop': None}, ['this execution mode does not support -p --publish']),
+    ({"portsmap": None, "netcoop": True}, ['this exec mode does not support -P --netcoop --publish-all']),
+    ({"portsmap": True, "netcoop": True}, ['this execution mode does not support -p --publish',
+                                           'this exec mode does not support -P --netcoop --publish-all'])
 ])
 @pytest.mark.parametrize('xmode', XMODE)
 def test_17__run_invalid_options(mocker, runc, logger, options, expected_logs):
     """Test17 RuncEngine()._run_invalid_options()."""
     mocker.patch.object(runc, 'opt', options)
+
     runc._run_invalid_options()
 
     assert logger.warning.call_count == len(expected_logs)
-    for msg in expected_logs:
-        assert logger.warning.call_any(msg)
+    assert all(logger.warning.call_any(msg) for msg in expected_logs)
 
 
-@pytest.mark.parametrize("xmode,executable,proot_noseccomp,expected_env,expected_cont_specjson,expected", [
+@pytest.mark.parametrize("xmode, executable, proot_noseccomp, expected_env, expected_cont_specjson, expected", [
     ("P1", "", False, None, [], False),
     ("P2", "", False, None, [], False),
     ("R2", "/bin/exec", False, [], ['/.udocker/bin/custom_folder', '-0', 'ls -la'], True),
@@ -528,33 +517,19 @@ def test_17__run_invalid_options(mocker, runc, logger, options, expected_logs):
     ("R2", "/bin/exec", True, [], ['/.udocker/bin/custom_folder', '-0', 'ls -la'], True),
     ("R3", "/bin/exec", True, ['PROOT_NO_SECCOMP=1'], ['/.udocker/bin/custom_folder', '-0', 'ls -la'], True),
 ])
-def test_18__proot_overlay(mocker, runc, mock_fileutil, xmode, executable, proot_noseccomp,
-                           expected_env,
-                           expected_cont_specjson,
+def test_18__proot_overlay(mocker, runc, xmode, executable, proot_noseccomp, expected_env, expected_cont_specjson,
                            expected):
     """Test18 RuncEngine()._proot_overlay()."""
     runc.exec_mode.get_mode = mocker.Mock(return_value=xmode)
-
     mocker.patch.object(os.path, 'basename', return_value="custom_folder")
-    mock_preng = mocker.Mock()
-    mock_preng.exec_mode.force_mode = mocker.Mock()
-    mock_preng.select_proot = mocker.Mock()
-    mock_preng.proot_noseccomp = proot_noseccomp
-    mock_preng.executable = executable
-
-    mocker.patch('udocker.engine.runc.PRootEngine', return_value=mock_preng)
-
-    mocker.patch.object(mock_fileutil, 'chmod', return_value=True)
-
+    mocker.patch('udocker.engine.runc.PRootEngine', return_value=mocker.Mock())
+    mocker.patch.object(FileUtil, 'chmod', return_value=True)
     mocker.patch.object(runc, '_cont_specjson', {"process": {"env": [], "args": []}})
     mocker.patch.object(runc, 'opt', {"cmd": ["ls -la"]})
-    mocker.patch.object(runc, '_create_mountpoint', autospec=True)
+    mocker.patch.object(runc, '_create_mountpoint')
+    mocker.patch.object(runc, '_filebind')
 
-    runc._filebind = mocker.Mock()
-    runc._filebind.set_file = mocker.Mock()
-    runc._filebind.add_file = mocker.Mock()
     result = runc._proot_overlay()
-
     assert result == expected
 
     if expected:
@@ -567,7 +542,7 @@ def test_18__proot_overlay(mocker, runc, mock_fileutil, xmode, executable, proot
 
 
 @pytest.mark.parametrize(
-    "logging_level,init_result,load_spec,load_spec_new, container_dir,iswriteable_container,is_tty,expected,call",
+    "log_level, init_result, load_spec, load_spec_new, container_dir, iswriteable_container, is_tty, expected, call",
     [
         (logging.NOTSET, False, True, False, None, True, False, 2, []),
         (logging.NOTSET, True, True, True, True, True, False, 0, ["_load_spec"]),
@@ -582,7 +557,7 @@ def test_18__proot_overlay(mocker, runc, mock_fileutil, xmode, executable, proot
         (logging.NOTSET, True, True, True, "/.udocker/containers/aaaaaa", True, True, 0, ["_load_spec", "run_pty"]),
     ])
 @pytest.mark.parametrize('xmode', XMODE)
-def test_19_run(mocker, runc, logging_level, init_result, load_spec, load_spec_new, container_dir,
+def test_19_run(mocker, runc, log_level, init_result, load_spec, load_spec_new, container_dir,
                 iswriteable_container, is_tty, expected, call):
     """Test19 RuncEngine().run()."""
     mocker.patch.object(runc, '_run_init', return_value=init_result)
@@ -611,7 +586,7 @@ def test_19_run(mocker, runc, logging_level, init_result, load_spec, load_spec_n
 
     mocker.patch.object(runc, 'opt', {'cmd': ['ls', '-la']})
     mocker.patch.object(Config, 'conf', {'runc_nomqueue': True, 'tmpdir': '/tmp', 'use_runc_executable': True,
-                                         'verbose_level': logging_level})
+                                         'verbose_level': log_level})
 
     mocker.patch.object(runc.localrepo, 'iswriteable_container', return_value=iswriteable_container)
     mocker.patch.object(runc, 'container_dir', return_value="/.udocker/containers/aaaaaa")
@@ -629,13 +604,13 @@ def test_19_run(mocker, runc, logging_level, init_result, load_spec, load_spec_n
 def test_20_run_pty(mocker, runc, subprocess_return, expected):
     """Test20 RuncEngine().run_pty()."""
     mocker.patch.object(runc, '_filebind', return_value=mocker.Mock())
-    mocker.patch('subprocess.call', return_value=expected)
+    mocker.patch.object(subprocess, 'call', return_value=subprocess_return)
 
     assert runc.run_pty(["CONTAINERID"]) == expected
     runc._filebind.finish.assert_called_once()
 
 
-@pytest.mark.parametrize("poll_return,select_return,read_raises,terminate_raises,expected", [
+@pytest.mark.parametrize("poll_return, select_return, read_raises, terminate_raises, expected", [
     (0, ([1, ], [], []), False, False, 0),
     (0, ([1, ], [], []), False, True, 0),
     (None, ([], [], [1, ]), False, False, None),
@@ -654,23 +629,19 @@ def test_21_run_nopty(mocker, runc, poll_return, select_return, read_raises, ter
     mocked_process.poll.return_value = [poll_return, 0]
     mocked_process.terminate.side_effect = [2]
     mocked_process.returncode = poll_return
-    mocker.patch('subprocess.Popen', return_value=mocked_process)
-    mocker.patch('os.openpty', return_value=(1, 2))
-    mocker.patch('os.close')
+    mocker.patch.object(subprocess, 'Popen', return_value=mocked_process)
+    mocker.patch.object(os, 'openpty', return_value=(1, 2))
+    mocker.patch.object(os, 'close')
+    mocker.patch.object(select, 'select', return_value=select_return)
+    mocker.patch.object(os, 'read', side_effect=OSError()) if read_raises else mocker.patch.object(
+        os, 'read', return_value=b'x')
+    mocker.patch.object(runc, '_filebind', return_value=mocker.Mock())
+    mocker.patch.object(runc._filebind, 'finish', return_value=mocker.Mock())
 
-    mocker.patch('select.select', return_value=select_return)
-    mocker.patch('subprocess.Popen', return_value=mocked_process)
-
-    if read_raises:
-        mocker.patch('os.read', side_effect=OSError())
-    else:
-        mocker.patch('os.read', return_value=b'x')
 
     if terminate_raises:
         mocked_process.terminate.side_effect = OSError()
 
-    runc._filebind = mocker.Mock()
-    runc._filebind.finish = mocker.Mock()
     result = runc.run_nopty(["some_cmd"])
     subprocess.Popen.assert_called_once_with(["some_cmd"], shell=False, close_fds=False, stdout=2, stderr=2)
     runc._filebind.finish.assert_called_once()
