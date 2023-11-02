@@ -5,7 +5,6 @@ udocker unit tests: ExecutionMode
 import os
 import random
 
-import mock
 import pytest
 
 from udocker.engine.execmode import ExecutionMode
