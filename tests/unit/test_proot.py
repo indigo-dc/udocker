@@ -144,8 +144,9 @@ class PRootEngineTestCase(TestCase):
         status = prex._get_volume_bindings()
         self.assertEqual(status, ['-b', '/tmp:/tmp', '-b', '/bbb:/bbb'])
 
+    @patch.object(PRootEngine, '_has_option')
     @patch('udocker.engine.proot.ExecutionEngineCommon._get_portsmap')
-    def test_06__get_network_map(self, mock_pmap):
+    def test_06__get_network_map(self, mock_pmap, mock_hasopt):
         """Test06 PRootEngine()._get_network_map()."""
         mock_pmap.return_value = {}
         prex = PRootEngine(self.local, self.xmode)
@@ -154,12 +155,14 @@ class PRootEngineTestCase(TestCase):
         self.assertEqual(status, [])
 
         mock_pmap.return_value = {}
+        mock_hasopt.side_effect = [True, True]
         prex = PRootEngine(self.local, self.xmode)
         prex.opt['netcoop'] = True
         status = prex._get_network_map()
         self.assertEqual(status, ['-n'])
 
         mock_pmap.return_value = {80: 8080, 443: 8443}
+        mock_hasopt.side_effect = [True, True]
         prex = PRootEngine(self.local, self.xmode)
         prex.opt['netcoop'] = True
         status = prex._get_network_map()
