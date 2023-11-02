@@ -230,7 +230,7 @@ def test_09__installation_exists(mocker, nvidia, logger, host_dir, cont_dir, fil
     mocker.patch.object(nvidia, '_files_exist', side_effect=file_exists)
 
     assert expected == nvidia._installation_exists(host_dir, cont_dir)
-    assert logger.info.call_count == info_log
+    assert logger.info.call_count == log_info
 
     if not expected:
         assert logger.info.call_args_list == [mocker.call('container has files from previous nvidia install')]
