@@ -2,6 +2,7 @@
 """
 udocker unit tests: ExecutionMode
 """
+import os
 import random
 
 import mock
@@ -12,6 +13,8 @@ from udocker.engine.fakechroot import FakechrootEngine
 from udocker.engine.proot import PRootEngine
 from udocker.engine.runc import RuncEngine
 from udocker.engine.singularity import SingularityEngine
+from udocker.helper.elfpatcher import ElfPatcher
+from udocker.utils.fileutil import FileUtil
 
 TMP_FOLDER = "/tmp"
 
@@ -41,24 +44,6 @@ def logger(mocker):
     return mocker_logger
 
 
-@pytest.fixture
-def mock_elfp(mocker):
-    mocker_elfp = mocker.patch('udocker.engine.execmode.ElfPatcher')
-    return mocker_elfp
-
-
-@pytest.fixture
-def mock_fileutil(mocker):
-    mock_fileutil = mocker.patch('udocker.engine.execmode.FileUtil')
-    return mock_fileutil
-
-
-@pytest.fixture
-def mock_filebind(mocker):
-    mocker_fbind = mocker.patch('udocker.engine.execmode.FileBind')
-    return mocker_fbind
-
-
 def test_01_init(exec_mode, localrepo, container_id):
     """Test01 ExecutionMode() constructor."""
     localrepo.cd_container.return_value = "/tmp"
@@ -75,7 +60,7 @@ def test_01_init(exec_mode, localrepo, container_id):
 
 
 @pytest.mark.parametrize('expected', ["P1", "P2", "F1", "F2", "F3", "F4", "R1", "R2", "R3", "S1"])
-def test_02_get_mode(exec_mode, mock_fileutil, expected):
+def test_02_get_mode(mocker, exec_mode, expected):
     """Test02 ExecutionMode().get_mode."""
     # forced mode
     exec_mode.force_mode = "P2"
@@ -83,40 +68,64 @@ def test_02_get_mode(exec_mode, mock_fileutil, expected):
 
     # selected mode
     exec_mode.force_mode = None
-    mock_fileutil.return_value.getdata.return_value.strip.return_value = expected
+    mocker_fileutil = mocker.patch.object(FileUtil, 'getdata', return_value=mocker.Mock())
+    mocker_fileutil.return_value.strip.return_value = expected
     assert exec_mode.get_mode() == expected
 
     # default mode
-    mock_fileutil.return_value.getdata.return_value.strip.return_value = None
+    mocker_fileutil.return_value.strip.return_value = None
     assert exec_mode.get_mode() == "P1"
 
 
-@pytest.mark.parametrize('mode,prev_mode,msg,force,expected', [
-    ("P1", "P1", [], True, True), ("P1", "P1", [], False, True),
-    ("P1", "P2", [], True, True), ("P1", "P2", [], False, True),
-    ("P1", "F3", [], True, True), ("P1", "F3", [mock.call("container setup failed")], False, False),
-    ("P1", "R3", [], True, True), ("P1", "R3", [], False, True),
-    ("R3", "S1", [], True, True), ("R3", "S1", [], False, True),
-    ("F2", "F3", [], True, True), ("F2", "F3", [mock.call('container setup failed')], False, False),
-    ("F2", "P1", [], True, True), ("F2", "P1", [], False, True),
-    ("F3", "P1", [], True, True), ("F3", "P1", [], False, True),
-    ("F3", "F4", [], True, True), ("F3", "F4", [], False, True),
-    ("NOMODE", "F4", [mock.call('invalid execmode: %s', 'NOMODE')], True, False),
-    ("NOMODE", "F4", [mock.call('invalid execmode: %s', 'NOMODE')], False, False),
-])
-def test_03_set_mode(mocker, exec_mode, logger, mock_elfp, mock_fileutil, mode, prev_mode, msg, force, expected):
-    """Test03 ExecutionMode().set_mode."""
-    mock_elfp.return_value.restore_ld.return_value = False
-    mock_elfp.return_value.restore_binaries.return_value = False
+@pytest.mark.parametrize('mode, prev_mode, mock_return_values, force, expected, error_msg', [
+    # Successful mode transitions
+    ("P1", "F3", {'restore_ld': True, 'restore_binaries': True}, False, True, None),
+    ("F2", "P1", {'restore_ld': True, 'restore_binaries': True}, False, False, "container setup failed"),
+    ("R3", "S1", {'restore_ld': True, 'restore_binaries': True}, False, True, None),
 
-    logger.reset_mock()
+    # force flag impact on failed restore
+    ("F2", "F3", {'restore_ld': False, 'restore_binaries': False}, True, True, None),
+    ("F3", "P1", {'restore_ld': False, 'restore_binaries': False}, True, True, None),
+
+    # invalid modes
+    ("NOMODE", "F4", {'restore_ld': True, 'restore_binaries': True}, False, False, "invalid execmode: %s"),
+
+    # mode transition with no operation needed
+    ("P1", "P1", {'restore_ld': True, 'restore_binaries': True}, False, True, None),
+
+    # transitions resulting in failure due to failed restoration
+    ("P1", "F3", {'restore_ld': False, 'restore_binaries': False}, False, False, "container setup failed"),
+    ("F2", "F3", {'restore_ld': False, 'restore_binaries': False}, False, False, "container setup failed"),
+
+    # failure in dependencies like FileUtil
+    ("F2", "P1", {'restore_ld': True, 'restore_binaries': True, 'links_conv': False}, False, False,
+     "container setup failed"),
+
+    # success filebind.restore()
+    ("P1", "R1", {'restore_ld': True, 'restore_binaries': True}, False, True, None),
+    ("F4", "F3", {'restore_ld': True, 'restore_binaries': True}, False, True, None),
+    ("F3", "F4", {'restore_ld': True, 'restore_binaries': True}, False, True, None),
+
+])
+def test_03_set_mode(mocker, exec_mode, logger, mode, prev_mode, mock_return_values, force, expected, error_msg):
+    """Test03 ExecutionMode().set_mode."""
+    mocker.patch.object(ElfPatcher, 'restore_ld', return_value=mock_return_values['restore_ld'])
+    mocker.patch.object(ElfPatcher, 'restore_binaries', return_value=mock_return_values['restore_binaries'])
+    mocker.patch.object(ElfPatcher, 'get_ld_libdirs')
+    mocker.patch.object(FileUtil, 'links_conv', return_value=mock_return_values.get('links_conv', True))
+
     mocker.patch.object(exec_mode, 'get_mode', return_value=prev_mode)
-    mocker.patch.object(mock_fileutil, 'links_conv')
+    mocker.patch.object(os.path, 'exists', return_value=True)
+    mocker.patch.object(os.path, 'isdir', return_value=True)
 
     status = exec_mode.set_mode(xmode=mode, force=force)
-    assert status is expected
-    assert logger.error.called == (not expected)
-    assert logger.error.call_args_list == msg
+    assert status == expected
+
+    if error_msg:
+        logger.error.assert_called_with(error_msg, mode) if '%s' in error_msg else logger.error.assert_called_with(
+            error_msg)
+    else:
+        logger.error.assert_not_called()
 
 
 @pytest.mark.parametrize('mode,expected', [
