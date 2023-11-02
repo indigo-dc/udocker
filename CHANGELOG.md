@@ -1,5 +1,9 @@
 # Changelog
 
+## udocker (1.3.12)
+
+* fix units tests, no modifications w.r.t. 1.3.11
+
 ## udocker (1.3.11)
 
 * add support for hard link to symbolic link conversion in Pn modes
