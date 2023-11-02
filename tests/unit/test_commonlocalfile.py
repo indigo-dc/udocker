@@ -117,12 +117,13 @@ class CommonLocalFileApiTestCase(TestCase):
         status = clfapi._untar_saved_container(tarfile, destdir)
         self.assertTrue(status)
 
+    @patch('udocker.commonlocalfile.ChkSUM.hash')
     @patch('udocker.commonlocalfile.HostInfo.parse_platform')
     @patch('udocker.commonlocalfile.FileUtil.size')
     @patch('udocker.commonlocalfile.HostInfo.osversion')
     @patch('udocker.commonlocalfile.HostInfo.arch')
     def test_06_create_container_meta(self, mock_arch, mock_version,
-                                      mock_size, mock_parseplatform):
+                                      mock_size, mock_parseplatform, mock_chksum):
         """Test06 CommonLocalFileApi().create_container_meta()."""
         layer_id = "12345"
         comment = "created by udocker"
@@ -130,21 +131,25 @@ class CommonLocalFileApiTestCase(TestCase):
         mock_arch.return_value = "x86_64"
         mock_version.return_value = "8"
         mock_size.return_value = 125
+        mock_chksum.return_value = 'abc123'
         clfapi = CommonLocalFileApi(self.local)
         status = clfapi.create_container_meta(layer_id, comment)
         self.assertEqual(status["id"], layer_id)
         self.assertEqual(status["comment"], comment)
+        self.assertEqual(status["rootfs"]["diff_ids"], ["sha256:" + 'abc123',])
         self.assertTrue(mock_arch.called)
         self.assertTrue(mock_version.called)
         self.assertTrue(mock_size.called)
+        self.assertTrue(mock_chksum.called)
 
+    @patch.object(CommonLocalFileApi, 'create_container_meta')
     @patch('udocker.commonlocalfile.Msg')
     @patch('udocker.commonlocalfile.os.rename')
     @patch('udocker.commonlocalfile.FileUtil.copyto')
     @patch('udocker.commonlocalfile.Unique.layer_v1')
     @patch('udocker.commonlocalfile.os.path.exists')
     def test_07_import_toimage(self, mock_exists, mock_layerv1,
-                               mock_copy, mock_rename, mock_msg):
+                               mock_copy, mock_rename, mock_msg, mock_contmeta):
         """Test07 CommonLocalFileApi().import_toimage()."""
         tarfile = "img.tar"
         imagerepo = "/home/.udocker/images"
@@ -217,17 +222,20 @@ class CommonLocalFileApiTestCase(TestCase):
         mock_layerv1.return_value = "12345"
         mock_copy.return_value = False
         mock_rename.return_value = None
+        mock_contmeta.return_value = {'a': '12'}
         clfapi = CommonLocalFileApi(self.local)
         status = clfapi.import_toimage(tarfile, imagerepo, tag, move_tarball)
         self.assertEqual(status, "12345")
         self.assertTrue(mock_layerv1.called)
+        self.assertTrue(mock_contmeta.called)
 
+    @patch.object(CommonLocalFileApi, 'create_container_meta')
     @patch('udocker.commonlocalfile.Msg')
     @patch('udocker.commonlocalfile.ContainerStructure.create_fromlayer')
     @patch('udocker.commonlocalfile.Unique.layer_v1')
     @patch('udocker.commonlocalfile.os.path.exists')
     def test_08_import_tocontainer(self, mock_exists, mock_layerv1,
-                                   mock_create, mock_msg):
+                                   mock_create, mock_msg, mock_contmeta):
         """Test08 CommonLocalFileApi().import_tocontainer()."""
         tarfile = ""
         imagerepo = ""
@@ -262,6 +270,7 @@ class CommonLocalFileApiTestCase(TestCase):
         mock_exists.return_value = True
         mock_layerv1.return_value = "12345"
         mock_create.return_value = "345"
+        mock_contmeta.return_value = {'a': '12'}
         clfapi = CommonLocalFileApi(self.local)
         status = clfapi.import_tocontainer(tarfile, imagerepo,
                                            tag, container_name)
@@ -270,6 +279,7 @@ class CommonLocalFileApiTestCase(TestCase):
         self.assertTrue(mock_layerv1.called)
         self.assertTrue(mock_create.called)
         self.assertEqual(status, "345")
+        self.assertTrue(mock_exists.called)
 
     @patch('udocker.commonlocalfile.Msg')
     @patch('udocker.commonlocalfile.ContainerStructure.clone_fromfile')
