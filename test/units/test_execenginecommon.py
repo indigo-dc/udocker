@@ -549,7 +549,7 @@ def test_19__set_cont_user_noroot(mocker, engine, logger, mocker_nixauth, user_i
     mocker.patch.object(engine, '_is_mountpoint', return_value=ismountpoint)
     create_user_mock = mocker.patch.object(engine, '_create_user')
 
-    engine.opt = {
+    mocker.patch.object(engine, 'opt', {
         "user": username,
         "hostauth": hostauth,
         "containerauth": containerauth,
@@ -560,7 +560,8 @@ def test_19__set_cont_user_noroot(mocker, engine, logger, mocker_nixauth, user_i
         'gecos': '*udocker*',
         'uid': uid,
         'gid': gid,
-    }
+    })
+    
     set_cont_user_noroot = engine._setup_container_user_noroot(user_input)
     assert set_cont_user_noroot == expected
     assert engine.opt["user"] == expected_username
