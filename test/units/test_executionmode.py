@@ -115,7 +115,6 @@ def test_03_set_mode(mocker, exec_mode, logger, mode, prev_mode, mock_return_val
 
     mocker.patch.object(exec_mode, 'get_mode', return_value=prev_mode)
     mocker.patch.object(os.path, 'exists', return_value=True)
-    mocker.patch.object(os.path, 'isdir', return_value=True)
 
     status = exec_mode.set_mode(xmode=mode, force=force)
     assert status == expected
