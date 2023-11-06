@@ -486,6 +486,7 @@ def test_13_export_tofile(mocker, container_struct, container_exists, tar_status
                         return_value=(None if not container_exists else '/ROOT'))
 
     mocker.patch.object(FileUtil, 'tar', return_value=tar_status)
+
     result = container_struct.export_tofile('/path_to/clone_file.tar')
 
     assert result == expected
@@ -535,13 +536,12 @@ def test_15_clone(mocker, container_struct, logger, source_exists, dest_setup, c
     mocker.patch.object(container_struct, 'imagerepo', 'imagerepo')
     mocker.patch.object(container_struct.localrepo, 'cd_container', return_value='/ROOT/src' if source_exists else None)
     mocker.patch.object(container_struct.localrepo, 'setup_container', return_value='/ROOT/dst' if dest_setup else None)
-
     mocker.patch.object(Unique, 'uuid', return_value='123456')
     mocker.patch.object(FileUtil, 'copydir', return_value=copydir)
     mocker.patch.object(container_struct, '_chk_container_root', return_value=root_check)
 
     result = container_struct.clone()
-    assert result == expected
 
+    assert result == expected
     logger.warning.called_once_with(log_warning, mocker.ANY) if log_warning else logger.warning.assert_not_called()
     logger.error.called_once_with(log_error, mocker.ANY) if log_error else logger.error.assert_not_called()

@@ -837,7 +837,7 @@ def test_27__check_platform(mocker, engine, logger, container_os, container_arch
 @pytest.mark.parametrize("xmode", ["F1", "P1"])
 def test_28__run_init(mocker, engine, error, container_dir, config_location, setup_result, volume, paths, executable,
                       expected):
-    """Test27 ExecutionEngineCommon()._run_init()."""
+    """Test28 ExecutionEngineCommon()._run_init()."""
     if error:
         mocker.patch.object(engine, '_run_load_metadata', side_effect=error)
     else:
@@ -898,7 +898,7 @@ def test_29__get_saved_osenv(mocker, engine, file_content, expected):
 ])
 @pytest.mark.parametrize("xmode", ["F1", "P1"])
 def test_30__is_same_osenv(mocker, engine, file_contents, osversion, oskernel, arch, osdistribution, error, expected):
-    """Test28 ExecutionEngineCommon()._is_same_osenv()."""
+    """Test30 ExecutionEngineCommon()._is_same_osenv()."""
     mocker.patch.object(HostInfo, 'osversion', return_value=osversion)
     mocker.patch.object(HostInfo, 'oskernel', return_value=oskernel)
     mocker.patch.object(HostInfo, 'arch', return_value=arch)
@@ -919,7 +919,7 @@ def test_30__is_same_osenv(mocker, engine, file_contents, osversion, oskernel, a
 ])
 @pytest.mark.parametrize("xmode", ["F1", "P1"])
 def test_31__save_osenv(mocker, engine, osversion, oskernel, arch, osdistribution, putdata_return, error, expected):
-    """Test29 ExecutionEngineCommon()._save_osenv()."""
+    """Test31 ExecutionEngineCommon()._save_osenv()."""
     mocker.patch.object(HostInfo, 'osversion', return_value=osversion)
     mocker.patch.object(HostInfo, 'oskernel', return_value=oskernel)
     mocker.patch.object(HostInfo, 'arch', return_value=arch)
@@ -950,7 +950,7 @@ def test_31__save_osenv(mocker, engine, osversion, oskernel, arch, osdistributio
 ])
 @pytest.mark.parametrize("xmode", ["F1", "P1"])
 def test_32__check_arch(mocker, engine, logger, is_same_arch, fail, expected_result, expected_log):
-    """ Test30 ExecutionEngineCommon()._check_arch()."""
+    """ Test32 ExecutionEngineCommon()._check_arch()."""
     mocker.patch.object(OSInfo, 'is_same_arch', return_value=is_same_arch)
 
     result = engine._check_arch(fail)
@@ -982,7 +982,7 @@ def test_32__check_arch(mocker, engine, logger, is_same_arch, fail, expected_res
 ])
 @pytest.mark.parametrize("xmode", ["F1", "P1"])
 def test_33__get_qemu(mocker, engine, logger, arch, qemu_exec_found, return_path, expected_result, expected_log):
-    """ Test31 ExecutionEngineCommon()._get_qemu()."""
+    """ Test33 ExecutionEngineCommon()._get_qemu()."""
     mocker.patch.object(OSInfo, 'arch', side_effect=arch)
     mocker.patch.object(FileUtil, 'find_exec', return_value="/path/to/qemu-arm" if qemu_exec_found else None)
 
