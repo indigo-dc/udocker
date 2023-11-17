@@ -42,119 +42,39 @@ def test_01_init(docker_local_api, localrepo):
     assert docker_local_api._imagerepo is None
 
 
-# FIXME: This test is broken
-# @pytest.mark.parametrize("listdir_output, isdir_output, load_json_output, expected_structure", [
-#     (["xx"], False, None, {"repolayers": {}, "repoconfigs": {}}),
-#     (["repositories"], False, {"REPO": ""}, {"repolayers": {}, "repoconfigs": {}, "repositories": {"REPO": ""}}),
-#     (["manifest.json"], False, {"REPO": ""}, {"repolayers": {}, "repoconfigs": {}, "manifest": {"REPO": ""}}),
-#     (["x" * 70 + ".json"], False, {"k": "v"}, {"repolayers": {}, "repoconfigs": {
-#         "x" * 70 + ".json": {"json": {"k": "v"}, "json_f": "/tmp/" + "x" * 70 + ".json"}}}),
-#     (["x" * 64], True, {"k": "v"}, {"repolayers": {"x" * 64: {"VERSION": {"k": "v"}}}, "repoconfigs": {}}),
-#     (["x" * 64], True, {"k": "v"},
-#      {"repolayers": {"x" * 64: {"json": {"k": "v"}, "json_f": "/tmp/" + "x" * 64 + "/json"}}, "repoconfigs": {}}),
-#     (
-#             ["x" * 64], True, None,
-#             {"repolayers": {"x" * 64: {"layer_f": "/tmp/" + "x" * 64 + "/layer1"}}, "repoconfigs": {}}),
-# ])
-# def test_02__load_structure(mocker, docker_local_api, localrepo, logger, listdir_output, isdir_output, load_json_output,
-#                             expected_structure):
-#     """Test02 DockerLocalFileAPI()._load_structure()."""
-#     tmp_imagedir = "/tmp"
-#     mocker.patch.object(os, 'listdir', return_value=listdir_output)
-#     mocker.patch.object(FileUtil, 'isdir', return_value=isdir_output)
-#     mocker.patch.object(localrepo, 'load_json', return_value=load_json_output)
-#     structure = docker_local_api._load_structure(tmp_imagedir)
-#
-#     assert structure == expected_structure
+@pytest.mark.parametrize("top_listdir_output, sub_listdir_output, isdir_output, load_json_output, expected_structure", [
+    ([], [], False, None, {"repolayers": {}, "repoconfigs": {}}),
+    (["xx"], [], False, None, {'repoconfigs': {}, 'repolayers': {'xx': {}}}),
+    (["repositories"], [], False, {"REPO": ""}, {"repolayers": {}, "repoconfigs": {}, "repositories": {"REPO": ""}}),
+    (["manifest.json"], [], False, {"REPO": ""}, {"repolayers": {}, "repoconfigs": {}, "manifest": {"REPO": ""}}),
+    (["x" * 70 + ".json"], [], False, {"k": "v"}, {"repolayers": {}, "repoconfigs": {
+        "x" * 70 + ".json": {"json": {"k": "v"}, "json_f": "/tmp/" + "x" * 70 + ".json"}}}),
+    (["x" * 64], [], True, None, {"repolayers": {"x" * 64: {}}, "repoconfigs": {}}),
+    (["x" * 64], ["random_file"], True, None, {"repolayers": {"x" * 64: {}}, "repoconfigs": {}}),
+    (["x" * 64], ["VERSION", "json"], True, {"k": "v"},
+     {"repolayers": {"x" * 64: {"VERSION": {"k": "v"}, "json": {"k": "v"}, "json_f": "/tmp/" + "x" * 64 + "/json"}},
+      "repoconfigs": {}}),
+    (["x" * 64], ["json"], True, {"k": "v"},
+     {"repolayers": {"x" * 64: {"json": {"k": "v"}, "json_f": "/tmp/" + "x" * 64 + "/json"}}, "repoconfigs": {}}),
+    (["x" * 64], ["repolayer1"], True, None,
+     {"repolayers": {"x" * 64: {"layer_f": "/tmp/" + "x" * 64 + "/repolayer1"}}, "repoconfigs": {}}),
+    (["x" * 64], ["VERSION", "json", "repolayer1"], True, {"k": "v"}, {"repolayers": {
+        "x" * 64: {"VERSION": {"k": "v"}, "json": {"k": "v"}, "json_f": "/tmp/" + "x" * 64 + "/json",
+                   "layer_f": "/tmp/" + "x" * 64 + "/repolayer1"}}, "repoconfigs": {}}),
+])
+def test_02__load_structure(mocker, docker_local_api, top_listdir_output, sub_listdir_output, isdir_output,
+                            load_json_output, expected_structure):
+    """Test02 DockerLocalFileAPI()._load_structure()."""
+    tmp_imagedir = "/tmp"
+    mocker.patch('os.listdir', side_effect=[top_listdir_output, sub_listdir_output])
+    mocker.patch.object(FileUtil, 'isdir', return_value=lambda path: path in top_listdir_output and isdir_output)
+    mocker.patch.object(FileUtil, 'isfile', return_value=lambda x: True if x.endswith('.json') else False)
+    mocker.patch.object(docker_local_api.localrepo, 'load_json', return_value=load_json_output)
+    structure = docker_local_api._load_structure(tmp_imagedir)
+
+    assert structure == expected_structure
 
 
-#         res = {'repoconfigs': {}, 'repolayers': {}}
-#         mock_ldir.return_value = ["xx"]
-#         dlocapi = DockerLocalFileAPI(self.local)
-#         structure = dlocapi._load_structure("/tmp")
-#         self.assertEqual(structure, res)
-#
-#         mock_isdir.return_value = False
-#         mock_ldir.return_value = ["repositories", ]
-#         self.local.load_json.return_value = {"REPO": "", }
-#         dlocapi = DockerLocalFileAPI(self.local)
-#         structure = dlocapi._load_structure("/tmp")
-#         res = {'repolayers': {}, 'repoconfigs': {},
-#                'repositories': {'REPO': ''}}
-#         self.assertEqual(structure, res)
-#
-#         mock_isdir.return_value = False
-#         mock_ldir.return_value = ["manifest.json", ]
-#         dlocapi = DockerLocalFileAPI(self.local)
-#         structure = dlocapi._load_structure("/tmp")
-#         res = {'repolayers': {}, 'repoconfigs': {},
-#                'manifest': {'REPO': ''}}
-#         self.assertEqual(structure, res)
-#
-#         jfname = "x" * 70 + ".json"
-#         res = {"repolayers": {},
-#                "repoconfigs": {jfname: {"json": {"k": "v"},
-#                                         "json_f": "/tmp/"+jfname}}}
-#         mock_isdir.return_value = False
-#         mock_ldir.return_value = [jfname, ]
-#         self.local.load_json.return_value = {"k": "v"}
-#         dlocapi = DockerLocalFileAPI(self.local)
-#         structure = dlocapi._load_structure("/tmp")
-#         self.assertEqual(structure, res)
-#
-#         fname = "x" * 64
-#         res = {"repolayers": {fname: {"VERSION": {"k": "v"}}},
-#                "repoconfigs": dict()}
-#         mock_isdir.return_value = True
-#         mock_ldir.side_effect = [[fname, ], ["VERSION", ], ]
-#         self.local.load_json.return_value = {"k": "v"}
-#         dlocapi = DockerLocalFileAPI(self.local)
-#         structure = dlocapi._load_structure("/tmp")
-#         self.assertEqual(structure, res)
-#
-#         fname = "x" * 64
-#         fulllayer = "/tmp/" + fname + "/json"
-#         res = {"repolayers": {fname: {"json": {"k": "v"},
-#                                       "json_f": fulllayer}},
-#                "repoconfigs": dict()}
-#         mock_isdir.return_value = True
-#         mock_ldir.side_effect = [[fname, ], ["json", ], ]
-#         self.local.load_json.return_value = {"k": "v"}
-#         dlocapi = DockerLocalFileAPI(self.local)
-#         structure = dlocapi._load_structure("/tmp")
-#         self.assertEqual(structure, res)
-#
-#         fname = "x" * 64
-#         fulllayer = "/tmp/" + fname + "/layer1"
-#         res = {"repolayers": {fname: {"layer_f": fulllayer}},
-#                "repoconfigs": dict()}
-#         mock_isdir.return_value = True
-#         mock_ldir.side_effect = [[fname, ], ["layer1", ], ]
-#         self.local.load_json.return_value = {"k": "v"}
-#         dlocapi = DockerLocalFileAPI(self.local)
-#         structure = dlocapi._load_structure("/tmp")
-#         self.assertEqual(structure, res)
-#
-
-# @pytest.mark.parametrize("structure, my_layer_id, expected_top_layer_id", [
-#     # Empty repolayers
-#     ({"repolayers": {}}, "", ""),
-#
-#     # Single layer
-#     ({"repolayers": {"layer1": {"json": {}}}}, "", "layer1"),
-#
-#     # Multiple layers
-#     ({"repolayers": {"layer1": {"json": {"parent": "layer2"}},
-#                      "layer2": {"json": {}}}}, "", "layer2"),
-#
-#     # Non-existent my_layer_id
-#     ({"repolayers": {"layer1": {"json": {}}}}, "layer3", ""),
-#
-#     # Specified my_layer_id
-#     ({"repolayers": {"layer1": {"json": {"parent": "layer2"}},
-#                      "layer2": {"json": {"parent": "layer3"}},
-#                      "layer3": {"json": {}}}}, "layer1", "layer3"),
-# ])
 @pytest.mark.parametrize("structure, my_layer_id, expected_top_layer_id", [
     ({}, "", ""),
     ({"repolayers": {"12345": {"json": {"parent": "v1"}, "json_f": "/tmp/12345/json"}}, "repoconfigs": {}}, "v1",
@@ -274,132 +194,52 @@ def test_08_load(mocker, docker_local_api, tmp_imagedir, imagerepo, load_structu
     assert result == expected
 
 
-#         tmp_imgdir = "/tmp/img1"
-#         mock_lstruct.return_value = dict()
-#         dlocapi = DockerLocalFileAPI(self.local)
-#         status = dlocapi.load(tmp_imgdir)
-#         self.assertEqual(status, [])
-#
-#         tmp_imgdir = "/tmp/img1"
-#         fname = "x" * 64
-#         fulllayer = "/tmp/" + fname + "/layer1"
-#         struc = {"repolayers": {fname: {"layer_f": fulllayer}},
-#                  "repositories": ["repo1", "repo2"]}
-#         mock_lstruct.return_value = struc
-#         mock_lrepo.return_value = ["repo1", "repo2"]
-#         dlocapi = DockerLocalFileAPI(self.local)
-#         status = dlocapi.load(tmp_imgdir)
-#         self.assertEqual(status, ["repo1", "repo2"])
-#
-#         struc = {"repolayers": {fname: {"layer_f": fulllayer}},
-#                  "manifest": dict()}
-#         mock_lstruct.return_value = struc
-#         mock_unique.return_value.imagename.return_value = "xyz123"
-#         mock_unique.return_value.imagetag.return_value = "tag1"
-#         mock_loadimg.return_value = ["repo1", "repo2"]
-#         dlocapi = DockerLocalFileAPI(self.local)
-#         status = dlocapi.load(tmp_imgdir)
-#         self.assertEqual(status, ["repo1", "repo2"])
-#
+@pytest.mark.parametrize("get_image_attributes, save_json, dict_returns, expected", [
+    ((None, None), [False, True],
+     {"cd_imagerepo": None, "copyto": True, "putdata": True, "rename": True, "os_exists": False}, False),
+    (("/cont/lname1.layer", ["layer_f"]), [False, True],
+     {"cd_imagerepo": None, "copyto": True, "putdata": True, "rename": True, "os_exists": False}, False),
+    (("/cont/lname1.layer", ["lname1.layer"]), [True, True],
+     {"cd_imagerepo": None, "copyto": False, "putdata": True, "rename": True, "os_exists": False}, False),
+    (("/layer_f", ["layer_f"]), [True, True],
+     {"cd_imagerepo": None, "copyto": False, "putdata": True, "rename": True, "os_exists": False}, False),
+    (("/cont/lname1.layer", ["lname1.layer"]), [True, False],
+     {"cd_imagerepo": None, "copyto": True, "putdata": True, "rename": True, "os_exists": False}, False),
+    (("/cont/lname1.layer", ["lname1.layer"]), [True, True],
+     {"cd_imagerepo": None, "copyto": True, "putdata": False, "rename": True, "os_exists": False}, False),
+    (("/cont/lname1.layer", ["lname1.layer"]), [True, True],
+     {"cd_imagerepo": None, "copyto": False, "putdata": True, "rename": True, "os_exists": True}, True),
+    (("/cont/lname1.layer", ["lname1.layer"]), [True, True],
+     {"cd_imagerepo": None, "copyto": True, "putdata": True, "rename": True, "os_exists": False}, True),
+])
+def test_09__save_image(mocker, docker_local_api, get_image_attributes, save_json, dict_returns, expected):
+    """Test09 DockerLocalFileAPI()._save_image()."""
+    imagerepo = "imagerepo"
+    tag = "tag"
+    structure = {"repositories": {}, "manifest": []}
+    tmp_imagedir = "/tmp/tmp_imagedir"
 
+    mocker.patch.object(docker_local_api.localrepo, 'cd_imagerepo', return_value=dict_returns['cd_imagerepo'])
+    mocker.patch.object(docker_local_api.localrepo, 'get_image_attributes', return_value=get_image_attributes)
+    mocker.patch.object(docker_local_api.localrepo, 'save_json', side_effect=save_json)
+    mocker.patch.object(FileUtil, 'rename', return_value=dict_returns['rename'])
+    mocker.patch.object(FileUtil, 'copyto', return_value=dict_returns['copyto'])
+    mocker.patch.object(FileUtil, 'putdata', return_value=dict_returns['putdata'])
+    mocker.patch('os.path.exists', return_value=dict_returns['os_exists'])
 
-# FIXME: This test is broken
-# @pytest.mark.parametrize("save_json_results, copyto_result, putdata_result, expected_result", [
-#     ([False], True, True, False), # save_json fails
-#     ([True], False, True, False),  # copyto fails
-#     ([True, True, False], True, True, False), # save JSON fails
-#     ([True, True, True], True, False, False), # VERSION file
-#     ([True, True, True], True, True, True), # Successful
-# ])
-# def test_09__save_image(mocker, docker_local_api, save_json_results, copyto_result, putdata_result, expected_result):
-#     """Test09 DockerLocalFileAPI()._save_image()."""
-#     mocker.patch.object(docker_local_api.localrepo, 'cd_imagerepo')
-#     mocker.patch.object(docker_local_api.localrepo, 'get_image_attributes',
-#                         return_value=("container_json", ["layer_f"]))
-#     save_json_mock = mocker.patch.object(docker_local_api.localrepo, 'save_json', side_effect=save_json_results)
-#     mocker.patch.object(FileUtil, 'rename')
-#     copyto_mock = mocker.patch.object(FileUtil, 'copyto', return_value=copyto_result)
-#     putdata_mock = mocker.patch.object(FileUtil, 'putdata', return_value=putdata_result)
-#
-#     imagerepo = "imagerepo"
-#     tag = "tag"
-#     structure = {"repositories": {}, "manifest": []}
-#     tmp_imagedir = "/tmp/tmp_imagedir"
-#
-#     result = docker_local_api._save_image(imagerepo, tag, structure, tmp_imagedir)
-#
-#     assert result == expected_result
+    result = docker_local_api._save_image(imagerepo, tag, structure, tmp_imagedir)
 
+    assert result == expected
 
-#         imgrepo = "img1"
-#         tag = "tag1"
-#         struct = dict()
-#         tmp_imgdir = "/tmp/img1"
-#         manifest = dict()
-#         self.local.cd_imagerepo.return_value = None
-#         self.local.get_image_attributes.return_value = (manifest, ['/cont/lname1.layer'])
-#         self.local.save_json.side_effect = [False, True]
-#         dlocapi = DockerLocalFileAPI(self.local)
-#         status = dlocapi._save_image(imgrepo, tag, struct, tmp_imgdir)
-#         self.assertFalse(status)
-#
-#         imgrepo = "IMAGE"
-#         tag = "tag1"
-#         fname = "x" * 64
-#         fulllayer = "/tmp/" + fname + "/layer1"
-#         struc = {"repolayers": {fname: {"layer_f": fulllayer}},
-#                  "repositories": {"IMAGE": {"TAG": "tag1", }, }}
-#         tmp_imgdir = "/tmp/img1"
-#         manifest = {
-#             "fsLayers": ({"blobSum": "foolayername"},),
-#             "history": ({"v1Compatibility": '["foojsonstring"]'},)
-#         }
-#         mock_sha256.return_value = "8a29a15cefaeccf6545f7ecf11298f9672d2f0cdaf9e357a95133ac3ad3e1f07"
-#         mock_rename.return_value = None
-#         mock_osbase.return_value = "lname1.layer"
-#         mock_exists.return_value = False
-#         mock_mkdir.return_value = None
-#         mock_copyto.return_value = False
-#         self.local.cd_imagerepo.return_value = None
-#         self.local.get_image_attributes.return_value = (manifest, ['/cont/lname1.layer'])
-#         self.local.save_json.side_effect = [True, True]
-#         dlocapi = DockerLocalFileAPI(self.local)
-#         status = dlocapi._save_image(imgrepo, tag, struc, tmp_imgdir)
-#         self.assertFalse(status)
-#
-#         imgrepo = "repo1"
-#         tag = "tag1"
-#         fname = "x" * 64
-#         fulllayer = "/tmp/" + fname + "/lname1.layer"
-#         manifest = {
-#             "fsLayers": ({"blobSum": "foolayername"},),
-#             "history": ({"v1Compatibility": '["foojsonstring"]'},)
-#         }
-#         struc = {"repolayers": {fname: {"layer_f": fulllayer}},
-#                  "repositories": {"repo1": {"TAG": "tag1", }, },
-#                  "manifest": [manifest]}
-#         tmp_imgdir = "/tmp/img1"
-#         mock_sha256.return_value = "8a29a15cefaeccf6545f7ecf11298f9672d2f0cdaf9e357a95133ac3ad3e1f07"
-#         mock_rename.return_value = None
-#         mock_osbase.return_value = "lname1.layer"
-#         mock_exists.return_value = False
-#         mock_mkdir.return_value = None
-#         mock_copyto.return_value = True
-#         mock_meta.return_value = dict()
-#         self.local.save_json.return_value = True
-#         mock_put.return_value = True
-#         self.local.cd_imagerepo.return_value = None
-#         self.local.get_image_attributes.return_value = (manifest, ['/cont/lname1.layer'])
-#         self.local.save_json.side_effect = [True, True]
-#         dlocapi = DockerLocalFileAPI(self.local)
-#         status = dlocapi._save_image(imgrepo, tag, struc, tmp_imgdir)
-#         self.assertTrue(status)
-#
-#     @patch.object(DockerLocalFileAPI, '_save_image')
-#     @patch('udocker.docker.FileUtil.remove')
-#     @patch('udocker.docker.FileUtil.tar')
-#     @patch('udocker.docker.os.makedirs')
-#     @patch('udocker.docker.FileUtil.mktmp')
+    if result:
+        assert structure["manifest"]
+        for manifest_item in structure["manifest"]:
+            assert manifest_item["Config"].endswith(".json")
+            assert isinstance(manifest_item["Layers"], list)
+            assert manifest_item["RepoTags"] == [f"{imagerepo}:{tag}"]
+    else:
+        assert not structure["manifest"]
+
 
 @pytest.mark.parametrize("make_dirs_result, save_image_results, tar_result, imagetag_list, expected", [
     (False, [], True, [("imagerepo1", "tag1")], False),
