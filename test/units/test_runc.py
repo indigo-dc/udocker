@@ -20,6 +20,7 @@ from udocker.engine.execmode import ExecutionMode
 from udocker.engine.nvidia import NvidiaMode
 from udocker.engine.runc import RuncEngine
 from udocker.helper.hostinfo import HostInfo
+from udocker.utils.filebind import FileBind
 from udocker.utils.fileutil import FileUtil
 
 XMODE = ["P1", "P2"]
@@ -103,7 +104,6 @@ def test_02_select_runc(mocker, runc, logger, conf, runc_path, crun_path, arch,
                         find_file, os_exists, error, expected_exec, expected_type):
     """Test02 RuncEngine().select_runc()."""
     mocker.patch.object(runc, 'executable', conf)
-    mocker.patch.object(FileUtil, 'find_exec', side_effect=[runc_path, crun_path])
     mocker.patch.object(FileUtil, 'find_exec', side_effect=[runc_path, crun_path])
     mocker.patch.object(HostInfo, 'arch', return_value=arch)
     mocker.patch.object(FileUtil, 'find_file_in_dir', return_value=find_file)
@@ -359,7 +359,6 @@ def test_11__add_devices(mocker, runc, devices, nvidia_mode_return, nvidia_devic
 @pytest.mark.parametrize('xmode', XMODE)
 def test_12__add_mount_spec(mocker, runc, rwmode, options, expected):
     """Test12 RuncEngine()._add_mount_spec()."""
-
     mocker.patch.object(runc, '_cont_specjson', {"mounts": []})
     host_source = "/HOSTDIR"
     cont_dest = "/CONTDIR"
@@ -420,26 +419,7 @@ def test_15__mod_mount_spec(mocker, fresh_runc, mount, host_source, cont_dest, n
 
     assert result == expected
     assert fresh_runc._cont_specjson["mounts"] == expected_mounts
-
-    # optnew = {"options": ["a", "su"]}
-    # mock_selmount.return_value = None
-    # rcex = RuncEngine(self.local, self.xmode)
-    # status = rcex._mod_mount_spec("/HOSTDIR", "/CONTDIR", optnew)
-    # self.assertFalse(status)
-    #
-    # optnew = {"options": ["a", "su"]}
-    # mock_selmount.return_value = 0
-    # rcex = RuncEngine(self.local, self.xmode)
-    # rcex._container_specjson = dict()
-    # rcex._container_specjson["mounts"] = []
-    # mount = {"destination": "/CONTDIR",
-    #          "type": "none",
-    #          "source": "/HOSTDIR",
-    #          "options": ["a"], }
-    # rcex._container_specjson["mounts"].append(mount)
-    # status = rcex._mod_mount_spec("/HOSTDIR", "/CONTDIR", optnew)
-    # self.assertTrue(status)
-    # self.assertEqual(len(rcex._container_specjson["mounts"]), 1)
+    # FIXME: this test fails, need to be fixed
 
 
 @pytest.mark.parametrize(
@@ -560,6 +540,7 @@ def test_18__proot_overlay(mocker, runc, xmode, executable, proot_noseccomp, exp
 def test_19_run(mocker, runc, log_level, init_result, load_spec, load_spec_new, container_dir,
                 iswriteable_container, is_tty, expected, call):
     """Test19 RuncEngine().run()."""
+    mocker.patch.object(runc.localrepo, 'cd_container', return_value=container_dir)
     mocker.patch.object(runc, '_run_init', return_value=init_result)
     mocker.patch.object(runc, '_check_arch')
     mocker.patch.object(runc, '_run_invalid_options')
@@ -583,6 +564,7 @@ def test_19_run(mocker, runc, log_level, init_result, load_spec, load_spec_new, 
     mocker.patch.object(runc, 'select_runc')
     mocker.patch.object(runc, '_run_banner')
     mocker.patch.object(runc, '_set_cpu_affinity', return_value=[0, ])
+    mocker.patch.object(os.path, 'realpath', return_value='/path/to/docker')
 
     mocker.patch.object(runc, 'opt', {'cmd': ['ls', '-la']})
     mocker.patch.object(Config, 'conf', {'runc_nomqueue': True, 'tmpdir': '/tmp', 'use_runc_executable': True,
@@ -637,7 +619,6 @@ def test_21_run_nopty(mocker, runc, poll_return, select_return, read_raises, ter
         os, 'read', return_value=b'x')
     mocker.patch.object(runc, '_filebind', return_value=mocker.Mock())
     mocker.patch.object(runc._filebind, 'finish', return_value=mocker.Mock())
-
 
     if terminate_raises:
         mocked_process.terminate.side_effect = OSError()

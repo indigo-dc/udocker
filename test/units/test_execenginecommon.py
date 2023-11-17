@@ -29,7 +29,9 @@ def container_id():
 
 @pytest.fixture
 def localrepo(mocker, container_id):
-    return mocker.patch('udocker.container.localrepo.LocalRepository')
+    mock_localrepo = mocker.patch('udocker.container.localrepo.LocalRepository')
+    mock_localrepo.return_value.cd_imagerepo.return_value = "/ROOT"
+    return mock_localrepo
 
 
 @pytest.fixture
@@ -838,6 +840,7 @@ def test_27__check_platform(mocker, engine, logger, container_os, container_arch
 def test_28__run_init(mocker, engine, error, container_dir, config_location, setup_result, volume, paths, executable,
                       expected):
     """Test28 ExecutionEngineCommon()._run_init()."""
+    mocker.patch.object(engine.localrepo, 'cd_container', return_value="/path/to/container")
     if error:
         mocker.patch.object(engine, '_run_load_metadata', side_effect=error)
     else:
