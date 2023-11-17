@@ -1121,13 +1121,15 @@ def test_46__load_structure(mocker, localrepo, logger, imagetagdir_exists, file_
      "layer1"),
     ({"repolayers": {"layer1": {"json": {"parent": "layer2"}}, "layer2": {"json": {"parent": "layer3"}},
                      "layer3": {"json": {}}}}, "layer1", "layer1"),
+    ({"repolayers": {"layer1": {"json": {"parent": "layer2"}},
+                     "layer2": {"json": {}}}, "repoconfigs": {}}, "layer2", "layer1"),
+
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
 def test_47__find_top_layer_id(localrepo, structure, my_layer_id, expected_top_layer_id):
     """Test47 LocalRepository()._find_top_layer_id"""
     result = localrepo._find_top_layer_id(structure, my_layer_id)
     assert result == expected_top_layer_id
-    # FIXME: recursive call is hard to test it
 
 
 @pytest.mark.parametrize("structure, top_layer_id, expected", [
@@ -1158,23 +1160,25 @@ def test_49__split_layer_id(localrepo, layer_id, expected):
     assert result == expected
 
 
-@pytest.mark.parametrize("layer_id, layer_f, cur_tagdir, layer_f_exists, islink, layer_target_exists, filetype, tar, checksum, expected", [
-    ("sha256:abc123", "/path/to/layer", "/path/to/tagdir", False, False, False, "", True, True, False),
-    ("sha256:abc123", "/path/to/layer", "/path/to/tagdir", True, True, False, "", True, True, False),
-    ("sha256:abc123", "/path/to/layer", "/path/to/tagdir", True, True, True, "text", True, True, True),
-    ("sha256:abc123", "/path/to/layer", "/path/to/tagdir", True, True, True, "gzip", False, True, False),
-    ("sha256:abc123", "/path/to/layer", "/path/to/tagdir", True, True, True, "gzip", True, True, True),
-    ("sha256:abc123", "/path/to/layer", "/path/to/tagdir", True, True, True, "gzip", True, False, False),
-], ids=[
-    "Layer file does not exist or is not a symlink",
-    "The target of the symlink does not exist",
-    "Layer file exists, is a symlink, target exists, but not gzip",
-    "Gzip file, tar verification fails",
-    "Gzip file, tar verification succeeds, checksum matches",
-    "Gzip file, tar verification succeeds, checksum does not match",
-])
+@pytest.mark.parametrize(
+    "layer_id, layer_f, cur_tagdir, layer_f_exists, islink, layer_target_exists, filetype, tar, checksum, expected", [
+        ("sha256:abc123", "/path/to/layer", "/path/to/tagdir", False, False, False, "", True, True, False),
+        ("sha256:abc123", "/path/to/layer", "/path/to/tagdir", True, True, False, "", True, True, False),
+        ("sha256:abc123", "/path/to/layer", "/path/to/tagdir", True, True, True, "text", True, True, True),
+        ("sha256:abc123", "/path/to/layer", "/path/to/tagdir", True, True, True, "gzip", False, True, False),
+        ("sha256:abc123", "/path/to/layer", "/path/to/tagdir", True, True, True, "gzip", True, True, True),
+        ("sha256:abc123", "/path/to/layer", "/path/to/tagdir", True, True, True, "gzip", True, False, False),
+    ], ids=[
+        "Layer file does not exist or is not a symlink",
+        "The target of the symlink does not exist",
+        "Layer file exists, is a symlink, target exists, but not gzip",
+        "Gzip file, tar verification fails",
+        "Gzip file, tar verification succeeds, checksum matches",
+        "Gzip file, tar verification succeeds, checksum does not match",
+    ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_verify_layer_file(mocker, localrepo, layer_id, layer_f, cur_tagdir, layer_f_exists, islink, layer_target_exists, filetype, tar, checksum, expected):
+def test_verify_layer_file(mocker, localrepo, layer_id, layer_f, cur_tagdir, layer_f_exists, islink,
+                           layer_target_exists, filetype, tar, checksum, expected):
     mocker.patch.object(localrepo, 'cur_tagdir', cur_tagdir)
     structure = {"repolayers": {layer_id: {"layer_f": layer_f}}}
     mocker.patch.object(os.path, 'exists', side_effect=lambda x: {
@@ -1189,7 +1193,6 @@ def test_verify_layer_file(mocker, localrepo, layer_id, layer_f, cur_tagdir, lay
 
     result = localrepo._verify_layer_file(structure, "sha256:abc123")
     assert result == expected
-
 
 
 @pytest.mark.parametrize("structure, log_info, log_errors, expected_result", [
