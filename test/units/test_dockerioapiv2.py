@@ -83,7 +83,7 @@ def test_02_split_fields(dockerioapiv2, input_buf, expected_output):
     "Invalid authentication header",
 ])
 def test_03_get_auth(mocker, dockerioapi, dockerioapiv2, www_authenticate, v2_auth_token, auth_url_response, retry,
-                  expected_header):
+                     expected_header):
     """Test03 DockerIoAPIv2().get_auth()."""
     dockerioapiv2.v2_auth_token = v2_auth_token
     mocker.patch.object(dockerioapi, 'get_url', return_value=({}, BytesIO(auth_url_response.encode())))
@@ -193,13 +193,6 @@ def test_08_get_digest_from_image_index(dockerioapiv2, image_index, platform, ex
      {"schemaVersion": 2}),
     (b'invalid', 'docker.distribution.manifest.v2', "", {}),
     (b'{"config": {"digest": "digest1"}}', 'unsupported', "", {}),
-], ids=[
-    "Valid manifest v2 response",
-    "Valid manifest v1 response",
-    "OCI image manifest response",
-    "Invalid response format",
-    "Unsupported content type",
-    "Valid manifest v2 response",
 ])
 def test_get_image_manifest(mocker, dockerioapiv2, response_content, content_type, platform, expected_manifest):
     imagerepo = "test/repo"
