@@ -2,7 +2,6 @@
 """
 udocker unit tests: DockerIoAPI
 """
-import io
 import random
 from io import BytesIO
 
@@ -130,51 +129,236 @@ def test_06__is_layer_name(dockerioapi, layername, expected):
     result = dockerioapi.is_layer_name(layername)
     assert result == expected
 
-#
-# @pytest.mark.parametrize("initial_status_code, retry_count, follow_count, final_status_code, expected", [
-#     (200, 3, 3, 200, "Success"),
-#     (500, 0, 3, 500, "Fail"),
-#     (302, 3, 1, 200, "Redirected"),
-#     (401, 2, 3, 200, "Authenticated"),
-#     (401, 3, 3, 401, "Unauthorized"),
-# ])
-# def test_07__get_url(mocker, dockerioapi, initial_status_code, retry_count, follow_count, final_status_code,
-#                      expected):
-#     """Test07 DockerIoAPI()._get_url()."""
-#     MockHeader = type('MockHeader', (object,), {'data': {}})
-#     first_mock_header = MockHeader()
-#     first_mock_header.data = {"X-ND-HTTPSTATUS": initial_status_code, "location": "http://redirect.location"}
-#     second_mock_header = MockHeader()
-#     second_mock_header.data = {"X-ND-HTTPSTATUS": final_status_code}
-#
-#     mock_curl_get = mocker.patch.object(dockerioapi.curl, 'get', side_effect=[
-#         (first_mock_header, BytesIO(b"Initial response")),
-#         (second_mock_header, io.BytesIO(b"Final response"))
-#     ])
-#
-#     mocker.patch.object(dockerioapi.curl, 'get_status_code',
-#                         side_effect=lambda hdr: hdr if isinstance(hdr, int) else hdr.data["X-ND-HTTPSTATUS"])
-#     mocker.patch.object(dockerioapi.v2api, 'get_auth', return_value="Bearer token")
-#     mocker.patch.object(dockerioapi.v1api, 'get_auth', return_value="Basic auth")
-#
-#     url = "http://example.com"
-#     (hdr, buf) = dockerioapi.get_url(url, RETRY=retry_count, FOLLOW=follow_count)
-#
-#     assert hdr.data["X-ND-HTTPSTATUS"] == final_status_code
-#     buffer_content = buf.getvalue().decode()
-#     if expected == "Success":
-#         assert "Success" in buffer_content
-#     elif expected == "Fail":
-#         assert "Fail" in buffer_content
-#     elif expected == "Redirected":
-#         assert "Redirected" in buffer_content
-#     elif expected == "Authenticated":
-#         assert "Authenticated" in buffer_content
-#     elif expected == "Unauthorized":
-#         assert "Unauthorized" in buffer_content and "www-authenticate" not in hdr.data
-#
-#     mock_curl_get.assert_called()
-#
+
+@pytest.mark.parametrize("params", [
+    # Scenario 1: Successful request with status code 200
+    {
+        'url': "http://some1.org/test",
+        'retry': 3,
+        'follow': 3,
+        'status_code': 200,
+        'www_authenticate': None,
+        'retry_result': None,
+        'follow_result': None,
+        'location': None,
+        'header': None,
+        'expected_header': {},
+        'expected_buffer': "response body",
+        'expected_status_code': 200
+    },
+
+    # no retry
+    {
+        'url': "http://some1.org/test",
+        'retry': -1,
+        'follow': -1,
+        'status_code': 200,
+        'www_authenticate': None,
+        'retry_result': None,
+        'follow_result': None,
+        'location': None,
+        'header': None,
+        'expected_header': {},
+        'expected_buffer': "response body",
+        'expected_status_code': 200
+    },
+
+    # no retry
+    {
+        'url': "http://some1.org/test",
+        'retry': 2,
+        'follow': None,
+        'status_code': 401,
+        'www_authenticate': None,
+        'retry_result': None,
+        'follow_result': None,
+        'location': "http://some1.org/test",
+        'header': None,
+        'expected_header': {},
+        'expected_buffer': "response body",
+        'expected_status_code': 401
+    },
+
+    # Scenario 2: Request with status code 401 and v1 authentication
+    {
+        'url': "http://some1.org/v1/test",
+        'retry': 3,
+        'follow': 3,
+        'status_code': 401,
+        'www_authenticate': "Token",
+        'retry_result': None,
+        'follow_result': None,
+        'location': None,
+        'header': None,
+        'expected_header': {'X-ND-HTTPSTATUS': 401, 'www-authenticate': 'Token'},
+        'expected_buffer': "response body",
+        'expected_status_code': 401
+    },
+
+    # Scenario 2: Request with status code 401 and v1 authentication
+    {
+        'url': "http://some1.org/v1/test",
+        'retry': 3,
+        'follow': 3,
+        'status_code': 401,
+        'www_authenticate': "Token",
+        'retry_result': None,
+        'follow_result': None,
+        'location': "http://some1.org/v1/test",
+        'header': None,
+        'expected_header': {'X-ND-CURLSTATUS': 13, 'X-ND-HTTPSTATUS': 401, 'location': 'http://some1.org/v1/test',
+                            'www-authenticate': 'Token'},
+        'expected_buffer': "response body",
+        'expected_status_code': 401
+    },
+
+    # Scenario 3: Request with status code 401 and v2 authentication
+    {
+        'url': "http://some1.org/v2/test",
+        'retry': 3,
+        'follow': 3,
+        'status_code': 401,
+        'www_authenticate': "Bearer",
+        'retry_result': 2,
+        'follow_result': None,
+        'location': "http://some1.org/v1/test",
+        'header': None,
+        'expected_header': {'X-ND-CURLSTATUS': 13, 'X-ND-HTTPSTATUS': 401, 'location': 'http://some1.org/v1/test',
+                            'www-authenticate': 'Bearer'},
+        'expected_buffer': "response body",
+        'expected_status_code': 401
+    },
+
+    # Scenario 5: Request with insufficient retries leading to failure
+    {
+        'url': "http://some1.org/fail",
+        'retry': 1,
+        'follow': 3,
+        'status_code': 500,
+        'www_authenticate': None,
+        'retry_result': 0,
+        'follow_result': None,
+        'location': None,
+        'header': None,
+        'expected_header': {},
+        'expected_buffer': "error body",
+        'expected_status_code': 500
+    },
+
+    # Scenario 7: Request with error="insufficient_scope" in www-authenticate
+    {
+        'url': "http://some1.org/insufficient-scope",
+        'retry': 3,
+        'follow': 3,
+        'status_code': 401,
+        'www_authenticate': 'error="insufficient_scope"',
+        'retry_result': None,
+        'follow_result': None,
+        'location': None,
+        'header': None,
+        'expected_header': {},
+        'expected_buffer': "error body",
+        'expected_status_code': 401
+    },
+
+    {
+        'url': "http://some1.org/insufficient-scope/v1/",
+        'retry': 3,
+        'follow': 3,
+        'status_code': 401,
+        'www_authenticate': 'error="insufficient_scope" realm="some-realm" header="header"',
+        'retry_result': None,
+        'follow_result': None,
+        'location': None,
+        'header': None,
+        'expected_header': {},
+        'expected_buffer': "error body",
+        'expected_status_code': 401
+    },
+
+    {
+        'url': "http://some1.org/insufficient-scope",
+        'retry': 3,
+        'follow': 3,
+        'status_code': 401,
+        'www_authenticate': 'realm="some-realm" error="insufficient_scope"',
+        'retry_result': None,
+        'follow_result': None,
+        'location': "http://some1.org/insufficient-scope/v1/",
+        'header': 'header',
+        'expected_header': {},
+        'expected_buffer': "error body",
+        'expected_status_code': 401
+    },
+
+    {
+        'url': "http://some1.org/insufficient-scope/v1/",
+        'retry': 3,
+        'follow': 3,
+        'status_code': 401,
+        'www_authenticate': 'realm="some-realm" header="header"',
+        'retry_result': None,
+        'follow_result': None,
+        'location': None,
+        'header': None,
+        'expected_header': {},
+        'expected_buffer': "error body",
+        'expected_status_code': 401
+    },
+
+    {
+        'url': "http://some1.org/insufficient-scope/v2/",
+        'retry': 3,
+        'follow': 3,
+        'status_code': 401,
+        'www_authenticate': 'realm="some-realm" header="header"',
+        'retry_result': None,
+        'follow_result': None,
+        'location': None,
+        'header': None,
+        'expected_header': {},
+        'expected_buffer': "error body",
+        'expected_status_code': 401
+    },
+])
+def test_07_get_url(mocker, dockerioapi, params):
+    """Test07 DockerIoAPI()._get_url()."""
+    mock_hdr = mocker.Mock()
+    mock_hdr.data = {"X-ND-HTTPSTATUS": params['status_code'], "www-authenticate": params['www_authenticate']}
+
+    if params['location']:
+        mock_hdr.data.update({"location": params['location']})
+
+    mock_curl_get = mocker.patch.object(dockerioapi.curl, 'get')
+    mock_curl_get.return_value = (mock_hdr, BytesIO(params['expected_buffer'].encode()))
+
+    mock_get_status_code = mocker.patch.object(dockerioapi.curl, 'get_status_code')
+    mock_get_status_code.return_value = params['status_code']
+
+    if params['retry'] == -1 and params['follow'] == -1:
+        hdr, buf = dockerioapi.get_url(params['url'])
+    elif params['header'] == 'header':
+        hdr, buf = dockerioapi.get_url(params['url'], RETRY=params['retry'], FOLLOW=params['follow'],
+                                       header=params['header'])
+    else:
+        hdr, buf = dockerioapi.get_url(params['url'], RETRY=params['retry'], FOLLOW=params['follow'])
+
+    # Assertions
+    assert mock_hdr.data["X-ND-HTTPSTATUS"] == params['expected_status_code']
+    assert buf.getvalue().decode() == params['expected_buffer']
+    if params['expected_header']:
+        assert hdr.data == params['expected_header']
+    if params['retry_result'] is not None:
+        retry_calls = sum(
+            1 for args, kwargs in mock_curl_get.call_args_list if kwargs.get('RETRY') == params['retry_result'])
+        assert retry_calls > 0, "Retry logic not triggered as expected"
+
+    if params['follow_result'] is not None:
+        follow_calls = sum(
+            1 for args, kwargs in mock_curl_get.call_args_list if kwargs.get('FOLLOW') == params['follow_result'])
+        assert follow_calls > 0, "Follow logic not triggered as expected"
+
+
 #
 # #         args = ["http://some1.org"]
 # #         kwargs = list()
@@ -220,79 +404,36 @@ def test_06__is_layer_name(dockerioapi, layername, expected):
 # #     @patch('udocker.docker.FileUtil.size')
 # #     @patch('udocker.docker.GetURL.get_content_length')
 # #     @patch('udocker.docker.ChkSUM.hash')
-#
-# @pytest.mark.parametrize("filename, cache_mode, is_cached, download_status, remote_size, download_success, expected", [
-#     ("file@sha256:checksum", 0, True, 200, 100, True, True),
-#     ("file.txt", 1, False, 200, 100, True, True),
-#     ("file.txt", 3, False, 200, 100, True, True),
-#     ("file.txt", 0, False, 200, 100, True, True),
-#     ("file.txt", 0, False, 404, 100, False, False),
-#     ("file.txt", 0, False, 200, 100, False, False),
-#     ("file.txt", 0, False, 200, -1, True, True),
-# ])
-# def test_08__get_file(mocker, dockerioapi, filename, cache_mode, is_cached, download_status, remote_size,
-#                       download_success, expected):
-#     """Test08 DockerIoAPI()._get_file()."""
-#     mocker.patch('re.search', return_value=is_cached)
-#     mocker.patch.object(ChkSUM, 'hash', return_value="checksum" if is_cached else "different")
-#     mocker.patch.object(dockerioapi.curl, 'cache_support', True)
-#     mocker.patch.object(dockerioapi.curl, 'get_content_length', return_value=remote_size)
-#     mocker.patch.object(dockerioapi.curl, 'get_status_code', return_value=download_status)
-#     mocker.patch.object(FileUtil, 'size', return_value=100 if is_cached else 50)
-#     mocker.patch.object(dockerioapi, 'get_url', return_value=({"X-ND-HTTPSTATUS": download_status}, BytesIO(b"")))
-#     mocker.patch.object(FileUtil, 'size', side_effect=lambda x: 100 if download_success else 50)
-#
-#     url = "http://example.com/file"
-#     result = dockerioapi.get_file(url, filename, cache_mode)
-#
-#     assert result == expected
-#
-#
-# #         cks = "af98ca7807fd3859c5bd876004fa7e960cecebddb342de1bc7f3b0e6f7dab415"
-# #         url = "http://some1.org/file1"
-# #         fname = "/sha256:" + cks
-# #         cache = 0
-# #         mock_hash.return_value = cks
-# #         doia = DockerIoAPI(self.local)
-# #         status = doia._get_file(url, fname, cache)
-# #         self.assertTrue(status)
-# #
-# #         cks = "af98ca7807fd3859c5bd876004fa7e960cecebddb342de1bc7f3b0e6f7dab415"
-# #         url = "http://some1.org/file1"
-# #         fname = ""
-# #         cache = 1
-# #         hdr = type('test', (object,), {})()
-# #         hdr.data = {"content-length": 10,
-# #                     "X-ND-HTTPSTATUS": "HTTP-Version 400 Reason-Phrase",
-# #                     "X-ND-CURLSTATUS": 0}
-# #         buff = strio()
-# #         mock_hash.return_value = cks
-# #         mock_geturl.return_value = (hdr, buff)
-# #         mock_getlength.return_value = 123
-# #         mock_fusize.return_value = 123
-# #         doia = DockerIoAPI(self.local)
-# #         doia.curl.cache_support = True
-# #         status = doia._get_file(url, fname, cache)
-# #         self.assertTrue(status)
-# #
-# #         cks = "af98ca7807fd3859c5bd876004fa7e960cecebddb342de1bc7f3b0e6f7dab415"
-# #         url = "http://some1.org/file1"
-# #         fname = cks + ".layer"
-# #         cache = 0
-# #         hdr = type('test', (object,), {})()
-# #         hdr.data = {"content-length": 10,
-# #                     "X-ND-HTTPSTATUS": "HTTP-Version 400 Reason-Phrase",
-# #                     "X-ND-CURLSTATUS": 0}
-# #         buff = strio()
-# #         mock_hash.return_value = cks
-# #         mock_geturl.return_value = (hdr, buff)
-# #         mock_getlength.return_value = 123
-# #         mock_fusize.return_value = 123
-# #         mock_status.return_value = 200
-# #         doia = DockerIoAPI(self.local)
-# #         doia.curl.cache_support = False
-# #         status = doia._get_file(url, fname, cache)
-# #         self.assertTrue(status)
+
+@pytest.mark.parametrize("filename, cache_mode, is_cached, download_status, remote_size, download_success, expected", [
+    ("/path/to/file:1234", 0, True, 200, 100, True, True),
+    ("justAfile:info", 1, False, 200, 100, True, True),
+    ("justAfile:info", 3, False, 200, 100, True, True),
+    ("justAfile:info", 0, False, 200, 100, True, True),
+    ("justAfile:info", 0, False, 404, 100, False, False),
+    ("justAfile:info", 0, False, 200, 100, False, False),
+    ("justAfile:info", 0, False, 200, -1, True, True),
+])
+def test_08__get_file(mocker, dockerioapi, filename, cache_mode, is_cached, download_status, remote_size,
+                      download_success, expected):
+    """Test08 DockerIoAPI()._get_file()."""
+    mock_hdr = mocker.Mock()
+    mock_hdr.data = {"X-ND-HTTPSTATUS": download_status}
+    mocker.patch('re.search', return_value=mocker.Mock(
+        group=lambda x: ("checksum" if is_cached else "different") if x == 2 else filename))
+    mocker.patch.object(ChkSUM, 'hash', return_value="checksum" if is_cached else "different")
+    mocker.patch.object(dockerioapi.curl, 'cache_support', True)
+    mocker.patch.object(dockerioapi.curl, 'get_content_length', return_value=remote_size)
+    mocker.patch.object(dockerioapi.curl, 'get_status_code', return_value=download_status)
+    mocker.patch.object(FileUtil, 'size', return_value=100 if is_cached else 50)
+    mocker.patch.object(dockerioapi, 'get_url', return_value=(mock_hdr, BytesIO(b"")))
+    mocker.patch.object(FileUtil, 'size', side_effect=lambda x: 100 if download_success else 50)
+
+    url = "http://some1.org/file1"
+    result = dockerioapi.get_file(url, filename, cache_mode)
+
+    assert result == expected
+
 
 @pytest.mark.parametrize("imagerepo, expected_registry, expected_remoterepo", [
     ("example.com/myrepo/myimage", "example.com", "myrepo/myimage"),
@@ -335,28 +476,32 @@ def test_10_get(dockerioapi, imagerepo, tag, platform, v2_valid, local_repo_has_
 
 
 @pytest.mark.parametrize("imagerepo, tag, platform, is_valid, expected", [
-    ("example.com/repo/image", "latest", "", True, {"manifest": "data"}),
-    ("example.com/repo/image", "latest", "", True, {}),
-    ("example.com/repo/image", "latest", "", False, ({}, {})),
+    ("repo/image", "latest", "", True, {"manifest": "data"}),
+    ("repo/image", "latest", "", True, {}),
+    ("repo/image", "latest", "", False, ({}, {})),
 ])
 def test_11_get_manifest(mocker, dockerioapi, logger, imagerepo, tag, platform, is_valid, expected):
     """ Test11 DockerIoAPI().get_manifest() """
-    mocker.patch.object(dockerioapi, '_parse_imagerepo', return_value=("dummy", "remoterepo"))
+    remoterepo = "repo/image"
+    mocker.patch.object(dockerioapi, '_parse_imagerepo', return_value=("dummy", remoterepo))
     mocker.patch.object(dockerioapi.v2api, 'is_valid', return_value=is_valid)
-    mocker.patch.object(dockerioapi.v2api, 'get_image_manifest', return_value=expected)
+    mocker_get_manifest = mocker.patch.object(dockerioapi.v2api, 'get_image_manifest', return_value=expected)
+
     result = dockerioapi.get_manifest(imagerepo, tag, platform)
+    mocker_get_manifest.assert_called_with(remoterepo, tag,
+                                           platform) if is_valid else mocker_get_manifest.assert_not_called()
     assert result == expected
     logger.debug.assert_called_once_with("get manifest imagerepo: %s tag: %s", imagerepo, tag)
 
 
 @pytest.mark.parametrize("imagerepo, v2_valid, v2_tags, v1_tags, expected", [
-    ("example.com/repo/image", True, ["v2_tag1", "v2_tag2"], [], ["v2_tag1", "v2_tag2"]),
-    ("example.com/repo/image", False, [], ["v1_tag1", "v1_tag2"], ["v1_tag1", "v1_tag2"]),
-    ("example.com/repo/image", False, [], [], []),
+    ("repo/image", True, ["v2_tag1", "v2_tag2"], [], ["v2_tag1", "v2_tag2"]),
+    ("repo/image", False, [], ["v1_tag1", "v1_tag2"], ["v1_tag1", "v1_tag2"]),
+    ("repo/image", False, [], [], []),
 ], ids=["v2_valid", "v1_valid", "none_valid"])
 def test_12_get_tags(mocker, dockerioapi, imagerepo, v2_valid, v2_tags, v1_tags, expected):
     """ Test12 DockerIoAPI().get_tags() """
-    mocker.patch.object(dockerioapi, '_parse_imagerepo', return_value=("dummy", "repo/image"))
+    mocker.patch.object(dockerioapi, '_parse_imagerepo', return_value=("dummy", imagerepo))
     mocker.patch.object(dockerioapi.v2api, 'is_valid', return_value=v2_valid)
     mocker.patch.object(dockerioapi.v2api, 'get_image_tags', return_value=v2_tags)
     mocker.patch.object(dockerioapi.v1api, 'get_image_tags', return_value=v1_tags)
