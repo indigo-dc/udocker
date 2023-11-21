@@ -52,12 +52,12 @@ def test_01_init(dockerioapi, dockerioapiv2):
 
 
 @pytest.mark.parametrize("input_buf, expected_output", [
-    ("field1=value1,field2=value2", {"field1": "value1", "field2": "value2"}),  # Basic case
-    ("field1=value1,field2=\"value2\"", {"field1": "value1", "field2": "value2"}),  # Quoted value
-    ("field1=value1,field2=", {"field1": "value1", "field2": ""}),  # Empty value
-    ("field1=value1=extra,field2=value2", {"field1": "value1=extra", "field2": "value2"}),  # Value with equals sign
-    ("", {}),  # Empty buffer
-    ("field1,field2=value2", {"field2": "value2"}),  # Missing equals sign
+    ("field1=value1,field2=value2", {"field1": "value1", "field2": "value2"}),
+    ("field1=value1,field2=\"value2\"", {"field1": "value1", "field2": "value2"}),
+    ("field1=value1,field2=", {"field1": "value1", "field2": ""}),
+    ("field1=value1=extra,field2=value2", {"field1": "value1=extra", "field2": "value2"}),
+    ("", {}),
+    ("field1,field2=value2", {"field2": "value2"}),
 ])
 def test_02_split_fields(dockerioapiv2, input_buf, expected_output):
     """Test02 DockerIoAPIv2()._split_fields()."""
@@ -65,44 +65,49 @@ def test_02_split_fields(dockerioapiv2, input_buf, expected_output):
     assert result == expected_output
 
 
-@pytest.mark.parametrize("www_authenticate, v2_auth_token, auth_url_response, retry, expected_header", [
-    ("Bearer realm=\"test\",service=\"docker.io\"", "validtoken", '{"token": "bearertoken"}', 3,
-     "Authorization: Bearer bearertoken"),
-    ("Bearer realm=\"test\",service=\"docker.io\"", "validtoken", "invalidjson", 3, ""),
-    ("Bearer realm=\"test\",service=\"docker.io\"", "", '{"token": "bearertoken"}', 3,
-     "Authorization: Bearer bearertoken"),
-    ("Basic realm=\"test\"", "validtoken", "", 3, "Authorization: Basic validtoken"),
-    ("Basic realm=\"test\"", "", "", 3, "Authorization: Basic "),
-    ("InvalidAuth realm=\"test\"", "validtoken", "", 3, ""),
-], ids=[
-    "Bearer token with valid auth token",
-    "Bearer token with invalid JSON response",
-    "Bearer token without auth token",
-    "Basic authentication with auth token",
-    "Basic authentication without auth token",
-    "Invalid authentication header",
-])
+@pytest.mark.parametrize(
+    "www_authenticate, v2_auth_token, auth_url_response, retry, json_load_fails, expected_header", [
+        ("Bearer realm=\"test\",service=\"docker.io\"", "validtoken", '{"token": "bearertoken"}', 3, False,
+         "Authorization: Bearer bearertoken"),
+        ("Bearer realm=\"test\",service=\"docker.io\"", "validtoken", '{"token": "bearertoken"}', 3, True,
+         ""),
+        ("Bearer realm=\"test\",service=\"docker.io\"", "validtoken", "invalidjson", 3, False, ""),
+        ("Bearer realm=\"test\",service=\"docker.io\"", "", '{"token": "bearertoken"}', 3, False,
+         "Authorization: Bearer bearertoken"),
+        ("Basic realm=\"test\"", "validtoken", "", 3, False, "Authorization: Basic validtoken"),
+        ("Basic realm=\"test\"", "", "", 3, False, "Authorization: Basic "),
+        ("InvalidAuth realm=\"test\"", "validtoken", "", 3, False, ""),
+    ])
 def test_03_get_auth(mocker, dockerioapi, dockerioapiv2, www_authenticate, v2_auth_token, auth_url_response, retry,
-                     expected_header):
+                     json_load_fails, expected_header):
     """Test03 DockerIoAPIv2().get_auth()."""
     dockerioapiv2.v2_auth_token = v2_auth_token
     mocker.patch.object(dockerioapi, 'get_url', return_value=({}, BytesIO(auth_url_response.encode())))
-
+    if json_load_fails:
+        mocker.patch.object(json, 'loads', side_effect=ValueError)
     result = dockerioapiv2.get_auth(www_authenticate, retry)
-
     assert result == expected_header
 
 
-@pytest.mark.parametrize("username, password, expected_token", [
-    ("user1", "pass1", base64.b64encode(b"user1:pass1").decode("ascii")),
-    ("", "", ""),
-    (None, None, ""),
-    ("user1", "", ""),
-    ("", "pass1", ""),
-    ("user:name", "pass:word", base64.b64encode(b"user:name:pass:word").decode("ascii")),
+@pytest.mark.parametrize("username, password,  log_call, error, expected_token", [
+    ("user1", "pass1", True, False, base64.b64encode(b"user1:pass1").decode("ascii")),
+    ("user1", "pass1", True, True, ""),
+    (None, None, False, False, ""),
+    ("user1", "", False, False, ""),
+    ("", "pass1", False, False, ""),
+    ("user:name", "pass:word", True, False, base64.b64encode(b"user:name:pass:word").decode("ascii")),
 ])
-def test_get_login_token(dockerioapiv2, username, password, expected_token):
+def test_04_get_login_token(mocker, dockerioapiv2, logger, username, password, log_call, error, expected_token):
+    """ Test04 DockerIoAPIv2().get_login_token()."""
+    if error:
+        mocker.patch('base64.b64encode', side_effect=KeyError)
+
     token = dockerioapiv2.get_login_token(username, password)
+    if log_call:
+        logger.debug.assert_called_with("Auth token is: %s", dockerioapiv2.v2_auth_token)
+    else:
+        logger.debug.assert_not_called()
+
     assert token == expected_token
 
 
@@ -111,7 +116,8 @@ def test_get_login_token(dockerioapiv2, username, password, expected_token):
     "",
     None,
 ], ids=["Valid token", "Empty token", "None token"])
-def test_04_set_login_token(dockerioapiv2, token):
+def test_05_set_login_token(dockerioapiv2, token):
+    """ Test05 DockerIoAPIv2().set_login_token()."""
     dockerioapiv2.set_login_token(token)
     assert dockerioapiv2.v2_auth_token == token
 
@@ -121,11 +127,13 @@ def test_04_set_login_token(dockerioapiv2, token):
     ("401", True),
     ("404", False),
     ("500", False),
-    ("X-ND-HTTPSTATUS", False),
+    ("NONE", False),
+    (False, False),
 ])
-def test_05_is_valid(mocker, dockerioapiv2, http_status, expected_result):
+def test_06_is_valid(mocker, dockerioapiv2, http_status, expected_result):
+    """Test06 DockerIoAPIv2().is_valid()."""
     mock_hdr = mocker.Mock()
-    mock_hdr.data = {"X-ND-HTTPSTATUS": http_status}
+    mock_hdr.data = {"X-ND-HTTPSTATUS": http_status} if http_status else {}
     mocker.patch.object(dockerioapiv2.dockerioapi, 'get_url', return_value=(mock_hdr, None))
 
     result = dockerioapiv2.is_valid()
@@ -133,37 +141,37 @@ def test_05_is_valid(mocker, dockerioapiv2, http_status, expected_result):
     assert result == expected_result
 
 
-@pytest.mark.parametrize("http_status, expected_result", [
+@pytest.mark.parametrize("http_status, expected", [
     ("200", True),
     ("401", True),
     ("404", False),
     ("500", False),
-    ("X-ND-HTTPSTATUS", False),
+    ("NONE", False),
+    (False, False),
 ])
-def test_06_is_searchable(mocker, dockerioapiv2, http_status, expected_result):
+def test_07_is_searchable(mocker, dockerioapiv2, http_status, expected):
+    """ Test07 DockerIoAPIv2().is_searchable()."""
     mock_hdr = mocker.Mock()
-    mock_hdr.data = {"X-ND-HTTPSTATUS": http_status}
+    mock_hdr.data = {"X-ND-HTTPSTATUS": http_status} if http_status else {}
     mocker.patch.object(dockerioapiv2.dockerioapi, 'get_url', return_value=(mock_hdr, None))
-
     result = dockerioapiv2.is_searchable()
+    assert result == expected
 
-    assert result == expected_result
 
-
-@pytest.mark.parametrize("response_content, tags_only, expected_result", [
+@pytest.mark.parametrize("response_content, tags_only, expected", [
     (b'{"tags": ["tag1", "tag2"]}', False, {"tags": ["tag1", "tag2"]}),
     (b'{"tags": ["tag1", "tag2"]}', True, ["tag1", "tag2"]),
     (b'', False, []),
     (b'invalid', False, []),
 ])
-def test_07_get_image_tags(mocker, dockerioapiv2, response_content, tags_only, expected_result):
+def test_08_get_image_tags(mocker, dockerioapiv2, response_content, tags_only, expected):
+    """ Test08 DockerIoAPIv2().get_image_tags()."""
     imagerepo = "test/repo"
     mock_buf = BytesIO(response_content)
     mocker.patch.object(dockerioapiv2.dockerioapi, 'get_url', return_value=(mocker.Mock(), mock_buf))
 
     result = dockerioapiv2.get_image_tags(imagerepo, tags_only)
-
-    assert result == expected_result
+    assert result == expected
 
 
 @pytest.mark.parametrize("image_index, platform, expected_digest", [
@@ -173,13 +181,15 @@ def test_07_get_image_tags(mocker, dockerioapiv2, response_content, tags_only, e
      "windows/amd64", ""),
     ("invalid", "linux/amd64", ""),
     ({}, "linux/amd64", ""),
-], ids=[
-    "Valid image index and platform",
-    "Platform not in image index",
-    "Invalid image index format",
-    "Empty image index"
+    ({"manifests": [{"platform": {"os": "linux", "architecture": "amd64"}, "digest": "digest1"},
+                    {"platform": {"os": "linux", "architecture": "arm64"}, "digest": "digest2"}]},
+     "linux/arm64", "digest2"),
+    ({"manifests": [{"platform": {"os": "linux", "architecture": "amd64", "variant": "v8"}, "digest": "digest1"},
+                    {"platform": {"os": "linux", "architecture": "amd64", "variant": "v7"}, "digest": "digest2"}]},
+     "linux/amd64/v7", "digest2"),
 ])
-def test_08_get_digest_from_image_index(dockerioapiv2, image_index, platform, expected_digest):
+def test_09_get_digest_from_image_index(dockerioapiv2, image_index, platform, expected_digest):
+    """ Test09 DockerIoAPIv2().get_digest_from_image_index()."""
     result = dockerioapiv2._get_digest_from_image_index(image_index, platform)
     assert result == expected_digest
 
@@ -194,7 +204,7 @@ def test_08_get_digest_from_image_index(dockerioapiv2, image_index, platform, ex
     (b'invalid', 'docker.distribution.manifest.v2', "", {}),
     (b'{"config": {"digest": "digest1"}}', 'unsupported', "", {}),
 ])
-def test_get_image_manifest(mocker, dockerioapiv2, response_content, content_type, platform, expected_manifest):
+def test_10_image_manifest(mocker, dockerioapiv2, response_content, content_type, platform, expected_manifest):
     imagerepo = "test/repo"
     tag = "latest"
     mock_hdr = mocker.Mock()
@@ -211,7 +221,8 @@ def test_get_image_manifest(mocker, dockerioapiv2, response_content, content_typ
     (True, True),
     (False, False),
 ])
-def test_get_image_layer(mocker, dockerioapi, dockerioapiv2, get_file_response, expected_result):
+def test_11_get_image_layer(mocker, dockerioapi, dockerioapiv2, get_file_response, expected_result):
+    """ Test11 DockerIoAPIv2().get_image_layer()."""
     imagerepo = "test/repo"
     layer_id = "layer123"
     mocker.patch.object(dockerioapi, 'get_file', return_value=get_file_response)
@@ -221,45 +232,52 @@ def test_get_image_layer(mocker, dockerioapi, dockerioapiv2, get_file_response, 
     assert result == expected_result
 
 
-# @pytest.mark.parametrize("fslayers, get_image_layer_responses, expected_files", [
-#     (["blob1", "blob2"], [True, True], ["blob1", "blob2"]),
-#     (["blob1", "blob2"], [True, False], []),
-#     (["blob1"], [True], ["blob1"]),
-#     (["blob1"], [False], []),
-#     ([], [], []),
-# ])
-# def test_get_layers_all(mocker, dockerioapiv2, fslayers, get_image_layer_responses, expected_files):
-#     imagerepo = "test/repo"
-#     mocker.patch.object(dockerioapiv2, 'get_image_layer', side_effect=get_image_layer_responses)
-#
-#     result = dockerioapiv2.get_layers_all(imagerepo, [{"digest": layer} for layer in fslayers])
-#
-#     assert result == expected_files
+@pytest.mark.parametrize("top_level, fslayers, get_image_layer_responses, expected_files", [
+    ("digest", ["blob1", "blob2"], [True, True], ["blob2", "blob1"]),
+    ("blobSum", ["blob1", "blob2"], [True, False], []),
+    ("blobSum", ["blob1"], [True], ["blob1"]),
+    ("blobSum", ["blob1"], [False], []),
+    ("blobSum", [], [], []),
+])
+def test_12_get_layers_all(mocker, dockerioapiv2, logger, top_level, fslayers, get_image_layer_responses,
+                           expected_files):
+    """ Test12 DockerIoAPIv2().get_layers_all()."""
+    imagerepo = "test/repo"
+    mocker.patch.object(dockerioapiv2, 'get_image_layer', side_effect=get_image_layer_responses)
+    fslayers = [{top_level: layer} for layer in fslayers]
+    result = dockerioapiv2.get_layers_all(imagerepo, fslayers)
+    logger.info.assert_has_calls(
+        [mocker.call("downloading layer: %s", layer[top_level]) for layer in reversed(fslayers)])
+    assert result == expected_files
 
 
-# @pytest.mark.parametrize("get_image_manifest_return, http_status, manifest_content, setup_tag_return, expected_files", [
-#     (({}, {"fsLayers": ["blob1", "blob2"]}), "200", True, ["blob1", "blob2"]),
-#     (({}, {"layers": ["blob1", "blob2"]}), "200", True, ["blob1", "blob2"]),
-#     (({}, {}), "401", True, []),
-#     (({}, {}), "500", True, []),
-#     (({}, {}), "200", True, []),
-#     (({}, {"fsLayers": ["blob1", "blob2"]}), "200", False, []),
-# ])
-# def test_get(mocker, dockerioapi, dockerioapiv2, get_image_manifest_return, http_status, setup_tag_return,
-#              manifest_content, expected_files):
-#     imagerepo = "test/repo"
-#     tag = "latest"
-#     platform = "linux/amd64"
-#     mocker.patch.object(dockerioapiv2, 'get_image_manifest', return_value=get_image_manifest_return)
-#     mocker.patch.object(dockerioapi.curl, 'get_status_code', return_value=http_status)
-#     mocker.patch.object(dockerioapiv2.localrepo, 'setup_tag', return_value=setup_tag_return)
-#     mocker.patch.object(dockerioapiv2.localrepo, 'save_json')
-#     mocker.patch.object(dockerioapiv2, 'get_layers_all', return_value=expected_files)
-#
-#     result = dockerioapiv2.get(imagerepo, tag, platform)
-#
-#     assert result == expected_files
+@pytest.mark.parametrize("get_image_manifest_return, http_status, setup_tag_return, expected_files", [
+    ({"fsLayers": ["blob1", "blob2"]}, 200, True, ["blob1", "blob2"]),
+    ({"layers": ["blob1", "blob2"]}, 200, True, ["blob1", "blob2"]),
+    ({}, 401, True, []),
+    ({}, 500, True, []),
+    ({}, 200, True, []),
+    (None, 200, True, []),
 
+])
+def test_13_get(mocker, dockerioapi, dockerioapiv2, get_image_manifest_return, http_status, setup_tag_return,
+                expected_files):
+    """ Test13 DockerIoAPIv2().get()."""
+    imagerepo = "test/repo"
+    tag = "latest"
+    platform = "linux/amd64"
+    hdr_data = {"X-ND-HTTPSTATUS": http_status}
+    mocker.patch.object(dockerioapiv2, 'get_image_manifest', return_value=(hdr_data, get_image_manifest_return))
+    mocker.patch.object(dockerioapi.curl, 'get_status_code', return_value=http_status)
+    mocker.patch.object(dockerioapiv2.localrepo, 'setup_tag', return_value=setup_tag_return)
+    mocker.patch.object(dockerioapiv2.localrepo, 'save_json')
+
+    # Mock get_layers_all to return the 'layers' or 'fsLayers' from the manifest
+    mocker.patch.object(dockerioapiv2, 'get_layers_all', side_effect=lambda repo, layers: layers if "blob1" in str(layers) else [])
+
+    result = dockerioapiv2.get(imagerepo, tag, platform)
+
+    assert result == expected_files
 
 @pytest.mark.parametrize("expression, official, lines, http_response, expected_result", [
     # Successful search
@@ -276,11 +294,10 @@ def test_get_image_layer(mocker, dockerioapi, dockerioapiv2, get_file_response, 
     # # Failed search
     # ("test", None, 22, {}, {}),
 ])
-def test_search_get_page(mocker, dockerioapi, dockerioapiv2, expression, official, lines, http_response,
-                         expected_result):
+def test_14_search_get_page(mocker, dockerioapi, dockerioapiv2, expression, official, lines, http_response,
+                            expected_result):
+    """ Test14 DockerIoAPIv2().search_get_page()."""
     url = "https://hub.docker.com"
     mocker.patch.object(dockerioapi, 'get_url', return_value=({}, BytesIO(json.dumps(http_response).encode())))
-
     result = dockerioapiv2.search_get_page(expression, url, lines, official)
-
     assert result == expected_result
