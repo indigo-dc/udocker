@@ -4,8 +4,14 @@
 """
 udocker unit tests: UdockerCLI
 """
+import os
+
 import pytest
+
+from udocker import MSG, LOG
 from udocker.cli import UdockerCLI
+from udocker.cmdparser import CmdParser
+from udocker.helper.hostinfo import HostInfo
 
 
 @pytest.fixture
@@ -77,6 +83,8 @@ def test_02__cdrepo(mocker, ucli, cmdparse, risdir, ropt, cisdir, expected):
     resout = ucli._cdrepo(cmdparse)
     assert resout == expected
     assert mock_isdir.call_count == cisdir
+
+
 #    assert lrepo.setup.call_count == clrepo
 
 
@@ -189,318 +197,337 @@ def test_10_do_mkrepo(mocker, ucli, cmdparse, lrepo):
     lrepo.create_repo.assert_called()
 
 
-# def test_11__search_print_lines(mocker, ucli):
-#     """Test11 UdockerCLI()._search_print_lines()."""
-#     fmt = "%-55.80s %8.8s %-70.70s %5.5s"
-#     repo_list = {'results': ['repo1', 'repo2']}
-#     lines = 'line1 \n line2 \n'
-#     mock_msg = mocker.patch('udocker.cli.MSG')
-#     ucli._search_print_lines(repo_list, lines, fmt)
-#     mock_msg.assert_called()
+def test_11__search_print_lines(mocker, ucli):
+    """Test11 UdockerCLI()._search_print_lines()."""
+    fmt = "%-55.80s %8.8s %-70.70s %5.5s"
+    repo_list = {
+        'results': [
+            {'name': 'repo1', 'is_official': True, 'description': 'First repo', 'star_count': 10},
+            {'name': 'repo2', 'is_official': False, 'description': 'Second repo\n', 'star_count': 5}
+        ]
+    }
+    lines = 2
+    mock_msg = mocker.patch.object(MSG, 'info')
+    ucli._search_print_lines(repo_list, lines, fmt)
+    expected_calls = [
+        mocker.call("repo1                                                       [OK] First repo                       "
+                    "                                         10"),
+        mocker.call("repo2                                                       ---- Second repo                      "
+                    "                                          5")
+    ]
+    mock_msg.assert_has_calls(expected_calls, any_order=True)
 
-# @patch('udocker.cli.DockerIoAPI.search_get_page')
-# @patch('udocker.cli.HostInfo.termsize')
-# def test_09__search_repositories(self, mock_termsz, mock_doiasearch):
-#     """Test09 UdockerCLI()._search_repositories()."""
-#     repo_list = {"count": 1, "next": "", "previous": "",
-#                     "results": [
-#                         {
-#                             "repo_name": "lipcomputing/ipyrad",
-#                             "short_description": "Docker to run ipyrad",
-#                             "star_count": 0,
-#                             "pull_count": 188,
-#                             "repo_owner": "",
-#                             "is_automated": True,
-#                             "is_official": False
-#                         }]}
-#     mock_termsz.return_value = (3, "")
-#     mock_doiasearch.side_effect = [repo_list, []]
-#     udoc = UdockerCLI(self.local)
-#     status = udoc._search_repositories("ipyrad", False)
-#     self.assertEqual(status, 0)
 
-# @patch('udocker.cli.DockerIoAPI.get_tags')
-# def test_10__list_tags(self, mock_gettags):
-#     """Test10 UdockerCLI()._list_tags()."""
-#     mock_gettags.return_value = ["t1"]
-#     udoc = UdockerCLI(self.local)
-#     status = udoc._list_tags("t1")
-#     self.assertEqual(status, 0)
+@pytest.mark.parametrize("pause, no_trunc, search_ended, expected_status", [
+    (False, False, False, 0),
+    (True, False, False, 0),
+    (False, True, False, 0)
+])
+def test_12__search_repositories(mocker, ucli, pause, no_trunc, search_ended, expected_status):
+    """Test12 UdockerCLI()._search_repositories()."""
+    expression = "ipyrad"
+    mock_termsz = mocker.patch.object(HostInfo, 'termsize', return_value=(3, ""))
+    mock_doiasearch = mocker.patch.object(ucli.dockerioapi, 'search_get_page')
+    mocker.patch.object(ucli.dockerioapi, 'search_ended', search_ended)
 
-#     mock_gettags.return_value = None
-#     udoc = UdockerCLI(self.local)
-#     status = udoc._list_tags("t1")
-#     self.assertEqual(status, 1)
+    repo_list = {
+        "count": 1, "next": "", "previous": "",
+        "results": [
+            {
+                "repo_name": "lipcomputing/ipyrad",
+                "short_description": "Docker to run ipyrad",
+                "star_count": 0,
+                "pull_count": 188,
+                "repo_owner": "",
+                "is_automated": True,
+                "is_official": False
+            }
+        ]
+    }
 
-# @patch('udocker.cli.KeyStore.get')
-# @patch('udocker.cli.DockerIoAPI.set_v2_login_token')
-# @patch('udocker.cli.DockerIoAPI.search_init')
-# @patch.object(UdockerCLI, '_search_repositories')
-# @patch.object(UdockerCLI, '_list_tags')
-# @patch.object(UdockerCLI, '_split_imagespec')
-# @patch.object(UdockerCLI, '_set_repository')
-# def test_11_do_search(self, mock_setrepo, mock_split, mock_listtags, mock_searchrepo,
-#                         mock_doiasearch, mock_doiasetv2, mock_ksget):
-#     """Test11 UdockerCLI().do_search()."""
-#     argv = ["udocker", "-h"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_search(cmdp)
-#     self.assertEqual(status, 1)
+    if pause:
+        mocker.patch('udocker.cli.GET_INPUT', side_effect=['q'])
+        mock_doiasearch.side_effect = [repo_list, repo_list, []]
+    else:
+        mock_doiasearch.side_effect = [repo_list, []]
 
-#     argv = ["udocker", "search", "--list-tags", "ipyrad"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_setrepo.return_value = None
-#     mock_split.return_value = ("d1", "d2", "ipyrad", "d3")
-#     mock_doiasearch.return_value = None
-#     mock_ksget.return_value = "v2token1"
-#     mock_doiasetv2.return_value = None
-#     mock_listtags.return_value = ["t1", "t2"]
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_search(cmdp)
-#     self.assertEqual(status, ["t1", "t2"])
-#     self.assertTrue(mock_setrepo.called)
-#     self.assertTrue(mock_doiasearch.called)
-#     self.assertTrue(mock_ksget.called)
-#     self.assertTrue(mock_doiasetv2.called)
-#     self.assertTrue(mock_listtags.called)
+    status = ucli._search_repositories(expression, pause, no_trunc)
+    assert status == expected_status
+    mock_doiasearch.assert_called()
+    mock_doiasearch.assert_called_with(expression, 1)
+    mock_termsz.assert_called()
 
-#     argv = ["udocker", "search", "ipyrad"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_setrepo.return_value = None
-#     mock_split.return_value = ("d1", "d2", "ipyrad", "d3")
-#     mock_doiasearch.return_value = None
-#     mock_ksget.return_value = "v2token1"
-#     mock_doiasetv2.return_value = None
-#     mock_searchrepo.return_value = 0
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_search(cmdp)
-#     self.assertEqual(status, 0)
-#     self.assertTrue(mock_searchrepo.called)
 
-# @patch('udocker.cli.LocalFileAPI.load')
-# @patch.object(UdockerCLI, '_check_imagerepo')
-# def test_12_do_load(self, mock_chkimg, mock_load):
-#     """Test12 UdockerCLI().do_load()."""
-#     argv = ["udocker", "-h"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_load(cmdp)
-#     self.assertEqual(status, 1)
+@pytest.mark.parametrize("tags, expected_status, raises_exception", [
+    (["latest", "v1.0", "v2.0"], 0, None),
+    ([], 0, None),
+    (None, 1, KeyError),
+    (None, 1, TypeError),
+    (None, 1, ValueError),
+])
+def test_13__list_tags(mocker, ucli, tags, expected_status, raises_exception):
+    """Test10 UdockerCLI()._list_tags()."""
+    expression = "t1"
+    mock_get_tags = mocker.patch.object(ucli.dockerioapi, 'get_tags', side_effect=raises_exception, return_value=tags)
+    mock_msg = mocker.patch('udocker.cli.MSG.info')
 
-#     argv = ["udocker", "load", "-i", "ipyrad", "ipyimg"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_chkimg.return_value = False
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_load(cmdp)
-#     self.assertEqual(status, 1)
-#     self.assertFalse(mock_load.called)
+    status = ucli._list_tags(expression)
 
-#     argv = ["udocker", "load", "-i", "ipyrad", "ipyimg"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_chkimg.return_value = True
-#     mock_load.return_value = False
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_load(cmdp)
-#     self.assertEqual(status, 1)
-#     self.assertTrue(mock_load.called)
+    assert status == expected_status
+    if not raises_exception:
+        assert mock_get_tags.call_count == 1
+        assert mock_msg.call_count == len(tags)
+        for tag in tags:
+            mock_msg.assert_any_call(tag)
+    else:
+        mock_get_tags.assert_called_once_with(expression)
+        mock_msg.assert_not_called()
 
-#     argv = ["udocker", "load", "-i", "ipyrad", "ipyimg"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_chkimg.return_value = True
-#     mock_load.return_value = ['docker-repo1', 'docker-repo2']
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_load(cmdp)
-#     self.assertEqual(status, 0)
 
-# @patch('udocker.cli.os.path.exists')
-# @patch('udocker.cli.LocalFileAPI.save')
-# @patch.object(UdockerCLI, '_check_imagespec')
-# def test_13_do_save(self, mock_chkimg, mock_save, mock_exists):
-#     """Test13 UdockerCLI().do_save()."""
-#     argv = ["udocker", "-h"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_save(cmdp)
-#     self.assertEqual(status, 1)
+@pytest.mark.parametrize("argv, mock_values, expected_status", [
+    (["udocker", "-h"], (None, None, None, None, None, None, None), 1),
+    (["udocker", "search", "--list-tags", "ipyrad"],
+     (None, ("d1", "d2", "ipyrad", "d3"), None, "v2token1", None, ["t1", "t2"], None), ["t1", "t2"]),
+    (["udocker", "search", "ipyrad"], (None, ("d1", "d2", "ipyrad", "d3"), None, "v2token1", None, None, 0), 0),
+])
+def test_14_do_search(mocker, ucli, argv, mock_values, expected_status):
+    """Test14 UdockerCLI().do_search()."""
+    cmdp = CmdParser()
+    cmdp.parse(argv)
+    mock_setrepo, mock_split, mock_doiasearch, mock_ksget, mock_doiasetv2, mock_listtags, mock_searchrepo = mock_values
+    mocker.patch.object(ucli, '_set_repository', return_value=mock_setrepo)
+    mocker.patch.object(ucli, '_split_imagespec', return_value=mock_split)
+    mocker.patch.object(ucli.dockerioapi, 'search_get_page', return_value=mock_doiasearch)
+    mocker.patch.object(ucli.keystore, 'get', return_value=mock_ksget)
+    mocker.patch.object(ucli.dockerioapi.v2api, 'set_login_token', return_value=mock_doiasetv2)
 
-#     argv = ["udocker", "save", "-o", "ipyrad", "ipyimg:latest"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_exists.return_value = True
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_save(cmdp)
-#     self.assertEqual(status, 1)
-#     self.assertTrue(mock_exists.called)
-#     self.assertFalse(mock_chkimg.called)
-#     self.assertFalse(mock_save.called)
+    if argv[1] == "search" and "--list-tags" in argv:
+        mocker.patch.object(ucli, '_list_tags', return_value=mock_listtags)
+    elif argv[1] == "search":
+        mocker.patch.object(ucli, '_search_repositories', return_value=mock_searchrepo)
 
-#     argv = ["udocker", "save", "-o", "ipyrad", "ipyimg:latest"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_exists.return_value = False
-#     mock_chkimg.return_value = ("ipyimg", "latest")
-#     mock_save.return_value = False
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_save(cmdp)
-#     self.assertEqual(status, 1)
-#     self.assertTrue(mock_save.called)
+    status = ucli.do_search(cmdp)
+    assert status == expected_status
 
-#     argv = ["udocker", "save", "-o", "ipyrad", "ipyimg:latest"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_exists.return_value = False
-#     mock_chkimg.return_value = ("ipyimg", "latest")
-#     mock_save.return_value = True
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_save(cmdp)
-#     self.assertTrue(mock_exists.called)
-#     self.assertTrue(mock_chkimg.called)
-#     self.assertTrue(mock_save.called)
-#     self.assertEqual(status, 0)
 
-# @patch('udocker.cli.LocalFileAPI.import_toimage')
-# @patch('udocker.cli.LocalFileAPI.import_tocontainer')
-# @patch('udocker.cli.LocalFileAPI.import_clone')
-# @patch.object(UdockerCLI, '_check_imagespec')
-# def test_14_do_import(self, mock_chkimg, mock_impclone, mock_impcont, mock_impimg):
-#     """Test14 UdockerCLI().do_import()."""
-#     argv = ["udocker", "-h"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_import(cmdp)
-#     self.assertEqual(status, 1)
-#     self.assertFalse(mock_chkimg.called)
-#     self.assertFalse(mock_impclone.called)
-#     self.assertFalse(mock_impcont.called)
-#     self.assertFalse(mock_impimg.called)
+@pytest.mark.parametrize("cmdp_options, check_imagerepo, load, missing_options, expected_status, error_msg", [
+    ({}, None, None, True, 1, None),  # missing command-line parameters
+    ({'-': 'stdin', 'P1': "-", '-i': 'ipyrad'}, True, ['docker-repo1'], False, 0, None),
+    ({'--input=': "ipyrad", 'P1': "invalidrepo"}, False, None, False, 1, None),
+    ({'--input=': "ipyrad", 'P1': "ipyimg"}, True, None, False, 1, "load failed"),  # load failure
+    ({'--input=': "ipyrad", 'P1': "ipyimg"}, True, ['docker-repo1', 'docker-repo2'], False, 0, None),  # successful load
+    ({'--input=': "-", 'P1': "ipyimg"}, True, ['docker-repo1'], False, 0, None),  # read from stdin
+    # ({'--input=': None, 'P1': "-"}, True, None, False, 1, "must specify filename of docker exported image"), # FIXME: this scenario is impossible to work, i can't figure a scenario were LOG.error("must specify filename of docker exported image") is called, also not sure reaching the end with imagerepofile as '-' makes sense
+])
+def test_15_do_load(mocker, ucli, cmdp_options, check_imagerepo, load, missing_options,
+                    expected_status,
+                    error_msg):
+    """ Test15 UdockerCLI().do_load(). """
+    cmdp = mocker.Mock()
+    cmdp.get.side_effect = lambda x: cmdp_options.get(x, None)
+    cmdp.missing_options.return_value = missing_options
 
-#     argv = ["udocker", "import", "ipyrad.tar", "ipyrad:latest"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_chkimg.return_value = ("", "latest")
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_import(cmdp)
-#     self.assertEqual(status, 1)
-#     self.assertTrue(mock_chkimg.called)
-#     self.assertFalse(mock_impimg.called)
+    mocker.patch.object(ucli, '_check_imagerepo', return_value=check_imagerepo)
+    mocker.patch.object(ucli.localfileapi, 'load', return_value=load)
+    error_log_mock = mocker.patch.object(LOG, 'error')
+    info_log_mock = mocker.patch.object(LOG, 'info')
 
-#     argv = ["udocker", "import", "ipyrad.tar", "ipyrad:latest"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_chkimg.return_value = ("ipyrad", "latest")
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_import(cmdp)
-#     self.assertEqual(status, 0)
-#     self.assertTrue(mock_chkimg.called)
-#     self.assertTrue(mock_impimg.called)
+    status = ucli.do_load(cmdp)
 
-#     argv = ["udocker", "import", "--clone", "ipyrad.tar", "ipyrad:latest"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_chkimg.return_value = ("ipyrad", "latest")
-#     mock_impclone.return_value = "12345"
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_import(cmdp)
-#     self.assertEqual(status, 0)
-#     self.assertFalse(mock_impcont.called)
-#     self.assertTrue(mock_impclone.called)
+    assert status == expected_status
+    if error_msg:
+        error_log_mock.assert_called_with(error_msg)
+    if load:
+        for repo in load:
+            info_log_mock.assert_any_call(repo)
 
-#     argv = ["udocker", "import", "--tocontainer", "ip.tar", "ip:latest"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_chkimg.return_value = ("ipyrad", "latest")
-#     mock_impcont.return_value = "12345"
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_import(cmdp)
-#     self.assertEqual(status, 0)
-#     self.assertTrue(mock_impcont.called)
 
-# @patch('udocker.cli.ContainerStructure')
-# def test_15_do_export(self, mock_cs):
-#     """Test15 UdockerCLI().do_export()."""
-#     argv = ["udocker", "-h"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_export(cmdp)
-#     self.assertEqual(status, 1)
+@pytest.mark.parametrize("cmdp_opts, missing_opts, file_exists, save, check_img, exp_status, err_msg, imgspec_list", [
+    ({}, True, None, None, (None, None), 1, None, None),
+    ({'-o=': "ipyrad.tar", 'P*': ["repo:latest"]}, False, False, True, ("ipyimg", "latest"), 0, None, ["repo:latest"]),
+    ({'-o=': "ipyrad.tar", 'P*': ["ipyimg:latest"]}, False, True, True, ("ipyimg", "latest"), 1,
+     "output file already exists: %s", ["ipyimg:latest"]),
+    ({'--output=': None, '-': True, 'P*': ["-", "ipyimg:latest"]}, False, False, True, ("ipyimg", "latest"), 0, None,
+     ['ipyimg:latest']),
+    ({'-o=': "ipyimg.tar", 'P*': ["ipyimg:latest"]}, False, False, False, ("ipyimg", "latest"), 1, None,
+     ['ipyimg:latest']),
+    ({'-o=': "image.tar", 'P*': ["invalid/repo"]}, False, False, True, (None, None), 1, None,
+     ["invalid/repo"]),
+    # ({'--output=': None, 'P*': ["repo:tag"]}, False, False, True, ("repo", "tag"), 1, "must specify filename of image file for output", ["repo:tag"]),
+])
+def test_16_do_save(mocker, ucli, cmdp_opts, missing_opts, file_exists, save, check_img, exp_status, err_msg,
+                    imgspec_list):
+    """ Test16 UdockerCLI().do_save(). """
+    cmdp = mocker.Mock()
+    cmdp.get.side_effect = lambda x: cmdp_opts.get(x, None)
+    cmdp.missing_options.return_value = missing_opts
 
-#     argv = ["udocker", "export", "-o", "ipyrad.tar", "ipyrad:latest"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     self.local.get_container_id.return_value = ""
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_export(cmdp)
-#     self.assertEqual(status, 1)
+    mocker.patch.object(ucli, '_check_imagespec', return_value=check_img)
+    mocker.patch.object(os.path, 'exists', return_value=file_exists)
+    mocker.patch.object(ucli.localfileapi, 'save', return_value=save)
+    error_log_mock = mocker.patch.object(LOG, 'error')
 
-#     argv = ["udocker", "export", "-o", "ipyrad.tar", "ipyrad:latest"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_cs.return_value.export_tofile.return_value = False
-#     self.local.get_container_id.return_value = "12345"
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_export(cmdp)
-#     self.assertEqual(status, 1)
-#     self.assertTrue(mock_cs.called)
-#     self.assertTrue(self.local.get_container_id.called)
+    if cmdp.get('-'):
+        if imgspec_list and imgspec_list[0] == '-':
+            imgspec_list.pop(0)
 
-#     argv = ["udocker", "export", "-o", "ipyrad.tar", "ipyrad:latest"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_cs.return_value.export_tofile.return_value = True
-#     self.local.get_container_id.return_value = "12345"
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_export(cmdp)
-#     self.assertEqual(status, 0)
+    status = ucli.do_save(cmdp)
 
-#     argv = ["udocker", "export", "--clone", "ip:latest"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     mock_cs.return_value.clone_tofile.return_value = True
-#     self.local.get_container_id.return_value = "12345"
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_export(cmdp)
-#     self.assertEqual(status, 0)
+    assert status == exp_status
+    if err_msg:
+        error_log_mock.assert_called_with(err_msg, 'ipyrad.tar')
+    assert cmdp.get("P*") == imgspec_list
 
-# @patch('udocker.cli.LocalFileAPI.clone_container')
-# def test_16_do_clone(self, mock_clone):
-#     """Test16 UdockerCLI().do_clone()."""
-#     argv = ["udocker", "-h"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_clone(cmdp)
-#     self.assertEqual(status, 1)
 
-#     argv = ["udocker", "clone", "ipyradcont"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     self.local.get_container_id.return_value = ""
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_clone(cmdp)
-#     self.assertEqual(status, 1)
-#     self.assertFalse(mock_clone.called)
-#     self.assertTrue(self.local.get_container_id.called)
+@pytest.mark.parametrize("cmd_opts, missing_opts, check_imagespec_return, import_result, expected_status, error_msg", [
+    ({}, True, None, None, 1, None),  # missing options
+    ({'P1': 'ipyrad.tar', 'P2': 'invalid_spec'}, False, (None, None), None, 1, None),  # invalid image spec
+    ({'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"), False, 1, "importing"),
+    # import failed
+    ({'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"), True, 0, None),  # import success
+    ({'--tocontainer': True, 'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"), False, 1,
+     "importing"),  # import to container failed
+    ({'--tocontainer': True, 'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"),
+     "container_id", 0, None),  # import to container success
+    (
+            {'--clone': True, 'P1': 'ipyrad.tar', 'P2': 'ipyrad/ipyrad:latest'}, False, ("ipyrad", "latest"),
+            "container_id", 0,
+            None),  # import clone success
+    ({'--clone': True, 'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, None, False, 1, "importing"),
+    # import clone failed
+    # ({'P1': '', 'P2': 'repo/ipyrad:latest'}, True, None, None, 1, "must specify tar filename"),
+])
+def test_17_do_import(mocker, ucli, cmd_opts, missing_opts, check_imagespec_return, import_result, expected_status,
+                      error_msg):
+    """ Test17 UdockerCLI().do_import(). """
+    cmdp = mocker.Mock()
+    cmdp.get.side_effect = lambda x: cmd_opts.get(x, None)
+    cmdp.missing_options.return_value = missing_opts
 
-#     argv = ["udocker", "clone", "ipyradcont"]
-#     cmdp = CmdParser()
-#     cmdp.parse(argv)
-#     self.local.get_container_id.return_value = "12345"
-#     mock_clone.return_value = "54321"
-#     udoc = UdockerCLI(self.local)
-#     status = udoc.do_clone(cmdp)
-#     self.assertEqual(status, 0)
-#     self.assertTrue(mock_clone.called)
+    mocker.patch.object(ucli, '_check_imagespec', return_value=check_imagespec_return)
+    mocker.patch.object(ucli.localfileapi, 'import_toimage', return_value=import_result)
+    mocker.patch.object(ucli.localfileapi, 'import_tocontainer', return_value=import_result)
+    mocker.patch.object(ucli.localfileapi, 'import_clone', return_value=import_result)
+    log_mock = mocker.patch.object(LOG, 'info')
+    error_log_mock = mocker.patch.object(LOG, 'error')
+
+    status = ucli.do_import(cmdp)
+
+    assert status == expected_status
+    if error_msg:
+        error_log_mock.assert_called_with(error_msg)
+    elif status == UdockerCLI.STATUS_OK and (cmd_opts.get('--tocontainer') or cmd_opts.get('--clone')):
+        log_mock.assert_called_with("container ID: %s", import_result)
+
+
+@pytest.mark.parametrize("cmdp_opts, missing_opts, container_id, export_result, expected_status, err_msg", [
+    ({'-o': True, 'P1': "ipyrad.tar", 'P2': "ipyrad:latest", '--clone': False}, False, "cont123", True, 0, None),
+    ({'-o': True, 'P1': "ipyrad.tar", 'P2': "invalid", '--clone': False}, False, "", True, 1,
+     "invalid container id: %s"),
+    ({'-o': True, 'P1': "ipyrad.tar", 'P2': ""}, True, "cont123", True, 1, None),
+    ({'-o': True, 'P1': "ipyrad.tar", 'P2': "invalid"}, False, "", True, 1, "invalid container id: %s"),
+    ({'-o': True, 'P1': "ipyrad.tar", 'P2': "ipyrad:latest"}, False, "cont123", False, 1, "exporting"),
+    ({'-o': True, 'P1': "ipyrad.tar", 'P2': "ipyrad:latest", '--clone': True}, False, "cont123", True, 0, None),
+])
+def test_18_do_export(mocker, ucli, cmdp_opts, missing_opts, container_id, export_result, expected_status,
+                      err_msg):
+    """ Test18 UdockerCLI().do_export(). """
+    cmdp = mocker.Mock()
+    cmdp.get.side_effect = lambda x: cmdp_opts.get(x, None)
+    cmdp.missing_options.return_value = missing_opts
+
+    mocker.patch.object(ucli.localrepo, 'get_container_id', return_value=container_id)
+    log_error = mocker.patch.object(LOG, 'error')
+    log_mock = mocker.patch.object(LOG, 'info')
+
+    cstruct_mock = mocker.Mock()
+    cstruct_class_mock = mocker.patch('udocker.cli.ContainerStructure', return_value=cstruct_mock)
+
+    cstruct_mock.clone_tofile.return_value = export_result
+    cstruct_mock.export_tofile.return_value = export_result
+
+    status = ucli.do_export(cmdp)
+
+    assert status == expected_status
+    if err_msg and not err_msg == 'exporting':
+        log_error.assert_called_with(err_msg, '' if not container_id else container_id)  # FIXME: tmp fix
+    elif err_msg and not missing_opts:
+        log_mock.assert_called_with("exporting to file: %s", cmdp_opts['P1'])
+    elif err_msg:
+        log_error.assert_called_with(err_msg)
+
+    # cstruct_class_mock.assert_called_with(ucli.localrepo, container_id) # FIXME: this need changes in the code
+    if not missing_opts:
+        if cmdp_opts.get('--clone') and expected_status == UdockerCLI.STATUS_OK:
+            cstruct_mock.clone_tofile.assert_called_with(cmdp_opts['P1'])
+        elif expected_status == UdockerCLI.STATUS_OK:
+            cstruct_mock.export_tofile.assert_called_with(cmdp_opts['P1'])
+
+
+@pytest.mark.parametrize("cmdp_options, missing_opts, get_container_id, clone, expected_status, err_msg", [
+    ({}, True, None, None, 1, None),
+    ({'P1': 'invalid_id'}, False, "", None, 1, "invalid container id: %s"),
+    ({'--name=': 'new_name', 'P1': 'cont123'}, False, 'cont123', None, 1, "container name already exists"),
+    ({'P1': 'valid_id'}, False, 'valid_id', None, 1, "cloning"),
+    ({'P1': 'valid_id'}, False, 'valid_id', 'clone_id', 0, None),
+    ({'--name=': 'new_name', 'P1': 'valid_id'}, False, "", 'clone_id', 1, "invalid container id: %s"),
+])
+def test_19_do_clone(mocker, ucli, cmdp_options, missing_opts, get_container_id, clone, expected_status, err_msg):
+    cmdp = mocker.Mock()
+    cmdp.get.side_effect = lambda x: cmdp_options.get(x, None)
+    cmdp.missing_options.return_value = missing_opts
+
+    mocker.patch.object(ucli.localrepo, 'get_container_id', return_value=get_container_id)
+    mocker.patch.object(ucli.localfileapi, 'clone_container', return_value=clone)
+    log_mock = mocker.patch.object(LOG, 'info')
+    error_log_mock = mocker.patch.object(LOG, 'error')
+
+    status = ucli.do_clone(cmdp)
+
+    assert status == expected_status
+    if err_msg and not get_container_id:
+        error_log_mock.assert_called_with(err_msg, mocker.ANY)
+    elif err_msg and cmdp.get('--name=') and get_container_id:
+        error_log_mock.assert_called_with(err_msg)
+    elif status == UdockerCLI.STATUS_OK:
+        log_mock.assert_called_with("clone ID: %s", clone)
+
+
+@pytest.mark.parametrize("cmdp_opts, missing_opts, input, getpass, token, keystore, exp_status, err_msg", [
+    ({}, True, None, None, None, None, 1, None),
+    ({'--username=': 'u1', '--password=': 'xx', "--registry=": 'https://registry-1.docker.io'}, False, None, None,
+     "zx1", 0, 0, None),
+    ({'--username=': 'u1', '--password=': 'XX'}, False, None, None, "zx1", 0, 0, None),
+    ({'--username=': 'u1', '--password=': 'xx'}, False, None, None, "zx1", 1, 1, "invalid credentials"),
+    ({}, False, "u1", "xx", "zx1", 0, 0, None),
+])
+def test_20_do_login(mocker, ucli, cmdp_opts, missing_opts, input, getpass, token, keystore, exp_status,
+                     err_msg):
+    """ Test20 UdockerCLI().do_login(). """
+    cmdp = mocker.Mock()
+    cmdp.get.side_effect = lambda x: cmdp_opts.get(x, None)
+    cmdp.missing_options.return_value = missing_opts
+
+    mocker.patch.object(ucli, '_set_repository', return_value=cmdp_opts.get("--registry="))
+    mocker.patch.object(ucli.dockerioapi.v2api, 'get_login_token', return_value=token)
+    mocker.patch.object(ucli.keystore, 'put', return_value=keystore)
+    mocker.patch('udocker.cli.GET_INPUT', return_value=input)
+    mocker.patch('udocker.cli.getpass', return_value=getpass)
+    mock_log_error = mocker.patch.object(LOG, 'error')
+    mock_log_warning = mocker.patch.object(LOG, 'warning')
+
+    status = ucli.do_login(cmdp)
+
+    assert status == exp_status
+    assert cmdp.get.call_count == 3
+
+    if not missing_opts and cmdp_opts.get("--registry="):
+        assert ucli._set_repository.return_value == "https://registry-1.docker.io"
+    else:
+        assert ucli._set_repository.return_value == None
+
+    if err_msg:
+        mock_log_error.assert_called_with(err_msg)
 
 # @patch('udocker.cli.KeyStore.put')
 # @patch('udocker.cli.DockerIoAPI.get_v2_login_token')
@@ -1447,4 +1474,3 @@ def test_10_do_mkrepo(mocker, ucli, cmdparse, lrepo):
 #     udoc = UdockerCLI(self.local)
 #     status = udoc.do_help(cmdp)
 #     self.assertEqual(status, 0)
-
