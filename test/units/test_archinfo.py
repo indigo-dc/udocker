@@ -6,6 +6,11 @@ import pytest
 from udocker.helper.archinfo import ArchInfo
 
 
+@pytest.fixture
+def archinfo_instance():
+    return ArchInfo()
+
+
 def test_01_get_binaries_list():
     '''Test01 ArchInfo.get_binaries_list'''
     binlist = ["/lib64/ld-linux-x86-64.so",
@@ -42,9 +47,18 @@ def test_02_get_arch(source_type, arch_info, target_type, expected):
 # data_trsl = (('amd64', 'docker', 'udocker', 'x86_64'),
 #              )
 
-
+@pytest.mark.parametrize("source_arch, source_type, target_type, expected_result", [
+    ("x86_64", "docker", "udocker", ["amd64"]),
+    ("unknown_arch", "docker", "udocker", []),
+    ("x86_64", "unknown_type", "udocker", []),
+    ("x86_64", "docker", "unknown_type", []),
+])
 # @pytest.mark.parametrize("source_arch,source_type,target_type,expected", data_trsl)
-# def test_03_translate_arch(source_arch, source_type, target_type, expected):
-#     '''Test03 ArchInfo.translate_arch'''
-#     output = ArchInfo().translate_arch(source_arch, source_type, target_type)
-#     assert output == expected
+def test_03_translate_arch(archinfo_instance, source_arch, source_type, target_type, expected_result):
+    '''Test03 ArchInfo.translate_arch'''
+    archinfo_instance._arch_list = [
+        {"docker": ["x86_64"], "udocker": ["amd64"]},
+        {"docker": ["ppc64le"], "udocker": ["powerpc64le"]}
+    ]
+    result = archinfo_instance.translate_arch(source_arch, source_type, target_type)
+    assert result == expected_result
