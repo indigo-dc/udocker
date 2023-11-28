@@ -4,8 +4,12 @@
 """
 udocker unit tests: GetURLexeCurl
 """
+import os
+
 import pytest
-from udocker.utils.curl import GetURLexeCurl
+from udocker.utils.curl import GetURLexeCurl, CurlHeader
+from udocker.utils.fileutil import FileUtil
+from udocker.utils.uprocess import Uprocess
 
 
 @pytest.fixture
@@ -112,3 +116,25 @@ def test_07__mkcurlcmd(geturl, mocker):
 #     geturl._geturl = type('test', (object,), {})()
 #     geturl.get = self._get
 #     self.assertEqual(geturl.get("http://host"), "http://host")
+
+@pytest.mark.parametrize("status_code, kwargs, expected_result", [
+    (200, {'ofile': 'outfile'}, "rename"),
+    (401, {}, "auth_required"),
+    (307, {}, "redirect"),
+    (206, {'resume': True}, "resume"),
+    (416, {'resume': True}, "outside range"),
+])
+def test_06_get(mocker, geturl, status_code, kwargs, expected_result):
+    """Test06 GetURLexeCurl().get()."""
+    mocker.patch.object(Uprocess, 'call', return_value=0)
+    mocker.patch.object(os, 'rename')
+    mocker.patch.object(FileUtil, 'remove')
+    mocker.patch.object(FileUtil, 'getdata', return_value='')
+    mocker.patch.object(CurlHeader, 'setvalue_from_file')
+    mocker.patch.object(GetURLexeCurl, 'get_status_code', return_value=status_code)
+
+    hdr, buf = geturl.get('http://host', **kwargs)
+
+    if expected_result == "rename":
+        os.rename.assert_called_with(geturl._files["output_file"], kwargs['ofile'])
+    assert isinstance(hdr, CurlHeader)
