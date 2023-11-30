@@ -54,7 +54,7 @@ class DockerIoAPIv1:
         return False
 
     def get_repo(self, imagerepo):
-        '''API v1 Get list of images in a repo from Docker Hub'''
+        """Get list of images in a repo from Docker Hub"""
         url = self.dockerioapi.index_url + "/v1/repositories/" + imagerepo + "/images"
         LOG.debug("repo url: %s", url)
         (hdr, buf) = self.dockerioapi.get_url(url, header=["X-Docker-Token: true"])
@@ -361,7 +361,7 @@ class DockerIoAPIv2:
             return []
 
     def _get_digest_from_image_index(self, image_index, platform):
-        '''Get OCI or docker manifest from an image index'''
+        """Get OCI or docker manifest from an image index"""
         if isinstance(image_index, dict):
             index_list = image_index
         else:
@@ -372,17 +372,19 @@ class DockerIoAPIv2:
         (p_os, p_architecture, p_variant) = HostInfo().parse_platform(platform)
         try:
             for manifest in index_list["manifests"]:
-                if (p_os and (manifest["platform"]["os"]).lower() != p_os):
+                manifest_p = manifest["platform"]
+                if (p_os and (manifest_p["os"]).lower() != p_os):
                     continue
                 if (p_architecture and
-                        (manifest["platform"]["architecture"]).lower() != p_architecture):
+                        (manifest_p["architecture"]).lower() != p_architecture):
                     continue
-                if (p_variant and (manifest["platform"]["variant"]).lower() != p_variant):
+                if (p_variant and
+                        (manifest_p["variant"]).lower() != p_variant):
                     continue
                 return manifest["digest"]
         except (KeyError, AttributeError, ValueError, TypeError):
             pass
-        return ''
+        return ""
 
     def get_image_manifest(self, imagerepo, tag, platform=""):
         ''' API v2 Get the image manifest which contains JSON metadata
@@ -399,14 +401,17 @@ class DockerIoAPIv2:
         (hdr, buf) = self.dockerioapi.get_url(url, header=reqhdr)
 
         try:
-            if "docker.distribution.manifest.v1" in hdr.data['content-type']:
+            content_type = hdr.data['content-type']
+            if "application/json" in content_type:
                 return (hdr.data, json.loads(buf.getvalue().decode()))
-            if "docker.distribution.manifest.v2" in hdr.data['content-type']:
+            if "docker.distribution.manifest.v1" in content_type:
                 return (hdr.data, json.loads(buf.getvalue().decode()))
-            if "oci.image.manifest.v1+json" in hdr.data['content-type']:
+            if "docker.distribution.manifest.v2" in content_type:
                 return (hdr.data, json.loads(buf.getvalue().decode()))
-            if ("docker.distribution.manifest.list.v2" in hdr.data['content-type'] or
-                    "oci.image.index.v1+json" in hdr.data['content-type']):
+            if "oci.image.manifest.v1+json" in content_type:
+                return (hdr.data, json.loads(buf.getvalue().decode()))
+            if ("docker.distribution.manifest.list.v2" in content_type or
+                    "oci.image.index.v1+json" in content_type):
                 image_index = json.loads(buf.getvalue().decode())
                 if not platform:
                     return (hdr.data, image_index)

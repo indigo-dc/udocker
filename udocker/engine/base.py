@@ -235,7 +235,6 @@ class ExecutionEngineCommon:
 
             if not found:
                 LOG.warning("--novol %s not in volumes list", novolume)
-
         return self._check_volumes()
 
     def _check_paths(self):
@@ -333,6 +332,7 @@ class ExecutionEngineCommon:
                 self.container_architecture = cstruc.get_container_meta("architecture",
                                                                         "", cntjson)
                 self.container_variant = cstruc.get_container_meta("variant", "", cntjson)
+
 
         return (cont_dir, cntjson)
 
@@ -689,7 +689,7 @@ class ExecutionEngineCommon:
 
     def _is_same_osenv(self, filename):
         """Check if the host has changed"""
-        saved = json.loads(FileUtil(filename).getdata())
+        saved = self._get_saved_osenv(filename)
         try:
             if (saved["osversion"] == HostInfo().osversion() and
                     saved["oskernel"] == HostInfo().oskernel() and
@@ -739,5 +739,33 @@ class ExecutionEngineCommon:
         qemu_path = FileUtil(qemu_filename).find_exec()
         if not qemu_path:
             LOG.error("qemu required but not available")
+            return ""
+        return qemu_path if return_path else qemu_filename
+
+    def _check_arch(self, fail=False):
+        """Check if architecture is the same"""
+        same_arch = OSInfo(self.container_root).is_same_arch()
+        if same_arch is None:
+            return True
+        if not same_arch:
+            if fail:
+                Msg().err("Error: host and container architectures mismatch")
+                return False
+            Msg().err("Warning: host and container architectures mismatch",
+                      l=Msg.WAR)
+        return True
+
+    def _get_qemu(self, return_path=False):
+        """Get the qemu binary name if emulation needed"""
+        container_qemu_arch = OSInfo(self.container_root).arch("qemu")
+        host_qemu_arch = HostInfo().arch("qemu")
+        if not (container_qemu_arch and host_qemu_arch):
+            return ""
+        if container_qemu_arch == host_qemu_arch:
+            return ""
+        qemu_filename = "qemu-%s" % container_qemu_arch
+        qemu_path = FileUtil(qemu_filename).find_exec()
+        if not qemu_path:
+            Msg().err("Warning: qemu required but not available", l=Msg.WAR)
             return ""
         return qemu_path if return_path else qemu_filename

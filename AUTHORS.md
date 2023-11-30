@@ -3,6 +3,7 @@
 * Docker <https://www.docker.com/>
 * PRoot <https://proot-me.github.io/>
 * Fakechroot <https://github.com/dex4er/fakechroot/wiki>
+* Patchelf <https://github.com/NixOS/patchelf>
 * runC <https://runc.io/>
 * crun <https://github.com/containers/crun>
 * Singularity <https://www.sylabs.io/>
@@ -12,6 +13,7 @@
 * EOSC-hub <https://eosc-hub.eu>
 * EGI-ACE <https://www.egi.eu/projects/egi-ace/>
 * EOSC-Synergy <https://www.eosc-synergy.eu/>
+* DT-Geo <https://dtgeo.eu/>
 * LIP [https://www.lip.pt](https://www.lip.pt/?section=home&page=homepage&lang=en)
 * INCD [https://www.incd.pt](https://www.incd.pt/?lang=en)
 

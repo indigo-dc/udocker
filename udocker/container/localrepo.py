@@ -156,10 +156,10 @@ class LocalRepository:
         if not os.path.exists(container_root):
             return 2
 
-        if not os.path.isdir(container_root):
+        if not FileUtil(container_root).isdir():
             return 3
 
-        if os.access(container_root, os.W_OK):
+        if FileUtil(container_root).iswriteable():
             return 1
 
         return 0
@@ -647,6 +647,27 @@ class LocalRepository:
                 return self._get_image_attributes_v2_s2(directory, manifest)
 
         return (None, None)
+
+    def get_image_platform_fmt(self):
+        """Get the image platform from the metadata"""
+        (manifest_json, dummy) = self.get_image_attributes()
+        if not manifest_json:
+            return "unknown/unknown"
+        try:
+            p_architecture = manifest_json["architecture"]
+        except KeyError:
+            p_architecture = "unknown"
+        try:
+            p_os = manifest_json["os"]
+        except KeyError:
+            p_os = "unknown"
+        try:
+            p_variant = manifest_json["variant"]
+        except KeyError:
+            p_variant = ""
+        if not p_variant:
+            return "%s/%s" % (p_os, p_architecture)
+        return "%s/%s/%s" % (p_os, p_architecture, p_variant)
 
     def save_json(self, filename, data):
         """Save container json to a file in the image TAG directory

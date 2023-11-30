@@ -26,6 +26,13 @@ class Config:
     # the actual tarball used in the installation can have a higher version
     conf['tarball_release'] = "1.2.10"
 
+    conf['tarball'] = (
+        "https://download.ncg.ingrid.pt/"
+        "webdav/udocker/udocker-englib-1.2.10.tar.gz"
+        " "
+        "https://raw.githubusercontent.com"
+        "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.10.tar.gz"
+    )
     # Either remove, as not been used
     # conf['installinfo'] = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages"]
 
@@ -64,11 +71,15 @@ class Config:
 
     # container execution mode if not set via setup
     # Change it to P2 if execution problems occur
-    conf['default_execution_mode'] = "P1"
+    conf['override_default_execution_mode'] = ""
+    conf['default_execution_modes'] = {'x86_64': "P1", 'x86': "P1",
+                                       'arm64': "P1", 'arm': "P2",
+                                       'ppc64le': "R1", 'DEFAULT': "R1"}
 
     # PRoot override seccomp
     conf['proot_noseccomp'] = None
-    conf['proot_killonexit'] = True   # PRoot kill-on-exit
+    conf['proot_killonexit'] = True   # PRoot --kill-on-exit
+    conf['proot_link2symlink'] = True   # PRoot --link2symlink
 
     # fakechroot engine get ld_library_paths from ld.so.cache
     conf['ld_so_cache'] = "/etc/ld.so.cache"
@@ -76,11 +87,19 @@ class Config:
     # fakechroot engine override fakechroot.so selection
     conf['fakechroot_so'] = None
 
-    # translate symbolic links in pathnames None means automatic
+    # translate symbolic links into pathnames None means automatic
     conf['fakechroot_expand_symlinks'] = None
 
+    # patterns to search for libc.so for bypass in fakechroot
+    conf['libc_search'] = ("/lib64/libc.so.[0-9]", "/usr/lib64/libc.so.[0-9]",
+                           "/usr/lib/libc.so.[0-9]", "/lib/libc.so.[0-9]",
+                           "/usr/libc.so.[0-9]", "/libc.so.[0-9]", "/libc.so",)
+
+    # override the above search for libc with a specified relative pathname
+    conf['fakechroot_libc'] = None
+
     # sharable library directories
-    conf['lib_dirs_list_x86_64'] = ("/usr/lib/x86_64-linux-gnu", "/usr/lib64",)
+    conf['lib_dirs_list_nvidia'] = ("/usr/lib/x86_64-linux-gnu", "/usr/lib64",)
 
     # fakechroot sharable library directories
     conf['lib_dirs_list_essential'] = ("/lib/x86_64-linux-gnu", "/usr/lib/x86_64-linux-gnu",
@@ -96,6 +115,7 @@ class Config:
     # Force the use of specific executables
     # UDOCKER = use executable from the udocker binary distribution/tarball
     conf['use_proot_executable'] = "UDOCKER"
+    conf['use_patchelf_executable'] = "UDOCKER"
     conf['use_runc_executable'] = ""
     conf['use_singularity_executable'] = ""
 
@@ -198,6 +218,12 @@ class Config:
                                                       Config.conf['dockerio_index_url'])
         Config.conf['dockerio_registry_url'] = os.getenv("UDOCKER_REGISTRY",
                                                          Config.conf['dockerio_registry_url'])
+        Config.conf['override_default_execution_mode'] = \
+            os.getenv("UDOCKER_DEFAULT_EXECUTION_MODE",
+                      Config.conf['override_default_execution_mode'])
+        Config.conf['fakechroot_libc'] = \
+            os.getenv("UDOCKER_FAKECHROOT_LIBC", Config.conf['fakechroot_libc'])
+
         Config.conf['default_execution_mode'] = os.getenv("UDOCKER_DEFAULT_EXECUTION_MODE",
                                                           Config.conf['default_execution_mode'])
         Config.conf['fakechroot_so'] = os.getenv("UDOCKER_FAKECHROOT_SO",
@@ -213,6 +239,9 @@ class Config:
         Config.conf['use_singularity_executable'] = \
             os.getenv("UDOCKER_USE_SINGULARITY_EXECUTABLE",
                       Config.conf['use_singularity_executable'])
+        Config.conf['use_patchelf_executable'] = \
+            os.getenv("UDOCKER_USE_PATCHELF_EXECUTABLE",
+                      Config.conf['use_patchelf_executable'])
 
         Config.conf['fakechroot_expand_symlinks'] = \
             os.getenv("UDOCKER_FAKECHROOT_EXPAND_SYMLINKS",

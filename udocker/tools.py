@@ -128,8 +128,32 @@ class UdockerTools:
 
         return ''
 
+    def _verify_version(self, tarball_file):
+        """verify the tarball version"""
+        if not (tarball_file and os.path.isfile(tarball_file)):
+            return (False, "")
+
+        tmpdir = FileUtil("VERSION").mktmpdir()
+        if not tmpdir:
+            return (False, "")
+
+        try:
+            tfile = tarfile.open(tarball_file, "r:gz")
+            for tar_in in tfile.getmembers():
+                if tar_in.name.startswith("udocker_dir/lib/VERSION"):
+                    tar_in.name = os.path.basename(tar_in.name)
+                    tfile.extract(tar_in, path=tmpdir)
+            tfile.close()
+        except tarfile.TarError:
+            FileUtil(tmpdir).remove(recursive=True)
+            return (False, "")
+        tarball_version = FileUtil(tmpdir + "/VERSION").getdata('r').strip()
+        status = self._version_isok(tarball_version)
+        FileUtil(tmpdir).remove(recursive=True)
+        return (status, tarball_version)
+
     def _clean_install(self, tfile):
-        '''Remove files before install'''
+        """Remove files before install"""
         for tar_in in tfile.getmembers():
             basename = os.path.basename(tar_in.name)
             if tar_in.name.startswith('udocker_dir/bin/'):

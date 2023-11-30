@@ -3,6 +3,9 @@
 [![PyPI version](https://badge.fury.io/py/udocker.svg)](https://badge.fury.io/py/udocker)
 [![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc%2Fudocker%2Fmaster)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/master/)
 
+[![SQAaaS badge](https://github.com/EOSC-synergy/SQAaaS/raw/master/badges/badges_150x116/badge_software_gold.png)](https://api.eu.badgr.io/public/assertions/70dSTwYKQpmEv7dFy6TF3w "SQAaaS gold badge achieved")
+
+---
 ![logo](docs/logo-small.png)
 
 udocker is a basic user tool to execute simple docker containers in user space without requiring
@@ -84,6 +87,7 @@ v1.1.x for Python 2 is no longer maintained but is still available
           pull <repo/image:tag>         :Pull container image from dockerhub
           create <repo/image:tag>       :Create container from a pulled image
           run <container>               :Execute container
+          run <repo/image:tag>          :Pull, create and execute container
 
           images -l                     :List container images
           ps -m -s                      :List created containers
@@ -93,6 +97,7 @@ v1.1.x for Python 2 is no longer maintained but is still available
           clone <container_id>          :Duplicate container
           rm <container-id>             :Delete container
           rmi <repo/image:tag>          :Delete image
+          tag <repo/image:tag> <repo2/image2:tag2> :Tag image
 
           import <tar> <repo/image:tag> :Import tar file (exported by docker)
           import - <repo/image:tag>     :Import from stdin (exported by docker)
@@ -104,6 +109,7 @@ v1.1.x for Python 2 is no longer maintained but is still available
 
           inspect -p <repo/image:tag>   :Return low level information on image
           verify <repo/image:tag>       :Verify a pulled or loaded image
+          manifest inspect <repo/image:tag> :Print manifest metadata
 
           protect <repo/image:tag>      :Protect repository
           unprotect <repo/image:tag>    :Unprotect repository
@@ -394,6 +400,7 @@ of the installation manual.
 * Docker <https://www.docker.com/>
 * PRoot <https://proot-me.github.io/>
 * Fakechroot <https://github.com/dex4er/fakechroot/wiki>
+* Patchelf <https://github.com/NixOS/patchelf>
 * runC <https://runc.io/>
 * crun <https://github.com/containers/crun>
 * Singularity <https://www.sylabs.io/>
@@ -403,13 +410,16 @@ of the installation manual.
 * EOSC-hub <https://eosc-hub.eu>
 * EGI-ACE <https://www.egi.eu/projects/egi-ace/>
 * EOSC-Synergy <https://www.eosc-synergy.eu/>
+* DT-Geo <https://dtgeo.eu/>
 * LIP [https://www.lip.pt](https://www.lip.pt/?section=home&page=homepage&lang=en)
 * INCD [https://www.incd.pt](https://www.incd.pt/?lang=en)
 
-This work was performed in the framework of the H2020 project INDIGO-Datacloud (RIA 653549) and
-further developed with co-funding by the projects EOSC-hub (Horizon 2020) under Grant number 777536
-and DEEP-Hybrid-DataCloud (Horizon 2020) under Grant number 777435. Software Quality Assurance is
-performed with the support of by the project EOSC-Synergy (Horizon 2020). The authors wish to
-acknowledge the support of INCD-Infraestrutura Nacional de
+This work was performed in the framework of the H2020 project INDIGO-Datacloud
+(RIA 653549) and further developed with co-funding by the projects EOSC-hub
+(Horizon 2020) under Grant number 777536, DEEP-Hybrid-DataCloud
+(Horizon 2020) under Grant number 777435, DT-Geo (Horizon Europe) under Grant
+number 101058129. Software Quality Assurance is performed with the support of
+by the project EOSC-Synergy (Horizon 2020).
+The authors wish to acknowleadge the support of INCD-Infraestrutura Nacional de
 Computação Distribuída (funded by FCT, P2020, Lisboa2020, COMPETE and FEDER
 under the project number 22153-01/SAICT/2016).

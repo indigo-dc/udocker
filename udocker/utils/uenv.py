@@ -141,7 +141,6 @@ class Uenv:
         env_list = []
         for (key, val) in self.env.items():
             env_list.append(f'{key}={val}')
-
         return env_list
 
     def dict(self):

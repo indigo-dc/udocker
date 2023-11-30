@@ -37,8 +37,8 @@ class NvidiaMode:
 
     def _copy_files(self, host_src_dir, cont_dst_dir, files_list, force=False):
         """copy or link file to destination creating directories as needed"""
-        LOG.debug("Source (host) dir %s", host_src_dir)
-        LOG.debug("Destination (container) dir %s", cont_dst_dir)
+        LOG.debug("Debug: Source (host) dir %s", host_src_dir)
+        LOG.debug("Debug: Destination (container) dir %s", cont_dst_dir)
         for fname in files_list:
             srcname = host_src_dir + '/' + fname
             dstname = self.container_root + '/' + cont_dst_dir + '/' + fname
@@ -91,12 +91,12 @@ class NvidiaMode:
         LOG.debug("list nvidia libs: %s", lib_list)
         return lib_list
 
-    def _find_host_dir_ldconfig(self, arch="x86-64"):
+    def _find_host_dir_ldconfig(self, arch=""):
         """Find host nvidia libraries via ldconfig"""
         dir_list = set()
         ld_data = Uprocess().get_output(["ldconfig", "-p"])
         if ld_data:
-            regexp = "[ |\t]%s[^ ]* .*%s.*=> (/.*)"
+            regexp = "[ |\t]%s[^ ]* .*%s => (/.*)"
             for line in ld_data.split('\n'):
                 for lib in self._nvidia_main_libs:
                     match = re.search(regexp % (lib, arch), line)
@@ -121,7 +121,7 @@ class NvidiaMode:
     def _find_host_dir(self):
         """Find the location of the host nvidia libraries"""
         dir_list = set()
-        library_path = ':'.join(Config.conf['lib_dirs_list_x86_64'])
+        library_path = ':'.join(Config.conf['lib_dirs_list_nvidia'])
         dir_list.update(self._find_host_dir_ldpath(library_path))
         dir_list.update(self._find_host_dir_ldconfig())
         library_path = os.getenv("LD_LIBRARY_PATH", "")

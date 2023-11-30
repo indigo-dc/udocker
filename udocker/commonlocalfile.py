@@ -7,6 +7,7 @@ import time
 import logging
 
 from udocker import LOG
+from udocker.utils.chksum import ChkSUM
 from udocker.utils.fileutil import FileUtil
 from udocker.utils.uprocess import Uprocess
 from udocker.helper.unique import Unique
@@ -86,10 +87,10 @@ class CommonLocalFileApi:
         return not status
 
     def create_container_meta(self, layer_id, platform=""):
-        ''' Create metadata for a given container layer, used in import.
-            A file for import is a tarball of a directory tree, does not contain
-            metadata. This method creates minimal metadata.
-        '''
+        """Create metadata for a given container layer, used in import.
+        A file for import is a tarball of a directory tree, does not contain
+        metadata. This method creates minimal metadata.
+        """
         (p_os, p_arch, p_variant) = HostInfo().parse_platform(platform)
         container_json = {}
         container_json["id"] = layer_id
@@ -104,6 +105,11 @@ class CommonLocalFileApi:
         container_json["size"] = FileUtil(layer_file).size()
         if container_json["size"] == -1:
             container_json["size"] = 0
+        layer_chksum = ChkSUM().hash(layer_file, "sha256")
+        if layer_chksum:
+            container_json["rootfs"] = {}
+            container_json["rootfs"]["type"] = "layers"
+            container_json["rootfs"]["diff_ids"] = ["sha256:" + layer_chksum,]
 
         container_json["container_config"] = {
             "Hostname": "",
