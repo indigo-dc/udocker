@@ -71,6 +71,7 @@ class Config:
 
     # container execution mode if not set via setup
     # Change it to P2 if execution problems occur
+    conf['default_execution_mode'] = "P1"
     conf['override_default_execution_mode'] = ""
     conf['default_execution_modes'] = {'x86_64': "P1", 'x86': "P1",
                                        'arm64': "P1", 'arm': "P2",

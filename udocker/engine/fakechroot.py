@@ -7,7 +7,7 @@ import re
 import subprocess
 import logging
 
-from udocker import LOG
+from udocker import LOG, MSG
 from udocker.engine.base import ExecutionEngineCommon
 from udocker.helper.osinfo import OSInfo
 from udocker.config import Config
@@ -60,12 +60,9 @@ class FakechrootEngine(ExecutionEngineCommon):
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
         if fakechroot_so.count('-') != 3:
-            Msg().out("Info: this OS or architecture might not be supported by",
-                      "this execution mode",
-                      "\n      specify path to libfakechroot.so with",
-                      "environment UDOCKER_FAKECHROOT_SO",
-                      "\n      or choose other execution mode with: udocker",
-                      "setup --execmode=<mode>", l=Msg.INF)
+            MSG.info("Info: this OS or architecture might not be supported by this execution mode"
+                      "\n      specify path to libfakechroot.so with environment UDOCKER_FAKECHROOT_SO"
+                      "\n      or choose other execution mode with: udocker setup --execmode=<mode>")
         if not os.path.exists(fakechroot_so):
             LOG.error("no libfakechroot found: %s", image_list)
             sys.exit(1)
