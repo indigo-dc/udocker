@@ -18,7 +18,8 @@ The configuration files allow overriding of the udocker `Config` class
 `conf` dictionary. Example of the `udocker.conf` syntax:
 
 ```ini
-dockerio_registry_url = "https://myregistry.mydomain:5000"
+[DEFAULT]
+dockerio_registry_url = https://myregistry.mydomain:5000
 http_insecure = True
 verbose_level = 5
 ```
