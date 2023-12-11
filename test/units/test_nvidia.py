@@ -157,7 +157,9 @@ def test_05__find_host_dir_ldconfig(mocker, nvidia, logger, arch, expected):
     mocker.patch.object(os.path, 'realpath', return_value="/lib/x86_64-linux-gnu", autospec=True)
     mocker.patch.object(os.path, 'dirname', return_value="/lib/x86_64-linux-gnu", autospec=True)
     mocker.patch.object(Uprocess, 'get_output', return_value=(
-        ' libnvidia-cfg.so (libc6,x86-64) => /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so\n,'
+        # ' libnvidia-cfg.so (libc6,x86-64) => /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so\n'
+        # ' libcuda.so (libc6,x86-64) => /usr/lib/x86_64-linux-gnu/libcuda.so\n'))
+        ' libnvidia-cfg.so (libc6,x86-64) => /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so\n'
         ' libcuda.so (libc6,x86-64) => /usr/lib/x86_64-linux-gnu/libcuda.so\n'))
 
     find_host_dir_ldconfig = nvidia._find_host_dir_ldconfig(arch)

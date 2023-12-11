@@ -221,7 +221,7 @@ def test_07__fakechroot_env_set(ufake, mocker, expand_symlinks, cwd, verbose_lev
     mocker.patch.object(os.path, 'realpath', return_value='/bin/fakepath')
     mocker.patch.object(ufake, 'opt', {'env': Uenv(), 'cwd': cwd, 'vol': '/tmp'})
     mocker.patch.object(Config, 'conf', {'fakechroot_expand_symlinks': expand_symlinks, 'tmpdir': '/some/tmp',
-                                         'verbose_level': verbose_level})
+                                         'verbose_level': verbose_level, 'fakechroot_libc': '/path/to/libc'})
 
     mock_elphpatcher = mocker.patch.object(ufake, '_elfpatcher', return_value=mocker.Mock())
     mocker.patch.object(mock_elphpatcher, 'get_ld_library_path', return_value='/a')
@@ -257,10 +257,10 @@ def test_08__run_invalid_options(ufake, mocker, logger, portsmap, netcoop):
 @pytest.mark.parametrize('file_type, find_exec_result, expected_result, raise_error, msg_log', [
     ("/bin/ls: ELF, x86-64, static", None, [], does_not_raise(), ""),
     ("/bin/ls: xxx, x86-64, yyy", "ls", ["/ROOT/ls"], does_not_raise(), ""),
-    ("/bin/ls: xxx, x86-64, yyy", "", ["/ls"], pytest.raises(SystemExit), ""),
-    ("/bin/ls: xxx, x86-64, yyy", "", [], pytest.raises(SystemExit), ""),
-    ("#! bin/ls: xxx, x86-64, yyy", "ls", ["/ROOT/ls"], pytest.raises(SystemExit), "no such file"),
-    ("#! /bin/ls: xxx, x86-64, yyy", "ls", ['/ROOT//bin/ls:', 'xxx,', 'x86-64,', 'yyy'], does_not_raise(), ""),
+    ("/bin/ls: xxx, x86-64, yyy", None, [], pytest.raises(SystemExit), ""),
+    ("/bin/ls: xxx, x86-64, yyy", None, [], pytest.raises(SystemExit), ""),
+    ("#! bin/ls: xxx, x86-64, yyy", None, [], pytest.raises(SystemExit), "no such file"),
+    ("#! /bin/ls: xxx, x86-64, yyy", None, ['/ROOT//bin/ls:', 'xxx,', 'x86-64,', 'yyy'], does_not_raise(), ""),
 ])
 def test_09__run_add_script_support(ufake, mocker, logger, xmode, file_type, find_exec_result, expected_result,
                                     raise_error, msg_log):
@@ -270,7 +270,10 @@ def test_09__run_add_script_support(ufake, mocker, logger, xmode, file_type, fin
     mocker.patch.object(FileUtil, 'find_exec', return_value=find_exec_result)
     mocker.patch.object(FileUtil, 'cont2host', return_value="/bin/ls")
     mocker.patch.object(OSInfo, 'get_filetype', return_value=("", file_type))
-    mocker.patch.object(FileUtil, 'get1stline', return_value=file_type.encode('utf-8'))
+    mocker.patch.object(OSInfo, 'is_binary_executable', side_effect=lambda x: "ELF" in file_type)
+
+    hashbang_line = file_type if file_type.startswith("#!") else ""
+    mocker.patch.object(FileUtil, 'get1stline', return_value=hashbang_line.encode('utf-8'))
 
     with raise_error:
         status = ufake._run_add_script_support("/bin/ls")

@@ -184,6 +184,7 @@ def test_06__get_network_map(mocker, proot, netcoop, portsmap, expected):
     """Test06 PRootEngine()._get_network_map()."""
     mocker.patch.object(proot, 'opt', {'netcoop': netcoop})
     mocker.patch.object(proot, '_get_portsmap', return_value=portsmap)
+    mocker.patch.object(proot, '_has_option', side_effect=lambda x: x == '--netcoop' or x == '--port')
 
     assert proot._get_network_map() == expected
 
@@ -229,7 +230,8 @@ def test_08_run(mocker, proot, container_id, kernel, run_init, env_keys, opt_dic
 
     mocker.patch.object(HostInfo, 'oskernel_isgreater', return_value=oskernel_isgreater)
     mocker.patch.object(subprocess, 'call', return_value=expected)
-    mocker.patch.object(Config, 'conf', {'verbose_level': loglevel, 'proot_killonexit': proot_killonexit})
+    mocker.patch.object(Config, 'conf',
+                        {'verbose_level': loglevel, 'proot_killonexit': proot_killonexit, 'proot_link2symlink': True})
     mocker.patch.object(os, 'getenv', side_effect=lambda key: env_keys.get(key, None))
     mocker.patch.object(proot, '_run_init', return_value=run_init)
     mocker.patch.object(proot, 'select_proot')

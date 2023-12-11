@@ -218,7 +218,7 @@ class FakechrootEngine(ExecutionEngineCommon):
             LOG.warning("this execution mode does not support -P --netcoop --publish-all")
 
     def _run_add_script_support(self, exec_path):
-        """Add an interpreter for non binary executables (scripts)"""
+        """Add an interpreter for non-binary executables (scripts)"""
         relc_path = exec_path.split(self.container_root, 1)[-1]
         # (dummy, filetype) = OSInfo(self.container_root).get_filetype(exec_path) FIXME: jprm 3f666a6af75b63e4813cf591d80f6cd10e7d645c
         if OSInfo(self.container_root).is_binary_executable(relc_path):

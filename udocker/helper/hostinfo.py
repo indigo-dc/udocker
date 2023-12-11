@@ -113,55 +113,6 @@ class HostInfo(ArchInfo):
 
         return True
 
-    def parse_platform(self, platform_in):
-        """Convert a platform string or dict into (os, architecture, variant)"""
-        if isinstance(platform_in, dict):
-            p_os = ""
-            p_architecture = ""
-            p_variant = ""
-            for (key, val) in platform_in.items():
-                if key == "os":
-                    p_os = val.lower()
-                elif key == "architecture":
-                    p_architecture = val.lower()
-                elif key == "variant":
-                    p_variant = val.lower()
-            return (p_os, p_architecture, p_variant)
-        if isinstance(platform_in, str):
-            try:
-                (p_os, p_architecture, p_variant) = platform_in.lower().split("/")
-                return (p_os, p_architecture, p_variant)
-            except ValueError:
-                try:
-                    (p_os, p_architecture) = platform_in.split("/")
-                    return (p_os, p_architecture, "")
-                except ValueError:
-                    return (platform_in.strip(), "", "")
-        return ("", "", "")
-
-    def platform_to_str(self, platform_in):
-        """Parse platform and return a string with os/architecture/variant"""
-        parsed_platform = self.parse_platform(platform_in)
-        if parsed_platform[2]:
-            return "%s/%s/%s" % parsed_platform
-        if parsed_platform[1]:
-            return "%s/%s" % parsed_platform[0:2]
-        return parsed_platform[0]
-
-    def platform(self, return_str=True):
-        """get docker platform os/architecture/variant"""
-        architecture = self.arch("docker")
-        host_platform = self.osversion() + "/" + architecture
-        if return_str:
-            return host_platform.lower()
-        return self.parse_platform(host_platform)
-
-    def is_same_platform(self, platform_in):
-        """Compare some platform against the host platform"""
-        if self.parse_platform(platform_in) == self.platform(return_str=False):
-            return True
-        return False
-
     def cmd_has_option(self, executable, search_option, arg=None):
         """Check if executable has a given cli option"""
         if not executable:

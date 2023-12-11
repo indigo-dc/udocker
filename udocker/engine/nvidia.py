@@ -37,8 +37,8 @@ class NvidiaMode:
 
     def _copy_files(self, host_src_dir, cont_dst_dir, files_list, force=False):
         """copy or link file to destination creating directories as needed"""
-        LOG.debug("Debug: Source (host) dir %s", host_src_dir)
-        LOG.debug("Debug: Destination (container) dir %s", cont_dst_dir)
+        LOG.debug("Source (host) dir %s", host_src_dir)
+        LOG.debug("Destination (container) dir %s", cont_dst_dir)
         for fname in files_list:
             srcname = host_src_dir + '/' + fname
             dstname = self.container_root + '/' + cont_dst_dir + '/' + fname

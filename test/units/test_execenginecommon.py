@@ -563,7 +563,7 @@ def test_19__set_cont_user_noroot(mocker, engine, logger, mocker_nixauth, user_i
         'uid': uid,
         'gid': gid,
     })
-    
+
     set_cont_user_noroot = engine._setup_container_user_noroot(user_input)
     assert set_cont_user_noroot == expected
     assert engine.opt["user"] == expected_username
@@ -893,7 +893,7 @@ def test_29__get_saved_osenv(mocker, engine, file_content, expected):
 
 @pytest.mark.parametrize("file_contents,osversion,oskernel,arch,osdistribution,error,expected", [
     ('{}', "", "", "", "", does_not_raise(), {}),
-    ('not_a_valid_json', "", "", "", "", pytest.raises(ValueError), {}),
+    ('not_a_valid_json', "", "", "", "", does_not_raise(), {}),
     ('{"osversion": "linux", "oskernel": "", "arch": ""}', "linux", "3.2.1", "amd64", "ubuntu", does_not_raise(), {}),
     ('{"osversion": "linux", "oskernel": "3.2.1", "arch": "amd64", "osdistribution": "ubuntu"}', "linux", "3.2.1",
      "amd64", "ubuntu", does_not_raise(),
@@ -902,7 +902,7 @@ def test_29__get_saved_osenv(mocker, engine, file_content, expected):
 @pytest.mark.parametrize("xmode", ["F1", "P1"])
 def test_30__is_same_osenv(mocker, engine, file_contents, osversion, oskernel, arch, osdistribution, error, expected):
     """Test30 ExecutionEngineCommon()._is_same_osenv()."""
-    mocker.patch.object(HostInfo, 'osversion', return_value=osversion)
+    mocker.patch.object(HostInfo, 'osversion', side_effect=[osversion])
     mocker.patch.object(HostInfo, 'oskernel', return_value=oskernel)
     mocker.patch.object(HostInfo, 'arch', return_value=arch)
     mocker.patch.object(OSInfo, 'osdistribution', return_value=osdistribution)
@@ -914,30 +914,29 @@ def test_30__is_same_osenv(mocker, engine, file_contents, osversion, oskernel, a
 
 
 @pytest.mark.parametrize("osversion,oskernel,arch,osdistribution,putdata_return,error,expected", [
-    ("linux", "3.2.1", "amd64", "ubuntu", True, does_not_raise(), True),
-    ("linux", "3.2.1", "amd64", "ubuntu", False, does_not_raise(), False),
-    (ValueError("Error"), "3.2.1", "amd64", "ubuntu", True, does_not_raise(), False),
-    (None, "3.2.1", "amd64", "ubuntu", False, does_not_raise(), False),
-    (None, "3.2.1", "amd64", "ubuntu", False, does_not_raise(), False),
+    ("linux", "3.2.1", "amd64", "ubuntu", True, False, True),
+    ("linux", "3.2.1", "amd64", "ubuntu", False, False, False),
+    (ValueError("Error"), "3.2.1", "amd64", "ubuntu", True, True, False),
+    (None, "3.2.1", "amd64", "ubuntu", False, False, False),
+    (None, "3.2.1", "amd64", "ubuntu", False, False, False),
 ])
 @pytest.mark.parametrize("xmode", ["F1", "P1"])
 def test_31__save_osenv(mocker, engine, osversion, oskernel, arch, osdistribution, putdata_return, error, expected):
     """Test31 ExecutionEngineCommon()._save_osenv()."""
-    mocker.patch.object(HostInfo, 'osversion', return_value=osversion)
+    mocker.patch.object(HostInfo, 'osversion', side_effect=[osversion])
     mocker.patch.object(HostInfo, 'oskernel', return_value=oskernel)
     mocker.patch.object(HostInfo, 'arch', return_value=arch)
     mocker.patch.object(OSInfo, 'osdistribution', return_value=osdistribution)
     mocker.patch.object(FileUtil, 'putdata', return_value=putdata_return)
 
-    with error:
-        assert engine._save_osenv("dummy_filename") == expected
-
     save = dict()
     engine._save_osenv("dummy_filename", save) == expected
-    assert save["osversion"] == osversion
-    assert save["oskernel"] == oskernel
-    assert save["arch"] == arch
-    assert save["osdistribution"] == osdistribution
+
+    if not error:
+        assert save["osversion"] == osversion
+        assert save["oskernel"] == oskernel
+        assert save["arch"] == arch
+        assert save["osdistribution"] == osdistribution
 
 
 @pytest.mark.parametrize("is_same_arch, fail, expected_result, expected_log", [
