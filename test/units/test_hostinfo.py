@@ -177,18 +177,23 @@ def test_13_cmd_has_option(mocker, hinfo, cmd, option, argmt, expected):
     assert status == expected
 
 
-def test_14_termsize(mocker, hinfo):
+@pytest.mark.parametrize("check_output, expected_size", [
+    (b"48 90", (48, 90)),
+    (OSError("fail"), (24, 80))
+])
+def test_14_termsize(mocker, hinfo, check_output, expected_size):
     """Test14 HostInfo().termsize. Change size"""
-    mock_chk = mocker.patch('udocker.helper.hostinfo.Uprocess.check_output', return_value="48 90")
-    status = hinfo.termsize()
-    assert status == (48, 90)
-    mock_chk.assert_called()
 
+    if isinstance(check_output, Exception):
+        mock_chk = mocker.patch('udocker.helper.hostinfo.Uprocess.check_output', side_effect=check_output)
+    else:
+        mock_chk = mocker.patch('udocker.helper.hostinfo.Uprocess.check_output', return_value=check_output)
 
-def test_15_termsize(mocker, hinfo):
-    """Test15 HostInfo().termsize. Default termsize and raises"""
-    mock_chk = mocker.patch('udocker.helper.hostinfo.Uprocess.check_output',
-                            side_effect=OSError("fail"))
+    mock_file = mocker.mock_open(read_data="some data")
+    mocker.patch('builtins.open', mock_file)
+
     status = hinfo.termsize()
-    assert status == (24, 80)
+    assert status == expected_size
     mock_chk.assert_called()
+    mock_file.assert_called_with("/dev/tty")
+
