@@ -6,7 +6,7 @@ import sys
 import subprocess
 import logging
 
-from udocker import LOG, MSG
+from udocker import LOG
 from udocker.config import Config
 
 
@@ -49,7 +49,7 @@ class Uprocess:
 
     def check_output(self, *popenargs, **kwargs):
         """Select check_output implementation"""
-        MSG.info("check_output: %s", *popenargs)
+        LOG.info("check_output: %s", *popenargs)
         try:
             output = subprocess.check_output(*popenargs, **kwargs)
             chk_out = output.decode()

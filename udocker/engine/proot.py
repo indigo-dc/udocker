@@ -48,7 +48,7 @@ class PRootEngine(ExecutionEngineCommon):
 
         if not os.path.exists(self.executable):
             LOG.error("proot executable not found")
-            LOG.info("Info: Host architecture might not be supported by this execution mode: %s "
+            LOG.info("Host architecture might not be supported by this execution mode: %s "
                      "\n      specify path to proot with environment UDOCKER_USE_PROOT_EXECUTABLE"
                      "\n      or choose other execution mode with: udocker setup --execmode=<mode>", arch)
             sys.exit(1)

@@ -185,11 +185,11 @@ def test_06__find_host_dir_ldpath(mocker, nvidia, logger, library_path, expected
 
 
 @pytest.mark.parametrize("lib_dirs, ldpath, ldconfig, expected", [
-    ({'lib_dirs_list_x86_64': ['/usr/lib', '/lib/x86_64-linux-gnu']}, [{'/lib/x86_64-linux-gnu/', "/usr/lib/"},
+    ({'lib_dirs_list_nvidia': ['/usr/lib', '/lib/x86_64-linux-gnu']}, [{'/lib/x86_64-linux-gnu/', "/usr/lib/"},
                                                                        {'/lib64/x86_64-linux-gnu'}],
      {'/lib64/x86_64-linux-gnu'}, {'/lib/x86_64-linux-gnu/', '/usr/lib/', '/lib64/x86_64-linux-gnu'}),
-    ({'lib_dirs_list_x86_64': []}, [{}, {}], [], set()),
-    ({'lib_dirs_list_x86_64': []}, [{}, {'/lib64/x86_64-linux-gnu'}], [], {'/lib64/x86_64-linux-gnu'}),
+    ({'lib_dirs_list_nvidia': []}, [{}, {}], [], set()),
+    ({'lib_dirs_list_nvidia': []}, [{}, {'/lib64/x86_64-linux-gnu'}], [], {'/lib64/x86_64-linux-gnu'}),
 ])
 def test_07__find_host_dir(mocker, nvidia, logger, lib_dirs, ldpath, ldconfig, expected):
     """Test07 NvidiaMode._find_host_dir."""

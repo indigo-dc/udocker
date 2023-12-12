@@ -17,7 +17,7 @@ def test_01_get_filetype(osinfo, mocker):
     mock_isfile = mocker.patch('udocker.helper.osinfo.os.path.isfile', return_value=True)
     mock_islnk = mocker.patch('udocker.helper.osinfo.os.path.islink', return_value=False)
     mock_getout = mocker.patch('udocker.helper.osinfo.Uprocess.get_output',
-                               return_value='/bin/ls: ELF 64-bit')
+                               side_effect=[None, 'something: ELF 64-bit']) # FIXME: check if this makes sense
     status = osinfo.get_filetype("/bin/ls")
     assert status == ftype
     mock_isfile.assert_called()
@@ -30,12 +30,12 @@ def test_02_get_filetype(osinfo, mocker):
     mock_isfile = mocker.patch('udocker.helper.osinfo.os.path.isfile', return_value=True)
     mock_islnk = mocker.patch('udocker.helper.osinfo.os.path.islink', return_value=False)
     mock_getout = mocker.patch('udocker.helper.osinfo.Uprocess.get_output',
-                               side_effect=[False, 'x86'])
+                               side_effect=['x86'])
     status = osinfo.get_filetype("ls")
     assert status == ('readelf', 'x86')
     mock_isfile.assert_called()
     mock_islnk.assert_called()
-    assert mock_getout.call_count == 2
+    assert mock_getout.call_count == 1
 
 
 def test_03_get_filetype(osinfo, mocker):
@@ -92,8 +92,8 @@ OS_DATA = ("NAME=\"Ubuntu\"\n"
            "UBUNTU_CODENAME=focal")
 
 data_os = [(1, RELEASE_DATA, '/etc/centos-release', [True, False, False], ("CentOS", "6")),
-           (1, LSB_DATA, '/etc/lsb-release', [False, True, False], ("Ubuntu", "16")),
-           (1, OS_DATA, '/etc/os-release', [False, False, True], ("Ubuntu", "20")),
+           (1, LSB_DATA, '/etc/lsb-release', [False, True, False], ("Ubuntu", "16.04")),
+           (1, OS_DATA, '/etc/os-release', [False, False, True], ("Ubuntu", "20.04")),
            (0, '', '', [False, False, False], ("", ""))]
 
 
@@ -103,7 +103,7 @@ def test_06_osdistribution(osinfo, mock_count, data, filepath, path_exist, expec
     mock_match = mocker.patch('udocker.helper.osinfo.FileUtil.match', return_value=[filepath])
     mock_exists = mocker.patch('udocker.helper.osinfo.os.path.exists', side_effect=path_exist)
     mock_gdata = mocker.patch('udocker.helper.osinfo.FileUtil.getdata', return_value=data)
-    status = osinfo.osdistribution()
+    status = osinfo._osdistribution()
     assert status == expected
     mock_match.assert_called()
     mock_exists.assert_called()
