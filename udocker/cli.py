@@ -1561,7 +1561,7 @@ class UdockerCLI:
             # MSG.info("tarball: %s", Config.conf['tarball'])  ## TODO DEPRECATED
             MSG.info("tarball_release: %s", Config.conf['tarball_release'])
         except (NameError, KeyError) as e:
-            MSG.error(f"Error occurred: {e}")
+            MSG.error(f"Error parsing version: {e}")
             return self.STATUS_ERROR
 
         return self.STATUS_OK
