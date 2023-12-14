@@ -258,7 +258,7 @@ class RuncEngine(ExecutionEngineCommon):
     def _del_mount_spec(self, host_source, cont_dest):
         """Remove one mount point"""
         index = self._sel_mount_spec(host_source, cont_dest)
-        if index:
+        if index is not None:
             del self._cont_specjson["mounts"][index]
 
     def _sel_mount_spec(self, host_source, cont_dest):
