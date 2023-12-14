@@ -2,7 +2,7 @@ config:
   credentials: []
   project_repos:
     github.com/indigo-dc/udocker:
-      branch: dev-v1.4
+      branch: add_support_toml
       repo: https://github.com/indigo-dc/udocker
 environment:
   JPL_DOCKERFORCEBUILD: enabled

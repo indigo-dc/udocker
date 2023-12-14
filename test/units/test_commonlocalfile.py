@@ -136,7 +136,6 @@ def test_09__untar_saved_container(mocker, clfapi):
     assert not status
     mock_ucall.assert_called()
 
-
 # def test_10_create_container_meta(mocker, clfapi):
 #     """Test10 CommonLocalFileApi().create_container_meta()."""
 #     layer_id = "12345"
@@ -151,7 +150,6 @@ def test_09__untar_saved_container(mocker, clfapi):
 #     mock_arch.assert_called()
 #     mock_version.assert_called()
 #     mock_size.assert_called()
-
 
 def test_11_import_toimage(mocker, clfapi, lrepo):
     """Test11 CommonLocalFileApi().import_toimage(). path exists False"""
