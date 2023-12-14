@@ -1394,7 +1394,7 @@ def test_49_do_verifytar(mocker, ucli, cmdparse, udockertools, chk_dir, force, t
 
 @pytest.mark.parametrize("missing_options, raises_exception,  expected_status", [
     (False, False, 0),
-    # (False, True, 1), # TODO: this scenario needs the exception to be changed to KeyError
+    (False, True, 1),
     (True, False, 1),
 ])
 def test_50_do_version(mocker, ucli, config, cmdparse, missing_options, raises_exception, expected_status):
