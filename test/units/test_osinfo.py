@@ -3,6 +3,7 @@
 udocker unit tests: OSInfo
 """
 import pytest
+
 from udocker.helper.osinfo import OSInfo
 
 
@@ -17,7 +18,7 @@ def test_01_get_filetype(osinfo, mocker):
     mock_isfile = mocker.patch('udocker.helper.osinfo.os.path.isfile', return_value=True)
     mock_islnk = mocker.patch('udocker.helper.osinfo.os.path.islink', return_value=False)
     mock_getout = mocker.patch('udocker.helper.osinfo.Uprocess.get_output',
-                               side_effect=[None, 'something: ELF 64-bit']) # FIXME: check if this makes sense
+                               side_effect=[None, 'something: ELF 64-bit'])  # FIXME: check if this makes sense
     status = osinfo.get_filetype("/bin/ls")
     assert status == ftype
     mock_isfile.assert_called()
@@ -48,16 +49,18 @@ def test_03_get_filetype(osinfo, mocker):
     mock_islnk.assert_called()
 
 
-data_arch = [(('file', 'x86-64'), 'x86_64'),
-             (('file', 'Intel 80386'), 'x86'),
-             (('file', 'aarch64'), 'arm64'),
-             (('file', 'ARM'), 'arm')]
+data_arch = [(('file', 'x86-64'), ['x86_64']),
+             (('file', 'Intel 80386'), ['x86']),
+             (('file', 'aarch64'), ['arm64']),
+             (('file', 'ELF 32-bit LSB executable, ARM, EABI5 version 1'), ['armhf'])]
 
 
 @pytest.mark.parametrize("ftype,expected", data_arch)
 def test_04_arch(osinfo, ftype, expected, mocker):
     """Test04 OSInfo.arch()"""
+    mocker.patch.object(OSInfo, 'arch_from_metadata', return_value="")
     mock_getftype = mocker.patch.object(OSInfo, 'get_filetype', return_value=ftype)
+    mocker.patch.object(OSInfo, 'get_binaries_list', return_value=["dummy_binary"])
     status = osinfo.arch()
     assert status == expected
     mock_getftype.assert_called()
@@ -74,7 +77,7 @@ def test_05_is_same_arch(osinfo, arch1, arch2, expected, mocker):
     mock_getftype = mocker.patch.object(OSInfo, 'arch', side_effect=[arch1, arch2])
     status = osinfo.is_same_arch()
     assert status == expected
-#    mock_getftype.assert_called()
+    mock_getftype.assert_called()
 
 
 RELEASE_DATA = 'CentOS release 6.10 (Final)'

@@ -8,6 +8,10 @@ from io import BytesIO as strio
 import pytest
 from udocker.utils.curl import GetURLpyCurl
 
+try:
+    import pycurl
+except ImportError:
+    pass
 
 def _get(self, *args, **kwargs):
     """Mock for pycurl.get."""

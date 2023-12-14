@@ -12,7 +12,7 @@ def archinfo_instance():
 
 
 def test_01_get_binaries_list():
-    '''Test01 ArchInfo.get_binaries_list'''
+    """Test01 ArchInfo.get_binaries_list"""
     binlist = ["/lib64/ld-linux-x86-64.so",
                "/lib64/ld-linux-x86-64.so.1",
                "/lib64/ld-linux-x86-64.so.2",
@@ -37,9 +37,9 @@ def test_01_get_binaries_list():
 
 
 data_arch = (
-             # ('uname', 'x86_64', 'ALL', (['amd64'], ['x86_64'], ['x86_64'])),
-             # ('file', 'x86-64', 'ALL', (['amd64'], ['x86_64'], ['x86_64'])),
-             ('readelf', 'X86_64', 'ALL', (['amd64'], ['x86_64'], ['x86_64'])),
+             ('uname', 'x86_64', 'ALL', (['amd64'], ['x86_64'], ['x86_64'])),
+             ('file', 'x86-64', 'ALL', (['amd64'], ['x86_64'], ['x86_64'])),
+             ('readelf', 'X86_64', 'ALL', (['x86_64'], ['x86_64'], ['x86_64'])),
              ('uname', 'ppc64', 'ALL', (['ppc64'], ['ppc64'], ['ppc64'])),
              ('uname', 'ppc64le', 'UDOCKER', (['ppc64le'], [], [])),
              ('readelf', 'AArch64', 'qemu', (['aarch64'], [], [])),
@@ -49,7 +49,7 @@ data_arch = (
 
 @pytest.mark.parametrize("source_type,arch_info,target_type,expected", data_arch)
 def test_02_get_arch(source_type, arch_info, target_type, expected):
-    '''Test02 ArchInfo.get_arch'''
+    """Test02 ArchInfo.get_arch"""
     output = ArchInfo().get_arch(source_type, arch_info, target_type)
     assert output == expected
 
@@ -65,7 +65,7 @@ def test_02_get_arch(source_type, arch_info, target_type, expected):
 ])
 # @pytest.mark.parametrize("source_arch,source_type,target_type,expected", data_trsl)
 def test_03_translate_arch(archinfo_instance, source_arch, source_type, target_type, expected_result):
-    '''Test03 ArchInfo.translate_arch'''
+    """Test03 ArchInfo.translate_arch"""
     archinfo_instance._arch_list = [
         {"docker": ["x86_64"], "udocker": ["amd64"]},
         {"docker": ["ppc64le"], "udocker": ["powerpc64le"]}

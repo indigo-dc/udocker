@@ -13,8 +13,11 @@ from udocker import MSG, LOG
 from udocker.cli import UdockerCLI
 from udocker.cmdparser import CmdParser
 from udocker.config import Config
+from udocker.engine.execmode import ExecutionMode
 from udocker.helper.hostinfo import HostInfo
 from udocker.helper.unshare import Unshare
+from udocker.utils.filebind import FileBind
+from udocker.utils.mountpoint import MountPoint
 
 
 @pytest.fixture
@@ -1174,7 +1177,7 @@ def test_39_do_verify(mocker, ucli, cmdparse, imagespec, imagerepo_exists, verif
      "msgs": {'error': None, 'info': None}},
     {"container_id": "123", "xmode": None, "force": False, "nvidia": False, "purge": True, "fixperm": False,
      "container": True, "protected": False, "exec_mode_set": True, "expected_status": 0,
-     "msgs": {'error': None, 'info': None}},
+     "msgs": {'error': None, 'info': None}}, # FIXME: is creating folders
     {"container_id": "123", "xmode": None, "force": False, "nvidia": False, "purge": False, "fixperm": True,
      "container": True, "protected": False, "exec_mode_set": True, "expected_status": 0,
      "msgs": {'error': None, 'info': "fixed permissions in container: %s"}},
@@ -1195,6 +1198,7 @@ def test_40_do_setup(mocker, ucli, cmdparse, params_setup):
                                           '--nvidia': params_setup['nvidia'],
                                           '--purge': params_setup['purge'], '--fixperm': params_setup['fixperm']}.get(x)
     cmdparse.missing_options.return_value = not params_setup['container_id']
+
     mocker.patch.object(ucli.localrepo, 'cd_container',
                         return_value=params_setup['container_id'] if params_setup['container'] else None)
     mocker.patch.object(ucli.localrepo, 'isprotected_container', return_value=params_setup['protected'])
@@ -1205,6 +1209,9 @@ def test_40_do_setup(mocker, ucli, cmdparse, params_setup):
     mocker.patch.object(Unshare, 'namespace_exec')
     mock_log_error = mocker.patch.object(LOG, 'error')
     mock_log_info = mocker.patch.object(LOG, 'info')
+    mocker.patch.object(FileBind, 'restore')
+    mocker.patch.object(MountPoint, 'restore')
+
 
     status = ucli.do_setup(cmdparse)
 
