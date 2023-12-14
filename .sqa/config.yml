@@ -25,7 +25,7 @@ sqa_criteria:
 
       github.com/indigo-dc/udocker git:
         commands:
-        - /usr/bin/env sh .sqa/script.git_doc06.sh
+        - /usr/bin/env sh scripts/script.git_doc06.sh
         container: qc.doc06_udocker
 
       github.com/indigo-dc/udocker markdownlint:
