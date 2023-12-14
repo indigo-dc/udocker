@@ -60,7 +60,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
         if fakechroot_so.count('-') != 3:
-            LOG.info("Info: this OS or architecture might not be supported by this execution mode"
+            MSG.info("Info: this OS or architecture might not be supported by this execution mode"
                       "\n      specify path to libfakechroot.so with environment UDOCKER_FAKECHROOT_SO"
                       "\n      or choose other execution mode with: udocker setup --execmode=<mode>")
         if not os.path.exists(fakechroot_so):
@@ -220,7 +220,7 @@ class FakechrootEngine(ExecutionEngineCommon):
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non-binary executables (scripts)"""
         relc_path = exec_path.split(self.container_root, 1)[-1]
-        # (dummy, filetype) = OSInfo(self.container_root).get_filetype(exec_path) #FIXME: jprm 3f666a6af75b63e4813cf591d80f6cd10e7d645c
+        # (dummy, filetype) = OSInfo(self.container_root).get_filetype(exec_path) # FIXME: jprm 3f666a6af75b63e4813cf591d80f6cd10e7d645c
         if OSInfo(self.container_root).is_binary_executable(relc_path):
             self.opt["cmd"][0] = exec_path
             return []
