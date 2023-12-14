@@ -75,9 +75,9 @@ sqa_criteria:
 
   QC.Uni:
     repos:
-      github.com/indigo-dc/udocker nosetests:
+      github.com/indigo-dc/udocker pytest:
         commands:
-        - /usr/bin/env sh .sqa/script.nosetests.sh
+        - /usr/bin/env sh .sqa/script.pytest.sh
         container: qc.unit_udocker
 
 timeout: 1800
