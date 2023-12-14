@@ -13,14 +13,14 @@ sqa_criteria:
     repos:
       github.com/indigo-dc/udocker git:
         commands:
-        - /usr/bin/env sh .sqa/script.acc.sh
+        - /usr/bin/env sh scripts/script.acc.sh
         container: qc.acc_udocker
 
   QC.Doc:
     repos:
       github.com/indigo-dc/udocker find_doc_files.py:
         commands:
-        - /usr/bin/env sh .sqa/script.find_doc_files.sh
+        - /usr/bin/env sh scripts/script.find_doc_files.sh
         container: qc.doc01_udocker
 
       github.com/indigo-dc/udocker git:
@@ -30,54 +30,54 @@ sqa_criteria:
 
       github.com/indigo-dc/udocker markdownlint:
         commands:
-        - /usr/bin/env sh .sqa/script.markdownlint.sh
+        - /usr/bin/env sh scripts/script.markdownlint.sh
         container: qc.doc02_udocker
 
   # QC.Lic:
   #   repos:
   #     github.com/indigo-dc/udocker licensee:
   #       commands:
-  #       - /usr/bin/env sh .sqa/script.licensee.sh
+  #       - /usr/bin/env sh scripts/script.licensee.sh
   #       container: qc.lic_udocker
 
   QC.Met:
     repos:
       github.com/indigo-dc/udocker validate_codemeta:
         commands:
-        - /usr/bin/env sh .sqa/script.codemeta.sh
+        - /usr/bin/env sh scripts/script.codemeta.sh
         container: qc.met_udocker
 
   QC.Sec:
     repos:
       github.com/indigo-dc/udocker bandit:
         commands:
-        - /usr/bin/env sh .sqa/script.bandit.sh
+        - /usr/bin/env sh scripts/script.bandit.sh
         container: qc.sec_udocker
 
   QC.Sty:
     repos:
       github.com/indigo-dc/udocker flake8:
         commands:
-        - /usr/bin/env sh .sqa/script.flake8.sh
+        - /usr/bin/env sh scripts/script.flake8.sh
         container: qc.sty_python_udocker
 
       github.com/indigo-dc/udocker jsonlint:
         commands:
-        - /usr/bin/env sh .sqa/script.jsonlint.sh
+        - /usr/bin/env sh scripts/script.jsonlint.sh
         container: qc.sty_json_udocker
 
   QC.Ver:
     repos:
       github.com/indigo-dc/udocker get_git_tags.py:
         commands:
-        - /usr/bin/env sh .sqa/script.get_git_tags.sh
+        - /usr/bin/env sh scripts/script.get_git_tags.sh
         container: qc.ver_udocker
 
   QC.Uni:
     repos:
       github.com/indigo-dc/udocker pytest:
         commands:
-        - /usr/bin/env sh .sqa/script.pytest.sh
+        - /usr/bin/env sh scripts/script.nosetests.sh
         container: qc.unit_udocker
 
 timeout: 1800
