@@ -96,7 +96,7 @@ class NvidiaMode:
         dir_list = set()
         ld_data = Uprocess().get_output(["ldconfig", "-p"])
         if ld_data:
-            regexp = "[ |\t]%s[^ ]* .*%s => (/.*)"
+            regexp = "[ |\t]%s[^ ]* .*%s.*=> (/.*)" # FIXME: this has been changed in cee38b670a410372f10e2218ddf03e77fecd0f41 but testing ldconfig -p the output is different an not matching this regexp
             for line in ld_data.split('\n'):
                 for lib in self._nvidia_main_libs:
                     match = re.search(regexp % (lib, arch), line)

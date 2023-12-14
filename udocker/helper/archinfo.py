@@ -18,7 +18,7 @@ class ArchInfo:
          'uname': ['x86_64'], 'file':['x86-64'], 'readelf': ['X86_64'],
          'arch/var':['amd64']},
         {'docker': ['386'], 'qemu': ['i386'], 'UDOCKER': ['x86'],
-         'uname': ['i386'], 'file': ['Intel 80386'], 'readelf': ['Intel 80386'],
+         'uname': ['i386'], 'file': ['Intel 80386'], 'readelf': ['Intel 80386'], # FIXME: note the trailing spaces before ARM, is this intended?
          'arch/var': ['386']},
         {'docker': ['arm64'], 'qemu': ['aarch64'], 'UDOCKER': ['arm64'],
          'uname': ['aarch64'], 'file': ['aarch64'], 'readelf': ['AArch64'],
@@ -100,7 +100,6 @@ class ArchInfo:
         arch_info is data previously produced by uname, file or readelf
         target_type can be docker, qemu, UDOCKER or ALL
         """
-        found = False
         try:
             for arch_dict in self._arch_list:
                 for arch_expression in arch_dict[source_type]:
@@ -116,29 +115,6 @@ class ArchInfo:
         except (KeyError, ValueError, TypeError, AttributeError):
             pass
         return ([], [], [])
-    # FIXME: jprm, check this version
-    # def get_arch(self, source_type, arch_info, target_type="UDOCKER"):
-    #     """
-    #     Return (docker_arch, qemu_arch, udocker_arch) by source type
-    #     source can be "uname", "file" or "readelf"
-    #     arch_info is data previously produced by uname, file or readelf
-    #     target_type can be docker, qemu, UDOCKER or ALL
-    #     """
-    #     if "ASCII" in arch_info or "Error:" in arch_info:
-    #         return ([], [], [])
-    #     found = False
-    #     try:
-    #         for arch_dict in self._arch_list:
-    #             for arch_expression in arch_dict[source_type]:
-    #                 if arch_expression not in arch_info:
-    #                     found = False
-    #                     break
-    #                 found = True
-    #             if found:
-    #                 return arch_dict[target_type]
-    #     except (KeyError, ValueError, TypeError, AttributeError):
-    #         pass
-    #     return ([])
 
     def translate_arch(self, source_arch, source_type, target_type):
         """
