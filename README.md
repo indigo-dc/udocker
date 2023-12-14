@@ -27,10 +27,10 @@ including pulling images and running containers with minimal functionality.
 The full documentation is available at:
 
 * [udocker documentation](https://indigo-dc.github.io/udocker/)
-  * [Installation manual](https://indigo-dc.github.io/udocker/installation_manual.html)
-  * [User manual](https://indigo-dc.github.io/udocker/user_manual.html)
-  * [CLI architecture](https://indigo-dc.github.io/udocker/cli_arch.html)
-  * [Reference card](https://indigo-dc.github.io/udocker/reference_card.html)
+* [Installation manual](https://indigo-dc.github.io/udocker/installation_manual.html)
+* [User manual](https://indigo-dc.github.io/udocker/user_manual.html)
+* [CLI architecture](https://indigo-dc.github.io/udocker/cli_arch.html)
+* [Reference card](https://indigo-dc.github.io/udocker/reference_card.html)
 
 ## How does it work
 
@@ -65,7 +65,7 @@ documentation, licenses, container images and extracted directory trees are plac
 * Includes the required tools already statically compiled to work across systems
 * Provides a docker like command line interface
 * Supports a subset of docker commands:
-  * search, pull, import, export, load, save, login, logout, create and run
+   * search, pull, import, export, load, save, login, logout, create and run
 * Understands docker container metadata
 * Allows loading of docker and OCI containers
 * Supports NVIDIA GPGPU applications

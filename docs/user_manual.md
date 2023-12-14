@@ -974,7 +974,6 @@ Example:
 UDOCKER_DEFAULT_EXECUTION_MODE=P2 ./udocker run mycontainer /bin/ls
 ```
 
-
 ### 3.28. tag
 
 ```bash
@@ -983,10 +982,10 @@ udocker tag SOURCEREPO/IMAGE:TAG  TARGETREPO/IMAGE:TAG
 
 Creates a new image tag from an existing source image. The newly created
 image tag is a replica of the source image. The source image can be removed
-or further updated via pull without affecting the newly created tag. A  
-new tag does not occupy additional space as the image layers are shared.  
+or further updated via pull without affecting the newly created tag. A
+new tag does not occupy additional space as the image layers are shared.
 The image layers are only removed from the local udocker repository when
-no other image is referencing them. 
+no other image is referencing them.
 
 Example:
 
@@ -1005,10 +1004,8 @@ Obtain and print information about an IMAGE manifest from a remote registry.
 Example:
 
 ```bash
-udocker manifest inspect centos:centos7  
+udocker manifest inspect centos:centos7
 ```
-
-
 
 ## 4. Running MPI jobs
 
