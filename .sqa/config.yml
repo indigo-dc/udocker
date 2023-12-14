@@ -1,9 +1,9 @@
-config:
-  credentials: []
-  project_repos:
-    github.com/indigo-dc/udocker:
-      branch: add_support_toml
-      repo: https://github.com/indigo-dc/udocker
+#config:
+#  credentials: []
+#  project_repos:
+#    github.com/indigo-dc/udocker:
+#      branch: "${GIT_BRANCH}"
+#      repo: https://github.com/indigo-dc/udocker
 environment:
   JPL_DOCKERFORCEBUILD: enabled
   JPL_KEEPGOING: enabled
