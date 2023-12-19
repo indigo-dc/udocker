@@ -81,7 +81,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                 libc_search_list = Config.conf['libc_search']
             elif isinstance(Config.conf['libc_search'], tuple):
                 libc_search_list = Config.conf['libc_search']
-            elif is_genstr(Config.conf['libc_search']):
+            elif isinstance(Config.conf['libc_search'], str):
                 libc_search_list = [Config.conf['libc_search'], ]
 
         for libc_pattern in libc_search_list:
@@ -220,14 +220,9 @@ class FakechrootEngine(ExecutionEngineCommon):
     def _run_add_script_support(self, exec_path):
         """Add an interpreter for non-binary executables (scripts)"""
         relc_path = exec_path.split(self.container_root, 1)[-1]
-        # (dummy, filetype) = OSInfo(self.container_root).get_filetype(exec_path) # FIXME: jprm 3f666a6af75b63e4813cf591d80f6cd10e7d645c
         if OSInfo(self.container_root).is_binary_executable(relc_path):
             self.opt["cmd"][0] = exec_path
             return []
-
-        # env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
-        # if env_exec:
-        #    return [self.container_root + '/' + env_exec, ]
 
         real_path = FileUtil(self.container_root).cont2host(relc_path, self.opt["vol"])
         hashbang = FileUtil(real_path).get1stline()

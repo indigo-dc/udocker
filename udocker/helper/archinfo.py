@@ -18,7 +18,7 @@ class ArchInfo:
          'uname': ['x86_64'], 'file':['x86-64'], 'readelf': ['X86_64'],
          'arch/var':['amd64']},
         {'docker': ['386'], 'qemu': ['i386'], 'UDOCKER': ['x86'],
-         'uname': ['i386'], 'file': ['Intel 80386'], 'readelf': ['Intel 80386'], # FIXME: note the trailing spaces before ARM, is this intended?
+         'uname': ['i386'], 'file': ['Intel 80386'], 'readelf': ['Intel 80386'],
          'arch/var': ['386']},
         {'docker': ['arm64'], 'qemu': ['aarch64'], 'UDOCKER': ['arm64'],
          'uname': ['aarch64'], 'file': ['aarch64'], 'readelf': ['AArch64'],

@@ -891,11 +891,11 @@ class UdockerCLI:
 
             if print_platform:
                 platform = self.localrepo.get_image_platform_fmt()
-                MSG.info("")
-                #("%-18.18s %c %s" % (platform, prot, imagerepo + ":" + tag)) FIXME: jprm
+                msgout = f"{platform:<18} {prot} {imagerepo}:{tag}"
+                MSG.info(msgout)
             else:
-                MSG.info("")
-                # Msg.info("%s    %c" % (imagerepo + ":" + tag, prot)) FIXME: jprm
+                msgout = f"{imagerepo}:{tag:<18} {prot}"
+                MSG.info(msgout)
 
             if verbose:
                 msgout = f'{imagerepo_dir : >4}'
