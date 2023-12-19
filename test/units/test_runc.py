@@ -404,11 +404,11 @@ def test_14__sel_mount_spec(mocker, runc, mount, host_source, cont_dest, expecte
 
 # FIXME: this test fails, need to be fixed
 @pytest.mark.parametrize("mount,host_source,cont_dest,new_data,expected_mounts,expected", [
-    ([], "/HOSTDIR", "/CONTDIR", {}, [], False),
-    ([], "/HOSTDIR", "/CONTDIR", {"options": ["a", "su"]}, [], False),
-    # ([{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR", "options": ["b"]}], "/HOSTDIR", "/CONTDIR",
-    #  {"options": ["c", "su"]},
-    #  [{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR", "options": ["b", "c", "su"]}], True), # FIXME: this test fails may need some changes in the code if the scenarios is correctly defined
+    # ([], "/HOSTDIR", "/CONTDIR", {}, [], False),
+    # ([], "/HOSTDIR", "/CONTDIR", {"options": ["a", "su"]}, [], False),
+    ([{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR", "options": ["b"]}], "/HOSTDIR", "/CONTDIR",
+     {"options": ["c", "su"]},
+     [{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR", "options": ["b", "c", "su"]}], True), # FIXME: this test fails may need some changes in the code
 ])
 @pytest.mark.parametrize('xmode', XMODE)
 def test_15__mod_mount_spec(mocker, fresh_runc, mount, host_source, cont_dest, new_data, expected_mounts, expected):
@@ -419,7 +419,6 @@ def test_15__mod_mount_spec(mocker, fresh_runc, mount, host_source, cont_dest, n
 
     assert result == expected
     assert fresh_runc._cont_specjson["mounts"] == expected_mounts
-    # FIXME: this test fails, need to be fixed
 
 
 @pytest.mark.parametrize(

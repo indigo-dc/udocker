@@ -86,10 +86,35 @@ def test_02_select_fakechroot_so(mocker, ufake, fakechroot_so, os_exist, os_info
         assert select == expected
 
 
+@pytest.mark.parametrize("fakechroot_libc, libc_search, matches, filetype, expected", [
+    ("/lib/libc.so.6", None, None, None, "/lib/libc.so.6"),
+    (None, ["/lib/libc-*"], ["/container/lib/libc.so.6"], "ELF 64-bit LSB shared object, dynamically linked",
+     "/container/lib/libc.so.6"),
+    (None, ("/lib/libc-*"), ["/container/lib/libc.so.6"], "ELF 64-bit LSB shared object, dynamically linked",
+     "/container/lib/libc.so.6"),
+    (None, ("/lib/libc-*",), ["/container/lib/libc.so.6"], "ELF 64-bit LSB shared object, dynamically linked",
+     "/container/lib/libc.so.6"),
+    (None, "/lib/libc-*", ["/container/lib/libc.so.6"], "ELF 64-bit LSB shared object, dynamically linked",
+     "/container/lib/libc.so.6"),
+    (None, ["/lib/libc-*"], [], "", ""),
+])
 @pytest.mark.parametrize('xmode', XMODE)
+def test_03_get_libc_pathname(ufake, mocker, fakechroot_libc, libc_search, matches, filetype, expected):
+    """ Test03 FakechrootEngine._get_libc_pathname()."""
+    mocker.patch.object(Config, 'conf', {'fakechroot_libc': fakechroot_libc, 'libc_search': libc_search,
+                                         'tmpdir': '/tmp'})
+    if libc_search is not None:
+        mocker.patch.object(FileUtil, "match_recursive", return_value=matches)
+        mocker.patch.object(OSInfo, "get_filetype", return_value=(None, filetype))
+
+    result = ufake._get_libc_pathname()
+    assert result == expected
+
+
 @pytest.mark.parametrize('user', ["user1", "root"])
-def test_03__setup_container_user(ufake, mocker, user):
-    """Test03 FakechrootEngine._setup_container_user()."""
+@pytest.mark.parametrize('xmode', XMODE)
+def test_04__setup_container_user(ufake, mocker, user):
+    """Test04 FakechrootEngine._setup_container_user()."""
     mock_setup_container_user_noroot = mocker.patch.object(ufake, '_setup_container_user_noroot', return_value=True)
     ufake._setup_container_user(user=user)
     assert mock_setup_container_user_noroot.call_count == 1
@@ -97,8 +122,8 @@ def test_03__setup_container_user(ufake, mocker, user):
 
 @pytest.mark.parametrize('user', [("user1", 0), ("root", 1), ("0", 1), ("", 0)])
 @pytest.mark.parametrize('xmode', XMODE)
-def test_04__uid_check(ufake, mocker, logger, user):
-    """Test04 FakechrootEngine._uid_check()."""
+def test_05__uid_check(ufake, mocker, logger, user):
+    """Test05 FakechrootEngine._uid_check()."""
     mocker.patch.object(ufake, 'opt', {'user': user[0]})
     ufake._uid_check()
     assert logger.warning.call_count == user[1]
@@ -120,9 +145,9 @@ def test_04__uid_check(ufake, mocker, logger, user):
     (("/tmp",), [("/tmp", "/tmp")], False, [], [False, False], False, ('/tmp', '')),
 ])
 @pytest.mark.parametrize('xmode', XMODE)
-def test_05__get_volume_bindings(ufake, mocker, vol, uvolume, symlinks, sysdirs_list, is_dir, expected_symlinks,
+def test_06__get_volume_bindings(ufake, mocker, vol, uvolume, symlinks, sysdirs_list, is_dir, expected_symlinks,
                                  expected):
-    """Test05 FakechrootEngine._get_volume_bindings()."""
+    """Test06 FakechrootEngine._get_volume_bindings()."""
     mocker.patch.object(ufake, 'opt', {'vol': vol})
     mocker.patch.object(Config, 'conf', {'fakechroot_expand_symlinks': symlinks, 'sysdirs_list': sysdirs_list})
     mocker.patch.object(os.path, 'exists', side_effect=lambda _: False)
@@ -140,8 +165,8 @@ def test_05__get_volume_bindings(ufake, mocker, vol, uvolume, symlinks, sysdirs_
         (("/sys/infin",), "/c/sys/infin", True, "/sys/infin"),
 ))
 @pytest.mark.parametrize('xmode', XMODE)
-def test_06__get_access_filesok(ufake, mocker, access_files, cont2host, os_path_exists, expected):
-    """Test06 FakechrootEngine._get_access_filesok()."""
+def test_07__get_access_filesok(ufake, mocker, access_files, cont2host, os_path_exists, expected):
+    """Test07 FakechrootEngine._get_access_filesok()."""
     mocker.patch.object(Config, 'conf', {'access_files': access_files, 'tmpdir': '/tmp'})
     mocker_os_path_exists = mocker.patch.object(os.path, 'exists', return_value=os_path_exists)
     mocker.patch.object(ufake, 'opt', {'vol': ("/tmp",)})
@@ -212,9 +237,9 @@ def test_06__get_access_filesok(ufake, mocker, access_files, cont2host, os_path_
           'FAKECHROOT_PATCH_ELFLOADER': '/ROOT/elf',
           'FAKECHROOT_PATCH_LAST_TIME': '/ROOT/elf'}, "F4"),
 ))
-def test_07__fakechroot_env_set(ufake, mocker, expand_symlinks, cwd, verbose_level,
+def test_08__fakechroot_env_set(ufake, mocker, expand_symlinks, cwd, verbose_level,
                                 sel_patchelf, container_loader, expected, xmode):
-    """Test07 FakechrootEngine._fakechroot_env_set()."""
+    """Test08 FakechrootEngine._fakechroot_env_set()."""
     mocker.patch.object(ufake, '_get_volume_bindings', return_value=('v1:v2', 'm1:m2'))
     mocker.patch.object(ufake, 'select_fakechroot_so', return_value='/ROOT/lib/libfakechroot.so')
     mocker.patch.object(ufake, '_get_access_filesok', return_value='/sys/infin')
@@ -238,8 +263,8 @@ def test_07__fakechroot_env_set(ufake, mocker, expand_symlinks, cwd, verbose_lev
 @pytest.mark.parametrize('portsmap', [(True, 1,), (False, 0)])
 @pytest.mark.parametrize('netcoop', [(True, 1), (False, 0)])
 @pytest.mark.parametrize('xmode', XMODE)
-def test_08__run_invalid_options(ufake, mocker, logger, portsmap, netcoop):
-    """Test08 FakechrootEngine._run_invalid_options()"""
+def test_09__run_invalid_options(ufake, mocker, logger, portsmap, netcoop):
+    """Test09 FakechrootEngine._run_invalid_options()"""
     mocker.patch.object(ufake, 'opt', {'portsmap': portsmap[0], 'netcoop': netcoop[0]})
 
     ufake._run_invalid_options()
@@ -262,9 +287,9 @@ def test_08__run_invalid_options(ufake, mocker, logger, portsmap, netcoop):
     ("#! bin/ls: xxx, x86-64, yyy", None, [], pytest.raises(SystemExit), "no such file"),
     ("#! /bin/ls: xxx, x86-64, yyy", None, ['/ROOT//bin/ls:', 'xxx,', 'x86-64,', 'yyy'], does_not_raise(), ""),
 ])
-def test_09__run_add_script_support(ufake, mocker, logger, xmode, file_type, find_exec_result, expected_result,
+def test_10__run_add_script_support(ufake, mocker, logger, xmode, file_type, find_exec_result, expected_result,
                                     raise_error, msg_log):
-    """Test09 FakechrootEngine._run_add_script_support()"""
+    """Test10 FakechrootEngine._run_add_script_support()"""
     mocker.patch.object(ufake, 'container_root', "/ROOT")
     mocker.patch.object(ufake, 'opt', {'cmd': ["ls"], 'env': Uenv(), 'cwd': '', 'vol': ''})
     mocker.patch.object(FileUtil, 'find_exec', return_value=find_exec_result)
@@ -288,8 +313,8 @@ def test_09__run_add_script_support(ufake, mocker, logger, xmode, file_type, fin
         (None, 0, '/ROOT/elf', 2),
 ))
 @pytest.mark.parametrize('xmode', ['P1', 'P2', 'F1', 'F2'])
-def test_10_run(ufake, mocker, logger, container_id, xmode, exec_path, log_count, last_path, expected):
-    """Test10 FakechrootEngine.run()."""
+def test_11_run(ufake, mocker, logger, container_id, xmode, exec_path, log_count, last_path, expected):
+    """Test11 FakechrootEngine.run()."""
     mocker_uenv = Uenv()
     mocker.patch.object(ufake, 'opt',
                         {'cmd': exec_path, 'env': mocker_uenv, 'hostenv': '', 'cpuset': '', 'cwd': '', 'vol': ''})
