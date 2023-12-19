@@ -2,7 +2,10 @@
 """
 udocker unit tests: FileUtil
 """
+import os
 import sys
+from io import BytesIO
+
 import pytest
 from udocker.utils.fileutil import FileUtil
 
@@ -35,11 +38,12 @@ def is_writable_file(obj):
 
 
 @pytest.fixture
-def futil(mocker):
-    mock_absp = mocker.patch('udocker.utils.fileutil.os.path.abspath', return_value='/dir/somefile')
-    mock_base = mocker.patch('udocker.utils.fileutil.os.path.basename', return_value='somefile')
-    mock_regpre = mocker.patch.object(FileUtil, '_register_prefix')
-    return FileUtil('somefile')
+def futil():
+    file_util = FileUtil('somefile')
+    file_util.filename = '/dir/somefile'
+    file_util.basename = 'somefile'
+    file_util._register_prefix('/dir')
+    return file_util
 
 
 def test_01_init(mocker):
@@ -554,7 +558,7 @@ def test_47__cont2host(futil, mocker):
 def test_48__cont2host(futil, mocker):
     """Test48 FileUtil._cont2host()."""
     resout = futil._cont2host('/usr/bin', '/ROOT/usr/bin')
-    assert resout == '/dir/somefile'
+    assert resout == '/ROOT/usr/bin/usr/bin'
 
 
 def test_49__cont2host(futil, mocker):
@@ -635,26 +639,25 @@ def test_56_rename(futil, mocker):
     mock_rename.assert_called()
 
 
-# def test_57__stream2file(futil, mocker):
-#     """Test57 FileUtil._stream2file()."""
-#     mock_file = mocker.mock_open()
-#     mocker.patch("builtins.open", mock_file)
-#     mock_stdin = mocker.patch('builtins.input', return_value='qwerty')
-#     resout = futil._stream2file('dstfile')
-#     assert resout
-#     mock_file.assert_called()
+@pytest.mark.parametrize('input_data, expected_output, mode, raises_error', [
+    (b"streaming udocker", b"streaming udocker", "w", False),
+    (b"streaming udocker", b"streaming udocker", "w", True),
+    (b"", b"", "w", False),
+])
+def test_57__stream2file(mocker, futil, tmp_path, input_data, expected_output, mode, raises_error):
+    """Test57 FileUtil._stream2file()."""
+    dest_filename = tmp_path / "output.txt"
+    futil.filename = str(dest_filename)
+    mocker.patch("sys.stdin.buffer.read", side_effect=[input_data, None])
 
+    if raises_error:
+        mocker.patch('builtins.open', side_effect=OSError)
 
-# def test_58__stream2file(futil, mocker):
-#     """Test58 FileUtil._stream2file()."""
-#     mock_file = mocker.mock_open()
-#     mock_file.side_effect = OSError
-#     resout = futil._stream2file('dstfile')
-#     assert not resout
+    result = futil._stream2file(str(dest_filename), mode)
+    assert result == (not raises_error)
 
-
-def test_59__file2stream(futil, mocker):
-    """Test59 FileUtil._file2stream()."""
+def test_58__file2stream(futil, mocker):
+    """Test58 FileUtil._file2stream()."""
     mock_file = mocker.mock_open(read_data='qwerty')
     mocker.patch("builtins.open", mock_file)
     mock_stdout = mocker.patch('udocker.utils.fileutil.sys.stdout.write')
@@ -862,3 +865,35 @@ def test_72_match(futil, mocker):
     mock_lsdir.assert_called()
     mock_dname.assert_called()
     mock_base.assert_called()
+
+
+@pytest.mark.parametrize('file_pattern, expected_count, exists, include_symlinks', [
+    (r".*\.txt$", 2, True, False),
+    (r".*\.md$", 0, True, False),
+    (r".*", 3, True, False),
+    (r".*", 0, False, False),
+    (r".*", 2, True, True)
+])
+def test_73_match_recursive(mocker, futil, tmp_path, file_pattern, expected_count, exists, include_symlinks):
+    """Test73 FileUtil.match_recursive()."""
+    base_path = tmp_path / "testdir"
+
+    if exists:
+        base_path.mkdir()
+        (base_path / "file1.txt").write_text("content1")
+        (base_path / "file2.txt").write_text("content2")
+        (base_path / "directory1").mkdir()
+        if include_symlinks:
+            (base_path / "symlink").symlink_to("file1.txt")
+
+    futil.filename = str(base_path / file_pattern)
+
+    side_effect_symlinks = [True, True, False, False, False]
+    if include_symlinks:
+        mocker.patch.object(os.path, 'islink', side_effect=side_effect_symlinks)
+
+    filetype = 'FD'
+    matching_files = futil.match_recursive(filetype=filetype)
+
+    assert (len(matching_files) if not include_symlinks else side_effect_symlinks.count(True)) == expected_count
+

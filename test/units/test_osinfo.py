@@ -2,9 +2,12 @@
 """
 udocker unit tests: OSInfo
 """
+import json
+
 import pytest
 
 from udocker.helper.osinfo import OSInfo
+from udocker.utils.fileutil import FileUtil
 
 
 @pytest.fixture
@@ -49,6 +52,82 @@ def test_03_get_filetype(osinfo, mocker):
     mock_islnk.assert_called()
 
 
+@pytest.mark.parametrize("filename, filetype, is_exec, expected", [
+    ("binary_executable", ("file", "ELF 64-bit"), True, True),
+    ("binary_executable", (None, None), True, True),
+    ("binary_non_executable", (None, None), False, False),
+    ("binary_non_executable", ("file", "ELF 64-bit"), False, True),
+    ("non_binary_executable", (None, None), True, False),
+    ("non_binary_non_executable", (None, None), False, False),
+])
+def test_04_is_binary_executable(mocker, osinfo, filename, filetype, is_exec, expected):
+    """Test04 OSInfo.is_binary_executable()"""
+    mocker.patch.object(osinfo, 'get_filetype', return_value=filetype)
+    mocker.patch.object(FileUtil, 'getdata', return_value=b'\x7fELF' if filename.startswith("binary") else b'')
+    mocker.patch.object(FileUtil, 'isexecutable', return_value=is_exec)
+    result = osinfo.is_binary_executable(filename)
+    assert result == expected
+
+
+@pytest.mark.parametrize("binary_list, expected_filetype_outputs, arch, error_arch, expected_arch", [
+    ([], [(None, None)], "", False, ""),
+    (["binary1", "binary2"], [("file", "x86_64"), ("file", "unknown")], "x86_64", False, "x86_64"),
+    (["unknown1", "unknown2"], [("file", "unknown"), ("file", "unknown")], "", False, ""),
+    (["binary_x86", "binary_arm"], [("file", "x86_64"), ("file", "arm")], "x86_64", False, "x86_64"),
+    (["no_source_type"], [(None, None)], "", False, ""),
+    (["binary1", "binary2"], [("file", "x86_64"), ("file", "unknown")], "", True, ""),
+])
+def test_05_arch_from_binaries(mocker, osinfo, binary_list, expected_filetype_outputs, arch, error_arch, expected_arch):
+    """Test05 OSInfo.arch_from_binaries()"""
+    filetype_dict = {binary: output for binary, output in zip(binary_list, expected_filetype_outputs)}
+    mocker.patch.object(OSInfo, 'get_filetype', side_effect=lambda file_path:
+    filetype_dict.get(next((binary for binary in binary_list if file_path.endswith(binary)), None),
+                      ("file", "unknown")))
+
+    mocker.patch.object(osinfo, 'get_binaries_list', return_value=binary_list)
+    mocker.patch.object(osinfo, 'get_arch', return_value=(arch, "", "") if not error_arch else ())
+
+    arch = osinfo.arch_from_binaries()
+    assert arch == expected_arch
+
+
+
+@pytest.mark.parametrize("file_presence, file_contents, expected", [
+    (["container.json"], '{"key": "value"}', {"key": "value"}),
+    (["config.json"], '{"key2": "value2"}', {"key2": "value2"}),
+    (["container.json"], "invalid json", None),
+    ([], None, None),
+])
+def test_06__load_config_json(mocker, osinfo, file_presence, file_contents, expected):
+    """Test06 OSInfo._load_config_json()"""
+    if file_contents and "invalid json" in file_contents:
+        mocker.patch("builtins.open", mocker.mock_open())
+        mocker.patch("json.load", side_effect=json.JSONDecodeError("Expecting value", "", 0))
+    else:
+        mocker.patch("builtins.open", mocker.mock_open(read_data=file_contents), create=True)
+        mocker.patch("json.load", side_effect=lambda f: json.loads(f.read()))
+
+    result = osinfo._load_config_json()
+    assert result == expected
+
+
+@pytest.mark.parametrize("config_json, mock_get_arch_return, error_arch_index, expected", [
+    ({"architecture": "x86_64", "variant": "v8"}, [("x86_64/v8", "", "")], False, ("x86_64/v8", "", "")),
+    ({"architecture": "x86_64"}, [("x86_64/v8", "", "")],  False,  ("x86_64/v8", "", "")),
+    ({"architecture": "x86_64", "variant": "v8"}, [], False, ""),
+    ({"architecture": None}, [],  False, ""),
+    ({"something_else": "some_other_key"}, [],  False, ""),
+    ({}, [],  False, ""),
+    (None, [],  False, ""),
+])
+def test_07_arch_from_metadata(mocker, osinfo, config_json, mock_get_arch_return, error_arch_index, expected):
+    """Test07 OSInfo.arch_from_metadata()"""
+    mocker.patch.object(osinfo, '_load_config_json', side_effect=[config_json])
+    mocker.patch.object(osinfo, 'get_arch', side_effect=[mock_get_arch_return, mock_get_arch_return])
+    result = osinfo.arch_from_metadata()
+    assert result == expected
+
+
 data_arch = [(('file', 'x86-64'), ['x86_64']),
              (('file', 'Intel 80386'), ['x86']),
              (('file', 'aarch64'), ['arm64']),
@@ -56,8 +135,8 @@ data_arch = [(('file', 'x86-64'), ['x86_64']),
 
 
 @pytest.mark.parametrize("ftype,expected", data_arch)
-def test_04_arch(osinfo, ftype, expected, mocker):
-    """Test04 OSInfo.arch()"""
+def test_08_arch(osinfo, ftype, expected, mocker):
+    """Test08 OSInfo.arch()"""
     mocker.patch.object(OSInfo, 'arch_from_metadata', return_value="")
     mock_getftype = mocker.patch.object(OSInfo, 'get_filetype', return_value=ftype)
     mocker.patch.object(OSInfo, 'get_binaries_list', return_value=["dummy_binary"])
@@ -72,8 +151,8 @@ data_same = (('x86_64', 'x86_64', True),
 
 
 @pytest.mark.parametrize("arch1,arch2,expected", data_same)
-def test_05_is_same_arch(osinfo, arch1, arch2, expected, mocker):
-    """Test05 OSInfo.is_same_arch()"""
+def test_09_is_same_arch(osinfo, arch1, arch2, expected, mocker):
+    """Test09 OSInfo.is_same_arch()"""
     mock_getftype = mocker.patch.object(OSInfo, 'arch', side_effect=[arch1, arch2])
     status = osinfo.is_same_arch()
     assert status == expected
@@ -101,8 +180,8 @@ data_os = [(1, RELEASE_DATA, '/etc/centos-release', [True, False, False], ("Cent
 
 
 @pytest.mark.parametrize("mock_count,data,filepath,path_exist,expected", data_os)
-def test_06_osdistribution(osinfo, mock_count, data, filepath, path_exist, expected, mocker):
-    """Test06 OSInfo.osdistribution()"""
+def test_10__osdistribution(osinfo, mock_count, data, filepath, path_exist, expected, mocker):
+    """Test10 OSInfo._osdistribution()"""
     mock_match = mocker.patch('udocker.helper.osinfo.FileUtil.match', return_value=[filepath])
     mock_exists = mocker.patch('udocker.helper.osinfo.os.path.exists', side_effect=path_exist)
     mock_gdata = mocker.patch('udocker.helper.osinfo.FileUtil.getdata', return_value=data)
@@ -116,10 +195,25 @@ def test_06_osdistribution(osinfo, mock_count, data, filepath, path_exist, expec
 data_ver = [(("Ubuntu", "20"), 'linux'),
             (("", ""), '')]
 
+@pytest.mark.parametrize("osdist_output, expected", [
+    (("Ubuntu", "20.04.1"), ("Ubuntu", "20.04")),
+    (("Debian", "10.6.0"), ("Debian", "10.6")),
+    (("Fedora", "38.0"), ("Fedora", "38")),
+    (("CentOS", "7"), ("CentOS", "7")),
+    (("OpenSUSE", ""), ("OpenSUSE", "")),
+])
+def test_11_osdistribution(mocker, osinfo, osdist_output, expected):
+    """Test11 OSInfo.osdistribution()"""
+
+    mocker.patch.object(osinfo, '_osdistribution', return_value=osdist_output)
+
+    result = osinfo.osdistribution()
+    assert result == expected
+
 
 @pytest.mark.parametrize("osver,expected", data_ver)
-def test_07_osversion(osinfo, osver, expected, mocker):
-    """Test07 OSInfo.osversion()"""
+def test_12_osversion(osinfo, osver, expected, mocker):
+    """Test12 OSInfo.osversion()"""
     mock_osdist = mocker.patch.object(OSInfo, 'osdistribution', return_value=osver)
     status = osinfo.osversion()
     assert status == expected

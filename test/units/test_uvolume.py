@@ -18,7 +18,8 @@ def test_01_cleanpath(path, path_clean, volm):
 
 
 data_split = [('/data:/contdata', ('/data', '/contdata')),
-              ('/data', ('/data', '/data'))]
+              ('/data', ('/data', '/data')),
+              ('/data:', ('/data', '/data'))]
 
 
 @pytest.mark.parametrize("volm,expected", data_split)

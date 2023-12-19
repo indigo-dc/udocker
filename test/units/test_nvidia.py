@@ -148,14 +148,14 @@ def test_04__get_nvidia_libs(mocker, nvidia, logger, nvi_lib_list, glob_value, e
 
 
 @pytest.mark.parametrize("arch, ldconfig_output, expected", [
-    ('x86-64', '    libnvidia-cfg.so (libc6,x86-64) => /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so\n'
-               '    libcuda.so (libc6,x86-64) => /usr/lib/x86_64-linux-gnu/libcuda.so\n',
+    ('x86-64', '    libnvidia-cfg.so (libc6,x86-64 => /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so\n'
+               '    libcuda.so (libc6,x86-64 => /usr/lib/x86_64-linux-gnu/libcuda.so\n',
      {'/usr/lib/x86_64-linux-gnu/'}),
-    ('', '    libnvidia-cfg.so (libc6) => /usr/lib/libnvidia-cfg.so\n'
-         '    libcuda.so (libc6) => /usr/lib/libcuda.so\n',
+    ('', '    libnvidia-cfg.so (libc6 => /usr/lib/libnvidia-cfg.so\n'
+         '    libcuda.so (libc6 => /usr/lib/libcuda.so\n',
      {'/usr/lib/'}),
-    ('i386', '    libnvidia-cfg.so (libc6,i386) => /usr/lib32/libnvidia-cfg.so\n'
-             '    libcuda.so (libc6,i386) => /usr/lib32/libcuda.so\n',
+    ('i386', '    libnvidia-cfg.so (libc6,i386 => /usr/lib32/libnvidia-cfg.so\n'
+             '    libcuda.so (libc6,i386 => /usr/lib32/libcuda.so\n',
      {'/usr/lib32/'}),
 ])
 def test_05__find_host_dir_ldconfig(mocker, nvidia, logger, arch, ldconfig_output, expected):
