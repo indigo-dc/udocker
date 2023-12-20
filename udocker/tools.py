@@ -16,7 +16,7 @@ from udocker.utils.chksum import ChkSUM
 
 
 def _str(data):
-    '''Safe str for Python 3'''
+    """Safe str for Python 3"""
     try:
         return data.decode()
     except (UnicodeDecodeError, AttributeError):
@@ -26,11 +26,11 @@ def _str(data):
 
 
 class UdockerTools:
-    ''' Download and setup of the udocker supporting tools
+    """ Download and setup of the udocker supporting tools
         Includes: proot and alternative python modules, these
         are downloaded to facilitate the installation by the
         end-user.
-    '''
+    """
 
     def __init__(self, localrepo):
         self.localrepo = localrepo                       # LocalRepository object
@@ -42,7 +42,7 @@ class UdockerTools:
 
     # TODO Review instructions
     def _instructions(self):
-        '''
+        """
         Udocker installation instructions are available at:
 
           https://indigo-dc.github.io/udocker/installation_manual.html
@@ -69,7 +69,7 @@ class UdockerTools:
 
         3) once installed the binaries and containers will be placed
            by default under $HOME/.udocker
-        '''
+        """
 
         msgout = "udocker command line interface version: " + __version__
         msgout = msgout + "\nrequires udocker tool modules from: " + self._tarball_release
@@ -77,7 +77,7 @@ class UdockerTools:
         MSG.info(msgout)
 
     def _version2int(self, version):
-        '''Convert version string to integer'''
+        """Convert version string to integer"""
         version_int = 0
         factor = 1000 * 1000
         for vitem in _str(version).strip().split('.'):
@@ -90,8 +90,17 @@ class UdockerTools:
 
         return int(version_int)
 
+    def _version_isok(self, version):
+        """Is version >= than the minimum required tarball release"""
+        if not (version and self._tarball_release):
+            return False
+        tarball_version_int = self._version2int(version)
+        required_version_int = self._version2int(self._tarball_release)
+        return tarball_version_int >= required_version_int
+
+
     def _download(self, url, fileout=''):
-        '''Download a file'''
+        """Download a file"""
         if fileout:
             download_file = fileout
         else:
@@ -380,7 +389,7 @@ class UdockerTools:
         return True
 
     def _installmod_logic(self, list_uid, top_dir, tar_dir, force):
-        '''Logics for installation of modules'''
+        """Logics for installation of modules"""
         lmodules = self._select_modules(list_uid, [])
         mod_dir = ''
         for modul in lmodules:
@@ -421,8 +430,8 @@ class UdockerTools:
         return True
 
     def _install_licenses(self, mod_all, top_dir, tar_dir, force):
-        ''' Install all licenses in docs directory
-        '''
+        """ Install all licenses in docs directory
+        """
         tarballfile = tar_dir + '/' + mod_all['docs']
         doc_dir = self.localrepo.docdir
         if top_dir:
@@ -453,8 +462,8 @@ class UdockerTools:
         return True
 
     def install_modules(self, list_uid, install_dir, from_locat, force=False):
-        ''' Install modules
-        '''
+        """ Install modules
+        """
         tar_dir = self.localrepo.tardir
         if from_locat:
             tar_dir = from_locat
@@ -491,11 +500,11 @@ class UdockerTools:
         return False
 
     def get_modules(self, list_uid, action, prefix):
-        ''' Get and manage installed modules through the file installed.json
+        """ Get and manage installed modules through the file installed.json
             list_uid: List of UIds of installed modules
             action: update, delete, show (update also creates if the json does not exist)
             prefix: directory where modules are installed
-        '''
+        """
         mod_inst = []
         new_mods = []
         install_json = Config.conf['installdir'] + '/' + Config.conf['installed_json']
@@ -542,10 +551,10 @@ class UdockerTools:
         return mod_inst
 
     def rm_module(self, list_uid, prefix):
-        ''' Remove/purges a list of modules
+        """ Remove/purges a list of modules
             list_uid: List of UIds of modules to be removed/purged
             prefix: directory where modules are installed
-        '''
+        """
         ret_value = True
         if list_uid:
             lmodules = self._select_modules(list_uid, [])
