@@ -392,21 +392,17 @@ def test_16_do_save(mocker, ucli, cmdparse, cmdp_opts, missing_opts, file_exists
 
 
 @pytest.mark.parametrize("cmd_opts, missing_opts, check_imagespec_return, import_result, expected_status, error_msg", [
-    ({}, True, None, None, 1, None),  # missing options
-    ({'P1': 'ipyrad.tar', 'P2': 'invalid_spec'}, False, (None, None), None, 1, None),  # invalid image spec
+    ({}, True, None, None, 1, None),
+    ({'P1': 'ipyrad.tar', 'P2': 'invalid_spec'}, False, (None, None), None, 1, None),
     ({'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"), False, 1, "importing"),
-    # import failed
-    ({'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"), True, 0, None),  # import success
+    ({'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"), True, 0, None),
     ({'--tocontainer': True, 'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"), False, 1,
-     "importing"),  # import to container failed
+     "importing"),
     ({'--tocontainer': True, 'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"),
-     "container_id", 0, None),  # import to container success
-    (
-            {'--clone': True, 'P1': 'ipyrad.tar', 'P2': 'ipyrad/ipyrad:latest'}, False, ("ipyrad", "latest"),
-            "container_id", 0,
-            None),  # import clone success
+     "container_id", 0, None),
+    ({'--clone': True, 'P1': 'ipyrad.tar', 'P2': 'ipyrad/ipyrad:latest'}, False, ("ipyrad", "latest"),
+     "container_id", 0, None),
     ({'--clone': True, 'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, None, False, 1, "importing"),
-    # import clone failed
     # ({'P1': '', 'P2': 'repo/ipyrad:latest'}, True, None, None, 1, "must specify tar filename"),
 ])
 def test_17_do_import(mocker, cmdparse, ucli, cmd_opts, missing_opts, check_imagespec_return, import_result,
@@ -1420,5 +1416,8 @@ def test_51_do_help(mocker, ucli, cmdparse):
     """ Test51 UdockerCLI().do_help(). """
     mock_msg_info = mocker.patch.object(MSG, 'info')
     status = ucli.do_help(cmdparse)
-    assert status == 0
+    assert status == ucli.STATUS_OK
     mock_msg_info.assert_called()
+    expected_text = "General options common to all commands must appear before the command:"
+    actual_call_arg = mock_msg_info.call_args[0][0]
+    assert expected_text in actual_call_arg

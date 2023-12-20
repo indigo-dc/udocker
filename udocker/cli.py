@@ -1224,51 +1224,6 @@ class UdockerCLI:
 
         return self.STATUS_OK
 
-    def do_manifest(self, cmdp):
-        """
-        manifest: commands for image manifests
-        manifest [options] inspect <repo/image:tag>
-        --httpproxy=socks4://user:pass@host:port        :use http proxy
-        --httpproxy=socks5://user:pass@host:port        :use http proxy
-        --httpproxy=socks4://host:port                  :use http proxy
-        --httpproxy=socks5://host:port                  :use http proxy
-        --httpproxy=socks4a://user:pass@host:port       :use http proxy
-        --httpproxy=socks5h://user:pass@host:port       :use http proxy
-        --httpproxy=socks4a://host:port                 :use http proxy
-        --httpproxy=socks5h://host:port                 :use http proxy
-        --index=https://index.docker.io/v1              :docker index
-        --registry=https://registry-1.docker.io         :docker registry
-        --platform=os/arch                              :docker platform
-
-        Examples:
-          manifest inspect quay.io/something/somewhere:latest
-        """
-        index_url = cmdp.get("--index=")
-        registry_url = cmdp.get("--registry=")
-        http_proxy = cmdp.get("--httpproxy=")
-        platform = cmdp.get("--platform=")
-        platform = "" if platform is False else platform
-        subcommand = cmdp.get("P1")
-
-        (imagerepo, tag) = self._check_imagespec(cmdp.get("P2"))
-        if (not imagerepo) or cmdp.missing_options() or subcommand != "inspect":
-            return self.STATUS_ERROR
-
-        self._set_repository(registry_url, index_url, imagerepo, http_proxy)
-        v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
-        self.dockerioapi.set_v2_login_token(v2_auth_token)
-        (dummy, manifest_json) = \
-            self.dockerioapi.get_manifest(imagerepo, tag, platform)
-
-        try:
-            MSG.info(json.dumps(manifest_json, sort_keys=True,
-                                 indent=4, separators=(',', ': ')))
-        except (IOError, OSError, AttributeError, ValueError, TypeError):
-            MSG.info(manifest_json)
-            return self.STATUS_ERROR
-
-        return self.STATUS_OK
-
     def do_inspect(self, cmdp):
         """
         inspect: print container metadata JSON from an imagerepo or container
