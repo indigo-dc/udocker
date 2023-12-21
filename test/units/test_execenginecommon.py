@@ -103,8 +103,7 @@ def test_03__get_portsmap(mocker, engine, xmode, by_container, portsmap, error, 
 @pytest.mark.parametrize("ports,portsexp,uid,error,count_error,count_warning,expected", [
     ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 1000, does_not_raise(), 1, 0, False),
     ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 0, does_not_raise(), 0, 1, True),
-    ({22: 22, 2048: 2048}, ("22", "2048/tcp"), 0, pytest.raises(ValueError), 0, 1, True),
-
+    ({22: 22, 2048: 2048}, ("invalid", "2048/tcp"), 1000, does_not_raise(), 0, 1, True),
 ])
 def test_04__check_exposed_ports(mocker, engine, xmode, logger, ports, portsexp, uid, error, count_error,
                                  count_warning, expected):
@@ -113,8 +112,10 @@ def test_04__check_exposed_ports(mocker, engine, xmode, logger, ports, portsexp,
     mocker.patch.object(engine, 'opt', {'portsexp': portsexp})
     mocker.patch.object(HostInfo, 'uid', uid)
 
-    exposed_port = engine._check_exposed_ports()
-    assert exposed_port == expected
+    with error:
+        exposed_port = engine._check_exposed_ports()
+        assert exposed_port == expected
+
 
     assert logger.error.call_count == count_error
     assert logger.warning.call_count == count_warning

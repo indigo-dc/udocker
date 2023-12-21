@@ -7,12 +7,14 @@ import random
 
 import pytest
 
+from udocker.config import Config
 from udocker.engine.execmode import ExecutionMode
 from udocker.engine.fakechroot import FakechrootEngine
 from udocker.engine.proot import PRootEngine
 from udocker.engine.runc import RuncEngine
 from udocker.engine.singularity import SingularityEngine
 from udocker.helper.elfpatcher import ElfPatcher
+from udocker.helper.hostinfo import HostInfo
 from udocker.utils.fileutil import FileUtil
 
 TMP_FOLDER = "/tmp"
@@ -76,38 +78,45 @@ def test_02_get_mode(mocker, exec_mode, expected):
     assert exec_mode.get_mode() == "P1"
 
 
+@pytest.mark.parametrize("arch, xmode, expected", [
+    ("x86_64", "P1", "P1"),
+    ("unknown", None, "R2"),
+])
+def test_03_get_mode(mocker, exec_mode, arch, xmode, expected):
+    """Test03 ExecutionMode().get_mode."""
+    mocker_fileutil = mocker.patch.object(FileUtil, 'getdata', return_value=mocker.Mock())
+    mocker_fileutil.return_value.strip.return_value = xmode
+    mocker.patch.object(Config, 'conf', {'override_default_execution_mode': None,
+                                         'default_execution_modes': {"x86_64": "P1", "DEFAULT": "R2"},
+                                         'tmpdir': TMP_FOLDER})
+    mocker.patch.object(HostInfo, 'arch', return_value=arch)
+
+    if xmode is not None:
+        mocker.patch.dict(Config.conf['default_execution_modes'], {arch: xmode})
+    elif arch is not None and arch != "unknown":
+        mocker.patch.dict(Config.conf['default_execution_modes'], {}, clear=True)
+    assert exec_mode.get_mode() == expected
+
+
 @pytest.mark.parametrize('mode, prev_mode, mock_return_values, force, expected, error_msg', [
-    # Successful mode transitions
     ("P1", "F3", {'restore_ld': True, 'restore_binaries': True}, False, True, None),
     ("F2", "P1", {'restore_ld': True, 'restore_binaries': True}, False, False, "container setup failed"),
     ("R3", "S1", {'restore_ld': True, 'restore_binaries': True}, False, True, None),
-
-    # force flag impact on failed restore
     ("F2", "F3", {'restore_ld': False, 'restore_binaries': False}, True, True, None),
     ("F3", "P1", {'restore_ld': False, 'restore_binaries': False}, True, True, None),
-
-    # invalid modes
     ("NOMODE", "F4", {'restore_ld': True, 'restore_binaries': True}, False, False, "invalid execmode: %s"),
-
-    # mode transition with no operation needed
     ("P1", "P1", {'restore_ld': True, 'restore_binaries': True}, False, True, None),
-
-    # transitions resulting in failure due to failed restoration
     ("P1", "F3", {'restore_ld': False, 'restore_binaries': False}, False, False, "container setup failed"),
     ("F2", "F3", {'restore_ld': False, 'restore_binaries': False}, False, False, "container setup failed"),
-
-    # failure in dependencies like FileUtil
     ("F2", "P1", {'restore_ld': True, 'restore_binaries': True, 'links_conv': False}, False, False,
      "container setup failed"),
-
-    # success filebind.restore()
     ("P1", "R1", {'restore_ld': True, 'restore_binaries': True}, False, True, None),
     ("F4", "F3", {'restore_ld': True, 'restore_binaries': True}, False, True, None),
     ("F3", "F4", {'restore_ld': True, 'restore_binaries': True}, False, True, None),
 
 ])
-def test_03_set_mode(mocker, exec_mode, logger, mode, prev_mode, mock_return_values, force, expected, error_msg):
-    """Test03 ExecutionMode().set_mode."""
+def test_04_set_mode(mocker, exec_mode, logger, mode, prev_mode, mock_return_values, force, expected, error_msg):
+    """Test04 ExecutionMode().set_mode."""
     mocker.patch.object(ElfPatcher, 'restore_ld', return_value=mock_return_values['restore_ld'])
     mocker.patch.object(ElfPatcher, 'restore_binaries', return_value=mock_return_values['restore_binaries'])
     mocker.patch.object(ElfPatcher, 'get_ld_libdirs')
@@ -138,8 +147,8 @@ def test_03_set_mode(mocker, exec_mode, logger, mode, prev_mode, mock_return_val
     ("R3", RuncEngine),
     ("S1", SingularityEngine),
 ])
-def test_04_get_engine(mocker, exec_mode, mode, expected):
-    """Test04 ExecutionMode().get_engine."""
+def test_05_get_engine(mocker, exec_mode, mode, expected):
+    """Test05 ExecutionMode().get_engine."""
     mocker.patch.object(exec_mode, 'get_mode', return_value=mode)
     exec_engine = exec_mode.get_engine()
     assert isinstance(exec_engine, expected)

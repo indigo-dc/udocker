@@ -44,8 +44,8 @@ data_arch = (
              ('uname', 'ppc64le', 'UDOCKER', (['ppc64le'], [], [])),
              ('readelf', 'AArch64', 'qemu', (['aarch64'], [], [])),
              ('readelf', 'dumm', 'qemu', ([], [], [])),
+             ('invalid_source', 'x86_64', 'ALL', ([], [], [])),
              )
-
 
 @pytest.mark.parametrize("source_type,arch_info,target_type,expected", data_arch)
 def test_02_get_arch(source_type, arch_info, target_type, expected):

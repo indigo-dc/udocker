@@ -2,9 +2,13 @@
 """
 udocker unit tests: CommonLocalFileApi
 """
+import logging
+import sys
+
 import pytest
 
 from udocker.commonlocalfile import CommonLocalFileApi
+from udocker.config import Config
 
 
 @pytest.fixture
@@ -140,15 +144,25 @@ def test_08__load_image(mocker, clfapi, lrepo):
     mock_imgstep2.assert_called()
 
 
-
-def test_09__untar_saved_container(mocker, clfapi):
+@pytest.mark.parametrize("verbose_level, expected_status", [
+    (logging.DEBUG, False),
+    (logging.INFO, False),
+])
+def test_09__untar_saved_container(mocker, clfapi, verbose_level, expected_status):
     """Test09 CommonLocalFileApi()._untar_saved_container()."""
     tarfile = "file.tar"
     destdir = "/home/.udocker/images"
+    mocker.patch.object(Config, 'conf', {'verbose_level': verbose_level})
     mock_ucall = mocker.patch('udocker.commonlocalfile.Uprocess.call', return_value=True)
     status = clfapi._untar_saved_container(tarfile, destdir)
-    assert not status
+    assert status is expected_status
     mock_ucall.assert_called()
+    mock_ucall.assert_called_with(
+        ["tar", "-C", destdir, "-x" + ("v" if verbose_level == logging.DEBUG else ""),
+         "--delay-directory-restore", "--one-file-system", "--no-same-owner",
+         "--no-same-permissions", "--overwrite", "-f", tarfile],
+        stderr=sys.stderr if verbose_level == logging.DEBUG else None, close_fds=True
+    )
 
 
 # def test_10_create_container_meta(mocker, clfapi):
