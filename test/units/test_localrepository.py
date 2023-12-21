@@ -1149,6 +1149,7 @@ def test_48__find_top_layer_id(localrepo, structure, my_layer_id, expected_top_l
 
 
 @pytest.mark.parametrize("structure, top_layer_id, expected", [
+    ({"repolayers": {"layer1": {}}}, "layer1", ["layer1"]),
     ({"repolayers": {"layer1": {"json": {}}}}, "layer1", ["layer1"]),
     ({"repolayers": {"layer1": {"json": {"parent": "layer2"}}, "layer2": {"json": {"parent": "layer3"}},
                      "layer3": {"json": {}}}}, "layer1", ["layer1", "layer2", "layer3"]),

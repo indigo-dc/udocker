@@ -112,13 +112,20 @@ def test_05_load_manifest(mocker, ociapi, manifest, load_json_return, tag, image
 # def test_06__load_manifest(mocker, ociapi, load_json):
 #     """Test06 OciLocalFileAPI()._load_manifest. with Unique"""
 
-
-def test_07__load_repositories(mocker, ociapi):
+@pytest.mark.parametrize("manifest_str, load_json_return", [
+    ({'mediaType': 'application/vnd.oci.image.manifest.v1+json'}, None),
+    ({'mediaType': 'application/vnd.oci.image.index.v1+json', 'digest': 'dummy_digest'},
+     {'index': {'manifests': [{'mediaType': 'application/vnd.oci.image.manifest.v1+json'}]}, 'repolayers': {}})
+])
+def test_07__load_repositories(mocker, ociapi, manifest_str, load_json_return):
     """Test05 OciLocalFileAPI()._load_repositories."""
-    manifest = [{'mediaType': 'application/vnd.oci.image.manifest.v1+json'}]
-    struct = {'index': {'manifests': manifest}}
-    mock_loadmanif = mocker.patch.object(OciLocalFileAPI, '_load_manifest',
-                                         return_value=['123'])
+    manifest = [manifest_str]
+    struct = {'index': {'manifests': manifest}, 'repolayers': {'dummy_digest': {'layer_f': 'dummy_file'}}}
+
+    mock_loadmanif = mocker.patch.object(OciLocalFileAPI, '_load_manifest', return_value=['123'])
+    if load_json_return is not None:
+        mocker.patch.object(ociapi.localrepo, 'load_json', return_value=load_json_return)
+
     status = ociapi._load_repositories(struct)
     assert status == [['123']]
     mock_loadmanif.assert_called()
