@@ -152,7 +152,7 @@ class FileUtil:
         return True
 
     def rchown(self, uid=0, gid=0):
-        """Change ownership recursively recursively"""
+        """Change ownership recursively"""
         return self.chown(uid, gid, recursive=True)
 
     def _chmod(self, filename, filemode=0o600, dirmode=0o700, mask=0o755):
