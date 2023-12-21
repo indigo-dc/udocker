@@ -152,7 +152,9 @@ data_version = (("1.1.2-", [1, 1, 1], True),
                 ("2.2.1-", [1, 1, 1], True),
                 ("0.1.0-", [1, 1, 1], False),
                 ("1.0.0-", [1, 1, 1], False),
-                ("1.1.0-", [1, 1, 1], False))
+                ("1.1.0-", [1, 1, 1], False),
+                ("no-version-info", [1, 1, 1], True),
+                ("1.1.2.3-", [1, 1, 2], True))
 
 
 @pytest.mark.parametrize("version,list_ver,expected", data_version)
