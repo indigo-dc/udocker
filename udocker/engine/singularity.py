@@ -25,7 +25,7 @@ class SingularityEngine(ExecutionEngineCommon):
 
     def __init__(self, localrepo, exec_mode):
         super().__init__(localrepo, exec_mode)
-        self.executable = None                   # singularity
+        self.executable = None  # singularity
         self.execution_id = None
 
     def select_singularity(self):
@@ -48,10 +48,10 @@ class SingularityEngine(ExecutionEngineCommon):
         if not os.path.exists(self.executable):
             LOG.error("Error: apptainer or singularity executable not found")
             LOG.info("Info: Host might not be supported this execution mode",
-                      "specify path to\n      apptainer/singularity with",
-                      "environment UDOCKER_USE_SINGULARITY_EXECUTABLE",
-                      "\n      or choose other execution mode with: udocker",
-                      "setup --execmode=<mode>")
+                     "specify path to\n      apptainer/singularity with",
+                     "environment UDOCKER_USE_SINGULARITY_EXECUTABLE",
+                     "\n      or choose other execution mode with: udocker",
+                     "setup --execmode=<mode>")
             sys.exit(1)
 
     def _get_volume_bindings(self):
@@ -139,7 +139,7 @@ class SingularityEngine(ExecutionEngineCommon):
           * options:  many via self.opt see the help
         """
         if os.path.isdir(FileBind(self.localrepo, container_id).container_orig_dir):
-            FileBind(self.localrepo, container_id).restore()   # legacy 1.1.3
+            FileBind(self.localrepo, container_id).restore()  # legacy 1.1.3
 
         Config.conf['sysdirs_list'] = ("/etc/resolv.conf", "/etc/host.conf", "/lib/modules",)
         exec_path = self._run_init(container_id)  # setup execution
@@ -153,7 +153,7 @@ class SingularityEngine(ExecutionEngineCommon):
         self._make_container_directories()
         self.select_singularity()
         self._run_as_root()
-        self._run_env_set()   # set environment variables
+        self._run_env_set()  # set environment variables
         if Config.conf['verbose_level'] == logging.DEBUG:
             singularity_debug = ["--debug", "-v", ]
         elif self._has_option("--silent"):
@@ -182,7 +182,7 @@ class SingularityEngine(ExecutionEngineCommon):
         cmd_l.extend(self.opt["cmd"])
         LOG.debug("CMD = %s", cmd_l)
         self._run_env_cleanup_dict()
-        self._run_banner(self.opt["cmd"][0])   # execute
+        self._run_banner(self.opt["cmd"][0])  # execute
         status = subprocess.call(cmd_l, shell=False, close_fds=False,
                                  env=os.environ.update(self._singularity_env_get()))
 

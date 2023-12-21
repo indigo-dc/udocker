@@ -60,7 +60,7 @@ class RuncEngine(ExecutionEngineCommon):
             LOG.error("runc or crun executable not found")
             LOG.info("Info: Host architecture might not be supported by this execution mode %s:"
                      "\n      specify path to runc or crun with environment UDOCKER_USE_RUNC_EXECUTABLE "
-                     "\n      or choose other execution mode with: udocker setup --execmode=<mode>", arch )
+                     "\n      or choose other execution mode with: udocker setup --execmode=<mode>", arch)
             sys.exit(1)
 
         if "crun" in os.path.basename(self.executable):

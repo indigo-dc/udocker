@@ -98,7 +98,6 @@ class UdockerTools:
         required_version_int = self._version2int(self._tarball_release)
         return tarball_version_int >= required_version_int
 
-
     def _download(self, url, fileout=''):
         """Download a file"""
         if fileout:
@@ -117,10 +116,10 @@ class UdockerTools:
         return ""
 
     def _get_file(self, url, fileout=''):
-        ''' Get file from list of possible locations file or internet,
+        """ Get file from list of possible locations file or internet,
             url: URL or local file
             fileout: full filename of downloaded file
-        '''
+        """
         filename = ''
         if '://' in url:
             LOG.debug('get %s from %s.', fileout, url)
@@ -181,7 +180,7 @@ class UdockerTools:
                 FileUtil(f_path).remove(recursive=True)
 
     def _get_mirrors(self, mirrors):
-        '''Get shuffled list of tarball mirrors'''
+        """Get shuffled list of tarball mirrors"""
         if isinstance(mirrors, str):
             mirrors = mirrors.split('\n')
 
@@ -278,10 +277,10 @@ class UdockerTools:
         return validation
 
     def download_tarballs(self, list_uid, dst_dir, from_locat, force):
-        ''' Download list of tarballs from the list of UIDs
+        """ Download list of tarballs from the list of UIDs
             Check for default files based on the host OS and arch
             or download from the list of uids in list_uid
-        '''
+        """
         lmodules = self._select_modules(list_uid, [])
         for modul in lmodules:
             locations = modul['urls']
@@ -310,7 +309,7 @@ class UdockerTools:
         return False
 
     def delete_tarballs(self, list_uid, dst_dir):
-        '''Delete tarballs corresponding to modules list_uid'''
+        """Delete tarballs corresponding to modules list_uid"""
         ret_value = True
         force = False
         if list_uid:
@@ -353,7 +352,7 @@ class UdockerTools:
         return False
 
     def show_metadata(self, metadict, long=False):
-        '''Show available modules and versions'''
+        """Show available modules and versions"""
         if long:
             for module in metadict:
                 MSG.info(120*"_")

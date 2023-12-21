@@ -564,6 +564,7 @@ def test_19_run(mocker, runc, log_level, init_result, load_spec, load_spec_new, 
     mocker.patch.object(runc, '_run_banner')
     mocker.patch.object(runc, '_set_cpu_affinity', return_value=[0, ])
     mocker.patch.object(os.path, 'realpath', return_value='/path/to/docker')
+    mocker.patch.object(FileBind, 'setup')
 
     mocker.patch.object(runc, 'opt', {'cmd': ['ls', '-la']})
     mocker.patch.object(Config, 'conf', {'runc_nomqueue': True, 'tmpdir': '/tmp', 'use_runc_executable': True,

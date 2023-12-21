@@ -438,12 +438,13 @@ def test_12__apply_whiteouts(mocker, container_struct, logger, verbose_level, lo
     assert actual_calls == expected_calls
 
 
-@pytest.mark.parametrize("verbose_level, has_options, tarfiles, cmd_success, expected_status", [
-    (logging.DEBUG, True, ["a.tar", "b.tar"], True, True),
-    (logging.INFO, False, ["a.tar"], False, False),
-    (logging.ERROR, True, [], True, False),
+@pytest.mark.parametrize("verbose_level, has_options, tarfiles, cmd_success, log_error, expected_status", [
+    (logging.DEBUG, True, ["a.tar", "b.tar"], True, "", True),
+    (logging.INFO, False, ["a.tar"], False, "while modifying attributes of image layer", False),
+    (logging.ERROR, True, [], True, "", False),
 ])
-def test_13__untar_layers(mocker, container_struct, verbose_level, has_options, tarfiles, cmd_success, expected_status):
+def test_13__untar_layers(mocker, container_struct, logger, verbose_level, has_options, tarfiles, cmd_success,
+                          log_error, expected_status):
     """Test13 ContainerStructure()._untar_layers()."""
     mocker.patch.object(Config, 'conf', {'verbose_level': verbose_level})
     mocker.patch.object(HostInfo, 'cmd_has_option', return_value=has_options)
@@ -458,6 +459,7 @@ def test_13__untar_layers(mocker, container_struct, verbose_level, has_options, 
         assert mock_apply_whiteouts.call_count == len(tarfiles)
     else:
         mock_apply_whiteouts.assert_not_called()
+    logger.error.assert_called_with(log_error) if log_error else logger.error.assert_not_called()
 
 
 @pytest.mark.parametrize("container_exists, tar_status, log_error, expected", [
@@ -466,7 +468,7 @@ def test_13__untar_layers(mocker, container_struct, verbose_level, has_options, 
     (False, True, "container not found: %s", False),
     (False, False, "container not found: %s", False),
 ])
-def test_14_export_tofile(mocker, container_struct, container_exists, tar_status, log_error, expected):
+def test_14_export_tofile(mocker, container_struct, logger, container_exists, tar_status, log_error, expected):
     """Test14 ContainerStructure().export_tofile()."""
     mocker.patch.object(container_struct, 'container_id', '123456')
     mocker.patch.object(container_struct.localrepo, 'cd_container',
@@ -475,7 +477,7 @@ def test_14_export_tofile(mocker, container_struct, container_exists, tar_status
     mocker.patch.object(FileUtil, 'tar', return_value=tar_status)
 
     result = container_struct.export_tofile('/path_to/clone_file.tar')
-
+    logger.error.called_once_with(log_error, mocker.ANY) if log_error else logger.error.assert_not_called()
     assert result == expected
 
 

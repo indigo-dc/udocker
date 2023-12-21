@@ -17,8 +17,9 @@ def config():
 
 @pytest.fixture
 def mock_lrepo(mocker):
-    return mocker.patch('udocker.umain.LocalRepository')
-
+    mock_repo = mocker.patch('udocker.umain.LocalRepository')
+    mock_repo.return_value.homedir = "/home/user"
+    return mock_repo
 
 @pytest.fixture
 def mock_ucli(mocker):
@@ -29,21 +30,20 @@ def logger(mocker):
     return mocker.patch('udocker.umain.LOG')
 
 
-def test_01__prepare_exec(mocker, config):
+def test_01__prepare_exec(mocker, config, logger):
     """Test01 UMain()._prepare_exec() userid=0."""
     argv = ["udocker", "-h"]
     mock_cmdp = mocker.patch('udocker.umain.CmdParser')
     mock_getuid = mocker.patch('udocker.umain.os.geteuid', return_value=0)
-    mock_logerr = mocker.patch('udocker.umain.LOG.error')
     with patch('sys.exit') as mock_exit:
         UMain(argv)._prepare_exec()
         mock_exit.assert_called()
         mock_cmdp.assert_called()
         mock_getuid.assert_called()
-        mock_logerr.assert_called()
+        logger.error.assert_called()
 
 
-def test_02__prepare_exec(mocker, config):
+def test_02__prepare_exec(mocker, config, logger):
     """Test02 UMain()._prepare_exec() userid=2000."""
     argv = ["udocker", "-h"]
     mock_cmdp = mocker.patch('udocker.umain.CmdParser')
@@ -53,6 +53,7 @@ def test_02__prepare_exec(mocker, config):
         mock_exit.assert_called()
         mock_cmdp.assert_called()
         mock_getuid.assert_called()
+        logger.error.assert_called()
 
 
 def test_03_execute(config, mock_lrepo, mock_ucli):

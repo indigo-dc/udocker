@@ -3,6 +3,7 @@
 udocker unit tests: CommonLocalFileApi
 """
 import pytest
+
 from udocker.commonlocalfile import CommonLocalFileApi
 
 
@@ -13,8 +14,19 @@ def lrepo(mocker):
 
 
 @pytest.fixture
-def clfapi(mocker, lrepo):
+def clfapi(lrepo):
     return CommonLocalFileApi(lrepo)
+
+
+@pytest.fixture
+def logger(mocker):
+    return mocker.patch('udocker.commonlocalfile.LOG')
+
+
+def test_01__init__(clfapi, lrepo):
+    """Test01 CommonLocalFileApi() constructor."""
+    assert clfapi.localrepo == lrepo
+    assert clfapi._imagerepo is None
 
 
 def test_02__move_layer_to_v1repo(mocker, clfapi):
@@ -91,7 +103,7 @@ def test_06__load_image(clfapi, lrepo):
     lrepo.set_version.assert_not_called()
 
 
-def test_07__load_image(clfapi, lrepo):
+def test_07__load_image(clfapi, lrepo, logger):
     """Test07 CommonLocalFileApi()._set version False"""
     structure = "12345"
     imagerepo = "/home/.udocker/images"
@@ -106,6 +118,7 @@ def test_07__load_image(clfapi, lrepo):
     lrepo.setup_imagerepo.assert_called()
     lrepo.setup_tag.assert_called()
     lrepo.set_version.assert_called()
+    logger.error.assert_called_with('setting repository version')
 
 
 def test_08__load_image(mocker, clfapi, lrepo):
@@ -125,6 +138,7 @@ def test_08__load_image(mocker, clfapi, lrepo):
     lrepo.setup_tag.assert_called()
     lrepo.set_version.assert_called()
     mock_imgstep2.assert_called()
+
 
 
 def test_09__untar_saved_container(mocker, clfapi):

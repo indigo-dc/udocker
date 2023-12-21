@@ -166,7 +166,7 @@ class OSInfo(ArchInfo):
             version = ".".join(version.split(".")[0:2])
         else:
             version = version.split(".")[0]
-        return(distribution, version)
+        return (distribution, version)
 
     def osversion(self):
         """Get guest operating system"""

@@ -72,6 +72,10 @@ def ucli2(mocker, lrepo, dioapi, lfapi, ks, config):
 def udockertools(mocker):
     return mocker.patch('udocker.cli.UdockerTools')
 
+@pytest.fixture
+def logger(mocker):
+    return mocker.patch('udocker.cli.LOG')
+
 
 def test_01_init(mocker, lrepo):
     """Test01 UdockerCLI() constructor."""
@@ -86,13 +90,13 @@ def test_01_init(mocker, lrepo):
     mock_ks.assert_called()
 
 
-data_cdrepo = ((None, True, 0, False),
-               (False, False, 1, False),
-               (True, False, 1, True))
+data_cdrepo = ((None, True, 0, False, False),
+               (False, False, 1, True, False),
+               (True, False, 1, False, True))
 
 
-@pytest.mark.parametrize('risdir,ropt,cisdir,expected', data_cdrepo)
-def test_02__cdrepo(mocker, ucli, cmdparse, risdir, ropt, cisdir, expected):
+@pytest.mark.parametrize('risdir,ropt,cisdir,log_warning,expected', data_cdrepo)
+def test_02__cdrepo(mocker, ucli, logger, cmdparse, risdir, ropt, cisdir, log_warning, expected):
     """Test02 UdockerCLI()._cdrepo()."""
     mock_isdir = mocker.patch('udocker.cli.FileUtil.isdir', return_value=risdir)
     cmdparse.get.return_value = '/.udocker'
@@ -100,6 +104,8 @@ def test_02__cdrepo(mocker, ucli, cmdparse, risdir, ropt, cisdir, expected):
     resout = ucli._cdrepo(cmdparse)
     assert resout == expected
     assert mock_isdir.call_count == cisdir
+    if log_warning:
+        logger.warning.assert_called_with('localrepo directory is invalid: %s', '/.udocker')
 
 
 #    assert lrepo.setup.call_count == clrepo
@@ -111,11 +117,13 @@ data_imgspec = ((False, '', None, (None, None)),
 
 
 @pytest.mark.parametrize('rdioapi,inprmt1,inprmt2,expected', data_imgspec)
-def test_03__check_imagespec(mocker, ucli, dioapi, rdioapi, inprmt1, inprmt2, expected):
+def test_03__check_imagespec(mocker, ucli, logger, dioapi, rdioapi, inprmt1, inprmt2, expected):
     """Test03 UdockerCLI()._check_imagespec()."""
     dioapi.is_repo_name.return_value = rdioapi
     resout = ucli._check_imagespec(inprmt1, inprmt2)
     assert resout == expected
+    if not expected:
+        logger.error.assert_called_with('enter image or repository/image without tag')
 
 
 data_imgrepo = ((False, '', None, None),
@@ -124,11 +132,13 @@ data_imgrepo = ((False, '', None, None),
 
 
 @pytest.mark.parametrize('rdioapi,inprmt1,inprmt2,expected', data_imgrepo)
-def test_04__check_imagerepo(mocker, ucli, dioapi, rdioapi, inprmt1, inprmt2, expected):
+def test_04__check_imagerepo(mocker, ucli, logger, dioapi, rdioapi, inprmt1, inprmt2, expected):
     """Test04 UdockerCLI()._check_imagespec()."""
     dioapi.is_repo_name.return_value = rdioapi
     resout = ucli._check_imagerepo(inprmt1, inprmt2)
     assert resout == expected
+    if not expected:
+        logger.error.assert_called_with('enter image or repository/image without tag')
 
 
 data_setrepo = (('registry.io', 'dockerhub.io', 'dockerhub.io/myimg:1.2', 'http://proxy', True),
@@ -172,7 +182,7 @@ def test_07_do_mkrepo(mocker, ucli, cmdparse):
     mock_exists.assert_not_called()
 
 
-def test_08_do_mkrepo(mocker, ucli, cmdparse, lrepo):
+def test_08_do_mkrepo(mocker, ucli, cmdparse, lrepo, logger):
     """Test08 UdockerCLI().do_mkrepo()."""
     cmdparse.get.return_value = '/.udocker'
     cmdparse.missing_options.return_value = False
@@ -184,9 +194,10 @@ def test_08_do_mkrepo(mocker, ucli, cmdparse, lrepo):
     mock_exists.assert_called()
     lrepo.setup.assert_called()
     lrepo.create_repo.assert_called()
+    logger.error.assert_called_with('localrepo creation failure: %s', '/.udocker')
 
 
-def test_09_do_mkrepo(mocker, ucli, cmdparse, lrepo):
+def test_09_do_mkrepo(mocker, ucli, cmdparse, lrepo, logger):
     """Test09 UdockerCLI().do_mkrepo()."""
     cmdparse.get.return_value = '/.udocker'
     cmdparse.missing_options.return_value = False
@@ -198,6 +209,7 @@ def test_09_do_mkrepo(mocker, ucli, cmdparse, lrepo):
     mock_exists.assert_called()
     lrepo.setup.assert_not_called()
     lrepo.create_repo.assert_not_called()
+    logger.error.assert_called_with('localrepo directory already exists: %s', '/.udocker')
 
 
 def test_10_do_mkrepo(mocker, ucli, cmdparse, lrepo):

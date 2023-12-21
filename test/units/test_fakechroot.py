@@ -51,6 +51,10 @@ def ufake(localrepo, mock_exec_mode, container_id):
 def logger(mocker):
     return mocker.patch('udocker.engine.fakechroot.LOG')
 
+@pytest.fixture
+def msg(mocker):
+    return mocker.patch('udocker.engine.fakechroot.MSG')
+
 
 @pytest.mark.parametrize('xmode', ['P1', 'P2'])
 def test_01__init(ufake):
@@ -73,7 +77,7 @@ def test_01__init(ufake):
      "/tmp/libfakechroot.so"),
 ])
 @pytest.mark.parametrize('xmode', XMODE)
-def test_02_select_fakechroot_so(mocker, ufake, fakechroot_so, os_exist, os_info, error, expected):
+def test_02_select_fakechroot_so(mocker, ufake, logger, msg, fakechroot_so, os_exist, os_info, error, expected):
     """Test02 FakechrootEngine.select_fakechroot_so."""
     mocker.patch.object(Config, 'conf',
                         {'fakechroot_so': fakechroot_so, 'root_path': '', 'verbose_level': '', 'tmpdir': '/tmp'})
@@ -84,6 +88,11 @@ def test_02_select_fakechroot_so(mocker, ufake, fakechroot_so, os_exist, os_info
     with error:
         select = ufake.select_fakechroot_so()
         assert select == expected
+    if error == pytest.raises(SystemExit):
+        assert logger.error.call_count == 1
+        assert any("no fakechroot" in call_args[0][0] for call_args in logger.error.call_args_list)
+
+    # FIXME: add assert for msg.info
 
 
 @pytest.mark.parametrize("fakechroot_libc, libc_search, matches, filetype, expected", [

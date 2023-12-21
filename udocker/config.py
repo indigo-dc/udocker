@@ -8,10 +8,10 @@ from udocker import LOG
 
 
 class Config:
-    ''' Default configuration values for the whole application. Changes
+    """ Default configuration values for the whole application. Changes
         to these values should be made via a configuration file read via
         Config.init() and that can reside in ~/.udocker/udocker.conf
-    '''
+    """
     conf = {}
     conf['verbose_level'] = logging.INFO
     conf['homedir'] = os.path.expanduser("~") + "/.udocker"  # dir with keystore file
@@ -178,7 +178,7 @@ class Config:
     conf['nvi_dev_list'] = ['/dev/nvidia', ]
 
     def _conf_file_read(self, cfpath, ignore_keys=None):
-        '''Read config file'''
+        """Read config file"""
         LOG.info('using config file: %s', cfpath)
         cfnparser = ConfigParser()
         cfnparser.read(cfpath)
@@ -189,7 +189,7 @@ class Config:
                 Config.conf[key] = val
 
     def _file_override(self, user_cfile, ignore_keys=None):
-        '''Override values from config file'''
+        """Override values from config file"""
         if os.path.exists('/etc/' + Config.conf['config']):
             self._conf_file_read('/etc/' + Config.conf['config'], ignore_keys)
 
@@ -206,7 +206,7 @@ class Config:
             self._conf_file_read(user_cfile, ignore_keys)
 
     def _env_override(self):
-        '''Override config with environment'''
+        """Override config with environment"""
         Config.conf['verbose_level'] = int(os.getenv("UDOCKER_LOGLEVEL",
                                            Config.conf['verbose_level']))
         Config.conf['topdir'] = os.getenv("UDOCKER_DIR", Config.conf['topdir'])
@@ -252,6 +252,6 @@ class Config:
                                                 Config.conf['tmpdir'])
 
     def getconf(self, user_cfile="u.conf"):
-        '''Return all configuration variables'''
+        """Return all configuration variables"""
         self._file_override(user_cfile)  # Override with variables in conf file
         self._env_override()             # Override with variables in environment

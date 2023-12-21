@@ -333,7 +333,6 @@ class ExecutionEngineCommon:
                                                                         "", cntjson)
                 self.container_variant = cstruc.get_container_meta("variant", "", cntjson)
 
-
         return (cont_dir, cntjson)
 
     def _select_auth_files(self):
@@ -410,7 +409,7 @@ class ExecutionEngineCommon:
            --volume=/etc/passwd:/etc/passwd
         2. else we are using the container original /etc/passwd
         in either case the user specified may not exist, in which
-        case we copy the passwd file to a new file and we create
+        case we copy the passwd file to a new file, and we create
         the intended user. the file is then passwd/mapped into
         the container.
         """
@@ -665,7 +664,7 @@ class ExecutionEngineCommon:
         # check if exposing privileged ports
         self._check_exposed_ports()
 
-        # which user to use inside the container and setup its account
+        # which user to use inside the container and set up its account
         if not self._setup_container_user(self.opt["user"]):
             return ""
 

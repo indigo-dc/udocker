@@ -622,7 +622,7 @@ class UdockerCLI:
         create: extract image layers and create a container
         create [options]  <repo/image:tag>
         --name=<container-name>    :set or change the name of the container
-        --force                    :allow create even if name already exists
+        --force                    :allow to create even if name already exists
         """
         imagespec = cmdp.get("P1")
         name = cmdp.get("--name=")
@@ -1181,7 +1181,7 @@ class UdockerCLI:
 
     def do_manifest(self, cmdp):
         """
-        manifest: commands for image manifests
+        manifest: commands for image manifest,
         manifest [options] inspect <repo/image:tag>
         --httpproxy=socks4://user:pass@host:port        :use http proxy
         --httpproxy=socks5://user:pass@host:port        :use http proxy
@@ -1380,14 +1380,14 @@ class UdockerCLI:
 # Here are the new commands of the CLI
 
     def do_install(self, cmdp):
-        ''' install: Install modules, perform default modules installation: proot for host arch and
+        """ install: Install modules, perform default modules installation: proot for host arch and
             kernel, fakechroot and its dependency patchelf
             install [options] module1 module2 ...: installs module1, module2, ...
             --force               :force reinstall or upgrade 1 or more modules
             --from=<url>|<dir>    :URL or local directory with modules tarball
             --prefix=<directory>  :modules installation directory
             <module>`             :positional args 1 or more
-        '''
+        """
         list_uid = [int(item) for item in cmdp.get("P*")]
         force = cmdp.get("--force")
         chk_dir = cmdp.get("--prefix=")
@@ -1412,11 +1412,11 @@ class UdockerCLI:
         return self.STATUS_ERROR
 
     def do_rmmod(self, cmdp):
-        ''' rmmod: Remove one or more installed modules
+        """ rmmod: Remove one or more installed modules
             (DEFAULT no options or args) remove/purge all modules
             --prefix=<directory>   :modules installation directory
             <module>               :positional args one or more
-        '''
+        """
         list_uid = [int(item) for item in cmdp.get("P*")]
         chk_dir = cmdp.get("--prefix=")
         install_dir = self.localrepo.installdir
@@ -1446,11 +1446,11 @@ class UdockerCLI:
         return self.STATUS_ERROR
 
     def do_availmod(self, cmdp):
-        ''' availmod: Show available modules in the catalog (DEFAULT no options or args) downloads
+        """ availmod: Show available modules in the catalog (DEFAULT no options or args) downloads
             metadata.json if it doesn't exist already in topdir
             --force  :force download of metadata.json
             -l       :Long format
-        '''
+        """
         force = cmdp.get("--force")
         long = cmdp.get("-l")
 
@@ -1463,8 +1463,8 @@ class UdockerCLI:
         return self.STATUS_OK
 
     def do_rmmeta(self, cmdp):
-        ''' rmmeta: Remove cached metadata.json
-        '''
+        """ rmmeta: Remove cached metadata.json
+        """
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
@@ -1480,7 +1480,7 @@ class UdockerCLI:
         return self.STATUS_OK
 
     def do_downloadtar(self, cmdp):
-        ''' download: Download tarballs with modules and verifies sha256sum, so it can be installed
+        """ download: Download tarballs with modules and verifies sha256sum, so it can be installed
             offline, it downloads the metadata.json if not existent. (DEFAULT no options or args)
             download tarballs proot for host arch and kernel,
             fakechroot and its dependency patchelf:
@@ -1489,7 +1489,7 @@ class UdockerCLI:
             --from=<url>|<dir>         :URL or local directory with modules, no trailing /
             --prefix=<directory>       :destination download directory, no trailing /
             <module>`                  :positional args 1 or more
-        '''
+        """
 
         dst_dir = self.localrepo.tardir    # Destination dir for tarballs
         list_uid = [int(item) for item in cmdp.get("P*")]
@@ -1508,10 +1508,10 @@ class UdockerCLI:
         return self.STATUS_ERROR
 
     def do_rmtar(self, cmdp):
-        ''' rmtar: Remove one or more tarballs. (DEFAULT no options or args) delete all tarballs
+        """ rmtar: Remove one or more tarballs. (DEFAULT no options or args) delete all tarballs
             --prefix=<directory> :destination download directory, no trainling /
             <module>          :positional args one or more, module name corresponding to the tarball
-        '''
+        """
         dst_dir = self.localrepo.tardir    # Destination dir for tarballs
         list_uid = [int(item) for item in cmdp.get("P*")]
         chk_dir = cmdp.get("--prefix=")
@@ -1527,10 +1527,10 @@ class UdockerCLI:
         return self.STATUS_ERROR
 
     def do_showmod(self, cmdp):
-        ''' showmod: Show installed modules and all information from metadata.json.
+        """ showmod: Show installed modules and all information from metadata.json.
             -l                     :Long format
             --prefix=<directory>   :modules installation directory
-        '''
+        """
         long = cmdp.get("-l")
         chk_dir = cmdp.get("--prefix=")
         install_dir = self.localrepo.installdir
@@ -1546,10 +1546,10 @@ class UdockerCLI:
         return self.STATUS_OK
 
     def do_verifytar(self, cmdp):
-        ''' verifymod: Verify/checksums downloaded tarballs, sha256
+        """ verifymod: Verify/checksums downloaded tarballs, sha256
             --force                    :Force the download
             --prefix=<directory>       :Destination download directory, no trailing /
-        '''
+        """
         dst_dir = self.localrepo.tardir    # Destination dir for tarballs
         chk_dir = cmdp.get("--prefix=")
         force = cmdp.get("--force")
