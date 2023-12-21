@@ -21,7 +21,7 @@ def test_01_get_filetype(osinfo, mocker):
     mock_isfile = mocker.patch('udocker.helper.osinfo.os.path.isfile', return_value=True)
     mock_islnk = mocker.patch('udocker.helper.osinfo.os.path.islink', return_value=False)
     mock_getout = mocker.patch('udocker.helper.osinfo.Uprocess.get_output',
-                               side_effect=[None, 'something: ELF 64-bit'])  # FIXME: check if this makes sense
+                               side_effect=[None, 'something: ELF 64-bit'])
     status = osinfo.get_filetype("/bin/ls")
     assert status == ftype
     mock_isfile.assert_called()

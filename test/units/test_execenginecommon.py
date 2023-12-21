@@ -93,7 +93,6 @@ def test_03__get_portsmap(mocker, engine, xmode, by_container, portsmap, error, 
     """Test03 ExecutionEngineCommon()._get_portsmap()."""
     mocker.patch.object(engine, 'opt', {'portsmap': portsmap})
 
-    # FIXME: this does not test the second try
     with error[0]:
         with error[1]:
             ports = engine._get_portsmap(by_container)
