@@ -204,18 +204,21 @@ def test_07__get_qemu_string(mocker, proot, qemu_return, kernel, xmode, expected
     assert result == expected
 
 
-@pytest.mark.parametrize('run_init, env_keys, opt_dict, oskernel_isgreater, loglevel, proot_killonexit, expected', [
-    (False, {}, {'cmd': [''], 'cwd': [], 'env': {}}, False, logging.DEBUG, False, 2),
-    (True, {"PROOT_NO_SECCOMP": '1', "PROOT_NEW_SECCOMP": '1'}, {'cmd': 'cmd', 'cwd': 'pwd', 'env': {}},
-     True, logging.DEBUG, True, 1),
-    (True, {"PROOT_NO_SECCOMP": '1', "PROOT_NEW_SECCOMP": '1'}, {'cmd': 'cmd', 'cwd': 'pwd', 'env': {}},
-     True, logging.NOTSET, False, 1),
-    (True, {}, {'cmd': [''], 'cwd': [], 'env': {}}, False, logging.NOTSET, False, 1),
-])
+@pytest.mark.parametrize(
+    'run_init, has_opt, env_keys, opt_dict, oskernel_isgreater, loglevel, proot_killonexit, expected', [
+        (False, True, {}, {'cmd': [''], 'cwd': [], 'env': {}}, False, logging.DEBUG, False, 2),
+        (True, True, {"PROOT_NO_SECCOMP": '1', "PROOT_NEW_SECCOMP": '1'}, {'cmd': 'cmd', 'cwd': 'pwd', 'env': {}},
+         True, logging.DEBUG, True, 1),
+        (True, False, {"PROOT_NO_SECCOMP": '1', "PROOT_NEW_SECCOMP": '1'}, {'cmd': 'cmd', 'cwd': 'pwd', 'env': {}},
+         True, logging.DEBUG, True, 1),
+        (True, True, {"PROOT_NO_SECCOMP": '1', "PROOT_NEW_SECCOMP": '1'}, {'cmd': 'cmd', 'cwd': 'pwd', 'env': {}},
+         True, logging.NOTSET, False, 1),
+        (True, True, {}, {'cmd': [''], 'cwd': [], 'env': {}}, False, logging.NOTSET, False, 1),
+    ])
 @pytest.mark.parametrize('kernel', ['4.8.13'])
 @pytest.mark.parametrize('xmode', XMODE)
-def test_08_run(mocker, proot, container_id, kernel, run_init, env_keys, opt_dict, oskernel_isgreater, loglevel,
-                proot_killonexit, expected):
+def test_08_run(mocker, proot, container_id, kernel, run_init, has_opt, env_keys, opt_dict, oskernel_isgreater,
+                loglevel, proot_killonexit, expected):
     """Test07 PRootEngine().run()."""
     uenv_instance = Uenv()
     for key, value in env_keys.items():
@@ -243,7 +246,7 @@ def test_08_run(mocker, proot, container_id, kernel, run_init, env_keys, opt_dic
     mocker.patch.object(proot, '_get_network_map', return_value=[])
     mocker.patch.object(proot, '_run_banner', return_value=[])
     mocker.patch.object(proot, '_run_env_cleanup_dict', return_value=None)
-    mocker.patch.object(proot, '_has_option', return_value=True)
+    mocker.patch.object(proot, '_has_option', return_value=has_opt)
 
     with mocker.patch('subprocess.call', return_value=expected):
         status = proot.run(container_id=container_id)
