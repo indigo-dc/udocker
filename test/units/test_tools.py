@@ -177,11 +177,34 @@ def test_01__instructions(mocker, utools):
     utools._instructions()
     assert mock_msg.call_count == 2
 
-
-def test_02__version2int(utools):
+@pytest.mark.parametrize("version, expected", [
+    ("2.4.3", 2004003),
+    ("2.4", 2004000),
+    ("2", 2000000),
+    ("", 0),
+    ("2.a.3", 2000003),
+    ("version2.4", 4000),
+    ("2.4.3.1", 2004003)
+])
+def test_02__version2int(utools, version, expected):
     """Test02 UdockerTools()._version2int()."""
-    out = utools._version2int("2.4")
-    assert out == 2004000
+    out = utools._version2int(version)
+    assert out == expected
+
+
+@pytest.mark.parametrize("given_version, required_version, expected_result", [
+    ("2.4.3", "2.4.3", True),
+    ("2.4.4", "2.4.3", True),
+    ("2.4.2", "2.4.3", False),
+    ("", "2.4.3", False),
+    ("2.4.3", "", False),
+    ("invalid", "2.4.3", False),
+])
+def test_03_version_isok(utools, mocker, given_version, required_version, expected_result):
+    """Test03 UdockerTools()._version_isok()."""
+    mocker.patch.object(utools, '_tarball_release', required_version)
+    result = utools._version_isok(given_version)
+    assert result == expected_result
 
 
 data_downl = (('file1', 'HTTP/1.1 200 OK', 0, 0, 'file1'),
@@ -190,8 +213,8 @@ data_downl = (('file1', 'HTTP/1.1 200 OK', 0, 0, 'file1'),
 
 
 @pytest.mark.parametrize("fout,hdr_status,cnt_mktmp,cnt_rm,expected", data_downl)
-def test_03__download(mocker, utools, get_url, fout, hdr_status, cnt_mktmp, cnt_rm, expected):
-    """Test03 UdockerTools()._download()."""
+def test_04__download(mocker, utools, get_url, fout, hdr_status, cnt_mktmp, cnt_rm, expected):
+    """Test04 UdockerTools()._download()."""
     hdr = CurlHeader()
     hdr.data["X-ND-HTTPSTATUS"] = hdr_status
     mock_fumktmp = mocker.patch('udocker.tools.FileUtil.mktmp', return_value="/tmp/tmpf")
@@ -213,9 +236,9 @@ data_getfile = (('', None, 0, False, 1, None, 0, False, 0, 0, '', ''),
 
 @pytest.mark.parametrize('url,mdownl,cdownl,mexists,cexists,mrpath,crpath,misfile,cisfile,cshucp,fout,expected',
                          data_getfile)
-def test_04__get_file(mocker, utools, url, mdownl, cdownl, mexists, cexists, mrpath, crpath,
+def test_05__get_file(mocker, utools, url, mdownl, cdownl, mexists, cexists, mrpath, crpath,
                       misfile, cisfile, cshucp, fout, expected):
-    """Test04 UdockerTools()._get_file()."""
+    """Test05 UdockerTools()._get_file()."""
     mock_downl = mocker.patch.object(UdockerTools, '_download', return_value=mdownl)
     mock_exists = mocker.patch('udocker.tools.os.path.exists', return_value=mexists)
     mock_rpath = mocker.patch('udocker.tools.os.path.realpath', return_value=mrpath)
@@ -236,8 +259,8 @@ def test_04__get_file(mocker, utools, url, mdownl, cdownl, mexists, cexists, mrp
     ("missing_tarball.tar.gz", False, '/tmp/tmpdir', (False, "")),
     ("invalid_tarball.tar.gz", True, '/tmp/tmpdir', (False, "")),
 ])
-def test_05__verify_version(mocker, utools, tarball_file, is_file, mktmpdir, expected_result):
-    """Test05 UdockerTools()._verify_version()."""
+def test_06__verify_version(mocker, utools, tarball_file, is_file, mktmpdir, expected_result):
+    """Test06 UdockerTools()._verify_version()."""
     mock_tarfile = mocker.Mock()
     mock_tarfile_open = mocker.patch('tarfile.open', return_value=mock_tarfile)
 
@@ -259,8 +282,8 @@ def test_05__verify_version(mocker, utools, tarball_file, is_file, mktmpdir, exp
     assert result == expected_result
 
 
-def test_06__clean_install(mocker, utools, lrepo):
-    """Test06 UdockerTools()._clean_install()."""
+def test_07__clean_install(mocker, utools, lrepo):
+    """Test07 UdockerTools()._clean_install()."""
     lrepo.bindir = '/test/bindir'
     lrepo.libdir = '/test/libdir'
     lrepo.docdir = '/test/docdir'
@@ -294,15 +317,15 @@ def test_06__clean_install(mocker, utools, lrepo):
     assert mock_remove.call_count == 3
 
 
-def test_07__get_mirrors(mocker, utools):
-    """Test07 UdockerTools()._get_mirrors()."""
+def test_08__get_mirrors(mocker, utools):
+    """Test08 UdockerTools()._get_mirrors()."""
     mirrors = "https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz"
     out = utools._get_mirrors(mirrors)
     assert out == [mirrors]
 
 
-def test_08_get_metadata(mocker, utools):
-    """Test08 UdockerTools().get_metadata()."""
+def test_09_get_metadata(mocker, utools):
+    """Test09 UdockerTools().get_metadata()."""
     mirrors = ['https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz']
     metajson = [MOD1]
 
@@ -319,8 +342,8 @@ def test_08_get_metadata(mocker, utools):
     mock_getfile.assert_called()
 
 
-def test_09_get_metadata(mocker, utools):
-    """Test09 UdockerTools().get_metadata()."""
+def test_10_get_metadata(mocker, utools):
+    """Test10 UdockerTools().get_metadata()."""
     mirrors = ['https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz']
     mock_fjson = mocker.mock_open()
     mock_fjson.side_effect = OSError
@@ -339,8 +362,8 @@ data_sel = (([1], [], [False, False], [MOD1]),
 
 
 @pytest.mark.parametrize('list_uid,list_names,sekgreat,expected', data_sel)
-def test_10__select_modules(mocker, utools, list_uid, list_names, sekgreat, expected):
-    """Test10 UdockerTools()._select_modules()."""
+def test_11__select_modules(mocker, utools, list_uid, list_names, sekgreat, expected):
+    """Test11 UdockerTools()._select_modules()."""
     metajson = [MOD1, MOD2, MOD3, MOD4]
     mock_getmeta = mocker.patch.object(UdockerTools, 'get_metadata', return_value=metajson)
     mock_hinfo = mocker.patch('udocker.tools.HostInfo')
@@ -355,8 +378,8 @@ data_vsha = (([MOD1, MOD2], [MOD1["sha256sum"], MOD2["sha256sum"]], True),
 
 
 @pytest.mark.parametrize('lmods,lsha,expected', data_vsha)
-def test_11_verify_sha(mocker, utools, lmods, lsha, expected):
-    """Test11 UdockerTools().verify_sha()."""
+def test_12_verify_sha(mocker, utools, lmods, lsha, expected):
+    """Test12 UdockerTools().verify_sha()."""
     mock_sha = mocker.patch('udocker.tools.ChkSUM.sha256', side_effect=lsha)
     resout = utools.verify_sha(lmods, 'udocker/tar')
     assert resout == expected
@@ -368,8 +391,8 @@ data_downtar = ((True, True, 2, True),
 
 
 @pytest.mark.parametrize('vsha,force,cgetfile,expected', data_downtar)
-def test_12_download_tarballs(mocker, utools, vsha, force, cgetfile, expected):
-    """Test12 UdockerTools().download_tarballs()."""
+def test_13_download_tarballs(mocker, utools, vsha, force, cgetfile, expected):
+    """Test13 UdockerTools().download_tarballs()."""
     lmods = [MOD1, MOD2]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
     mock_getfile = mocker.patch.object(UdockerTools, '_get_file',
@@ -388,8 +411,8 @@ data_deltar = (([1], 1, 0),
 
 
 @pytest.mark.parametrize('listuid,cselmod,cgetmeta', data_deltar)
-def test_13_delete_tarballs(mocker, utools, listuid, cselmod, cgetmeta):
-    """Test13 UdockerTools().delete_tarballs()."""
+def test_14_delete_tarballs(mocker, utools, listuid, cselmod, cgetmeta):
+    """Test14 UdockerTools().delete_tarballs()."""
     lmods = [MOD1, MOD2]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
     mock_getmeta = mocker.patch.object(UdockerTools, 'get_metadata', return_value=lmods)
@@ -403,8 +426,8 @@ def test_13_delete_tarballs(mocker, utools, listuid, cselmod, cgetmeta):
     assert mock_rm.call_count == 2
 
 
-def test_14_delete_tarballs(mocker, utools):
-    """Test14 UdockerTools().delete_tarballs()."""
+def test_15_delete_tarballs(mocker, utools):
+    """Test15 UdockerTools().delete_tarballs()."""
     lmods = [MOD1]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
     mock_getmeta = mocker.patch.object(UdockerTools, 'get_metadata', return_value=lmods)
@@ -424,8 +447,8 @@ data_downlic = ((False, [False, True], 0, True),
 
 
 @pytest.mark.parametrize('force,mgetfile,cgetfile,expected', data_downlic)
-def test_15_download_licenses(mocker, utools, force, mgetfile, cgetfile, expected):
-    """Test15 UdockerTools().download_licenses()."""
+def test_16_download_licenses(mocker, utools, force, mgetfile, cgetfile, expected):
+    """Test16 UdockerTools().download_licenses()."""
     lmods = [MOD1]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
     mock_getfile = mocker.patch.object(UdockerTools, '_get_file', side_effect=mgetfile)
@@ -440,8 +463,8 @@ data_showmeta = ((True, 18), (False, 2))
 
 
 @pytest.mark.parametrize('long,cmsg', data_showmeta)
-def test_16_show_metadata(mocker, utools, long, cmsg):
-    """Test16 UdockerTools().show_metadata()."""
+def test_17_show_metadata(mocker, utools, long, cmsg):
+    """Test17 UdockerTools().show_metadata()."""
     mock_msg = mocker.patch('udocker.tools.MSG.info')
     assert utools.show_metadata([MOD1], long)
     assert mock_msg.call_count == cmsg
@@ -455,9 +478,9 @@ def test_16_show_metadata(mocker, utools, long, cmsg):
     (["uid2"], "", "/tar/dir", True, False, "", "failed to install module"),
     (["uid3"], "", "/tar/dir", False, True, "", "")
 ])
-def test_17_installmod_logic(mocker, utools, logger, mock_tarfile, list_uid, top_dir, tar_dir, force, expect_success,
+def test_18_installmod_logic(mocker, utools, logger, mock_tarfile, list_uid, top_dir, tar_dir, force, expect_success,
                              log_info, log_error):
-    """Test17 UdockerTools._installmod_logic()."""
+    """Test18 UdockerTools._installmod_logic()."""
     if expect_success:
         mock_tarfile_instance = mock_tarfile(["file1", "file2"] if expect_success else [],
                                              [mocker.Mock(), mocker.Mock()] if expect_success else [])
@@ -488,9 +511,9 @@ def test_17_installmod_logic(mocker, utools, logger, mock_tarfile, list_uid, top
     (False, False, True, False, "", "installing licenses", ""),
     (True, False, False, True, "failed to install licenses", "", ""),
 ])
-def test_18_install_licenses(mocker, utools, mock_tarfile, logger, force, licenses_exist, expected_result, raises_error,
+def test_19_install_licenses(mocker, utools, mock_tarfile, logger, force, licenses_exist, expected_result, raises_error,
                              log_error, log_info, log_debug):
-    """Test18 UdockerTools()._install_licenses()."""
+    """Test19 UdockerTools()._install_licenses()."""
     mod_all = {"docs": "license.tgz"}
     tar_dir = "/tar/dir"
     top_dir = "/some/dir"
@@ -518,8 +541,8 @@ def test_18_install_licenses(mocker, utools, mock_tarfile, logger, force, licens
     assert result == expected_result
 
 
-def test_19_install_modules(mocker, utools):
-    """Test19 UdockerTools().install_modules()."""
+def test_20_install_modules(mocker, utools):
+    """Test20 UdockerTools().install_modules()."""
     lmods = [MOD1]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
     mock_downtar = mocker.patch.object(UdockerTools, 'download_tarballs')
@@ -533,8 +556,8 @@ def test_19_install_modules(mocker, utools):
     mock_inst.assert_not_called()
 
 
-def test_20_install_modules(mocker, utools):
-    """Test20 UdockerTools().install_modules()."""
+def test_21_install_modules(mocker, utools):
+    """Test21 UdockerTools().install_modules()."""
     lmods = [MOD1]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
     mock_downtar = mocker.patch.object(UdockerTools, 'download_tarballs', return_value=True)
@@ -553,8 +576,8 @@ def test_20_install_modules(mocker, utools):
     mock_inst.assert_not_called()
 
 
-def test_21_install_modules(mocker, utools):
-    """Test21 UdockerTools().install_modules()."""
+def test_22_install_modules(mocker, utools):
+    """Test22 UdockerTools().install_modules()."""
     lmods = [MOD1]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
     mock_downtar = mocker.patch.object(UdockerTools, 'download_tarballs', return_value=False)
@@ -573,8 +596,8 @@ def test_21_install_modules(mocker, utools):
     mock_inst.assert_called()
 
 
-def test_22_get_modules(mocker, utools):
-    """Test22 UdockerTools().get_modules()."""
+def test_23_get_modules(mocker, utools):
+    """Test23 UdockerTools().get_modules()."""
     lmods = [MOD1, MOD2]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
     mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=True)
@@ -588,8 +611,8 @@ def test_22_get_modules(mocker, utools):
     mock_selmod.assert_not_called()
 
 
-def test_23_get_modules(mocker, utools):
-    """Test23 UdockerTools().get_modules()."""
+def test_24_get_modules(mocker, utools):
+    """Test24 UdockerTools().get_modules()."""
     lmods = [MOD1, MOD2]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
     mock_isfile = mocker.patch('udocker.tools.os.path.isfile', return_value=True)
@@ -605,8 +628,8 @@ def test_23_get_modules(mocker, utools):
     ('delete', ['uid1'], {MOD2['uid']}, False),               # Delete action, remove an existing module
     ('update', ['uid1'], set(), True),                        # Update action, but file write fails
 ])
-def test_24_get_modules(mocker, utools, logger, action, list_uid, expected_result, write_error):
-    """Test24 UdockerTools().get_modules()."""
+def test_25_get_modules(mocker, utools, logger, action, list_uid, expected_result, write_error):
+    """Test25 UdockerTools().get_modules()."""
     lmods = [MOD2]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=[MOD1])
     mock_isfile = mocker.patch.object(os.path, 'isfile', return_value=True)
@@ -634,8 +657,8 @@ def test_24_get_modules(mocker, utools, logger, action, list_uid, expected_resul
             actual_uids = {mod['uid'] for mod in mock_jdump.call_args[0][0]}
             assert actual_uids == expected_result
 
-def test_25_rm_module(mocker, utools):
-    """Test25 UdockerTools().rm_module()."""
+def test_26_rm_module(mocker, utools):
+    """Test26 UdockerTools().rm_module()."""
     lmods = [MOD1, MOD4]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
     mock_getmod = mocker.patch.object(UdockerTools, 'get_modules')
@@ -649,8 +672,8 @@ def test_25_rm_module(mocker, utools):
     assert mock_futil.return_value.remove.call_count == 2
     mock_getmod.assert_not_called()
 
-def test_26_rm_module(mocker, utools):
-    """Test26 UdockerTools().rm_module() empty list_uid."""
+def test_27_rm_module(mocker, utools):
+    """Test27 UdockerTools().rm_module() empty list_uid."""
     mock_getmod = mocker.patch.object(UdockerTools, 'get_modules', return_value=[])
     mock_oslistdir = mocker.patch('os.listdir', return_value=['file1', 'file2'])
     mock_futil = mocker.patch('udocker.tools.FileUtil')
@@ -664,8 +687,8 @@ def test_26_rm_module(mocker, utools):
     assert mock_futil.return_value.register_prefix.call_count == 2
     assert mock_futil.return_value.remove.call_count == 2
 
-def test_27_rm_module(mocker, utools):
-    """Test27 UdockerTools().rm_module() non-empty list_uid and prefix."""
+def test_28_rm_module(mocker, utools):
+    """Test28 UdockerTools().rm_module() non-empty list_uid and prefix."""
     lmods = [MOD1, MOD4]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
     mock_futil_register_prefix = mocker.patch.object(FileUtil, 'register_prefix')
@@ -678,8 +701,8 @@ def test_27_rm_module(mocker, utools):
     assert mock_futil_register_prefix.call_count == len(lmods)
     assert mock_futil_remove.call_count == len(lmods)
 
-def test_28_rm_module(mocker, utools):
-    """Test28 UdockerTools().rm_module() no modules selected."""
+def test_29_rm_module(mocker, utools):
+    """Test29 UdockerTools().rm_module() no modules selected."""
     lmods = [{'installdir': 'unknown/', 'fname': 'unknown_file'}]
     mock_selmod = mocker.patch.object(UdockerTools, '_select_modules', return_value=lmods)
 

@@ -402,10 +402,13 @@ def test_14__sel_mount_spec(mocker, runc, mount, host_source, cont_dest, expecte
     assert sel_mount_spec == expected
 
 
-# FIXME: this test fails, need to be fixed
 @pytest.mark.parametrize("mount,host_source,cont_dest,new_data,expected_mounts,expected", [
     ([], "/HOSTDIR", "/CONTDIR", {}, [], False),
     ([], "/HOSTDIR", "/CONTDIR", {"options": ["a", "su"]}, [], False),
+    ([{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR", "options": ["b"]}], "/HOSTDIR", "/CONTDIR",
+     {"options": ["su"]},
+     [{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR", "options": ["b", "su"]}], True),
+
     # ([{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR", "options": ["b"]}], "/HOSTDIR", "/CONTDIR",
     #  {"options": ["c", "su"]},
     #  [{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR", "options": ["b", "c", "su"]}], True), # FIXME: this test fails may need some changes in the code
