@@ -72,9 +72,15 @@ def ucli2(mocker, lrepo, dioapi, lfapi, ks, config):
 def udockertools(mocker):
     return mocker.patch('udocker.cli.UdockerTools')
 
+
 @pytest.fixture
 def logger(mocker):
     return mocker.patch('udocker.cli.LOG')
+
+
+@pytest.fixture
+def mock_msg(mocker):
+    return mocker.patch('udocker.cli.MSG')
 
 
 def test_01_init(mocker, lrepo):
@@ -460,7 +466,7 @@ def test_18_do_export(mocker, ucli, cmdparse, cmdp_opts, missing_opts, container
     log_mock = mocker.patch.object(LOG, 'info')
 
     cstruct_mock = mocker.Mock()
-    mocker.patch('udocker.cli.ContainerStructure', return_value=cstruct_mock)
+    cstruct_class_mock = mocker.patch('udocker.cli.ContainerStructure', return_value=cstruct_mock)
 
     cstruct_mock.clone_tofile.return_value = export_result
     cstruct_mock.export_tofile.return_value = export_result
@@ -469,13 +475,12 @@ def test_18_do_export(mocker, ucli, cmdparse, cmdp_opts, missing_opts, container
 
     assert status == expected_status
     if err_msg and not err_msg == 'exporting':
-        log_error.assert_called_with(err_msg, '' if not container_id else container_id)  # FIXME: tmp fix
+        log_error.assert_called_with(err_msg, '' if not container_id else container_id)
     elif err_msg and not missing_opts:
         log_mock.assert_called_with("exporting to file: %s", cmdp_opts['P1'])
     elif err_msg:
         log_error.assert_called_with(err_msg)
 
-    # cstruct_class_mock.assert_called_with(ucli.localrepo, container_id) # FIXME: this need changes in the code
     if not missing_opts:
         if cmdp_opts.get('--clone') and expected_status == UdockerCLI.STATUS_OK:
             cstruct_mock.clone_tofile.assert_called_with(cmdp_opts['P1'])
@@ -780,14 +785,17 @@ def test_26_do_run(mocker, ucli, cmdparse, config, params):
         mock_log_error.assert_called_with(params['err_msg'])
 
 
-@pytest.mark.parametrize("missing_opts, cmdp_opts, images_list, layers_list, expected_status", [
-    (True, {}, [], [], 1),
-    (False, {}, [], [], 0),
-    (False, {}, [('repo1', 'tag1'), ('repo2', 'tag2')], [], 0),
-    (False, {'-l': True}, [('repo1', 'tag1')], [('layer1', 2048)], 0),
-    # (False, {'-l': True}, [('repo1', 'tag1')], [('layer1', 512)], 0), # FIXME: need to be casted to int file_size
+@pytest.mark.parametrize("missing_opts, print_platform, cmdp_opts, images_list, layers_list, expected_status", [
+    (True,  False, {}, [], [], 1),
+    (False, False,  {}, [], [], 0),
+    (False, False,  {}, [('repo1', 'tag1'), ('repo2', 'tag2')], [], 0),
+    (False, False,  {'-l': True}, [('repo1', 'tag1')], [('layer1', 2048)], 0),
+    (False, False,  {'-l': True}, [('repo1', 'tag1')], [('layer1', 1048577)], 0),
+    (False, False,  {'-l': True}, [('repo1', 'tag1')], [('layer1', 512)], 0),
+    (False, True,  {'-l': True, '-p': True}, [('repo1', 'tag1')], [('layer1', 512)], 0),
 ])
-def test_27_do_images(mocker, ucli, cmdparse, missing_opts, cmdp_opts, images_list, layers_list, expected_status):
+def test_27_do_images(mocker, ucli, cmdparse, mock_msg, print_platform, missing_opts, cmdp_opts, images_list, layers_list,
+                      expected_status):
     """ Test27 UdockerCLI().do_images(). """
     cmdparse.get.side_effect = lambda x: cmdp_opts.get(x)
     cmdparse.missing_options.return_value = missing_opts
@@ -795,11 +803,12 @@ def test_27_do_images(mocker, ucli, cmdparse, missing_opts, cmdp_opts, images_li
     mocker.patch.object(ucli.localrepo, 'isprotected_imagerepo', return_value=False)
     mocker.patch.object(ucli.localrepo, 'cd_imagerepo', return_value="image_dir")
     mocker.patch.object(ucli.localrepo, 'get_layers', return_value=layers_list)
-
+    mocker.patch.object(ucli.localrepo, 'get_image_platform_fmt', return_value="platform")
     status = ucli.do_images(cmdparse)
-
     assert status == expected_status
 
+    if print_platform:
+        assert mocker.call('platform           . repo1:tag1') in mock_msg.info.mock_calls
 
 @pytest.mark.parametrize("missing_opts, cmdp_opts, containers_list, exec_mode, expected_status", [
     (True, {}, [], '', 1),
@@ -1185,7 +1194,7 @@ def test_39_do_verify(mocker, ucli, cmdparse, imagespec, imagerepo_exists, verif
      "msgs": {'error': None, 'info': None}},
     {"container_id": "123", "xmode": None, "force": False, "nvidia": False, "purge": True, "fixperm": False,
      "container": True, "protected": False, "exec_mode_set": True, "expected_status": 0,
-     "msgs": {'error': None, 'info': None}}, # FIXME: is creating folders
+     "msgs": {'error': None, 'info': None}},  # FIXME: is creating folders
     {"container_id": "123", "xmode": None, "force": False, "nvidia": False, "purge": False, "fixperm": True,
      "container": True, "protected": False, "exec_mode_set": True, "expected_status": 0,
      "msgs": {'error': None, 'info': "fixed permissions in container: %s"}},
@@ -1219,7 +1228,6 @@ def test_40_do_setup(mocker, ucli, cmdparse, params_setup):
     mock_log_info = mocker.patch.object(LOG, 'info')
     mocker.patch.object(FileBind, 'restore')
     mocker.patch.object(MountPoint, 'restore')
-
 
     status = ucli.do_setup(cmdparse)
 

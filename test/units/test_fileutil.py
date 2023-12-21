@@ -46,6 +46,11 @@ def futil():
     return file_util
 
 
+@pytest.fixture
+def logger(mocker):
+    return mocker.patch('udocker.utils.fileutil.LOG')
+
+
 def test_01_init(mocker):
     """Test01 FileUtil() constructor."""
     mock_absp = mocker.patch('udocker.utils.fileutil.os.path.abspath', return_value='/dir/somefile')
@@ -277,11 +282,12 @@ def test_21__chmod(futil, mocker):
     mock_stat.S_IMODE.assert_called()
 
 
-def test_22__chmod(futil, mocker):
+def test_22__chmod(futil, mocker, logger):
     """Test22 FileUtil._chmod()."""
     mock_lstat = mocker.patch('udocker.utils.fileutil.os.lstat', side_effect=OSError('fail'))
     futil._chmod("somefile")
     mock_lstat.assert_called()
+    logger.error.assert_called_with('changing permissions of: %s', 'somefile')
 
 
 def test_23_chmod(futil, mocker):
@@ -362,7 +368,7 @@ data_rm = ((False, False, 100, 100, False, False, False, False, '/f4', False),
 
 
 @pytest.mark.parametrize('force,recursive,mhinfo,muid,msafe,mfile,mdir,mrmd,fname,expected', data_rm)
-def test_29_remove(futil, mocker, force, recursive, mhinfo, muid, msafe, mfile, mdir, mrmd, fname,
+def test_29_remove(futil, mocker, logger, force, recursive, mhinfo, muid, msafe, mfile, mdir, mrmd, fname,
                    expected):
     """Test29 FileUtil.remove()."""
     mock_exists = mocker.patch('udocker.utils.fileutil.os.path.lexists', return_value=True)
@@ -381,8 +387,11 @@ def test_29_remove(futil, mocker, force, recursive, mhinfo, muid, msafe, mfile, 
     resout = futil.remove(force, recursive)
     assert resout == expected
 
+    if not expected:
+        assert logger.error.call_count == 1
 
-def test_30_remove(futil, mocker):
+
+def test_30_remove(futil, mocker, logger):
     """Test30 FileUtil.remove()."""
     mock_exists = mocker.patch('udocker.utils.fileutil.os.path.lexists', return_value=True)
     mock_hinfo = mocker.patch('udocker.utils.fileutil.HostInfo')
@@ -395,6 +404,8 @@ def test_30_remove(futil, mocker):
     futil.filename = '/dir/f4'
     resout = futil.remove()
     assert not resout
+    assert logger.error.call_count == 1
+    logger.error.assert_called_with('delete outside of directory tree: %s', '/dir/f4')
 
 
 data_tarver = ((True, False, True), (True, True, False), (False, False, False))
@@ -415,7 +426,7 @@ data_tar = ((False, True), (True, False))
 
 
 @pytest.mark.parametrize('boolcal,expected', data_tar)
-def test_32_tar(futil, mocker, boolcal, expected):
+def test_32_tar(futil, mocker, logger, boolcal, expected):
     """Test32 FileUtil.tar()."""
     mock_stderr = mocker.patch('udocker.utils.fileutil.Uprocess.get_stderr', return_value='stder')
     mock_call = mocker.patch('udocker.utils.fileutil.Uprocess.call', return_value=boolcal)
@@ -423,6 +434,8 @@ def test_32_tar(futil, mocker, boolcal, expected):
     assert resout == expected
     mock_stderr.assert_called()
     mock_call.assert_called()
+    if not expected:
+        logger.error.assert_called_with('creating tar file: %s', 't.tar')
 
 
 data_cpdir = ((True, True), (False, False))
@@ -833,7 +846,7 @@ def test_71__link_restore(futil, mocker, mrlnk, orig_path, force, expected):
     mock_readlink.assert_called()
 
 
-def test_72_links_conv(futil, mocker):
+def test_72_links_conv(futil, mocker, logger):
     """Test72 FileUtil.links_conv()."""
     mock_is_safe_prefix = mocker.patch.object(FileUtil, '_is_safe_prefix', return_value=False)
     mock_walk = mocker.patch('udocker.utils.fileutil.os.walk')
@@ -844,6 +857,7 @@ def test_72_links_conv(futil, mocker):
     mock_realpath.assert_called()
     mock_is_safe_prefix.assert_called()
     mock_walk.assert_not_called()
+    logger.error.assert_called_with('links convertion outside of dir tree: %s', '/ROOT')
 
 
 def test_73_links_conv(futil, mocker):
