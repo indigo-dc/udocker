@@ -4257,12 +4257,28 @@ centos7_setup()
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
 	    --forcearch="$OS_ARCH" \
             gcc make libtalloc libtalloc-devel glibc-static glibc-devel \
-            tar python gzip zlib diffutils file git which
+            tar python gzip zlib diffutils file git which curl libseccomp-devel \
+	    libseccomp-static
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
             --forcearch="$OS_ARCH" \
             autoconf m4 gcc-c++ libstdc++-static automake gawk libtool xz
+
+    REPOSECCOMP="https://cbs.centos.org/kojifiles/packages/libseccomp/2.3.0"
+    curl "$REPOSECCOMP/1.el7/${OS_ARCH}/libseccomp-2.3.0-1.el7.${OS_ARCH}.rpm" > \
+	    "$OS_ROOTDIR/root/libseccomp-2.3.0-1.el7.${OS_ARCH}.rpm"
+    curl "$REPOSECCOMP/1.el7/${OS_ARCH}/libseccomp-static-2.3.0-1.el7.${OS_ARCH}.rpm" > \
+	    "$OS_ROOTDIR/root/libseccomp-static-2.3.0-1.el7.${OS_ARCH}.rpm"
+    curl "$REPOSECCOMP/1.el7/${OS_ARCH}/libseccomp-devel-2.3.0-1.el7.${OS_ARCH}.rpm" > \
+	    "$OS_ROOTDIR/root/libseccomp-devel-2.3.0-1.el7.${OS_ARCH}.rpm"
+
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        localinstall  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+            --forcearch="$OS_ARCH" \
+	    "$OS_ROOTDIR/root/libseccomp-2.3.0-1.el7.${OS_ARCH}.rpm" \
+	    "$OS_ROOTDIR/root/libseccomp-static-2.3.0-1.el7.${OS_ARCH}.rpm" \
+	    "$OS_ROOTDIR/root/libseccomp-devel-2.3.0-1.el7.${OS_ARCH}.rpm"
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -4447,6 +4463,64 @@ EOF_centos7_patchelf
     set +xv
 }
 
+
+centos7_build_runc()
+{
+    echo "centos7_build_runc : $1"
+    local OS_ARCH="$1"
+    local RUNC_SOURCE_DIR="$2"
+    local OS_NAME="centos"
+    local OS_RELVER="7"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "amd64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${RUNC_SOURCE_DIR}/runc-centos-7.bin" ] ; then
+        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc-centos-7.bin"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile runc
+    mkdir -p "${OS_ROOTDIR}/go/src/github.com/opencontainers"
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -0 -r "$OS_ROOTDIR" -b "${RUNC_SOURCE_DIR}:/go/src/github.com/opencontainers/runc" -w / -b /dev \
+            -b /etc/resolv.conf:/etc/resolv.conf /bin/bash <<'EOF_centos7_runc'
+cd /root
+curl https://dl.google.com/go/go1.16.linux-amd64.tar.gz --output go.tgz
+tar xzvf go.tgz
+export PATH=$PATH:/root/go/bin
+export GOROOT=/root/go
+export GOPATH=/go
+go version
+export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+go get github.com/sirupsen/logrus
+cd /go/src/github.com/opencontainers/runc
+make clean
+make static
+/bin/mv runc runc-centos-7.bin
+EOF_centos7_runc
+
+}
 
 
 # #############################################################################
