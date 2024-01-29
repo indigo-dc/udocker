@@ -22,7 +22,7 @@ limitations under the License.
 """
 
 __author__ = "udocker@lip.pt"
-__copyright__ = "Copyright 2016 - 2023, LIP"
+__copyright__ = "Copyright 2016 - 2024, LIP"
 __credits__ = [
     "PRoot http://proot.me",
     "runC https://runc.io",
@@ -32,5 +32,5 @@ __credits__ = [
     "Singularity http://singularity.lbl.gov"
     ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.3.12"
-__date__ = "2023"
+__version__ = "1.3.13-rc.1"
+__date__ = "2024"
