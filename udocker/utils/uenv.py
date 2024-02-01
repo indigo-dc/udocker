@@ -97,7 +97,7 @@ class Uenv:
         return self
 
     def extendif(self, envlist):
-        """Extend Uenv environment with list of key=val if key non-existant"""
+        """Extend Uenv environment with list of key=val if key non-existent"""
         if isinstance(envlist, (list)):
             for envstr in envlist:
                 self.appendif(envstr)

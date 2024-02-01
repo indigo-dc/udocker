@@ -94,7 +94,7 @@ class UdockerCLI:
         return imagerepo
 
     def _set_repository(self, registry_url, index_url=None, imagerepo=None, http_proxy=None):
-        """Select docker respository"""
+        """Select docker repository"""
         transport = "https:"
         if http_proxy:
             self.dockerioapi.set_proxy(http_proxy)

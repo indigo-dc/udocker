@@ -133,7 +133,7 @@ class FakechrootEngine(ExecutionEngineCommon):
 
     def _get_access_filesok(self):
         """
-        Circunvent mpi init issues when calling access()
+        Circumvent mpi init issues when calling access()
         A list of certain existing files is provided
         """
         file_list = []

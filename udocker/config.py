@@ -106,7 +106,7 @@ class Config:
                                        "/lib64", "/usr/lib64", "/lib", "/usr/lib", )
     conf['lib_dirs_list_append'] = (".", )
 
-    # fakechroot access files, used to circunvent openmpi init issues
+    # fakechroot access files, used to circumvent openmpi init issues
     conf['access_files'] = ("/sys/class/infiniband", "/dev/open-mx", "/dev/myri0", "/dev/myri1",
                             "/dev/myri2", "/dev/myri3", "/dev/myri4", "/dev/myri5", "/dev/myri6",
                             "/dev/myri7", "/dev/myri8", "/dev/myri9", "/dev/ipath", "/dev/kgni0",
