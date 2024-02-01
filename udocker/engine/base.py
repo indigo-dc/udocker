@@ -235,7 +235,6 @@ class ExecutionEngineCommon:
 
             if not found:
                 LOG.warning("--novol %s not in volumes list", novolume)
-
         return self._check_volumes()
 
     def _check_paths(self):
@@ -410,7 +409,7 @@ class ExecutionEngineCommon:
            --volume=/etc/passwd:/etc/passwd
         2. else we are using the container original /etc/passwd
         in either case the user specified may not exist, in which
-        case we copy the passwd file to a new file and we create
+        case we copy the passwd file to a new file, and we create
         the intended user. the file is then passwd/mapped into
         the container.
         """
@@ -665,7 +664,7 @@ class ExecutionEngineCommon:
         # check if exposing privileged ports
         self._check_exposed_ports()
 
-        # which user to use inside the container and setup its account
+        # which user to use inside the container and set up its account
         if not self._setup_container_user(self.opt["user"]):
             return ""
 
@@ -689,7 +688,7 @@ class ExecutionEngineCommon:
 
     def _is_same_osenv(self, filename):
         """Check if the host has changed"""
-        saved = json.loads(FileUtil(filename).getdata())
+        saved = self._get_saved_osenv(filename)
         try:
             if (saved["osversion"] == HostInfo().osversion() and
                     saved["oskernel"] == HostInfo().oskernel() and
@@ -720,7 +719,10 @@ class ExecutionEngineCommon:
 
     def _check_arch(self, fail=False):
         """Check if architecture is the same"""
-        if not OSInfo(self.container_root).is_same_arch():
+        same_arch = OSInfo(self.container_root).is_same_arch()
+        if same_arch is None:
+            return True
+        if not same_arch:
             if fail:
                 LOG.error("host and container architectures mismatch")
                 return False

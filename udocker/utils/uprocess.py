@@ -49,6 +49,7 @@ class Uprocess:
 
     def check_output(self, *popenargs, **kwargs):
         """Select check_output implementation"""
+        LOG.info("check_output: %s", *popenargs)
         try:
             output = subprocess.check_output(*popenargs, **kwargs)
             chk_out = output.decode()
@@ -59,6 +60,7 @@ class Uprocess:
 
     def get_output(self, cmd, ignore_error=False):
         """Execute a shell command and get its output"""
+        LOG.debug("get_output: %s", cmd)
         if not cmd[0].startswith("/"):
             path = Config.conf["root_path"] + ":" + os.getenv("PATH", "")
             cmd_path = self.find_inpath(cmd[0], path)
@@ -87,6 +89,7 @@ class Uprocess:
 
     def pipe(self, cmd1, cmd2, **kwargs):
         """Pipe two shell commands"""
+        LOG.info("pipe: %s %s", cmd1, cmd2)
         path = Config.conf["root_path"] + ":" + os.getenv("PATH", "")
         if not cmd1[0].startswith("/"):
             cmd1[0] = self.find_inpath(cmd1[0], path)

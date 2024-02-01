@@ -63,3 +63,10 @@ def test_06_getvalue(curl_header):
     curl_header.data = "XXXX"
     resout = curl_header.getvalue()
     assert resout == curl_header.data
+
+
+def test_07__str__(curl_header):
+    """Test07 CurlHeader().__str__()."""
+    curl_header.data = "XXXX"
+    resout = curl_header.__str__()
+    assert resout == curl_header.data

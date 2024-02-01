@@ -7,7 +7,7 @@ import re
 import subprocess
 import logging
 
-from udocker import LOG
+from udocker import LOG, MSG
 from udocker.engine.base import ExecutionEngineCommon
 from udocker.helper.osinfo import OSInfo
 from udocker.config import Config
@@ -32,6 +32,8 @@ class FakechrootEngine(ExecutionEngineCommon):
     def select_fakechroot_so(self):
         """Select fakechroot sharable object library"""
         image_list = []
+        guest = OSInfo(self.container_root)
+        arch = guest.arch()
         if Config.conf['fakechroot_so']:
             if isinstance(Config.conf['fakechroot_so'], list):
                 image_list = Config.conf['fakechroot_so']
@@ -47,8 +49,6 @@ class FakechrootEngine(ExecutionEngineCommon):
             lib = "libfakechroot"
             deflib = "libfakechroot.so"
             image_list = [deflib, ]
-            guest = OSInfo(self.container_root)
-            arch = guest.arch()
             (distro, version) = guest.osdistribution()
             if "Alpine" not in distro:
                 version = version.split(".")[0]
@@ -59,12 +59,41 @@ class FakechrootEngine(ExecutionEngineCommon):
 
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
+        if fakechroot_so.count('-') != 3:
+            MSG.info("Info: this OS or architecture might not be supported by this execution mode"
+                     "\n      specify path to libfakechroot.so with environment UDOCKER_FAKECHROOT_SO"
+                     "\n      or choose other execution mode with: udocker setup --execmode=<mode>")
         if not os.path.exists(fakechroot_so):
             LOG.error("no libfakechroot found: %s", image_list)
             sys.exit(1)
 
         LOG.debug("fakechroot_so: %s", fakechroot_so)
         return fakechroot_so
+
+    def _get_libc_pathname(self):
+        """Get the pathname of libc in the container"""
+        if Config.conf['fakechroot_libc']:
+            return Config.conf['fakechroot_libc']
+
+        libc_search_list = []
+        if Config.conf['libc_search']:
+            if isinstance(Config.conf['libc_search'], list):
+                libc_search_list = Config.conf['libc_search']
+            elif isinstance(Config.conf['libc_search'], tuple):
+                libc_search_list = Config.conf['libc_search']
+            elif isinstance(Config.conf['libc_search'], str):
+                libc_search_list = [Config.conf['libc_search'], ]
+
+        for libc_pattern in libc_search_list:
+            libc_matches = \
+                FileUtil(self.container_root + "/" + libc_pattern).match_recursive()
+            for libc_abs_path in libc_matches:
+                libc_relative_path = libc_abs_path[len(self.container_root):]
+                (dummy, filetype) = \
+                    OSInfo(self.container_root).get_filetype(libc_relative_path)
+                if "ELF" in filetype and "dynamic" in filetype:
+                    return libc_relative_path
+        return ""
 
     def _setup_container_user(self, user):
         """Override of _setup_container_user()"""
@@ -120,15 +149,20 @@ class FakechrootEngine(ExecutionEngineCommon):
         (host_volumes, map_volumes) = self._get_volume_bindings()
         self._fakechroot_so = self.select_fakechroot_so()
         access_filesok = self._get_access_filesok()
+        fakechroot_libc = self._get_libc_pathname()
         self.opt["env"].append("PWD=" + self.opt["cwd"])
         self.opt["env"].append("FAKECHROOT_BASE=" + os.path.realpath(self.container_root))
         self.opt["env"].append("LD_PRELOAD=" + self._fakechroot_so)
+
         if Config.conf['fakechroot_expand_symlinks'] is None:
             self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" +
                                    str(self._recommend_expand_symlinks).lower())
         else:
             self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" +
                                    str(Config.conf['fakechroot_expand_symlinks']).lower())
+
+        if fakechroot_libc:
+            self.opt["env"].append("FAKECHROOT_LIBC=" + fakechroot_libc)
 
         if not self._is_volume("/tmp"):
             self.opt["env"].append("FAKECHROOT_AF_UNIX_PATH=" + Config.conf['tmpdir'])
@@ -184,17 +218,12 @@ class FakechrootEngine(ExecutionEngineCommon):
             LOG.warning("this execution mode does not support -P --netcoop --publish-all")
 
     def _run_add_script_support(self, exec_path):
-        """Add an interpreter for non binary executables (scripts)"""
-        (dummy, filetype) = OSInfo(self.container_root).get_filetype(exec_path)
-        if "ELF" in filetype and ("static" in filetype or "dynamic" in filetype):
+        """Add an interpreter for non-binary executables (scripts)"""
+        relc_path = exec_path.split(self.container_root, 1)[-1]
+        if OSInfo(self.container_root).is_binary_executable(relc_path):
             self.opt["cmd"][0] = exec_path
             return []
 
-        # env_exec = FileUtil("env").find_exec("/bin:/usr/bin", self.container_root)
-        # if env_exec:
-        #    return [self.container_root + '/' + env_exec, ]
-
-        relc_path = exec_path.split(self.container_root, 1)[-1]
         real_path = FileUtil(self.container_root).cont2host(relc_path, self.opt["vol"])
         hashbang = FileUtil(real_path).get1stline()
         match = re.search("#! *([^ ]+)(.*)", hashbang.decode())

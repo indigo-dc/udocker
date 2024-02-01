@@ -42,38 +42,40 @@ def test_01_init(docker_local_api, localrepo):
     assert docker_local_api._imagerepo is None
 
 
-@pytest.mark.parametrize("top_listdir_output, sub_listdir_output, isdir_output, load_json_output, expected_structure", [
-    ([], [], False, None, {"repolayers": {}, "repoconfigs": {}}),
-    (["xx"], [], False, None, {'repoconfigs': {}, 'repolayers': {'xx': {}}}),
-    (["repositories"], [], False, {"REPO": ""}, {"repolayers": {}, "repoconfigs": {}, "repositories": {"REPO": ""}}),
-    (["manifest.json"], [], False, {"REPO": ""}, {"repolayers": {}, "repoconfigs": {}, "manifest": {"REPO": ""}}),
-    (["x" * 70 + ".json"], [], False, {"k": "v"}, {"repolayers": {}, "repoconfigs": {
+@pytest.mark.parametrize("top_listdir, sub_listdir, isdir, load_json_output, log_warning, expected_struct", [
+    ([], [], False, None, None, {"repolayers": {}, "repoconfigs": {}}),
+    (["xx"], [], False, None, None, {'repoconfigs': {}, 'repolayers': {'xx': {}}}),
+    (["repositories"], [], False, {"REPO": ""}, None,
+     {"repolayers": {}, "repoconfigs": {}, "repositories": {"REPO": ""}}),
+    (["manifest.json"], [], False, {"REPO": ""}, None, {"repolayers": {}, "repoconfigs": {}, "manifest": {"REPO": ""}}),
+    (["x" * 70 + ".json"], [], False, {"k": "v"}, None, {"repolayers": {}, "repoconfigs": {
         "x" * 70 + ".json": {"json": {"k": "v"}, "json_f": "/tmp/" + "x" * 70 + ".json"}}}),
-    (["x" * 64], [], True, None, {"repolayers": {"x" * 64: {}}, "repoconfigs": {}}),
-    (["x" * 64], ["random_file"], True, None, {"repolayers": {"x" * 64: {}}, "repoconfigs": {}}),
-    (["x" * 64], ["VERSION", "json"], True, {"k": "v"},
+    (["x" * 64], [], True, None, None, {"repolayers": {"x" * 64: {}}, "repoconfigs": {}}),
+    (["x" * 64], ["random_file"], True, None, "unknown file in layer: %s", {"repolayers": {"x" * 64: {}}, "repoconfigs": {}}),
+    (["x" * 64], ["VERSION", "json"], True, {"k": "v"}, None,
      {"repolayers": {"x" * 64: {"VERSION": {"k": "v"}, "json": {"k": "v"}, "json_f": "/tmp/" + "x" * 64 + "/json"}},
       "repoconfigs": {}}),
-    (["x" * 64], ["json"], True, {"k": "v"},
+    (["x" * 64], ["json"], True, {"k": "v"}, None,
      {"repolayers": {"x" * 64: {"json": {"k": "v"}, "json_f": "/tmp/" + "x" * 64 + "/json"}}, "repoconfigs": {}}),
-    (["x" * 64], ["repolayer1"], True, None,
+    (["x" * 64], ["repolayer1"], True, None, None,
      {"repolayers": {"x" * 64: {"layer_f": "/tmp/" + "x" * 64 + "/repolayer1"}}, "repoconfigs": {}}),
-    (["x" * 64], ["VERSION", "json", "repolayer1"], True, {"k": "v"}, {"repolayers": {
+    (["x" * 64], ["VERSION", "json", "repolayer1"], True, {"k": "v"}, None, {"repolayers": {
         "x" * 64: {"VERSION": {"k": "v"}, "json": {"k": "v"}, "json_f": "/tmp/" + "x" * 64 + "/json",
                    "layer_f": "/tmp/" + "x" * 64 + "/repolayer1"}}, "repoconfigs": {}}),
 ])
-def test_02__load_structure(mocker, docker_local_api, top_listdir_output, sub_listdir_output, isdir_output,
-                            load_json_output, expected_structure):
+def test_02__load_structure(mocker, docker_local_api, logger, top_listdir, sub_listdir, isdir, load_json_output,
+                            log_warning, expected_struct):
     """Test02 DockerLocalFileAPI()._load_structure()."""
     tmp_imagedir = "/tmp"
-    mocker.patch('os.listdir', side_effect=[top_listdir_output, sub_listdir_output])
-    mocker.patch.object(FileUtil, 'isdir', return_value=lambda path: path in top_listdir_output and isdir_output)
+    mocker.patch('os.listdir', side_effect=[top_listdir, sub_listdir])
+    mocker.patch.object(FileUtil, 'isdir', return_value=lambda path: path in top_listdir and isdir)
     mocker.patch.object(FileUtil, 'isfile', return_value=lambda x: True if x.endswith('.json') else False)
     mocker.patch.object(docker_local_api.localrepo, 'load_json', return_value=load_json_output)
     structure = docker_local_api._load_structure(tmp_imagedir)
 
-    assert structure == expected_structure
-
+    assert structure == expected_struct
+    if log_warning:
+        logger.warning.assert_called_with(log_warning, mocker.ANY)
 
 @pytest.mark.parametrize("structure, my_layer_id, expected_top_layer_id", [
     ({}, "", ""),

@@ -3,6 +3,8 @@
 udocker unit tests: OciLocalFileAPI
 """
 import pytest
+
+from udocker.helper.unique import Unique
 from udocker.oci import OciLocalFileAPI
 
 
@@ -79,37 +81,51 @@ def test_04__get_from_manifest(ociapi):
 ##        structure["manifest"][imagetag]["json_f"] = \
 ##            structure["repolayers"][manifest["digest"]]["layer_f"]
 
-# def test_05__load_manifest(mocker, ociapi, load_json):
-#     """Test05 OciLocalFileAPI()._load_manifest."""
-#     manifest = {'annotations': {'org.opencontainers.image.ref.name': '/ctn:123'},
-#                 'digest': {'layer_a': 'f1',
-#                            'layer_f': 'tmpimg/blobs/f1/f2',
-#                            'layer_h': 'f2'}}
 
-#     ljson = {'layers': [{'digest': 'd1'},
-#                         {'digest': 'd2'}],
-#              'config': {'digest': 'dgt'}}
-#     load_json.return_value = ljson
+@pytest.mark.parametrize("manifest, load_json_return, tag, imagerepo, expected", [
+    ({"annotations": {"org.opencontainers.image.ref.name": "repo1:tag1"}, "digest": "digest1"},
+     {"json_key": "json_value"}, "tag1", None, "expected_result1"),
+    ({"annotations": {"org.opencontainers.image.ref.name": "repo1:tag1/latest"}, "digest": "digest1"},
+     {"json_key": "json_value"}, "tag1:latest", None, "expected_result2"),
+    ({"digest": "digest2"}, {"json_key": "json_value"}, "customtag", "custom_repo", "expected_result3"),
+])
+def test_05_load_manifest(mocker, ociapi, manifest, load_json_return, tag, imagerepo, expected):
+    """Test05 OciLocalFileAPI()._load_manifest."""
+    mocker.patch.object(Unique, 'imagetag', return_value=tag)
+    mocker.patch.object(ociapi, '_imagerepo', imagerepo)
+    mocker.patch.object(ociapi, '_load_image', return_value=expected)
+    mock_load_json = mocker.patch('udocker.container.localrepo.LocalRepository.load_json',
+                                  return_value=load_json_return)
 
-#     struct = {'manifest': {'123': {'json': ljson}},
-#               'repolayers': manifest}
+    structure = {
+        "manifest": {},
+        "repolayers": {
+            manifest.get("digest", "default_digest"): {"layer_f": "some_layer_file_path"}
+        }
+    }
+    result = ociapi._load_manifest(structure, manifest)
 
-#     mock_loadimg = mocker.patch('udocker.commonlocalfile.CommonLocalFileApi._load_image',
-#                                 return_value=['123'])
-#     status = ociapi._load_manifest(struct, manifest)
-#     assert status == ['123']
+    assert result == expected
+    mock_load_json.assert_called()
 
 
 # def test_06__load_manifest(mocker, ociapi, load_json):
 #     """Test06 OciLocalFileAPI()._load_manifest. with Unique"""
 
-
-def test_07__load_repositories(mocker, ociapi):
+@pytest.mark.parametrize("manifest_str, load_json_return", [
+    ({'mediaType': 'application/vnd.oci.image.manifest.v1+json'}, None),
+    ({'mediaType': 'application/vnd.oci.image.index.v1+json', 'digest': 'dummy_digest'},
+     {'index': {'manifests': [{'mediaType': 'application/vnd.oci.image.manifest.v1+json'}]}, 'repolayers': {}})
+])
+def test_07__load_repositories(mocker, ociapi, manifest_str, load_json_return):
     """Test05 OciLocalFileAPI()._load_repositories."""
-    manifest = [{'mediaType': 'application/vnd.oci.image.manifest.v1+json'}]
-    struct = {'index': {'manifests': manifest}}
-    mock_loadmanif = mocker.patch.object(OciLocalFileAPI, '_load_manifest',
-                                         return_value=['123'])
+    manifest = [manifest_str]
+    struct = {'index': {'manifests': manifest}, 'repolayers': {'dummy_digest': {'layer_f': 'dummy_file'}}}
+
+    mock_loadmanif = mocker.patch.object(OciLocalFileAPI, '_load_manifest', return_value=['123'])
+    if load_json_return is not None:
+        mocker.patch.object(ociapi.localrepo, 'load_json', return_value=load_json_return)
+
     status = ociapi._load_repositories(struct)
     assert status == [['123']]
     mock_loadmanif.assert_called()
@@ -120,12 +136,12 @@ def test_08__load_image_step2(mocker, ociapi):
     imgtag = '123'
     imgrepo = '/somerepo'
     struct = {'repolayers':
-              {'layer1': {'layer_a': 'f1',
-                          'layer_f': '/somedir/cfg1.json',
-                          'layer_h': 'f2'},
-               'layer2': {'layer_a': 'g1',
-                          'layer_f': '/somedir/cfg2.json',
-                          'layer_h': 'g2'}},
+                  {'layer1': {'layer_a': 'f1',
+                              'layer_f': '/somedir/cfg1.json',
+                              'layer_h': 'f2'},
+                   'layer2': {'layer_a': 'g1',
+                              'layer_f': '/somedir/cfg2.json',
+                              'layer_h': 'g2'}},
               'manifest': {},
               'oci-layout': 'oci_lay1',
               'index': 'idx1'}
@@ -147,12 +163,12 @@ def test_09__load_image_step2(mocker, ociapi):
     imgtag = '123'
     imgrepo = '/somerepo'
     struct = {'repolayers':
-              {'layer1': {'layer_a': 'f1',
-                          'layer_f': '/somedir/cfg1.json',
-                          'layer_h': 'f2'},
-               'layer2': {'layer_a': 'g1',
-                          'layer_f': '/somedir/cfg2.json',
-                          'layer_h': 'g2'}},
+                  {'layer1': {'layer_a': 'f1',
+                              'layer_f': '/somedir/cfg1.json',
+                              'layer_h': 'f2'},
+                   'layer2': {'layer_a': 'g1',
+                              'layer_f': '/somedir/cfg2.json',
+                              'layer_h': 'g2'}},
               'manifest': {},
               'oci-layout': 'oci_lay1',
               'index': 'idx1'}
@@ -188,9 +204,9 @@ def test_11_load(mocker, ociapi):
     tmpdir = '/ROOT'
     imgrepo = 'somerepo'
     struct = {'repolayers':
-              {'f1:f2': {'layer_a': 'f1',
-                         'layer_f': 'tmpimg/blobs/f1/f2',
-                         'layer_h': 'f2'}},
+                  {'f1:f2': {'layer_a': 'f1',
+                             'layer_f': 'tmpimg/blobs/f1/f2',
+                             'layer_h': 'f2'}},
               'manifest': {},
               'oci-layout': 'oci_lay1',
               'index': 'idx1'}

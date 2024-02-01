@@ -91,7 +91,7 @@ def test_03_get_auth(mocker, dockerioapi, dockerioapiv2, www_authenticate, v2_au
 
 @pytest.mark.parametrize("username, password,  log_call, error, expected_token", [
     ("user1", "pass1", True, False, base64.b64encode(b"user1:pass1").decode("ascii")),
-    ("user1", "pass1", True, True, ""),  # FIXME: the exception is handled silencing the error
+    ("user1", "pass1", True, True, ""),
     (None, None, False, False, ""),
     ("user1", "", False, False, ""),
     ("", "pass1", False, False, ""),

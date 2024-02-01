@@ -33,22 +33,24 @@ class PRootEngine(ExecutionEngineCommon):
     def select_proot(self):
         """Set proot executable and related variables"""
         self.executable = Config.conf['use_proot_executable']
-        if self.executable != "UDOCKER" and not self.executable:
+        if not self.executable:
             self.executable = FileUtil("proot").find_exec()
 
+        arch = HostInfo().arch()
         if self.executable == "UDOCKER" or not self.executable:
             self.executable = ""
-            arch = HostInfo().arch()
             if HostInfo().oskernel_isgreater([4, 8, 0]):
                 image_list = ["proot-%s-4_8_0" % (arch), "proot-%s" % (arch), "proot"]
             else:
                 image_list = ["proot-%s" % (arch), "proot"]
-
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
 
         if not os.path.exists(self.executable):
             LOG.error("proot executable not found")
+            LOG.info("Host architecture might not be supported by this execution mode: %s "
+                     "\n      specify path to proot with environment UDOCKER_USE_PROOT_EXECUTABLE"
+                     "\n      or choose other execution mode with: udocker setup --execmode=<mode>", arch)
             sys.exit(1)
 
         if Config.conf['proot_noseccomp'] is not None:
@@ -73,7 +75,7 @@ class PRootEngine(ExecutionEngineCommon):
             return False
 
         host_file = self.container_dir + "/osenv.json"
-        # host_info = self._is_same_osenv(host_file)
+        # host_info = self._get_saved_osenv(host_file)
         host_info = self._get_saved_osenv(host_file)
         if host_info:
             if "PROOT_NEW_SECCOMP" in host_info:
@@ -121,10 +123,11 @@ class PRootEngine(ExecutionEngineCommon):
         for (cont_port, host_port) in list(self._get_portsmap().items()):
             proot_netmap_list.extend(["-p", f'{cont_port}:{host_port}'])
 
-        if self.opt["netcoop"]:
+        if self.opt["netcoop"] and self._has_option("--netcoop"):
             proot_netmap_list.extend(["-n", ])
-
-        return proot_netmap_list
+        if proot_netmap_list and self._has_option("--port"):
+            return proot_netmap_list
+        return []
 
     def _get_qemu_string(self):
         """Get the qemu string for container run command if emulation needed"""
@@ -162,7 +165,14 @@ class PRootEngine(ExecutionEngineCommon):
         else:
             proot_verbose = []
 
-        if (Config.conf['proot_killonexit'] and self._has_option("--kill-on-exit")):
+        if (Config.conf['proot_link2symlink'] and
+                self._has_option("--link2symlink")):
+            proot_link2symlink = ["--link2symlink", ]
+        else:
+            proot_link2symlink = []
+
+        if (Config.conf['proot_killonexit'] and
+                self._has_option("--kill-on-exit")):
             proot_kill_on_exit = ["--kill-on-exit", ]
         else:
             proot_kill_on_exit = []
@@ -172,6 +182,7 @@ class PRootEngine(ExecutionEngineCommon):
         cmd_l.append(self.executable)
         cmd_l.extend(proot_verbose)
         cmd_l.extend(proot_kill_on_exit)
+        cmd_l.extend(proot_link2symlink)
         cmd_l.extend(self._get_qemu_string())
         cmd_l.extend(self._get_volume_bindings())
         cmd_l.extend(self._set_uid_map())

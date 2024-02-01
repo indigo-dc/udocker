@@ -13,8 +13,11 @@ from udocker import MSG, LOG
 from udocker.cli import UdockerCLI
 from udocker.cmdparser import CmdParser
 from udocker.config import Config
+from udocker.engine.execmode import ExecutionMode
 from udocker.helper.hostinfo import HostInfo
 from udocker.helper.unshare import Unshare
+from udocker.utils.filebind import FileBind
+from udocker.utils.mountpoint import MountPoint
 
 
 @pytest.fixture
@@ -70,6 +73,16 @@ def udockertools(mocker):
     return mocker.patch('udocker.cli.UdockerTools')
 
 
+@pytest.fixture
+def logger(mocker):
+    return mocker.patch('udocker.cli.LOG')
+
+
+@pytest.fixture
+def mock_msg(mocker):
+    return mocker.patch('udocker.cli.MSG')
+
+
 def test_01_init(mocker, lrepo):
     """Test01 UdockerCLI() constructor."""
     mock_dioapi = mocker.patch('udocker.cli.DockerIoAPI')
@@ -83,13 +96,13 @@ def test_01_init(mocker, lrepo):
     mock_ks.assert_called()
 
 
-data_cdrepo = ((None, True, 0, False),
-               (False, False, 1, False),
-               (True, False, 1, True))
+data_cdrepo = ((None, True, 0, False, False),
+               (False, False, 1, True, False),
+               (True, False, 1, False, True))
 
 
-@pytest.mark.parametrize('risdir,ropt,cisdir,expected', data_cdrepo)
-def test_02__cdrepo(mocker, ucli, cmdparse, risdir, ropt, cisdir, expected):
+@pytest.mark.parametrize('risdir,ropt,cisdir,log_warning,expected', data_cdrepo)
+def test_02__cdrepo(mocker, ucli, logger, cmdparse, risdir, ropt, cisdir, log_warning, expected):
     """Test02 UdockerCLI()._cdrepo()."""
     mock_isdir = mocker.patch('udocker.cli.FileUtil.isdir', return_value=risdir)
     cmdparse.get.return_value = '/.udocker'
@@ -97,6 +110,8 @@ def test_02__cdrepo(mocker, ucli, cmdparse, risdir, ropt, cisdir, expected):
     resout = ucli._cdrepo(cmdparse)
     assert resout == expected
     assert mock_isdir.call_count == cisdir
+    if log_warning:
+        logger.warning.assert_called_with('localrepo directory is invalid: %s', '/.udocker')
 
 
 #    assert lrepo.setup.call_count == clrepo
@@ -108,11 +123,13 @@ data_imgspec = ((False, '', None, (None, None)),
 
 
 @pytest.mark.parametrize('rdioapi,inprmt1,inprmt2,expected', data_imgspec)
-def test_03__check_imagespec(mocker, ucli, dioapi, rdioapi, inprmt1, inprmt2, expected):
+def test_03__check_imagespec(mocker, ucli, logger, dioapi, rdioapi, inprmt1, inprmt2, expected):
     """Test03 UdockerCLI()._check_imagespec()."""
     dioapi.is_repo_name.return_value = rdioapi
     resout = ucli._check_imagespec(inprmt1, inprmt2)
     assert resout == expected
+    if not expected:
+        logger.error.assert_called_with('enter image or repository/image without tag')
 
 
 data_imgrepo = ((False, '', None, None),
@@ -121,11 +138,13 @@ data_imgrepo = ((False, '', None, None),
 
 
 @pytest.mark.parametrize('rdioapi,inprmt1,inprmt2,expected', data_imgrepo)
-def test_04__check_imagerepo(mocker, ucli, dioapi, rdioapi, inprmt1, inprmt2, expected):
+def test_04__check_imagerepo(mocker, ucli, logger, dioapi, rdioapi, inprmt1, inprmt2, expected):
     """Test04 UdockerCLI()._check_imagespec()."""
     dioapi.is_repo_name.return_value = rdioapi
     resout = ucli._check_imagerepo(inprmt1, inprmt2)
     assert resout == expected
+    if not expected:
+        logger.error.assert_called_with('enter image or repository/image without tag')
 
 
 data_setrepo = (('registry.io', 'dockerhub.io', 'dockerhub.io/myimg:1.2', 'http://proxy', True),
@@ -169,7 +188,7 @@ def test_07_do_mkrepo(mocker, ucli, cmdparse):
     mock_exists.assert_not_called()
 
 
-def test_08_do_mkrepo(mocker, ucli, cmdparse, lrepo):
+def test_08_do_mkrepo(mocker, ucli, cmdparse, lrepo, logger):
     """Test08 UdockerCLI().do_mkrepo()."""
     cmdparse.get.return_value = '/.udocker'
     cmdparse.missing_options.return_value = False
@@ -181,9 +200,10 @@ def test_08_do_mkrepo(mocker, ucli, cmdparse, lrepo):
     mock_exists.assert_called()
     lrepo.setup.assert_called()
     lrepo.create_repo.assert_called()
+    logger.error.assert_called_with('localrepo creation failure: %s', '/.udocker')
 
 
-def test_09_do_mkrepo(mocker, ucli, cmdparse, lrepo):
+def test_09_do_mkrepo(mocker, ucli, cmdparse, lrepo, logger):
     """Test09 UdockerCLI().do_mkrepo()."""
     cmdparse.get.return_value = '/.udocker'
     cmdparse.missing_options.return_value = False
@@ -195,6 +215,7 @@ def test_09_do_mkrepo(mocker, ucli, cmdparse, lrepo):
     mock_exists.assert_called()
     lrepo.setup.assert_not_called()
     lrepo.create_repo.assert_not_called()
+    logger.error.assert_called_with('localrepo directory already exists: %s', '/.udocker')
 
 
 def test_10_do_mkrepo(mocker, ucli, cmdparse, lrepo):
@@ -389,21 +410,17 @@ def test_16_do_save(mocker, ucli, cmdparse, cmdp_opts, missing_opts, file_exists
 
 
 @pytest.mark.parametrize("cmd_opts, missing_opts, check_imagespec_return, import_result, expected_status, error_msg", [
-    ({}, True, None, None, 1, None),  # missing options
-    ({'P1': 'ipyrad.tar', 'P2': 'invalid_spec'}, False, (None, None), None, 1, None),  # invalid image spec
+    ({}, True, None, None, 1, None),
+    ({'P1': 'ipyrad.tar', 'P2': 'invalid_spec'}, False, (None, None), None, 1, None),
     ({'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"), False, 1, "importing"),
-    # import failed
-    ({'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"), True, 0, None),  # import success
+    ({'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"), True, 0, None),
     ({'--tocontainer': True, 'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"), False, 1,
-     "importing"),  # import to container failed
+     "importing"),
     ({'--tocontainer': True, 'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, ("ipyrad", "latest"),
-     "container_id", 0, None),  # import to container success
-    (
-            {'--clone': True, 'P1': 'ipyrad.tar', 'P2': 'ipyrad/ipyrad:latest'}, False, ("ipyrad", "latest"),
-            "container_id", 0,
-            None),  # import clone success
+     "container_id", 0, None),
+    ({'--clone': True, 'P1': 'ipyrad.tar', 'P2': 'ipyrad/ipyrad:latest'}, False, ("ipyrad", "latest"),
+     "container_id", 0, None),
     ({'--clone': True, 'P1': 'ipyrad.tar', 'P2': 'repo/ipyrad:latest'}, False, None, False, 1, "importing"),
-    # import clone failed
     # ({'P1': '', 'P2': 'repo/ipyrad:latest'}, True, None, None, 1, "must specify tar filename"),
 ])
 def test_17_do_import(mocker, cmdparse, ucli, cmd_opts, missing_opts, check_imagespec_return, import_result,
@@ -449,7 +466,7 @@ def test_18_do_export(mocker, ucli, cmdparse, cmdp_opts, missing_opts, container
     log_mock = mocker.patch.object(LOG, 'info')
 
     cstruct_mock = mocker.Mock()
-    mocker.patch('udocker.cli.ContainerStructure', return_value=cstruct_mock)
+    cstruct_class_mock = mocker.patch('udocker.cli.ContainerStructure', return_value=cstruct_mock)
 
     cstruct_mock.clone_tofile.return_value = export_result
     cstruct_mock.export_tofile.return_value = export_result
@@ -458,13 +475,12 @@ def test_18_do_export(mocker, ucli, cmdparse, cmdp_opts, missing_opts, container
 
     assert status == expected_status
     if err_msg and not err_msg == 'exporting':
-        log_error.assert_called_with(err_msg, '' if not container_id else container_id)  # FIXME: tmp fix
+        log_error.assert_called_with(err_msg, '' if not container_id else container_id)
     elif err_msg and not missing_opts:
         log_mock.assert_called_with("exporting to file: %s", cmdp_opts['P1'])
     elif err_msg:
         log_error.assert_called_with(err_msg)
 
-    # cstruct_class_mock.assert_called_with(ucli.localrepo, container_id) # FIXME: this need changes in the code
     if not missing_opts:
         if cmdp_opts.get('--clone') and expected_status == UdockerCLI.STATUS_OK:
             cstruct_mock.clone_tofile.assert_called_with(cmdp_opts['P1'])
@@ -769,14 +785,17 @@ def test_26_do_run(mocker, ucli, cmdparse, config, params):
         mock_log_error.assert_called_with(params['err_msg'])
 
 
-@pytest.mark.parametrize("missing_opts, cmdp_opts, images_list, layers_list, expected_status", [
-    (True, {}, [], [], 1),
-    (False, {}, [], [], 0),
-    (False, {}, [('repo1', 'tag1'), ('repo2', 'tag2')], [], 0),
-    (False, {'-l': True}, [('repo1', 'tag1')], [('layer1', 2048)], 0),
-    # (False, {'-l': True}, [('repo1', 'tag1')], [('layer1', 512)], 0), # FIXME: need to be casted to int file_size
+@pytest.mark.parametrize("missing_opts, print_platform, cmdp_opts, images_list, layers_list, expected_status", [
+    (True,  False, {}, [], [], 1),
+    (False, False,  {}, [], [], 0),
+    (False, False,  {}, [('repo1', 'tag1'), ('repo2', 'tag2')], [], 0),
+    (False, False,  {'-l': True}, [('repo1', 'tag1')], [('layer1', 2048)], 0),
+    (False, False,  {'-l': True}, [('repo1', 'tag1')], [('layer1', 1048577)], 0),
+    (False, False,  {'-l': True}, [('repo1', 'tag1')], [('layer1', 512)], 0),
+    (False, True,  {'-l': True, '-p': True}, [('repo1', 'tag1')], [('layer1', 512)], 0),
 ])
-def test_27_do_images(mocker, ucli, cmdparse, missing_opts, cmdp_opts, images_list, layers_list, expected_status):
+def test_27_do_images(mocker, ucli, cmdparse, mock_msg, print_platform, missing_opts, cmdp_opts, images_list, layers_list,
+                      expected_status):
     """ Test27 UdockerCLI().do_images(). """
     cmdparse.get.side_effect = lambda x: cmdp_opts.get(x)
     cmdparse.missing_options.return_value = missing_opts
@@ -784,11 +803,12 @@ def test_27_do_images(mocker, ucli, cmdparse, missing_opts, cmdp_opts, images_li
     mocker.patch.object(ucli.localrepo, 'isprotected_imagerepo', return_value=False)
     mocker.patch.object(ucli.localrepo, 'cd_imagerepo', return_value="image_dir")
     mocker.patch.object(ucli.localrepo, 'get_layers', return_value=layers_list)
-
+    mocker.patch.object(ucli.localrepo, 'get_image_platform_fmt', return_value="platform")
     status = ucli.do_images(cmdparse)
-
     assert status == expected_status
 
+    if print_platform:
+        assert mocker.call('platform           . repo1:tag1') in mock_msg.info.mock_calls
 
 @pytest.mark.parametrize("missing_opts, cmdp_opts, containers_list, exec_mode, expected_status", [
     (True, {}, [], '', 1),
@@ -1174,7 +1194,7 @@ def test_39_do_verify(mocker, ucli, cmdparse, imagespec, imagerepo_exists, verif
      "msgs": {'error': None, 'info': None}},
     {"container_id": "123", "xmode": None, "force": False, "nvidia": False, "purge": True, "fixperm": False,
      "container": True, "protected": False, "exec_mode_set": True, "expected_status": 0,
-     "msgs": {'error': None, 'info': None}},
+     "msgs": {'error': None, 'info': None}},  # FIXME: is creating folders
     {"container_id": "123", "xmode": None, "force": False, "nvidia": False, "purge": False, "fixperm": True,
      "container": True, "protected": False, "exec_mode_set": True, "expected_status": 0,
      "msgs": {'error': None, 'info': "fixed permissions in container: %s"}},
@@ -1195,6 +1215,7 @@ def test_40_do_setup(mocker, ucli, cmdparse, params_setup):
                                           '--nvidia': params_setup['nvidia'],
                                           '--purge': params_setup['purge'], '--fixperm': params_setup['fixperm']}.get(x)
     cmdparse.missing_options.return_value = not params_setup['container_id']
+
     mocker.patch.object(ucli.localrepo, 'cd_container',
                         return_value=params_setup['container_id'] if params_setup['container'] else None)
     mocker.patch.object(ucli.localrepo, 'isprotected_container', return_value=params_setup['protected'])
@@ -1205,6 +1226,8 @@ def test_40_do_setup(mocker, ucli, cmdparse, params_setup):
     mocker.patch.object(Unshare, 'namespace_exec')
     mock_log_error = mocker.patch.object(LOG, 'error')
     mock_log_info = mocker.patch.object(LOG, 'info')
+    mocker.patch.object(FileBind, 'restore')
+    mocker.patch.object(MountPoint, 'restore')
 
     status = ucli.do_setup(cmdparse)
 
@@ -1413,5 +1436,8 @@ def test_51_do_help(mocker, ucli, cmdparse):
     """ Test51 UdockerCLI().do_help(). """
     mock_msg_info = mocker.patch.object(MSG, 'info')
     status = ucli.do_help(cmdparse)
-    assert status == 0
+    assert status == ucli.STATUS_OK
     mock_msg_info.assert_called()
+    expected_text = "General options common to all commands must appear before the command:"
+    actual_call_arg = mock_msg_info.call_args[0][0]
+    assert expected_text in actual_call_arg

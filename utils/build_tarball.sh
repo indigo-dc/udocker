@@ -26,10 +26,10 @@
 
 # This script produces the following udocker-englib tarball
 
-DEVEL3=$(realpath "$0" | grep "devel3")
+DEVEL3=$(realpath "$0" | grep -E "devel3|devel4")
 
-TARBALL_VERSION_P3="1.2.9"
-TARBALL_VERSION_P2="1.1.9"
+TARBALL_VERSION_P3="1.2.10"
+TARBALL_VERSION_P2="1.1.10"
 
 sanity_check() 
 {
@@ -53,22 +53,64 @@ sanity_check()
 get_proot_static() 
 {
     echo "get_proot_static"
-    cd "$BUILD_DIR"
+    cd "$BUILD_DIR" || exit 1
 
-    if [ -d "$BUILD_DIR/proot-static-build" ] ; then
+    if [ -d "$BUILD_DIR/proot-static-build/static" ] ; then
         echo "proot static already exists: $BUILD_DIR/proot-static-build"
         return
     fi
 
     git clone --depth=1 --branch v5.1.1 https://github.com/proot-me/proot-static-build 
-    /bin/rm -Rf $BUILD_DIR/proot-static-build/.git
+    /bin/rm -Rf "$BUILD_DIR/proot-static-build/.git"
+}
+
+get_udocker_static()
+{
+    local BUILD_VERSION="$1"
+
+    echo "get_udocker_tools"
+    cd "$BUILD_DIR" || exit 1
+
+    if [ -d "$BUILD_DIR/proot-static-build/static" ] ; then
+	echo "udocker build directory already exists: $BUILD_DIR/proot-static-build"
+	return
+    fi
+    /bin/mkdir -p "$BUILD_DIR/proot-static-build/static"
+
+    curl "https://raw.githubusercontent.com/jorge-lip/udocker-builds/master/tarballs/udocker-englib-${BUILD_VERSION}.tar.gz" > \
+	"$BUILD_DIR/proot-static-build/udocker-englib.tar.gz"
+    (cd "$BUILD_DIR/proot-static-build"; tar xvf udocker-englib.tar.gz)
+    (cd "$BUILD_DIR/proot-static-build"; /bin/mv udocker_dir/bin/proot-x86-4_8_0 static/proot-x86)
+    (cd "$BUILD_DIR/proot-static-build"; /bin/mv udocker_dir/bin/proot-x86_64-4_8_0 static/proot-x86_64)
+    (cd "$BUILD_DIR/proot-static-build"; /bin/mv udocker_dir/bin/proot-arm static/proot-arm)
+    (cd "$BUILD_DIR/proot-static-build"; /bin/mv udocker_dir/bin/proot-arm64-4_8_0 static/proot-arm64)
+    chmod u+rx "$BUILD_DIR/proot-static-build/static/*"
+}
+
+get_libtalloc()
+{
+	echo "get_libtalloc"
+
+        if [ -f "$S_PROOT_PACKAGES_DIR/talloc.tar.gz" ] ; then
+            echo "talloc.tar.gz already exists: " \
+		    "$S_PROOT_PACKAGES_DIR/talloc.tar.gz"
+            return
+        fi
+	[ ! -d "$S_PROOT_PACKAGES_DIR" ] && /bin/mkdir -p "$S_PROOT_PACKAGES_DIR"
+
+	#June 2013
+	#https://www.samba.org/ftp/talloc/talloc-2.1.16.tar.gz
+	#https://www.samba.org/ftp/talloc/talloc-2.3.4.tar.gz
+	#https://www.samba.org/ftp/talloc/talloc-2.4.0.tar.gz
+	curl "https://www.samba.org/ftp/talloc/talloc-2.1.16.tar.gz" > \
+	    "$S_PROOT_PACKAGES_DIR/talloc.tar.gz"
 }
 
 prepare_proot_source()
 {
     echo "prepare_proot_source : $1"
     local PROOT_SOURCE_DIR="$1"
-    cd "$BUILD_DIR"
+    cd "$BUILD_DIR" || exit 1
 
     if [ -d "$PROOT_SOURCE_DIR" ] ; then
         echo "proot source already exists: $PROOT_SOURCE_DIR"
@@ -78,7 +120,7 @@ prepare_proot_source()
     #git clone --branch v5.1.0 --depth=1 https://github.com/proot-me/PRoot 
     #git clone --branch udocker-2 --depth=1 https://github.com/jorge-lip/proot-udocker.git
 
-    git clone --branch udocker-3 https://github.com/jorge-lip/proot-udocker.git
+    git clone --branch udocker-4 https://github.com/jorge-lip/proot-udocker.git
 
     #/bin/rm -Rf $BUILD_DIR/proot-udocker/.git
     #/bin/rm -Rf $BUILD_DIR/proot-udocker/static/care*
@@ -94,28 +136,43 @@ prepare_proot_source()
     /bin/mv proot-udocker "$PROOT_SOURCE_DIR"
 }
 
-prepare_patchelf_source()
+prepare_patchelf_source_v1()
 {
     echo "prepare_patchelf_source : $1"
     local PATCHELF_SOURCE_DIR="$1"
-    cd "$BUILD_DIR"
+    cd "$BUILD_DIR" || exit 1
 
     if [ -d "$PATCHELF_SOURCE_DIR" ] ; then
         echo "patchelf source already exists: $PATCHELF_SOURCE_DIR"
         return
     fi
 
-    #git clone --depth=1 --branch=0.9 https://github.com/NixOS/patchelf.git
     git clone --branch udocker-1 --depth=1 https://github.com/jorge-lip/patchelf-udocker.git
-    /bin/rm -Rf $BUILD_DIR/patchelf-udocker/.git
+    /bin/rm -Rf "$BUILD_DIR/patchelf-udocker/.git"
     /bin/mv patchelf-udocker "$PATCHELF_SOURCE_DIR"
+}
+
+prepare_patchelf_source_v2()
+{
+    echo "prepare_patchelf_source : $1"
+    local PATCHELF_SOURCE_DIR="$1"
+    cd "$BUILD_DIR" || exit 1
+
+    if [ -d "$PATCHELF_SOURCE_DIR" ] ; then
+        echo "patchelf source already exists: $PATCHELF_SOURCE_DIR"
+        return
+    fi
+
+    git clone --branch udocker-2 --depth=1 https://github.com/jorge-lip/patchelf-udocker-2.git
+    /bin/rm -Rf "$BUILD_DIR/patchelf-udocker-2/.git"
+    /bin/mv patchelf-udocker-2 "$PATCHELF_SOURCE_DIR"
 }
 
 prepare_fakechroot_glibc_source()
 {
     echo "prepare_fakechroot_glibc_source : $1"
     local FAKECHROOT_SOURCE_DIR="$1"
-    cd "$BUILD_DIR"
+    cd "$BUILD_DIR" || exit 1
 
     if [ -d "$FAKECHROOT_SOURCE_DIR" ] ; then
         echo "fakechroot source already exists: $FAKECHROOT_SOURCE_DIR"
@@ -123,9 +180,9 @@ prepare_fakechroot_glibc_source()
     fi
 
     #git clone --depth=1 --branch 2.18 https://github.com/dex4er/fakechroot.git
-    git clone --branch udocker-2 --depth=1 \
+    git clone --branch udocker-3 --depth=1 \
         https://github.com/jorge-lip/libfakechroot-glibc-udocker.git
-    /bin/rm -Rf $BUILD_DIR/libfakechroot-glibc-udocker/.git
+    /bin/rm -Rf "$BUILD_DIR/libfakechroot-glibc-udocker/.git"
     /bin/mv libfakechroot-glibc-udocker "$FAKECHROOT_SOURCE_DIR"
 }
 
@@ -133,7 +190,7 @@ prepare_fakechroot_musl_source()
 {
     echo "prepare_fakechroot_musl_source : $1"
     local FAKECHROOT_SOURCE_DIR="$1"
-    cd "$BUILD_DIR"
+    cd "$BUILD_DIR" || exit 1
 
     if [ -d "$FAKECHROOT_SOURCE_DIR" ] ; then
         echo "fakechroot source already exists: $FAKECHROOT_SOURCE_DIR"
@@ -143,7 +200,7 @@ prepare_fakechroot_musl_source()
     #git clone --depth=1 --branch 2.18 https://github.com/dex4er/fakechroot.git
     git clone --branch udocker-1 --depth=1 \
         https://github.com/jorge-lip/libfakechroot-musl-udocker.git
-    /bin/rm -Rf $BUILD_DIR/libfakechroot-musl-udocker/.git
+    /bin/rm -Rf "$BUILD_DIR/libfakechroot-musl-udocker/.git"
     /bin/mv libfakechroot-musl-udocker "$FAKECHROOT_SOURCE_DIR"
 }
 
@@ -151,7 +208,7 @@ prepare_runc_source()
 {
     echo "prepare_runc_source : $1"
     local RUNC_SOURCE_DIR="$1"
-    cd "$BUILD_DIR"
+    cd "$BUILD_DIR" || exit 1
 
     #/bin/rm -Rf $RUNC_SOURCE_DIR
     if [ -d "$RUNC_SOURCE_DIR" ] ; then
@@ -169,7 +226,7 @@ prepare_crun_source()
 {
     echo "prepare_crun_source : $1"
     local CRUN_SOURCE_DIR="$1"
-    cd "$BUILD_DIR"
+    cd "$BUILD_DIR" || exit 1
 
     if [ -d "$CRUN_SOURCE_DIR" ] ; then
         echo "crun source already exists: $CRUN_SOURCE_DIR"
@@ -196,12 +253,12 @@ prepare_package()
 {
     echo "prepare_package"
     cd "$BUILD_DIR"
-    if [ "$1" = "ERASE" ] ; then 
+    if [ "$1" = "ERASE" ] ; then
         /bin/rm -f ${PACKAGE_DIR}/udocker_dir/bin/*
         /bin/rm -f ${PACKAGE_DIR}/udocker_dir/lib/*
         /bin/rm -f ${PACKAGE_DIR}/udocker_dir/doc/*
         /bin/rm -f ${PACKAGE_DIR}/udocker_dir/*
-    fi	
+    fi
     if [ ! -d "${PACKAGE_DIR}" ] ; then
         /bin/mkdir -p "${PACKAGE_DIR}"
         /bin/mkdir -p "${PACKAGE_DIR}/udocker_dir/bin"
@@ -215,7 +272,7 @@ addto_package_udocker()
     if [ -z "$DEVEL3" ]; then
         echo "addto_package_udocker: add udocker for Python2"
         /bin/cp -f -L  "${REPO_DIR}/udocker.py"  "${PACKAGE_DIR}/udocker"
-        (cd ${PACKAGE_DIR}; /bin/ln -s udocker udocker.py)
+        (cd "${PACKAGE_DIR}"; /bin/ln -s udocker udocker.py)
     else
 	/bin/rm -f "${PACKAGE_DIR}/udocker"
 	/bin/rm -f "${PACKAGE_DIR}/udocker.py"
@@ -225,7 +282,7 @@ addto_package_udocker()
 addto_package_simplejson()
 {
     echo "addto_package_simplejson"
-    cd "${PACKAGE_DIR}/udocker_dir/lib"
+    cd "${PACKAGE_DIR}/udocker_dir/lib" || exit 1
 
     if [ -d "simplejson" ] ; then
         echo "simplejson already exists: $PACKAGE_DIR/simplejson"
@@ -255,8 +312,8 @@ addto_package_other()
 
     #/bin/cp -f "${S_PROOT_DIR}/proot-x86"                 "${PACKAGE_DIR}/udocker_dir/bin/"
     #/bin/cp -f "${S_PROOT_DIR}/proot-x86_64"              "${PACKAGE_DIR}/udocker_dir/bin/"
-    /bin/cp -f "${S_PROOT_DIR}/proot-arm"                  "${PACKAGE_DIR}/udocker_dir/bin/"
-    /bin/cp -f "${S_PROOT_DIR}/proot-arm64"                "${PACKAGE_DIR}/udocker_dir/bin/"
+    /bin/cp -f "${S_PROOT_DIR}/proot-arm"                 "${PACKAGE_DIR}/udocker_dir/bin/"
+    #/bin/cp -f "${S_PROOT_DIR}/proot-arm64"               "${PACKAGE_DIR}/udocker_dir/bin/"
 }
 
 # #############################################################################
@@ -313,14 +370,14 @@ fedora25_setup()
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    gzip zlib diffutils file dnf
+        --forcearch="$OS_ARCH" \
+        gcc kernel-devel make libtalloc libtalloc-devel glibc-static \
+	glibc-devel tar python gzip zlib diffutils file dnf which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-                autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
-    fi
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+        --forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         clean packages
@@ -344,7 +401,8 @@ fedora25_build_proot()
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        PROOT="$HOME/.udocker/bin/proot-x86_64"
+        #PROOT="$HOME/.udocker/bin/proot-x86_64"
+	PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -360,15 +418,17 @@ fedora25_build_proot()
                            -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora25_proot_1'
 cd /proot
 /bin/rm -f proot-Fedora-25.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 make clean
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -376,7 +436,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora25_proot_1
     fi
 
@@ -420,7 +480,7 @@ fedora25_build_patchelf()
 
     # compile patchelf
     set -xv
-    (cd ${PATCHELF_SOURCE_DIR} ; bash ./bootstrap.sh)
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
     $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
                             /bin/bash <<'EOF_fedora25_patchelf'
 cd /patchelf
@@ -447,11 +507,11 @@ fedora25_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$S_PROOT_DIR/proot-x86"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-25.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-25.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -562,16 +622,16 @@ fedora29_setup()
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
-            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file dnf
+        gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
+	python2 gzip zlib diffutils file dnf which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
-                autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
-    fi
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
+
     if [ "$OS_ARCH" = "aarch64" ]; then
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf "dnf -y reinstall $(rpm -qa)"
     fi
@@ -595,11 +655,11 @@ fedora29_build_proot()
     local PROOT=""
 
     if [ "$OS_ARCH" = "i386" ]; then
-        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -615,14 +675,16 @@ fedora29_build_proot()
                            -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora29_proot_1'
 cd /proot
 /bin/rm -f proot-Fedora-29.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -630,7 +692,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora29_proot_1
     fi
 
@@ -657,10 +719,12 @@ fedora29_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -675,7 +739,7 @@ fedora29_build_patchelf()
 
     # compile patchelf
     set -xv
-    (cd ${PATCHELF_SOURCE_DIR} ; bash ./bootstrap.sh)
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
     $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
                             /bin/bash <<'EOF_fedora29_patchelf'
 cd /patchelf
@@ -702,10 +766,12 @@ fedora29_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -814,18 +880,19 @@ fedora30_setup()
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file dnf
+	--forcearch="$OS_ARCH" \
+        gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel \
+	tar python python2 gzip zlib diffutils file dnf which
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            coreutils-8.31-1.fc30.x86_64 coreutils-common-8.31-1.fc30.x86_64
+        --forcearch="$OS_ARCH" \
+        coreutils-8.31-1.fc30.x86_64 coreutils-common-8.31-1.fc30.x86_64
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-                autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
-    fi
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+        --forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         clean packages
@@ -847,11 +914,12 @@ fedora30_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
         #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-25.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-25.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -867,14 +935,16 @@ fedora30_build_proot()
                            -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora30_proot_1'
 cd /proot
 /bin/rm -f proot-Fedora-30.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -882,7 +952,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora30_proot_1
     fi
 
@@ -909,10 +979,12 @@ fedora30_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -927,7 +999,7 @@ fedora30_build_patchelf()
 
     # compile patchelf
     set -xv
-    (cd ${PATCHELF_SOURCE_DIR} ; bash ./bootstrap.sh)
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
     $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
                             /bin/bash <<'EOF_fedora30_patchelf'
 cd /patchelf
@@ -954,10 +1026,12 @@ fedora30_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1067,23 +1141,24 @@ fedora31_setup()
     fedora31_create_dnf "${OS_ROOTDIR}/etc/dnf/dnf.conf" "$OS_ARCH"
 
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
-            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file glibc-headers dnf git
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--forcearch="$OS_ARCH" \
+        gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
+	python2 gzip zlib diffutils file glibc-headers dnf git which
 
     #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
     #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
     #        coreutils-8.31-1.fc31.x86_64 coreutils-common-8.31-1.fc31.x86_64
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
-                autoconf m4 gcc-c++ libstdc++-static automake gawk libtool xz
-    fi
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+	--forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ libstdc++-static automake gawk libtool xz
 
     if [ "$OS_ARCH" = "aarch64" ]; then
-        $SUDO chown -R $(id -u):$(id -g) "$OS_ROOTDIR"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora31_reinstall'
 dnf -y reinstall --releasever=31 $(rpm -qa)
@@ -1110,14 +1185,16 @@ fedora31_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
         #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	PROOT="$S_PROOT_DIR/proot-x86_64"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1136,14 +1213,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-31.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -1151,7 +1230,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora31_proot_1
     fi
 
@@ -1178,10 +1257,18 @@ fedora31_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1196,7 +1283,7 @@ fedora31_build_patchelf()
 
     # compile patchelf
     set -xv
-    (cd ${PATCHELF_SOURCE_DIR} ; bash ./bootstrap.sh)
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
     $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
                             /bin/bash <<'EOF_fedora31_patchelf'
 cd /patchelf
@@ -1223,10 +1310,18 @@ fedora31_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1337,21 +1432,20 @@ fedora32_setup()
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
             gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file glibc-headers dnf
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
 
     #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
     #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
     #        coreutils-8.31-1.fc31.x86_64 coreutils-common-8.31-1.fc31.x86_64
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
-                autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
-    fi
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
 
     if [ "$OS_ARCH" = "aarch64" ]; then
-        $SUDO chown -R $(id -u):$(id -g) "$OS_ROOTDIR"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora32_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -1377,14 +1471,17 @@ fedora32_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1403,14 +1500,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-32.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -1418,7 +1517,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora32_proot_1
     fi
 
@@ -1445,10 +1544,18 @@ fedora32_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1463,7 +1570,7 @@ fedora32_build_patchelf()
 
     # compile patchelf
     set -xv
-    (cd ${PATCHELF_SOURCE_DIR} ; bash ./bootstrap.sh)
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
     $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
                             /bin/bash <<'EOF_fedora32_patchelf'
 cd /patchelf
@@ -1490,10 +1597,18 @@ fedora32_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1604,21 +1719,20 @@ fedora33_setup()
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
             gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file glibc-headers dnf
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
 
     #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
     #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
     #        coreutils-8.31-1.fc31.x86_64 coreutils-common-8.31-1.fc31.x86_64
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
-                autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
-    fi
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
 
     if [ "$OS_ARCH" = "aarch64" ]; then
-        $SUDO chown -R $(id -u):$(id -g) "$OS_ROOTDIR"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora33_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -1644,14 +1758,17 @@ fedora33_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1670,14 +1787,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-33.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -1685,7 +1804,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora33_proot_1
     fi
 
@@ -1712,10 +1831,18 @@ fedora33_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1730,7 +1857,7 @@ fedora33_build_patchelf()
 
     # compile patchelf
     set -xv
-    (cd ${PATCHELF_SOURCE_DIR} ; bash ./bootstrap.sh)
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
     $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
                             /bin/bash <<'EOF_fedora33_patchelf'
 cd /patchelf
@@ -1757,10 +1884,18 @@ fedora33_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1871,21 +2006,20 @@ fedora34_setup()
     $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
             gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
-	    python2 gzip zlib diffutils file glibc-headers dnf
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
 
     #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
     #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
     #        coreutils-8.31-1.fc31.x86_64 coreutils-common-8.31-1.fc31.x86_64
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
-                autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
-    fi
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
 
     if [ "$OS_ARCH" = "aarch64" ]; then
-        $SUDO chown -R $(id -u):$(id -g) "$OS_ROOTDIR"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora34_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -1917,20 +2051,22 @@ fedora34_build_proot_c()
 	$SUDO mount --bind "${PROOT_SOURCE_DIR}" "$OS_ROOTDIR/proot"
 	$SUDO mount --bind "${S_PROOT_PACKAGES_DIR}" "$OS_ROOTDIR/proot-static-packages"
         # compile proot
-        $SUDO chroot --userspec=$USER "$OS_ROOTDIR" /bin/bash <<'EOF_fedora34_proot_1'
+        $SUDO chroot --userspec="$USER" "$OS_ROOTDIR" /bin/bash <<'EOF_fedora34_proot_1'
 cd /usr/bin
 rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-34.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -1938,7 +2074,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora34_proot_1
     sync
     $SUDO umount "$OS_ROOTDIR/proot"
@@ -1968,14 +2104,17 @@ fedora34_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1994,14 +2133,16 @@ rm python
 ln -s python2 python
 cd /proot
 /bin/rm -f proot-Fedora-34.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -2009,7 +2150,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_fedora34_proot_1
     fi
 
@@ -2036,10 +2177,18 @@ fedora34_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2054,7 +2203,7 @@ fedora34_build_patchelf()
 
     # compile patchelf
     set -xv
-    (cd ${PATCHELF_SOURCE_DIR} ; bash ./bootstrap.sh)
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
     $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
                             /bin/bash <<'EOF_fedora34_patchelf'
 cd /patchelf
@@ -2081,10 +2230,18 @@ fedora34_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2110,6 +2267,1044 @@ make
 cp src/.libs/libfakechroot.so libfakechroot-Fedora-34.so
 make clean
 EOF_fedora34_fakechroot
+    set +xv
+}
+
+
+# #############################################################################
+# Fedora 35
+# #############################################################################
+
+fedora35_create_dnf()
+{
+    echo "fedora35_create_dnf : $1"
+    local FILENAME="$1"
+    local ARCH="$2"
+
+    cat > "$FILENAME" <<EOF_fedora35_dnf
+[main]
+gpgcheck=0
+sslverify=0
+installonly_limit=3
+clean_requirements_on_remove=True
+reposdir=NONE
+
+[fedora-modular]
+name=Fedora Modular \$releasever - $ARCH
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/releases/\$releasever/Modular/$ARCH/os/
+metalink=https://mirrors.fedoraproject.org/metalink?repo=fedora-modular-\$releasever&arch=$ARCH
+enabled=1
+#metadata_expire=7d
+repo_gpgcheck=0
+type=rpm
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
+skip_if_unavailable=False
+
+[updates]
+name=Fedora \$releasever - $ARCH - Updates
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/updates/\$releasever/Everything/$ARCH/os
+metalink=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f\$releasever&arch=$ARCH
+enabled=1
+repo_gpgcheck=0
+type=rpm
+gpgcheck=0
+metadata_expire=6h
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
+skip_if_unavailable=False
+
+[fedora]
+name=Fedora \$releasever - $ARCH
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/releases/\$releasever/Everything/$ARCH/os/
+metalink=https://mirrors.fedoraproject.org/metalink?repo=fedora-\$releasever&arch=$ARCH
+enabled=1
+metadata_expire=7d
+repo_gpgcheck=0
+type=rpm
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
+skip_if_unavailable=False
+EOF_fedora35_dnf
+}
+
+
+fedora35_setup()
+{
+    echo "fedora35_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="fedora"
+    local OS_RELVER="35"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/bin/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    /bin/mkdir -p "${OS_ROOTDIR}/tmp"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot-static-packages"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/dnf"
+    fedora35_create_dnf "${OS_ROOTDIR}/etc/dnf/dnf.conf" "$OS_ARCH"
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
+
+    #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+    #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+    #        coreutils-8.31-1.fc31.x86_64 coreutils-common-8.31-1.fc31.x86_64
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
+
+    if [ "$OS_ARCH" = "aarch64" ]; then
+        $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        export PROOT_NO_SECCOMP=1
+	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora35_reinstall'
+dnf -y reinstall $(rpm -qa)
+EOF_fedora35_reinstall
+    fi
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        clean packages
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+fedora35_build_proot_c()
+{
+    echo "fedora35_build_proot : $1"
+    local OS_ARCH="$1"
+    local PROOT_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="35"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    SUDO=/bin/sudo
+
+    if [ -x "${PROOT_SOURCE_DIR}/proot-Fedora-35.bin" ] ; then
+        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/proot-Fedora-35.bin"
+    else
+	$SUDO mount --bind "${PROOT_SOURCE_DIR}" "$OS_ROOTDIR/proot"
+	$SUDO mount --bind "${S_PROOT_PACKAGES_DIR}" "$OS_ROOTDIR/proot-static-packages"
+        # compile proot
+        $SUDO chroot --userspec="$USER" "$OS_ROOTDIR" /bin/bash <<'EOF_fedora35_proot_1'
+cd /usr/bin
+rm python
+ln -s python2 python
+cd /proot
+/bin/rm -f proot-Fedora-35.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
+# BUILD TALLOC
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
+./configure
+make
+cp talloc.h /proot/src
+cd bin/default
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
+cp libtalloc.a /proot/src && make clean
+# BUILD PROOT
+cd /proot/src
+make clean
+make loader.elf
+make loader-m32.elf
+make build.h
+LDFLAGS="-L/proot/usr/src -static" make proot
+EOF_fedora35_proot_1
+    sync
+    $SUDO umount "$OS_ROOTDIR/proot"
+    $SUDO umount "$OS_ROOTDIR/proot-static-packages"
+    fi
+
+    if [ -e "${PROOT_SOURCE_DIR}/src/proot" ]; then
+        mv "${PROOT_SOURCE_DIR}/src/proot" "${PROOT_SOURCE_DIR}/proot-Fedora-35.bin"
+    fi
+
+    if [ ! -e "${PROOT_SOURCE_DIR}/proot-Fedora-35.bin" ]; then
+        echo "proot compilation failed ${PROOT_SOURCE_DIR}/proot-Fedora-35.bin not found"
+        exit 1
+    fi
+}
+
+
+fedora35_build_proot()
+{
+    echo "fedora35_build_proot : $1"
+    local OS_ARCH="$1"
+    local PROOT_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="35"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    if [ -x "${PROOT_SOURCE_DIR}/proot-Fedora-35.bin" ] ; then
+        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/proot-Fedora-35.bin"
+    else
+        # compile proot
+        $PROOT -r "$OS_ROOTDIR" -b "${PROOT_SOURCE_DIR}:/proot" -w / -b /dev \
+                           -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora35_proot_1'
+cd /usr/bin
+rm python
+ln -s python2 python
+cd /proot
+/bin/rm -f proot-Fedora-35.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
+# BUILD TALLOC
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
+./configure
+make
+cp talloc.h /proot/src
+cd bin/default
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
+cp libtalloc.a /proot/src && make clean
+# BUILD PROOT
+cd /proot/src
+make clean
+make loader.elf
+make loader-m32.elf
+make build.h
+LDFLAGS="-L/proot/usr/src -static" make proot
+EOF_fedora35_proot_1
+    fi
+
+    if [ -e "${PROOT_SOURCE_DIR}/src/proot" ]; then
+        mv "${PROOT_SOURCE_DIR}/src/proot" "${PROOT_SOURCE_DIR}/proot-Fedora-35.bin"
+    fi
+
+    if [ ! -e "${PROOT_SOURCE_DIR}/proot-Fedora-35.bin" ]; then
+        echo "proot compilation failed ${PROOT_SOURCE_DIR}/proot-Fedora-35.bin not found"
+        exit 1
+    fi
+}
+
+
+fedora35_build_patchelf()
+{
+    echo "fedora35_build_patchelf : $1"
+    local OS_ARCH="$1"
+    local PATCHELF_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="35"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${PATCHELF_SOURCE_DIR}/patchelf-Fedora-35" ] ; then
+        echo "patchelf binary already compiled : ${PATCHELF_SOURCE_DIR}/patchelf-Fedora-35"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile patchelf
+    set -xv
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
+    $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
+                            /bin/bash <<'EOF_fedora35_patchelf'
+cd /patchelf
+make clean
+# BUILD PATCHELF
+#bash bootstrap.sh
+bash ./configure
+make
+cp src/patchelf /patchelf/patchelf-Fedora-35
+make clean
+EOF_fedora35_patchelf
+    set +xv
+}
+
+fedora35_build_fakechroot()
+{
+    echo "fedora35_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="35"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-Fedora-35.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-Fedora-35.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_fedora35_fakechroot'
+cd /fakechroot
+# BUILD FAKECHROOT
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-Fedora-35.so
+make clean
+EOF_fedora35_fakechroot
+    set +xv
+}
+
+
+# #############################################################################
+# Fedora 36
+# #############################################################################
+
+fedora36_create_dnf()
+{
+    echo "fedora36_create_dnf : $1"
+    local FILENAME="$1"
+    local ARCH="$2"
+
+    cat > "$FILENAME" <<EOF_fedora36_dnf
+[main]
+gpgcheck=0
+sslverify=0
+installonly_limit=3
+clean_requirements_on_remove=True
+reposdir=NONE
+
+[fedora-modular]
+name=Fedora Modular \$releasever - $ARCH
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/releases/\$releasever/Modular/$ARCH/os/
+metalink=https://mirrors.fedoraproject.org/metalink?repo=fedora-modular-\$releasever&arch=$ARCH
+enabled=1
+#metadata_expire=7d
+repo_gpgcheck=0
+type=rpm
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
+skip_if_unavailable=False
+
+[updates]
+name=Fedora \$releasever - $ARCH - Updates
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/updates/\$releasever/Everything/$ARCH/os
+metalink=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f\$releasever&arch=$ARCH
+enabled=1
+repo_gpgcheck=0
+type=rpm
+gpgcheck=0
+metadata_expire=6h
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
+skip_if_unavailable=False
+
+[fedora]
+name=Fedora \$releasever - $ARCH
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/releases/\$releasever/Everything/$ARCH/os/
+metalink=https://mirrors.fedoraproject.org/metalink?repo=fedora-\$releasever&arch=$ARCH
+enabled=1
+metadata_expire=7d
+repo_gpgcheck=0
+type=rpm
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
+skip_if_unavailable=False
+EOF_fedora36_dnf
+}
+
+
+fedora36_setup()
+{
+    echo "fedora36_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="fedora"
+    local OS_RELVER="36"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/bin/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    /bin/mkdir -p "${OS_ROOTDIR}/tmp"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot-static-packages"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/dnf"
+    fedora36_create_dnf "${OS_ROOTDIR}/etc/dnf/dnf.conf" "$OS_ARCH"
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
+
+    #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+    #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+    #        coreutils-8.31-1.fc31.x86_64 coreutils-common-8.31-1.fc31.x86_64
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
+
+    if [ "$OS_ARCH" = "aarch64" ]; then
+        $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        export PROOT_NO_SECCOMP=1
+	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora36_reinstall'
+dnf -y reinstall $(rpm -qa)
+EOF_fedora36_reinstall
+    fi
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        clean packages
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+fedora36_build_proot_c()
+{
+    echo "fedora36_build_proot : $1"
+    local OS_ARCH="$1"
+    local PROOT_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="36"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    SUDO=/bin/sudo
+
+    if [ -x "${PROOT_SOURCE_DIR}/proot-Fedora-36.bin" ] ; then
+        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/proot-Fedora-36.bin"
+    else
+	$SUDO mount --bind "${PROOT_SOURCE_DIR}" "$OS_ROOTDIR/proot"
+	$SUDO mount --bind "${S_PROOT_PACKAGES_DIR}" "$OS_ROOTDIR/proot-static-packages"
+        # compile proot
+        $SUDO chroot --userspec="$USER" "$OS_ROOTDIR" /bin/bash <<'EOF_fedora36_proot_1'
+cd /usr/bin
+rm python
+ln -s python2 python
+cd /proot
+/bin/rm -f proot-Fedora-36.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
+# BUILD TALLOC
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
+./configure
+make
+cp talloc.h /proot/src
+cd bin/default
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
+cp libtalloc.a /proot/src && make clean
+# BUILD PROOT
+cd /proot/src
+make clean
+make loader.elf
+make loader-m32.elf
+make build.h
+LDFLAGS="-L/proot/usr/src -static" make proot
+EOF_fedora36_proot_1
+    sync
+    $SUDO umount "$OS_ROOTDIR/proot"
+    $SUDO umount "$OS_ROOTDIR/proot-static-packages"
+    fi
+
+    if [ -e "${PROOT_SOURCE_DIR}/src/proot" ]; then
+        mv "${PROOT_SOURCE_DIR}/src/proot" "${PROOT_SOURCE_DIR}/proot-Fedora-36.bin"
+    fi
+
+    if [ ! -e "${PROOT_SOURCE_DIR}/proot-Fedora-36.bin" ]; then
+        echo "proot compilation failed ${PROOT_SOURCE_DIR}/proot-Fedora-36.bin not found"
+        exit 1
+    fi
+}
+
+
+fedora36_build_proot()
+{
+    echo "fedora36_build_proot : $1"
+    local OS_ARCH="$1"
+    local PROOT_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="36"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    if [ -x "${PROOT_SOURCE_DIR}/proot-Fedora-36.bin" ] ; then
+        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/proot-Fedora-36.bin"
+    else
+        # compile proot
+        $PROOT -r "$OS_ROOTDIR" -b "${PROOT_SOURCE_DIR}:/proot" -w / -b /dev \
+                           -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora36_proot_1'
+cd /usr/bin
+rm python
+ln -s python2 python
+cd /proot
+/bin/rm -f proot-Fedora-36.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
+# BUILD TALLOC
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
+./configure
+make
+cp talloc.h /proot/src
+cd bin/default
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
+cp libtalloc.a /proot/src && make clean
+# BUILD PROOT
+cd /proot/src
+make clean
+make loader.elf
+make loader-m32.elf
+make build.h
+LDFLAGS="-L/proot/usr/src -static" make proot
+EOF_fedora36_proot_1
+    fi
+
+    if [ -e "${PROOT_SOURCE_DIR}/src/proot" ]; then
+        mv "${PROOT_SOURCE_DIR}/src/proot" "${PROOT_SOURCE_DIR}/proot-Fedora-36.bin"
+    fi
+
+    if [ ! -e "${PROOT_SOURCE_DIR}/proot-Fedora-36.bin" ]; then
+        echo "proot compilation failed ${PROOT_SOURCE_DIR}/proot-Fedora-36.bin not found"
+        exit 1
+    fi
+}
+
+
+fedora36_build_patchelf()
+{
+    echo "fedora36_build_patchelf : $1"
+    local OS_ARCH="$1"
+    local PATCHELF_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="36"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${PATCHELF_SOURCE_DIR}/patchelf-Fedora-36" ] ; then
+        echo "patchelf binary already compiled : ${PATCHELF_SOURCE_DIR}/patchelf-Fedora-36"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile patchelf
+    set -xv
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
+    $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
+                            /bin/bash <<'EOF_fedora36_patchelf'
+cd /patchelf
+make clean
+# BUILD PATCHELF
+#bash bootstrap.sh
+bash ./configure
+make
+cp src/patchelf /patchelf/patchelf-Fedora-36
+make clean
+EOF_fedora36_patchelf
+    set +xv
+}
+
+fedora36_build_fakechroot()
+{
+    echo "fedora36_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="36"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-Fedora-36.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-Fedora-36.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_fedora36_fakechroot'
+cd /fakechroot
+# BUILD FAKECHROOT
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-Fedora-36.so
+make clean
+EOF_fedora36_fakechroot
+    set +xv
+}
+
+
+# #############################################################################
+# Fedora 38
+# #############################################################################
+
+fedora38_create_dnf()
+{
+    echo "fedora38_create_dnf : $1"
+    local FILENAME="$1"
+    local ARCH="$2"
+
+    cat > "$FILENAME" <<EOF_fedora38_dnf
+[main]
+gpgcheck=0
+sslverify=0
+installonly_limit=3
+clean_requirements_on_remove=True
+reposdir=NONE
+
+[fedora-modular]
+name=Fedora Modular \$releasever - $ARCH
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/releases/\$releasever/Modular/$ARCH/os/
+metalink=https://mirrors.fedoraproject.org/metalink?repo=fedora-modular-\$releasever&arch=$ARCH
+enabled=1
+#metadata_expire=7d
+repo_gpgcheck=0
+type=rpm
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
+skip_if_unavailable=False
+
+[updates]
+name=Fedora \$releasever - $ARCH - Updates
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/updates/\$releasever/Everything/$ARCH/os
+metalink=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f\$releasever&arch=$ARCH
+enabled=1
+repo_gpgcheck=0
+type=rpm
+gpgcheck=0
+metadata_expire=6h
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
+skip_if_unavailable=False
+
+[fedora]
+name=Fedora \$releasever - $ARCH
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/releases/\$releasever/Everything/$ARCH/os/
+metalink=https://mirrors.fedoraproject.org/metalink?repo=fedora-\$releasever&arch=$ARCH
+enabled=1
+metadata_expire=7d
+repo_gpgcheck=0
+type=rpm
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
+skip_if_unavailable=False
+EOF_fedora38_dnf
+}
+
+
+fedora38_setup()
+{
+    echo "fedora38_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="fedora"
+    local OS_RELVER="38"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/bin/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    /bin/mkdir -p "${OS_ROOTDIR}/tmp"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot-static-packages"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/dnf"
+    fedora38_create_dnf "${OS_ROOTDIR}/etc/dnf/dnf.conf" "$OS_ARCH"
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
+
+    #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+    #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+    #        coreutils-8.31-1.fc31.x86_64 coreutils-common-8.31-1.fc31.x86_64
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
+
+    if [ "$OS_ARCH" = "aarch64" ]; then
+        $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        export PROOT_NO_SECCOMP=1
+	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora38_reinstall'
+dnf -y reinstall $(rpm -qa)
+EOF_fedora38_reinstall
+    fi
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        clean packages
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+fedora38_build_proot_c()
+{
+    echo "fedora38_build_proot : $1"
+    local OS_ARCH="$1"
+    local PROOT_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="38"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    SUDO=/bin/sudo
+
+    if [ -x "${PROOT_SOURCE_DIR}/proot-Fedora-38.bin" ] ; then
+        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/proot-Fedora-38.bin"
+    else
+	$SUDO mount --bind "${PROOT_SOURCE_DIR}" "$OS_ROOTDIR/proot"
+	$SUDO mount --bind "${S_PROOT_PACKAGES_DIR}" "$OS_ROOTDIR/proot-static-packages"
+        # compile proot
+        $SUDO chroot --userspec="$USER" "$OS_ROOTDIR" /bin/bash <<'EOF_fedora38_proot_1'
+cd /usr/bin
+rm python
+ln -s python2 python
+cd /proot
+/bin/rm -f proot-Fedora-38.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
+# BUILD TALLOC
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
+./configure
+make
+cp talloc.h /proot/src
+cd bin/default
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
+cp libtalloc.a /proot/src && make clean
+# BUILD PROOT
+cd /proot/src
+make clean
+make loader.elf
+make loader-m32.elf
+make build.h
+LDFLAGS="-L/proot/usr/src -static" make proot
+EOF_fedora38_proot_1
+    sync
+    $SUDO umount "$OS_ROOTDIR/proot"
+    $SUDO umount "$OS_ROOTDIR/proot-static-packages"
+    fi
+
+    if [ -e "${PROOT_SOURCE_DIR}/src/proot" ]; then
+        mv "${PROOT_SOURCE_DIR}/src/proot" "${PROOT_SOURCE_DIR}/proot-Fedora-38.bin"
+    fi
+
+    if [ ! -e "${PROOT_SOURCE_DIR}/proot-Fedora-38.bin" ]; then
+        echo "proot compilation failed ${PROOT_SOURCE_DIR}/proot-Fedora-38.bin not found"
+        exit 1
+    fi
+}
+
+
+fedora38_build_proot()
+{
+    echo "fedora38_build_proot : $1"
+    local OS_ARCH="$1"
+    local PROOT_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="38"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    if [ -x "${PROOT_SOURCE_DIR}/proot-Fedora-38.bin" ] ; then
+        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/proot-Fedora-38.bin"
+    else
+        # compile proot
+        $PROOT -r "$OS_ROOTDIR" -b "${PROOT_SOURCE_DIR}:/proot" -w / -b /dev \
+                           -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora38_proot_1'
+cd /usr/bin
+rm python
+ln -s python2 python
+cd /proot
+/bin/rm -f proot-Fedora-38.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
+# BUILD TALLOC
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
+./configure
+make
+cp talloc.h /proot/src
+cd bin/default
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
+cp libtalloc.a /proot/src && make clean
+# BUILD PROOT
+cd /proot/src
+make clean
+make loader.elf
+make loader-m32.elf
+make build.h
+LDFLAGS="-L/proot/usr/src -static" make proot
+EOF_fedora38_proot_1
+    fi
+
+    if [ -e "${PROOT_SOURCE_DIR}/src/proot" ]; then
+        mv "${PROOT_SOURCE_DIR}/src/proot" "${PROOT_SOURCE_DIR}/proot-Fedora-38.bin"
+    fi
+
+    if [ ! -e "${PROOT_SOURCE_DIR}/proot-Fedora-38.bin" ]; then
+        echo "proot compilation failed ${PROOT_SOURCE_DIR}/proot-Fedora-38.bin not found"
+        exit 1
+    fi
+}
+
+
+fedora38_build_patchelf()
+{
+    echo "fedora38_build_patchelf : $1"
+    local OS_ARCH="$1"
+    local PATCHELF_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="38"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${PATCHELF_SOURCE_DIR}/patchelf-Fedora-38" ] ; then
+        echo "patchelf binary already compiled : ${PATCHELF_SOURCE_DIR}/patchelf-Fedora-38"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile patchelf
+    set -xv
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
+    $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
+                            /bin/bash <<'EOF_fedora38_patchelf'
+cd /patchelf
+make clean
+# BUILD PATCHELF
+#bash bootstrap.sh
+bash ./configure
+make
+cp src/patchelf /patchelf/patchelf-Fedora-38
+make clean
+EOF_fedora38_patchelf
+    set +xv
+}
+
+fedora38_build_fakechroot()
+{
+    echo "fedora38_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="38"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-Fedora-38.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-Fedora-38.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_fedora38_fakechroot'
+cd /fakechroot
+# BUILD FAKECHROOT
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-Fedora-38.so
+make clean
+EOF_fedora38_fakechroot
     set +xv
 }
 
@@ -2887,13 +4082,12 @@ centos6_setup()
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            gcc make libtalloc libtalloc-devel glibc-static glibc-devel tar python gzip zlib diffutils file
+            gcc make libtalloc libtalloc-devel glibc-static glibc-devel \
+	    tar python gzip zlib diffutils file git which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-                autoconf m4 gcc-c++ automake gawk libtool
-    fi
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+        autoconf m4 gcc-c++ automake gawk libtool
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -2915,9 +4109,16 @@ centos6_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3054,13 +4255,14 @@ centos7_setup()
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-            gcc make libtalloc libtalloc-devel glibc-static glibc-devel tar python gzip zlib diffutils file
+	    --forcearch="$OS_ARCH" \
+            gcc make libtalloc libtalloc-devel glibc-static glibc-devel \
+            tar python gzip zlib diffutils file git which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-                autoconf m4 gcc-c++ automake gawk libtool
-    fi
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+            --forcearch="$OS_ARCH" \
+            autoconf m4 gcc-c++ libstdc++-static automake gawk libtool xz
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -3082,10 +4284,18 @@ centos7_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3127,10 +4337,16 @@ centos7_build_proot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$HOME/.udocker/bin/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$HOME/.udocker/bin/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3146,15 +4362,17 @@ centos7_build_proot()
                            -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_centos7_proot_1'
 cd /proot
 /bin/rm -f proot-CentOS-7.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
 # BUILD TALLOC
-tar xzvf /proot-static-packages/talloc-2.1.1.tar.gz
-cd talloc-2.1.1
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
 make clean
 ./configure
 make
 cp talloc.h /proot/src
 cd bin/default
-ar qf libtalloc.a talloc_3.o
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
 cp libtalloc.a /proot/src && make clean
 # BUILD PROOT
 cd /proot/src
@@ -3162,7 +4380,7 @@ make clean
 make loader.elf
 make loader-m32.elf
 make build.h
-make proot
+LDFLAGS="-L/proot/usr/src -static" make proot
 EOF_centos7_proot_1
     fi
 
@@ -3175,6 +4393,60 @@ EOF_centos7_proot_1
         exit 1
     fi
 }
+
+centos7_build_patchelf()
+{
+    echo "centos7_build_patchelf : $1"
+    local OS_ARCH="$1"
+    local PATCHELF_SOURCE_DIR="$2"
+    local OS_NAME="centos"
+    local OS_RELVER="7"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${PATCHELF_SOURCE_DIR}/patchelf-CentOS-7" ] ; then
+        echo "patchelf binary already compiled : ${PATCHELF_SOURCE_DIR}/patchelf-CentOS-7"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile patchelf
+    set -xv
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
+    $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
+                            /bin/bash <<'EOF_centos7_patchelf'
+cd /patchelf
+make clean
+# BUILD PATCHELF
+#bash bootstrap.sh
+bash ./configure
+make
+cp src/patchelf /patchelf/patchelf-CentOS-7
+make clean
+EOF_centos7_patchelf
+    set +xv
+}
+
 
 
 # #############################################################################
@@ -3324,14 +4596,16 @@ centos8_setup()
     centos8_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --setopt=module_platform_id=platform:el$OS_RELVER \
-            dnf dnf-data gcc make libtalloc libtalloc-devel glibc-static glibc-devel tar python3 python2 gzip zlib diffutils file
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--setopt=module_platform_id=platform:el$OS_RELVER \
+	--forcearch="$OS_ARCH" \
+        dnf dnf-data gcc make libtalloc libtalloc-devel glibc-static \
+	glibc-devel tar python3 python2 gzip zlib diffutils file git which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-                autoconf m4 gcc-c++ automake gawk libtool
-    fi
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ automake gawk libtool
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -3353,10 +4627,18 @@ centos8_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3547,14 +4829,16 @@ centos_stream8_setup()
     centos_stream8_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --setopt=module_platform_id=platform:el${OS_RELVER} \
-            dnf dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar python3 python2 gzip zlib diffutils file
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	    --setopt=module_platform_id=platform:el${OS_RELVER} \
+	    --forcearch="$OS_ARCH" \
+            dnf dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar \
+	    python3 python2 gzip zlib diffutils file git which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-                autoconf m4 gcc-c++ automake gawk libtool
-    fi
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ automake gawk libtool
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -3576,10 +4860,18 @@ centos_stream8_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3760,14 +5052,16 @@ centos_stream9_setup()
     centos_stream9_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --setopt=module_platform_id=platform:el${OS_RELVER} \
-            dnf dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar python3 python2 gzip zlib diffutils file
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--setopt=module_platform_id=platform:el${OS_RELVER} \
+	--forcearch="$OS_ARCH" \
+        dnf dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar \
+	python3 python2 gzip zlib diffutils file git which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-                autoconf m4 gcc-c++ automake gawk libtool
-    fi
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ automake gawk libtool
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -3789,10 +5083,18 @@ centos_stream9_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3993,17 +5295,17 @@ rocky8_setup()
     /bin/mkdir -p "${OS_ROOTDIR}/etc/yum.repos.d"
     rocky8_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
 
-set -v
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --setopt=module_platform_id=platform:el$OS_RELVER \
-            dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar python3 python2 gzip zlib diffutils file
-set +v
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--setopt=module_platform_id=platform:el$OS_RELVER \
+	--forcearch="$OS_ARCH" \
+        dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar \
+	python3 python2 gzip zlib diffutils file git which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-                autoconf m4 gcc-c++ automake gawk libtool
-    fi
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--forcearch="$OS_ARCH" --enablerepo=crb \
+        autoconf m4 gcc-c++ libstdc++-static glibc-static automake gawk libtool
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -4025,10 +5327,18 @@ rocky8_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4250,17 +5560,17 @@ rocky9_setup()
     /bin/mkdir -p "${OS_ROOTDIR}/etc/yum.repos.d"
     rocky9_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
 
-set -v
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --setopt=module_platform_id=platform:el$OS_RELVER \
-            dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar python3 python2 gzip zlib diffutils file
-set +v
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--setopt=module_platform_id=platform:el$OS_RELVER \
+	--forcearch="$OS_ARCH" \
+        dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar \
+	python3 python2 gzip zlib diffutils file git which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-                autoconf m4 gcc-c++ automake gawk libtool
-    fi
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--forcearch="$OS_ARCH" --enablerepo=crb \
+        autoconf m4 gcc-c++ libstdc++-static glibc-static automake gawk libtool
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -4282,10 +5592,18 @@ rocky9_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4311,6 +5629,271 @@ make
 cp src/.libs/libfakechroot.so libfakechroot-Rocky-9.so
 make clean
 EOF_rocky9_fakechroot
+    set +xv
+}
+
+
+
+# #############################################################################
+# Alma 8
+# #############################################################################
+
+alma8_create_yum()
+{
+    echo "alma8_create_yum : $1"
+    local FILENAME="$1"
+    local ARCH="$2"
+
+    cat > "${FILENAME}" <<'EOF_alma8_yum_conf'
+[main]
+cachedir=/var/cache/yum/$basearch/$releasever
+keepcache=0
+debuglevel=2
+exactarch=1
+obsoletes=1
+gpgcheck=0
+plugins=1
+installonly_limit=5
+
+# PUT YOUR REPOS HERE OR IN separate files named file.repo
+# in /etc/yum.repos.d
+reposdir=NONE
+
+[appstream]
+name=AlmaLinux $releasever - AppStream
+mirrorlist=https://mirrors.almalinux.org/mirrorlist/$releasever/appstream
+# baseurl=https://repo.almalinux.org/almalinux/$releasever/AppStream/$basearch/os/
+enabled=1
+gpgcheck=0
+countme=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-8
+metadata_expire=86400
+enabled_metadata=1
+
+[baseos]
+name=AlmaLinux $releasever - BaseOS
+mirrorlist=https://mirrors.almalinux.org/mirrorlist/$releasever/baseos
+# baseurl=https://repo.almalinux.org/almalinux/$releasever/BaseOS/$basearch/os/
+enabled=1
+gpgcheck=0
+countme=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-8
+metadata_expire=86400
+enabled_metadata=1
+
+[crb]
+name=AlmaLinux $releasever - CRB
+mirrorlist=https://mirrors.almalinux.org/mirrorlist/$releasever/crb
+# baseurl=https://repo.almalinux.org/almalinux/$releasever/CRB/$basearch/os/
+enabled=0
+gpgcheck=0
+countme=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-8
+metadata_expire=86400
+enabled_metadata=0
+
+[extras]
+name=AlmaLinux $releasever - Extras
+mirrorlist=https://mirrors.almalinux.org/mirrorlist/$releasever/extras
+# baseurl=https://repo.almalinux.org/almalinux/$releasever/extras/$basearch/os/
+enabled=1
+gpgcheck=0
+countme=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-8
+metadata_expire=86400
+enabled_metadata=0
+
+[highavailability]
+name=AlmaLinux $releasever - HighAvailability
+mirrorlist=https://mirrors.almalinux.org/mirrorlist/$releasever/highavailability
+# baseurl=https://repo.almalinux.org/almalinux/$releasever/HighAvailability/$basearch/os/
+enabled=0
+gpgcheck=0
+countme=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-8
+metadata_expire=86400
+enabled_metadata=0
+
+[nfv]
+name=AlmaLinux $releasever - NFV
+mirrorlist=https://mirrors.almalinux.org/mirrorlist/$releasever/nfv
+# baseurl=https://repo.almalinux.org/almalinux/$releasever/NFV/$basearch/os/
+enabled=0
+gpgcheck=0
+countme=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-8
+metadata_expire=86400
+enabled_metadata=0
+
+[plus]
+name=AlmaLinux $releasever - Plus
+mirrorlist=https://mirrors.almalinux.org/mirrorlist/$releasever/plus
+# baseurl=https://repo.almalinux.org/almalinux/$releasever/plus/$basearch/os/
+enabled=0
+gpgcheck=0
+countme=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-8
+metadata_expire=86400
+enabled_metadata=0
+
+[resilientstorage]
+name=AlmaLinux $releasever - ResilientStorage
+mirrorlist=https://mirrors.almalinux.org/mirrorlist/$releasever/resilientstorage
+# baseurl=https://repo.almalinux.org/almalinux/$releasever/ResilientStorage/$basearch/os/
+enabled=0
+gpgcheck=0
+countme=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-8
+metadata_expire=86400
+enabled_metadata=0
+
+[rt]
+name=AlmaLinux $releasever - RT
+mirrorlist=https://mirrors.almalinux.org/mirrorlist/$releasever/rt
+# baseurl=https://repo.almalinux.org/almalinux/$releasever/RT/$basearch/os/
+enabled=0
+gpgcheck=0
+countme=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-8
+metadata_expire=86400
+enabled_metadata=0
+
+[sap]
+name=AlmaLinux $releasever - SAP
+mirrorlist=https://mirrors.almalinux.org/mirrorlist/$releasever/sap
+# baseurl=https://repo.almalinux.org/almalinux/$releasever/SAP/$basearch/os/
+enabled=0
+gpgcheck=0
+countme=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-8
+metadata_expire=86400
+enabled_metadata=0
+
+[saphana]
+name=AlmaLinux $releasever - SAPHANA
+mirrorlist=https://mirrors.almalinux.org/mirrorlist/$releasever/saphana
+# baseurl=https://repo.almalinux.org/almalinux/$releasever/SAPHANA/$basearch/os/
+enabled=0
+gpgcheck=0
+countme=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-8
+metadata_expire=86400
+enabled_metadata=0
+
+#############################################################
+
+[epel-playground]
+name=Extra Packages for Enterprise Linux $releasever - Playground - $basearch
+#baseurl=https://download.fedoraproject.org/pub/epel/playground/$releasever/Everything/$basearch/os
+metalink=https://mirrors.fedoraproject.org/metalink?repo=playground-epel$releasever&arch=$basearch&infra=$infra&content=$contentdir
+failovermethod=priority
+enabled=0
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-8
+
+[epel]
+name=Extra Packages for Enterprise Linux $releasever - $basearch
+#baseurl=https://download.fedoraproject.org/pub/epel/$releasever/Everything/$basearch
+metalink=https://mirrors.fedoraproject.org/metalink?repo=epel-$releasever&arch=$basearch&infra=$infra&content=$contentdir
+failovermethod=priority
+enabled=1
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-8
+EOF_alma8_yum_conf
+}
+
+
+alma8_setup()
+{
+    echo "alma8_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="alma"
+    local OS_RELVER="8"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/bin/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    /bin/mkdir -p "${OS_ROOTDIR}/tmp"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot-static-packages"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/yum"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/yum.repos.d"
+    alma8_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
+
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--setopt=module_platform_id=platform:el$OS_RELVER \
+	--forcearch="$OS_ARCH"   --enablerepo=crb  \
+        dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar \
+	python3 python2 gzip zlib diffutils file git which
+
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--forcearch="$OS_ARCH" --enablerepo=crb \
+        autoconf m4 gcc-c++ libstdc++-static glibc-static automake gawk libtool
+
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        clean packages
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+
+alma8_build_fakechroot()
+{
+    echo "alma8_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="alma"
+    local OS_RELVER="8"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-AlmaLinux-8.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-AlmaLinux-8.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_alma8_fakechroot'
+cd /fakechroot
+# BUILD FAKECHROOT
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-AlmaLinux-8.so
+make clean
+EOF_alma8_fakechroot
     set +xv
 }
 
@@ -4507,17 +6090,17 @@ alma9_setup()
     /bin/mkdir -p "${OS_ROOTDIR}/etc/yum.repos.d"
     alma9_create_yum "${OS_ROOTDIR}/etc/yum.conf" "$OS_ARCH"
 
-set -v
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --setopt=module_platform_id=platform:el$OS_RELVER \
-            dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar python3 python2 gzip zlib diffutils file
-set +v
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--setopt=module_platform_id=platform:el$OS_RELVER \
+	--forcearch="$OS_ARCH" \
+        dnf rpm dnf-data gcc make libtalloc libtalloc-devel glibc-devel tar \
+	python3 python2 gzip zlib diffutils file git which
 
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
-            install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
-                autoconf m4 gcc-c++ automake gawk libtool
-    fi
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+	--forcearch="$OS_ARCH"  --enablerepo=crb  \
+        autoconf m4 gcc-c++ libstdc++-static glibc-static automake gawk libtool
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -4526,6 +6109,52 @@ set +v
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
 }
 
+alma9_build_patchelf()
+{
+    echo "alma9_build_patchelf : $1"
+    local OS_ARCH="$1"
+    local PATCHELF_SOURCE_DIR="$2"
+    local OS_NAME="alma"
+    local OS_RELVER="9"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${PATCHELF_SOURCE_DIR}/patchelf-AlmaLinux-9" ] ; then
+        echo "patchelf binary already compiled : ${PATCHELF_SOURCE_DIR}/patchelf-AlmaLinux-9"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile patchelf
+    set -xv
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
+    $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
+                            /bin/bash <<'EOF_alma9_patchelf'
+cd /patchelf
+make clean
+# BUILD PATCHELF
+#bash bootstrap.sh
+bash ./configure
+make
+cp src/patchelf /patchelf/patchelf-AlmaLinux-9
+make clean
+EOF_alma9_patchelf
+    set +xv
+}
 
 alma9_build_fakechroot()
 {
@@ -4539,10 +6168,18 @@ alma9_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4592,8 +6229,8 @@ ubuntu12_setup()
 
     SUDO=sudo
 
-    $SUDO debootstrap --no-check-gpg --arch=$OS_ARCH --variant=buildd \
-	    precise $OS_ROOTDIR http://old-releases.ubuntu.com/ubuntu/
+    $SUDO debootstrap --no-check-gpg --arch="$OS_ARCH" --variant=buildd \
+	    precise "$OS_ROOTDIR" http://old-releases.ubuntu.com/ubuntu/
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
@@ -4611,6 +6248,7 @@ ubuntu12_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         PROOT="$S_PROOT_DIR/proot-x86_64"
@@ -4634,7 +6272,8 @@ ubuntu12_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano 
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash
+apt-get -y install diffutils file which
 EOF_ubuntu12_packages
 
     SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
@@ -4674,7 +6313,7 @@ ubuntu14_setup()
 
     SUDO=sudo
 
-    $SUDO debootstrap --arch=$OS_ARCH --variant=buildd trusty $OS_ROOTDIR http://archive.ubuntu.com/ubuntu/
+    $SUDO debootstrap --arch="$OS_ARCH" --variant=buildd trusty "$OS_ROOTDIR" http://archive.ubuntu.com/ubuntu/
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
@@ -4692,6 +6331,7 @@ ubuntu14_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         PROOT="$S_PROOT_DIR/proot-x86_64"
@@ -4716,7 +6356,8 @@ ubuntu14_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano 
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash
+apt-get -y install diffutils file which
 EOF_ubuntu14_packages
     fi
 
@@ -4756,7 +6397,15 @@ ubuntu16_setup()
 
     SUDO=sudo
 
-    $SUDO debootstrap --arch=$OS_ARCH --variant=buildd xenial $OS_ROOTDIR http://archive.ubuntu.com/ubuntu/
+    if [ "$OS_ARCH" = "amd64" ] || [ "$OS_ARCH" = "i386" ]; then
+        REPOSITORY_URL="http://archive.ubuntu.com/ubuntu/"
+        #REPOSITORY_URL="http://old-releases.ubuntu.com/ubuntu/"
+    else
+        REPOSITORY_URL="http://ports.ubuntu.com/ubuntu-ports/"
+        #REPOSITORY_URL="http://old-releases.ubuntu.com/ubuntu/"
+    fi
+
+    $SUDO debootstrap --arch="$OS_ARCH" --variant=buildd xenial "$OS_ROOTDIR" "$REPOSITORY_URL"
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
@@ -4774,9 +6423,16 @@ ubuntu16_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
         PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4798,7 +6454,8 @@ ubuntu16_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash
+apt-get -y install diffutils file which
 EOF_ubuntu16_packages
     fi
 
@@ -4834,20 +6491,26 @@ ubuntu16_build_runc()
         PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
     fi
 
-    if [ -x "${RUNC_SOURCE_DIR}/runc" ] ; then
-        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc"
+    if [ -x "${RUNC_SOURCE_DIR}/runc-Ubuntu-16.bin" ] ; then
+        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc-Ubuntu-16.bin"
         return
     fi
 
     export PROOT_NO_SECCOMP=1
 
     # compile runc
-    mkdir -p ${OS_ROOTDIR}/go/src/github.com/opencontainers
+    mkdir -p "${OS_ROOTDIR}/go/src/github.com/opencontainers"
     set -xv
     SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
         $PROOT -0 -r "$OS_ROOTDIR" -b "${RUNC_SOURCE_DIR}:/go/src/github.com/opencontainers/runc" -w / -b /dev \
@@ -4856,7 +6519,9 @@ apt-get -y update
 apt-get -y install golang libseccomp-dev git
 export GOPATH=/go
 cd /go/src/github.com/opencontainers/runc
+make clean
 make static
+/bin/mv runc runc-Ubuntu-16.bin
 EOF_ubuntu16_runc
 
     set +xv
@@ -4881,7 +6546,15 @@ ubuntu18_setup()
 
     SUDO=sudo
 
-    $SUDO debootstrap --arch=$OS_ARCH --variant=buildd bionic $OS_ROOTDIR http://archive.ubuntu.com/ubuntu/
+    if [ "$OS_ARCH" = "amd64" ] || [ "$OS_ARCH" = "i386" ]; then
+        REPOSITORY_URL="http://archive.ubuntu.com/ubuntu/"
+        #REPOSITORY_URL="http://old-releases.ubuntu.com/ubuntu/"
+    else
+        REPOSITORY_URL="http://ports.ubuntu.com/ubuntu-ports/"
+        #REPOSITORY_URL="http://old-releases.ubuntu.com/ubuntu/"
+    fi
+
+    $SUDO debootstrap --arch="$OS_ARCH" --variant=buildd bionic "$OS_ROOTDIR" "$REPOSITORY_URL"
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
@@ -4902,6 +6575,12 @@ ubuntu18_build_fakechroot()
         PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4923,7 +6602,8 @@ ubuntu18_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash
+apt-get -y install diffutils file which
 EOF_ubuntu18_packages
     fi
 
@@ -4956,25 +6636,32 @@ ubuntu18_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
     fi
 
-    if [ -x "${RUNC_SOURCE_DIR}/runc" ] ; then
-        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc"
+    if [ -x "${RUNC_SOURCE_DIR}/runc-Ubuntu-18.bin" ] ; then
+        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc-Ubuntu-18.bin"
         return
     fi
 
     export PROOT_NO_SECCOMP=1
 
     # compile runc
-    mkdir -p ${OS_ROOTDIR}/go/src/github.com/opencontainers
-    set -xv
+    mkdir -p "${OS_ROOTDIR}/go/src/github.com/opencontainers"
     SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
         $PROOT -0 -r "$OS_ROOTDIR" -b "${RUNC_SOURCE_DIR}:/go/src/github.com/opencontainers/runc" -w / -b /dev \
             -b /etc/resolv.conf:/etc/resolv.conf /bin/bash <<'EOF_ubuntu18_runc'
@@ -4988,10 +6675,11 @@ export GOPATH=/go
 export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 go get github.com/sirupsen/logrus
 cd /go/src/github.com/opencontainers/runc
+make clean
 make static
+/bin/mv runc runc-Ubuntu-18.bin
 EOF_ubuntu18_runc
 
-    set +xv
 }
 
 
@@ -5014,8 +6702,8 @@ ubuntu19_setup()
 
     SUDO=sudo
 
-    #$SUDO debootstrap --arch=$OS_ARCH --variant=buildd eoan $OS_ROOTDIR http://archive.ubuntu.com/ubuntu/
-    $SUDO debootstrap --arch=$OS_ARCH --variant=buildd eoan $OS_ROOTDIR http://old-releases.ubuntu.com/ubuntu/
+    #$SUDO debootstrap --arch="$OS_ARCH" --variant=buildd eoan "$OS_ROOTDIR" http://archive.ubuntu.com/ubuntu/
+    $SUDO debootstrap --arch="$OS_ARCH" --variant=buildd eoan "$OS_ROOTDIR" http://old-releases.ubuntu.com/ubuntu/
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
@@ -5034,10 +6722,18 @@ ubuntu19_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5059,7 +6755,8 @@ ubuntu19_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash
+apt-get -y install diffutils file which
 EOF_ubuntu19_packages
     fi
 
@@ -5092,24 +6789,32 @@ ubuntu19_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
     fi
 
-    if [ -x "${RUNC_SOURCE_DIR}/runc" ] ; then
-        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc"
+    if [ -x "${RUNC_SOURCE_DIR}/runc-Ubuntu-19.bin" ] ; then
+        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc-Ubuntu-19.bin"
         return
     fi
 
     export PROOT_NO_SECCOMP=1
 
     # compile runc
-    mkdir -p ${OS_ROOTDIR}/go/src/github.com/opencontainers
+    mkdir -p "${OS_ROOTDIR}/go/src/github.com/opencontainers"
     set -xv
     SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
         $PROOT -0 -r "$OS_ROOTDIR" -b "${RUNC_SOURCE_DIR}:/go/src/github.com/opencontainers/runc" -w / -b /dev \
@@ -5124,7 +6829,9 @@ export GOPATH=/go
 export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 go get github.com/sirupsen/logrus
 cd /go/src/github.com/opencontainers/runc
+make clean
 make static
+/bin/mv runc runc-Ubuntu-19.bin
 EOF_ubuntu19_runc
 
     set +xv
@@ -5150,8 +6857,13 @@ ubuntu20_setup()
 
     SUDO=sudo
 
-    $SUDO debootstrap --arch=$OS_ARCH --variant=buildd focal $OS_ROOTDIR http://archive.ubuntu.com/ubuntu/
-    #$SUDO debootstrap --arch=$OS_ARCH --variant=buildd eoan $OS_ROOTDIR http://de.mirrors.clouvider.net/ubuntu/
+    if [ "$OS_ARCH" = "amd64" ] || [ "$OS_ARCH" = "i386" ]; then
+	REPOSITORY_URL="http://archive.ubuntu.com/ubuntu/"
+    else
+	REPOSITORY_URL="http://ports.ubuntu.com/ubuntu-ports/"
+    fi
+
+    $SUDO debootstrap --arch="$OS_ARCH" --variant=buildd focal "$OS_ROOTDIR" "$REPOSITORY_URL"
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
@@ -5170,10 +6882,18 @@ ubuntu20_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5195,7 +6915,8 @@ ubuntu20_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash
+apt-get -y install diffutils file which
 EOF_ubuntu20_packages
     fi
 
@@ -5228,24 +6949,32 @@ ubuntu20_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
     fi
 
-    if [ -x "${RUNC_SOURCE_DIR}/runc" ] ; then
-        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc"
+    if [ -x "${RUNC_SOURCE_DIR}/runc-Ubuntu-20.bin" ] ; then
+        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc-Ubuntu-20.bin"
         return
     fi
 
     export PROOT_NO_SECCOMP=1
 
     # compile runc
-    mkdir -p ${OS_ROOTDIR}/go/src/github.com/opencontainers
+    mkdir -p "${OS_ROOTDIR}/go/src/github.com/opencontainers"
     set -xv
     SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
         $PROOT -0 -r "$OS_ROOTDIR" -b "${RUNC_SOURCE_DIR}:/go/src/github.com/opencontainers/runc" -w / -b /dev \
@@ -5260,7 +6989,9 @@ export GOPATH=/go
 export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 go get github.com/sirupsen/logrus
 cd /go/src/github.com/opencontainers/runc
+make clean
 make static
+/bin/mv runc runc-Ubuntu-20.bin
 EOF_ubuntu20_runc
 
     set +xv
@@ -5286,7 +7017,14 @@ ubuntu21_setup()
 
     SUDO=sudo
 
-    $SUDO debootstrap --arch=$OS_ARCH --variant=buildd hirsute $OS_ROOTDIR http://archive.ubuntu.com/ubuntu/
+    if [ "$OS_ARCH" = "amd64" ] || [ "$OS_ARCH" = "i386" ]; then
+	#REPOSITORY_URL="http://archive.ubuntu.com/ubuntu/"
+	REPOSITORY_URL="http://old-releases.ubuntu.com/ubuntu/"
+    else
+	#REPOSITORY_URL="http://ports.ubuntu.com/ubuntu-ports/"
+	REPOSITORY_URL="http://old-releases.ubuntu.com/ubuntu/"
+    fi
+    $SUDO debootstrap --arch="$OS_ARCH" --variant=buildd hirsute "$OS_ROOTDIR" "$REPOSITORY_URL"
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
@@ -5305,10 +7043,18 @@ ubuntu21_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5330,7 +7076,8 @@ ubuntu21_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash
+apt-get -y install diffutils file which
 EOF_ubuntu21_packages
     fi
 
@@ -5363,24 +7110,32 @@ ubuntu21_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
     fi
 
-    if [ -x "${RUNC_SOURCE_DIR}/runc" ] ; then
-        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc"
+    if [ -x "${RUNC_SOURCE_DIR}/runc-Ubuntu-21.bin" ] ; then
+        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc-Ubuntu-21.bin"
         return
     fi
 
     export PROOT_NO_SECCOMP=1
 
     # compile runc
-    mkdir -p ${OS_ROOTDIR}/go/src/github.com/opencontainers
+    mkdir -p "${OS_ROOTDIR}/go/src/github.com/opencontainers"
     set -xv
     SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
         $PROOT -0 -r "$OS_ROOTDIR" -b "${RUNC_SOURCE_DIR}:/go/src/github.com/opencontainers/runc" -w / -b /dev \
@@ -5395,7 +7150,9 @@ export GOPATH=/go
 export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 go get github.com/sirupsen/logrus
 cd /go/src/github.com/opencontainers/runc
+make clean
 make static
+/bin/mv runc runc-Ubuntu-21.bin
 EOF_ubuntu21_runc
 
     set +xv
@@ -5421,7 +7178,13 @@ ubuntu22_setup()
 
     SUDO=sudo
 
-    $SUDO debootstrap --arch=$OS_ARCH --variant=buildd jammy $OS_ROOTDIR http://archive.ubuntu.com/ubuntu/
+    if [ "$OS_ARCH" = "amd64" ] || [ "$OS_ARCH" = "i386" ]; then
+	REPOSITORY_URL="http://archive.ubuntu.com/ubuntu/"
+    else
+	REPOSITORY_URL="http://ports.ubuntu.com/ubuntu-ports/"
+    fi
+
+    $SUDO debootstrap --arch="$OS_ARCH" --variant=buildd jammy "$OS_ROOTDIR" "$REPOSITORY_URL"
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
     $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
@@ -5438,12 +7201,17 @@ ubuntu22_build_fakechroot()
     local PROOT=""
 
     if [ "$OS_ARCH" = "i386" ]; then
-        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
-        #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "armhf" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    elif [ "$OS_ARCH" = "riscv64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-riscv64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5465,7 +7233,8 @@ ubuntu22_build_fakechroot()
 apt-get -y update
 apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
 apt-get -y update
-apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash diffutils file
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash
+apt-get -y install diffutils file which
 EOF_ubuntu22_packages
     fi
 
@@ -5497,25 +7266,28 @@ ubuntu22_build_runc()
     local PROOT=""
 
     if [ "$OS_ARCH" = "i386" ]; then
-        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "amd64" ]; then
-        #PROOT="$S_PROOT_DIR/proot-x86_64"
-        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
     fi
 
-    if [ -x "${RUNC_SOURCE_DIR}/runc" ] ; then
-        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc"
+    if [ -x "${RUNC_SOURCE_DIR}/runc-Ubuntu-22.bin" ] ; then
+        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc-Ubuntu-22.bin"
         return
     fi
 
-    export PROOT_NO_SECCOMP=1
+    #export PROOT_NO_SECCOMP=1
+    unset PROOT_NO_SECCOMP
 
     # compile runc
-    mkdir -p ${OS_ROOTDIR}/go/src/github.com/opencontainers
+    mkdir -p "${OS_ROOTDIR}/go/src/github.com/opencontainers"
     set -xv
     SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
         $PROOT -0 -r "$OS_ROOTDIR" -b "${RUNC_SOURCE_DIR}:/go/src/github.com/opencontainers/runc" -w / -b /dev \
@@ -5530,12 +7302,345 @@ apt-get -y install golang libseccomp-dev git software-properties-common
 #export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 #go get github.com/sirupsen/logrus
 cd /go/src/github.com/opencontainers/runc
+make clean
 make static
+/bin/mv runc runc-Ubuntu-22.bin
 EOF_ubuntu22_runc
 
     set +xv
 }
 
+ubuntu22_build_runc_root()
+{
+    echo "ubuntu22_build_runc : $1"
+    local OS_ARCH="$1"
+    local RUNC_SOURCE_DIR="$2"
+    local OS_NAME="ubuntu"
+    local OS_RELVER="22"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        QEMU=""
+    elif [ "$OS_ARCH" = "amd64" ]; then
+        QEMU=""
+    elif [ "$OS_ARCH" = "arm64" ]; then
+	QEMU="/qemu"
+	/bin/cp -f "$(which qemu-aarch64-static)" "${OS_ROOTDIR}/${QEMU}"
+	chmod u+rx "${OS_ROOTDIR}/${QEMU}"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+	QEMU="/qemu"
+	/bin/cp -f "$(which qemu-ppc64le-static)" "${OS_ROOTDIR}/${QEMU}"
+	chmod u+rx "${OS_ROOTDIR}/${QEMU}"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${RUNC_SOURCE_DIR}/runc-Ubuntu-22.bin" ] ; then
+        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc-Ubuntu-22.bin"
+        return
+    fi
+
+    #export PROOT_NO_SECCOMP=1
+    unset PROOT_NO_SECCOMP
+
+    # compile runc
+    mkdir -p "${OS_ROOTDIR}/go/src/github.com/opencontainers"
+    set -xv
+    $SUDO mount --bind "${RUNC_SOURCE_DIR}" "$OS_ROOTDIR/go/src/github.com/opencontainers/runc"
+    $SUDO mount --bind "/etc/resolv.conf" "$OS_ROOTDIR/etc/resolv.conf"
+
+    $SUDO chroot --userspec="root" "$OS_ROOTDIR" /qemu /bin/bash <<EOF_ubuntu22_root_setup
+groupadd --gid "$(id -g)" "$USER"
+adduser --home / --uid "$(id -u)" --gid "$(id -g)" --no-create-home --shell /bin/bash "$USER"
+EOF_ubuntu22_root_setup
+
+    $SUDO chroot --userspec="jorge" "$OS_ROOTDIR" /qemu /bin/bash <<'EOF_ubuntu22_runc_root'
+export SHELL=/bin/bash
+export CONFIG_SHELL=/bin/bash
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib
+apt-get -y update
+apt-get -y install golang libseccomp-dev git software-properties-common
+#add-apt-repository ppa:gophers/archive
+#apt-get -y update
+#apt-get -y install golang-1.11-go
+#export GOROOT=/usr/lib/go-1.11
+#export GOPATH=/go
+#export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+#go get github.com/sirupsen/logrus
+cd /go/src/github.com/opencontainers/runc
+make clean
+make static
+/bin/mv runc runc-Ubuntu-22.bin
+EOF_ubuntu22_runc_root
+    $SUDO umount "$OS_ROOTDIR/go/src/github.com/opencontainers/runc"
+    $SUDO umount "$OS_ROOTDIR/etc/resolv.conf"
+    set +xv
+}
+
+
+# #############################################################################
+# Ubuntu 23.04
+# #############################################################################
+
+ubuntu23_setup()
+{
+    echo "ubuntu23_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="ubuntu"
+    local OS_RELVER="23"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/usr/lib/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    if [ "$OS_ARCH" = "amd64" ] || [ "$OS_ARCH" = "i386" ]; then
+	REPOSITORY_URL="http://archive.ubuntu.com/ubuntu/"
+    else
+	REPOSITORY_URL="http://ports.ubuntu.com/ubuntu-ports/"
+    fi
+
+    $SUDO debootstrap --arch="$OS_ARCH" --variant=buildd lunar "$OS_ROOTDIR" "$REPOSITORY_URL"
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+ubuntu23_build_fakechroot()
+{
+    echo "ubuntu23_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="ubuntu"
+    local OS_RELVER="23"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "amd64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-Ubuntu-23.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-Ubuntu-23.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    if [ ! -x "$OS_ROOTDIR/bin/bash" ] ; then
+        SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+            $PROOT -0 -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+                -b /etc/resolv.conf:/etc/resolv.conf /bin/bash <<'EOF_ubuntu23_packages'
+apt-get -y update
+apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
+apt-get -y update
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash
+apt-get -y install diffutils file which
+EOF_ubuntu23_packages
+    fi
+
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_ubuntu23_fakechroot'
+# BUILD FAKECHROOT
+export SHELL=/bin/bash
+export CONFIG_SHELL=/bin/bash
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib
+cd /fakechroot
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-Ubuntu-23.so
+make clean
+EOF_ubuntu23_fakechroot
+    set +xv
+}
+
+ubuntu23_build_runc()
+{
+    echo "ubuntu23_build_runc : $1"
+    local OS_ARCH="$1"
+    local RUNC_SOURCE_DIR="$2"
+    local OS_NAME="ubuntu"
+    local OS_RELVER="23"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "amd64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${RUNC_SOURCE_DIR}/runc-Ubuntu-23.bin" ] ; then
+        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc-Ubuntu-23.bin"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile runc
+    mkdir -p "${OS_ROOTDIR}/go/src/github.com/opencontainers"
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -0 -r "$OS_ROOTDIR" -b "${RUNC_SOURCE_DIR}:/go/src/github.com/opencontainers/runc" -w / -b /dev \
+            -b /etc/resolv.conf:/etc/resolv.conf /bin/bash <<'EOF_ubuntu23_runc'
+apt-get -y update
+apt-get -y install golang libseccomp-dev git software-properties-common
+#add-apt-repository ppa:gophers/archive
+#apt-get -y update
+#apt-get -y install golang-1.11-go
+#export GOROOT=/usr/lib/go-1.11
+#export GOPATH=/go
+#export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+#go get github.com/sirupsen/logrus
+cd /go/src/github.com/opencontainers/runc
+make static
+/bin/mv runc runc-Ubuntu-23.bin
+EOF_ubuntu23_runc
+
+    set +xv
+}
+
+
+# #############################################################################
+# Debian 10
+# #############################################################################
+
+debian10_setup()
+{
+    echo "debian10_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="debian"
+    local OS_RELVER="10"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/usr/lib/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    if [ "$OS_ARCH" = "amd64" ] || [ "$OS_ARCH" = "i386" ]; then
+	REPOSITORY_URL="http://ftp.debian.org/debian/"
+    else
+	REPOSITORY_URL="http://ftp.debian.org/debian/"
+    fi
+
+    #$SUDO debootstrap --arch=armhf sid /chroots/sid-armhf http://ftp.debian.org/debian/
+    $SUDO debootstrap --arch="$OS_ARCH" buster "$OS_ROOTDIR" "$REPOSITORY_URL"
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+
+debian10_build_proot()
+{
+    echo "debian10_build_proot : $1"
+    local OS_ARCH="$1"
+    local PROOT_SOURCE_DIR="$2"
+    local OS_NAME="debian"
+    local OS_RELVER="10"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        PROOT="$HOME/.udocker/bin/proot-x86_64"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "armhf" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-arm"
+    elif [ "$OS_ARCH" = "armel" ]; then
+        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-arm"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    if [ -x "${PROOT_SOURCE_DIR}/proot-Debian-10.bin" ] ; then
+        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/proot-Debian-10.bin"
+    else
+        # compile proot
+        $PROOT -0 -r "$OS_ROOTDIR" -b "${PROOT_SOURCE_DIR}:/proot" -w / -b /dev \
+                           -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_debian10_proot_1'
+apt-get -y update
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash
+apt-get -y install diffutils file make python3 python3-dev
+cd /proot
+/bin/rm -f proot-Debian-10.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
+# BUILD TALLOC
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
+make clean
+./configure
+make
+cp talloc.h /proot/src
+cd bin/default
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
+cp libtalloc.a /proot/src && make clean
+# BUILD PROOT
+cd /proot/src
+make clean
+make loader.elf
+make loader-m32.elf
+make build.h
+LDFLAGS="-L/proot/usr/src -static" make proot
+EOF_debian10_proot_1
+    fi
+
+    if [ -e "${PROOT_SOURCE_DIR}/src/proot" ]; then
+        mv "${PROOT_SOURCE_DIR}/src/proot" "${PROOT_SOURCE_DIR}/proot-Debian-10.bin"
+    fi
+
+    if [ ! -e "${PROOT_SOURCE_DIR}/proot-Debian-10.bin" ]; then
+        echo "proot compilation failed ${PROOT_SOURCE_DIR}/proot-Debian-10.bin not found"
+        exit 1
+    fi
+}
 
 
 # #############################################################################
@@ -5561,12 +7666,12 @@ alpine36_setup()
     if [ -e "${APK_TOOLS_DIR}/sbin" ] ; then
         echo "apk-tools already installed : ${APK_TOOLS_DIR}"
     else
-        /bin/rm -f ${APK_TOOLS}
-        mkdir ${APK_TOOLS_DIR}
+        /bin/rm -f "${APK_TOOLS}"
+        mkdir "${APK_TOOLS_DIR}"
         local APK_TOOLS_URL="${ALPINE_MIRROR}/${OS_RELVER}/main/${OS_ARCH}/${APK_TOOLS}"
         echo "download apk-tools : ${APK_TOOLS_URL}"
-	(cd ${APK_TOOLS_DIR}; curl ${APK_TOOLS_URL} > ${APK_TOOLS})
-	(cd ${APK_TOOLS_DIR}; tar xzvf ${APK_TOOLS})
+	(cd "${APK_TOOLS_DIR}"; curl "${APK_TOOLS_URL}" > "${APK_TOOLS}")
+	(cd "${APK_TOOLS_DIR}"; tar xzvf "${APK_TOOLS}")
         if [ ! -e "${APK_TOOLS_DIR}/sbin" ] ; then
             echo "apk-tools install failed: ${APK_TOOLS_DIR}"
             exit
@@ -5575,20 +7680,21 @@ alpine36_setup()
 
     SUDO=sudo
 
-    $SUDO ${APK_TOOLS_DIR}/sbin/apk.static \
-        -X ${ALPINE_MIRROR}/${OS_RELVER}/main \
+    $SUDO "${APK_TOOLS_DIR}/sbin/apk.static" \
+        -X "${ALPINE_MIRROR}/${OS_RELVER}/main" \
         -U \
         --allow-untrusted \
-        --root ${OS_ROOTDIR} \
+        --root "${OS_ROOTDIR}" \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils \
+		     file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
-    /bin/mkdir -p ${OS_ROOTDIR}/proc
-    /bin/mkdir -p ${OS_ROOTDIR}/root
-    /bin/mkdir -p ${OS_ROOTDIR}/etc/apk
-    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  ${OS_ROOTDIR}/etc/apk/repositories
+    /bin/mkdir -p "${OS_ROOTDIR}/proc"
+    /bin/mkdir -p "${OS_ROOTDIR}/root"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/apk"
+    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  "${OS_ROOTDIR}/etc/apk/repositories"
 }
 
 alpine36_build_fakechroot()
@@ -5661,12 +7767,12 @@ alpine38_setup()
     if [ -e "${APK_TOOLS_DIR}/sbin" ] ; then
         echo "apk-tools already installed : ${APK_TOOLS_DIR}"
     else
-        /bin/rm -f ${APK_TOOLS}
-        mkdir ${APK_TOOLS_DIR}
+        /bin/rm -f "${APK_TOOLS}"
+        mkdir "${APK_TOOLS_DIR}"
         local APK_TOOLS_URL="${ALPINE_MIRROR}/${OS_RELVER}/main/${OS_ARCH}/${APK_TOOLS}"
         echo "download apk-tools : ${APK_TOOLS_URL}"
-	(cd ${APK_TOOLS_DIR}; curl ${APK_TOOLS_URL} > ${APK_TOOLS})
-	(cd ${APK_TOOLS_DIR}; tar xzvf ${APK_TOOLS})
+	(cd "${APK_TOOLS_DIR}"; curl "${APK_TOOLS_URL}" > "${APK_TOOLS}")
+	(cd "${APK_TOOLS_DIR}"; tar xzvf "${APK_TOOLS}")
         if [ ! -e "${APK_TOOLS_DIR}/sbin" ] ; then
             echo "apk-tools install failed: ${APK_TOOLS_DIR}"
             exit
@@ -5675,20 +7781,20 @@ alpine38_setup()
 
     SUDO=sudo
 
-    $SUDO ${APK_TOOLS_DIR}/sbin/apk.static \
-        -X ${ALPINE_MIRROR}/${OS_RELVER}/main \
+    $SUDO "${APK_TOOLS_DIR}/sbin/apk.static" \
+        -X "${ALPINE_MIRROR}/${OS_RELVER}/main" \
         -U \
         --allow-untrusted \
-        --root ${OS_ROOTDIR} \
+        --root "${OS_ROOTDIR}" \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
                      libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
-    /bin/mkdir -p ${OS_ROOTDIR}/proc
-    /bin/mkdir -p ${OS_ROOTDIR}/root
-    /bin/mkdir -p ${OS_ROOTDIR}/etc/apk
-    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  ${OS_ROOTDIR}/etc/apk/repositories
+    /bin/mkdir -p "${OS_ROOTDIR}/proc"
+    /bin/mkdir -p "${OS_ROOTDIR}/root"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/apk"
+    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  "${OS_ROOTDIR}/etc/apk/repositories"
 }
 
 alpine38_build_fakechroot()
@@ -5761,12 +7867,12 @@ alpine39_setup()
     if [ -e "${APK_TOOLS_DIR}/sbin" ] ; then
         echo "apk-tools already installed : ${APK_TOOLS_DIR}"
     else
-        /bin/rm -f ${APK_TOOLS}
-        mkdir ${APK_TOOLS_DIR}
+        /bin/rm -f "${APK_TOOLS}"
+        mkdir "${APK_TOOLS_DIR}"
         local APK_TOOLS_URL="${ALPINE_MIRROR}/${OS_RELVER}/main/${OS_ARCH}/${APK_TOOLS}"
         echo "download apk-tools : ${APK_TOOLS_URL}"
-	(cd ${APK_TOOLS_DIR}; curl ${APK_TOOLS_URL} > ${APK_TOOLS})
-	(cd ${APK_TOOLS_DIR}; tar xzvf ${APK_TOOLS})
+	(cd "${APK_TOOLS_DIR}"; curl "${APK_TOOLS_URL}" > "${APK_TOOLS}")
+	(cd "${APK_TOOLS_DIR}"; tar xzvf "${APK_TOOLS}")
         if [ ! -e "${APK_TOOLS_DIR}/sbin" ] ; then
             echo "apk-tools install failed: ${APK_TOOLS_DIR}"
             exit
@@ -5775,20 +7881,20 @@ alpine39_setup()
 
     SUDO=sudo
 
-    $SUDO ${APK_TOOLS_DIR}/sbin/apk.static \
-        -X ${ALPINE_MIRROR}/${OS_RELVER}/main \
+    $SUDO "${APK_TOOLS_DIR}/sbin/apk.static" \
+        -X "${ALPINE_MIRROR}/${OS_RELVER}/main" \
         -U \
         --allow-untrusted \
-        --root ${OS_ROOTDIR} \
+        --root "${OS_ROOTDIR}" \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
                      libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
-    /bin/mkdir -p ${OS_ROOTDIR}/proc
-    /bin/mkdir -p ${OS_ROOTDIR}/root
-    /bin/mkdir -p ${OS_ROOTDIR}/etc/apk
-    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  ${OS_ROOTDIR}/etc/apk/repositories
+    /bin/mkdir -p "${OS_ROOTDIR}/proc"
+    /bin/mkdir -p "${OS_ROOTDIR}/root"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/apk"
+    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  "${OS_ROOTDIR}/etc/apk/repositories"
 }
 
 alpine39_build_fakechroot()
@@ -5862,12 +7968,12 @@ alpine310_setup()
     if [ -e "${APK_TOOLS_DIR}/sbin" ] ; then
         echo "apk-tools already installed : ${APK_TOOLS_DIR}"
     else
-        /bin/rm -f ${APK_TOOLS}
-        mkdir ${APK_TOOLS_DIR}
+        /bin/rm -f "${APK_TOOLS}"
+        mkdir "${APK_TOOLS_DIR}"
         local APK_TOOLS_URL="${ALPINE_MIRROR}/${OS_RELVER}/main/${OS_ARCH}/${APK_TOOLS}"
         echo "download apk-tools : ${APK_TOOLS_URL}"
-	(cd ${APK_TOOLS_DIR}; curl ${APK_TOOLS_URL} > ${APK_TOOLS})
-	(cd ${APK_TOOLS_DIR}; tar xzvf ${APK_TOOLS})
+	(cd "${APK_TOOLS_DIR}"; curl "${APK_TOOLS_URL}" > "${APK_TOOLS}")
+	(cd "${APK_TOOLS_DIR}"; tar xzvf "${APK_TOOLS}")
         if [ ! -e "${APK_TOOLS_DIR}/sbin" ] ; then
             echo "apk-tools install failed: ${APK_TOOLS_DIR}"
             exit
@@ -5876,20 +7982,20 @@ alpine310_setup()
 
     SUDO=sudo
 
-    $SUDO ${APK_TOOLS_DIR}/sbin/apk.static \
-        -X ${ALPINE_MIRROR}/${OS_RELVER}/main \
+    $SUDO "${APK_TOOLS_DIR}/sbin/apk.static" \
+        -X "${ALPINE_MIRROR}/${OS_RELVER}/main" \
         -U \
         --allow-untrusted \
-        --root ${OS_ROOTDIR} \
+        --root "${OS_ROOTDIR}" \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
                      libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
-    /bin/mkdir -p ${OS_ROOTDIR}/proc
-    /bin/mkdir -p ${OS_ROOTDIR}/root
-    /bin/mkdir -p ${OS_ROOTDIR}/etc/apk
-    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  ${OS_ROOTDIR}/etc/apk/repositories
+    /bin/mkdir -p "${OS_ROOTDIR}/proc"
+    /bin/mkdir -p "${OS_ROOTDIR}/root"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/apk"
+    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  "${OS_ROOTDIR}/etc/apk/repositories"
 }
 
 alpine310_build_fakechroot()
@@ -5963,12 +8069,12 @@ alpine311_setup()
     if [ -e "${APK_TOOLS_DIR}/sbin" ] ; then
         echo "apk-tools already installed : ${APK_TOOLS_DIR}"
     else
-        /bin/rm -f ${APK_TOOLS}
-        mkdir ${APK_TOOLS_DIR}
+        /bin/rm -f "${APK_TOOLS}"
+        mkdir "${APK_TOOLS_DIR}"
         local APK_TOOLS_URL="${ALPINE_MIRROR}/${OS_RELVER}/main/${OS_ARCH}/${APK_TOOLS}"
         echo "download apk-tools : ${APK_TOOLS_URL}"
-	(cd ${APK_TOOLS_DIR}; curl ${APK_TOOLS_URL} > ${APK_TOOLS})
-	(cd ${APK_TOOLS_DIR}; tar xzvf ${APK_TOOLS})
+	(cd "${APK_TOOLS_DIR}"; curl "${APK_TOOLS_URL}" > "${APK_TOOLS}")
+	(cd "${APK_TOOLS_DIR}"; tar xzvf "${APK_TOOLS}")
         if [ ! -e "${APK_TOOLS_DIR}/sbin" ] ; then
             echo "apk-tools install failed: ${APK_TOOLS_DIR}"
             exit
@@ -5977,20 +8083,20 @@ alpine311_setup()
 
     SUDO=sudo
 
-    $SUDO ${APK_TOOLS_DIR}/sbin/apk.static \
-        -X ${ALPINE_MIRROR}/${OS_RELVER}/main \
+    $SUDO "${APK_TOOLS_DIR}/sbin/apk.static" \
+        -X "${ALPINE_MIRROR}/${OS_RELVER}/main" \
         -U \
         --allow-untrusted \
-        --root ${OS_ROOTDIR} \
+        --root "${OS_ROOTDIR}" \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
                      libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
-    /bin/mkdir -p ${OS_ROOTDIR}/proc
-    /bin/mkdir -p ${OS_ROOTDIR}/root
-    /bin/mkdir -p ${OS_ROOTDIR}/etc/apk
-    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  ${OS_ROOTDIR}/etc/apk/repositories
+    /bin/mkdir -p "${OS_ROOTDIR}/proc"
+    /bin/mkdir -p "${OS_ROOTDIR}/root"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/apk"
+    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  "${OS_ROOTDIR}/etc/apk/repositories"
 }
 
 alpine311_build_fakechroot()
@@ -6064,12 +8170,12 @@ alpine312_setup()
     if [ -e "${APK_TOOLS_DIR}/sbin" ] ; then
         echo "apk-tools already installed : ${APK_TOOLS_DIR}"
     else
-        /bin/rm -f ${APK_TOOLS}
-        mkdir ${APK_TOOLS_DIR}
+        /bin/rm -f "${APK_TOOLS}"
+        mkdir "${APK_TOOLS_DIR}"
         local APK_TOOLS_URL="${ALPINE_MIRROR}/${OS_RELVER}/main/${OS_ARCH}/${APK_TOOLS}"
         echo "download apk-tools : ${APK_TOOLS_URL}"
-	(cd ${APK_TOOLS_DIR}; curl ${APK_TOOLS_URL} > ${APK_TOOLS})
-	(cd ${APK_TOOLS_DIR}; tar xzvf ${APK_TOOLS})
+	(cd "${APK_TOOLS_DIR}"; curl "${APK_TOOLS_URL}" > "${APK_TOOLS}")
+	(cd "${APK_TOOLS_DIR}"; tar xzvf "${APK_TOOLS}")
         if [ ! -e "${APK_TOOLS_DIR}/sbin" ] ; then
             echo "apk-tools install failed: ${APK_TOOLS_DIR}"
             exit
@@ -6078,20 +8184,21 @@ alpine312_setup()
 
     SUDO=sudo
 
-    $SUDO ${APK_TOOLS_DIR}/sbin/apk.static \
-        -X ${ALPINE_MIRROR}/${OS_RELVER}/main \
+    $SUDO "${APK_TOOLS_DIR}/sbin/apk.static" \
+        -X "${ALPINE_MIRROR}/${OS_RELVER}/main" \
         -U \
         --allow-untrusted \
-        --root ${OS_ROOTDIR} \
+        --root "${OS_ROOTDIR}" \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils \
+		     file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
-    /bin/mkdir -p ${OS_ROOTDIR}/proc
-    /bin/mkdir -p ${OS_ROOTDIR}/root
-    /bin/mkdir -p ${OS_ROOTDIR}/etc/apk
-    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  ${OS_ROOTDIR}/etc/apk/repositories
+    /bin/mkdir -p "${OS_ROOTDIR}/proc"
+    /bin/mkdir -p "${OS_ROOTDIR}/root"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/apk"
+    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  "${OS_ROOTDIR}/etc/apk/repositories"
 }
 
 alpine312_build_fakechroot()
@@ -6165,12 +8272,12 @@ alpine313_setup()
     if [ -e "${APK_TOOLS_DIR}/sbin" ] ; then
         echo "apk-tools already installed : ${APK_TOOLS_DIR}"
     else
-        /bin/rm -f ${APK_TOOLS}
-        mkdir ${APK_TOOLS_DIR}
+        /bin/rm -f "${APK_TOOLS}"
+        mkdir "${APK_TOOLS_DIR}"
         local APK_TOOLS_URL="${ALPINE_MIRROR}/${OS_RELVER}/main/${OS_ARCH}/${APK_TOOLS}"
         echo "download apk-tools : ${APK_TOOLS_URL}"
-	(cd ${APK_TOOLS_DIR}; curl ${APK_TOOLS_URL} > ${APK_TOOLS})
-	(cd ${APK_TOOLS_DIR}; tar xzvf ${APK_TOOLS})
+	(cd "${APK_TOOLS_DIR}"; curl "${APK_TOOLS_URL}" > "${APK_TOOLS}")
+	(cd "${APK_TOOLS_DIR}"; tar xzvf "${APK_TOOLS}")
         if [ ! -e "${APK_TOOLS_DIR}/sbin" ] ; then
             echo "apk-tools install failed: ${APK_TOOLS_DIR}"
             exit
@@ -6179,20 +8286,21 @@ alpine313_setup()
 
     SUDO=sudo
 
-    $SUDO ${APK_TOOLS_DIR}/sbin/apk.static \
-        -X ${ALPINE_MIRROR}/${OS_RELVER}/main \
+    $SUDO "${APK_TOOLS_DIR}/sbin/apk.static" \
+        -X "${ALPINE_MIRROR}/${OS_RELVER}/main" \
         -U \
         --allow-untrusted \
-        --root ${OS_ROOTDIR} \
+        --root "${OS_ROOTDIR}" \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils \
+		     file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
-    /bin/mkdir -p ${OS_ROOTDIR}/proc
-    /bin/mkdir -p ${OS_ROOTDIR}/root
-    /bin/mkdir -p ${OS_ROOTDIR}/etc/apk
-    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  ${OS_ROOTDIR}/etc/apk/repositories
+    /bin/mkdir -p "${OS_ROOTDIR}/proc"
+    /bin/mkdir -p "${OS_ROOTDIR}/root"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/apk"
+    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  "${OS_ROOTDIR}/etc/apk/repositories"
 }
 
 alpine313_build_fakechroot()
@@ -6266,12 +8374,12 @@ alpine314_setup()
     if [ -e "${APK_TOOLS_DIR}/sbin" ] ; then
         echo "apk-tools already installed : ${APK_TOOLS_DIR}"
     else
-        /bin/rm -f ${APK_TOOLS}
-        mkdir ${APK_TOOLS_DIR}
+        /bin/rm -f "${APK_TOOLS}"
+        mkdir "${APK_TOOLS_DIR}"
         local APK_TOOLS_URL="${ALPINE_MIRROR}/${OS_RELVER}/main/${OS_ARCH}/${APK_TOOLS}"
         echo "download apk-tools : ${APK_TOOLS_URL}"
-	(cd ${APK_TOOLS_DIR}; curl ${APK_TOOLS_URL} > ${APK_TOOLS})
-	(cd ${APK_TOOLS_DIR}; tar xzvf ${APK_TOOLS})
+	(cd "${APK_TOOLS_DIR}"; curl "${APK_TOOLS_URL}" > "${APK_TOOLS}")
+	(cd "${APK_TOOLS_DIR}"; tar xzvf "${APK_TOOLS}")
         if [ ! -e "${APK_TOOLS_DIR}/sbin" ] ; then
             echo "apk-tools install failed: ${APK_TOOLS_DIR}"
             exit
@@ -6280,20 +8388,21 @@ alpine314_setup()
 
     SUDO=sudo
 
-    $SUDO ${APK_TOOLS_DIR}/sbin/apk.static \
-        -X ${ALPINE_MIRROR}/${OS_RELVER}/main \
+    $SUDO "${APK_TOOLS_DIR}/sbin/apk.static" \
+        -X "${ALPINE_MIRROR}/${OS_RELVER}/main" \
         -U \
         --allow-untrusted \
-        --root ${OS_ROOTDIR} \
+        --root "${OS_ROOTDIR}" \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils \
+		     file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
-    /bin/mkdir -p ${OS_ROOTDIR}/proc
-    /bin/mkdir -p ${OS_ROOTDIR}/root
-    /bin/mkdir -p ${OS_ROOTDIR}/etc/apk
-    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  ${OS_ROOTDIR}/etc/apk/repositories
+    /bin/mkdir -p "${OS_ROOTDIR}/proc"
+    /bin/mkdir -p "${OS_ROOTDIR}/root"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/apk"
+    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  "${OS_ROOTDIR}/etc/apk/repositories"
 }
 
 alpine314_build_fakechroot()
@@ -6309,10 +8418,12 @@ alpine314_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6369,12 +8480,12 @@ alpine315_setup()
     if [ -e "${APK_TOOLS_DIR}/sbin" ] ; then
         echo "apk-tools already installed : ${APK_TOOLS_DIR}"
     else
-        /bin/rm -f ${APK_TOOLS}
-        mkdir ${APK_TOOLS_DIR}
+        /bin/rm -f "${APK_TOOLS}"
+        mkdir "${APK_TOOLS_DIR}"
         local APK_TOOLS_URL="${ALPINE_MIRROR}/${OS_RELVER}/main/${OS_ARCH}/${APK_TOOLS}"
         echo "download apk-tools : ${APK_TOOLS_URL}"
-	(cd ${APK_TOOLS_DIR}; curl ${APK_TOOLS_URL} > ${APK_TOOLS})
-	(cd ${APK_TOOLS_DIR}; tar xzvf ${APK_TOOLS})
+	(cd "${APK_TOOLS_DIR}"; curl "${APK_TOOLS_URL}" > "${APK_TOOLS}")
+	(cd "${APK_TOOLS_DIR}"; tar xzvf "${APK_TOOLS}")
         if [ ! -e "${APK_TOOLS_DIR}/sbin" ] ; then
             echo "apk-tools install failed: ${APK_TOOLS_DIR}"
             exit
@@ -6383,20 +8494,21 @@ alpine315_setup()
 
     SUDO=sudo
 
-    $SUDO ${APK_TOOLS_DIR}/sbin/apk.static \
-        -X ${ALPINE_MIRROR}/${OS_RELVER}/main \
+    $SUDO "${APK_TOOLS_DIR}/sbin/apk.static" \
+        -X "${ALPINE_MIRROR}/${OS_RELVER}/main" \
         -U \
         --allow-untrusted \
-        --root ${OS_ROOTDIR} \
+        --root "${OS_ROOTDIR}" \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils \
+		     file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
-    /bin/mkdir -p ${OS_ROOTDIR}/proc
-    /bin/mkdir -p ${OS_ROOTDIR}/root
-    /bin/mkdir -p ${OS_ROOTDIR}/etc/apk
-    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  ${OS_ROOTDIR}/etc/apk/repositories
+    /bin/mkdir -p "${OS_ROOTDIR}/proc"
+    /bin/mkdir -p "${OS_ROOTDIR}/root"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/apk"
+    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  "${OS_ROOTDIR}/etc/apk/repositories"
 }
 
 alpine315_build_fakechroot()
@@ -6412,10 +8524,12 @@ alpine315_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6472,12 +8586,12 @@ alpine316_setup()
     if [ -e "${APK_TOOLS_DIR}/sbin" ] ; then
         echo "apk-tools already installed : ${APK_TOOLS_DIR}"
     else
-        /bin/rm -f ${APK_TOOLS}
-        mkdir ${APK_TOOLS_DIR}
+        /bin/rm -f "${APK_TOOLS}"
+        mkdir "${APK_TOOLS_DIR}"
         local APK_TOOLS_URL="${ALPINE_MIRROR}/${OS_RELVER}/main/${OS_ARCH}/${APK_TOOLS}"
         echo "download apk-tools : ${APK_TOOLS_URL}"
-	(cd ${APK_TOOLS_DIR}; curl ${APK_TOOLS_URL} > ${APK_TOOLS})
-	(cd ${APK_TOOLS_DIR}; tar xzvf ${APK_TOOLS})
+	(cd "${APK_TOOLS_DIR}"; curl "${APK_TOOLS_URL}" > "${APK_TOOLS}")
+	(cd "${APK_TOOLS_DIR}"; tar xzvf "${APK_TOOLS}")
         if [ ! -e "${APK_TOOLS_DIR}/sbin" ] ; then
             echo "apk-tools install failed: ${APK_TOOLS_DIR}"
             exit
@@ -6486,20 +8600,21 @@ alpine316_setup()
 
     SUDO=sudo
 
-    $SUDO ${APK_TOOLS_DIR}/sbin/apk.static \
-        -X ${ALPINE_MIRROR}/${OS_RELVER}/main \
+    $SUDO "${APK_TOOLS_DIR}/sbin/apk.static" \
+        -X "${ALPINE_MIRROR}/${OS_RELVER}/main" \
         -U \
         --allow-untrusted \
-        --root ${OS_ROOTDIR} \
+        --root "${OS_ROOTDIR}" \
         --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
-                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils file
+                     libbsd libbsd-dev fts fts-dev libconfig-dev musl-dev bash diffutils \
+		     file
 
     $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
     $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
-    /bin/mkdir -p ${OS_ROOTDIR}/proc
-    /bin/mkdir -p ${OS_ROOTDIR}/root
-    /bin/mkdir -p ${OS_ROOTDIR}/etc/apk
-    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  ${OS_ROOTDIR}/etc/apk/repositories
+    /bin/mkdir -p "${OS_ROOTDIR}/proc"
+    /bin/mkdir -p "${OS_ROOTDIR}/root"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/apk"
+    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  "${OS_ROOTDIR}/etc/apk/repositories"
 }
 
 alpine316_build_fakechroot()
@@ -6515,10 +8630,12 @@ alpine316_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6553,6 +8670,222 @@ EOF_alpine316_fakechroot
 
 
 # #############################################################################
+# Alpine 3.17.x
+# #############################################################################
+
+alpine317_setup()
+{
+    echo "alpine317_setup : $1"
+    local ALPINE_MIRROR="http://dl-5.alpinelinux.org/alpine"
+    local APK_TOOLS="apk-tools-static-2.12.9-r3.apk"
+    local APK_TOOLS_DIR="${BUILD_DIR}/apk-tools-2.12.9-r3"
+    local OS_ARCH="$1"
+    local OS_NAME="alpine"
+    local OS_RELVER="v3.17"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/etc/alpine-release" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    if [ -e "${APK_TOOLS_DIR}/sbin" ] ; then
+        echo "apk-tools already installed : ${APK_TOOLS_DIR}"
+    else
+        /bin/rm -f "${APK_TOOLS}"
+        mkdir "${APK_TOOLS_DIR}"
+        local APK_TOOLS_URL="${ALPINE_MIRROR}/${OS_RELVER}/main/${OS_ARCH}/${APK_TOOLS}"
+        echo "download apk-tools : ${APK_TOOLS_URL}"
+	(cd "${APK_TOOLS_DIR}"; curl "${APK_TOOLS_URL}" > "${APK_TOOLS}")
+	(cd "${APK_TOOLS_DIR}"; tar xzvf "${APK_TOOLS}")
+        if [ ! -e "${APK_TOOLS_DIR}/sbin" ] ; then
+            echo "apk-tools install failed: ${APK_TOOLS_DIR}"
+            exit
+        fi
+    fi
+
+    SUDO=sudo
+
+    set -x
+    $SUDO "${APK_TOOLS_DIR}/sbin/apk.static" \
+        -X "${ALPINE_MIRROR}/${OS_RELVER}/main" \
+        -U \
+        --allow-untrusted \
+        --root "${OS_ROOTDIR}" \
+        --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
+                     libbsd libbsd-dev musl-fts musl-fts-dev libconfig-dev musl-dev bash \
+		     diffutils file
+    set +x
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
+    $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
+    /bin/mkdir -p "${OS_ROOTDIR}/proc"
+    /bin/mkdir -p "${OS_ROOTDIR}/root"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/apk"
+    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  "${OS_ROOTDIR}/etc/apk/repositories"
+}
+
+alpine317_build_fakechroot()
+{
+    echo "alpine317_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="alpine"
+    local OS_RELVER="v3.17"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-Alpine-3.17.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-Alpine-3.17.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_alpine317_fakechroot'
+# BUILD FAKECHROOT
+export SHELL=/bin/bash
+export CONFIG_SHELL=/bin/bash
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib
+cd /fakechroot
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-Alpine-3.17.so
+make clean
+EOF_alpine317_fakechroot
+    set +xv
+}
+
+
+# #############################################################################
+# Alpine 3.18.x
+# #############################################################################
+
+alpine318_setup()
+{
+    echo "alpine318_setup : $1"
+    local ALPINE_MIRROR="http://dl-5.alpinelinux.org/alpine"
+    local APK_TOOLS="apk-tools-static-2.12.9-r3.apk"
+    local APK_TOOLS_DIR="${BUILD_DIR}/apk-tools-2.12.9-r3"
+    local OS_ARCH="$1"
+    local OS_NAME="alpine"
+    local OS_RELVER="v3.18"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/etc/alpine-release" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    if [ -e "${APK_TOOLS_DIR}/sbin" ] ; then
+        echo "apk-tools already installed : ${APK_TOOLS_DIR}"
+    else
+        /bin/rm -f "${APK_TOOLS}"
+        mkdir "${APK_TOOLS_DIR}"
+        local APK_TOOLS_URL="${ALPINE_MIRROR}/${OS_RELVER}/main/${OS_ARCH}/${APK_TOOLS}"
+        echo "download apk-tools : ${APK_TOOLS_URL}"
+	(cd "${APK_TOOLS_DIR}"; curl "${APK_TOOLS_URL}" > "${APK_TOOLS}")
+	(cd "${APK_TOOLS_DIR}"; tar xzvf "${APK_TOOLS}")
+        if [ ! -e "${APK_TOOLS_DIR}/sbin" ] ; then
+            echo "apk-tools install failed: ${APK_TOOLS_DIR}"
+            exit
+        fi
+    fi
+
+    SUDO=sudo
+
+    set -x
+    $SUDO "${APK_TOOLS_DIR}/sbin/apk.static" \
+        -X "${ALPINE_MIRROR}/${OS_RELVER}/main" \
+        -U \
+        --allow-untrusted \
+        --root "${OS_ROOTDIR}" \
+        --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
+                     libbsd libbsd-dev musl-fts musl-fts-dev libconfig-dev musl-dev bash \
+		     diffutils file
+    set +x
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
+    $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
+    /bin/mkdir -p "${OS_ROOTDIR}/proc"
+    /bin/mkdir -p "${OS_ROOTDIR}/root"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/apk"
+    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  "${OS_ROOTDIR}/etc/apk/repositories"
+}
+
+alpine318_build_fakechroot()
+{
+    echo "alpine318_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="alpine"
+    local OS_RELVER="v3.18"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+        PROOT="$S_PROOT_DIR/proot-x86_64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-Alpine-3.18.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-Alpine-3.18.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_alpine318_fakechroot'
+# BUILD FAKECHROOT
+export SHELL=/bin/bash
+export CONFIG_SHELL=/bin/bash
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib
+cd /fakechroot
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-Alpine-3.18.so
+make clean
+EOF_alpine318_fakechroot
+    set +xv
+}
+
+
+# #############################################################################
 # Nix using chroot
 # #############################################################################
 
@@ -6575,10 +8908,10 @@ nix_setup()
     /bin/mkdir -p "${OS_ROOTDIR}/crun"
     #/bin/mkdir -p "${OS_ROOTDIR}/etc"
 
-    curl -L https://nixos.org/nix/install > $OS_ROOTDIR/nix_installer.sh
+    curl -L https://nixos.org/nix/install > "$OS_ROOTDIR/nix_installer.sh"
 
     /bin/rm -f "${OS_ROOTDIR}/etc/resolv.conf"
-    /bin/cp -f /etc/resolv.conf "${OS_ROOTDIR}/etc"	    
+    /bin/cp -f /etc/resolv.conf "${OS_ROOTDIR}/etc"
     $SUDO mount --bind /dev "${OS_ROOTDIR}/dev"	    
     $SUDO mount --bind /proc "${OS_ROOTDIR}/proc"	    
     $SUDO mount --bind /sys "${OS_ROOTDIR}/sys"	    
@@ -6586,7 +8919,7 @@ nix_setup()
     #$SUDO mount -t devpts none "${OS_ROOTDIR}/dev/pts" -o ptmxmode=0666,newinstance
 
     set -xv
-    $SUDO /usr/sbin/chroot --userspec=$USER ${OS_ROOTDIR} /bin/bash <<'EOF_nix_setup_1'
+    $SUDO /usr/sbin/chroot --userspec="$USER" "${OS_ROOTDIR}" /bin/bash <<'EOF_nix_setup_1'
 export HOME=/home/user
 export USER=user
 export LOGNAME=user
@@ -6628,7 +8961,7 @@ nix_build_crun()
     $SUDO mount --bind /dev/pts "${OS_ROOTDIR}/dev/pts"
     #$SUDO mount -t devpts none "${OS_ROOTDIR}/dev/pts" -o ptmxmode=0666,newinstance
     set -xv
-    $SUDO /usr/sbin/chroot --userspec=$USER ${OS_ROOTDIR} /bin/bash <<'EOF_nix_crun_1'
+    $SUDO /usr/sbin/chroot --userspec="$USER" "${OS_ROOTDIR}" /bin/bash <<'EOF_nix_crun_1'
 export HOME=/home/user
 export USER=user
 export LOGNAME=user
@@ -6666,169 +8999,47 @@ ostree_delete()
 # CREATE TARBALL PACKAGE
 # #############################################################################
 
+copy_file()
+{
+    local SOURCE_FILE="${BUILD_DIR}/${1}"
+    local TARGET_FILE="${PACKAGE_DIR}/udocker_dir/${2}"
+    if [ ! -f "$SOURCE_FILE" ] ; then
+        echo "ERROR: copy_file file not found : $SOURCE_FILE"
+        exit 1
+    fi
+    if [ -e "$TARGET_FILE" ] ; then
+        echo "ERROR: copy_file target file already exists : $TARGET_FILE"
+        exit 1
+    fi
+    /bin/cp -f  "$SOURCE_FILE"  "$TARGET_FILE"
+}
+
+link_file()
+{
+    local SOURCE_FILE="${PACKAGE_DIR}/udocker_dir/${1}"
+    local TARGET_FILE="$2"
+    if [ ! -f "$SOURCE_FILE" ] ; then
+        echo "ERROR: link_file file not found : $SOURCE_FILE"
+        exit 1
+    fi
+    SOURCE_DIR=$(dirname "$SOURCE_FILE")
+    SOURCE_BASENAME=$(basename "$SOURCE_FILE")
+    TARGET_BASENAME=$(basename "$TARGET_FILE")
+    if [ -z "$SOURCE_DIR" ] || [ -z "$SOURCE_BASENAME" ] ; then
+	echo "ERROR: link_file directory or filename is empty : $SOURCE_FILE"
+	exit 1
+    fi
+    if [ -e "${SOURCE_DIR}/${TARGET_BASENAME}" ]; then
+	echo "ERROR: link_file target for link already exists : ${SOURCE_DIR}/${TARGET_BASENAME}"
+	exit 1
+    fi
+    ( cd "$SOURCE_DIR"; /bin/ln -s  "$SOURCE_BASENAME"  "$TARGET_BASENAME" )
+}
+
+
 create_package_tarball()
 {
     echo "create_package_tarball : $TARBALL_FILE"
-    if [ ! -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-30.bin" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/proot-source-x86/proot-Fedora-30.bin"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-30.bin" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/proot-source-x86_64/proot-Fedora-30.bin"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/proot-source-aarch64/proot-Fedora-31.bin" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/proot-source-aarch64/proot-Fedora-31.bin"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-25" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-25"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-25.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-25.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-29.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-29.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-30.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-30.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-31.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-31.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-32.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-32.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-33.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-33.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-34.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-34.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-35.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-35.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-36.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-36.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-6.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-6.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-7.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-7.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-8.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-8.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-9.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-9.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Rocky-8.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Rocky-8.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Rocky-9.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Rocky-9.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-AlmaLinux-9.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-AlmaLinux-9.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-12.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-12.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-14.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-14.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-16.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-16.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-18.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-18.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-19.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-19.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-20.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-20.so"
-        return
-    fi
-    #if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-21.so" ] ; then
-    #    echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-21.so"
-    #    return
-    #fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-22.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-22.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.6.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.6.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.8.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.8.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.9.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.9.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.10.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.10.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.11.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.11.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.12.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.12.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.13.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.13.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.14.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.14.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.15.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.15.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.16.so" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.16.so"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/runc-source-x86_64/runc" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/runc-source-x86_64/runc"
-        return
-    fi
-    if [ ! -f "${BUILD_DIR}/crun-source-x86_64/crun-nix-latest" ] ; then
-        echo "ERROR: failed to compile : ${BUILD_DIR}/crun-source-x86_64/crun-nix-latest"
-        return
-    fi
 
     if [ -n "$DEVEL3" ] ; then
         echo "$TARBALL_VERSION_P3"
@@ -6838,185 +9049,262 @@ create_package_tarball()
         echo "$TARBALL_VERSION_P2" > "${PACKAGE_DIR}/udocker_dir/lib/VERSION"
     fi
 
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-30.bin" \
-               "${PACKAGE_DIR}/udocker_dir/bin/proot-x86-4_8_0"
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-30.bin" \
-               "${PACKAGE_DIR}/udocker_dir/bin/proot-x86_64-4_8_0"
-    /bin/cp -f "${BUILD_DIR}/proot-source-aarch64/proot-Fedora-31.bin" \
-               "${PACKAGE_DIR}/udocker_dir/bin/proot-arm64-4_8_0"
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86/proot-Fedora-25.bin" \
-               "${PACKAGE_DIR}/udocker_dir/bin/proot-x86"
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/proot-Fedora-25.bin" \
-               "${PACKAGE_DIR}/udocker_dir/bin/proot-x86_64"
-    /bin/cp -f "${BUILD_DIR}/proot-source-x86_64/COPYING" \
-               "${PACKAGE_DIR}/udocker_dir/doc/COPYING.proot"
+    # documents ----------------------------------------------------------------------------------------------
+    copy_file proot-source-x86_64/COPYING                                 doc/COPYING.proot
+    copy_file patchelf-source-x86_64/COPYING                              doc/COPYING.patchelf
+    copy_file fakechroot-source-glibc-x86_64/LICENSE                      doc/LICENSE.fakechroot
+    copy_file fakechroot-source-glibc-x86_64/COPYING                      doc/COPYING.fakechroot
+    copy_file runc-source-x86_64/LICENSE                                  doc/LICENSE.runc
+    copy_file crun-source-x86_64/COPYING                                  doc/COPYING.crun
 
-    /bin/cp -f "${BUILD_DIR}/patchelf-source-x86_64/patchelf-Fedora-25" \
-               "${PACKAGE_DIR}/udocker_dir/bin/patchelf-x86_64"
-    /bin/cp -f "${BUILD_DIR}/patchelf-source-x86_64/COPYING" \
-               "${PACKAGE_DIR}/udocker_dir/doc/COPYING.patchelf"
+    # x86 ----------------------------------------------------------------------------------------------------
+    copy_file proot-source-x86/proot-Fedora-25.bin                        bin/proot-x86
+    copy_file proot-source-x86/proot-Fedora-30.bin                        bin/proot-x86-4_8_0
 
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-25.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Fedora-25-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-29.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Fedora-29-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-30.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Fedora-30-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-31.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Fedora-31-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-32.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Fedora-32-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-33.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Fedora-33-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-34.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Fedora-34-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-35.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Fedora-35-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Fedora-36.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Fedora-36-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-6.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-CentOS-6-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-7.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-CentOS-7-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-8.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-CentOS-8-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-CentOS-9.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-CentOS-9-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Rocky-8.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Rocky-8-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Rocky-9.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Rocky-9-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-AlmaLinux-9.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-AlmaLinux-9-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-12.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-12-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-14.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-14-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-16.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-16-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-18.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-18-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-19.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-19-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-20.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-20-x86_64.so"
-    #/bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-21.so" \
-    #           "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-21-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-22.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Ubuntu-22-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.6.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Alpine-3.6-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.8.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Alpine-3.8-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.9.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Alpine-3.9-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.10.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Alpine-3.10-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.11.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Alpine-3.11-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.12.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Alpine-3.12-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.13.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Alpine-3.13-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.14.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Alpine-3.14-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.15.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Alpine-3.15-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.16.so" \
-               "${PACKAGE_DIR}/udocker_dir/lib/libfakechroot-Alpine-3.16-x86_64.so"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/LICENSE" \
-               "${PACKAGE_DIR}/udocker_dir/doc/LICENSE.fakechroot"
-    /bin/cp -f "${BUILD_DIR}/fakechroot-source-glibc-x86_64/COPYING" \
-               "${PACKAGE_DIR}/udocker_dir/doc/COPYING.fakechroot"
+    # armhf --------------------------------------------------------------------------------------------------
+    copy_file proot-source-armhf/proot-Debian-10.bin                      bin/proot-armhf
 
-    /bin/cp -f "${BUILD_DIR}/runc-source-x86_64/runc" \
-               "${PACKAGE_DIR}/udocker_dir/bin/runc-x86_64"
-    /bin/cp -f "${BUILD_DIR}/runc-source-x86_64/LICENSE" \
-               "${PACKAGE_DIR}/udocker_dir/doc/LICENSE.runc"
+    # armel --------------------------------------------------------------------------------------------------
+    copy_file proot-source-armel/proot-Debian-10.bin                      bin/proot-armel
 
-    /bin/cp -f "${BUILD_DIR}/crun-source-x86_64/crun-nix-latest" \
-               "${PACKAGE_DIR}/udocker_dir/bin/crun-x86_64"
-    /bin/cp -f "${BUILD_DIR}/crun-source-x86_64/COPYING" \
-               "${PACKAGE_DIR}/udocker_dir/doc/COPYING.crun"
+    # x86_64 -------------------------------------------------------------------------------------------------
+    copy_file proot-source-x86_64/proot-Fedora-25.bin                     bin/proot-x86_64
+    copy_file proot-source-x86_64/proot-Fedora-30.bin                     bin/proot-x86_64-4_8_0
 
-    ( cd "${PACKAGE_DIR}/udocker_dir/lib"; \
-        ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-x86_64.so ; \
-        ln -s libfakechroot-Fedora-25-x86_64.so libfakechroot-Fedora-18-x86_64.so ; \
-        ln -s libfakechroot-Fedora-25-x86_64.so libfakechroot-Fedora-19-x86_64.so ; \
-        ln -s libfakechroot-Fedora-25-x86_64.so libfakechroot-Fedora-20-x86_64.so ; \
-        ln -s libfakechroot-Fedora-25-x86_64.so libfakechroot-Fedora-21-x86_64.so ; \
-        ln -s libfakechroot-Fedora-25-x86_64.so libfakechroot-Fedora-22-x86_64.so ; \
-        ln -s libfakechroot-Fedora-25-x86_64.so libfakechroot-Fedora-23-x86_64.so ; \
-        ln -s libfakechroot-Fedora-25-x86_64.so libfakechroot-Fedora-24-x86_64.so ; \
-        ln -s libfakechroot-Fedora-25-x86_64.so libfakechroot-Fedora-26-x86_64.so ; \
-        ln -s libfakechroot-Fedora-25-x86_64.so libfakechroot-Fedora-27-x86_64.so ; \
-        ln -s libfakechroot-Fedora-25-x86_64.so libfakechroot-Fedora-28-x86_64.so ; \
-        ln -s libfakechroot-Fedora-36-x86_64.so libfakechroot-Fedora-x86_64.so ; \
-        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-Red-4-x86_64.so ; \
-        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-Red-5-x86_64.so ; \
-        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-Red-6-x86_64.so ; \
-        ln -s libfakechroot-CentOS-7-x86_64.so  libfakechroot-Red-7-x86_64.so ; \
-        ln -s libfakechroot-Rocky-8-x86_64.so   libfakechroot-Red-8-x86_64.so ; \
-        ln -s libfakechroot-Rocky-9-x86_64.so   libfakechroot-Red-9-x86_64.so ; \
-        ln -s libfakechroot-Rocky-9-x86_64.so   libfakechroot-Red-x86_64.so ; \
-        ln -s libfakechroot-Rocky-9-x86_64.so   libfakechroot-Rocky-x86_64.so ; \
-        ln -s libfakechroot-Rocky-8-x86_64.so   libfakechroot-AlmaLinux-8-x86_64.so ; \
-        ln -s libfakechroot-AlmaLinux-9-x86_64.so libfakechroot-AlmaLinux-x86_64.so ; \
-        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-Scientific-4-x86_64.so ; \
-        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-Scientific-5-x86_64.so ; \
-        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-Scientific-6-x86_64.so ; \
-        ln -s libfakechroot-CentOS-7-x86_64.so  libfakechroot-Scientific-7-x86_64.so ; \
-        ln -s libfakechroot-CentOS-8-x86_64.so  libfakechroot-Scientific-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-12-x86_64.so libfakechroot-Debian-7-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-Debian-8-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-16-x86_64.so libfakechroot-Debian-9-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-19-x86_64.so libfakechroot-Debian-10-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-22-x86_64.so libfakechroot-Debian-11-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-22-x86_64.so libfakechroot-Debian-12-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-22-x86_64.so libfakechroot-Debian-x86_64.so ; \
-        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-CentOS-4-x86_64.so ; \
-        ln -s libfakechroot-CentOS-6-x86_64.so  libfakechroot-CentOS-5-x86_64.so ; \
-        ln -s libfakechroot-Centos-9-x86_64.so  libfakechroot-CentOS-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-12-x86_64.so libfakechroot-LinuxMint-10-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-12-x86_64.so libfakechroot-LinuxMint-11-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-12-x86_64.so libfakechroot-LinuxMint-12-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-LinuxMint-13-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-LinuxMint-14-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-16-x86_64.so libfakechroot-LinuxMint-15-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-16-x86_64.so libfakechroot-LinuxMint-16-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-18-x86_64.so libfakechroot-LinuxMint-17-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-18-x86_64.so libfakechroot-LinuxMint-18-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-19-x86_64.so libfakechroot-LinuxMint-19-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-20-x86_64.so libfakechroot-LinuxMint-20-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-22-x86_64.so libfakechroot-LinuxMint-21-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-22-x86_64.so libfakechroot-LinuxMint-22-x86_64.so ; \
-	ln -s libfakechroot-Ubuntu-22-x86_64.so libfakechroot-LinuxMint-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-Ubuntu-9-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-Ubuntu-10-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-Ubuntu-11-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-14-x86_64.so libfakechroot-Ubuntu-13-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-16-x86_64.so libfakechroot-Ubuntu-15-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-18-x86_64.so libfakechroot-Ubuntu-17-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-22-x86_64.so libfakechroot-Ubuntu-21-x86_64.so ; \
-        ln -s libfakechroot-Ubuntu-22-x86_64.so libfakechroot-Ubuntu-x86_64.so ; \
-        ln -s libfakechroot-Alpine-3.6-x86_64.so libfakechroot-Alpine-3.0-x86_64.so ; \
-        ln -s libfakechroot-Alpine-3.6-x86_64.so libfakechroot-Alpine-3.1-x86_64.so ; \
-        ln -s libfakechroot-Alpine-3.6-x86_64.so libfakechroot-Alpine-3.2-x86_64.so ; \
-        ln -s libfakechroot-Alpine-3.6-x86_64.so libfakechroot-Alpine-3.3-x86_64.so ; \
-        ln -s libfakechroot-Alpine-3.6-x86_64.so libfakechroot-Alpine-3.4-x86_64.so ; \
-        ln -s libfakechroot-Alpine-3.6-x86_64.so libfakechroot-Alpine-3.5-x86_64.so ; \
-        ln -s libfakechroot-Alpine-3.16-x86_64.so libfakechroot-Alpine-x86_64.so )
+    copy_file patchelf-source-x86_64/patchelf-Fedora-25                   bin/patchelf-x86_64
+   #copy_file patchelf-source-x86_64/patchelf-Fedora-38                   bin/patchelf-x86_64
 
+    copy_file runc-source-x86_64/runc-Ubuntu-22.bin                       bin/runc-x86_64
+    copy_file crun-source-x86_64/crun-nix-latest                          bin/crun-x86_64
+
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Fedora-25.so   lib/libfakechroot-Fedora-25-x86_64.so
+    link_file lib/libfakechroot-Fedora-25-x86_64.so                       libfakechroot-Fedora-18-x86_64.so
+    link_file lib/libfakechroot-Fedora-25-x86_64.so                       libfakechroot-Fedora-19-x86_64.so
+    link_file lib/libfakechroot-Fedora-25-x86_64.so                       libfakechroot-Fedora-20-x86_64.so
+    link_file lib/libfakechroot-Fedora-25-x86_64.so                       libfakechroot-Fedora-21-x86_64.so
+    link_file lib/libfakechroot-Fedora-25-x86_64.so                       libfakechroot-Fedora-22-x86_64.so
+    link_file lib/libfakechroot-Fedora-25-x86_64.so                       libfakechroot-Fedora-23-x86_64.so
+    link_file lib/libfakechroot-Fedora-25-x86_64.so                       libfakechroot-Fedora-24-x86_64.so
+    link_file lib/libfakechroot-Fedora-25-x86_64.so                       libfakechroot-Fedora-26-x86_64.so
+    link_file lib/libfakechroot-Fedora-25-x86_64.so                       libfakechroot-Fedora-27-x86_64.so
+    link_file lib/libfakechroot-Fedora-25-x86_64.so                       libfakechroot-Fedora-28-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Fedora-29.so   lib/libfakechroot-Fedora-29-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Fedora-30.so   lib/libfakechroot-Fedora-30-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Fedora-31.so   lib/libfakechroot-Fedora-31-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Fedora-32.so   lib/libfakechroot-Fedora-32-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Fedora-33.so   lib/libfakechroot-Fedora-33-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Fedora-34.so   lib/libfakechroot-Fedora-34-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Fedora-35.so   lib/libfakechroot-Fedora-35-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Fedora-36.so   lib/libfakechroot-Fedora-36-x86_64.so
+    link_file lib/libfakechroot-Fedora-36-x86_64.so                       libfakechroot-Fedora-37-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Fedora-38.so   lib/libfakechroot-Fedora-38-x86_64.so
+    link_file lib/libfakechroot-Fedora-38-x86_64.so                       libfakechroot-Fedora-x86_64.so
+
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-CentOS-6.so    lib/libfakechroot-CentOS-6-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-CentOS-7.so    lib/libfakechroot-CentOS-7-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-CentOS-8.so    lib/libfakechroot-CentOS-8-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-CentOS-9.so    lib/libfakechroot-CentOS-9-x86_64.so
+    link_file lib/libfakechroot-CentOS-6-x86_64.so                        libfakechroot-CentOS-4-x86_64.so
+    link_file lib/libfakechroot-CentOS-6-x86_64.so                        libfakechroot-CentOS-5-x86_64.so
+    link_file lib/libfakechroot-CentOS-9-x86_64.so                        libfakechroot-CentOS-x86_64.so
+
+   #copy_file fakechroot-source-glibc-x86_64/libfakechroot-Rocky-8.so     lib/libfakechroot-Rocky-8-x86_64.so
+   #copy_file fakechroot-source-glibc-x86_64/libfakechroot-Rocky-9.so     lib/libfakechroot-Rocky-9-x86_64.so
+   #link_file fakechroot-source-glibc-x86_64/libfakechroot-Rocky-9.so     libfakechroot-Rocky-x86_64.so
+
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-AlmaLinux-8.so  lib/libfakechroot-AlmaLinux-8-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-AlmaLinux-9.so  lib/libfakechroot-AlmaLinux-9-x86_64.so
+    link_file lib/libfakechroot-AlmaLinux-9-x86_64.so                      libfakechroot-AlmaLinux-x86_64.so
+
+    link_file lib/libfakechroot-CentOS-6-x86_64.so                        libfakechroot-Red-4-x86_64.so
+    link_file lib/libfakechroot-CentOS-6-x86_64.so                        libfakechroot-Red-5-x86_64.so
+    link_file lib/libfakechroot-CentOS-6-x86_64.so                        libfakechroot-Red-6-x86_64.so
+    link_file lib/libfakechroot-CentOS-7-x86_64.so                        libfakechroot-Red-7-x86_64.so
+    link_file lib/libfakechroot-AlmaLinux-8-x86_64.so                     libfakechroot-Red-8-x86_64.so
+    link_file lib/libfakechroot-AlmaLinux-9-x86_64.so                     libfakechroot-Red-9-x86_64.so
+    link_file lib/libfakechroot-AlmaLinux-9-x86_64.so                     libfakechroot-Red-x86_64.so
+
+    link_file lib/libfakechroot-CentOS-6-x86_64.so                        libfakechroot-Scientific-4-x86_64.so
+    link_file lib/libfakechroot-CentOS-6-x86_64.so                        libfakechroot-Scientific-5-x86_64.so
+    link_file lib/libfakechroot-CentOS-6-x86_64.so                        libfakechroot-Scientific-6-x86_64.so
+    link_file lib/libfakechroot-CentOS-7-x86_64.so                        libfakechroot-Scientific-7-x86_64.so
+    link_file lib/libfakechroot-AlmaLinux-8-x86_64.so                     libfakechroot-Scientific-8-x86_64.so
+    link_file lib/libfakechroot-AlmaLinux-9-x86_64.so                     libfakechroot-Scientific-9-x86_64.so
+    link_file lib/libfakechroot-AlmaLinux-9-x86_64.so                     libfakechroot-Scientific-x86_64.so
+
+    link_file lib/libfakechroot-AlmaLinux-8-x86_64.so                     libfakechroot-Rocky-8-x86_64.so
+    link_file lib/libfakechroot-AlmaLinux-9-x86_64.so                     libfakechroot-Rocky-9-x86_64.so
+    link_file lib/libfakechroot-AlmaLinux-9-x86_64.so                     libfakechroot-Rocky-x86_64.so
+
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-12.so   lib/libfakechroot-Ubuntu-12-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-14.so   lib/libfakechroot-Ubuntu-14-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-14-x86_64.so                       libfakechroot-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-16.so   lib/libfakechroot-Ubuntu-16-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-18.so   lib/libfakechroot-Ubuntu-18-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-19.so   lib/libfakechroot-Ubuntu-19-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-20.so   lib/libfakechroot-Ubuntu-20-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-21.so   lib/libfakechroot-Ubuntu-21-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-22.so   lib/libfakechroot-Ubuntu-22-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Ubuntu-23.so   lib/libfakechroot-Ubuntu-23-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-12-x86_64.so                       libfakechroot-Ubuntu-9-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-12-x86_64.so                       libfakechroot-Ubuntu-10-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-12-x86_64.so                       libfakechroot-Ubuntu-11-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-14-x86_64.so                       libfakechroot-Ubuntu-13-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-16-x86_64.so                       libfakechroot-Ubuntu-15-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-18-x86_64.so                       libfakechroot-Ubuntu-17-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-23-x86_64.so                       libfakechroot-Ubuntu-x86_64.so
+
+    link_file lib/libfakechroot-Ubuntu-12-x86_64.so                       libfakechroot-Debian-7-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-14-x86_64.so                       libfakechroot-Debian-8-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-16-x86_64.so                       libfakechroot-Debian-9-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-19-x86_64.so                       libfakechroot-Debian-10-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-20-x86_64.so                       libfakechroot-Debian-11-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-23-x86_64.so                       libfakechroot-Debian-x86_64.so
+
+    link_file lib/libfakechroot-Ubuntu-12-x86_64.so                       libfakechroot-LinuxMint-10-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-12-x86_64.so                       libfakechroot-LinuxMint-11-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-12-x86_64.so                       libfakechroot-LinuxMint-12-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-14-x86_64.so                       libfakechroot-LinuxMint-13-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-14-x86_64.so                       libfakechroot-LinuxMint-14-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-16-x86_64.so                       libfakechroot-LinuxMint-15-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-16-x86_64.so                       libfakechroot-LinuxMint-16-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-18-x86_64.so                       libfakechroot-LinuxMint-17-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-18-x86_64.so                       libfakechroot-LinuxMint-18-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-19-x86_64.so                       libfakechroot-LinuxMint-19-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-20-x86_64.so                       libfakechroot-LinuxMint-20-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-21-x86_64.so                       libfakechroot-LinuxMint-21-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-22-x86_64.so                       libfakechroot-LinuxMint-22-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-23-x86_64.so                       libfakechroot-LinuxMint-23-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-23-x86_64.so                       libfakechroot-LinuxMint-x86_64.so
+
+    copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.6.so   lib/libfakechroot-Alpine-3.6-x86_64.so
+    copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.8.so   lib/libfakechroot-Alpine-3.8-x86_64.so
+    copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.9.so   lib/libfakechroot-Alpine-3.9-x86_64.so
+    copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.10.so  lib/libfakechroot-Alpine-3.10-x86_64.so
+    copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.11.so  lib/libfakechroot-Alpine-3.11-x86_64.so
+    copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.12.so  lib/libfakechroot-Alpine-3.12-x86_64.so
+    copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.13.so  lib/libfakechroot-Alpine-3.13-x86_64.so
+    copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.14.so  lib/libfakechroot-Alpine-3.14-x86_64.so
+    copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.15.so  lib/libfakechroot-Alpine-3.15-x86_64.so
+    copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.16.so  lib/libfakechroot-Alpine-3.16-x86_64.so
+    copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.17.so  lib/libfakechroot-Alpine-3.17-x86_64.so
+    copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.18.so  lib/libfakechroot-Alpine-3.18-x86_64.so
+    link_file lib/libfakechroot-Alpine-3.6-x86_64.so                      libfakechroot-Alpine-3.0-x86_64.so
+    link_file lib/libfakechroot-Alpine-3.6-x86_64.so                      libfakechroot-Alpine-3.1-x86_64.so
+    link_file lib/libfakechroot-Alpine-3.6-x86_64.so                      libfakechroot-Alpine-3.2-x86_64.so
+    link_file lib/libfakechroot-Alpine-3.6-x86_64.so                      libfakechroot-Alpine-3.3-x86_64.so
+    link_file lib/libfakechroot-Alpine-3.6-x86_64.so                      libfakechroot-Alpine-3.4-x86_64.so
+    link_file lib/libfakechroot-Alpine-3.6-x86_64.so                      libfakechroot-Alpine-3.5-x86_64.so
+    link_file lib/libfakechroot-Alpine-3.18-x86_64.so                     libfakechroot-Alpine-x86_64.so
+
+    # arch64 / amd64 -----------------------------------------------------------------------------------------
+    copy_file proot-source-aarch64/proot-Fedora-31.bin                      bin/proot-arm64-4_8_0
+    link_file bin/proot-arm64-4_8_0                                         proot-arm64
+    copy_file patchelf-source-aarch64/patchelf-AlmaLinux-9                  bin/patchelf-arm64
+    copy_file runc-source-aarch64/runc-Ubuntu-22.bin                        bin/runc-arm64
+
+    copy_file fakechroot-source-glibc-aarch64/libfakechroot-Fedora-36.so    lib/libfakechroot-Fedora-36-arm64.so
+    copy_file fakechroot-source-glibc-aarch64/libfakechroot-Fedora-38.so    lib/libfakechroot-Fedora-38-arm64.so
+    link_file lib/libfakechroot-Fedora-36-arm64.so                          libfakechroot-Fedora-37-arm64.so
+    link_file lib/libfakechroot-Fedora-38-arm64.so                          libfakechroot-Fedora-arm64.so
+
+    copy_file fakechroot-source-glibc-aarch64/libfakechroot-CentOS-7.so     lib/libfakechroot-CentOS-7-arm64.so
+    copy_file fakechroot-source-glibc-aarch64/libfakechroot-AlmaLinux-8.so  lib/libfakechroot-AlmaLinux-8-arm64.so
+    copy_file fakechroot-source-glibc-aarch64/libfakechroot-AlmaLinux-9.so  lib/libfakechroot-AlmaLinux-9-arm64.so
+
+    copy_file fakechroot-source-glibc-aarch64/libfakechroot-Ubuntu-16.so    lib/libfakechroot-Ubuntu-16-arm64.so
+    copy_file fakechroot-source-glibc-aarch64/libfakechroot-Ubuntu-18.so    lib/libfakechroot-Ubuntu-18-arm64.so
+    copy_file fakechroot-source-glibc-aarch64/libfakechroot-Ubuntu-20.so    lib/libfakechroot-Ubuntu-20-arm64.so
+    copy_file fakechroot-source-glibc-aarch64/libfakechroot-Ubuntu-22.so    lib/libfakechroot-Ubuntu-22-arm64.so
+    link_file lib/libfakechroot-Ubuntu-18-arm64.so                          libfakechroot-Ubuntu-17-arm64.so
+    link_file lib/libfakechroot-Ubuntu-20-arm64.so                          libfakechroot-Ubuntu-19-arm64.so
+    link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-Ubuntu-21-arm64.so
+    link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-Ubuntu-arm64.so
+
+    link_file lib/libfakechroot-Ubuntu-16-arm64.so                          libfakechroot-LinuxMint-16-arm64.so
+    link_file lib/libfakechroot-Ubuntu-18-arm64.so                          libfakechroot-LinuxMint-17-arm64.so
+    link_file lib/libfakechroot-Ubuntu-18-arm64.so                          libfakechroot-LinuxMint-18-arm64.so
+    link_file lib/libfakechroot-Ubuntu-20-arm64.so                          libfakechroot-LinuxMint-19-arm64.so
+    link_file lib/libfakechroot-Ubuntu-20-arm64.so                          libfakechroot-LinuxMint-20-arm64.so
+    link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-LinuxMint-21-arm64.so
+    link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-LinuxMint-22-arm64.so
+    link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-LinuxMint-arm64.so
+
+    link_file lib/libfakechroot-Ubuntu-16-arm64.so                          libfakechroot-Debian-9-arm64.so
+    link_file lib/libfakechroot-Ubuntu-18-arm64.so                          libfakechroot-Debian-10-arm64.so
+    link_file lib/libfakechroot-Ubuntu-20-arm64.so                          libfakechroot-Debian-11-arm64.so
+    link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-Debian-arm64.so
+
+    link_file lib/libfakechroot-AlmaLinux-8-arm64.so                        libfakechroot-CentOS-8-arm64.so
+    link_file lib/libfakechroot-AlmaLinux-9-arm64.so                        libfakechroot-CentOS-9-arm64.so
+    link_file lib/libfakechroot-AlmaLinux-9-arm64.so                        libfakechroot-CentOS-arm64.so
+
+    link_file lib/libfakechroot-AlmaLinux-8-arm64.so                        libfakechroot-Rocky-8-arm64.so
+    link_file lib/libfakechroot-AlmaLinux-9-arm64.so                        libfakechroot-Rocky-9-arm64.so
+    link_file lib/libfakechroot-AlmaLinux-9-arm64.so                        libfakechroot-Rocky-arm64.so
+
+    link_file lib/libfakechroot-AlmaLinux-8-arm64.so                        libfakechroot-Red-8-arm64.so
+    link_file lib/libfakechroot-AlmaLinux-9-arm64.so                        libfakechroot-Red-9-arm64.so
+    link_file lib/libfakechroot-AlmaLinux-9-arm64.so                        libfakechroot-Red-arm64.so
+
+    # ppc64le ------------------------------------------------------------------------------------------------
+    copy_file patchelf-source-ppc64le/patchelf-AlmaLinux-9                  bin/patchelf-ppc64le
+    copy_file runc-source-ppc64le/runc-Ubuntu-22.bin                        bin/runc-ppc64le
+
+    copy_file fakechroot-source-glibc-ppc64le/libfakechroot-CentOS-7.so     lib/libfakechroot-CentOS-7-ppc64le.so
+    copy_file fakechroot-source-glibc-ppc64le/libfakechroot-AlmaLinux-8.so  lib/libfakechroot-AlmaLinux-8-ppc64le.so
+    copy_file fakechroot-source-glibc-ppc64le/libfakechroot-AlmaLinux-9.so  lib/libfakechroot-AlmaLinux-9-ppc64le.so
+    copy_file fakechroot-source-glibc-ppc64le/libfakechroot-AlmaLinux-9.so  lib/libfakechroot-AlmaLinux-ppc64le.so
+
+    copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Fedora-38.so    lib/libfakechroot-Fedora-38-ppc64le.so
+    link_file lib/libfakechroot-Fedora-38-ppc64le.so                        libfakechroot-Fedora-ppc64le.so
+
+    copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Ubuntu-16.so    lib/libfakechroot-Ubuntu-16-ppc64le.so
+    copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Ubuntu-18.so    lib/libfakechroot-Ubuntu-18-ppc64le.so
+    copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Ubuntu-20.so    lib/libfakechroot-Ubuntu-20-ppc64le.so
+    copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Ubuntu-22.so    lib/libfakechroot-Ubuntu-22-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-18-ppc64le.so                        libfakechroot-Ubuntu-17-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-20-ppc64le.so                        libfakechroot-Ubuntu-19-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-Ubuntu-21-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-Ubuntu-ppc64le.so
+
+    link_file lib/libfakechroot-Ubuntu-16-ppc64le.so                        libfakechroot-LinuxMint-16-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-18-ppc64le.so                        libfakechroot-LinuxMint-17-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-18-ppc64le.so                        libfakechroot-LinuxMint-18-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-20-ppc64le.so                        libfakechroot-LinuxMint-19-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-20-ppc64le.so                        libfakechroot-LinuxMint-20-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-LinuxMint-21-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-LinuxMint-22-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-LinuxMint-ppc64le.so
+
+    link_file lib/libfakechroot-Ubuntu-16-ppc64le.so                        libfakechroot-Debian-9-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-18-ppc64le.so                        libfakechroot-Debian-10-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-20-ppc64le.so                        libfakechroot-Debian-11-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-Debian-ppc64le.so
+
+    link_file lib/libfakechroot-AlmaLinux-8-ppc64le.so                      libfakechroot-CentOS-8-ppc64le.so
+    link_file lib/libfakechroot-AlmaLinux-9-ppc64le.so                      libfakechroot-CentOS-9-ppc64le.so
+    link_file lib/libfakechroot-AlmaLinux-9-ppc64le.so                      libfakechroot-CentOS-ppc64le.so
+
+    link_file lib/libfakechroot-AlmaLinux-8-ppc64le.so                      libfakechroot-Rocky-8-ppc64le.so
+    link_file lib/libfakechroot-AlmaLinux-9-ppc64le.so                      libfakechroot-Rocky-9-ppc64le.so
+    link_file lib/libfakechroot-AlmaLinux-9-ppc64le.so                      libfakechroot-Rocky-ppc64le.so
+
+    link_file lib/libfakechroot-AlmaLinux-8-ppc64le.so                      libfakechroot-Red-8-ppc64le.so
+    link_file lib/libfakechroot-AlmaLinux-9-ppc64le.so                      libfakechroot-Red-9-ppc64le.so
+    link_file lib/libfakechroot-AlmaLinux-9-ppc64le.so                      libfakechroot-Red-ppc64le.so
+
+    # package ------------------------------------------------------------------------------------------------
     find "${PACKAGE_DIR}" -type d -exec /bin/chmod u=rwx,og=rx  {} \;
     find "${PACKAGE_DIR}" -type f -exec /bin/chmod u=+r+w,og=r  {} \;
     find "${PACKAGE_DIR}/udocker_dir/bin" -type f -exec /bin/chmod u=rwx,og=rx  {} \;
-    /bin/chmod u=rwx,og=rx ${PACKAGE_DIR}/setup.py
+    /bin/chmod u=rwx,og=rx "${PACKAGE_DIR}/setup.py"
     [ -e "${PACKAGE_DIR}/udocker" ] && \
-        /bin/chmod u=rwx,og=rx ${PACKAGE_DIR}/udocker 
+        /bin/chmod u=rwx,og=rx "${PACKAGE_DIR}/udocker"
     [ -e "${PACKAGE_DIR}/setup.py" ] && \
-        /bin/chmod u=rwx,og=rx ${PACKAGE_DIR}/setup.py 
+        /bin/chmod u=rwx,og=rx "${PACKAGE_DIR}/setup.py"
 
-    /bin/rm -f $TARBALL_FILE 2>&1 > /dev/null
+    /bin/rm -f "$TARBALL_FILE" > /dev/null 2>&1
 
     cd "$PACKAGE_DIR"
     /bin/rm -f "$TARBALL_FILE"
@@ -7027,7 +9315,7 @@ create_package_tarball()
 # MAIN
 # ##################################################################
 
-utils_dir="$(dirname $(readlink -e $0))"
+utils_dir="$(dirname $(readlink -e "$0"))"
 REPO_DIR="$(dirname $utils_dir)"
 
 sanity_check
@@ -7036,6 +9324,7 @@ BUILD_DIR="${HOME}/udocker-englib-${TARBALL_VERSION_P3}"
 S_PROOT_DIR="${BUILD_DIR}/proot-static-build/static"
 S_PROOT_PACKAGES_DIR="${BUILD_DIR}/proot-static-build/packages"
 PACKAGE_DIR="${BUILD_DIR}/package"
+#TALLOC_TAR="$BUILD_DIR/libtalloc/talloc.tar.gz"
 
 if [ -n "$DEVEL3" ]; then
     TARBALL_FILE="${BUILD_DIR}/udocker-englib-${TARBALL_VERSION_P3}.tar.gz"
@@ -7049,7 +9338,11 @@ fi
 # Prepare
 # #######
 
-get_proot_static 
+#get_proot_static
+
+get_udocker_static "1.2.10"
+
+get_libtalloc
 
 prepare_crun_source "${BUILD_DIR}/crun-source-x86_64"
 
@@ -7074,14 +9367,12 @@ fedora30_build_proot "i386" "${BUILD_DIR}/proot-source-x86"
 # x86_64
 # #######
 prepare_proot_source "${BUILD_DIR}/proot-source-x86_64"
-prepare_patchelf_source "${BUILD_DIR}/patchelf-source-x86_64"
+prepare_patchelf_source_v1 "${BUILD_DIR}/patchelf-source-x86_64"
 prepare_fakechroot_glibc_source "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 prepare_fakechroot_musl_source "${BUILD_DIR}/fakechroot-source-musl-x86_64"
 prepare_runc_source "${BUILD_DIR}/runc-source-x86_64"
-prepare_crun_source "${BUILD_DIR}/crun-source-x86_64"
 
 
-#
 fedora25_setup "x86_64"
 fedora25_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
 fedora25_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
@@ -7128,15 +9419,19 @@ fedora36_setup "x86_64"
 fedora36_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "x86_64" "fedora" "36"
 
-
 #
+fedora38_setup "x86_64"
+#fedora38_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
+#fedora38_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
+fedora38_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
+#ostree_delete "x86_64" "fedora" "38"
+
 fedora29_setup "x86_64"
 #fedora29_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
 #fedora29_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
 fedora29_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "x86_64" "fedora" "29"
 
-#
 alpine36_setup "x86_64"
 alpine36_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-musl-x86_64"
 #ostree_delete "x86_64" "alpine" "3.6"
@@ -7178,6 +9473,26 @@ alpine316_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-musl-x86_64"
 #ostree_delete "x86_64" "alpine" "3.16"
 
 #
+alpine314_setup "x86_64"
+alpine314_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-musl-x86_64"
+#ostree_delete "x86_64" "alpine" "3.14"
+#
+alpine315_setup "x86_64"
+alpine315_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-musl-x86_64"
+#ostree_delete "x86_64" "alpine" "3.15"
+#
+alpine316_setup "x86_64"
+alpine316_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-musl-x86_64"
+#ostree_delete "x86_64" "alpine" "3.16"
+#
+alpine317_setup "x86_64"
+alpine317_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-musl-x86_64"
+#ostree_delete "x86_64" "alpine" "3.17"
+#
+alpine318_setup "x86_64"
+alpine318_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-musl-x86_64"
+#ostree_delete "x86_64" "alpine" "3.18"
+
 centos6_setup "x86_64"
 #centos6_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
 centos6_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
@@ -7195,15 +9510,18 @@ centos_stream8_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x
 centos_stream9_setup "x86_64"
 centos_stream9_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "x86_64" "centos" "9"
-#
-rocky8_setup "x86_64"
-rocky8_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
+
+#rocky8_setup "x86_64"
+#rocky8_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "x86_64" "rocky" "8"
 #
-rocky9_setup "x86_64"
-rocky9_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
+#rocky9_setup "x86_64"
+#rocky9_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "x86_64" "rocky" "9"
 
+alma8_setup "x86_64"
+alma8_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
+#ostree_delete "x86_64" "alma" "8"
 #
 alma9_setup "x86_64"
 alma9_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
@@ -7234,26 +9552,150 @@ ubuntu20_setup "amd64"
 ubuntu20_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "amd64" "ubuntu" "20"
 #
-#ubuntu21_setup "amd64"
-#ubuntu21_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
+ubuntu21_setup "amd64"
+ubuntu21_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "amd64" "ubuntu" "21"
 #
 ubuntu22_setup "amd64"
 ubuntu22_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 ubuntu22_build_runc "amd64" "${BUILD_DIR}/runc-source-x86_64"
-#ostree_delete "amd64" "ubuntu" "21"
+#ostree_delete "amd64" "ubuntu" "22"
 #
+ubuntu23_setup "amd64"
+ubuntu23_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
+#ubuntu23_build_runc "amd64" "${BUILD_DIR}/runc-source-x86_64"
+#ostree_delete "amd64" "ubuntu" "23"
 
+# #######
+# armhf
+# #######
+prepare_proot_source "${BUILD_DIR}/proot-source-armhf"
+debian10_setup "armhf"
+debian10_build_proot "armhf" "${BUILD_DIR}/proot-source-armhf"
+
+# #######
+# armel
+# #######
+prepare_proot_source "${BUILD_DIR}/proot-source-armel"
+debian10_setup "armel"
+debian10_build_proot "armel" "${BUILD_DIR}/proot-source-armel"
 
 # #######
 # aarch64
 # #######
 prepare_proot_source "${BUILD_DIR}/proot-source-aarch64"
+prepare_patchelf_source_v2 "${BUILD_DIR}/patchelf-source-aarch64"
+prepare_fakechroot_glibc_source "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+prepare_runc_source "${BUILD_DIR}/runc-source-aarch64"
 #
 fedora31_setup "aarch64"
 fedora31_build_proot "aarch64" "${BUILD_DIR}/proot-source-aarch64"
+#fedora31_build_patchelf "aarch64" "${BUILD_DIR}/patchelf-source-aarch64"
 #ostree_delete "aarch64" "fedora" "31"
+#
+fedora36_setup "aarch64"
+fedora36_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ostree_delete "aarch64" "fedora" "36"
+#
+fedora38_setup "aarch64"
+fedora38_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#fedora38_build_patchelf "aarch64" "${BUILD_DIR}/patchelf-source-aarch64"
+#ostree_delete "aarch64" "fedora" "38"
+#
+centos7_setup "aarch64"
+centos7_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ostree_delete "aarch64" "centos" "7"
 
+#centos_stream8_setup "aarch64"
+#centos_stream8_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ostree_delete "aarch64" "centos" "8"
+#
+#centos_stream9_setup "aarch64"
+#centos_stream9_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ostree_delete "aarch64" "centos" "9"
+
+alma8_setup "aarch64"
+alma8_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ostree_delete "aarch64" "alma" "8"
+#
+alma9_setup "aarch64"
+alma9_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+alma9_build_patchelf "aarch64" "${BUILD_DIR}/patchelf-source-aarch64"
+#ostree_delete "aarch64" "alma" "9"
+
+ubuntu16_setup "arm64"
+ubuntu16_build_fakechroot "arm64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ostree_delete "arm64" "ubuntu" "16"
+
+ubuntu18_setup "arm64"
+ubuntu18_build_fakechroot "arm64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ostree_delete "arm64" "ubuntu" "18"
+
+ubuntu20_setup "arm64"
+ubuntu20_build_fakechroot "arm64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ostree_delete "arm64" "ubuntu" "20"
+
+ubuntu22_setup "arm64"
+ubuntu22_build_fakechroot "arm64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#ubuntu22_build_runc "arm64" "${BUILD_DIR}/runc-source-aarch64"
+ubuntu22_build_runc_root "arm64" "${BUILD_DIR}/runc-source-aarch64"
+#ostree_delete "arm64" "ubuntu" "22"
+
+# #######
+# ppc64le
+# #######
+prepare_proot_source "${BUILD_DIR}/proot-source-ppc64le"
+prepare_patchelf_source_v2 "${BUILD_DIR}/patchelf-source-ppc64le"
+prepare_fakechroot_glibc_source "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+prepare_runc_source "${BUILD_DIR}/runc-source-ppc64le"
+#
+fedora38_setup "ppc64le"
+fedora38_build_fakechroot "ppc64le" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+#ostree_delete "ppc64le" "fedora" "38"
+#
+centos7_setup "ppc64le"
+centos7_build_fakechroot "ppc64le" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+#ostree_delete "ppc64le" "centos" "7"
+#
+alma8_setup "ppc64le"
+alma8_build_fakechroot "ppc64le" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+#ostree_delete "ppc64le" "alma" "8"
+#
+alma9_setup "ppc64le"
+alma9_build_fakechroot "ppc64le" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+alma9_build_patchelf "ppc64le" "${BUILD_DIR}/patchelf-source-ppc64le"
+#ostree_delete "ppc64le" "alma" "9"
+
+ubuntu16_setup "ppc64el"
+ubuntu16_build_fakechroot "ppc64el" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+#ostree_delete "ppc64el" "ubuntu" "16"
+
+ubuntu18_setup "ppc64el"
+ubuntu18_build_fakechroot "ppc64el" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+#ostree_delete "ppc64el" "ubuntu" "18"
+
+ubuntu20_setup "ppc64el"
+ubuntu20_build_fakechroot "ppc64el" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+#ostree_delete "ppc64el" "ubuntu" "20"
+
+ubuntu22_setup "ppc64el"
+ubuntu22_build_fakechroot "ppc64el" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+#ubuntu22_build_runc "ppc64el" "${BUILD_DIR}/runc-source-ppc64le"
+ubuntu22_build_runc_root "ppc64el" "${BUILD_DIR}/runc-source-ppc64le"
+#ostree_delete "ppc64el" "ubuntu" "22"
+
+# ###############################
+# x86_64 Nix build uses Fedora 36
+# ###############################
+prepare_crun_source "${BUILD_DIR}/crun-source-x86_64"
+nix_setup "x86_64"
+nix_build_crun "x86_64" "${BUILD_DIR}/crun-source-x86_64"
+#ostree_delete "x86_64" "fedora" "36"
+
+#prepare_crun_source "${BUILD_DIR}/crun-source-ppc64le"
+#nix_setup "ppc64le"
+#nix_build_crun "ppc64le" "${BUILD_DIR}/crun-source-ppc64le"
+#ostree_delete "ppc64le" "fedora" "36"
 
 # #######
 # x86_64

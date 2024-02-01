@@ -40,13 +40,21 @@ class ElfPatcher:
 
     def select_patchelf(self):
         """Set patchelf executable"""
-        arch = HostInfo().arch()
-        image_list = ["patchelf-%s" % (arch), "patchelf"]
+        patchelf_exec = Config.conf['use_patchelf_executable']
+        if not patchelf_exec:
+            patchelf_exec = FileUtil("patchelf").find_exec()
 
-        f_util = FileUtil(self.localrepo.bindir)
-        patchelf_exec = f_util.find_file_in_dir(image_list)
+        arch = HostInfo().arch()
+        if patchelf_exec == "UDOCKER" or not patchelf_exec:
+            image_list = ["patchelf-%s" % (arch), "patchelf"]
+            f_util = FileUtil(self.localrepo.bindir)
+            patchelf_exec = f_util.find_file_in_dir(image_list)
+
         if not os.path.exists(patchelf_exec):
             LOG.error("patchelf executable not found")
+            LOG.info("Info: Host architecture might not be supported by this execution mode: %s \n      "
+                     "specify path to patchelf with environment UDOCKER_USE_PATCHELF_EXECUTABLE\n      "
+                     "or choose other execution mode with: udocker setup --execmode=<mode>", arch)
             sys.exit(1)
 
         return patchelf_exec

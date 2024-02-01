@@ -147,18 +147,21 @@ def test_04__get_nvidia_libs(mocker, nvidia, logger, nvi_lib_list, glob_value, e
     assert logger.debug.call_args_list == [mocker.call('list nvidia libs: %s', nvidia_libs)]
 
 
-@pytest.mark.parametrize("arch, expected", [
-    ('x86-64', {'/lib/x86_64-linux-gnu/'}),
-    ('', {'/lib/x86_64-linux-gnu/'}),
-    ('i386', set()),
+@pytest.mark.parametrize("arch, ldconfig_output, expected", [
+    ('x86-64', '    libnvidia-cfg.so (libc6,x86-64 => /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so\n'
+               '    libcuda.so (libc6,x86-64 => /usr/lib/x86_64-linux-gnu/libcuda.so\n',
+     {'/usr/lib/x86_64-linux-gnu/'}),
+    ('', '    libnvidia-cfg.so (libc6 => /usr/lib/libnvidia-cfg.so\n'
+         '    libcuda.so (libc6 => /usr/lib/libcuda.so\n',
+     {'/usr/lib/'}),
+    ('i386', '    libnvidia-cfg.so (libc6,i386 => /usr/lib32/libnvidia-cfg.so\n'
+             '    libcuda.so (libc6,i386 => /usr/lib32/libcuda.so\n',
+     {'/usr/lib32/'}),
 ])
-def test_05__find_host_dir_ldconfig(mocker, nvidia, logger, arch, expected):
+def test_05__find_host_dir_ldconfig(mocker, nvidia, logger, arch, ldconfig_output, expected):
     """Test05 NvidiaMode._find_host_dir_ldconfig."""
-    mocker.patch.object(os.path, 'realpath', return_value="/lib/x86_64-linux-gnu", autospec=True)
-    mocker.patch.object(os.path, 'dirname', return_value="/lib/x86_64-linux-gnu", autospec=True)
-    mocker.patch.object(Uprocess, 'get_output', return_value=(
-        ' libnvidia-cfg.so (libc6,x86-64) => /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so\n,'
-        ' libcuda.so (libc6,x86-64) => /usr/lib/x86_64-linux-gnu/libcuda.so\n'))
+    mocker.patch.object(os.path, 'realpath', side_effect=lambda x: x, autospec=True)
+    mocker.patch.object(Uprocess, 'get_output', return_value=ldconfig_output)
 
     find_host_dir_ldconfig = nvidia._find_host_dir_ldconfig(arch)
 
@@ -183,11 +186,11 @@ def test_06__find_host_dir_ldpath(mocker, nvidia, logger, library_path, expected
 
 
 @pytest.mark.parametrize("lib_dirs, ldpath, ldconfig, expected", [
-    ({'lib_dirs_list_x86_64': ['/usr/lib', '/lib/x86_64-linux-gnu']}, [{'/lib/x86_64-linux-gnu/', "/usr/lib/"},
+    ({'lib_dirs_list_nvidia': ['/usr/lib', '/lib/x86_64-linux-gnu']}, [{'/lib/x86_64-linux-gnu/', "/usr/lib/"},
                                                                        {'/lib64/x86_64-linux-gnu'}],
      {'/lib64/x86_64-linux-gnu'}, {'/lib/x86_64-linux-gnu/', '/usr/lib/', '/lib64/x86_64-linux-gnu'}),
-    ({'lib_dirs_list_x86_64': []}, [{}, {}], [], set()),
-    ({'lib_dirs_list_x86_64': []}, [{}, {'/lib64/x86_64-linux-gnu'}], [], {'/lib64/x86_64-linux-gnu'}),
+    ({'lib_dirs_list_nvidia': []}, [{}, {}], [], set()),
+    ({'lib_dirs_list_nvidia': []}, [{}, {'/lib64/x86_64-linux-gnu'}], [], {'/lib64/x86_64-linux-gnu'}),
 ])
 def test_07__find_host_dir(mocker, nvidia, logger, lib_dirs, ldpath, ldconfig, expected):
     """Test07 NvidiaMode._find_host_dir."""

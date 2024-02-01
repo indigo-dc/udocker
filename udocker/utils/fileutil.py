@@ -42,9 +42,10 @@ class FileUtil:
     def _register_prefix(self, prefix):
         """Register directory prefixes where remove() is allowed"""
         if os.path.islink(prefix):
-            prefix = (os.path.realpath(os.path.dirname(prefix)) + "/" + os.path.basename(prefix))
+            prefix = os.path.realpath(os.path.dirname(prefix)) + "/" + os.path.basename(prefix)
         else:
             prefix = os.path.realpath(prefix)
+
         if prefix not in FileUtil.safe_prefixes:
             if os.path.isdir(prefix) and not prefix.endswith('/'):
                 FileUtil.safe_prefixes.append(prefix + '/')
@@ -117,22 +118,20 @@ class FileUtil:
         except OSError:
             return -1
 
-    def _is_safe_prefix(self, filename):
+    def _is_safe_prefix(self, fname):
         """Check if file prefix falls under valid prefixes"""
-        if os.path.islink(filename):
-            filename = (os.path.realpath(os.path.dirname(filename)) + "/" +
-                        os.path.basename(filename))
+        if os.path.islink(fname):
+            fname = os.path.realpath(os.path.dirname(fname)) + "/" + os.path.basename(fname)
         else:
-            filename = os.path.realpath(filename)
+            fname = os.path.realpath(fname)
 
-        if os.path.isdir(filename):
-            filename += '/'
-
+        if os.path.isdir(fname):
+            fname += '/'
         for safe_prefix in FileUtil.safe_prefixes:
-            if filename.startswith(safe_prefix):
+            if fname.startswith(safe_prefix):
                 return True
 
-            if filename.startswith(os.path.realpath(safe_prefix)):
+            if fname.startswith(os.path.realpath(safe_prefix)):
                 return True
 
         return False
@@ -146,13 +145,14 @@ class FileUtil:
                         os.lchown(dir_path + '/' + f_name, uid, gid)
             else:
                 os.lchown(self.filename, uid, gid)
+
         except OSError:
             return False
 
         return True
 
     def rchown(self, uid=0, gid=0):
-        """Change ownership recursively recursively"""
+        """Change ownership recursively"""
         return self.chown(uid, gid, recursive=True)
 
     def _chmod(self, filename, filemode=0o600, dirmode=0o700, mask=0o755):
@@ -170,6 +170,7 @@ class FileUtil:
             elif filemode:
                 mode = (stat.S_IMODE(filestat) & mask) | filemode
                 os.chmod(filename, mode)
+
         except OSError:
             LOG.error("changing permissions of: %s", filename)
 
@@ -186,6 +187,7 @@ class FileUtil:
 
             # TODO: should be an else here, but needs test and confirmation
             self._chmod(self.filename, filemode, dirmode, mask)
+
         except OSError:
             return False
 
@@ -217,6 +219,7 @@ class FileUtil:
 
             os.chmod(self.filename, stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR)
             os.rmdir(self.filename)
+
         except OSError:
             LOG.error("removing: %s", self.filename)
             return False
@@ -265,7 +268,6 @@ class FileUtil:
         verbose = ""
         if Config.conf['verbose_level'] == logging.DEBUG:
             verbose = "v"
-
         cmd = ["tar", "t" + verbose + "f", self.filename]
         stderror = Uprocess().get_stderr()
         if Uprocess().call(cmd, stderr=stderror, stdout=stderror, close_fds=True):
@@ -281,14 +283,12 @@ class FileUtil:
         verbose = ""
         if Config.conf['verbose_level'] == logging.DEBUG:
             verbose = "v"
-
         cmd = ["tar", "-C", sourcedir, "-c" + verbose, "--one-file-system",
                "-S", "--xattrs", "-f", tarfile, "."]
         stderror = Uprocess().get_stderr()
         status = Uprocess().call(cmd, stderr=stderror, close_fds=True)
         if status:
             LOG.error("creating tar file: %s", tarfile)
-
         return not status
 
     def copydir(self, destdir, sourcedir=None):
@@ -306,7 +306,6 @@ class FileUtil:
         status = Uprocess().pipe(cmd_tarc, cmd_tarx)
         if not status:
             LOG.error("copying %s to %s", sourcedir, destdir)
-
         return status
 
     def cleanup(self):
@@ -314,6 +313,20 @@ class FileUtil:
         tmptrash_copy = dict(FileUtil.tmptrash)
         for filename in tmptrash_copy:
             FileUtil(filename).remove(recursive=True)
+
+    def isexecutable(self):
+        """Check if execute bit is set"""
+        try:
+            return os.access(self.filename, os.X_OK)
+        except (IOError, OSError, TypeError):
+            return False
+
+    def iswriteable(self):
+        """Check if execute bit is set"""
+        try:
+            return os.access(self.filename, os.W_OK)
+        except (IOError, OSError, TypeError):
+            return False
 
     def isdir(self):
         """Is filename a directory"""
@@ -343,12 +356,14 @@ class FileUtil:
         except (OSError, TypeError):
             return -1
 
-    def getdata(self, mode="rb"):
+    def getdata(self, mode="rb", size=-1):
         """Read file content to a buffer"""
         try:
             with open(self.filename, mode) as filep:
-                buf = filep.read()
-
+                if size == -1:
+                    buf = filep.read()
+                else:
+                    buf = filep.read(size)
             LOG.debug("read buf: %s", buf)
             return buf
         except (OSError, TypeError):
@@ -604,7 +619,7 @@ class FileUtil:
             if match:
                 orig_path = match.group(1)
 
-        if (orig_path and l_path.startswith(orig_path) and orig_path != root_path):
+        if orig_path and l_path.startswith(orig_path) and orig_path != root_path:
             new_l_path = l_path.replace(orig_path, root_path, 1)
         elif not l_path.startswith(root_path):
             new_l_path = root_path + l_path
@@ -646,7 +661,6 @@ class FileUtil:
         if not self._is_safe_prefix(root_path):
             LOG.error("links convertion outside of dir tree: %s", root_path)
             return links     # DONE: return target, changed by mdavid
-
         for dir_path, dirs, files in os.walk(root_path):
             for f_name in files + dirs:
                 try:
@@ -662,13 +676,14 @@ class FileUtil:
                             links.append(f_path)
                     elif self._link_restore(f_path, orig_path, root_path, force):
                         links.append(f_path)
+
                 except OSError:
                     continue
 
         return links
 
     def match(self):
-        """Find matching file with wildcard matching expression"""
+        """Find file with wildcard matching expression"""
         directory = os.path.dirname(self.filename)
         matching_expression = os.path.basename(self.filename)
         matching_files = []
@@ -678,5 +693,28 @@ class FileUtil:
         for f_name in os.listdir(directory):
             if re.match(matching_expression, f_name):
                 matching_files.append(directory + "/" + f_name)
+
+        return matching_files
+
+    def match_recursive(self, filetype='FL'):
+        """Recursively find file with wildcard matching expression"""
+        directory = os.path.dirname(self.filename)
+        matching_expression = os.path.basename(self.filename)
+        matching_files = []
+        if not os.path.isdir(directory):
+            return []
+
+        for dir_path, dirs, files in os.walk(directory):
+            f_list = []
+            if 'F' in filetype:
+                f_list += files
+            if 'D' in filetype:
+                f_list += dirs
+            for f_name in f_list:
+                f_path = dir_path + "/" + f_name
+                if os.path.islink(f_path) and 'L' not in filetype:
+                    continue
+                if re.match(matching_expression, f_name):
+                    matching_files.append(f_path)
 
         return matching_files

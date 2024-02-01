@@ -4,13 +4,20 @@ udocker unit tests: Uprocess
 """
 import logging
 import subprocess
-from udocker.utils.uprocess import Uprocess
+
+import pytest
+
 from udocker.config import Config
+from udocker.utils.uprocess import Uprocess
 
 
 def test_01_get_stderr(mocker):
     """Test01 Uprocess().get_stderr() info level."""
     mock_subproc = mocker.patch('udocker.utils.uprocess.subprocess')
+    mock_config = mocker.patch('udocker.config.Config.getconf')
+    mock_config.return_value = None
+    mocker.patch('udocker.config.Config.conf', {'verbose_level': logging.INFO})
+
     mock_subproc.DEVNULL = -3
     Config().getconf()
     Config.conf['verbose_level'] = logging.INFO
@@ -18,16 +25,16 @@ def test_01_get_stderr(mocker):
     assert status == -3
 
 
-# def test_02_get_stderr(mocker):
-#     """Test01 Uprocess().get_stderr() debug level."""
-#     mock_subproc = mocker.patch('udocker.utils.uprocess.subprocess')
-#     mock_sysstderr = mocker.patch('udocker.utils.uprocess.sys.stderr', return_value=1)
-#     mock_subproc.DEVNULL = -3
-#     Config().getconf()
-#     Config.conf['verbose_level'] = logging.DEBUG
-#     status = Uprocess().get_stderr()
-#     assert status == 1
-#     mock_sysstderr.assert_called()
+def test_02_get_stderr(mocker):
+    """Test01 Uprocess().get_stderr() debug level."""
+    mocker.patch('udocker.utils.uprocess.subprocess')
+    mocker.patch('udocker.config.Config.getconf').return_value = None
+    mocker.patch('udocker.config.Config.conf', {'verbose_level': logging.DEBUG})
+
+    mocker.patch('sys.stderr', 1)
+
+    status = Uprocess().get_stderr()
+    assert status == 1
 
 
 def test_03_find_inpath(mocker):
@@ -128,16 +135,41 @@ def test_10_call(mocker):
     mock_subcall.assert_called()
 
 
-# def test_11_pipe(mocker):
-#     """Test11 Uprocess().pipe()."""
-#     mock_getenv = mocker.patch('udocker.utils.uprocess.os.getenv', return_value='/usr/bin')
-#     mock_findinpath = mocker.patch.object(Uprocess, 'find_inpath',
-#                                           side_effect=['/usr/bin/ls', '/usr/bin/grep'])
-#     mock_subpopen = mocker.patch('udocker.utils.uprocess.subprocess.Popen', side_effect=[None, None])
-#     mock_subret = mocker.patch('udocker.utils.uprocess.subprocess.Popen.returncode', side_effect=[True, True])
-#     status = Uprocess().pipe(['ls', '-a'], ['grep', '-r'])
-#     assert status
-#     mock_getenv.assert_called()
-#     assert mock_findinpath.call_count == 2
-#     assert mock_subpopen.call_count == 2
-#     assert mock_subret.call_count == 2
+@pytest.mark.parametrize('error_proc1, error_proc2, count_findinpath, count_popen', [
+    (False, False, 2, 2),
+    (True, True, 2, 1),
+    (True, False, 2, 1),
+    (False, True, 2, 2),
+])
+def test_11_pipe(mocker, error_proc1, error_proc2, count_findinpath, count_popen):
+    """Test11 Uprocess().pipe()."""
+    mock_getenv = mocker.patch('udocker.utils.uprocess.os.getenv', return_value='/usr/bin')
+    mock_findinpath = mocker.patch.object(Uprocess, 'find_inpath', side_effect=['/usr/bin/ls', '/usr/bin/grep'])
+    mock_popen = mocker.patch('udocker.utils.uprocess.subprocess.Popen')
+
+    mock_proc1 = mocker.Mock()
+    mock_proc2 = mocker.Mock()
+
+    proc1_returncode_mock = mocker.PropertyMock(side_effect=[None, 0, 0, 0])
+    proc2_returncode_mock = mocker.PropertyMock(side_effect=[None, 0, 0, 0])
+
+    type(mock_proc1).returncode = proc1_returncode_mock
+    type(mock_proc2).returncode = proc2_returncode_mock
+
+    mock_popen.side_effect = [OSError if error_proc1 else mock_proc1, OSError if error_proc2 else mock_proc2]
+
+    status = Uprocess().pipe(['ls', '-a'], ['grep', '-r'])
+
+    mock_getenv.assert_called_once_with("PATH", "")
+    assert mock_findinpath.call_count == count_findinpath
+    assert mock_popen.call_count == count_popen
+
+    if error_proc2 and not error_proc1:
+        mock_proc1.kill.assert_called()
+    if error_proc2 or error_proc1:
+        assert status is False
+
+    if not error_proc1 and not error_proc2:
+        assert status is True
+        mock_proc1.wait.assert_called()
+        mock_proc2.wait.assert_called()

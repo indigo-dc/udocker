@@ -78,6 +78,21 @@ def test_02_get_container_attr(mocker, container_struct, logger, location_set, c
     logger.error.assert_called_with(logmsg) if logmsg else logger.error.assert_not_called()
 
 
+@pytest.mark.parametrize("manifest_json, expected_output", [
+    ({"architecture": "x86_64", "os": "linux", "variant": "v8"}, "linux/x86_64/v8"),
+    ({"architecture": "x86_64", "os": "linux"}, "linux/x86_64"),
+    ({"architecture": "x86_64"}, "unknown/x86_64"),
+    ({"os": "linux"}, "linux/unknown"),
+    ({}, "unknown/unknown"),
+    (None, "unknown/unknown"),
+])
+def test_03_get_container_platform_fmt(mocker, container_struct, manifest_json, expected_output):
+    """Test03 ContainerStructure().get_container_platform_fmt()."""
+    mocker.patch.object(container_struct, 'get_container_attr', return_value=(None, manifest_json))
+    result = container_struct.get_container_platform_fmt()
+    assert result == expected_output
+
+
 @pytest.mark.parametrize("config,param,default,expected", [
     (False, "Cmd", "", "/bin/bash"),
     (True, "Cmd", "", "/bin/bash"),
@@ -116,8 +131,8 @@ def test_02_get_container_attr(mocker, container_struct, logger, location_set, c
     "onbuild in config, default None",
     "architecture as direct param"
 ])
-def test_03__get_container_meta(container_struct, config, param, default, expected):
-    """Test03 ContainerStructure().get_container_meta()."""
+def test_04__get_container_meta(container_struct, config, param, default, expected):
+    """Test04 ContainerStructure().get_container_meta()."""
     container_json = {
         "architecture": "amd64",
         "author": "https://github.com/CentOS/sig-cloud-instance-images",
@@ -168,7 +183,8 @@ def test_03__get_container_meta(container_struct, config, param, default, expect
     ("DictItem", "default_value", "key1:value1 key2:value2 "),
     ("SplitParam", "default_value", "split value"),
 ])
-def test_04_get_container_meta(container_struct, param, default, expected):
+def test_05_get_container_meta(container_struct, param, default, expected):
+    """Test05 ContainerStructure().get_container_meta()."""
     container_json2 = {
         "architecture": "amd64",
         "author": "https://github.com/CentOS/sig-cloud-instance-images",
@@ -207,8 +223,8 @@ def test_04_get_container_meta(container_struct, param, default, expected):
     "Different data types as values",
     "Nested dictionary",
 ])
-def test_05__dict_to_str(container_struct, input_dict, expected):
-    """Test04 ContainerStructure()._dict_to_str()."""
+def test_06__dict_to_str(container_struct, input_dict, expected):
+    """Test06 ContainerStructure()._dict_to_str()."""
     assert container_struct._dict_to_str(input_dict) == expected
 
 
@@ -218,8 +234,8 @@ def test_05__dict_to_str(container_struct, input_dict, expected):
     ({"A": 123, "B": [1, 2, 3], "C": "value"}, ['A:123', 'B:[1, 2, 3]', 'C:value']),
     ({"A": {"B": "1"}}, ["A:{'B': '1'}"]),
 ])
-def test_06__dict_to_list(container_struct, test_input, expected):
-    """Test05 ContainerStructure()._dict_to_list()."""
+def test_07__dict_to_list(container_struct, test_input, expected):
+    """Test07 ContainerStructure()._dict_to_list()."""
     assert container_struct._dict_to_list(test_input) == expected
 
 
@@ -230,8 +246,8 @@ def test_06__dict_to_list(container_struct, test_input, expected):
     (12345, "", 0, ["/usr", "/sys", "/dev"]),
     ("invalid_id", "/fake/container/dir", 0, []),
 ])
-def test_07__chk_container_root(mocker, container_struct, container_id, container_dir, expected, existing_paths):
-    """Test06 ContainerStructure()._chk_container_root()."""
+def test_08__chk_container_root(mocker, container_struct, container_id, container_dir, expected, existing_paths):
+    """Test08 ContainerStructure()._chk_container_root()."""
     mocker.patch.object(container_struct.localrepo, "cd_container", return_value=container_dir)
     mocker.patch("os.path.exists",
                  side_effect=lambda path: any(path == container_dir + "/ROOT" + ep for ep in existing_paths))
@@ -260,9 +276,9 @@ def test_07__chk_container_root(mocker, container_struct, container_id, containe
         "success scenario",
         "success scenario, no container id"
     ])
-def test_08_create_fromimage(mocker, container_struct, container_id, logger, image_dir, log_error, log_warn,
+def test_09_create_fromimage(mocker, container_struct, container_id, logger, image_dir, log_error, log_warn,
                              img_attributes, setup_container, untar, chk_container, expected):
-    """Test07 ContainerStructure().create_fromimage()."""
+    """Test09 ContainerStructure().create_fromimage()."""
     mocker.patch.object(container_struct.localrepo, 'cd_imagerepo', return_value="/" if image_dir else None)
     mocker.patch.object(container_struct.localrepo, 'get_image_attributes', return_value=img_attributes)
     mocker.patch.object(container_struct.localrepo, 'setup_container',
@@ -285,35 +301,6 @@ def test_08_create_fromimage(mocker, container_struct, container_id, logger, ima
         logger.warning.assert_called_with(log_warn, mocker.ANY)
 
 
-#         self.local.cd_imagerepo.return_value = ""
-#         prex = ContainerStructure(self.local)
-#         status = prex.create_fromimage("imagerepo", "tag")
-#         self.assertFalse(status)
-#
-#         self.local.cd_imagerepo.return_value = "/"
-#         self.local.get_image_attributes.return_value = ([], [])
-#         prex = ContainerStructure(self.local)
-#         status = prex.create_fromimage("imagerepo", "tag")
-#         self.assertFalse(status)
-#
-#         self.local.cd_imagerepo.return_value = "/"
-#         self.local.get_image_attributes.return_value = (["value", ], [])
-#         self.local.setup_container.return_value = ""
-#         prex = ContainerStructure(self.local)
-#         status = prex.create_fromimage("imagerepo", "tag")
-#         self.assertFalse(status)
-#
-#         self.local.cd_imagerepo.return_value = "/"
-#         self.local.get_image_attributes.return_value = (["value", ], [])
-#         self.local.setup_container.return_value = "/"
-#         mock_untar.return_value = False
-#         mock_uuid.return_value = "123456"
-#         prex = ContainerStructure(self.local)
-#         status = prex.create_fromimage("imagerepo", "tag")
-#         self.assertEqual(status, "123456")
-#
-
-
 @pytest.mark.parametrize(
     "container_id, cntjson_exists, logmsg_error, logmsg_warning, setup_cont, untar_status, chk_root_status, expected",
     [
@@ -331,9 +318,9 @@ def test_08_create_fromimage(mocker, container_struct, container_id, logger, ima
         "success scenario",
         "success scenario, no container id"
     ])
-def test_09_create_fromlayer(mocker, container_struct, logger, container_id, cntjson_exists, logmsg_error,
+def test_10_create_fromlayer(mocker, container_struct, logger, container_id, cntjson_exists, logmsg_error,
                              logmsg_warning, setup_cont, untar_status, chk_root_status, expected):
-    """Test08 ContainerStructure().create_fromlayer()."""
+    """Test10 ContainerStructure().create_fromlayer()."""
     mocker.patch.object(container_struct.localrepo, 'setup_container', return_value=setup_cont)
     mocker.patch.object(container_struct.localrepo, 'save_json')
     mocker.patch.object(container_struct, '_untar_layers', return_value=untar_status)
@@ -406,9 +393,9 @@ def test_09_create_fromlayer(mocker, container_struct, logger, container_id, cnt
         "check container root fails",
         "success scenario",
     ])
-def test_10_clone_fromfile(mocker, container_struct, logger, container_id, setup_container_return, logmsg_error,
+def test_11_clone_fromfile(mocker, container_struct, logger, container_id, setup_container_return, logmsg_error,
                            logmsg_warning, untar_status, chk_root_status, expected):
-    """Test09 ContainerStructure().clone_fromfile()."""
+    """Test11 ContainerStructure().clone_fromfile()."""
     mocker.patch.object(container_struct.localrepo, 'setup_container', return_value=setup_container_return)
     mocker.patch.object(container_struct, '_untar_layers', return_value=untar_status)
     mocker.patch.object(container_struct, '_chk_container_root', return_value=chk_root_status)
@@ -433,9 +420,9 @@ def test_10_clone_fromfile(mocker, container_struct, logger, container_id, setup
      ['/tmp/path/.wh.aa', '/tmp/path/.wh.bb']),
     (logging.NOTSET, None, False, "path/.wh.file\n", False, None, ["/tmp/path/file"]),
 ])
-def test_11__apply_whiteouts(mocker, container_struct, logger, verbose_level, logmsg, has_wildcards, is_dir, tar_output,
+def test_12__apply_whiteouts(mocker, container_struct, logger, verbose_level, logmsg, has_wildcards, is_dir, tar_output,
                              list_dir, expected_calls):
-    """Test10 ContainerStructure()._apply_whiteouts()."""
+    """Test12 ContainerStructure()._apply_whiteouts()."""
     mocker.patch.object(Config, 'conf', {'verbose_level': verbose_level, 'tmpdir': "/tmp"})
     mocker.patch.object(HostInfo, 'cmd_has_option', return_value=has_wildcards)
     mocker.patch.object(Uprocess, 'get_output', return_value=tar_output)
@@ -451,13 +438,14 @@ def test_11__apply_whiteouts(mocker, container_struct, logger, verbose_level, lo
     assert actual_calls == expected_calls
 
 
-@pytest.mark.parametrize("verbose_level, has_options, tarfiles, cmd_success, expected_status", [
-    (logging.DEBUG, True, ["a.tar", "b.tar"], True, True),
-    (logging.INFO, False, ["a.tar"], False, False),
-    (logging.ERROR, True, [], True, False),
+@pytest.mark.parametrize("verbose_level, has_options, tarfiles, cmd_success, log_error, expected_status", [
+    (logging.DEBUG, True, ["a.tar", "b.tar"], True, "", True),
+    (logging.INFO, False, ["a.tar"], False, "while modifying attributes of image layer", False),
+    (logging.ERROR, True, [], True, "", False),
 ])
-def test_12__untar_layers(mocker, container_struct, verbose_level, has_options, tarfiles, cmd_success, expected_status):
-    """Test11 ContainerStructure()._untar_layers()."""
+def test_13__untar_layers(mocker, container_struct, logger, verbose_level, has_options, tarfiles, cmd_success,
+                          log_error, expected_status):
+    """Test13 ContainerStructure()._untar_layers()."""
     mocker.patch.object(Config, 'conf', {'verbose_level': verbose_level})
     mocker.patch.object(HostInfo, 'cmd_has_option', return_value=has_options)
     mocker.patch.object(HostInfo, 'gid', return_value='1000')
@@ -471,6 +459,7 @@ def test_12__untar_layers(mocker, container_struct, verbose_level, has_options, 
         assert mock_apply_whiteouts.call_count == len(tarfiles)
     else:
         mock_apply_whiteouts.assert_not_called()
+    logger.error.assert_called_with(log_error) if log_error else logger.error.assert_not_called()
 
 
 @pytest.mark.parametrize("container_exists, tar_status, log_error, expected", [
@@ -479,8 +468,8 @@ def test_12__untar_layers(mocker, container_struct, verbose_level, has_options, 
     (False, True, "container not found: %s", False),
     (False, False, "container not found: %s", False),
 ])
-def test_13_export_tofile(mocker, container_struct, container_exists, tar_status, log_error, expected):
-    """Test12 ContainerStructure().export_tofile()."""
+def test_14_export_tofile(mocker, container_struct, logger, container_exists, tar_status, log_error, expected):
+    """Test14 ContainerStructure().export_tofile()."""
     mocker.patch.object(container_struct, 'container_id', '123456')
     mocker.patch.object(container_struct.localrepo, 'cd_container',
                         return_value=(None if not container_exists else '/ROOT'))
@@ -488,7 +477,7 @@ def test_13_export_tofile(mocker, container_struct, container_exists, tar_status
     mocker.patch.object(FileUtil, 'tar', return_value=tar_status)
 
     result = container_struct.export_tofile('/path_to/clone_file.tar')
-
+    logger.error.called_once_with(log_error, mocker.ANY) if log_error else logger.error.assert_not_called()
     assert result == expected
 
 
@@ -503,8 +492,8 @@ def test_13_export_tofile(mocker, container_struct, container_exists, tar_status
     "Container not found",
     "Container not found",
 ])
-def test_14_clone_tofile(mocker, container_struct, logger, container_exists, tar_status, log_error, expected):
-    """Test13 ContainerStructure().clone_tofile()."""
+def test_15_clone_tofile(mocker, container_struct, logger, container_exists, tar_status, log_error, expected):
+    """Test15 ContainerStructure().clone_tofile()."""
     mocker.patch.object(container_struct, 'container_id', '123456')
     mocker.patch.object(container_struct.localrepo, 'cd_container',
                         return_value=(None if not container_exists else '/ROOT'))
@@ -529,9 +518,9 @@ def test_14_clone_tofile(mocker, container_struct, logger, container_exists, tar
     "Setting up destination container fails",
     "Setting up source container fails",
 ])
-def test_15_clone(mocker, container_struct, logger, source_exists, dest_setup, copydir, log_warning, log_error,
+def test_16_clone(mocker, container_struct, logger, source_exists, dest_setup, copydir, log_warning, log_error,
                   root_check, expected):
-    """Test14 ContainerStructure().clone()."""
+    """Test16 ContainerStructure().clone()."""
     mocker.patch.object(container_struct, 'container_id', 'source_container_id')
     mocker.patch.object(container_struct, 'imagerepo', 'imagerepo')
     mocker.patch.object(container_struct.localrepo, 'cd_container', return_value='/ROOT/src' if source_exists else None)

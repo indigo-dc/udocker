@@ -4,6 +4,8 @@ udocker unit tests: UMain
 """
 import pytest
 from unittest.mock import patch
+
+from udocker.cmdparser import CmdParser
 from udocker.umain import UMain
 from udocker.config import Config
 
@@ -15,29 +17,33 @@ def config():
 
 @pytest.fixture
 def mock_lrepo(mocker):
-    return mocker.patch('udocker.umain.LocalRepository')
-
+    mock_repo = mocker.patch('udocker.umain.LocalRepository')
+    mock_repo.return_value.homedir = "/home/user"
+    return mock_repo
 
 @pytest.fixture
 def mock_ucli(mocker):
     return mocker.patch('udocker.umain.UdockerCLI')
 
+@pytest.fixture
+def logger(mocker):
+    return mocker.patch('udocker.umain.LOG')
 
-def test_01__prepare_exec(mocker, config):
+
+def test_01__prepare_exec(mocker, config, logger):
     """Test01 UMain()._prepare_exec() userid=0."""
     argv = ["udocker", "-h"]
     mock_cmdp = mocker.patch('udocker.umain.CmdParser')
     mock_getuid = mocker.patch('udocker.umain.os.geteuid', return_value=0)
-    mock_logerr = mocker.patch('udocker.umain.LOG.error')
     with patch('sys.exit') as mock_exit:
         UMain(argv)._prepare_exec()
         mock_exit.assert_called()
         mock_cmdp.assert_called()
         mock_getuid.assert_called()
-        mock_logerr.assert_called()
+        logger.error.assert_called()
 
 
-def test_02__prepare_exec(mocker, config):
+def test_02__prepare_exec(mocker, config, logger):
     """Test02 UMain()._prepare_exec() userid=2000."""
     argv = ["udocker", "-h"]
     mock_cmdp = mocker.patch('udocker.umain.CmdParser')
@@ -47,6 +53,7 @@ def test_02__prepare_exec(mocker, config):
         mock_exit.assert_called()
         mock_cmdp.assert_called()
         mock_getuid.assert_called()
+        logger.error.assert_called()
 
 
 def test_03_execute(config, mock_lrepo, mock_ucli):
@@ -121,10 +128,22 @@ def test_09_execute(config, mock_lrepo, mock_ucli):
     mock_ucli.return_value.do_rm.assert_called()
 
 
-def test_10_execute(config, mock_lrepo, mock_ucli):
+def test_10_execute(config, mock_lrepo, mock_ucli, logger):
     """Test10 UMain().execute() faking."""
     argv = ['udocker', '--allow-root', 'faking']
     mock_lrepo.return_value.is_repo.return_value = True
     mock_lrepo.return_value.create_repo.return_value = None
     status = UMain(argv).execute()
     assert status == 1
+    logger.error.assert_called_with('invalid command: %s\n', 'faking')
+
+
+def test_11_execute_missing_options(mocker, config, mock_lrepo, mock_ucli, logger):
+    """Test11 UMain().execute() with syntax error due to missing options."""
+    argv = ['udocker', '--allow-root', 'save']
+    mock_lrepo.return_value.is_repo.return_value = True
+    mock_lrepo.return_value.create_repo.return_value = None
+    mocker.patch('udocker.umain.CmdParser.missing_options', return_value="a")
+    status = UMain(argv).execute()
+    assert status == 1
+    logger.error.assert_called_with('Syntax error at: %s', 'a')

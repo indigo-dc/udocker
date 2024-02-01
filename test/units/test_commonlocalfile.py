@@ -2,8 +2,13 @@
 """
 udocker unit tests: CommonLocalFileApi
 """
+import logging
+import sys
+
 import pytest
+
 from udocker.commonlocalfile import CommonLocalFileApi
+from udocker.config import Config
 
 
 @pytest.fixture
@@ -13,8 +18,19 @@ def lrepo(mocker):
 
 
 @pytest.fixture
-def clfapi(mocker, lrepo):
+def clfapi(lrepo):
     return CommonLocalFileApi(lrepo)
+
+
+@pytest.fixture
+def logger(mocker):
+    return mocker.patch('udocker.commonlocalfile.LOG')
+
+
+def test_01__init__(clfapi, lrepo):
+    """Test01 CommonLocalFileApi() constructor."""
+    assert clfapi.localrepo == lrepo
+    assert clfapi._imagerepo is None
 
 
 def test_02__move_layer_to_v1repo(mocker, clfapi):
@@ -91,7 +107,7 @@ def test_06__load_image(clfapi, lrepo):
     lrepo.set_version.assert_not_called()
 
 
-def test_07__load_image(clfapi, lrepo):
+def test_07__load_image(clfapi, lrepo, logger):
     """Test07 CommonLocalFileApi()._set version False"""
     structure = "12345"
     imagerepo = "/home/.udocker/images"
@@ -106,6 +122,7 @@ def test_07__load_image(clfapi, lrepo):
     lrepo.setup_imagerepo.assert_called()
     lrepo.setup_tag.assert_called()
     lrepo.set_version.assert_called()
+    logger.error.assert_called_with('setting repository version')
 
 
 def test_08__load_image(mocker, clfapi, lrepo):
@@ -127,14 +144,25 @@ def test_08__load_image(mocker, clfapi, lrepo):
     mock_imgstep2.assert_called()
 
 
-def test_09__untar_saved_container(mocker, clfapi):
+@pytest.mark.parametrize("verbose_level, expected_status", [
+    (logging.DEBUG, False),
+    (logging.INFO, False),
+])
+def test_09__untar_saved_container(mocker, clfapi, verbose_level, expected_status):
     """Test09 CommonLocalFileApi()._untar_saved_container()."""
     tarfile = "file.tar"
     destdir = "/home/.udocker/images"
+    mocker.patch.object(Config, 'conf', {'verbose_level': verbose_level})
     mock_ucall = mocker.patch('udocker.commonlocalfile.Uprocess.call', return_value=True)
     status = clfapi._untar_saved_container(tarfile, destdir)
-    assert not status
+    assert status is expected_status
     mock_ucall.assert_called()
+    mock_ucall.assert_called_with(
+        ["tar", "-C", destdir, "-x" + ("v" if verbose_level == logging.DEBUG else ""),
+         "--delay-directory-restore", "--one-file-system", "--no-same-owner",
+         "--no-same-permissions", "--overwrite", "-f", tarfile],
+        stderr=sys.stderr if verbose_level == logging.DEBUG else None, close_fds=True
+    )
 
 
 # def test_10_create_container_meta(mocker, clfapi):

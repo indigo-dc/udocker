@@ -402,13 +402,16 @@ def test_14__sel_mount_spec(mocker, runc, mount, host_source, cont_dest, expecte
     assert sel_mount_spec == expected
 
 
-# FIXME: this test fails, need to be fixed
 @pytest.mark.parametrize("mount,host_source,cont_dest,new_data,expected_mounts,expected", [
     ([], "/HOSTDIR", "/CONTDIR", {}, [], False),
     ([], "/HOSTDIR", "/CONTDIR", {"options": ["a", "su"]}, [], False),
+    ([{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR", "options": ["b"]}], "/HOSTDIR", "/CONTDIR",
+     {"options": ["su"]},
+     [{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR", "options": ["b", "su"]}], True),
+
     # ([{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR", "options": ["b"]}], "/HOSTDIR", "/CONTDIR",
     #  {"options": ["c", "su"]},
-    #  [{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR", "options": ["b", "c", "su"]}], True), # FIXME: this test fails may need some changes in the code if the scenarios is correctly defined
+    #  [{"destination": "/CONTDIR", "type": "none", "source": "/HOSTDIR", "options": ["b", "c", "su"]}], True), # FIXME: this test fails may need some changes in the code
 ])
 @pytest.mark.parametrize('xmode', XMODE)
 def test_15__mod_mount_spec(mocker, fresh_runc, mount, host_source, cont_dest, new_data, expected_mounts, expected):
@@ -419,7 +422,6 @@ def test_15__mod_mount_spec(mocker, fresh_runc, mount, host_source, cont_dest, n
 
     assert result == expected
     assert fresh_runc._cont_specjson["mounts"] == expected_mounts
-    # FIXME: this test fails, need to be fixed
 
 
 @pytest.mark.parametrize(
@@ -565,6 +567,7 @@ def test_19_run(mocker, runc, log_level, init_result, load_spec, load_spec_new, 
     mocker.patch.object(runc, '_run_banner')
     mocker.patch.object(runc, '_set_cpu_affinity', return_value=[0, ])
     mocker.patch.object(os.path, 'realpath', return_value='/path/to/docker')
+    mocker.patch.object(FileBind, 'setup')
 
     mocker.patch.object(runc, 'opt', {'cmd': ['ls', '-la']})
     mocker.patch.object(Config, 'conf', {'runc_nomqueue': True, 'tmpdir': '/tmp', 'use_runc_executable': True,

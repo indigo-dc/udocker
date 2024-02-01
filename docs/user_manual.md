@@ -289,6 +289,7 @@ form Docker Hub, and/or load or imported from files.
 Options:
 
 * `-l` long format, display more information about the images and related layers
+* `-p` display the image platform including os, architecture and variant
 
 Examples:
 
@@ -343,6 +344,7 @@ Options:
 
 * `-m` show the current execution mode of each container
 * `-s` show current disk usage (container size in MB), can be very slow
+* `-p` display the image platform including os, architecture and variant
 
 Examples:
 
@@ -972,7 +974,6 @@ Example:
 UDOCKER_DEFAULT_EXECUTION_MODE=P2 ./udocker run mycontainer /bin/ls
 ```
 
-
 ### 3.28. tag
 
 ```bash
@@ -981,10 +982,10 @@ udocker tag SOURCEREPO/IMAGE:TAG  TARGETREPO/IMAGE:TAG
 
 Creates a new image tag from an existing source image. The newly created
 image tag is a replica of the source image. The source image can be removed
-or further updated via pull without affecting the newly created tag. A  
-new tag does not occupy additional space as the image layers are shared.  
+or further updated via pull without affecting the newly created tag. A
+new tag does not occupy additional space as the image layers are shared.
 The image layers are only removed from the local udocker repository when
-no other image is referencing them. 
+no other image is referencing them.
 
 Example:
 
@@ -1003,10 +1004,8 @@ Obtain and print information about an IMAGE manifest from a remote registry.
 Example:
 
 ```bash
-udocker manifest inspect centos:centos7  
+udocker manifest inspect centos:centos7
 ```
-
-
 
 ## 4. Running MPI jobs
 
@@ -1456,6 +1455,7 @@ container is not being executed.
 * Docker <https://www.docker.com/>
 * PRoot <http://proot.me>
 * Fakechroot <https://github.com/dex4er/fakechroot/wiki>
+* Patchelf <https://github.com/NixOS/patchelf>
 * runC <https://runc.io/>
 * crun <https://github.com/containers/crun>
 * Singularity <http://singularity.lbl.gov>

@@ -16,7 +16,7 @@ from udocker.utils.chksum import ChkSUM
 
 
 def _str(data):
-    '''Safe str for Python 3'''
+    """Safe str for Python 3"""
     try:
         return data.decode()
     except (UnicodeDecodeError, AttributeError):
@@ -26,11 +26,11 @@ def _str(data):
 
 
 class UdockerTools:
-    ''' Download and setup of the udocker supporting tools
+    """ Download and setup of the udocker supporting tools
         Includes: proot and alternative python modules, these
         are downloaded to facilitate the installation by the
         end-user.
-    '''
+    """
 
     def __init__(self, localrepo):
         self.localrepo = localrepo                       # LocalRepository object
@@ -42,7 +42,7 @@ class UdockerTools:
 
     # TODO Review instructions
     def _instructions(self):
-        '''
+        """
         Udocker installation instructions are available at:
 
           https://indigo-dc.github.io/udocker/installation_manual.html
@@ -69,7 +69,7 @@ class UdockerTools:
 
         3) once installed the binaries and containers will be placed
            by default under $HOME/.udocker
-        '''
+        """
 
         msgout = "udocker command line interface version: " + __version__
         msgout = msgout + "\nrequires udocker tool modules from: " + self._tarball_release
@@ -77,7 +77,7 @@ class UdockerTools:
         MSG.info(msgout)
 
     def _version2int(self, version):
-        '''Convert version string to integer'''
+        """Convert version string to integer"""
         version_int = 0
         factor = 1000 * 1000
         for vitem in _str(version).strip().split('.'):
@@ -90,8 +90,16 @@ class UdockerTools:
 
         return int(version_int)
 
+    def _version_isok(self, version):
+        """Is version >= than the minimum required tarball release"""
+        if not (version and self._tarball_release):
+            return False
+        tarball_version_int = self._version2int(version)
+        required_version_int = self._version2int(self._tarball_release)
+        return tarball_version_int >= required_version_int
+
     def _download(self, url, fileout=''):
-        '''Download a file'''
+        """Download a file"""
         if fileout:
             download_file = fileout
         else:
@@ -108,10 +116,10 @@ class UdockerTools:
         return ""
 
     def _get_file(self, url, fileout=''):
-        ''' Get file from list of possible locations file or internet,
+        """ Get file from list of possible locations file or internet,
             url: URL or local file
             fileout: full filename of downloaded file
-        '''
+        """
         filename = ''
         if '://' in url:
             LOG.debug('get %s from %s.', fileout, url)
@@ -128,8 +136,32 @@ class UdockerTools:
 
         return ''
 
+    def _verify_version(self, tarball_file):
+        """verify the tarball version"""
+        if not (tarball_file and os.path.isfile(tarball_file)):
+            return (False, "")
+
+        tmpdir = FileUtil("VERSION").mktmpdir()
+        if not tmpdir:
+            return (False, "")
+
+        try:
+            tfile = tarfile.open(tarball_file, "r:gz")
+            for tar_in in tfile.getmembers():
+                if tar_in.name.startswith("udocker_dir/lib/VERSION"):
+                    tar_in.name = os.path.basename(tar_in.name)
+                    tfile.extract(tar_in, path=tmpdir)
+            tfile.close()
+        except tarfile.TarError:
+            FileUtil(tmpdir).remove(recursive=True)
+            return (False, "")
+        tarball_version = FileUtil(tmpdir + "/VERSION").getdata('r').strip()
+        status = self._version_isok(tarball_version)
+        FileUtil(tmpdir).remove(recursive=True)
+        return (status, tarball_version)
+
     def _clean_install(self, tfile):
-        '''Remove files before install'''
+        """Remove files before install"""
         for tar_in in tfile.getmembers():
             basename = os.path.basename(tar_in.name)
             if tar_in.name.startswith('udocker_dir/bin/'):
@@ -148,7 +180,7 @@ class UdockerTools:
                 FileUtil(f_path).remove(recursive=True)
 
     def _get_mirrors(self, mirrors):
-        '''Get shuffled list of tarball mirrors'''
+        """Get shuffled list of tarball mirrors"""
         if isinstance(mirrors, str):
             mirrors = mirrors.split('\n')
 
@@ -245,10 +277,10 @@ class UdockerTools:
         return validation
 
     def download_tarballs(self, list_uid, dst_dir, from_locat, force):
-        ''' Download list of tarballs from the list of UIDs
+        """ Download list of tarballs from the list of UIDs
             Check for default files based on the host OS and arch
             or download from the list of uids in list_uid
-        '''
+        """
         lmodules = self._select_modules(list_uid, [])
         for modul in lmodules:
             locations = modul['urls']
@@ -277,7 +309,7 @@ class UdockerTools:
         return False
 
     def delete_tarballs(self, list_uid, dst_dir):
-        '''Delete tarballs corresponding to modules list_uid'''
+        """Delete tarballs corresponding to modules list_uid"""
         ret_value = True
         force = False
         if list_uid:
@@ -320,7 +352,7 @@ class UdockerTools:
         return False
 
     def show_metadata(self, metadict, long=False):
-        '''Show available modules and versions'''
+        """Show available modules and versions"""
         if long:
             for module in metadict:
                 MSG.info(120*"_")
@@ -356,7 +388,7 @@ class UdockerTools:
         return True
 
     def _installmod_logic(self, list_uid, top_dir, tar_dir, force):
-        '''Logics for installation of modules'''
+        """Logics for installation of modules"""
         lmodules = self._select_modules(list_uid, [])
         mod_dir = ''
         for modul in lmodules:
@@ -397,8 +429,8 @@ class UdockerTools:
         return True
 
     def _install_licenses(self, mod_all, top_dir, tar_dir, force):
-        ''' Install all licenses in docs directory
-        '''
+        """ Install all licenses in docs directory
+        """
         tarballfile = tar_dir + '/' + mod_all['docs']
         doc_dir = self.localrepo.docdir
         if top_dir:
@@ -429,8 +461,8 @@ class UdockerTools:
         return True
 
     def install_modules(self, list_uid, install_dir, from_locat, force=False):
-        ''' Install modules
-        '''
+        """ Install modules
+        """
         tar_dir = self.localrepo.tardir
         if from_locat:
             tar_dir = from_locat
@@ -467,11 +499,11 @@ class UdockerTools:
         return False
 
     def get_modules(self, list_uid, action, prefix):
-        ''' Get and manage installed modules through the file installed.json
+        """ Get and manage installed modules through the file installed.json
             list_uid: List of UIds of installed modules
             action: update, delete, show (update also creates if the json does not exist)
             prefix: directory where modules are installed
-        '''
+        """
         mod_inst = []
         new_mods = []
         install_json = Config.conf['installdir'] + '/' + Config.conf['installed_json']
@@ -518,10 +550,10 @@ class UdockerTools:
         return mod_inst
 
     def rm_module(self, list_uid, prefix):
-        ''' Remove/purges a list of modules
+        """ Remove/purges a list of modules
             list_uid: List of UIds of modules to be removed/purged
             prefix: directory where modules are installed
-        '''
+        """
         ret_value = True
         if list_uid:
             lmodules = self._select_modules(list_uid, [])

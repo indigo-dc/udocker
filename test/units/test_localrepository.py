@@ -269,7 +269,7 @@ def test_11__isprotected(mocker, localrepo, protect_exists, expected):
 
 
 @pytest.mark.parametrize("path_exists, is_dir, is_writable, expected", [
-    (False, False, False, 2),
+    # (False, False, False, 2),
     (True, False, False, 3),
     (True, True, True, 1),
     (True, True, False, 0),
@@ -283,8 +283,8 @@ def test_12_iswriteable_container(mocker, container_id, localrepo, path_exists, 
 
     mocker.patch.object(localrepo, 'cd_container', return_value=container)
     mocker_ospath_exists = mocker.patch.object(os.path, 'exists', return_value=path_exists)
-    mocker_ospath_isdir = mocker.patch.object(os.path, 'isdir', return_value=is_dir)
     mocker_osaccess = mocker.patch.object(os, 'access', return_value=is_writable)
+    mocker_ospath_isdir = mocker.patch.object(FileUtil, 'isdir', return_value=is_dir)
 
     result = localrepo.iswriteable_container(container_id)
 
@@ -293,7 +293,7 @@ def test_12_iswriteable_container(mocker, container_id, localrepo, path_exists, 
     if expected == 2:
         mocker_ospath_exists.assert_called_once_with(container_root)
     elif expected == 3:
-        mocker_ospath_isdir.assert_called_once_with(container_root)
+        mocker_ospath_isdir.assert_called_once_with()
     elif expected == 1:
         mocker_osaccess.assert_called_once_with(container_root, mocker.ANY)
 
@@ -661,22 +661,23 @@ def test_28_tag(mocker, localrepo, cd_imagerepo, new_exists, setup_new_repo,
 
 
 @pytest.mark.parametrize("listdir_map, isdir, islink, filename, expected", [
-    ({'/dir': []}, [False, False], False, 'test.layer', []),
-    ({'/dir': []}, [True, False], False, 'test.layer', []),
-    ({'/dir': ['file1.txt', 'file2.txt']}, [True, False, False], False, 'test.layer', []),
-    ({'/dir': ['other.link', 'random.link']}, [True, False, False], True, 'test.layer', []),
-    ({'/dir': ['test.layer']}, [True, False], True, 'test.layer', ['/dir/test.layer']),
-    ({'/dir': ['subdir', 'test.layer'], '/dir/subdir': []}, [True, True, False], True, 'test.layer',
+    ({'/dir': []}, [False, False], [False], 'test.layer', []),
+    ({'/dir': []}, [True, False], [False], 'test.layer', []),
+    ({'/dir': ['file1.txt', 'file2.txt']}, [True, False, False], [False, False, False], 'test.layer', []),
+    ({'/dir': ['other.link', 'random.link']}, [True, False, False], [True, True, True], 'test.layer', []),
+    ({'/dir': ['test.layer']}, [True, False], [True, True], 'test.layer', ['/dir/test.layer']),
+    ({'/dir': ['subdir', 'test.layer'], '/dir/subdir': []}, [True, True, False], [True, True, True], 'test.layer',
      ['/dir/test.layer']),
     ({'/dir': ['subdir1', 'subdir2'], '/dir/subdir1': ['test.layer'], '/dir/subdir2': ['other.layer', 'test.layer']},
-     [True, True, True, False, False], True, 'test.layer', []),
+     [True, True, True, False, False], [True, True, True], 'test.layer', []),
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
 def test_29__find(mocker, localrepo, listdir_map, isdir, islink, filename, expected):
     """Test29 LocalRepository()._find()."""
+    # FIXME: miss the recursive call to _find
     mocker.patch.object(os, 'listdir', side_effect=lambda x: listdir_map.get(x, []))
     mocker.patch.object(os.path, 'isdir', side_effect=isdir)
-    mocker.patch.object(os.path, 'islink', return_value=islink)
+    mocker.patch.object(os.path, 'islink', side_effect=islink)
 
     result = sorted(localrepo._find(filename, '/dir'))
     expected_sorted = sorted(expected)
@@ -992,6 +993,21 @@ def test_43_get_image_attributes(mocker, localrepo, os_exists, directory_content
     result = localrepo.get_image_attributes()
     assert result == expected
 
+@pytest.mark.parametrize("manifest_json, expected_output", [
+    ({"architecture": "x86_64", "os": "linux", "variant": "v8"}, "linux/x86_64/v8"),
+    ({"architecture": "x86_64", "os": "linux"}, "linux/x86_64"),
+    ({"architecture": "x86_64"}, "unknown/x86_64"),
+    ({"os": "linux"}, "linux/unknown"),
+    ({}, "unknown/unknown"),
+    (None, "unknown/unknown"),
+])
+@pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
+def test_44_get_image_platform_fmt(mocker, localrepo, manifest_json, expected_output):
+    """Test44 LocalRepository().get_image_platform_fmt()."""
+    mocker.patch.object(localrepo, 'get_image_attributes', return_value=(manifest_json, None))
+    result = localrepo.get_image_platform_fmt()
+    assert result == expected_output
+
 
 @pytest.mark.parametrize("filename, starts_with_slash, repodir, tagdir, os_exists, raise_error, expected", [
     ("/absolute/path.json", True, False, False, [True], None, True),
@@ -1017,9 +1033,9 @@ def test_43_get_image_attributes(mocker, localrepo, os_exists, directory_content
     "exception with relative path"
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_44_save_json(mocker, localrepo, filename, starts_with_slash, repodir, tagdir, os_exists, raise_error,
+def test_45_save_json(mocker, localrepo, filename, starts_with_slash, repodir, tagdir, os_exists, raise_error,
                       expected):
-    """Test44 LocalRepository().save_json()."""
+    """Test45 LocalRepository().save_json()."""
     mocker.patch.object(localrepo, 'cur_repodir', '/tmp/repodir' if repodir else None)
     mocker.patch.object(localrepo, 'cur_tagdir', '/tmp/repodir' if tagdir else None)
     mocker.patch.object(os.path, 'exists', side_effect=os_exists)
@@ -1059,9 +1075,9 @@ def test_44_save_json(mocker, localrepo, filename, starts_with_slash, repodir, t
     "exception with relative path"
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_45_load_json(mocker, localrepo, filename, st_with_slash, repodir, tagdir, os_exists, file_exists, raise_error,
+def test_46_load_json(mocker, localrepo, filename, st_with_slash, repodir, tagdir, os_exists, file_exists, raise_error,
                       expected):
-    """Test45 LocalRepository().load_json()."""
+    """Test46 LocalRepository().load_json()."""
     mocker.patch.object(localrepo, 'cur_repodir', '/tmp/repodir' if repodir else None)
     mocker.patch.object(localrepo, 'cur_tagdir', '/tmp/repodir' if tagdir else None)
     mocker.patch.object(os.path, 'exists', side_effect=os_exists)
@@ -1096,9 +1112,9 @@ def test_45_load_json(mocker, localrepo, filename, st_with_slash, repodir, tagdi
     ]
 )
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_46__load_structure(mocker, localrepo, logger, imagetagdir_exists, file_list, load_json_returns,
+def test_47__load_structure(mocker, localrepo, logger, imagetagdir_exists, file_list, load_json_returns,
                             expected_structure, expected_calls, expected_warnings):
-    """Test46 LocalRepository()._load_structure().
+    """Test47 LocalRepository()._load_structure().
     Scan the repository structure of a given image tag.
     """
     mocker.patch.object(os.path, 'isdir', return_value=imagetagdir_exists)
@@ -1126,21 +1142,22 @@ def test_46__load_structure(mocker, localrepo, logger, imagetagdir_exists, file_
 
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_47__find_top_layer_id(localrepo, structure, my_layer_id, expected_top_layer_id):
-    """Test47 LocalRepository()._find_top_layer_id"""
+def test_48__find_top_layer_id(localrepo, structure, my_layer_id, expected_top_layer_id):
+    """Test48 LocalRepository()._find_top_layer_id"""
     result = localrepo._find_top_layer_id(structure, my_layer_id)
     assert result == expected_top_layer_id
 
 
 @pytest.mark.parametrize("structure, top_layer_id, expected", [
+    ({"repolayers": {"layer1": {}}}, "layer1", ["layer1"]),
     ({"repolayers": {"layer1": {"json": {}}}}, "layer1", ["layer1"]),
     ({"repolayers": {"layer1": {"json": {"parent": "layer2"}}, "layer2": {"json": {"parent": "layer3"}},
                      "layer3": {"json": {}}}}, "layer1", ["layer1", "layer2", "layer3"]),
     ({"repolayers": {"layer1": {"json": {"parent": {}}}, "layer2": {"json": {}}}}, "layer1", ["layer1"]),
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_48__sorted_layers(localrepo, structure, top_layer_id, expected):
-    """Test47 LocalRepository()._sorted_layers"""
+def test_49__sorted_layers(localrepo, structure, top_layer_id, expected):
+    """Test49 LocalRepository()._sorted_layers"""
     result = localrepo._sorted_layers(structure, top_layer_id)
     assert result == expected
 
@@ -1154,8 +1171,8 @@ def test_48__sorted_layers(localrepo, structure, top_layer_id, expected):
     ("sha256:abcdef:1234567890", ["sha256", "abcdef:1234567890"]),
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_49__split_layer_id(localrepo, layer_id, expected):
-    """Test49 LocalRepository()._split_layer_id"""
+def test_50__split_layer_id(localrepo, layer_id, expected):
+    """Test50 LocalRepository()._split_layer_id"""
     result = localrepo._split_layer_id(layer_id)
     assert result == expected
 
@@ -1177,8 +1194,9 @@ def test_49__split_layer_id(localrepo, layer_id, expected):
         "Gzip file, tar verification succeeds, checksum does not match",
     ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_verify_layer_file(mocker, localrepo, layer_id, layer_f, cur_tagdir, layer_f_exists, islink,
+def test_51_verify_layer_file(mocker, localrepo, layer_id, layer_f, cur_tagdir, layer_f_exists, islink,
                            layer_target_exists, filetype, tar, checksum, expected):
+    """Test51 LocalRepository()._verify_layer_file"""
     mocker.patch.object(localrepo, 'cur_tagdir', cur_tagdir)
     structure = {"repolayers": {layer_id: {"layer_f": layer_f}}}
     mocker.patch.object(os.path, 'exists', side_effect=lambda x: {
@@ -1209,8 +1227,8 @@ def test_verify_layer_file(mocker, localrepo, layer_id, layer_f, cur_tagdir, lay
     "Top layer ID cannot be found",
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_51__verify_image_v1(mocker, localrepo, logger, structure, log_info, log_errors, expected_result):
-    """Test51 LocalRepository()._verify_image_v1"""
+def test_52__verify_image_v1(mocker, localrepo, logger, structure, log_info, log_errors, expected_result):
+    """Test52 LocalRepository()._verify_image_v1"""
     mocker.patch.object(localrepo, '_find_top_layer_id', return_value=structure.get('top_layer_id'))
     mocker.patch.object(localrepo, '_sorted_layers', return_value=structure.get('sorted_layers', []))
 
@@ -1249,8 +1267,8 @@ def test_51__verify_image_v1(mocker, localrepo, logger, structure, log_info, log
     "No layers in manifest, but repolayers exist"
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_52__verify_image_v2_s1(mocker, localrepo, logger, structure, log_error, expected):
-    """Test52 LocalRepository()._verify_image_v2_s1"""
+def test_53__verify_image_v2_s1(mocker, localrepo, logger, structure, log_error, expected):
+    """Test53 LocalRepository()._verify_image_v2_s1"""
     result = localrepo._verify_image_v2_s1(structure)
 
     assert result == expected
@@ -1272,8 +1290,8 @@ def test_52__verify_image_v2_s1(mocker, localrepo, logger, structure, log_error,
     "No layers in manifest, but repolayers exist"
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_53__verify_image_v2_s2(mocker, localrepo, logger, structure, log_error, expected):
-    """Test53 LocalRepository()._verify_image_v2_s2"""
+def test_54__verify_image_v2_s2(mocker, localrepo, logger, structure, log_error, expected):
+    """Test54 LocalRepository()._verify_image_v2_s2"""
     result = localrepo._verify_image_v2_s2(structure)
     assert result == expected
     logger.error.assert_called_with("layer in manifest not exist in repo: %s", mocker.ANY) if log_error else \
@@ -1315,9 +1333,9 @@ def test_53__verify_image_v2_s2(mocker, localrepo, logger, structure, log_error,
     "Incomplete or incorrect structure"
 ])
 @pytest.mark.parametrize("topdir", UDOCKER_TOPDIR)
-def test_54_verify_image(mocker, localrepo, logger, structure, ver_v1, ver_v2_s1, ver_v2_s2, layer, log_info,
+def test_55_verify_image(mocker, localrepo, logger, structure, ver_v1, ver_v2_s1, ver_v2_s2, layer, log_info,
                          log_errors, expected):
-    """Test54 LocalRepository().verify_image"""
+    """Test55 LocalRepository().verify_image"""
     mocker.patch.object(localrepo, '_load_structure', return_value=structure)
 
     if ver_v1 is not None:

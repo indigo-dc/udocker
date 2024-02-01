@@ -5,8 +5,16 @@
 udocker unit tests: GetURLpyCurl
 """
 from io import BytesIO as strio
+
 import pytest
+
 from udocker.utils.curl import GetURLpyCurl
+from udocker.utils.fileutil import FileUtil
+
+try:
+    import pycurl
+except ImportError:
+    pass
 
 
 def _get(self, *args, **kwargs):
@@ -17,6 +25,11 @@ def _get(self, *args, **kwargs):
 @pytest.fixture
 def geturl():
     return GetURLpyCurl()
+
+
+@pytest.fixture
+def logger(mocker):
+    return mocker.patch('udocker.docker.LOG')
 
 
 def test_01_is_available(geturl, mocker):
@@ -62,19 +75,61 @@ def test_05__mkpycurl(geturl, mocker):
     mock_pyc.setopt.assert_called()
 
 
-# def test_06_get(geturl, mocker):
-#     """Test06 GetURLpyCurl().get() generic get."""
-#     geturl._geturl = type('test', (object,), {})()
-#     resout = geturl.get("http://host")
+def test_06_get(mocker, geturl):
+    geturl._geturl = type('test', (object,), {})()
+    resout = geturl.get("http://host")
 
 
-# ## Needs works
-# @patch.object(GetURLpyCurl, 'is_available')
-# def test_06_get(self, mock_sel):
-#     """Test06 GetURLpyCurl().get() generic get."""
-#     mock_sel.return_value = True
-#     geturl = GetURLpyCurl()
-#     geturl._geturl = type('test', (object,), {})()
-#     geturl.get = self._get
-#     status = geturl.get("http://host")
-#     self.assertEqual(status, "http://host")
+@pytest.mark.parametrize("url, kwargs, perform, status_code, expected_hdr_data, mycurl_error, expected_exception", [
+    ("http://example.com", {}, None, 200, {'X-ND-CURLSTATUS': '', 'X-ND-HTTPSTATUS': ''}, False, None),
+    ("http://example.com", {"timeout": 10, "header": ["User-Agent: custom"]}, None, 200,
+     {'X-ND-CURLSTATUS': '', 'X-ND-HEADERS': ['User-Agent: custom'], 'X-ND-HTTPSTATUS': ''}, False, None),
+    ("http://example.com", {"timeout": 10, "header": ["User-Agent: custom"]}, None, 200,
+     {'X-ND-CURLSTATUS': '', 'X-ND-HEADERS': ['User-Agent: custom'], 'X-ND-HTTPSTATUS': ''}, True, True),
+    ("http://example.com", {"ofile": "test", "timeout": 10, "header": ["User-Agent: custom"]}, None, 200,
+     {'X-ND-CURLSTATUS': '', 'X-ND-HEADERS': ['User-Agent: custom'], 'X-ND-HTTPSTATUS': ''}, False, None),
+    ("http://example.com", {"ofile": "test", "timeout": 10, "header": ["User-Agent: custom"]}, None, 401,
+     {'X-ND-CURLSTATUS': '', 'X-ND-HEADERS': ['User-Agent: custom'], 'X-ND-HTTPSTATUS': ''}, False, None),
+    ("http://example.com", {"ofile": "test", "timeout": 10, "header": ["User-Agent: custom"]}, None, 301,
+     {'X-ND-CURLSTATUS': '', 'X-ND-HEADERS': ['User-Agent: custom'], 'X-ND-HTTPSTATUS': ''}, False, None),
+    ("http://example.com", {"ofile": "test", "timeout": 10, "header": ["User-Agent: custom"]}, None, 206,
+     {'X-ND-CURLSTATUS': '', 'X-ND-HEADERS': ['User-Agent: custom'], 'X-ND-HTTPSTATUS': ''}, False, None),
+    ("http://example.com", {"ofile": "test", "resume": "", "timeout": 10, "header": ["User-Agent: custom"]}, None, 206,
+     {'X-ND-CURLSTATUS': '', 'X-ND-HEADERS': ['User-Agent: custom'], 'X-ND-HTTPSTATUS': ''}, False, None),
+    ("http://example.com", {"ofile": "test", "timeout": 10, "header": ["User-Agent: custom"]}, None, 416,
+     {'X-ND-CURLSTATUS': '', 'X-ND-HEADERS': ['User-Agent: custom'], 'X-ND-HTTPSTATUS': ''}, False, None),
+    # ("http://example.com", {"ofile": "test", "resume": "", "timeout": 10, "header": ["User-Agent: custom"]}, None, 416,
+    #  {'X-ND-CURLSTATUS': '', 'X-ND-HEADERS': ['User-Agent: custom'], 'X-ND-HTTPSTATUS': ''}, False, None), # FIXME: recursive
+    ("http://example.com", {"ofile": "test", "timeout": 10, "header": ["User-Agent: custom"]}, None, 405,
+     {'X-ND-CURLSTATUS': '', 'X-ND-HEADERS': ['User-Agent: custom'], 'X-ND-HTTPSTATUS': ''}, False, None),
+    ("http://example.com", {}, (pycurl.error(0, 'error'),), 200, {'X-ND-CURLSTATUS': 0, 'X-ND-HTTPSTATUS': 'error'},
+     False, pycurl.error),
+])
+def test_06_get(mocker, geturl, url, kwargs, perform, status_code, expected_hdr_data, mycurl_error, expected_exception):
+    """Test06 GetURLpyCurl().get() generic get."""
+    mocker.patch.object(geturl, '_set_defaults')
+
+    if mycurl_error:
+        mock_mkpycurl = mocker.patch.object(geturl, '_mkpycurl', side_effect=OSError)
+    else:
+        mock_mkpycurl = mocker.patch.object(geturl, '_mkpycurl')
+        mock_pycurl_instance = mocker.Mock(spec=pycurl.Curl)
+        mock_output_file = mocker.Mock()
+        mock_filep = mocker.Mock()
+        mock_mkpycurl.return_value = (mock_output_file, mock_filep)
+        mock_pycurl_instance.perform.side_effect = perform
+        mocker.patch('pycurl.Curl', return_value=mock_pycurl_instance)
+
+    mocker.patch.object(geturl, 'get_status_code', return_value=status_code)
+    mocker.patch.object(FileUtil, 'remove')
+
+    result = geturl.get(url, **kwargs)
+
+    if expected_exception and mycurl_error:
+        assert result == (None, None)
+    elif expected_exception:
+        assert result[0].data == expected_hdr_data
+    else:
+        assert result[0].data == expected_hdr_data
+        geturl._set_defaults.assert_called_once()
+        mock_mkpycurl.assert_called_once()
