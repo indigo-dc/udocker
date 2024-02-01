@@ -372,7 +372,7 @@ def test_12__add_mount_spec(mocker, runc, rwmode, options, expected):
 
 
 @pytest.mark.parametrize("index,initial_mount,host_source,cont_dest,expected", [
-    # (0, [{"destination": "/CONTDIR", "source": "/HOSTDIR"}, ], "/HOSTDIR", "/CONTDIR", 0), #FIXME: this test fails need some changes in the code
+    (0, [{"destination": "/CONTDIR", "source": "/HOSTDIR"}, ], "/HOSTDIR", "/CONTDIR", 0),
     (None, [{"destination": "/XXXX", "source": "/HOSTDIR"}, ], "/HOSTDIR", "/CONTDIR", 1),
     (None, [{"destination": "/CONTDIR", "source": "XXXX"}, ], "/HOSTDIR", "/CONTDIR", 1),
     (1, [{"destination": "/CONTDIR", "source": "XXXX"}, {"destination": "/CONTDIR", "source": "/HOSTDIR"}],
@@ -385,7 +385,6 @@ def test_13__del_mount_spec(mocker, runc, index, initial_mount, host_source, con
     mocker.patch.object(runc, '_sel_mount_spec', return_value=index)
     runc._del_mount_spec(host_source, cont_dest)
     assert len(runc._cont_specjson["mounts"]) == expected
-    # FIXME: this test needs changes in the code, also using more than one mode is affecting the results
 
 
 @pytest.mark.parametrize("mount, host_source, cont_dest, expected", [
