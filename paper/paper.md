@@ -261,7 +261,7 @@ executables and `$HOME/.udocker/lib` for libraries.
 Currently the external tools and libraries compiled and provided with
 udocker support *x86_64*, *aarch64*, *arm* 32bit and *i386* for use with the
 **P** modes. The binaries for the remaining execution modes are currently
-only provided for *x86_64* systems, this may change in the future as thes
+only provided for *x86_64* systems, this may change in the future as these
 and other architectures become more widely used.
 
 The **F** mode is particularly unique to udocker. It relies on the interception
