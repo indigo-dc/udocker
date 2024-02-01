@@ -903,7 +903,7 @@ class UdockerCLI:
                 layers_list = self.localrepo.get_layers(imagerepo, tag)
                 if layers_list:
                     for (layer_name, size) in layers_list:
-                        file_size = size / (1024 * 1024)
+                        file_size = int(size / (1024 * 1024))
                         if not file_size and size:
                             file_size = 1
 
