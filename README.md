@@ -182,7 +182,7 @@ udocker tag centos/centos8  mycentos/centos8:arm64
 
 Create a container from a pulled image, assign a name to the created
 container and run it. A created container can be run multiple times
-until it is explicitely removed.
+until it is explicitly removed.
 
 ```bash
 udocker create --name=myfed  fedora:29

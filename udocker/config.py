@@ -46,7 +46,7 @@ class Config(object):
     conf['tmpdir'] = os.getenv("TMPDIR", "/tmp")    # for tmp files only
 
     # defaults for container execution
-    conf['cmd'] = ["bash", "-i"]  # Comand to execute
+    conf['cmd'] = ["bash", "-i"]  # Command to execute
 
     # default path for executables
     conf['root_path'] = "/usr/sbin:/sbin:/usr/bin:/bin"
@@ -110,7 +110,7 @@ class Config(object):
                                        "/usr/lib", )
     conf['lib_dirs_list_append'] = (".", )
 
-    # fakechroot access files, used to circunvent openmpi init issues
+    # fakechroot access files, used to circumvent openmpi init issues
     conf['access_files'] = ("/sys/class/infiniband", "/dev/open-mx",
                             "/dev/myri0", "/dev/myri1", "/dev/myri2",
                             "/dev/myri3", "/dev/myri4", "/dev/myri5",

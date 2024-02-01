@@ -34,7 +34,7 @@ class ElfPatcherTestCase(TestCase):
         mock_path.return_value = "/some_contdir"
         mock_hinfo.uid = "1000"
         elfp = ElfPatcher(self.local, self.contid)
-        self.assertTrue(mock_path.callled)
+        self.assertTrue(mock_path.called)
         self.assertEqual(elfp._uid, "1000")
 
     @patch('udocker.helper.elfpatcher.FileUtil.find_exec')

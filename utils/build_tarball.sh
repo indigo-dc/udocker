@@ -20,7 +20,7 @@
 
 # The tarball containing the build binaries for udocker is
 # maintained separately and has its own version. Each release of
-# udocker requires a tarball that is equal or greather than a given
+# udocker requires a tarball that is equal or greater than a given
 # base version.
 # i.e. udocker 1.3.0 requires a tarball >= 1.2.8
 
