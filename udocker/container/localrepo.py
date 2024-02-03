@@ -294,11 +294,10 @@ class LocalRepository(object):
             out_imagerepo = open(container_dir + "/imagerepo.name", 'w')
         except (IOError, OSError):
             return None
-        else:
-            out_imagerepo.write(imagerepo + ":" + tag)
-            out_imagerepo.close()
-            self.cur_containerdir = container_dir
-            return container_dir
+        out_imagerepo.write(imagerepo + ":" + tag)
+        out_imagerepo.close()
+        self.cur_containerdir = container_dir
+        return container_dir
 
     def _is_tag(self, tag_dir):
         """Does this directory contain an image tag ?
@@ -486,9 +485,8 @@ class LocalRepository(object):
             out_tag = open(directory + "/TAG", 'w')
         except (IOError, OSError):
             return False
-        else:
-            out_tag.write(self.cur_repodir + ":" + tag)
-            out_tag.close()
+        out_tag.write(self.cur_repodir + ":" + tag)
+        out_tag.close()
         return True
 
     def set_version(self, version):
