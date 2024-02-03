@@ -376,10 +376,9 @@ class FileUtil:
             filep = open(self.filename, mode)
         except (OSError, TypeError):
             return ""
-        else:
-            buf = filep.readline().strip()
-            filep.close()
-            return buf
+        buf = filep.readline().strip()
+        filep.close()
+        return buf
 
     def putdata(self, buf, mode="wb"):
         """Write buffer to file"""
