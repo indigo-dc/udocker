@@ -319,14 +319,14 @@ class FileUtil(object):
 
     def isexecutable(self):
         """Check if execute bit is set"""
-        try: 
+        try:
             return os.access(self.filename, os.X_OK)
         except (IOError, OSError, TypeError):
             return False
 
     def iswriteable(self):
         """Check if execute bit is set"""
-        try: 
+        try:
             return os.access(self.filename, os.W_OK)
         except (IOError, OSError, TypeError):
             return False
@@ -378,10 +378,9 @@ class FileUtil(object):
             filep = open(self.filename, mode)
         except (IOError, OSError, TypeError):
             return ""
-        else:
-            buf = filep.readline().strip()
-            filep.close()
-            return buf
+        buf = filep.readline().strip()
+        filep.close()
+        return buf
 
     def putdata(self, buf, mode="wb"):
         """Write buffer to file"""
