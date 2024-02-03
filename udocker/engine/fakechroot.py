@@ -59,7 +59,7 @@ class FakechrootEngine(ExecutionEngineCommon):
 
         f_util = FileUtil(self.localrepo.libdir)
         fakechroot_so = f_util.find_file_in_dir(image_list)
-        if fakechroot_so.count('-') != 3:
+        if os.path.basename(fakechroot_so).count('-') != 3:
             MSG.info("Info: this OS or architecture might not be supported by this execution mode"
                      "\n      specify path to libfakechroot.so with environment UDOCKER_FAKECHROOT_SO"
                      "\n      or choose other execution mode with: udocker setup --execmode=<mode>")
@@ -91,7 +91,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                 libc_relative_path = libc_abs_path[len(self.container_root):]
                 (dummy, filetype) = \
                     OSInfo(self.container_root).get_filetype(libc_relative_path)
-                if "ELF" in filetype and "dynamic" in filetype:
+                if "ELF" in filetype and ( "dynamic" in filetype or "DYN" in filetype):
                     return libc_relative_path
         return ""
 
@@ -153,6 +153,10 @@ class FakechrootEngine(ExecutionEngineCommon):
         self.opt["env"].append("PWD=" + self.opt["cwd"])
         self.opt["env"].append("FAKECHROOT_BASE=" + os.path.realpath(self.container_root))
         self.opt["env"].append("LD_PRELOAD=" + self._fakechroot_so)
+
+        if Config.conf['fakechroot_cmd_subst']:
+            self.opt["env"].append("FAKECHROOT_CMD_SUBST=" +
+                                   Config.conf['fakechroot_cmd_subst'])
 
         if Config.conf['fakechroot_expand_symlinks'] is None:
             self.opt["env"].append("FAKECHROOT_EXPAND_SYMLINKS=" +
@@ -226,7 +230,11 @@ class FakechrootEngine(ExecutionEngineCommon):
 
         real_path = FileUtil(self.container_root).cont2host(relc_path, self.opt["vol"])
         hashbang = FileUtil(real_path).get1stline()
-        match = re.search("#! *([^ ]+)(.*)", hashbang.decode())
+        try:
+            match = re.search("#! *([^ ]+)(.*)", hashbang.decode())
+        except UnicodeDecodeError:
+            Msg().err("Error: file is not executable:", relc_path)
+            sys.exit(1)
         if match and not match.group(1).startswith('/'):
             LOG.error("no such file %s in %s", match.group(1), exec_path)
             sys.exit(1)
@@ -257,6 +265,7 @@ class FakechrootEngine(ExecutionEngineCommon):
         exec_path = self._run_init(container_id)
         if not exec_path:
             return 2
+        exec_path = os.path.normpath(exec_path)
 
         self._check_arch()
         self._run_invalid_options()
