@@ -1215,7 +1215,6 @@ class UdockerCLI(object):
         --purge                 :clean mountpoints and files created by udocker
         --fixperm               :attempt to fix file permissions
         --nvidia                :add NVIDIA libraries and binaries
-                                 (nvidia support is EXPERIMENTAL)
 
         <mode> is one of the following execution modes:
         P1: proot accelerated mode using seccomp filtering (default)
