@@ -14,6 +14,10 @@
 * Mode Fn musl execvpe()
 * Mode Fn musl improve command substitution
 * Mode Pn make links2symlinks feature disabled by default
+* udocker improve is_binary_executable()
+* udocker fix fakechroot parsing of so, exec_path and add cmd subst
+* pylint compliance improvements
+* use udockertools 1.2.11
 
 ## udocker (1.3.12)
 
