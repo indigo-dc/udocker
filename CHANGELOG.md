@@ -1,5 +1,20 @@
 # Changelog
 
+## udocker (1.3.13)
+
+* Mode Fn glibc fix dladdr(), dlopen(), dlmopen(), dl_iterate_phdr()
+* Mode Fn glibc add dladdr1()
+* Mode Fn glibc add execvpe(), execveat()
+* Mode Fn glibc add getauxval()
+* Mode Fn glibc add scandirat(), scandirat64()
+* Mode Fn glibc change stat64(), lstat64(), stat()
+* Mode Fn glibc add narrowing of program_invocation_name
+* Mode Fn glibc improve command substitution
+* Mode Fn musl fix dladdr(), dlopen(), dlmopen(), dl_iterate_phdr()
+* Mode Fn musl execvpe()
+* Mode Fn musl improve command substitution
+* Mode Pn make links2symlinks feature disabled by default
+
 ## udocker (1.3.12)
 
 * fix units tests, no modifications w.r.t. 1.3.11
