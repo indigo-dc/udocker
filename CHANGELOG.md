@@ -1,5 +1,27 @@
 # Changelog
 
+## udocker (1.3.13)
+
+* udocker improve binary executables identification
+* udocker fix fakechroot parsing of so, exec_path and add cmd subst
+* udocker implement minor pylint compliance improvements
+* udocker mode Pn make links2symlinks feature disabled by default in config: solves #412
+* New udockertools 1.2.11 tarball
+* udockertools mode Fn glibc fix dladdr(), dlopen(), dlmopen(), dl_iterate_phdr()
+* udockertools mode Fn glibc add dladdr1()
+* udockertools mode Fn glibc add execvpe(), execveat()
+* udockertools mode Fn glibc add getauxval()
+* udockertools mode Fn glibc add scandirat(), scandirat64()
+* udockertools mode Fn glibc change stat64(), lstat64(), stat()
+* udockertools mode Fn glibc add narrowing of program_invocation_name
+* udockertools mode Fn glibc improve command substitution
+* udockertools mode Fn musl fix dladdr(), dlopen(), dlmopen(), dl_iterate_phdr()
+* udockertools mode Fn musl execvpe()
+* udockertools mode Fn musl improve command substitution
+* udockertools mode Fn added support for Alpine 3.19 (x86_64)
+* udockertools mode Fn added support for Fedora 39 (x86_64, aarch64, ppc64le)
+* udockertools mode Rn include runc 1.1.12
+
 ## udocker (1.3.12)
 
 * fix units tests, no modifications w.r.t. 1.3.11

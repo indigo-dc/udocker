@@ -107,7 +107,8 @@ v1.1.x for Python 2 is no longer maintained but is still available
           load                          :Load image from stdin (saved by docker)
           save -o <imagefile> <repo/image:tag>  :Save image with layers to file
 
-          inspect -p <repo/image:tag>   :Return low level information on image
+          inspect <repo/image:tag>      :Return low level information on image
+          inspect -p <container>        :Return path to container location
           verify <repo/image:tag>       :Verify a pulled or loaded image
           manifest inspect <repo/image:tag> :Print manifest metadata
 
@@ -137,18 +138,20 @@ v1.1.x for Python 2 is no longer maintained but is still available
 
 Some examples of usage:
 
-Search container images in dockerhub.
+Search container images in dockerhub and listing tags.
 
 ```bash
 udocker search  fedora
 udocker search  ubuntu
-udocker search  indigodatacloud
+udocker search  debian
+
+udocker search --list-tags ubuntu
 ```
 
 Pull from dockerhub and list the pulled images.
 
 ```bash
-udocker pull   fedora:29
+udocker pull   fedora:39
 udocker pull   busybox
 udocker pull   iscampos/openqcd
 udocker images
@@ -172,7 +175,8 @@ udocker tag centos/centos8  mycentos/centos8:arm64
 ```
 
 Create a container from a pulled image, assign a name to the created container and run it. A created
-container can be run multiple times until it is explicitly removed.
+container can be run multiple times until it is explicitly removed. Files modified or added to the container
+remain available across executions until the container is removed.
 
 ```bash
 udocker create --name=myfed  fedora:29
@@ -207,7 +211,7 @@ udocker run  -v /tmp  --entrypoint=/bin/bash  myfed  -c 'cd /tmp; ./myscript.sh'
 ```
 
 Execute mounting the host /var, /proc, /sys and /tmp in the same container directories. Notice that
-the content of these container directories will be obfuscated.
+the content of these container directories will be obfuscated by the host files.
 
 ```bash
 udocker run -v /var -v /proc -v /sys -v /tmp  myfed  /bin/bash
@@ -268,6 +272,14 @@ udocker setup  --execmode=S1  myfed
 udocker run  --user=root myfed  yum install -y firefox pulseaudio gnash-plugin
 ```
 
+Change execution to enable nvidia ready applications. Requires that
+the nvidia drivers are installed in the host system.
+
+```bash
+udocker setup  --nvidia  mytensorflow
+```
+
+
 ## Security
 
 By default udocker via PRoot offers the emulation of the root user. This emulation mimics a real
@@ -318,8 +330,8 @@ udocker does not provide all the docker features, and is not intended as a docke
 udocker is mainly oriented at providing a run-time environment for containers execution in user
 space. udocker is particularly suited to run user applications encapsulated in docker containers.
 
-Debugging inside of udocker with the PRoot engine will not work due to the way PRoot implements the
-chroot environment
+Debugging or using strace with the PRoot engine will not work as both the debuggers and PRoot use the
+same tracing mechanism.  
 
 ## Execution mode specific limitations
 

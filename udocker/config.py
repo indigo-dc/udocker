@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Configurations options and treatment/overrinding"""
+"""Configurations options and treatment/overriding"""
 import os
 import logging
 
@@ -24,14 +24,13 @@ class Config:
 
     # udocker installation tarball the release is the minimum requirement
     # the actual tarball used in the installation can have a higher version
-    conf['tarball_release'] = "1.2.10"
-
+    conf['tarball_release'] = "1.2.11"
     conf['tarball'] = (
         "https://download.ncg.ingrid.pt/"
-        "webdav/udocker/udocker-englib-1.2.10.tar.gz"
+        "webdav/udocker/udocker-englib-1.2.11.tar.gz"
         " "
         "https://raw.githubusercontent.com"
-        "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.10.tar.gz"
+        "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.11.tar.gz"
     )
     # Either remove, as not been used
     # conf['installinfo'] = ["https://raw.githubusercontent.com/indigo-dc/udocker/master/messages"]
@@ -80,7 +79,7 @@ class Config:
     # PRoot override seccomp
     conf['proot_noseccomp'] = None
     conf['proot_killonexit'] = True   # PRoot --kill-on-exit
-    conf['proot_link2symlink'] = True   # PRoot --link2symlink
+    conf['proot_link2symlink'] = False   # PRoot --link2symlink
 
     # fakechroot engine get ld_library_paths from ld.so.cache
     conf['ld_so_cache'] = "/etc/ld.so.cache"
@@ -91,12 +90,21 @@ class Config:
     # translate symbolic links into pathnames None means automatic
     conf['fakechroot_expand_symlinks'] = None
 
-    # patterns to search for libc.so for bypass in fakechroot
-    conf['libc_search'] = ("/lib64/libc.so.[0-9]", "/usr/lib64/libc.so.[0-9]",
-                           "/usr/lib/libc.so.[0-9]", "/lib/libc.so.[0-9]",
-                           "/usr/libc.so.[0-9]", "/libc.so.[0-9]", "/libc.so",)
+    conf['fakechroot_cmd_subst'] = \
+        "/sbin/ldconfig=#RETURN(TRUE)#:/usr/sbin/ldconfig=#RETURN(TRUE)#"
 
-    # override the above search for libc with a specified relative pathname
+    # patterns to search for libc.so in fakechroot
+    conf['libc_search'] = ("/usr/lib64/libc.so.[0-9]",
+                           "/usr/lib/x86_64-linux-gnu/libc.so.[0-9]",
+                           "/lib64/libc.so.[0-9]",
+                           "/usr/lib/libc.so.[0-9]",
+                           "/lib/libc.so.[0-9]",
+                           "/usr/libc.so.[0-9]",
+                           "/libc.so.[0-9]",
+                           "/libc.so",)
+
+    # override the above search for libc with a specific pathname
+    # relative to the container root directory (excluding host prefix)
     conf['fakechroot_libc'] = None
 
     # sharable library directories
@@ -107,7 +115,7 @@ class Config:
                                        "/lib64", "/usr/lib64", "/lib", "/usr/lib", )
     conf['lib_dirs_list_append'] = (".", )
 
-    # fakechroot access files, used to circunvent openmpi init issues
+    # fakechroot access files, used to circumvent openmpi init issues
     conf['access_files'] = ("/sys/class/infiniband", "/dev/open-mx", "/dev/myri0", "/dev/myri1",
                             "/dev/myri2", "/dev/myri3", "/dev/myri4", "/dev/myri5", "/dev/myri6",
                             "/dev/myri7", "/dev/myri8", "/dev/myri9", "/dev/ipath", "/dev/kgni0",
@@ -243,6 +251,9 @@ class Config:
         Config.conf['use_patchelf_executable'] = \
             os.getenv("UDOCKER_USE_PATCHELF_EXECUTABLE",
                       Config.conf['use_patchelf_executable'])
+        Config.conf['fakechroot_cmd_subst'] = \
+            os.getenv("UDOCKER_FAKECHROOT_CMD_SUBST",
+                      Config.conf['fakechroot_cmd_subst'])
 
         Config.conf['fakechroot_expand_symlinks'] = \
             os.getenv("UDOCKER_FAKECHROOT_EXPAND_SYMLINKS",
