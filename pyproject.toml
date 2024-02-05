@@ -7,7 +7,7 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
-addopts = "-ra --cov-report term --cov"
+addopts = "-ra --cov-report term --no-cov"
 testpaths = [
     "test/units",
 ]

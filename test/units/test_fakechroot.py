@@ -254,7 +254,8 @@ def test_08__fakechroot_env_set(ufake, mocker, expand_symlinks, cwd, verbose_lev
     mocker.patch.object(ufake, '_get_access_filesok', return_value='/sys/infin')
     mocker.patch.object(os.path, 'realpath', return_value='/bin/fakepath')
     mocker.patch.object(ufake, 'opt', {'env': Uenv(), 'cwd': cwd, 'vol': '/tmp'})
-    mocker.patch.object(Config, 'conf', {'fakechroot_expand_symlinks': expand_symlinks, 'tmpdir': '/some/tmp',
+    mocker.patch.object(Config, 'conf', {'fakechroot_expand_symlinks': expand_symlinks,
+                                         'fakechroot_cmd_subst': None, 'tmpdir': '/some/tmp',
                                          'verbose_level': verbose_level, 'fakechroot_libc': '/path/to/libc'})
 
     mock_elphpatcher = mocker.patch.object(ufake, '_elfpatcher', return_value=mocker.Mock())

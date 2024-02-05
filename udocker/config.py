@@ -187,7 +187,7 @@ class Config:
 
     def _conf_file_read(self, cfpath, ignore_keys=None):
         """Read config file"""
-        LOG.info('using config file: %s', cfpath, l=Msg.VER)
+        LOG.info('using config file: %s', cfpath)
         cfnparser = ConfigParser()
         cfnparser.read(cfpath)
         for (key, val) in cfnparser.items('DEFAULT'):
