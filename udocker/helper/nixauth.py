@@ -41,15 +41,14 @@ class NixAuthentication(object):
             insub = open(sub_file)
         except (IOError, OSError):
             return []
-        else:
-            for line in insub:
-                try:
-                    (subuser, subid, count) = line.strip().split(':')
-                except ValueError:
-                    continue
-                if subuser == user:
-                    subid_list.extend([(subid, count), ])
-            insub.close()
+        for line in insub:
+            try:
+                (subuser, subid, count) = line.strip().split(':')
+            except ValueError:
+                continue
+            if subuser == user:
+                subid_list.extend([(subid, count), ])
+        insub.close()
         return subid_list
 
     def user_in_subuid(self, wanted_user):
@@ -113,16 +112,15 @@ class NixAuthentication(object):
             inpasswd = open(self.passwd_file)
         except (IOError, OSError):
             return ("", "", "", "", "", "")
-        else:
-            for line in inpasswd:
-                (user, dummy, uid, gid, gecos, home,
-                 shell) = line.strip().split(':')
-                if wanted_user and user == wanted_user:
-                    return (user, uid, gid, gecos, home, shell)
-                if wanted_uid and uid == wanted_uid:
-                    return (user, uid, gid, gecos, home, shell)
-            inpasswd.close()
-            return ("", "", "", "", "", "")
+        for line in inpasswd:
+            (user, dummy, uid, gid, gecos, home,
+             shell) = line.strip().split(':')
+            if wanted_user and user == wanted_user:
+                return (user, uid, gid, gecos, home, shell)
+            if wanted_uid and uid == wanted_uid:
+                return (user, uid, gid, gecos, home, shell)
+        inpasswd.close()
+        return ("", "", "", "", "", "")
 
     def _get_group_from_file(self, wanted_group):
         """Get group from a group file"""
@@ -135,15 +133,14 @@ class NixAuthentication(object):
             ingroup = open(self.group_file)
         except (IOError, OSError):
             return ("", "", "")
-        else:
-            for line in ingroup:
-                (group, dummy, gid, users) = line.strip().split(':')
-                if wanted_group and group == wanted_group:
-                    return (group, gid, users)
-                if wanted_gid and gid == wanted_gid:
-                    return (group, gid, users)
-            ingroup.close()
-            return ("", "", "")
+        for line in ingroup:
+            (group, dummy, gid, users) = line.strip().split(':')
+            if wanted_group and group == wanted_group:
+                return (group, gid, users)
+            if wanted_gid and gid == wanted_gid:
+                return (group, gid, users)
+        ingroup.close()
+        return ("", "", "")
 
     def add_user(self, user, passw, uid, gid, gecos,
                  home, shell):

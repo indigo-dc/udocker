@@ -115,7 +115,7 @@ class ArchInfo(object):
                     return arch_dict[target_type]
         except (KeyError, ValueError, TypeError, AttributeError):
             pass
-        return ([])
+        return []
 
     def translate_arch(self, source_arch, source_type, target_type):
         """

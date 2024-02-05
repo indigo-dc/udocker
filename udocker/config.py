@@ -29,13 +29,13 @@ class Config(object):
 
     # udocker installation tarball the release is the minimum requirement
     # the actual tarball used in the installation can have a higher version
-    conf['tarball_release'] = "1.2.10"
+    conf['tarball_release'] = "1.2.11"
     conf['tarball'] = (
         "https://download.ncg.ingrid.pt/"
-        "webdav/udocker/udocker-englib-1.2.10.tar.gz"
+        "webdav/udocker/udocker-englib-1.2.11.tar.gz"
         " "
         "https://raw.githubusercontent.com"
-        "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.10.tar.gz"
+        "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.11.tar.gz"
     )
     conf['installinfo'] = [
         "https://raw.githubusercontent.com/indigo-dc/udocker/master/messages", ]
@@ -80,7 +80,7 @@ class Config(object):
     # conf['proot_noseccomp'] = True
     conf['proot_noseccomp'] = None
     conf['proot_killonexit'] = True   # PRoot --kill-on-exit
-    conf['proot_link2symlink'] = True   # PRoot --link2symlink
+    conf['proot_link2symlink'] = False   # PRoot --link2symlink
 
     # fakechroot engine get ld_library_paths from ld.so.cache
     conf['ld_so_cache'] = "/etc/ld.so.cache"
@@ -92,12 +92,21 @@ class Config(object):
     # translate symbolic links into pathnames None means automatic
     conf['fakechroot_expand_symlinks'] = None
 
-    # patterns to search for libc.so for bypass in fakechroot
-    conf['libc_search'] = ("/lib64/libc.so.[0-9]", "/usr/lib64/libc.so.[0-9]",
-                           "/usr/lib/libc.so.[0-9]", "/lib/libc.so.[0-9]",
-                           "/usr/libc.so.[0-9]", "/libc.so.[0-9]", "/libc.so",)
+    conf['fakechroot_cmd_subst'] = \
+        "/sbin/ldconfig=#RETURN(TRUE)#:/usr/sbin/ldconfig=#RETURN(TRUE)#"
 
-    # override the above search for libc with a specified relative pathname
+    # patterns to search for libc.so in fakechroot
+    conf['libc_search'] = ("/usr/lib64/libc.so.[0-9]",
+                           "/usr/lib/x86_64-linux-gnu/libc.so.[0-9]",
+                           "/lib64/libc.so.[0-9]",
+                           "/usr/lib/libc.so.[0-9]",
+                           "/lib/libc.so.[0-9]",
+                           "/usr/libc.so.[0-9]",
+                           "/libc.so.[0-9]",
+                           "/libc.so",)
+
+    # override the above search for libc with a specific pathname
+    # relative to the container root directory (excluding host prefix)
     conf['fakechroot_libc'] = None
 
     # sharable library directories
@@ -196,7 +205,7 @@ class Config(object):
         """
         Read config file
         """
-        Msg().out('Info: using config file: ', cfpath)
+        Msg().out('Info: using config file: ', cfpath, l=Msg.VER)
         cfnparser = ConfigParser()
         cfnparser.read(cfpath)
         for (key, val) in cfnparser.items('DEFAULT'):
@@ -269,6 +278,9 @@ class Config(object):
         Config.conf['use_patchelf_executable'] = \
             os.getenv("UDOCKER_USE_PATCHELF_EXECUTABLE",
                       Config.conf['use_patchelf_executable'])
+        Config.conf['fakechroot_cmd_subst'] = \
+            os.getenv("UDOCKER_FAKECHROOT_CMD_SUBST",
+                      Config.conf['fakechroot_cmd_subst'])
 
         Config.conf['fakechroot_expand_symlinks'] = \
             os.getenv("UDOCKER_FAKECHROOT_EXPAND_SYMLINKS",
