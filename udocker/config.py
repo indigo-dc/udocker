@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Configurations options and treatment/overrinding"""
+"""Configurations options and treatment/overriding"""
 import os
 import logging
 
