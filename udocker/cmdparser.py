@@ -65,7 +65,7 @@ class CmdParser(object):
 
     def get(self, opt_name, opt_where="CMD_OPT", opt_multiple=False):
         """Get the value of a command line option --xyz=
-        multiple=true  multiple occurences of option can be present
+        multiple=true  multiple occurrences of option can be present
         """
         if opt_where == "CMD":
             return self._argv_split["CMD"]

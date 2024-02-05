@@ -1,7 +1,7 @@
 [![PyPI version](https://badge.fury.io/py/udocker.svg)](https://badge.fury.io/py/udocker)
 [![Build Status](https://jenkins.eosc-synergy.eu/buildStatus/icon?job=indigo-dc%2Fudocker%2Fmaster)](https://jenkins.eosc-synergy.eu/job/indigo-dc/job/udocker/job/master/)
 
-[![SQAaaS badge](https://github.com/EOSC-synergy/SQAaaS/raw/master/badges/badges_150x116/badge_software_gold.png)](https://api.eu.badgr.io/public/assertions/70dSTwYKQpmEv7dFy6TF3w "SQAaaS gold badge achieved")
+[![SQAaaS badge](https://github.com/EOSC-synergy/SQAaaS/raw/master/badges/badges_150x116/badge_software_gold.png)](https://api.eu.badgr.io/public/assertions/_HIuuD5PRMipzM62mWTk3Q "SQAaaS gold badge achieved")
 
 ---
 ![logo](docs/logo-small.png)
@@ -185,7 +185,7 @@ udocker tag centos/centos8  mycentos/centos8:arm64
 
 Create a container from a pulled image, assign a name to the created
 container and run it. A created container can be run multiple times
-until it is explicitely removed. Files modified or added to the container
+until it is explicitly removed. Files modified or added to the container
 remain available across executions until the container is removed.
 
 ```bash

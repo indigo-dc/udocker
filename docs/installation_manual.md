@@ -74,6 +74,14 @@ git clone -b dev-v1.4 --depth=1 https://github.com/indigo-dc/udocker.git
 export PATH=`pwd`/udocker/udocker:$PATH
 ```
 
+Alternatively, install the latest development code from the github `devel3` branch:
+
+```bash
+git clone -b devel3 --depth=1 https://github.com/indigo-dc/udocker.git
+(cd udocker/udocker; ln -s maincmd.py udocker)
+export PATH=`pwd`/udocker/udocker:$PATH
+```
+
 udocker executes containers using external tools and libraries that
 are enhanced and packaged for use with udocker. For more information see
 [section 6 External tools and libraries](#6-external-tools-and-libraries).
