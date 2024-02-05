@@ -5,7 +5,7 @@
 * udocker improve binary executables identification
 * udocker fix fakechroot parsing of so, exec_path and add cmd subst
 * udocker implement minor pylint compliance improvements
-* udocker mode Pn make links2symlinks feature disabled by default in config
+* udocker mode Pn make links2symlinks feature disabled by default in config: solves #412
 * New udockertools 1.2.11 tarball
 * udockertools mode Fn glibc fix dladdr(), dlopen(), dlmopen(), dl_iterate_phdr()
 * udockertools mode Fn glibc add dladdr1()
