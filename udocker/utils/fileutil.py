@@ -319,14 +319,14 @@ class FileUtil(object):
 
     def isexecutable(self):
         """Check if execute bit is set"""
-        try: 
+        try:
             return os.access(self.filename, os.X_OK)
         except (IOError, OSError, TypeError):
             return False
 
     def iswriteable(self):
         """Check if execute bit is set"""
-        try: 
+        try:
             return os.access(self.filename, os.W_OK)
         except (IOError, OSError, TypeError):
             return False
@@ -378,10 +378,9 @@ class FileUtil(object):
             filep = open(self.filename, mode)
         except (IOError, OSError, TypeError):
             return ""
-        else:
-            buf = filep.readline().strip()
-            filep.close()
-            return buf
+        buf = filep.readline().strip()
+        filep.close()
+        return buf
 
     def putdata(self, buf, mode="wb"):
         """Write buffer to file"""
@@ -598,7 +597,7 @@ class FileUtil(object):
         return ""
 
     def _link_change_apply(self, new_l_path, f_path, force):
-        """Actually apply the link convertion"""
+        """Actually apply the link conversion"""
         p_path = os.path.realpath(os.path.dirname(f_path))
         if force and not os.access(p_path, os.W_OK):
             os.chmod(p_path, stat.S_IMODE(os.stat(p_path).st_mode) | stat.S_IWUSR)
@@ -610,7 +609,7 @@ class FileUtil(object):
             os.symlink(new_l_path, f_path)
 
     def _link_set(self, f_path, orig_path, root_path, force):
-        """Convertion to container specific symbolic link"""
+        """Conversion to container specific symbolic link"""
         l_path = os.readlink(f_path)
         if not l_path.startswith("/"):
             return False
@@ -635,7 +634,7 @@ class FileUtil(object):
         return False
 
     def _link_restore(self, f_path, orig_path, root_path, force):
-        """Convertion for host specific symbolic link"""
+        """Conversion for host specific symbolic link"""
         l_path = os.readlink(f_path)
         new_l_path = ""
         if not l_path.startswith("/"):
@@ -663,7 +662,7 @@ class FileUtil(object):
         root_path = os.path.realpath(self.filename)
         links = []
         if not self._is_safe_prefix(root_path):
-            Msg().err("Error: links convertion outside of directory tree: ",
+            Msg().err("Error: links conversion outside of directory tree: ",
                       root_path)
 
             return None
