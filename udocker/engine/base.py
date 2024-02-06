@@ -43,7 +43,7 @@ class ExecutionEngineCommon(object):
     opt["user"] = ""                 # User to run in the container
     opt["cwd"] = ""                  # Default dir in the container
     opt["entryp"] = ""               # Container entrypoint
-    opt["cmd"] = []                  # Comand to execute
+    opt["cmd"] = []                  # Command to execute
     opt["hostname"] = ""             # Hostname TBD
     opt["domain"] = ""               # Host domainname TBD
     opt["volfrom"] = []              # Mount vol from container TBD
