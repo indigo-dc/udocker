@@ -47,12 +47,12 @@ class RuncEngine(ExecutionEngineCommon):
         if not self.executable:
             self.executable = FileUtil("runsc").find_exec()
 
-        arch = HostInfo().arch()
+        self.arch = HostInfo().arch()
         if self.executable == "UDOCKER" or not self.executable:
             self.executable = ""
             image_list = []
             eng = ["runc", "crun", "runsc"]
-            image_list = [eng[0]+"-"+arch, eng[0], eng[1]+"-"+arch, eng[1]]
+            image_list = [eng[0]+"-"+self.arch, eng[0], eng[1]+"-"+self.arch, eng[1]]
 
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
@@ -81,7 +81,11 @@ class RuncEngine(ExecutionEngineCommon):
 
         if FileUtil(self._container_specfile).size() == -1:
             if self.engine_type == "runsc":
-                cmd_l = [self.executable, "spec", ]
+                f_util = FileUtil(self.localrepo.bindir)
+                runc_executable = f_util.find_file_in_dir(["runc-"+self.arch])
+                if runc_executable:
+                    cmd_l = [runc_executable, "spec", "--rootless", ]
+                #cmd_l = [self.executable, "spec", ]
             else:
                 cmd_l = [self.executable, "spec", "--rootless", ]
 
