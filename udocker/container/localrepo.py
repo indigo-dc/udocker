@@ -5,6 +5,7 @@ import os
 import re
 import stat
 import json
+from json import JSONDecodeError
 
 from udocker import LOG
 from udocker.config import Config
@@ -186,14 +187,12 @@ class LocalRepository:
         for fname in os.listdir(self.containersdir):
             container_dir = self.containersdir + '/' + fname
             if os.path.isdir(container_dir):
-                # TODO: (mdavid) )redo this part
+                reponame = ""
                 try:
-                    filep = open(container_dir + "/imagerepo.name", 'r', encoding='utf-8')
+                    with open(os.path.join(container_dir, "imagerepo.name"), 'r', encoding='utf-8') as filep:
+                        reponame = filep.read()
                 except OSError:
-                    reponame = ""
-                else:
-                    reponame = filep.read()
-                    filep.close()
+                    pass
 
                 if dir_only:
                     containers_list.append(container_dir)
@@ -317,17 +316,14 @@ class LocalRepository:
         if os.path.exists(container_dir):
             return ""
 
-        # TODO: (mdavid) )redo this part
         try:
             os.makedirs(container_dir + "/ROOT")
-            out_imagerepo = open(container_dir + "/imagerepo.name", 'w', encoding='utf-8')
+            with open(container_dir + "/imagerepo.name", 'w', encoding='utf-8') as out_imagerepo:
+                out_imagerepo.write(imagerepo + ":" + tag)
+                self.cur_containerdir = container_dir
+                return container_dir
         except OSError:
             return None
-        else:
-            out_imagerepo.write(imagerepo + ":" + tag)
-            out_imagerepo.close()
-            self.cur_containerdir = container_dir
-            return container_dir
 
     def _is_tag(self, tag_dir):
         """Does this directory contain an image tag ?
@@ -520,19 +516,15 @@ class LocalRepository:
         """Create directory structure for an image TAG
         to be invoked after setup_imagerepo()
         """
-        directory = self.cur_repodir + "/" + tag
-        # TODO: (mdavid) )redo this part
+        directory = os.path.join(self.cur_repodir, tag)
         try:
             if not os.path.exists(directory):
                 os.makedirs(directory)
-
             self.cur_tagdir = directory
-            out_tag = open(directory + "/TAG", 'w', encoding='utf-8')
+            with open(os.path.join(directory, "TAG"), 'w', encoding='utf-8') as out_tag:
+                out_tag.write(self.cur_repodir + ":" + tag)
         except OSError:
             return False
-        else:
-            out_tag.write(self.cur_repodir + ":" + tag)
-            out_tag.close()
 
         return True
 
@@ -686,20 +678,15 @@ class LocalRepository:
             if not os.path.exists(self.cur_tagdir):
                 return False
 
-            out_filename = self.cur_tagdir + "/" + filename
+            out_filename = os.path.join(self.cur_tagdir, filename)
 
-        outfile = None
-        # TODO: (mdavid) )redo this part
         try:
-            outfile = open(out_filename, 'w')
-            json.dump(data, outfile)
-        except (OSError, AttributeError, ValueError, TypeError):
-            if outfile:
-                outfile.close()
+            with open(out_filename, 'w') as outfile:
+                json.dump(data, outfile)
 
+        except (OSError, AttributeError, ValueError, TypeError):
             return False
 
-        outfile.close()
         return True
 
     def load_json(self, filename):
@@ -722,16 +709,11 @@ class LocalRepository:
             in_filename = self.cur_tagdir + '/' + filename
 
         json_obj = None
-        infile = None
-        # (mdavid) )redo this part
         try:
-            infile = open(in_filename, 'r')
-            json_obj = json.load(infile)
-        except (OSError, AttributeError, ValueError, TypeError):
+            with open(in_filename, 'r') as infile:
+                json_obj = json.load(infile)
+        except (OSError, JSONDecodeError):
             pass
-
-        if infile:
-            infile.close()
 
         return json_obj
 
