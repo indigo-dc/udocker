@@ -411,6 +411,8 @@ class RuncEngine(ExecutionEngineCommon):
         self._add_devices()
         self._add_capabilities_spec()
         self._mod_mount_spec("shm", "/dev/shm", {"options": ["size=2g"]})
+        if self.engine_type == "runsc":
+            self._del_namespace_spec("user")
         self._proot_overlay()
         self._save_spec()
         if Msg.level >= Msg.DBG:
