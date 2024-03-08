@@ -426,7 +426,7 @@ class RuncEngine(ExecutionEngineCommon):
         cmd_l.append(self.executable)
         cmd_l.extend(runc_debug)
         if self.engine_type == "runsc":
-            cmd_l.extend(["--network=none", "--ignore-cgroups"])
+            cmd_l.extend(["--network=host", "--ignore-cgroups"])
             cmd_l.extend(["--rootless", ])
         cmd_l.extend(["--root", self._container_specdir, "run"])
         cmd_l.extend(["--bundle", self._container_specdir, self.execution_id])
