@@ -720,9 +720,6 @@ class UdockerCLI(object):
                     if option_value or last_value is None:
                         exec_engine.opt[option] = option_value
                 elif cmdp_args["act"] == "E":   # action is extend
-                    # if option == "env":
-                    #    print (type(option_value))
-                    #    print (option_value)
                     exec_engine.opt[option].extend(option_value)
                 last_value = option_value
 
