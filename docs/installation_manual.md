@@ -337,17 +337,9 @@ versions. The tools are also delivered for several architectures.
 | Mode  | Supported architecture                       |
 |-------|:---------------------------------------------|
 | **P** | x86_64, i386, aarch64 and arm                |
-| **F** | x86_64                                       |
-| **R** | x86_64                                       |
+| **F** | x86_64, aarch64, ppc64le                     |
+| **R** | x86_64  aarch64                              |
 | **S** | uses the binaries present in the host system |
-
-The latest binary tarball can be produced from the source code using:
-
-```bash
-git clone -b devel3 https://github.com/indigo-dc/udocker
-cd udocker/utils
-./build_tarball.sh
-```
 
 ### 6.3. Compiling 
 
@@ -370,6 +362,14 @@ selection of the library can be forced by setting the environment variable
 ```
 udocker setup --execmode=F3 <mycontainerid>
 UDOCKER_FAKECHROOT_SO=$HOME/mylibfakechroot.so  udocker run <mycontainerid>
+```
+
+The latest binary tarball can be produced from the source code using:
+
+```bash
+git clone -b devel3 https://github.com/indigo-dc/udocker
+cd udocker/utils
+./build_tarball.sh
 ```
 
 ## 7. Central installation
