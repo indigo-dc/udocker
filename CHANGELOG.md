@@ -163,7 +163,7 @@
 * Implement use of `--entrypoint=<cmd>` to force execution of command - closes: #306
 * Implement use of `--entrypoint=""` to bypass entrypoint in metadata - closes: #306
 
-## udocker (1.2.9)
+## udocker (1.2.9) - 2021-05-24
 
 * Method Unshare.unshare os.strerror() takes one argument - closes: #254
 * Add unit test for #254
@@ -182,12 +182,12 @@
 * Improve keystore logic
 * Fix pull /v2
 
-## udocker (1.2.8b2)
+## udocker (1.2.8b2) - 2021-05-04
 
 * Fix Rn modes to enable containers execution from readonly dirs
 * Documentation centralized installation and readonly setups
 * Fix handling of dockerhub repository names in /v2
-* Improve documentation and algn with 1.1.8b2
+* Improve documentation and align with 1.1.8b2
 * Add credits
 * Fix delete of paths with symlinks - closes: #267, #265
 * Fix issues with login credentials - closes: #310
@@ -198,13 +198,19 @@
 * Add exclude of whiteouts on layer untar
 * Add --nobanner to udocker run
 
-## udocker (1.2.7)
+## udocker (1.2.7) - 2021-01-26
 
 * Major restructuring of the code
 * Major restructuring of the unit tests
 * Porting to Python 3, still supports python 2.7
 * All fixes up to previous 1.1.7 version have been applied
 * Added scripts tests udocker: `utils/udocker_test.sh utils/udocker_test-run.sh`
+
+## udocker (1.1.8) - 2021-06-16
+
+* Last 1.1.x release
+* Fix Rn modes to enable containers execution from readonly dirs
+* Documentation centralized installation and readonly setups
 
 ## udocker (1.1.7) - 2021-02-21
 
@@ -223,7 +229,7 @@
 * Add Fn libraries for Ubuntu20, Fedora32, Fedora33
 * Add Fn libraries for Alpine 3.12, 3.13
 
-## udocker (1.1.4-1) - 2020-01-07
+## udocker (1.1.4-1) - 2020-01-10
 
 * Fix run --location
 * Fix udocker integrated help
@@ -397,6 +403,6 @@
 * Provide support for private repositories e.g. gitlab registries - closes: #30
 * Provide --insecure command line parameter for SSL requests - closes: #31
 
-## udocker (1.0.0)
+## udocker (1.0.0) - 2016-06-06
 
 * Initial version
