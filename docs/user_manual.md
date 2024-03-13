@@ -736,7 +736,7 @@ UDOCKER_LOGLEVEL=2 udocker run busybox:latest /bin/ls
 ### 3.23. login
 
 ```bash
-udocker login [--username=USERNAME] [--password=PASSWORD] [--registry=REGISTRY]
+udocker login [--username=USERNAME] [--password=PASSWORD | --password-stdin ] [--registry=REGISTRY]
 ```
 
 Login into a Docker registry using v2 API. Only basic authentication
@@ -748,15 +748,22 @@ Options:
 
 * `--username=USERNAME` provide the username in the command line
 * `--password=PASSWORD` provide the password in the command line
+* `--password-stdin`    provide the password via stdin
 * `--registry=REGISTRY` credentials are for this registry
 
 Examples:
 
 ```bash
+# To use dockerhub private repositories
 udocker login --username=xxxx --password=yyyy
-udocker login --registry="https://hostname:5000"
+
+# To use a different container registry (the https:// is optional)
+udocker login --registry=https://hostname
 username: xxxx
 password: ****
+
+# To use a private repository at AWS ECR
+aws ecr get-login-password --region eu-north-1 | udocker login --username=AWS --password-stdin --registry=000000000000.dkr.ecr.eu-north-1.amazonaws.com
 ```
 
 ### 3.24. logout
@@ -1000,11 +1007,20 @@ udocker manifest inspect REPO/IMAGE:TAG
 ```
 
 Obtain and print information about an IMAGE manifest from a remote registry.
+Can be used to obtain the platform architectures supported by the IMAGE.
+
+Options:
+
+* `--index=url` specify an index other than index.docker.io
+* `--registry=url` specify a registry other than registry-1.docker.io
+* `--httpproxy=proxy` specify a socks proxy for downloading, see `pull`
+* `--platform=os/architecture` specify a different platform to be pulled
 
 Example:
 
 ```bash
 udocker manifest inspect centos:centos7
+udocker manifest --platform=linux/ppc64le inspect centos:7
 ```
 
 ## 4. Running MPI jobs
