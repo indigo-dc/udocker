@@ -575,9 +575,10 @@ class DockerIoAPI(object):
         #if ('.' not in components[0] and
         #        components[0] != "library" and len(components) == 1):
         if ('.' not in components[0] and
-                components[0] != "library" and len(components) == 1 and
-                ((not registry) or "docker.io" in registry)):
-            components.insert(0, "library")
+            components[0] != "library" and len(components) == 1):
+            if ((not registry) or
+                "docker.io" in registry or "docker.com" in registry):
+                components.insert(0, "library")
         remoterepo = '/'.join(components)
         if registry:
             try:
