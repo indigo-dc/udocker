@@ -257,8 +257,8 @@ the environment variables described below together with the default behavior.
 A value of `UDOCKER` will force the usage of the executables provided by the
 udocker installation.
 
-A full pathname can be used to select a specific executable (or library) from the
-host or from the udocker installation.
+A full pathname can be used to force selection of a specific executable (or library)
+from the host or from the udocker installation.
 
 * `UDOCKER_USE_PROOT_EXECUTABLE`: path to proot, default is proot from udocker.
 * `UDOCKER_USE_RUNC_EXECUTABLE`: path to runc, default is search the host and
@@ -266,9 +266,22 @@ host or from the udocker installation.
 * `UDOCKER_USE_SINGULARITY_EXECUTABLE`: path to singularity, default is search
   the host.
 * `UDOCKER_FAKECHROOT_SO`: path to a fakechroot library, default is search
-  in udocker.
+  in udocker under `$HOME/.udocker/lib`.
 * `UDOCKER_DEFAULT_EXECUTION_MODE`: default execution mode can be P1, P2, F1,
   S1, R1, R2 or R3.
+
+Several executables and libraries are shipped with udocker. For instance 
+the executable for the Rn modes can be selected to be either `runc` or
+`crun`. This can be accomplished by setting `UDOCKER_USE_RUNC_EXECUTABLE`
+to the path of the desired executable. If `runsc` is available in the
+host it can also be selected in this manner.
+
+```
+# Forcing the use of crun instead of runc
+export UDOCKER_USE_RUNC_EXECUTABLE=$HOME/.udocker/bin/crun-x86_64 
+export UDOCKER_DEFAULT_EXECUTION_MODE=R1
+udocker run <mycontainerid>
+```
 
 ## 6. External tools and libraries
 
@@ -292,6 +305,7 @@ containing the modified source code and the original repositories.
 | **F** | Patchelf         | <https://github.com/jorge-lip/patchelf-udocker>            | <https://github.com/NixOS/patchelf>
 | **R** | runc             | THE ORIGINAL REPOSITORY IS USED                            | <https://github.com/opencontainers/runc>
 | **R** | crun             | THE ORIGINAL REPOSITORY IS USED                            | <https://github.com/containers/crun>
+
 
 ### 6.2. Software Licenses
 
@@ -333,6 +347,29 @@ The latest binary tarball can be produced from the source code using:
 git clone -b devel3 https://github.com/indigo-dc/udocker
 cd udocker/utils
 ./build_tarball.sh
+```
+
+### 6.3. Compiling 
+
+udocker already provides executables and libraries for the engines. These
+are statically compiled to be used across different Linux distributions.
+In some cases these executables may not work and may require recompilation.
+Use the repositories in section 6.2 if you which to compile the executables
+or libraries. Notice that the git repositories that are specific of udocker
+have branches or tags like `UDOCKER-x` where `x` is a number. Use the branch
+or tag with the highest number.
+
+A notable case are the fakechroot libraries used in the Fn modes that need
+to match the libc in the container. This means that a libfakechroot.so must
+be produced for each different distribution release and intended architecture.
+Two implementations of the `libc` are supported `glibc` and `musl`, choose
+the one that matches the distribution inside the container. Once compiled the
+selection of the library can be forced by setting the environment variable
+`UDOCKER_FAKECHROOT_SO`.
+
+```
+udocker setup --execmode=F3 <mycontainerid>
+UDOCKER_FAKECHROOT_SO=$HOME/mylibfakechroot.so  udocker run <mycontainerid>
 ```
 
 ## 7. Central installation

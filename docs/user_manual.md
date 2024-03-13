@@ -275,6 +275,7 @@ udocker pull --httpproxy=socks5h://host:port busybox
 udocker pull --httpproxy=socks4a://user:pass@host:port busybox
 udocker pull --httpproxy=socks5h://user:pass@host:port busybox
 udocker pull --platform=linux/arm64 fedora:latest
+udocker pull --platform=linux/ppc64le centos:7
 ```
 
 ### 3.6. images
@@ -936,7 +937,7 @@ Newer versions of Singularity may run without requiring privileges but
 need a recent kernel in the host system with support for rootless user
 mode namespaces similar to runc in mode R1.
 Singularity cannot be compiled statically due to dependencies on
-dynamic libraries and therefore is not provided with udocker.
+dynamic libraries and therefore is not shipped with udocker.
 In CentOS 6 and CentOS 7 Singularity must be installed with privileges
 by a system administrator as it requires suid or capabilities.
 The S1 mode also offers root emulation to facilitate software installation
@@ -973,7 +974,7 @@ changed through the configuration files by changing the attribute
 **UDOCKER_DEFAULT_EXECUTION_MODE**. Only the following modes can be used as
 default modes:
 **P1**, **P2**, **F1**, **S1**, and **R1**. Changing the default execution
-mode can be useful in case the default does not work as expected.
+mode can be useful if the default does not work as expected.
 
 Example:
 
@@ -1014,7 +1015,7 @@ Options:
 * `--index=url` specify an index other than index.docker.io
 * `--registry=url` specify a registry other than registry-1.docker.io
 * `--httpproxy=proxy` specify a socks proxy for downloading, see `pull`
-* `--platform=os/architecture` specify a different platform to be pulled
+* `--platform=os/architecture` specify a platform to be inspected
 
 Example:
 
@@ -1397,7 +1398,7 @@ considerations may hold:
   mode may exhibit a large performance penalty. This also
   applies to P1 in older kernels without **SECCOMP filtering**
 * Fn modes are generally faster than Pn modes and do not have
-  multi threading or I/O limitations.
+  the multi threading or I/O limitations.
 * Singularity and runc should provide similar performances.
 * Depending on application the Fn modes are often faster than
   all other modes.
@@ -1407,8 +1408,37 @@ considerations may hold:
 The udocker Python code was the built-in logic to support several hardware
 architectures namely i386, x86_64, arm (32 bit) and aarch64 (arm 64 bit).
 However the required engine binaries and/or libraries must also be provided
-for each of the architectures. Currently only the Pn modes are provided with
-compiled executables to support execution on x86, x86_64, ARM and ARM64.
+for each of the architectures. Currently only some modes are provided with
+compiled executables to support execution on x86, x86_64, ARM, ARM64 and
+ppc64le. The executables and libraries for the execution engines shipped
+with udocker have a suffix that identifies the architecture, check the
+relevant udocker installation directories usually `$HOME/.udocker/bin`
+and `$HOME/.udocker/lib`.
+
+Users may compile the same executables shipped in the udockertools in
+their linux hosts to support different or newer distributions, and/or
+architectures. See the [installation manual](installation_manual.md)
+for further information.
+
+Checking which architectures are supported by a given container can
+be check with `udocker manifest inspect IMAGE`. If the intended architecture
+is available it can be pulled using `pull --platform=OS/ARCH`.
+
+```bash
+udocker manifest inspect centos:7
+udocker pull --platform=linux/arm64 centos:7
+udocker create --name=C7 centos:7
+udocker run C7
+```
+
+If the architecture of the host is different from the architecture of
+the container execution may still be possible provided that `qemu-user`
+is locally installed. In many distributions is provided by the package
+`qemu-user-static`. In such case the default engine of udocker Pn will
+automatically use the qemu emulation to support the execution.
+Since the architecture is emulated the execution will be much slower.
+Emulation for the Fn modes may also work if the `qemu-user` binaries
+are both installed and also appear in `/proc/sys/fs/binfmt_misc/`.
 
 ## 11. Host environment specific notes
 
@@ -1428,9 +1458,10 @@ udocker run arm64v8/fedora:35
 udocker can run on Google Colab using the **P** or **F** modes.
 
 ```bash
-!PATH=`pwd`/udocker:$PATH udocker --allow-root pull centos:centos7
-!PATH=`pwd`/udocker:$PATH udocker --allow-root create --name=c7 centos:centos7
-!PATH=`pwd`/udocker:$PATH udocker --allow-root run c7
+! pip install udocker
+! udocker --allow-root pull centos:centos7
+! udocker --allow-root create --name=c7 centos:centos7
+! udocker --allow-root run c7
 ```
 
 ### 11.3. Docker
@@ -1447,15 +1478,13 @@ udocker --allow-root run ub18
 
 ## 12. Issues
 
-To avoid corruption the execution of data backups and container copies should
-only be performed when the container is not being executed (not locally nor
-in any other host if the filesystem is shared).
-
 Containers should only be copied for transfer when they are in the execution
 modes Pn or Rn. The modes Fn perform changes to the containers that will make
 them fail if they are execute in a different host where the absolute pathname
 to the container location is different. In this later case convert back to P1
-(using:  `udocker setup --execmode=P1`) before performing the backup.
+(using:  `udocker setup --execmode=P1`) before performing the backup. Sharing
+of containers can be done across hosts in an homogeneous cluster or between 
+hosts with the very same directory structure.
 
 When experiencing issues in the default execution mode (P1) you may try
 to setup the container to execute using mode P2 or one of the Fn or
@@ -1464,7 +1493,8 @@ Rn modes. See section 3.27 for information on changing execution modes.
 Some execution modes require the creation of auxiliary files, directories
 and mount points. These can be purged from a given container using
 `setup --purge`, however this operation must be performed when the
-container is not being executed.
+container is not being executed (nor locally nor in another host of the
+cluster).
 
 ## Acknowledgments
 
