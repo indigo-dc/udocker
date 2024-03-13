@@ -1269,7 +1269,7 @@ as root. In other modes execution as root is achieved by invoking
 run with the `--user=root` option:
 
 ```bash
-udocker run --user=root <container-id>`
+udocker run --user=root <container-id>
 ```
 
 ### 7.1. Running as root in Pn modes
@@ -1405,11 +1405,11 @@ considerations may hold:
 
 ## 10. Hardware architectures
 
-The udocker Python code was the built-in logic to support several hardware
+The udocker Python code has the built-in logic to support several hardware
 architectures namely i386, x86_64, arm (32 bit) and aarch64 (arm 64 bit).
 However the required engine binaries and/or libraries must also be provided
-for each of the architectures. Currently only some modes are provided with
-compiled executables to support execution on x86, x86_64, ARM, ARM64 and
+for each of the architectures. Currently only some modes have compiled
+binaries to support execution on x86, x86_64, ARM, ARM64 and
 ppc64le. The executables and libraries for the execution engines shipped
 with udocker have a suffix that identifies the architecture, check the
 relevant udocker installation directories usually `$HOME/.udocker/bin`
@@ -1421,8 +1421,8 @@ architectures. See the [installation manual](installation_manual.md)
 for further information.
 
 Checking which architectures are supported by a given container can
-be check with `udocker manifest inspect IMAGE`. If the intended architecture
-is available it can be pulled using `pull --platform=OS/ARCH`.
+be verified using `udocker manifest inspect IMAGE`. If the intended architecture
+is available it can be pulled using `udocker pull --platform=OS/ARCH`.
 
 ```bash
 udocker manifest inspect centos:7
@@ -1431,14 +1431,15 @@ udocker create --name=C7 centos:7
 udocker run C7
 ```
 
-If the architecture of the host is different from the architecture of
-the container execution may still be possible provided that `qemu-user`
-is locally installed. In many distributions is provided by the package
-`qemu-user-static`. In such case the default engine of udocker Pn will
-automatically use the qemu emulation to support the execution.
-Since the architecture is emulated the execution will be much slower.
-Emulation for the Fn modes may also work if the `qemu-user` binaries
-are both installed and also appear in `/proc/sys/fs/binfmt_misc/`.
+In general, if the binaries in the container have been compiled for
+an architecture that is different from the host then the execution
+will not be possible. However, execution may still be possible provided
+that `qemu-user` is locally installed. In many distributions `qemu-user`
+is provided by the package `qemu-user-static`. In such case the default
+engine of udocker Pn will automatically use the qemu emulation to support
+the execution. Since the architecture is emulated the execution will be
+much slower. Emulation for the Fn modes may also work if the `qemu-user`
+binaries are both installed and also appear in `/proc/sys/fs/binfmt_misc/`.
 
 ## 11. Host environment specific notes
 
