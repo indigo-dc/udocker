@@ -1460,6 +1460,7 @@ udocker can run on Google Colab using the **P** or **F** modes.
 
 ```bash
 ! pip install udocker
+! udocker install
 ! udocker --allow-root pull centos:centos7
 ! udocker --allow-root create --name=c7 centos:centos7
 ! udocker --allow-root run c7
