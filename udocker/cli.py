@@ -480,17 +480,21 @@ class UdockerCLI(object):
         login: authenticate into docker repository e.g. dockerhub
         --username=username
         --password=password
-        --registry=<url>         ex. https://registry-1.docker.io
+        --password-stdin         :read password from stdin
+        --registry=<url>         :optional ex. quay.io, public.ecr.aws
         """
         username = cmdp.get("--username=")
         password = cmdp.get("--password=")
+        password_stdin = cmdp.get("--password-stdin")
         registry_url = cmdp.get("--registry=")
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
         self._set_repository(registry_url, None, None, None)
         if not username:
             username = GET_INPUT("username: ")
-        if not password:
+        if password_stdin:
+            password = input()
+        elif not password:
             password = getpass("password: ")
         if password and password == password.upper():
             Msg().out("Warning: password in uppercase", "Caps Lock ?", l=Msg.WAR)
