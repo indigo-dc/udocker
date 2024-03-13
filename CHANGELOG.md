@@ -1,5 +1,13 @@
 # Changelog
 
+## udocker (1.3.14-rc.1)
+
+* Support for runsc as engine for execution mode Rn: solves #414
+* New option `login --password-stdin`
+* Improve handling of registry names in login: solves #168
+* Improve handling of image names in pull: solves #168
+* Improve handling of mount point removal: solves #406, #399
+
 ## udocker (1.3.13)
 
 * udocker improve binary executables identification
@@ -64,7 +72,7 @@
 * experimental support for native Fn execution on ppc64le for CentOS 7,
   AlmaLinux 8, AlmaLinux 9, Ubuntu 22, Ubuntu 20, Ubuntu 18 and similar.
 * experimental support for runc in arm64 and ppc64le
-* updated version of Pn engines for x86, x86_64, arm64.
+* updated version of Pn engines for x86, x86_64, arm64. Addresses #393
 
 ## udocker (1.3.9)
 
