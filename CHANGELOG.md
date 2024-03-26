@@ -4,6 +4,7 @@
 
 * Support for runsc as engine for execution mode Rn: solves #414
 * New option `login --password-stdin`
+* New option `run --pull=reuse`
 * Improve handling of registry names in login: solves #168
 * Improve handling of image names in pull: solves #168
 * Improve handling of mount point removal: solves #406, #399
