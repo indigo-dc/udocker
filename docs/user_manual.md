@@ -639,7 +639,7 @@ Options:
 * `--kernel=KERNELID` use a specific kernel id to emulate useful when the host kernel is too old
 * `--location=DIR` execute a container in a given directory
 * `--platform=os/architecture` specify a different platform to be pulled
-* `--pull=missing|never|always` specify when to pull the image
+* `--pull=missing|never|always|reuse` specify when to pull the image
 
 Options valid only in Pn execution modes:
 
@@ -662,10 +662,19 @@ udocker create --name=myfed  fedora:29
 # execute a cat inside of the container
 udocker run  myfed  cat /etc/redhat-release
 
-# The above three operations could have done with a single command
-# However each time udocker is invoked this way a new container
-# directory tree is created consuming additional space and time
+# The above three operations can be done with a single command
+# However each time udocker is invoked in this way a new container
+# directory tree is created. This will consume additional space
+# and may considerably increase the time for the container to start.
 udocker run fedora:29 cat /etc/redhat-release
+
+# For repeated invocations of the same container image the issue 
+# described above can be prevented by using --pull=reuse with --name.
+# With the option --pull=reuse udocker will first try to execute
+# a container with the same name specified by --name and only if
+# it doesn't exist will it pull and create. In this way repeated 
+# calls to run only create a single container that is then reused.
+udocker run --name=F29 --pull=reuse fedora:29 cat /etc/redhat-release
 
 # In this example the host /tmp is mapped to the container /tmp
 udocker run --volume=/tmp  myfed  /bin/bash
