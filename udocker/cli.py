@@ -755,7 +755,7 @@ class UdockerCLI(object):
         --nobanner                 :don't print a startup banner
         --entrypoint               :override the container metadata entrypoint
         --platform=os/arch         :pull image for OS and architecture
-        --pull=<when>              :when to pull (missing|never|always)
+        --pull=<when>              :when to pull (missing|never|always|reuse)
 
         Only available in Rn execution modes:
         --device=/dev/xxx          :pass device to container (R1 mode only)
@@ -767,8 +767,10 @@ class UdockerCLI(object):
         run <container-id-or-name> executes an existing container, previously
         created from an image by using: create <repo/image:tag>
 
-        run <repo/image:tag> always creates a new container from the image
-        if needed the image is pulled. This is slow and may waste storage.
+        run <repo/image:tag> always creates a new container from the image.
+        If needed the image is pulled. This is slow and may waste storage.
+        Using run --name=<container-name> --pull=reuse allows to use existing
+        container and only pull/create if the <container-name> does not exist.
         """
         self._get_run_options(cmdp)
         container_or_image = cmdp.get("P1")
@@ -787,7 +789,10 @@ class UdockerCLI(object):
             Msg().err("Error: must specify container_id or image:tag")
             return self.STATUS_ERROR
         else:
-            container_id = self.localrepo.get_container_id(container_or_image)
+            if pull == "reuse" and name:
+                container_id = self.localrepo.get_container_id(name)
+            if not container_id:
+                container_id = self.localrepo.get_container_id(container_or_image)
             if not container_id:
                 (imagerepo, tag) = self._check_imagespec(container_or_image)
                 if (imagerepo and
@@ -802,8 +807,9 @@ class UdockerCLI(object):
                         return self.STATUS_ERROR
             if name and container_id:
                 if not self.localrepo.set_container_name(container_id, name):
-                    Msg().err("Error: invalid container name format")
-                    return self.STATUS_ERROR
+                    if pull != "reuse":
+                        Msg().err("Error: invalid container name")
+                        return self.STATUS_ERROR
 
         exec_mode = ExecutionMode(self.localrepo, container_id)
         exec_engine = exec_mode.get_engine()
