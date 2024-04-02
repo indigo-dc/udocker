@@ -91,11 +91,11 @@ class UdockerCLITestCase(TestCase):
         self.assertTrue(status)
         self.assertTrue(self.local.setup.called)
 
-    @patch('udocker.cli.DockerIoAPI.__init__')
+    @patch('udocker.cli.DockerIoAPI.__new__')
     @patch('udocker.cli.DockerIoAPI.is_repo_name')
     @patch('udocker.cli.Msg')
     def test_03__check_imagespec(self, mock_msg, mock_reponame,
-                                 mock_dockerinit):
+                                 mock_dockerio):
         """Test03 UdockerCLI()._check_imagespec()."""
         mock_msg.level = 0
         mock_reponame.return_value = False
