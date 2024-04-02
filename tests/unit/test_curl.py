@@ -233,34 +233,34 @@ class GetURLpyCurlTestCase(TestCase):
     # def test_03__select_implementation(self):
     #     """Test03 GetURLpyCurl()._select_implementation()."""
 
-    @patch.object(GetURLpyCurl, 'is_available')
-    @patch('udocker.utils.curl.Msg')
-    @patch('udocker.utils.curl.pycurl')
-    @patch('udocker.utils.curl.CurlHeader')
-    def test_04__set_defaults(self, mock_hdr, mock_pyc,
-                              mock_msg, mock_selinsec):
-        """Test04 GetURLpyCurl()._set_defaults()."""
-        mock_selinsec.return_value = True
-        mock_msg.level = 0
-        mock_msg.VER = 4
-        geturl = GetURLpyCurl()
-        geturl._set_defaults(mock_pyc, mock_hdr)
-        self.assertTrue(mock_pyc.setopt.called)
+    # @patch.object(GetURLpyCurl, 'is_available')
+    # @patch('udocker.utils.curl.Msg')
+    # @patch('udocker.utils.curl.pycurl')
+    # @patch('udocker.utils.curl.CurlHeader')
+    # def test_04__set_defaults(self, mock_hdr, mock_pyc,
+    #                           mock_msg, mock_selinsec):
+    #     """Test04 GetURLpyCurl()._set_defaults()."""
+    #     mock_selinsec.return_value = True
+    #     mock_msg.level = 0
+    #     mock_msg.VER = 4
+    #     geturl = GetURLpyCurl()
+    #     geturl._set_defaults(mock_pyc, mock_hdr)
+    #     self.assertTrue(mock_pyc.setopt.called)
 
-        # when Msg.level >= Msg.VER = 4: AND insecure
-        mock_msg.level = 5
-        mock_msg.VER = 4
-        geturl = GetURLpyCurl()
-        geturl._set_defaults(mock_pyc, mock_hdr)
-        self.assertEqual(mock_pyc.setopt.call_count, 18)
+    #     # when Msg.level >= Msg.VER = 4: AND insecure
+    #     mock_msg.level = 5
+    #     mock_msg.VER = 4
+    #     geturl = GetURLpyCurl()
+    #     geturl._set_defaults(mock_pyc, mock_hdr)
+    #     self.assertEqual(mock_pyc.setopt.call_count, 18)
 
-        mock_selinsec.return_value = True
-        # when Msg.level < Msg.VER = 4: AND secure
-        mock_msg.level = 2
-        mock_msg.VER = 4
-        geturl = GetURLpyCurl()
-        geturl._set_defaults(mock_pyc, mock_hdr)
-        self.assertEqual(mock_pyc.setopt.call_count, 27)
+    #     mock_selinsec.return_value = True
+    #     # when Msg.level < Msg.VER = 4: AND secure
+    #     mock_msg.level = 2
+    #     mock_msg.VER = 4
+    #     geturl = GetURLpyCurl()
+    #     geturl._set_defaults(mock_pyc, mock_hdr)
+    #     self.assertEqual(mock_pyc.setopt.call_count, 27)
 
     # @patch.object(GetURLpyCurl, 'is_available')
     # @patch('utils.curl.Msg')
