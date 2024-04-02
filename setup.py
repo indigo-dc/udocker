@@ -32,7 +32,7 @@ with open('CHANGELOG.md', 'r') as history_file:
 CONF_DIR = '/udocker/etc'
 REQUIREMENTS = []
 SETUP_REQUIREMENTS = ['pytest-runner', ]
-TEST_REQUIREMENTS = ['pytest', ]
+TEST_REQUIREMENTS = ['pytest', 'pycurl', ]
 
 setup(
     author="Jorge Gomes",
