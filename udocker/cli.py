@@ -789,7 +789,7 @@ class UdockerCLI(object):
             Msg().err("Error: must specify container_id or image:tag")
             return self.STATUS_ERROR
         else:
-            container_id = "" 
+            container_id = ""
             if pull == "reuse" and name:
                 container_id = self.localrepo.get_container_id(name)
             if not container_id:
