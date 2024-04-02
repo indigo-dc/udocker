@@ -3,11 +3,16 @@
 ## udocker (1.3.14) - 2024-03-xx
 
 * Support for runsc as engine for execution mode Rn: solves #414
-* New option `login --password-stdin`
-* New option `run --pull=reuse`
+* New option `login --password-stdin`: solves: #168
+* New option `run --pull=reuse` to be used with --name= and with
+  and image name as argument. Instead of always pulling and creating
+  a new container --pull=reuse allows to execute an existing container
+  and only pull+create if the container does not exist
+* New option `run --httpproxy=<proxy>`: solves #418
 * Improve handling of registry names in login: solves #168
 * Improve handling of image names in pull: solves #168
 * Improve handling of mount point removal: solves #406, #399
+* Support for gVisor: closes #414
 * Documentation fixes
 
 ## udocker (1.3.13) - 2024-02-05
