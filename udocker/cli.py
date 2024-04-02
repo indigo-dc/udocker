@@ -779,10 +779,10 @@ class UdockerCLI(object):
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
         pull = cmdp.get("--pull=")
-        cmdp.get("--pull")  # if invoked without option
-        cmdp.get("--index=") # used in do_pull()
-        cmdp.get("--registry=") # used in do_pull()
-        cmdp.get("--httpproxy=") # used in do_pull()
+        cmdp.get("--pull")          # if invoked without option
+        cmdp.get("--index=")        # used in do_pull()
+        cmdp.get("--registry=")     # used in do_pull()
+        cmdp.get("--httpproxy=")    # used in do_pull()
 
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
