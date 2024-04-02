@@ -668,11 +668,11 @@ udocker run  myfed  cat /etc/redhat-release
 # and may considerably increase the time for the container to start.
 udocker run fedora:29 cat /etc/redhat-release
 
-# For repeated invocations of the same container image the issue 
+# For repeated invocations of the same container image the issue
 # described above can be prevented by using --pull=reuse with --name.
 # With the option --pull=reuse udocker will first try to execute
 # a container with the same name specified by --name and only if
-# it doesn't exist will it pull and create. In this way repeated 
+# it doesn't exist will it pull and create. In this way repeated
 # calls to run only create a single container that is then reused.
 udocker run --name=F29 --pull=reuse fedora:29 cat /etc/redhat-release
 
@@ -1494,7 +1494,7 @@ modes Pn or Rn. The modes Fn perform changes to the containers that will make
 them fail if they are execute in a different host where the absolute pathname
 to the container location is different. In this later case convert back to P1
 (using:  `udocker setup --execmode=P1`) before performing the backup. Sharing
-of containers can be done across hosts in an homogeneous cluster or between 
+of containers can be done across hosts in an homogeneous cluster or between
 hosts with the very same directory structure.
 
 When experiencing issues in the default execution mode (P1) you may try

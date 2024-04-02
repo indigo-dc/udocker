@@ -1,6 +1,6 @@
 # Changelog
 
-## udocker (1.3.14-rc.1) - 
+## udocker (1.3.14) - 2024-03-xx
 
 * Support for runsc as engine for execution mode Rn: solves #414
 * New option `login --password-stdin`
@@ -224,7 +224,7 @@
 
 * Complete fix for of ELF paths in modes Fn for $ORIGIN:$ORIGIN - closes: #255
 
-## udocker (1.1.5) 
+## udocker (1.1.5)
 
 * Preliminary fix for of ELF paths in modes Fn for $ORIGIN:$ORIGIN
 * Add Fn libraries for Ubuntu20, Fedora32, Fedora33

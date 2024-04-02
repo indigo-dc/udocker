@@ -294,7 +294,6 @@ the nvidia drivers are installed in the host system.
 udocker setup  --nvidia  mytensorflow
 ```
 
-
 ## Security
 
 By default udocker via PRoot offers the emulation of the root user. This
@@ -354,7 +353,7 @@ containers execution in user space. udocker is particularly suited to
 run user applications encapsulated in docker containers.
 
 Debugging or using strace with the PRoot engine will not work as both
-the debuggers and PRoot use the same tracing mechanism.  
+the debuggers and PRoot use the same tracing mechanism.
 
 ## Execution mode specific limitations
 

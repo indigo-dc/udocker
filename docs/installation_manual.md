@@ -169,7 +169,7 @@ The configuration of udocker has the following hierarchy:
    it will override 1.
 3. If environment variables are set ([section 5. Environment variables](#5-environment-variables)),
    they will override 2.
-4. The presence of general udocker command line options, will override 3. .
+4. The presence of general udocker command line options, will override 3.
 
 ### 3.1. Directories
 
@@ -270,7 +270,7 @@ from the host or from the udocker installation.
 * `UDOCKER_DEFAULT_EXECUTION_MODE`: default execution mode can be P1, P2, F1,
   S1, R1, R2 or R3.
 
-Several executables and libraries are shipped with udocker. For instance 
+Several executables and libraries are shipped with udocker. For instance
 the executable for the Rn modes can be selected to be either `runc` or
 `crun`. This can be accomplished by setting `UDOCKER_USE_RUNC_EXECUTABLE`
 to the path of the desired executable. If `runsc` is available in the
@@ -278,7 +278,7 @@ host it can also be selected in this manner.
 
 ```
 # Forcing the use of crun instead of runc
-export UDOCKER_USE_RUNC_EXECUTABLE=$HOME/.udocker/bin/crun-x86_64 
+export UDOCKER_USE_RUNC_EXECUTABLE=$HOME/.udocker/bin/crun-x86_64
 export UDOCKER_DEFAULT_EXECUTION_MODE=R1
 udocker run <mycontainerid>
 ```
@@ -305,7 +305,6 @@ containing the modified source code and the original repositories.
 | **F** | Patchelf         | <https://github.com/jorge-lip/patchelf-udocker>            | <https://github.com/NixOS/patchelf>
 | **R** | runc             | THE ORIGINAL REPOSITORY IS USED                            | <https://github.com/opencontainers/runc>
 | **R** | crun             | THE ORIGINAL REPOSITORY IS USED                            | <https://github.com/containers/crun>
-
 
 ### 6.2. Software Licenses
 
@@ -341,7 +340,7 @@ versions. The tools are also delivered for several architectures.
 | **R** | x86_64  aarch64                              |
 | **S** | uses the binaries present in the host system |
 
-### 6.3. Compiling 
+### 6.3. Compiling
 
 udocker already provides executables and libraries for the engines. These
 are statically compiled to be used across different Linux distributions.
