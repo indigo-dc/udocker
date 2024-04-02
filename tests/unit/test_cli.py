@@ -60,8 +60,9 @@ class UdockerCLITestCase(TestCase):
         UdockerCLI(self.local)
         self.assertTrue(mock_ks.called_with(Config().conf['keystore']))
 
+    @patch('udocker.utils.curl')
     @patch('udocker.cli.FileUtil.isdir')
-    def test_02__cdrepo(self, mock_isdir):
+    def test_02__cdrepo(self, mock_isdir, mock_curl):
         """Test02 UdockerCLI()._cdrepo()."""
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
