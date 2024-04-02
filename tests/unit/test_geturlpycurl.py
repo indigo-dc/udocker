@@ -6,8 +6,9 @@ udocker unit tests: GetURLpyCurl
 """
 
 from unittest import TestCase, main
-from unittest.mock import patch, Mock
-from io import BytesIO as strio
+from unittest.mock import patch
+# from unittest.mock import patch, Mock
+# from io import BytesIO as strio
 from udocker.utils.curl import GetURLpyCurl
 from udocker.config import Config
 import collections

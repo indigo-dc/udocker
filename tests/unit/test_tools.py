@@ -3,8 +3,8 @@
 udocker unit tests: UdockerTools
 """
 
-import tarfile
-from tarfile import TarInfo
+# import tarfile
+# from tarfile import TarInfo
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from io import StringIO
