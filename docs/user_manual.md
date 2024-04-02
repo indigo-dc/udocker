@@ -640,6 +640,7 @@ Options:
 * `--location=DIR` execute a container in a given directory
 * `--platform=os/architecture` specify a different platform to be pulled
 * `--pull=missing|never|always|reuse` specify when to pull the image
+* `--httpproxy=PROXY` uses an http or socks proxy, see `pull`
 
 Options valid only in Pn execution modes:
 
