@@ -756,6 +756,7 @@ class UdockerCLI(object):
         --entrypoint               :override the container metadata entrypoint
         --platform=os/arch         :pull image for OS and architecture
         --pull=<when>              :when to pull (missing|never|always|reuse)
+        --httpproxy=<proxy>        :use http proxy, see udocker pull --help
 
         Only available in Rn execution modes:
         --device=/dev/xxx          :pass device to container (R1 mode only)
@@ -778,18 +779,21 @@ class UdockerCLI(object):
         delete = cmdp.get("--rm")
         name = cmdp.get("--name=")
         pull = cmdp.get("--pull=")
-        dummy = cmdp.get("--pull")  # if invoked without option
+        cmdp.get("--pull")  # if invoked without option
+        cmdp.get("--index=") # used in do_pull()
+        cmdp.get("--registry=") # used in do_pull()
+        cmdp.get("--httpproxy=") # used in do_pull()
 
         if cmdp.missing_options():  # syntax error
             return self.STATUS_ERROR
 
+        container_id = ""
         if Config.conf['location']:
-            container_id = ""
+            pass
         elif not container_or_image:
             Msg().err("Error: must specify container_id or image:tag")
             return self.STATUS_ERROR
         else:
-            container_id = ""
             if pull == "reuse" and name:
                 container_id = self.localrepo.get_container_id(name)
             if not container_id:
