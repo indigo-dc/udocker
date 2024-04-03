@@ -847,7 +847,7 @@ class DockerIoAPITestCase(TestCase):
     @patch.object(GetURLpyCurl, 'is_available')
     def test_35_search_init(self, mock_gupycurl):
         """Test35 DockerIoAPI().search_init"""
-        mock_gupycurl.return_value = True 
+        mock_gupycurl.return_value = True
 
         doia = DockerIoAPI(self.local)
         doia.search_init("PAUSE")
