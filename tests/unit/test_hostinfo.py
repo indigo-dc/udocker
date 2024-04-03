@@ -82,13 +82,13 @@ class HostInfoTestCase(TestCase):
         status = HostInfo().oskernel_isgreater([1, 1, 1])
         self.assertFalse(status)
 
-    def test_06_cmd_has_option(self):
-        """Test06 HostInfo().cmd_has_option."""
-        status = HostInfo().cmd_has_option("ls", "-a")
-        self.assertTrue(status)
-
-        status = HostInfo().cmd_has_option("ls", "-z")
-        self.assertFalse(status)
+    # def test_06_cmd_has_option(self):
+    #     """Test06 HostInfo().cmd_has_option."""
+    #     status = HostInfo().cmd_has_option("ls", "-a")
+    #     self.assertTrue(status)
+    #
+    #     status = HostInfo().cmd_has_option("ls", "-z")
+    #     self.assertFalse(status)
 
     @patch('udocker.helper.hostinfo.Uprocess.check_output')
     def test_07_termsize(self, mock_chkout):

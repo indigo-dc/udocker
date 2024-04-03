@@ -11,6 +11,7 @@ from io import StringIO
 from udocker.config import Config
 from udocker.utils.curl import CurlHeader
 from udocker.tools import UdockerTools
+from udocker.utils.curl import GetURLpyCurl
 import collections
 
 collections.Callable = collections.abc.Callable
@@ -40,21 +41,30 @@ class UdockerToolsTestCase(TestCase):
         self.assertTrue(mock_geturl.called)
         self.assertEqual(utools.localrepo, self.local)
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch('udocker.tools.Msg')
-    def test_02__instructions(self, mock_msg):
+    def test_02__instructions(self, mock_msg, mock_gupycurl):
         """Test02 UdockerTools()._instructions()."""
+        mock_gupycurl.return_value = True
+
         utools = UdockerTools(self.local)
         utools._instructions()
         self.assertTrue(mock_msg.return_value.out.call_count, 2)
 
-    def test_03__version2int(self):
+    @patch.object(GetURLpyCurl, 'is_available')
+    def test_03__version2int(self, mock_gupycurl):
         """Test03 UdockerTools()._version2int()."""
+        mock_gupycurl.return_value = True
+
         utools = UdockerTools(self.local)
         status = utools._version2int("2.4")
         self.assertEqual(status, 2004000)
 
-    def test_04__version_isok(self):
+    @patch.object(GetURLpyCurl, 'is_available')
+    def test_04__version_isok(self, mock_gupycurl):
         """Test04 UdockerTools()._version_isok()."""
+        mock_gupycurl.return_value = True
+
         Config.conf['tarball_release'] = "1.3"
         utools = UdockerTools(self.local)
         status = utools._version_isok("2.4")
@@ -65,20 +75,27 @@ class UdockerToolsTestCase(TestCase):
         status = utools._version_isok("1.4")
         self.assertFalse(status)
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch('udocker.tools.FileUtil.getdata')
-    def test_05_is_available(self, mock_fuget):
+    def test_05_is_available(self, mock_fuget, mock_gupycurl):
         """Test05 UdockerTools().is_available()."""
+        mock_gupycurl.return_value = True
+
         Config.conf['tarball_release'] = "2.3"
         mock_fuget.return_value = "2.3\n"
         utools = UdockerTools(self.local)
         status = utools.is_available()
         self.assertTrue(status)
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch('udocker.tools.FileUtil.remove')
     @patch('udocker.tools.FileUtil.register_prefix')
     @patch('udocker.tools.os.listdir')
-    def test_06_purge(self, mock_lsdir, mock_fureg, mock_furm):
+    def test_06_purge(self, mock_lsdir, mock_fureg, mock_furm,
+                      mock_gupycurl):
         """Test06 UdockerTools().purge()."""
+        mock_gupycurl.return_value = True
+
         mock_lsdir.side_effect = [["f1", "f2"],
                                   ["f3", "f4"],
                                   ["f5", "f6"]]
@@ -90,11 +107,15 @@ class UdockerToolsTestCase(TestCase):
         self.assertTrue(mock_fureg.call_count, 4)
         self.assertTrue(mock_furm.call_count, 4)
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch('udocker.tools.GetURL.get')
     @patch('udocker.tools.FileUtil.remove')
     @patch('udocker.tools.FileUtil.mktmp')
-    def test_07__download(self, mock_fumktmp, mock_furm, mock_geturl):
+    def test_07__download(self, mock_fumktmp, mock_furm, mock_geturl,
+                          mock_gupycurl):
         """Test07 UdockerTools()._download()."""
+        mock_gupycurl.return_value = True
+
         url = "https://down/file"
         hdr = CurlHeader()
         hdr.data["X-ND-HTTPSTATUS"] = "HTTP/1.1 200 OK"
@@ -222,18 +243,25 @@ class UdockerToolsTestCase(TestCase):
     #         self.assertTrue(mock_futil.called)
     #         self.assertTrue(mock_futil.return_value.rchmod.call_count, 4)
 
-    def test_11__get_mirrors(self):
+    @patch.object(GetURLpyCurl, 'is_available')
+    def test_11__get_mirrors(self, mock_gupycurl):
         """Test11 UdockerTools()._get_mirrors()."""
+        mock_gupycurl.return_value = True
+
         mirrors = "https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz"
         utools = UdockerTools(self.local)
         status = utools._get_mirrors(mirrors)
         self.assertEqual(status, [mirrors])
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch.object(UdockerTools, '_get_file')
     @patch.object(UdockerTools, '_get_mirrors')
     @patch('udocker.tools.json.load')
-    def test_12_get_installinfo(self, mock_jload, mock_mirr, mock_getf):
+    def test_12_get_installinfo(self, mock_jload, mock_mirr, mock_getf,
+                                mock_gupycurl):
         """Test12 UdockerTools().get_installinfo()."""
+        mock_gupycurl.return_value = True
+
         Config.conf['installinfo'] = "/home/info.json"
         res = {"tarversion": "1.2.7"}
         mock_jload.return_value = {"tarversion": "1.2.7"}
@@ -247,14 +275,17 @@ class UdockerToolsTestCase(TestCase):
             status = utools.get_installinfo()
             self.assertEqual(status, res)
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch.object(UdockerTools, '_install')
     @patch.object(UdockerTools, '_verify_version')
     @patch.object(UdockerTools, '_get_file')
     @patch.object(UdockerTools, '_get_mirrors')
     @patch('udocker.tools.FileUtil.remove')
     def test_13__install_logic(self, mock_furm, mock_getmirr, mock_getfile,
-                               mock_verversion, mock_install):
+                               mock_verversion, mock_install, mock_gupycurl):
         """Test13 UdockerTools()._install_logic()."""
+        mock_gupycurl.return_value = True
+
         mock_furm.return_value = None
         mock_getmirr.return_value = "https://down.pt/udocker-1.2.7.tar.gz"
         mock_getfile.return_value = "udocker-1.2.7.tar.gz"
@@ -286,13 +317,16 @@ class UdockerToolsTestCase(TestCase):
         status = utools._install_logic(False)
         self.assertFalse(status)
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch('udocker.tools.Msg')
     @patch.object(UdockerTools, 'get_installinfo')
     @patch.object(UdockerTools, '_install_logic')
     @patch.object(UdockerTools, 'is_available')
     def test_14_install(self, mock_isavail, mock_instlog,
-                        mock_getinfo, mock_msg):
+                        mock_getinfo, mock_msg, mock_gupycurl):
         """Test14 UdockerTools().install()."""
+        mock_gupycurl.return_value = True
+
         mock_msg.level = 0
         Config.conf['autoinstall'] = True
         Config.conf['tarball'] = "udocker-1.2.7.tar.gz"
