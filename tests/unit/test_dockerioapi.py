@@ -132,14 +132,17 @@ class DockerIoAPITestCase(TestCase):
         status = doia._get_url(args, kwargs)
         self.assertEqual(status, (hdr, buff))
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch.object(DockerIoAPI, '_get_url')
     @patch('udocker.docker.GetURL.get_status_code')
     @patch('udocker.docker.FileUtil.size')
     @patch('udocker.docker.GetURL.get_content_length')
     @patch('udocker.docker.ChkSUM.hash')
     def test_07__get_file(self, mock_hash, mock_getlength,
-                          mock_fusize, mock_status, mock_geturl):
+                          mock_fusize, mock_status, mock_geturl, mock_gupycurl):
         """Test07 DockerIoAPI()._get_file()."""
+        mock_gupycurl.return_value = True
+
         cks = "af98ca7807fd3859c5bd876004fa7e960cecebddb342de1bc7f3b0e6f7dab415"
         url = "http://some1.org/file1"
         fname = "/sha256:" + cks
@@ -186,16 +189,22 @@ class DockerIoAPITestCase(TestCase):
         status = doia._get_file(url, fname, cache)
         self.assertTrue(status)
 
-    def test_08__split_fields(self):
+    @patch.object(GetURLpyCurl, 'is_available')
+    def test_08__split_fields(self, mock_gupycurl):
         """Test08 DockerIoAPI()._split_fields()."""
+        mock_gupycurl.return_value = True
+
         buff = 'k1="v1",k2="v2"'
         doia = DockerIoAPI(self.local)
         status = doia._split_fields(buff)
         self.assertEqual(status, {"k1": "v1", "k2": "v2"})
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch.object(DockerIoAPI, '_get_url')
-    def test_09_is_v1(self, mock_geturl):
+    def test_09_is_v1(self, mock_geturl, mock_gupycurl):
         """Test09 DockerIoAPI().is_v1()."""
+        mock_gupycurl.return_value = True
+
         hdr = type('test', (object,), {})()
         hdr.data = {"content-length": 10,
                     "X-ND-HTTPSTATUS": "HTTP-Version 200 Reason-Phrase",
@@ -216,9 +225,12 @@ class DockerIoAPITestCase(TestCase):
         status = doia.is_v1()
         self.assertFalse(status)
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch.object(DockerIoAPI, '_get_url')
-    def test_10_has_search_v1(self, mock_geturl):
+    def test_10_has_search_v1(self, mock_geturl, mock_gupycurl):
         """Test10 DockerIoAPI().has_search_v1()."""
+        mock_gupycurl.return_value = True
+
         url = "http://some1.org/file1"
         hdr = type('test', (object,), {})()
         hdr.data = {"content-length": 10,
@@ -240,10 +252,13 @@ class DockerIoAPITestCase(TestCase):
         status = doia.has_search_v1(url)
         self.assertFalse(status)
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch('udocker.docker.json.loads')
     @patch.object(DockerIoAPI, '_get_url')
-    def test_11_get_v1_repo(self, mock_geturl, mock_jload):
+    def test_11_get_v1_repo(self, mock_geturl, mock_jload, mock_gupycurl):
         """Test11 DockerIoAPI().get_v1_repo"""
+        mock_gupycurl.return_value = True
+
         imagerepo = "REPO"
         hdr = type('test', (object,), {})()
         hdr.data = {"x-docker-token": "12345"}
@@ -255,8 +270,11 @@ class DockerIoAPITestCase(TestCase):
         status = doia.get_v1_repo(imagerepo)
         self.assertEqual(status, ({"x-docker-token": "12345"}, {"k1": "v1"}))
 
-    def test_12__get_v1_auth(self):
+    @patch.object(GetURLpyCurl, 'is_available')
+    def test_12__get_v1_auth(self, mock_gupycurl):
         """Test12 DockerIoAPI()._get_v1_auth"""
+        mock_gupycurl.return_value = True
+
         doia = DockerIoAPI(self.local)
         doia.v1_auth_header = "Not Empty"
         www_authenticate = ['Other Stuff']
@@ -269,11 +287,14 @@ class DockerIoAPITestCase(TestCase):
         out = doia._get_v1_auth(www_authenticate)
         self.assertEqual(out, "Not Empty")
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch('udocker.docker.Msg')
     @patch('udocker.utils.curl.CurlHeader')
     @patch.object(DockerIoAPI, '_get_url')
-    def test_13_get_v1_image_tags(self, mock_dgu, mock_hdr, mock_msg):
+    def test_13_get_v1_image_tags(self, mock_dgu, mock_hdr, mock_msg, mock_gupycurl):
         """Test13 DockerIoAPI().get_v1_image_tags"""
+        mock_gupycurl.return_value = True
+
         mock_msg.level = 0
         mock_dgu.return_value = (mock_hdr, [])
         endpoint = "docker.io"
@@ -282,11 +303,14 @@ class DockerIoAPITestCase(TestCase):
         out = doia.get_v1_image_tags(endpoint, imagerepo)
         self.assertIsInstance(out, list)
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch('udocker.docker.Msg')
     @patch('udocker.utils.curl.CurlHeader')
     @patch.object(DockerIoAPI, '_get_url')
-    def test_14_get_v1_image_tag(self, mock_dgu, mock_hdr, mock_msg):
+    def test_14_get_v1_image_tag(self, mock_dgu, mock_hdr, mock_msg, mock_gupycurl):
         """Test14 DockerIoAPI().get_v1_image_tag"""
+        mock_gupycurl.return_value = True
+
         mock_msg.level = 0
         mock_dgu.return_value = (mock_hdr, [])
         endpoint = "docker.io"
