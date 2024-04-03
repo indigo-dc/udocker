@@ -10,6 +10,7 @@ from unittest.mock import Mock, patch
 from io import BytesIO as strio
 from udocker.config import Config
 from udocker.docker import DockerIoAPI
+from udocker.utils.curl import GetURLpyCurl
 import collections
 
 collections.Callable = collections.abc.Callable
