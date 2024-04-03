@@ -46,12 +46,12 @@ class UdockerCLITestCase(TestCase):
     @patch('udocker.cli.LocalFileAPI')
     @patch('udocker.cli.KeyStore')
     @patch('udocker.cli.DockerIoAPI')
-    def test_01_init(self, mock_dioapi, mock_ks, mock_lfapi):
+    def test_01_init(self, mock_dockerio, mock_ks, mock_lfapi):
         """Test01 UdockerCLI() constructor."""
         # Test Config().conf['keystore'] starts with /
         Config().conf['keystore'] = "/xxx"
         UdockerCLI(self.local)
-        self.assertTrue(mock_dioapi.called)
+        self.assertTrue(mock_dockerio.called)
         self.assertTrue(mock_lfapi.called)
         self.assertTrue(mock_ks.called_with(Config().conf['keystore']))
 
@@ -91,7 +91,7 @@ class UdockerCLITestCase(TestCase):
         self.assertTrue(status)
         self.assertTrue(self.local.setup.called)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.DockerIoAPI.is_repo_name')
     @patch('udocker.cli.Msg')
     def test_03__check_imagespec(self, mock_msg, mock_reponame,
@@ -113,7 +113,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc._check_imagespec("AAA:45")
         self.assertEqual(status, ("AAA", "45"))
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.DockerIoAPI.is_repo_name')
     @patch('udocker.cli.Msg')
     def test_04__check_imagerepo(self, mock_msg, mock_reponame,
@@ -130,39 +130,37 @@ class UdockerCLITestCase(TestCase):
         status = udoc._check_imagerepo("AAA")
         self.assertEqual(status, "AAA")
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
-    @patch('udocker.cli.DockerIoAPI.set_index')
-    @patch('udocker.cli.DockerIoAPI.set_registry')
-    @patch('udocker.cli.DockerIoAPI.set_proxy')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
-    def test_05__set_repository(self, mock_msg, mock_proxy,
-                                mock_reg, mock_idx, mock_dockerio):
+    def test_05__set_repository(self, mock_msg, mock_dockerio):
         """Test05 UdockerCLI()._set_repository()."""
         mock_msg.level = 0
         regist = "registry.io"
         idxurl = "dockerhub.io"
         imgrepo = "dockerhub.io/myimg:1.2"
-        mock_proxy.return_value = None
-        mock_reg.side_effect = [None, None, None, None]
-        mock_idx.side_effect = [None, None, None, None]
+        mock_dockerio.set_proxy.return_value = None
+        mock_dockerio.set_registry.side_effect = [None, None, None, None]
+        mock_dockerio.set_index.side_effect = [None, None, None, None]
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc._set_repository(regist, idxurl, imgrepo, True)
         self.assertTrue(status)
-        self.assertTrue(mock_proxy.called)
-        self.assertTrue(mock_reg.called)
-        self.assertTrue(mock_idx.called)
+        self.assertTrue(mock_dockerio.set_proxy.called)
+        self.assertTrue(mock_dockerio.set_registry.called)
+        self.assertTrue(mock_dockerio.set_index.called)
 
         regist = ""
         idxurl = ""
         imgrepo = "https://dockerhub.io/myimg:1.2"
-        mock_proxy.return_value = None
-        mock_reg.side_effect = [None, None, None, None]
-        mock_idx.side_effect = [None, None, None, None]
+        mock_dockerio.set_proxy.return_value = None
+        mock_dockerio.set_registry.side_effect = [None, None, None, None]
+        mock_dockerio.set_index.side_effect = [None, None, None, None]
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc._set_repository(regist, idxurl, imgrepo, False)
         self.assertTrue(status)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     def test_06__split_imagespec(self, mock_dockerio):
         """Test06 UdockerCLI()._split_imagespec()."""
         imgrepo = ""
@@ -183,7 +181,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc._split_imagespec(imgrepo)
         self.assertEqual(status, res)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.os.path.exists')
     @patch('udocker.cli.Msg')
     def test_07_do_mkrepo(self, mock_msg, mock_exists, mock_dockerio):
@@ -246,31 +244,29 @@ class UdockerCLITestCase(TestCase):
     #     status = udoc._search_repositories("ipyrad")
     #     self.assertEqual(status, 0)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
-    @patch('udocker.cli.DockerIoAPI.get_tags')
-    def test_10__list_tags(self, mock_gettags, mock_dockerio):
+    @patch('udocker.cli.DockerIoAPI')
+    def test_10__list_tags(self, mock_dockerio):
         """Test10 UdockerCLI()._list_tags()."""
-        mock_gettags.return_value = ["t1"]
+        mock_dockerio.get_tags.return_value = ["t1"]
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc._list_tags("t1")
         self.assertEqual(status, 0)
 
-        mock_gettags.return_value = None
+        mock_dockerio.get_tags.return_value = None
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc._list_tags("t1")
         self.assertEqual(status, 1)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.KeyStore.get')
-    @patch('udocker.cli.DockerIoAPI.set_v2_login_token')
-    @patch('udocker.cli.DockerIoAPI.search_init')
     @patch.object(UdockerCLI, '_search_repositories')
     @patch.object(UdockerCLI, '_list_tags')
     @patch.object(UdockerCLI, '_split_imagespec')
     @patch.object(UdockerCLI, '_set_repository')
     def test_11_do_search(self, mock_setrepo, mock_split, mock_listtags,
-                          mock_searchrepo, mock_doiasearch, mock_doiasetv2,
-                          mock_ksget, mock_dockerio):
+                          mock_searchrepo, mock_ksget, mock_dockerio):
         """Test11 UdockerCLI().do_search()."""
         argv = ["udocker", "-h"]
         cmdp = CmdParser()
@@ -284,17 +280,18 @@ class UdockerCLITestCase(TestCase):
         cmdp.parse(argv)
         mock_setrepo.return_value = None
         mock_split.return_value = ("d1", "d2", "ipyrad", "d3")
-        mock_doiasearch.return_value = None
+        mock_dockerio.search_init.return_value = None
         mock_ksget.return_value = "v2token1"
-        mock_doiasetv2.return_value = None
+        mock_dockerio.set_v2_login_token.return_value = None
         mock_listtags.return_value = ["t1", "t2"]
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc.do_search(cmdp)
         self.assertEqual(status, ["t1", "t2"])
         self.assertTrue(mock_setrepo.called)
-        self.assertTrue(mock_doiasearch.called)
+        self.assertTrue(mock_dockerio.search_init.called)
         self.assertTrue(mock_ksget.called)
-        self.assertTrue(mock_doiasetv2.called)
+        self.assertTrue(mock_dockerio.set_v2_login_token.called)
         self.assertTrue(mock_listtags.called)
 
         argv = ["udocker", "search", "ipyrad"]
@@ -302,16 +299,17 @@ class UdockerCLITestCase(TestCase):
         cmdp.parse(argv)
         mock_setrepo.return_value = None
         mock_split.return_value = ("d1", "d2", "ipyrad", "d3")
-        mock_doiasearch.return_value = None
+        mock_dockerio.search_init.return_value = None
         mock_ksget.return_value = "v2token1"
-        mock_doiasetv2.return_value = None
+        mock_dockerio.set_v2_login_token.return_value = None
         mock_searchrepo.return_value = 0
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc.do_search(cmdp)
         self.assertEqual(status, 0)
         self.assertTrue(mock_searchrepo.called)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     @patch('udocker.cli.LocalFileAPI.load')
     @patch.object(UdockerCLI, '_check_imagerepo')
@@ -354,7 +352,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_load(cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     @patch('udocker.cli.os.path.exists')
     @patch('udocker.cli.LocalFileAPI.save')
@@ -405,7 +403,7 @@ class UdockerCLITestCase(TestCase):
         self.assertTrue(mock_save.called)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.LocalFileAPI.import_toimage')
     @patch('udocker.cli.LocalFileAPI.import_tocontainer')
     @patch('udocker.cli.LocalFileAPI.import_clone')
@@ -468,7 +466,7 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(mock_impcont.called)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     @patch('udocker.cli.ContainerStructure')
     def test_15_do_export(self, mock_cs, mock_msg, mock_dockerio):
@@ -519,7 +517,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_export(cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.LocalFileAPI.clone_container')
     @patch('udocker.cli.Msg')
     def test_16_do_clone(self, mock_msg, mock_clone, mock_dockerio):
@@ -552,13 +550,12 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(mock_clone.called)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     @patch('udocker.cli.KeyStore.put')
-    @patch('udocker.cli.DockerIoAPI.get_v2_login_token')
     @patch.object(UdockerCLI, '_set_repository')
-    def test_17_do_login(self, mock_setrepo, mock_dioalog,
-                         mock_ksput, mock_msg, mock_dockerio):
+    def test_17_do_login(self, mock_setrepo, mock_ksput, mock_msg,
+                         mock_dockerio):
         """Test17 UdockerCLI().do_login()."""
         mock_msg.level = 0
         argv = ["udocker", "-h"]
@@ -573,13 +570,14 @@ class UdockerCLITestCase(TestCase):
         cmdp = CmdParser()
         cmdp.parse(argv)
         mock_setrepo.return_value = True
-        mock_dioalog.return_value = "zx1"
+        mock_dockerio.get_v2_login_token.return_value = "zx1"
         mock_ksput.return_value = 1
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc.do_login(cmdp)
         self.assertEqual(status, 1)
         self.assertTrue(mock_setrepo.called)
-        self.assertTrue(mock_dioalog.called)
+        self.assertTrue(mock_dockerio.get_v2_login_token.called)
         self.assertTrue(mock_ksput.called)
 
         argv = ["udocker", "login", "--username", "u1",
@@ -587,16 +585,17 @@ class UdockerCLITestCase(TestCase):
         cmdp = CmdParser()
         cmdp.parse(argv)
         mock_setrepo.return_value = None
-        mock_dioalog.return_value = "zx1"
+        mock_dockerio.get_v2_login_token.return_value = "zx1"
         mock_ksput.return_value = 0
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc.do_login(cmdp)
         self.assertEqual(status, 0)
         self.assertTrue(mock_setrepo.called)
-        self.assertTrue(mock_dioalog.called)
+        self.assertTrue(mock_dockerio.get_v2_login_token.called)
         self.assertTrue(mock_ksput.called)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     @patch('udocker.cli.KeyStore')
     @patch.object(UdockerCLI, '_set_repository')
@@ -633,14 +632,13 @@ class UdockerCLITestCase(TestCase):
         self.assertTrue(mock_setrepo.called)
         self.assertTrue(mock_ks.return_value.delete.called)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
     @patch.object(UdockerCLI, '_set_repository')
     @patch.object(UdockerCLI, '_check_imagespec')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.KeyStore.get')
     @patch('udocker.cli.Msg')
-    def test_19_do_pull(self, mock_msg, mock_ksget, mock_dioa,
-                        mock_chkimg, mock_setrepo, mock_dockerio):
+    def test_19_do_pull(self, mock_msg, mock_ksget, mock_dockerio,
+                        mock_chkimg, mock_setrepo):
         """Test19 UdockerCLI().do_pull()."""
         mock_msg.level = 0
         argv = ["udocker", "-h"]
@@ -648,6 +646,7 @@ class UdockerCLITestCase(TestCase):
         cmdp.parse(argv)
         mock_chkimg.return_value = ("ipyrad", "latest")
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc.do_pull(cmdp)
         self.assertEqual(status, 1)
 
@@ -657,16 +656,17 @@ class UdockerCLITestCase(TestCase):
         mock_chkimg.return_value = ("ipyrad", "latest")
         mock_setrepo.return_value = None
         mock_ksget.return_value = "zx1"
-        mock_dioa.return_value.set_v2_login_token.return_value = None
-        mock_dioa.return_value.get.return_value = False
+        mock_dockerio.set_v2_login_token.return_value = None
+        mock_dockerio.get.return_value = False
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc.do_pull(cmdp)
         self.assertEqual(status, 1)
         self.assertTrue(mock_chkimg.called)
         self.assertTrue(mock_setrepo.called)
         self.assertTrue(mock_ksget.called)
-        self.assertTrue(mock_dioa.return_value.set_v2_login_token.called)
-        self.assertTrue(mock_dioa.return_value.get.called)
+        self.assertTrue(mock_dockerio.set_v2_login_token.called)
+        self.assertTrue(mock_dockerio.get.called)
 
         argv = ["udocker", "pull", "ipyrad:latest"]
         cmdp = CmdParser()
@@ -674,42 +674,45 @@ class UdockerCLITestCase(TestCase):
         mock_chkimg.return_value = ("ipyrad", "latest")
         mock_setrepo.return_value = None
         mock_ksget.return_value = "zx1"
-        mock_dioa.return_value.set_v2_login_token.return_value = None
-        mock_dioa.return_value.get.return_value = True
+        mock_dockerio.set_v2_login_token.return_value = None
+        mock_dockerio.get.return_value = True
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc.do_pull(cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
     @patch.object(UdockerCLI, '_check_imagespec')
     @patch('udocker.cli.ContainerStructure')
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
-    def test_20__create(self, mock_msg, mock_dioapi,
-                        mock_cstruct, mock_chkimg, mock_dockerio):
+    def test_20__create(self, mock_msg, mock_dockerio,
+                        mock_cstruct, mock_chkimg):
         """Test20 UdockerCLI()._create()."""
         mock_msg.level = 0
-        mock_dioapi.return_value.is_repo_name.return_value = False
+        mock_dockerio.is_repo_name.return_value = False
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc._create("IMAGE:TAG")
         self.assertFalse(status)
         self.assertTrue(mock_msg.return_value.err.called)
 
-        mock_dioapi.return_value.is_repo_name.return_value = True
+        mock_dockerio.is_repo_name.return_value = True
         mock_chkimg.return_value = ("", "TAG")
         mock_cstruct.return_value.create.return_value = True
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc._create("IMAGE:TAG")
         self.assertFalse(status)
 
-        mock_dioapi.return_value.is_repo_name.return_value = True
+        mock_dockerio.is_repo_name.return_value = True
         mock_chkimg.return_value = ("IMAGE", "TAG")
         mock_cstruct.return_value.create.return_value = True
         udoc = UdockerCLI(self.local)
+        udoc.dockerioapi = mock_dockerio
         status = udoc._create("IMAGE:TAG")
         self.assertTrue(status)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch.object(UdockerCLI, '_create')
     @patch('udocker.cli.Msg')
     def test_21_do_create(self, mock_msg, mock_create, mock_dockerio):
@@ -754,7 +757,7 @@ class UdockerCLITestCase(TestCase):
     # def test_22__get_run_options(self):
     #    """Test22 UdockerCLI()._get_run_options()"""
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.ExecutionMode')
     @patch('udocker.cli.Msg')
     @patch.object(UdockerCLI, 'do_pull')
@@ -828,7 +831,7 @@ class UdockerCLITestCase(TestCase):
 
         exeng_patch.stop()
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     def test_24_do_images(self, mock_dockerio):
         """Test24 UdockerCLI().do_images()."""
         argv = ["udocker", "-h"]
@@ -853,7 +856,7 @@ class UdockerCLITestCase(TestCase):
         self.assertTrue(self.local.cd_imagerepo.called)
         self.assertTrue(self.local.get_layers.called)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.ExecutionMode')
     def test_25_do_ps(self, mock_exec, mock_dockerio):
         """Test25 UdockerCLI().do_ps()."""
@@ -882,7 +885,7 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         exeng_patch.stop()
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_26_do_rm(self, mock_msg, mock_dockerio):
         """Test26 UdockerCLI().do_rm()."""
@@ -944,7 +947,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_rm(cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     @patch.object(UdockerCLI, '_check_imagespec')
     def test_27_do_rmi(self, mock_chkimg, mock_msg, mock_dockerio):
@@ -1000,7 +1003,7 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(self.local.del_imagerepo.called)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     @patch.object(UdockerCLI, '_check_imagespec')
     def test_28_do_protect(self, mock_chkimg, mock_msg, mock_dockerio):
@@ -1067,7 +1070,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_protect(cmdp)
         self.assertEqual(status, 1)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     @patch.object(UdockerCLI, '_check_imagespec')
     def test_29_do_unprotect(self, mock_chkimg, mock_msg, mock_dockerio):
@@ -1134,7 +1137,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_unprotect(cmdp)
         self.assertEqual(status, 1)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_30_do_name(self, mock_msg, mock_dockerio):
         """Test30 UdockerCLI().do_name()."""
@@ -1175,7 +1178,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_name(cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_31_do_rename(self, mock_msg, mock_dockerio):
         """Test31 UdockerCLI().do_rename()."""
@@ -1238,7 +1241,7 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(self.local.set_container_name.call_count, 1)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_32_do_rmname(self, mock_msg, mock_dockerio):
         """Test32 UdockerCLI().do_rmname()."""
@@ -1276,7 +1279,7 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(self.local.del_container_name.called)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch.object(UdockerCLI, '_check_imagespec')
     @patch('udocker.cli.json.dumps')
     @patch('udocker.cli.ContainerStructure.get_container_attr')
@@ -1373,7 +1376,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_inspect(cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch.object(UdockerCLI, '_check_imagespec')
     @patch('udocker.cli.Msg')
     def test_34_do_verify(self, mock_msg, mock_chkimg, mock_dockerio):
@@ -1406,7 +1409,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_verify(cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.ExecutionMode')
     @patch('udocker.cli.NvidiaMode')
     @patch('udocker.cli.FileUtil.rchmod')
@@ -1494,7 +1497,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_setup(cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.UdockerTools')
     @patch('udocker.cli.Msg')
     def test_36_do_install(self, mock_msg, mock_utools, mock_dockerio):
@@ -1525,7 +1528,7 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_install(cmdp)
         self.assertEqual(status, 0)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_37_do_showconf(self, mock_msg, mock_dockerio):
         """Test37 UdockerCLI().do_showconf()."""
@@ -1538,7 +1541,7 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(mock_msg.return_value.out.called)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_38_do_version(self, mock_msg, mock_dockerio):
         """Test38 UdockerCLI().do_version()."""
@@ -1551,7 +1554,7 @@ class UdockerCLITestCase(TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(mock_msg.return_value.out.called)
 
-    @patch('udocker.cli.DockerIoAPI.__new__')
+    @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.Msg')
     def test_39_do_help(self, mock_msg, mock_dockerio):
         """Test39 UdockerCLI().do_help()."""

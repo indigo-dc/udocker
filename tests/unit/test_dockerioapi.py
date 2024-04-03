@@ -1,13 +1,15 @@
 #!/usr/bin/env python
+
+# -*- coding: utf-8 -*-
 """
 udocker unit tests: DockerIoAPI
 """
 
 from unittest import TestCase, main
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 from io import BytesIO as strio
-from udocker.docker import DockerIoAPI
 from udocker.config import Config
+from udocker.docker import DockerIoAPI
 import collections
 
 collections.Callable = collections.abc.Callable
