@@ -90,7 +90,7 @@ class GetURLTestCase(TestCase):
         Config().conf['http_agent'] = ""
         Config().conf['http_proxy'] = ""
         Config().conf['http_insecure'] = 0
-        Config().conf['use_curl_exec'] = ""
+        Config().conf['use_curl_executable'] = ""
 
     def tearDown(self):
         pass
@@ -136,7 +136,8 @@ class GetURLTestCase(TestCase):
         with self.assertRaises(NameError):
             GetURL()
 
-    def test_03_get_content_length(self):
+    @patch('udocker.utils.curl.GetURL._select_implementation')
+    def test_03_get_content_length(self, mock_sel):
         """Test03 GetURL().get_content_length()."""
         hdr = type('test', (object,), {})()
         hdr.data = {"content-length": 10, }
@@ -205,6 +206,7 @@ class GetURLpyCurlTestCase(TestCase):
         Config().conf['http_agent'] = ""
         Config().conf['http_proxy'] = ""
         Config().conf['http_insecure'] = 0
+        Config().conf['use_curl_executable'] = ""
 
     def tearDown(self):
         pass
@@ -293,6 +295,7 @@ class GetURLexeCurlTestCase(TestCase):
         Config().conf['http_agent'] = ""
         Config().conf['http_proxy'] = ""
         Config().conf['http_insecure'] = 0
+        Config().conf['use_curl_executable'] = ""
 
     def tearDown(self):
         pass
