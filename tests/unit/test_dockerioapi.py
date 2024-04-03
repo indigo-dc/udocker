@@ -58,19 +58,22 @@ class DockerIoAPITestCase(TestCase):
         doia.set_proxy(url)
         self.assertTrue(mock_geturl.return_value.set_proxy.called_with(url))
 
-    def test_03_set_registry(self):
+    @patch('udocker.docker.GetURL')
+    def test_03_set_registry(self, mock_geturl):
         """Test03 DockerIoAPI().set_registry()."""
         doia = DockerIoAPI(self.local)
         doia.set_registry("https://registry-1.docker.io")
         self.assertEqual(doia.registry_url, "https://registry-1.docker.io")
 
-    def test_04_set_index(self):
+    @patch('udocker.docker.GetURL')
+    def test_04_set_index(self, mock_geturl):
         """Test04 DockerIoAPI().set_index()."""
         doia = DockerIoAPI(self.local)
         doia.set_index("https://index.docker.io/v1")
         self.assertEqual(doia.index_url, "https://index.docker.io/v1")
 
-    def test_05_is_repo_name(self):
+    @patch('udocker.docker.GetURL')
+    def test_05_is_repo_name(self, mock_geturl):
         """Test05 DockerIoAPI().is_repo_name()."""
         doia = DockerIoAPI(self.local)
         self.assertFalse(doia.is_repo_name(""))
@@ -82,10 +85,13 @@ class DockerIoAPITestCase(TestCase):
         self.assertTrue(doia.is_repo_name("lipcomputing/os-cli-centos7"))
         self.assertTrue(doia.is_repo_name("lipcomputing/os-cli-centos7:latest"))
 
+    @patch.object(GetURLpyCurl, 'is_available')
     @patch('udocker.docker.GetURL.get_status_code')
     @patch('udocker.docker.GetURL.get')
-    def test_06__get_url(self, mock_get, mock_getstatus):
+    def test_06__get_url(self, mock_get, mock_getstatus, mock_gupycurl):
         """Test06 DockerIoAPI()._get_url()."""
+        mock_gupycurl.return_value = True
+
         args = ["http://some1.org"]
         kwargs = list()
         hdr = type('test', (object,), {})()

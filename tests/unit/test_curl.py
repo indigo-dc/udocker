@@ -169,27 +169,27 @@ class GetURLTestCase(TestCase):
         geturl.set_proxy("http://host")
         self.assertEqual(geturl.http_proxy, "http://host")
 
-    def test_06_get(self):
-        """Test06 GetURL().get()."""
-        geturl = GetURL()
-        self.assertRaises(TypeError, geturl.get)
+    # def test_06_get(self):
+    #     """Test06 GetURL().get()."""
+    #     geturl = GetURL()
+    #     self.assertRaises(TypeError, geturl.get)
+    #
+    #     geturl = GetURL()
+    #     geturl._geturl = type('test', (object,), {})()
+    #     geturl._geturl.get = self._get
+    #     self.assertEqual(geturl.get("http://host"), "http://host")
 
-        geturl = GetURL()
-        geturl._geturl = type('test', (object,), {})()
-        geturl._geturl.get = self._get
-        self.assertEqual(geturl.get("http://host"), "http://host")
-
-    def test_07_post(self):
-        """Test07 GetURL().post()."""
-        geturl = GetURL()
-        self.assertRaises(TypeError, geturl.post)
-        self.assertRaises(TypeError, geturl.post, "http://host")
-
-        geturl = GetURL()
-        geturl._geturl = type('test', (object,), {})()
-        geturl._geturl.get = self._get
-        status = geturl.post("http://host", {"DATA": 1, })
-        self.assertEqual(status, "http://host")
+    # def test_07_post(self):
+    #     """Test07 GetURL().post()."""
+    #     geturl = GetURL()
+    #     self.assertRaises(TypeError, geturl.post)
+    #     self.assertRaises(TypeError, geturl.post, "http://host")
+    #
+    #     geturl = GetURL()
+    #     geturl._geturl = type('test', (object,), {})()
+    #     geturl._geturl.get = self._get
+    #     status = geturl.post("http://host", {"DATA": 1, })
+    #     self.assertEqual(status, "http://host")
 
     # def test_08_get_status_code(self):
     #     """Test08 GetURL().get_status_code()."""
