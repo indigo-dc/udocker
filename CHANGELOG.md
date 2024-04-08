@@ -1,6 +1,6 @@
 # Changelog
 
-## udocker (1.3.14) - 2024-03-04
+## udocker (1.3.14) - 2024-04-04
 
 * Support for runsc as engine for execution mode R1: closes #414
 * New option `login --password-stdin`: closes #168
