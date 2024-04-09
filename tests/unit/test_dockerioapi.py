@@ -57,7 +57,7 @@ class DockerIoAPITestCase(TestCase):
         url = "socks5://user:pass@host:port"
         doia = DockerIoAPI(self.local)
         doia.set_proxy(url)
-        self.assertTrue(mock_geturl.return_value.set_proxy.called_with(url))
+        self.assertTrue(mock_geturl.return_value.set_proxy.called)
 
     @patch('udocker.docker.GetURL')
     def test_03_set_registry(self, mock_geturl):
