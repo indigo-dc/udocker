@@ -53,12 +53,11 @@ class UdockerCLITestCase(TestCase):
         UdockerCLI(self.local)
         self.assertTrue(mock_dockerio.called)
         self.assertTrue(mock_lfapi.called)
-        self.assertTrue(mock_ks.called_with(Config().conf['keystore']))
 
         # Test Config().conf['keystore'] does not starts with /
         Config().conf['keystore'] = "xx"
         UdockerCLI(self.local)
-        self.assertTrue(mock_ks.called_with(Config().conf['keystore']))
+        self.assertTrue(mock_ks.called)
 
     @patch('udocker.cli.DockerIoAPI')
     @patch('udocker.cli.FileUtil.isdir')

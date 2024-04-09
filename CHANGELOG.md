@@ -1,5 +1,10 @@
 # Changelog
 
+## udocker (1.3.15) - 2024-04-09
+
+* Fix unit tests: remove called_with as invalid assertion introduced in python 3.12
+* This version is the same as 1.3.14
+
 ## udocker (1.3.14) - 2024-04-04
 
 * Support for runsc as engine for execution mode R1: closes #414

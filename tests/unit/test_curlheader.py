@@ -59,7 +59,7 @@ class CurlHeaderTestCase(TestCase):
                 lambda self: iter(fakedata.readline, ''))
             curl_header = CurlHeader()
             self.assertTrue(curl_header.setvalue_from_file("filename"))
-            self.assertTrue(mock_write.called_with('XXXX'))
+            self.assertTrue(mock_write.called)
 
     def test_04_getvalue(self):
         """Test04 CurlHeader().getvalue()."""
