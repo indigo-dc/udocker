@@ -32,18 +32,18 @@ udocker requires:
 Download a release tarball from <https://github.com/indigo-dc/udocker/releases>:
 
 ```bash
-wget https://github.com/indigo-dc/udocker/releases/download/1.3.13/udocker-1.3.13.tar.gz
-tar zxvf udocker-1.3.13.tar.gz
-export PATH=`pwd`/udocker-1.3.13/udocker:$PATH
+wget https://github.com/indigo-dc/udocker/releases/download/1.3.14/udocker-1.3.14.tar.gz
+tar zxvf udocker-1.3.14.tar.gz
+export PATH=`pwd`/udocker-1.3.14/udocker:$PATH
 ```
 
 Alternatively use `curl` instead of `wget` as follows:
 
 ```bash
-curl -L https://github.com/indigo-dc/udocker/releases/download/1.3.13/udocker-1.3.13.tar.gz \
-  > udocker-1.3.13.tar.gz
-tar zxvf udocker-1.3.13.tar.gz
-export PATH=`pwd`/udocker-1.3.13/udocker:$PATH
+curl -L https://github.com/indigo-dc/udocker/releases/download/1.3.14/udocker-1.3.14.tar.gz \
+  > udocker-1.3.14.tar.gz
+tar zxvf udocker-1.3.14.tar.gz
+export PATH=`pwd`/udocker-1.3.14/udocker:$PATH
 ```
 
 udocker executes containers using external tools and libraries that
@@ -169,7 +169,7 @@ The configuration of udocker has the following hierarchy:
    it will override 1.
 3. If environment variables are set ([section 5. Environment variables](#5-environment-variables)),
    they will override 2.
-4. The presence of general udocker command line options, will override 3. .
+4. The presence of general udocker command line options, will override 3.
 
 ### 3.1. Directories
 
@@ -257,8 +257,8 @@ the environment variables described below together with the default behavior.
 A value of `UDOCKER` will force the usage of the executables provided by the
 udocker installation.
 
-A full pathname can be used to select a specific executable (or library) from the
-host or from the udocker installation.
+A full pathname can be used to force selection of a specific executable (or library)
+from the host or from the udocker installation.
 
 * `UDOCKER_USE_PROOT_EXECUTABLE`: path to proot, default is proot from udocker.
 * `UDOCKER_USE_RUNC_EXECUTABLE`: path to runc, default is search the host and
@@ -266,9 +266,22 @@ host or from the udocker installation.
 * `UDOCKER_USE_SINGULARITY_EXECUTABLE`: path to singularity, default is search
   the host.
 * `UDOCKER_FAKECHROOT_SO`: path to a fakechroot library, default is search
-  in udocker.
+  in udocker under `$HOME/.udocker/lib`.
 * `UDOCKER_DEFAULT_EXECUTION_MODE`: default execution mode can be P1, P2, F1,
   S1, R1, R2 or R3.
+
+Several executables and libraries are shipped with udocker. For instance
+the executable for the Rn modes can be selected to be either `runc` or
+`crun`. This can be accomplished by setting `UDOCKER_USE_RUNC_EXECUTABLE`
+to the path of the desired executable. If `runsc` is available in the
+host it can also be selected in this manner.
+
+```
+# Forcing the use of crun instead of runc
+export UDOCKER_USE_RUNC_EXECUTABLE=$HOME/.udocker/bin/crun-x86_64
+export UDOCKER_DEFAULT_EXECUTION_MODE=R1
+udocker run <mycontainerid>
+```
 
 ## 6. External tools and libraries
 
@@ -323,9 +336,32 @@ versions. The tools are also delivered for several architectures.
 | Mode  | Supported architecture                       |
 |-------|:---------------------------------------------|
 | **P** | x86_64, i386, aarch64 and arm                |
-| **F** | x86_64                                       |
-| **R** | x86_64                                       |
+| **F** | x86_64, aarch64, ppc64le                     |
+| **R** | x86_64  aarch64                              |
 | **S** | uses the binaries present in the host system |
+
+### 6.3. Compiling
+
+udocker already provides executables and libraries for the engines. These
+are statically compiled to be used across different Linux distributions.
+In some cases these executables may not work and may require recompilation.
+Use the repositories in section 6.2 if you which to compile the executables
+or libraries. Notice that the git repositories that are specific of udocker
+have branches or tags like `UDOCKER-x` where `x` is a number. Use the branch
+or tag with the highest number.
+
+A notable case are the fakechroot libraries used in the Fn modes that need
+to match the libc in the container. This means that a libfakechroot.so must
+be produced for each different distribution release and intended architecture.
+Two implementations of the `libc` are supported `glibc` and `musl`, choose
+the one that matches the distribution inside the container. Once compiled the
+selection of the library can be forced by setting the environment variable
+`UDOCKER_FAKECHROOT_SO`.
+
+```
+udocker setup --execmode=F3 <mycontainerid>
+UDOCKER_FAKECHROOT_SO=$HOME/mylibfakechroot.so  udocker run <mycontainerid>
+```
 
 The latest binary tarball can be produced from the source code using:
 
@@ -353,8 +389,8 @@ The udocker tool should be installed as shown in section 2.1:
 
 ```bash
 cd /sw
-wget https://github.com/indigo-dc/udocker/releases/download/1.3.13/udocker-1.3.13.tar.gz
-tar zxvf udocker-1.3.13.tar.gz
+wget https://github.com/indigo-dc/udocker/releases/download/1.3.14/udocker-1.3.14.tar.gz
+tar zxvf udocker-1.3.14.tar.gz
 ```
 
 Directing users to the central udocker installation can be done using the

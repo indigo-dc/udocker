@@ -44,13 +44,15 @@ class RuncEngine(ExecutionEngineCommon):
             self.executable = FileUtil("runc").find_exec()
         if not self.executable:
             self.executable = FileUtil("crun").find_exec()
+        if not self.executable:
+            self.executable = FileUtil("runsc").find_exec()
 
-        arch = HostInfo().arch()
+        self.arch = HostInfo().arch()
         if self.executable == "UDOCKER" or not self.executable:
             self.executable = ""
             image_list = []
-            eng = ["runc", "crun"]
-            image_list = [eng[0]+"-"+arch, eng[0], eng[1]+"-"+arch, eng[1]]
+            eng = ["runc", "crun", "runsc"]
+            image_list = [eng[0]+"-"+self.arch, eng[0], eng[1]+"-"+self.arch, eng[1]]
 
             f_util = FileUtil(self.localrepo.bindir)
             self.executable = f_util.find_file_in_dir(image_list)
@@ -58,7 +60,7 @@ class RuncEngine(ExecutionEngineCommon):
         if not os.path.exists(self.executable):
             Msg().err("Error: runc or crun executable not found")
             Msg().out("Info: Host architecture might not be supported by",
-                      "this execution mode:", arch,
+                      "this execution mode:", self.arch,
                       "\n      specify path to runc or crun with environment",
                       "UDOCKER_USE_RUNC_EXECUTABLE",
                       "\n      or choose other execution mode with: udocker",
@@ -68,6 +70,8 @@ class RuncEngine(ExecutionEngineCommon):
             self.engine_type = "crun"
         elif "runc" in os.path.basename(self.executable):
             self.engine_type = "runc"
+        elif "runsc" in os.path.basename(self.executable):
+            self.engine_type = "runsc"
 
     def _load_spec(self, new=False):
         """Generate runc spec file"""
@@ -76,7 +80,15 @@ class RuncEngine(ExecutionEngineCommon):
             FileUtil(self._container_specfile).remove()
 
         if FileUtil(self._container_specfile).size() == -1:
-            cmd_l = [self.executable, "spec", "--rootless", ]
+            if self.engine_type == "runsc":
+                f_util = FileUtil(self.localrepo.bindir)
+                runc_executable = f_util.find_file_in_dir(["runc-"+self.arch])
+                if runc_executable:
+                    cmd_l = [runc_executable, "spec", "--rootless", ]
+                # cmd_l = [self.executable, "spec", ]
+            else:
+                cmd_l = [self.executable, "spec", "--rootless", ]
+
             status = subprocess.call(cmd_l, shell=False, stderr=Msg.chlderr,
                                      close_fds=True,
                                      cwd=os.path.realpath(self._container_specdir))
@@ -399,6 +411,8 @@ class RuncEngine(ExecutionEngineCommon):
         self._add_devices()
         self._add_capabilities_spec()
         self._mod_mount_spec("shm", "/dev/shm", {"options": ["size=2g"]})
+        if self.engine_type == "runsc":
+            self._del_namespace_spec("user")
         self._proot_overlay()
         self._save_spec()
         if Msg.level >= Msg.DBG:
@@ -413,6 +427,9 @@ class RuncEngine(ExecutionEngineCommon):
         cmd_l = self._set_cpu_affinity()
         cmd_l.append(self.executable)
         cmd_l.extend(runc_debug)
+        if self.engine_type == "runsc":
+            cmd_l.extend(["--network=host", "--ignore-cgroups"])
+            cmd_l.extend(["--rootless", ])
         cmd_l.extend(["--root", self._container_specdir, "run"])
         cmd_l.extend(["--bundle", self._container_specdir, self.execution_id])
         Msg().err("CMD =", cmd_l, l=Msg.VER)

@@ -50,7 +50,7 @@ class Config(object):
 
     # default path for executables
     conf['root_path'] = "/usr/sbin:/sbin:/usr/bin:/bin"
-    conf['user_path'] = "/usr/local/bin:/usr/bin:/bin"
+    conf['user_path'] = "/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin"
 
     # directories to be mapped in containers with: run --sysdirs
     conf['sysdirs_list'] = ("/dev", "/proc", "/sys",

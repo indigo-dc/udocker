@@ -28,6 +28,7 @@ class GetURLTestCase(TestCase):
         Config().conf['http_proxy'] = ""
         Config().conf['http_insecure'] = 0
         Config().conf['use_curl_exec'] = ""
+        Config().conf['use_curl_executable'] = ""
 
     def tearDown(self):
         pass
@@ -43,9 +44,9 @@ class GetURLTestCase(TestCase):
     def test_01_init(self, mock_msg, mock_gupycurl,
                      mock_guexecurl, mock_select):
         """Test01 GetURL() constructor."""
-        mock_msg.level = 0
         mock_gupycurl.return_value = False
         mock_guexecurl.return_value = True
+        mock_msg.level = 0
         geturl = GetURL()
         mock_select.assert_called()
         self.assertEqual(geturl.ctimeout, Config().conf['ctimeout'])
@@ -58,9 +59,8 @@ class GetURLTestCase(TestCase):
     def test_02__select_implementation(self, mock_gupycurl,
                                        mock_guexecurl, mock_msg):
         """Test02 GetURL()._select_implementation()."""
-        Config.conf['use_curl_executable'] = ""
-        mock_msg.level = 0
         mock_gupycurl.return_value = True
+        mock_msg.level = 0
         geturl = GetURL()
         geturl._select_implementation()
         self.assertTrue(geturl.cache_support)
@@ -78,8 +78,11 @@ class GetURLTestCase(TestCase):
             geturl._select_implementation()
             self.assertEqual(nameerr.exception.code, 1)
 
-    def test_03_get_content_length(self):
+    @patch.object(GetURLpyCurl, 'is_available')
+    def test_03_get_content_length(self, mock_gupycurl):
         """Test03 GetURL().get_content_length()."""
+        mock_gupycurl.return_value = True
+
         hdr = type('test', (object,), {})()
         hdr.data = {"content-length": 10, }
         geturl = GetURL()
@@ -110,8 +113,10 @@ class GetURLTestCase(TestCase):
         geturl.set_proxy("http://host")
         self.assertEqual(geturl.http_proxy, "http://host")
 
-    def test_06_get(self):
+    @patch.object(GetURLpyCurl, 'is_available')
+    def test_06_get(self, mock_gupycurl):
         """Test06 GetURL().get()."""
+        mock_gupycurl.return_value = True
         geturl = GetURL()
         self.assertRaises(TypeError, geturl.get)
 
@@ -120,8 +125,10 @@ class GetURLTestCase(TestCase):
         geturl._geturl.get = self._get
         self.assertEqual(geturl.get("http://host"), "http://host")
 
-    def test_07_post(self):
+    @patch.object(GetURLpyCurl, 'is_available')
+    def test_07_post(self, mock_gupycurl):
         """Test07 GetURL().post()."""
+        mock_gupycurl.return_value = True
         geturl = GetURL()
         self.assertRaises(TypeError, geturl.post)
         self.assertRaises(TypeError, geturl.post, "http://host")
@@ -132,8 +139,10 @@ class GetURLTestCase(TestCase):
         status = geturl.post("http://host", {"DATA": 1, })
         self.assertEqual(status, "http://host")
 
-    def test_08_get_status_code(self):
+    @patch.object(GetURLpyCurl, 'is_available')
+    def test_08_get_status_code(self, mock_gupycurl):
         """Test08 GetURL().get_status_code()."""
+        mock_gupycurl.return_value = True
         sline = "HTTP-Version 400 Reason-Phrase"
         geturl = GetURL()
         status = geturl.get_status_code(sline)

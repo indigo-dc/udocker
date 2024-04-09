@@ -105,7 +105,7 @@ class CommonLocalFileApi(object):
         if layer_chksum:
             container_json["rootfs"] = {}
             container_json["rootfs"]["type"] = "layers"
-            container_json["rootfs"]["diff_ids"] = ["sha256:" + layer_chksum,]
+            container_json["rootfs"]["diff_ids"] = ["sha256:" + layer_chksum, ]
         container_json["container_config"] = {
             "Hostname": "",
             "Domainname": "",

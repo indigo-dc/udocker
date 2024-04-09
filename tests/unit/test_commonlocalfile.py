@@ -136,7 +136,7 @@ class CommonLocalFileApiTestCase(TestCase):
         status = clfapi.create_container_meta(layer_id, comment)
         self.assertEqual(status["id"], layer_id)
         self.assertEqual(status["comment"], comment)
-        self.assertEqual(status["rootfs"]["diff_ids"], ["sha256:" + 'abc123',])
+        self.assertEqual(status["rootfs"]["diff_ids"], ["sha256:" + 'abc123', ])
         self.assertTrue(mock_arch.called)
         self.assertTrue(mock_version.called)
         self.assertTrue(mock_size.called)

@@ -3,6 +3,7 @@
 
 import os
 import json
+import re
 
 from udocker.helper.hostinfo import HostInfo
 from udocker.utils.fileutil import FileUtil
@@ -71,6 +72,12 @@ class KeyStore(object):
         """Get credential from keystore for given url"""
         auths = self._read_all()
         try:
+            self.credential = auths[url]
+            return self.credential["auth"]
+        except KeyError:
+            pass
+        try:
+            url = re.sub(r'https?://', '', url)
             self.credential = auths[url]
             return self.credential["auth"]
         except KeyError:

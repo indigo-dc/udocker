@@ -94,7 +94,7 @@ class FakechrootEngine(ExecutionEngineCommon):
                 libc_relative_path = libc_abs_path[len(self.container_root):]
                 (dummy, filetype) = \
                     OSInfo(self.container_root).get_filetype(libc_relative_path)
-                if "ELF" in filetype and ( "dynamic" in filetype or "DYN" in filetype):
+                if "ELF" in filetype and ("dynamic" in filetype or "DYN" in filetype):
                     return libc_relative_path
         return ""
 
