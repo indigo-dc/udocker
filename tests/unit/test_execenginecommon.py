@@ -732,7 +732,7 @@ class ExecutionEngineCommonTestCase(TestCase):
         ex_eng._run_banner("/bin/bash")
         ex_eng.container_id = "CONTAINERID"
         self.assertTrue(mock_msg.called)
-        self.assertTrue(mock_base.called_once_with("/bin/bash"))
+        self.assertTrue(mock_base.called)
 
     @patch('udocker.engine.base.os.environ.copy')
     @patch('udocker.engine.base.os.environ')
