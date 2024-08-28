@@ -94,7 +94,7 @@ class UdockerCLI:
         return imagerepo
 
     def _set_repository(self, registry_url, index_url=None, imagerepo=None, http_proxy=None):
-        """Select docker respository"""
+        """Select docker repository"""
         transport = "https:"
         if http_proxy:
             self.dockerioapi.set_proxy(http_proxy)
@@ -1295,7 +1295,6 @@ class UdockerCLI:
         --purge                 :clean mountpoints and files created by udocker
         --fixperm               :attempt to fix file permissions
         --nvidia                :add NVIDIA libraries and binaries
-                                 (nvidia support is EXPERIMENTAL)
 
         <mode> is one of the following execution modes:
         P1: proot accelerated mode using seccomp filtering (default)

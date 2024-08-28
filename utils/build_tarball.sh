@@ -20,7 +20,7 @@
 
 # The tarball containing the build binaries for udocker is
 # maintained separately and has its own version. Each release of
-# udocker requires a tarball that is equal or greather than a given
+# udocker requires a tarball that is equal or greater than a given
 # base version.
 # i.e. udocker 1.3.0 requires a tarball >= 1.2.8
 
@@ -28,8 +28,8 @@
 
 DEVEL3=$(realpath "$0" | grep -E "devel3|devel4")
 
-TARBALL_VERSION_P3="1.2.10"
-TARBALL_VERSION_P2="1.1.10"
+TARBALL_VERSION_P3="1.2.11"
+TARBALL_VERSION_P2="1.1.11"
 
 sanity_check() 
 {
@@ -120,7 +120,7 @@ prepare_proot_source()
     #git clone --branch v5.1.0 --depth=1 https://github.com/proot-me/PRoot 
     #git clone --branch udocker-2 --depth=1 https://github.com/jorge-lip/proot-udocker.git
 
-    git clone --branch udocker-4 https://github.com/jorge-lip/proot-udocker.git
+    git clone --branch udocker-1 https://github.com/jorge-lip/proot-udocker.git
 
     #/bin/rm -Rf $BUILD_DIR/proot-udocker/.git
     #/bin/rm -Rf $BUILD_DIR/proot-udocker/static/care*
@@ -198,7 +198,7 @@ prepare_fakechroot_musl_source()
     fi
 
     #git clone --depth=1 --branch 2.18 https://github.com/dex4er/fakechroot.git
-    git clone --branch udocker-1 --depth=1 \
+    git clone --branch udocker-4 --depth=1 \
         https://github.com/jorge-lip/libfakechroot-musl-udocker.git
     /bin/rm -Rf "$BUILD_DIR/libfakechroot-musl-udocker/.git"
     /bin/mv libfakechroot-musl-udocker "$FAKECHROOT_SOURCE_DIR"
@@ -216,7 +216,8 @@ prepare_runc_source()
         return
     fi
      
-    git clone --depth=1 --branch v1.1.4 https://github.com/opencontainers/runc
+    git clone --depth=1 --branch v1.1.12 https://github.com/opencontainers/runc
+    #git clone --depth=1 --branch v1.1.4 https://github.com/opencontainers/runc
     #git clone --depth=1 --branch v1.0.0-rc5 https://github.com/opencontainers/runc
     #/bin/rm -Rf $BUILD_DIR/runc/.git
     /bin/mv runc "$RUNC_SOURCE_DIR"
@@ -1157,8 +1158,8 @@ fedora31_setup()
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora31_reinstall'
 dnf -y reinstall --releasever=31 $(rpm -qa)
@@ -1185,16 +1186,14 @@ fedora31_build_proot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-	PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1257,18 +1256,17 @@ fedora31_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1310,18 +1308,17 @@ fedora31_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1444,8 +1441,8 @@ fedora32_setup()
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora32_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -1472,16 +1469,13 @@ fedora32_build_proot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1544,18 +1538,17 @@ fedora32_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1597,18 +1590,17 @@ fedora32_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1731,8 +1723,8 @@ fedora33_setup()
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+	#PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora33_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -1759,16 +1751,13 @@ fedora33_build_proot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1831,18 +1820,17 @@ fedora33_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -1884,18 +1872,17 @@ fedora33_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2018,8 +2005,8 @@ fedora34_setup()
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+	#PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora34_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -2105,16 +2092,13 @@ fedora34_build_proot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2177,18 +2161,17 @@ fedora34_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2230,18 +2213,17 @@ fedora34_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2364,8 +2346,8 @@ fedora35_setup()
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+	#PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora35_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -2451,16 +2433,13 @@ fedora35_build_proot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2523,18 +2502,17 @@ fedora35_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2576,18 +2554,17 @@ fedora35_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2710,8 +2687,8 @@ fedora36_setup()
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+	#PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora36_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -2797,16 +2774,13 @@ fedora36_build_proot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2869,18 +2843,17 @@ fedora36_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -2922,18 +2895,17 @@ fedora36_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3056,8 +3028,8 @@ fedora38_setup()
 
     if [ "$OS_ARCH" = "aarch64" ]; then
         $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-	PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+	#PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
         export PROOT_NO_SECCOMP=1
 	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora38_reinstall'
 dnf -y reinstall $(rpm -qa)
@@ -3143,16 +3115,13 @@ fedora38_build_proot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3215,18 +3184,17 @@ fedora38_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3268,18 +3236,17 @@ fedora38_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -3305,6 +3272,347 @@ make
 cp src/.libs/libfakechroot.so libfakechroot-Fedora-38.so
 make clean
 EOF_fedora38_fakechroot
+    set +xv
+}
+
+
+# #############################################################################
+# Fedora 39
+# #############################################################################
+
+fedora39_create_dnf()
+{
+    echo "fedora39_create_dnf : $1"
+    local FILENAME="$1"
+    local ARCH="$2"
+
+    cat > "$FILENAME" <<EOF_fedora39_dnf
+[main]
+gpgcheck=0
+sslverify=0
+installonly_limit=3
+clean_requirements_on_remove=True
+reposdir=NONE
+
+[fedora-modular]
+name=Fedora Modular \$releasever - $ARCH
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/releases/\$releasever/Modular/$ARCH/os/
+metalink=https://mirrors.fedoraproject.org/metalink?repo=fedora-modular-\$releasever&arch=$ARCH
+enabled=1
+#metadata_expire=7d
+repo_gpgcheck=0
+type=rpm
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
+skip_if_unavailable=False
+
+[updates]
+name=Fedora \$releasever - $ARCH - Updates
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/updates/\$releasever/Everything/$ARCH/os
+metalink=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f\$releasever&arch=$ARCH
+enabled=1
+repo_gpgcheck=0
+type=rpm
+gpgcheck=0
+metadata_expire=6h
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
+skip_if_unavailable=False
+
+[fedora]
+name=Fedora \$releasever - $ARCH
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/releases/\$releasever/Everything/$ARCH/os/
+metalink=https://mirrors.fedoraproject.org/metalink?repo=fedora-\$releasever&arch=$ARCH
+enabled=1
+metadata_expire=7d
+repo_gpgcheck=0
+type=rpm
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-\$releasever-$ARCH
+skip_if_unavailable=False
+EOF_fedora39_dnf
+}
+
+
+fedora39_setup()
+{
+    echo "fedora39_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="fedora"
+    local OS_RELVER="39"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/bin/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    /bin/mkdir -p "${OS_ROOTDIR}/tmp"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot"
+    /bin/mkdir -p "${OS_ROOTDIR}/proot-static-packages"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/dnf"
+    fedora39_create_dnf "${OS_ROOTDIR}/etc/dnf/dnf.conf" "$OS_ARCH"
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+            gcc kernel-devel make libtalloc libtalloc-devel glibc-static glibc-devel tar python \
+	    python2 gzip zlib diffutils file glibc-headers dnf git which
+
+    #$SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+    #    downgrade  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+    #        coreutils-8.31-1.fc31.x86_64 coreutils-common-8.31-1.fc31.x86_64
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" --forcearch="$OS_ARCH" \
+        autoconf m4 gcc-c++ libstdc++-static automake gawk libtool
+
+    if [ "$OS_ARCH" = "aarch64" ]; then
+        $SUDO chown -R "$(id -u):$(id -g)" "$OS_ROOTDIR"
+	#PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+        export PROOT_NO_SECCOMP=1
+	$PROOT -r "$OS_ROOTDIR" -0 -w / -b /dev -b /etc/resolv.conf /bin/bash <<'EOF_fedora39_reinstall'
+dnf -y reinstall $(rpm -qa)
+EOF_fedora39_reinstall
+    fi
+
+    $SUDO /usr/bin/dnf -y -c "${OS_ROOTDIR}/etc/dnf/dnf.conf" \
+        clean packages
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+fedora39_build_proot_c()
+{
+    echo "fedora39_build_proot : $1"
+    local OS_ARCH="$1"
+    local PROOT_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="39"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    SUDO=/bin/sudo
+
+    if [ -x "${PROOT_SOURCE_DIR}/proot-Fedora-39.bin" ] ; then
+        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/proot-Fedora-39.bin"
+    else
+	$SUDO mount --bind "${PROOT_SOURCE_DIR}" "$OS_ROOTDIR/proot"
+	$SUDO mount --bind "${S_PROOT_PACKAGES_DIR}" "$OS_ROOTDIR/proot-static-packages"
+        # compile proot
+        $SUDO chroot --userspec="$USER" "$OS_ROOTDIR" /bin/bash <<'EOF_fedora39_proot_1'
+cd /usr/bin
+rm python
+ln -s python2 python
+cd /proot
+/bin/rm -f proot-Fedora-39.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
+# BUILD TALLOC
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
+./configure
+make
+cp talloc.h /proot/src
+cd bin/default
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
+cp libtalloc.a /proot/src && make clean
+# BUILD PROOT
+cd /proot/src
+make clean
+make loader.elf
+make loader-m32.elf
+make build.h
+LDFLAGS="-L/proot/usr/src -static" make proot
+EOF_fedora39_proot_1
+    sync
+    $SUDO umount "$OS_ROOTDIR/proot"
+    $SUDO umount "$OS_ROOTDIR/proot-static-packages"
+    fi
+
+    if [ -e "${PROOT_SOURCE_DIR}/src/proot" ]; then
+        mv "${PROOT_SOURCE_DIR}/src/proot" "${PROOT_SOURCE_DIR}/proot-Fedora-39.bin"
+    fi
+
+    if [ ! -e "${PROOT_SOURCE_DIR}/proot-Fedora-39.bin" ]; then
+        echo "proot compilation failed ${PROOT_SOURCE_DIR}/proot-Fedora-39.bin not found"
+        exit 1
+    fi
+}
+
+
+fedora39_build_proot()
+{
+    echo "fedora39_build_proot : $1"
+    local OS_ARCH="$1"
+    local PROOT_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="39"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    if [ -x "${PROOT_SOURCE_DIR}/proot-Fedora-39.bin" ] ; then
+        echo "proot binary already compiled : ${PROOT_SOURCE_DIR}/proot-Fedora-39.bin"
+    else
+        # compile proot
+        $PROOT -r "$OS_ROOTDIR" -b "${PROOT_SOURCE_DIR}:/proot" -w / -b /dev \
+                           -b "${S_PROOT_PACKAGES_DIR}:/proot-static-packages"   /bin/bash <<'EOF_fedora39_proot_1'
+cd /usr/bin
+rm python
+ln -s python2 python
+cd /proot
+/bin/rm -f proot-Fedora-39.bin src/proot src/libtalloc.a src/talloc.h
+/bin/rm -Rf talloc*
+# BUILD TALLOC
+tar xzvf /proot-static-packages/talloc.tar.gz
+cd talloc*
+./configure
+make
+cp talloc.h /proot/src
+cd bin/default
+[ -f talloc.c.6.o ] && ar qf libtalloc.a talloc.c.6.o
+[ -f talloc.c.5.o -a ! -f libtalloc.a ] && ar qf libtalloc.a talloc.c.5.o
+cp libtalloc.a /proot/src && make clean
+# BUILD PROOT
+cd /proot/src
+make clean
+make loader.elf
+make loader-m32.elf
+make build.h
+LDFLAGS="-L/proot/usr/src -static" make proot
+EOF_fedora39_proot_1
+    fi
+
+    if [ -e "${PROOT_SOURCE_DIR}/src/proot" ]; then
+        mv "${PROOT_SOURCE_DIR}/src/proot" "${PROOT_SOURCE_DIR}/proot-Fedora-39.bin"
+    fi
+
+    if [ ! -e "${PROOT_SOURCE_DIR}/proot-Fedora-39.bin" ]; then
+        echo "proot compilation failed ${PROOT_SOURCE_DIR}/proot-Fedora-39.bin not found"
+        exit 1
+    fi
+}
+
+
+fedora39_build_patchelf()
+{
+    echo "fedora39_build_patchelf : $1"
+    local OS_ARCH="$1"
+    local PATCHELF_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="39"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${PATCHELF_SOURCE_DIR}/patchelf-Fedora-39" ] ; then
+        echo "patchelf binary already compiled : ${PATCHELF_SOURCE_DIR}/patchelf-Fedora-39"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile patchelf
+    set -xv
+    (cd "${PATCHELF_SOURCE_DIR}" ; bash ./bootstrap.sh)
+    $PROOT -r "$OS_ROOTDIR" -b "${PATCHELF_SOURCE_DIR}:/patchelf" -w / -b /dev \
+                            /bin/bash <<'EOF_fedora39_patchelf'
+cd /patchelf
+make clean
+# BUILD PATCHELF
+#bash bootstrap.sh
+bash ./configure
+make
+cp src/patchelf /patchelf/patchelf-Fedora-39
+make clean
+EOF_fedora39_patchelf
+    set +xv
+}
+
+fedora39_build_fakechroot()
+{
+    echo "fedora39_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="fedora"
+    local OS_RELVER="39"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "aarch64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64le" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-Fedora-39.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-Fedora-39.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_fedora39_fakechroot'
+cd /fakechroot
+# BUILD FAKECHROOT
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-Fedora-39.so
+make clean
+EOF_fedora39_fakechroot
     set +xv
 }
 
@@ -4110,15 +4418,17 @@ centos6_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4257,12 +4567,28 @@ centos7_setup()
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
 	    --forcearch="$OS_ARCH" \
             gcc make libtalloc libtalloc-devel glibc-static glibc-devel \
-            tar python gzip zlib diffutils file git which
+            tar python gzip zlib diffutils file git which curl libseccomp-devel \
+	    libseccomp-static
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         install  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
             --forcearch="$OS_ARCH" \
             autoconf m4 gcc-c++ libstdc++-static automake gawk libtool xz
+
+    REPOSECCOMP="https://cbs.centos.org/kojifiles/packages/libseccomp/2.3.0"
+    curl "$REPOSECCOMP/1.el7/${OS_ARCH}/libseccomp-2.3.0-1.el7.${OS_ARCH}.rpm" > \
+	    "$OS_ROOTDIR/root/libseccomp-2.3.0-1.el7.${OS_ARCH}.rpm"
+    curl "$REPOSECCOMP/1.el7/${OS_ARCH}/libseccomp-static-2.3.0-1.el7.${OS_ARCH}.rpm" > \
+	    "$OS_ROOTDIR/root/libseccomp-static-2.3.0-1.el7.${OS_ARCH}.rpm"
+    curl "$REPOSECCOMP/1.el7/${OS_ARCH}/libseccomp-devel-2.3.0-1.el7.${OS_ARCH}.rpm" > \
+	    "$OS_ROOTDIR/root/libseccomp-devel-2.3.0-1.el7.${OS_ARCH}.rpm"
+
+    $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
+        localinstall  --installroot="$OS_ROOTDIR" --releasever="$OS_RELVER" \
+            --forcearch="$OS_ARCH" \
+	    "$OS_ROOTDIR/root/libseccomp-2.3.0-1.el7.${OS_ARCH}.rpm" \
+	    "$OS_ROOTDIR/root/libseccomp-static-2.3.0-1.el7.${OS_ARCH}.rpm" \
+	    "$OS_ROOTDIR/root/libseccomp-devel-2.3.0-1.el7.${OS_ARCH}.rpm"
 
     $SUDO /usr/bin/yum -y -c "${OS_ROOTDIR}/etc/yum.conf" \
         clean packages
@@ -4284,18 +4610,17 @@ centos7_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4337,16 +4662,13 @@ centos7_build_proot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$HOME/.udocker/bin/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$HOME/.udocker/bin/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4406,18 +4728,17 @@ centos7_build_patchelf()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4447,6 +4768,63 @@ EOF_centos7_patchelf
     set +xv
 }
 
+
+centos7_build_runc()
+{
+    echo "centos7_build_runc : $1"
+    local OS_ARCH="$1"
+    local RUNC_SOURCE_DIR="$2"
+    local OS_NAME="centos"
+    local OS_RELVER="7"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "amd64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${RUNC_SOURCE_DIR}/runc-centos-7.bin" ] ; then
+        echo "runc binary already compiled : ${RUNC_SOURCE_DIR}/runc-centos-7.bin"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile runc
+    mkdir -p "${OS_ROOTDIR}/go/src/github.com/opencontainers"
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -0 -r "$OS_ROOTDIR" -b "${RUNC_SOURCE_DIR}:/go/src/github.com/opencontainers/runc" -w / -b /dev \
+            -b /etc/resolv.conf:/etc/resolv.conf /bin/bash <<'EOF_centos7_runc'
+cd /root
+curl https://dl.google.com/go/go1.16.linux-amd64.tar.gz --output go.tgz
+tar xzvf go.tgz
+export PATH=$PATH:/root/go/bin
+export GOROOT=/root/go
+export GOPATH=/go
+go version
+export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+go get github.com/sirupsen/logrus
+cd /go/src/github.com/opencontainers/runc
+make clean
+make static
+/bin/mv runc runc-centos-7.bin
+EOF_centos7_runc
+
+}
 
 
 # #############################################################################
@@ -4627,18 +5005,17 @@ centos8_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -4860,18 +5237,17 @@ centos_stream8_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5083,18 +5459,17 @@ centos_stream9_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5327,18 +5702,17 @@ rocky8_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5592,18 +5966,17 @@ rocky9_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -5857,18 +6230,17 @@ alma8_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6120,13 +6492,17 @@ alma9_build_patchelf()
     local PROOT=""
 
     if [ "$OS_ARCH" = "i386" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6168,18 +6544,17 @@ alma9_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64le" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6249,9 +6624,10 @@ ubuntu12_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6332,9 +6708,10 @@ ubuntu14_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6424,15 +6801,16 @@ ubuntu16_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6488,15 +6866,17 @@ ubuntu16_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6572,15 +6952,17 @@ ubuntu18_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6636,18 +7018,17 @@ ubuntu18_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6722,18 +7103,16 @@ ubuntu19_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6789,18 +7168,17 @@ ubuntu19_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6882,18 +7260,16 @@ ubuntu20_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -6949,18 +7325,17 @@ ubuntu20_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -7043,18 +7418,16 @@ ubuntu21_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -7110,18 +7483,17 @@ ubuntu21_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -7201,17 +7573,23 @@ ubuntu22_build_fakechroot()
     local PROOT=""
 
     if [ "$OS_ARCH" = "i386" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "armhf" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     elif [ "$OS_ARCH" = "riscv64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-riscv64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-riscv64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-riscv64"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -7266,13 +7644,17 @@ ubuntu22_build_runc()
     local PROOT=""
 
     if [ "$OS_ARCH" = "i386" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -7424,18 +7806,16 @@ ubuntu23_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -7491,18 +7871,17 @@ ubuntu23_build_runc()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        #PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "amd64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "arm64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
-        #PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "ppc64el" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -7583,15 +7962,20 @@ debian10_build_proot()
     local PROOT=""
 
     if [ "$OS_ARCH" = "i386" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        PROOT="$HOME/.udocker/bin/proot-x86_64"
+        #PROOT="$HOME/.udocker/bin/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "aarch64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
     elif [ "$OS_ARCH" = "armhf" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-arm"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-arm"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-arm"
     elif [ "$OS_ARCH" = "armel" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-arm"
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-arm"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-arm"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -7640,6 +8024,110 @@ EOF_debian10_proot_1
         echo "proot compilation failed ${PROOT_SOURCE_DIR}/proot-Debian-10.bin not found"
         exit 1
     fi
+}
+
+# #############################################################################
+# Debian 12
+# #############################################################################
+
+debian12_setup()
+{
+    echo "debian12_setup : $1"
+    local OS_ARCH="$1"
+    local OS_NAME="debian"
+    local OS_RELVER="12"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/usr/lib/gcc" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    SUDO=sudo
+
+    if [ "$OS_ARCH" = "amd64" ] || [ "$OS_ARCH" = "i386" ]; then
+	REPOSITORY_URL="http://ftp.debian.org/debian/"
+    else
+	REPOSITORY_URL="http://ftp.debian.org/debian/"
+    fi
+
+    #$SUDO debootstrap --arch=armhf sid /chroots/sid-armhf http://ftp.debian.org/debian/
+    $SUDO debootstrap --arch="$OS_ARCH" buster "$OS_ROOTDIR" "$REPOSITORY_URL"
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "$OS_ROOTDIR"
+    $SUDO /bin/chmod -R u+rw "$OS_ROOTDIR"
+}
+
+
+debian12_build_fakechroot()
+{
+    echo "debian12_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="debian"
+    local OS_RELVER="12"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "amd64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "armhf" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-aarch64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-aarch64"
+    elif [ "$OS_ARCH" = "ppc64el" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-ppc64le"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-ppc64le"
+    elif [ "$OS_ARCH" = "riscv64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64 -q qemu-riscv64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin -q qemu-riscv64"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-debian-12.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-debian-12.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+    if [ ! -x "$OS_ROOTDIR/usr/bin/make" ] ; then
+        SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+            $PROOT -0 -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+                -b /etc/resolv.conf:/etc/resolv.conf /bin/bash <<'EOF_debian12_packages'
+apt-get -y update
+apt-get -y --no-install-recommends install wget debconf devscripts gnupg nano
+apt-get -y update
+apt-get -y install locales build-essential gcc make autoconf m4 automake gawk libtool bash 
+apt-get -y install diffutils file which
+EOF_debian12_packages
+    fi
+
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_debian12_fakechroot'
+# BUILD FAKECHROOT
+export SHELL=/bin/bash
+export CONFIG_SHELL=/bin/bash
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib
+cd /fakechroot
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-debian-12.so
+make clean
+EOF_debian12_fakechroot
+    set +xv
 }
 
 
@@ -7709,9 +8197,11 @@ alpine36_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -7809,9 +8299,11 @@ alpine38_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -7909,9 +8401,11 @@ alpine39_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -8010,9 +8504,11 @@ alpine310_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -8111,9 +8607,11 @@ alpine311_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -8213,9 +8711,11 @@ alpine312_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -8315,9 +8815,11 @@ alpine313_build_fakechroot()
 
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
-        PROOT="$S_PROOT_DIR/proot-x86"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+        PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+        PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -8418,12 +8920,10 @@ alpine314_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -8524,12 +9024,10 @@ alpine315_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -8630,12 +9128,10 @@ alpine316_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -8738,12 +9234,10 @@ alpine317_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -8846,12 +9340,10 @@ alpine318_build_fakechroot()
     if [ "$OS_ARCH" = "i386" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
         #PROOT="$S_PROOT_DIR/proot-x86"
-	#PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86"
+	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
     elif [ "$OS_ARCH" = "x86_64" ]; then
         #PROOT="$S_PROOT_DIR/proot-x86_64"
-	#PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
-        PROOT="$S_PROOT_DIR/proot-x86_64"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
     else
         echo "unsupported $OS_NAME architecture: $OS_ARCH"
         exit 2
@@ -8881,6 +9373,112 @@ make
 cp src/.libs/libfakechroot.so libfakechroot-Alpine-3.18.so
 make clean
 EOF_alpine318_fakechroot
+    set +xv
+}
+
+
+# #############################################################################
+# Alpine 3.19.x
+# #############################################################################
+
+alpine319_setup()
+{
+    echo "alpine319_setup : $1"
+    local ALPINE_MIRROR="http://dl-5.alpinelinux.org/alpine"
+    local APK_TOOLS="apk-tools-static-2.12.9-r3.apk"
+    local APK_TOOLS_DIR="${BUILD_DIR}/apk-tools-2.12.9-r3"
+    local OS_ARCH="$1"
+    local OS_NAME="alpine"
+    local OS_RELVER="v3.19"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+
+    if [ -x "${OS_ROOTDIR}/etc/alpine-release" ] ; then
+        echo "os already setup : ${OS_ROOTDIR}"
+        return
+    fi
+
+    if [ -e "${APK_TOOLS_DIR}/sbin" ] ; then
+        echo "apk-tools already installed : ${APK_TOOLS_DIR}"
+    else
+        /bin/rm -f "${APK_TOOLS}"
+        mkdir "${APK_TOOLS_DIR}"
+        local APK_TOOLS_URL="${ALPINE_MIRROR}/${OS_RELVER}/main/${OS_ARCH}/${APK_TOOLS}"
+        echo "download apk-tools : ${APK_TOOLS_URL}"
+	(cd "${APK_TOOLS_DIR}"; curl "${APK_TOOLS_URL}" > "${APK_TOOLS}")
+	(cd "${APK_TOOLS_DIR}"; tar xzvf "${APK_TOOLS}")
+        if [ ! -e "${APK_TOOLS_DIR}/sbin" ] ; then
+            echo "apk-tools install failed: ${APK_TOOLS_DIR}"
+            exit
+        fi
+    fi
+
+    SUDO=sudo
+
+    set -x
+    $SUDO "${APK_TOOLS_DIR}/sbin/apk.static" \
+        -X "${ALPINE_MIRROR}/${OS_RELVER}/main" \
+        -U \
+        --allow-untrusted \
+        --root "${OS_ROOTDIR}" \
+        --initdb add alpine-base alpine-sdk bash libc-dev make autoconf m4 automake \
+                     libbsd libbsd-dev musl-fts musl-fts-dev libconfig-dev musl-dev bash \
+		     diffutils file
+    set +x
+
+    $SUDO /bin/chown -R "$(id -u).$(id -g)" "${OS_ROOTDIR}"
+    $SUDO /bin/chmod -R u+rw "${OS_ROOTDIR}"
+    /bin/mkdir -p "${OS_ROOTDIR}/proc"
+    /bin/mkdir -p "${OS_ROOTDIR}/root"
+    /bin/mkdir -p "${OS_ROOTDIR}/etc/apk"
+    /bin/echo "$ALPINE_MIRROR/$OS_RELVER/main" >  "${OS_ROOTDIR}/etc/apk/repositories"
+}
+
+alpine319_build_fakechroot()
+{
+    echo "alpine319_build_fakechroot : $1"
+    local OS_ARCH="$1"
+    local FAKECHROOT_SOURCE_DIR="$2"
+    local OS_NAME="alpine"
+    local OS_RELVER="v3.19"
+    local OS_ROOTDIR="${BUILD_DIR}/${OS_NAME}_${OS_RELVER}_${OS_ARCH}"
+    local PROOT=""
+
+    if [ "$OS_ARCH" = "i386" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86 -q qemu-i386"
+        #PROOT="$S_PROOT_DIR/proot-x86"
+	PROOT="$BUILD_DIR/proot-source-x86/proot-Fedora-30.bin"
+    elif [ "$OS_ARCH" = "x86_64" ]; then
+        #PROOT="$S_PROOT_DIR/proot-x86_64"
+	PROOT="$BUILD_DIR/proot-source-x86_64/proot-Fedora-30.bin"
+    else
+        echo "unsupported $OS_NAME architecture: $OS_ARCH"
+        exit 2
+    fi
+
+    if [ -x "${FAKECHROOT_SOURCE_DIR}/libfakechroot-Alpine-3.19.so" ] ; then
+        echo "fakechroot binary already compiled : ${FAKECHROOT_SOURCE_DIR}/libfakechroot-Alpine-3.19.so"
+        return
+    fi
+
+    export PROOT_NO_SECCOMP=1
+
+    # compile fakechroot
+    set -xv
+
+    SHELL=/bin/bash CONFIG_SHELL=/bin/bash PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib \
+        $PROOT -r "$OS_ROOTDIR" -b "${FAKECHROOT_SOURCE_DIR}:/fakechroot" -w / -b /dev \
+            /bin/bash <<'EOF_alpine319_fakechroot'
+# BUILD FAKECHROOT
+export SHELL=/bin/bash
+export CONFIG_SHELL=/bin/bash
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/lib
+cd /fakechroot
+make distclean
+bash ./configure
+make
+cp src/.libs/libfakechroot.so libfakechroot-Alpine-3.19.so
+make clean
+EOF_alpine319_fakechroot
     set +xv
 }
 
@@ -9098,6 +9696,7 @@ create_package_tarball()
     copy_file fakechroot-source-glibc-x86_64/libfakechroot-Fedora-36.so   lib/libfakechroot-Fedora-36-x86_64.so
     link_file lib/libfakechroot-Fedora-36-x86_64.so                       libfakechroot-Fedora-37-x86_64.so
     copy_file fakechroot-source-glibc-x86_64/libfakechroot-Fedora-38.so   lib/libfakechroot-Fedora-38-x86_64.so
+    copy_file fakechroot-source-glibc-x86_64/libfakechroot-Fedora-39.so   lib/libfakechroot-Fedora-39-x86_64.so
     link_file lib/libfakechroot-Fedora-38-x86_64.so                       libfakechroot-Fedora-x86_64.so
 
     copy_file fakechroot-source-glibc-x86_64/libfakechroot-CentOS-6.so    lib/libfakechroot-CentOS-6-x86_64.so
@@ -9159,6 +9758,7 @@ create_package_tarball()
     link_file lib/libfakechroot-Ubuntu-16-x86_64.so                       libfakechroot-Debian-9-x86_64.so
     link_file lib/libfakechroot-Ubuntu-19-x86_64.so                       libfakechroot-Debian-10-x86_64.so
     link_file lib/libfakechroot-Ubuntu-20-x86_64.so                       libfakechroot-Debian-11-x86_64.so
+    link_file lib/libfakechroot-Ubuntu-22-x86_64.so                       libfakechroot-Debian-12-x86_64.so
     link_file lib/libfakechroot-Ubuntu-23-x86_64.so                       libfakechroot-Debian-x86_64.so
 
     link_file lib/libfakechroot-Ubuntu-12-x86_64.so                       libfakechroot-LinuxMint-10-x86_64.so
@@ -9189,13 +9789,14 @@ create_package_tarball()
     copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.16.so  lib/libfakechroot-Alpine-3.16-x86_64.so
     copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.17.so  lib/libfakechroot-Alpine-3.17-x86_64.so
     copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.18.so  lib/libfakechroot-Alpine-3.18-x86_64.so
+    copy_file fakechroot-source-musl-x86_64/libfakechroot-Alpine-3.19.so  lib/libfakechroot-Alpine-3.19-x86_64.so
     link_file lib/libfakechroot-Alpine-3.6-x86_64.so                      libfakechroot-Alpine-3.0-x86_64.so
     link_file lib/libfakechroot-Alpine-3.6-x86_64.so                      libfakechroot-Alpine-3.1-x86_64.so
     link_file lib/libfakechroot-Alpine-3.6-x86_64.so                      libfakechroot-Alpine-3.2-x86_64.so
     link_file lib/libfakechroot-Alpine-3.6-x86_64.so                      libfakechroot-Alpine-3.3-x86_64.so
     link_file lib/libfakechroot-Alpine-3.6-x86_64.so                      libfakechroot-Alpine-3.4-x86_64.so
     link_file lib/libfakechroot-Alpine-3.6-x86_64.so                      libfakechroot-Alpine-3.5-x86_64.so
-    link_file lib/libfakechroot-Alpine-3.18-x86_64.so                     libfakechroot-Alpine-x86_64.so
+    link_file lib/libfakechroot-Alpine-3.19-x86_64.so                     libfakechroot-Alpine-x86_64.so
 
     # arch64 / amd64 -----------------------------------------------------------------------------------------
     copy_file proot-source-aarch64/proot-Fedora-31.bin                      bin/proot-arm64-4_8_0
@@ -9205,6 +9806,7 @@ create_package_tarball()
 
     copy_file fakechroot-source-glibc-aarch64/libfakechroot-Fedora-36.so    lib/libfakechroot-Fedora-36-arm64.so
     copy_file fakechroot-source-glibc-aarch64/libfakechroot-Fedora-38.so    lib/libfakechroot-Fedora-38-arm64.so
+    copy_file fakechroot-source-glibc-aarch64/libfakechroot-Fedora-39.so    lib/libfakechroot-Fedora-39-arm64.so
     link_file lib/libfakechroot-Fedora-36-arm64.so                          libfakechroot-Fedora-37-arm64.so
     link_file lib/libfakechroot-Fedora-38-arm64.so                          libfakechroot-Fedora-arm64.so
 
@@ -9233,6 +9835,7 @@ create_package_tarball()
     link_file lib/libfakechroot-Ubuntu-16-arm64.so                          libfakechroot-Debian-9-arm64.so
     link_file lib/libfakechroot-Ubuntu-18-arm64.so                          libfakechroot-Debian-10-arm64.so
     link_file lib/libfakechroot-Ubuntu-20-arm64.so                          libfakechroot-Debian-11-arm64.so
+    link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-Debian-12-arm64.so
     link_file lib/libfakechroot-Ubuntu-22-arm64.so                          libfakechroot-Debian-arm64.so
 
     link_file lib/libfakechroot-AlmaLinux-8-arm64.so                        libfakechroot-CentOS-8-arm64.so
@@ -9257,6 +9860,7 @@ create_package_tarball()
     copy_file fakechroot-source-glibc-ppc64le/libfakechroot-AlmaLinux-9.so  lib/libfakechroot-AlmaLinux-ppc64le.so
 
     copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Fedora-38.so    lib/libfakechroot-Fedora-38-ppc64le.so
+    copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Fedora-39.so    lib/libfakechroot-Fedora-39-ppc64le.so
     link_file lib/libfakechroot-Fedora-38-ppc64le.so                        libfakechroot-Fedora-ppc64le.so
 
     copy_file fakechroot-source-glibc-ppc64le/libfakechroot-Ubuntu-16.so    lib/libfakechroot-Ubuntu-16-ppc64le.so
@@ -9280,6 +9884,7 @@ create_package_tarball()
     link_file lib/libfakechroot-Ubuntu-16-ppc64le.so                        libfakechroot-Debian-9-ppc64le.so
     link_file lib/libfakechroot-Ubuntu-18-ppc64le.so                        libfakechroot-Debian-10-ppc64le.so
     link_file lib/libfakechroot-Ubuntu-20-ppc64le.so                        libfakechroot-Debian-11-ppc64le.so
+    link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-Debian-12-ppc64le.so
     link_file lib/libfakechroot-Ubuntu-22-ppc64le.so                        libfakechroot-Debian-ppc64le.so
 
     link_file lib/libfakechroot-AlmaLinux-8-ppc64le.so                      libfakechroot-CentOS-8-ppc64le.so
@@ -9432,6 +10037,12 @@ fedora29_setup "x86_64"
 fedora29_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ostree_delete "x86_64" "fedora" "29"
 
+fedora39_setup "x86_64"
+#fedora39_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
+#fedora39_build_patchelf "x86_64" "${BUILD_DIR}/patchelf-source-x86_64"
+fedora39_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
+#ostree_delete "x86_64" "fedora" "39"
+
 alpine36_setup "x86_64"
 alpine36_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-musl-x86_64"
 #ostree_delete "x86_64" "alpine" "3.6"
@@ -9492,6 +10103,10 @@ alpine317_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-musl-x86_64"
 alpine318_setup "x86_64"
 alpine318_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-musl-x86_64"
 #ostree_delete "x86_64" "alpine" "3.18"
+#
+alpine319_setup "x86_64"
+alpine319_build_fakechroot "x86_64" "${BUILD_DIR}/fakechroot-source-musl-x86_64"
+#ostree_delete "x86_64" "alpine" "3.19"
 
 centos6_setup "x86_64"
 #centos6_build_proot "x86_64" "${BUILD_DIR}/proot-source-x86_64"
@@ -9566,6 +10181,9 @@ ubuntu23_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
 #ubuntu23_build_runc "amd64" "${BUILD_DIR}/runc-source-x86_64"
 #ostree_delete "amd64" "ubuntu" "23"
 
+#debian12_setup "amd64"
+#debian12_build_fakechroot "amd64" "${BUILD_DIR}/fakechroot-source-glibc-x86_64"
+
 # #######
 # armhf
 # #######
@@ -9587,21 +10205,26 @@ prepare_proot_source "${BUILD_DIR}/proot-source-aarch64"
 prepare_patchelf_source_v2 "${BUILD_DIR}/patchelf-source-aarch64"
 prepare_fakechroot_glibc_source "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
 prepare_runc_source "${BUILD_DIR}/runc-source-aarch64"
-#
+
 fedora31_setup "aarch64"
 fedora31_build_proot "aarch64" "${BUILD_DIR}/proot-source-aarch64"
 #fedora31_build_patchelf "aarch64" "${BUILD_DIR}/patchelf-source-aarch64"
 #ostree_delete "aarch64" "fedora" "31"
-#
+
 fedora36_setup "aarch64"
 fedora36_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
 #ostree_delete "aarch64" "fedora" "36"
-#
+
 fedora38_setup "aarch64"
 fedora38_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
 #fedora38_build_patchelf "aarch64" "${BUILD_DIR}/patchelf-source-aarch64"
 #ostree_delete "aarch64" "fedora" "38"
-#
+
+fedora39_setup "aarch64"
+fedora39_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
+#fedora39_build_patchelf "aarch64" "${BUILD_DIR}/patchelf-source-aarch64"
+#ostree_delete "aarch64" "fedora" "39"
+
 centos7_setup "aarch64"
 centos7_build_fakechroot "aarch64" "${BUILD_DIR}/fakechroot-source-glibc-aarch64"
 #ostree_delete "aarch64" "centos" "7"
@@ -9648,11 +10271,15 @@ prepare_proot_source "${BUILD_DIR}/proot-source-ppc64le"
 prepare_patchelf_source_v2 "${BUILD_DIR}/patchelf-source-ppc64le"
 prepare_fakechroot_glibc_source "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
 prepare_runc_source "${BUILD_DIR}/runc-source-ppc64le"
-#
+
 fedora38_setup "ppc64le"
 fedora38_build_fakechroot "ppc64le" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
 #ostree_delete "ppc64le" "fedora" "38"
-#
+
+fedora39_setup "ppc64le"
+fedora39_build_fakechroot "ppc64le" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
+#ostree_delete "ppc64le" "fedora" "39"
+
 centos7_setup "ppc64le"
 centos7_build_fakechroot "ppc64le" "${BUILD_DIR}/fakechroot-source-glibc-ppc64le"
 #ostree_delete "ppc64le" "centos" "7"

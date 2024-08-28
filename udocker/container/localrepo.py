@@ -324,6 +324,10 @@ class LocalRepository:
                 return container_dir
         except OSError:
             return None
+        out_imagerepo.write(imagerepo + ":" + tag)
+        out_imagerepo.close()
+        self.cur_containerdir = container_dir
+        return container_dir
 
     def _is_tag(self, tag_dir):
         """Does this directory contain an image tag ?
@@ -526,6 +530,8 @@ class LocalRepository:
         except OSError:
             return False
 
+        out_tag.write(self.cur_repodir + ":" + tag)
+        out_tag.close()
         return True
 
     def set_version(self, version):

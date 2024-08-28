@@ -56,7 +56,7 @@ def test_03_get_filetype(osinfo, mocker):
     ("binary_executable", ("file", "ELF 64-bit"), True, True),
     ("binary_executable", (None, None), True, True),
     ("binary_non_executable", (None, None), False, False),
-    ("binary_non_executable", ("file", "ELF 64-bit"), False, True),
+    ("binary_non_executable", ("file", "ELF 64-bit"), True, True),
     ("non_binary_executable", (None, None), True, False),
     ("non_binary_non_executable", (None, None), False, False),
 ])

@@ -37,6 +37,8 @@ class OSInfo(ArchInfo):
     def is_binary_executable(self, filename):
         """Check if file is a binary executable"""
         filename = self._root_dir + '/' + filename
+        if not FileUtil(filename).isexecutable():
+            return False
         (sourcetype, filetype) = self.get_filetype(filename)
         if sourcetype:
             if ("ELF" in filetype and "rror" not in filetype):
@@ -44,8 +46,7 @@ class OSInfo(ArchInfo):
         else:
             elf_pattern = "\x7fELF".encode()
             bin_head = FileUtil(filename).getdata('rb', 4)
-            if (elf_pattern == bin_head[0:4] and
-                    FileUtil(filename).isexecutable()):
+            if elf_pattern == bin_head[0:4]:
                 return True
         return False
 

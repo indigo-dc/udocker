@@ -903,7 +903,7 @@ def test_72_links_conv(futil, mocker, logger):
     mock_realpath.assert_called()
     mock_is_safe_prefix.assert_called()
     mock_walk.assert_not_called()
-    logger.error.assert_called_with('links convertion outside of dir tree: %s', '/ROOT')
+    logger.error.assert_called_with('links conversion outside of dir tree: %s', '/ROOT')
 
 
 def test_73_links_conv(futil, mocker):
