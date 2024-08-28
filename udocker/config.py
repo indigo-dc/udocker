@@ -27,8 +27,7 @@ class Config:
     conf['tarball_release'] = "1.2.10"
 
     conf['tarball'] = (
-        "https://download.ncg.ingrid.pt/"
-        "webdav/udocker/udocker-englib-1.2.10.tar.gz"
+        "https://download.a.incd.pt/udocker/udocker-englib-1.2.10.tar.gz"
         " "
         "https://raw.githubusercontent.com"
         "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.10.tar.gz"
@@ -43,7 +42,7 @@ class Config:
     conf['tmpdir'] = os.getenv("TMPDIR", "/tmp")    # for tmp files only
 
     # new conf options and commands for install
-    base_url = ['https://download.ncg.ingrid.pt/webdav/udocker/engines/',
+    base_url = ['https://download.a.incd.pt/udocker/engines/',
                 'https://github.com/LIP-Computing/udocker_tools/raw/main/data/']
 
     conf['installed_json'] = 'installed.json'

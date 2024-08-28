@@ -34,8 +34,8 @@ THIS_SCRIPT_NAME=$( basename "$0" )
 declare -a FAILED_TESTS
 TAR_IMAGE="centos7.tar"
 TAR_CONT="centos7-cont.tar"
-TAR_IMAGE_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_IMAGE}"
-TAR_CONT_URL="https://download.ncg.ingrid.pt/webdav/udocker_test/${TAR_CONT}"
+TAR_IMAGE_URL="https://download.a.incd.pt/udocker_test/${TAR_IMAGE}"
+TAR_CONT_URL="https://download.a.incd.pt/udocker_test/${TAR_CONT}"
 TAR_DIR=$HOME/.udocker_tar
 DOCKER_IMG="ubuntu:22.04"
 CONT="ubuntu"
@@ -143,7 +143,7 @@ echo "Manually clean directories before the tests"
 clean
 echo "rm -rf ${UDOCKER_DIR} ${UDOCKER_INSTALL} ${TAR_DIR} > /dev/null 2>&1"
 mkdir -p ${TAR_DIR} ${UDOCKER_INSTALL}/tar
-wget https://download.ncg.ingrid.pt/webdav/udocker/engines/tarballs/crun-x86_64.tgz -P ${TAR_DIR}
+wget https://download.a.incd.pt/udocker/engines/tarballs/crun-x86_64.tgz -P ${TAR_DIR}
 
 STRING="T001: udocker showconf"
 udocker showconf; return=$?
