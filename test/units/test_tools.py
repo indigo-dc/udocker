@@ -28,12 +28,12 @@ MOD1 = {
     "fname": "crun-x86_64",
     "docs": "COPYING.crun",
     "urls": [
-        "https://download.ncg.ingrid.pt/webdav/udocker/engines/tarballs/crun-x86_64.tgz",
+        "https://download.a.incd.pt/udocker/engines/tarballs/crun-x86_64.tgz",
         "https://github.com/LIP-Computing/udocker_tools/raw/main/tarballs/crun-x86_64.tgz"
     ],
     "dependencies": [],
     "docs_url": [
-        "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/COPYING.crun",
+        "https://download.a.incd.pt/udocker/engines/doc/COPYING.crun",
         "https://github.com/LIP-Computing/udocker_tools/raw/main/docs/COPYING.crun"
     ]
 }
@@ -52,12 +52,12 @@ MOD2 = {
     "fname": "proot-x86_64-4_8_0",
     "docs": "COPYING.proot",
     "urls": [
-        "https://download.ncg.ingrid.pt/webdav/udocker/engines/tarballs/proot-x86_64-4_8_0.tgz",
+        "https://download.a.incd.pt/udocker/engines/tarballs/proot-x86_64-4_8_0.tgz",
         "https://github.com/LIP-Computing/udocker_tools/raw/main/tarballs/proot-x86_64-4_8_0.tgz"
     ],
     "dependencies": [],
     "docs_url": [
-        "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/COPYING.proot",
+        "https://download.a.incd.pt/udocker/engines/doc/COPYING.proot",
         "https://github.com/LIP-Computing/udocker_tools/raw/main/docs/COPYING.proot"
     ]
 }
@@ -76,12 +76,12 @@ MOD3 = {
     "fname": "patchelf-x86_64",
     "docs": "COPYING.patchelf",
     "urls": [
-        "https://download.ncg.ingrid.pt/webdav/udocker/engines/tarballs/patchelf-x86_64.tgz",
+        "https://download.a.incd.pt/udocker/engines/tarballs/patchelf-x86_64.tgz",
         "https://github.com/LIP-Computing/udocker_tools/raw/main/tarballs/patchelf-x86_64.tgz"
     ],
     "dependencies": [],
     "docs_url": [
-        "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/COPYING.patchelf",
+        "https://download.a.incd.pt/udocker/engines/doc/COPYING.patchelf",
         "https://github.com/LIP-Computing/udocker_tools/raw/main/docs/COPYING.patchelf"
     ]
 }
@@ -100,14 +100,14 @@ MOD4 = {
     "fname": "",
     "docs": "LIC-COPY-fakechroot.tgz",
     "urls": [
-        "https://download.ncg.ingrid.pt/webdav/udocker/engines/tarballs/libfakechroot-x86_64.tgz",
+        "https://download.a.incd.pt/udocker/engines/tarballs/libfakechroot-x86_64.tgz",
         "https://github.com/LIP-Computing/udocker_tools/raw/main/tarballs/libfakechroot-x86_64.tgz"
     ],
     "dependencies": [
         "patchelf-x86_64.tgz"
     ],
     "docs_url": [
-        "https://download.ncg.ingrid.pt/webdav/udocker/engines/doc/LIC-COPY-fakechroot.tgz",
+        "https://download.a.incd.pt/udocker/engines/doc/LIC-COPY-fakechroot.tgz",
         "https://github.com/LIP-Computing/udocker_tools/raw/main/docs/LIC-COPY-fakechroot.tgz"
     ]
 }
@@ -319,14 +319,14 @@ def test_07__clean_install(mocker, utools, lrepo):
 
 def test_08__get_mirrors(mocker, utools):
     """Test08 UdockerTools()._get_mirrors()."""
-    mirrors = "https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz"
+    mirrors = "https://download.a.incd.pt/udocker-1.2.7.tar.gz"
     out = utools._get_mirrors(mirrors)
     assert out == [mirrors]
 
 
 def test_09_get_metadata(mocker, utools):
     """Test09 UdockerTools().get_metadata()."""
-    mirrors = ['https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz']
+    mirrors = ['https://download.a.incd.pt/udocker-1.2.7.tar.gz']
     metajson = [MOD1]
 
     mock_fjson = mocker.mock_open(read_data=str(metajson))
@@ -344,7 +344,7 @@ def test_09_get_metadata(mocker, utools):
 
 def test_10_get_metadata(mocker, utools):
     """Test10 UdockerTools().get_metadata()."""
-    mirrors = ['https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz']
+    mirrors = ['https://download.a.incd.pt/udocker-1.2.7.tar.gz']
     mock_fjson = mocker.mock_open()
     mock_fjson.side_effect = OSError
     mock_getmirr = mocker.patch.object(UdockerTools, '_get_mirrors', return_value=mirrors)
