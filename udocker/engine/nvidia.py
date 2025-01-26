@@ -71,7 +71,8 @@ class NvidiaMode(object):
 
             srcdir = os.path.dirname(srcname)
             dstdir = os.path.dirname(dstname)
-            if not os.path.isdir(dstdir):
+            if os.path.isdir(srcdir) and not os.path.isdir(dstdir):
+                # Create necessary directories only if srcdir exists
                 try:
                     os.makedirs(dstdir)
                     os.chmod(dstdir, stat.S_IMODE(os.stat(srcdir).st_mode) |
