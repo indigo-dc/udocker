@@ -149,7 +149,7 @@ class NvidiaMode(object):
 
     def _find_cont_dir(self):
         """Find the location of the host target directory for libraries"""
-        # Ensure these directories exist in the container
+        # Support different linux distributions
         for dst_dir in ("/usr/lib/x86_64-linux-gnu", "/usr/lib64"):
             if os.path.isdir(self.container_root + '/' + dst_dir):
                 Msg().out("Debug: Cont. location nvidia", dst_dir, l=Msg.DBG)
@@ -164,8 +164,9 @@ class NvidiaMode(object):
                 self._files_exist(nvi_cont_dir, lib_list)
             self._files_exist("/etc", Config.conf['nvi_etc_list'])
             self._files_exist("/usr/bin", Config.conf['nvi_bin_list'])
-            Msg().out("Info: Cont, has files from previous nvidia install")
+            Msg().out("Info: Cont, nvidia not set up")
         except OSError:
+            Msg().out("Info: Cont, has files from previous nvidia install")
             return True
         return False
 
@@ -209,3 +210,19 @@ class NvidiaMode(object):
                 dev_list.append(expanded_devs)
         Msg().out("Debug: nvidia device list", dev_list, l=Msg.DBG)
         return dev_list
+
+    def merge_path_env(self, env):
+        """Add nvidia library path into LD_LIBRARY_PATH of env(Uenv)"""
+        nvi_cont_dir = self._find_cont_dir()
+        if not nvi_cont_dir:
+            return
+        ld_library_path = env.getenv("LD_LIBRARY_PATH")
+        if not ld_library_path:
+            ld_library_list = []
+        else:
+            ld_library_list = [p.strip() for p in ld_library_path.split(':')]
+        if nvi_cont_dir in ld_library_list:
+            return
+        ld_library_list.append(nvi_cont_dir)
+        env.setenv("LD_LIBRARY_PATH", ':'.join(ld_library_list))
+        Msg().out("Debug: add nvidia library path", nvi_cont_dir, "to LD_LIBRARY_PATH", l=Msg.DBG)

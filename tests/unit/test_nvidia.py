@@ -9,6 +9,7 @@ from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.config import Config
 from udocker.engine.nvidia import NvidiaMode
+from udocker.utils.uenv import Uenv
 
 collections.Callable = collections.abc.Callable
 
@@ -349,6 +350,29 @@ class NvidiaModeTestCase(TestCase):
         nvmode._copy_single_file(src, dst)
         self.assertTrue(mock_copy2.called) # should copy file
         self.assertTrue(mock_chmod.called)
+
+    @patch('udocker.engine.nvidia.os.path.isdir')
+    def test_14_merge_path_env(self, mock_isdir):
+        """Test14 NvidiaMode.merge_path_env()."""
+        nvmode = NvidiaMode(self.local, self.cont_id)
+        env_path = "/opt/python/bin"
+        nvi_lib_dir = nvmode._find_cont_dir()
+        mock_isdir.return_value = True
+
+        # Case 1: LD_LIBRARY_PATH not in env
+        env = Uenv(["PATH=%s" % env_path])
+        nvmode.merge_path_env(env)
+        self.assertEqual(nvi_lib_dir, env.getenv("LD_LIBRARY_PATH"))
+        self.assertEqual(env_path, env.getenv("PATH"))
+        self.assertTrue(mock_isdir.called)
+
+        # Case 2: LD_LIBRARY_PATH in env
+        original_ld_library_path = "/usr/local/nvidia/lib:/usr/local/nvidia/lib64"
+        env = Uenv(["PATH=%s" % env_path, "LD_LIBRARY_PATH=%s" % original_ld_library_path])
+        nvmode.merge_path_env(env)
+        self.assertTrue(nvi_lib_dir in env.getenv("LD_LIBRARY_PATH"))
+        self.assertTrue(original_ld_library_path in env.getenv("LD_LIBRARY_PATH"))
+        self.assertEqual(env_path, env.getenv("PATH"))
 
 
 if __name__ == '__main__':
