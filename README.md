@@ -24,6 +24,11 @@ udocker is a wrapper around several tools and libraries to mimic a
 subset of the docker capabilities including pulling images and running
 containers with minimal functionality.
 
+**Important notice: We have changed the udocker tools location as of udocker 1.3.17.
+This affects the configuration option `conf['tarball']` and environment variable
+`UDOCKER_TARBALL`, so if you are using udocker <= 1.3.16, make sure to:
+`export UDOCKER_TARBALL=https://download.a.incd.pt/udocker/udocker-englib-1.2.11.tar.gz`.
+
 ## Documentation
 
 The full documentation is available at:
@@ -83,7 +88,7 @@ extracted directory trees are placed by default under `$HOME/.udocker`.
 
 ## Python 2 and Python 3
 
-Since v1.3.0, udocker supports Python 2.6, 2.7 and Python >= 3.6.
+Since v1.3.0, udocker supports Python 2.7 and Python >= 3.6.
 The original udocker v1.1.x for Python 2 is no longer maintained
 but is still available
 [here](https://github.com/indigo-dc/udocker/tree/v1.1.8).

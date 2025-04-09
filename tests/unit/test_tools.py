@@ -248,7 +248,7 @@ class UdockerToolsTestCase(TestCase):
         """Test11 UdockerTools()._get_mirrors()."""
         mock_gupycurl.return_value = True
 
-        mirrors = "https://download.ncg.ingrid.pt/udocker-1.2.7.tar.gz"
+        mirrors = "https://download.a.incd.pt/udocker/udocker-englib-1.2.11.tar.gz"
         utools = UdockerTools(self.local)
         status = utools._get_mirrors(mirrors)
         self.assertEqual(status, [mirrors])

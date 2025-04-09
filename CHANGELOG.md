@@ -1,5 +1,9 @@
 # Changelog
 
+## udocker (1.3.17) - 2024-08-28
+
+* Update docker tools url location
+
 ## udocker (1.3.16) - 2024-04-09
 
 * Fix unit tests: remove called_with and called_once_with as invalid assertion

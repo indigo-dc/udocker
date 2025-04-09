@@ -31,8 +31,7 @@ class Config(object):
     # the actual tarball used in the installation can have a higher version
     conf['tarball_release'] = "1.2.11"
     conf['tarball'] = (
-        "https://download.ncg.ingrid.pt/"
-        "webdav/udocker/udocker-englib-1.2.11.tar.gz"
+        "https://download.a.incd.pt/udocker/udocker-englib-1.2.11.tar.gz"
         " "
         "https://raw.githubusercontent.com"
         "/jorge-lip/udocker-builds/master/tarballs/udocker-englib-1.2.11.tar.gz"
