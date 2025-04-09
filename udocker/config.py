@@ -288,10 +288,22 @@ class Config(object):
         os.environ["PROOT_TMP_DIR"] = os.getenv("PROOT_TMP_DIR",
                                                 Config.conf['tmpdir'])
 
+    def _rel_to_abs(self):
+        "Convert relative paths to absolute paths"
+        path_keys = ["topdir", "bindir", "libdir", "docdir", "homedir",
+                     "reposdir", "layersdir", "containersdir", "location", ]
+        for key in path_keys:
+            try:
+                if not Config.conf[key].startswith("/"):
+                    Config.conf[key] = os.path.realpath(Config.conf[key])
+            except (AttributeError, KeyError, TypeError):
+                continue
+
     def getconf(self, user_cfile="u.conf"):
         """Return all configuration variables"""
         self._file_override(user_cfile)  # Override with variables in conf file
         self._env_override()             # Override with variables in environment
+        self._rel_to_abs()
 
     def container(self, user_cfile="u.conf"):
         """
@@ -301,3 +313,4 @@ class Config(object):
         ignore_keys = ["topdir", "homedir", "reposdir", "layersdir",
                        "containersdir", "location", ]
         self._file_override(user_cfile, ignore_keys)
+        self._rel_to_abs()
