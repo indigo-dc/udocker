@@ -35,8 +35,24 @@ class NvidiaMode(object):
             if os.path.exists(dstname):
                 raise OSError("file already exists", dstname)
 
+    def _copy_single_file(self, src_path, dst_path):
+        """Copy a single file to destination and change mask, won't overwrite"""
+        if os.path.exists(dst_path):
+            Msg().out("Debug: dest file", dst_path, "already exists, skipped copy", l=Msg.DBG)
+            return
+        shutil.copy2(src_path, dst_path)
+        try:
+            mask = stat.S_IMODE(os.stat(src_path).st_mode) | \
+                   stat.S_IWUSR | stat.S_IRUSR
+            if os.access(src_path, os.X_OK):
+                mask = mask | stat.S_IXUSR
+            os.chmod(dst_path, mask)
+        except (IOError, OSError) as error:
+            Msg().err("Error: change mask of nvidia file", error)
+        Msg().out("Debug: copied file from", src_path, "to", dst_path, l=Msg.DBG)
+
     def _copy_files(self, host_src_dir, cont_dst_dir, files_list, force=False):
-        """copy or link file to destination creating directories as needed"""
+        """Copy or link file to destination creating directories as needed"""
         Msg().out("Debug: Source (host) dir ", host_src_dir, l=Msg.DBG)
         Msg().out("Debug: Destination (container) dir ", cont_dst_dir, l=Msg.DBG)
         for fname in files_list:
@@ -55,7 +71,8 @@ class NvidiaMode(object):
 
             srcdir = os.path.dirname(srcname)
             dstdir = os.path.dirname(dstname)
-            if not os.path.isdir(dstdir):
+            if os.path.isdir(srcdir) and not os.path.isdir(dstdir):
+                # Create necessary directories only if srcdir exists
                 try:
                     os.makedirs(dstdir)
                     os.chmod(dstdir, stat.S_IMODE(os.stat(srcdir).st_mode) |
@@ -65,19 +82,19 @@ class NvidiaMode(object):
 
             if os.path.islink(srcname):
                 linkto = os.readlink(srcname)
-                os.symlink(linkto, dstname)
-                Msg().out("Debug: is link", srcname, "to", dstname, l=Msg.DBG)
+                if os.path.basename(linkto) == linkto:
+                    # Link to a file in the same directory as srcname, copy link
+                    Msg().out("Debug: is link", srcname, "to", dstname, l=Msg.DBG)
+                    os.symlink(linkto, dstname)
+                else:
+                    # Link to a file in a different directory, copy real file
+                    real_src_path = os.path.realpath(srcname)
+                    Msg().out("Debug: is file", real_src_path, "to", dstname, l=Msg.DBG)
+                    self._copy_single_file(real_src_path, dstname)
+
             elif os.path.isfile(srcname):
-                shutil.copy2(srcname, dstname)
                 Msg().out("Debug: is file", srcname, "to", dstname, l=Msg.DBG)
-                try:
-                    mask = stat.S_IMODE(os.stat(srcname).st_mode) | \
-                                        stat.S_IWUSR | stat.S_IRUSR
-                    if os.access(srcname, os.X_OK):
-                        mask = mask | stat.S_IXUSR
-                    os.chmod(dstname, mask)
-                except (IOError, OSError) as error:
-                    Msg().err("Error: change mask of nvidia file", error)
+                self._copy_single_file(srcname, dstname)
             else:
                 Msg().err("Warn: nvidia file in config not found", srcname)
 
@@ -132,6 +149,7 @@ class NvidiaMode(object):
 
     def _find_cont_dir(self):
         """Find the location of the host target directory for libraries"""
+        # Support different linux distributions
         for dst_dir in ("/usr/lib/x86_64-linux-gnu", "/usr/lib64"):
             if os.path.isdir(self.container_root + '/' + dst_dir):
                 Msg().out("Debug: Cont. location nvidia", dst_dir, l=Msg.DBG)
@@ -146,8 +164,9 @@ class NvidiaMode(object):
                 self._files_exist(nvi_cont_dir, lib_list)
             self._files_exist("/etc", Config.conf['nvi_etc_list'])
             self._files_exist("/usr/bin", Config.conf['nvi_bin_list'])
-            Msg().out("Info: Cont, has files from previous nvidia install")
+            Msg().out("Info: Cont, nvidia not set up")
         except OSError:
+            Msg().out("Info: Cont, has files from previous nvidia install")
             return True
         return False
 
@@ -191,3 +210,19 @@ class NvidiaMode(object):
                 dev_list.append(expanded_devs)
         Msg().out("Debug: nvidia device list", dev_list, l=Msg.DBG)
         return dev_list
+
+    def merge_path_env(self, env):
+        """Add nvidia library path into LD_LIBRARY_PATH of env(Uenv)"""
+        nvi_cont_dir = self._find_cont_dir()
+        if not nvi_cont_dir:
+            return
+        ld_library_path = env.getenv("LD_LIBRARY_PATH")
+        if not ld_library_path:
+            ld_library_list = []
+        else:
+            ld_library_list = [p.strip() for p in ld_library_path.split(':')]
+        if nvi_cont_dir in ld_library_list:
+            return
+        ld_library_list.append(nvi_cont_dir)
+        env.setenv("LD_LIBRARY_PATH", ':'.join(ld_library_list))
+        Msg().out("Debug: add nvidia library path", nvi_cont_dir, "to LD_LIBRARY_PATH", l=Msg.DBG)
