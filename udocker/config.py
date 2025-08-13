@@ -294,7 +294,7 @@ class Config(object):
                      "reposdir", "layersdir", "containersdir", "location", ]
         for key in path_keys:
             try:
-                if not Config.conf[key].startswith("/"):
+                if Config.conf[key] and not Config.conf[key].startswith("/"):
                     Config.conf[key] = os.path.realpath(Config.conf[key])
             except (AttributeError, KeyError, TypeError):
                 continue
