@@ -810,6 +810,11 @@ class UdockerCLI(object):
                     if not container_id:
                         Msg().err("Error: image or container not available")
                         return self.STATUS_ERROR
+                if Config.conf['set_execution_mode']:
+                    Msg().out("setting execmode: %s" % (Config.conf['set_execution_mode']))
+                    exec_mode = ExecutionMode(self.localrepo, container_id)
+                    if not exec_mode.set_mode(Config.conf['set_execution_mode'].upper(), False):
+                        return self.STATUS_ERROR
             if name and container_id:
                 if not self.localrepo.set_container_name(container_id, name):
                     if pull != "reuse":

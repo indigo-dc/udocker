@@ -619,6 +619,11 @@ within a container. Execution modes can be changed using the command
 `udocker setup --execmode=<mode> <container-id>` for more information
 on available modes and their characteristics see section 3.27.
 
+When running containers from images (using `udocker run REPO/IMAGE:TAG`),
+the execution mode can be automatically set using the environment variable
+`UDOCKER_SET_EXECUTION_MODE` or the configuration parameter `set_execution_mode`.
+This automatically creates a container and sets the execution mode before running.
+
 Options:
 
 * `--rm` delete the container after execution
@@ -676,6 +681,11 @@ udocker run fedora:29 cat /etc/redhat-release
 # it doesn't exist will it pull and create. In this way repeated
 # calls to run only create a single container that is then reused.
 udocker run --name=F29 --pull=reuse fedora:29 cat /etc/redhat-release
+
+# Automatically set execution mode when running from images
+export UDOCKER_SET_EXECUTION_MODE=F3
+udocker run quay.io/pacbio/hiphase:1.5.0_build1 hiphase --help
+# This automatically creates a container and sets F3 execution mode
 
 # In this example the host /tmp is mapped to the container /tmp
 udocker run --volume=/tmp  myfed  /bin/bash
@@ -986,10 +996,25 @@ default modes:
 **P1**, **P2**, **F1**, **S1**, and **R1**. Changing the default execution
 mode can be useful if the default does not work as expected.
 
-Example:
+Additionally, udocker provides an automatic execution mode setting feature
+through the environment variable **UDOCKER_SET_EXECUTION_MODE** or the
+configuration parameter **set_execution_mode**. When set, this automatically
+creates a container and sets the execution mode before running when using
+`udocker run` with an image name, equivalent to running `create`,
+`setup --execmode`, and `run` commands in sequence.
+
+Examples:
 
 ```bash
 UDOCKER_DEFAULT_EXECUTION_MODE=P2 ./udocker run mycontainer /bin/ls
+
+# Automatically set execution mode when running from images
+export UDOCKER_SET_EXECUTION_MODE=F3
+udocker run quay.io/pacbio/hiphase:1.5.0_build1 hiphase --help
+# This is equivalent to:
+# udocker create --name=hiphase quay.io/pacbio/hiphase:1.5.0_build1
+# udocker setup --execmode=F3 hiphase
+# udocker run hiphase hiphase --help
 ```
 
 ### 3.28. tag

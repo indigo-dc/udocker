@@ -32,5 +32,5 @@ __credits__ = [
     "Singularity http://singularity.lbl.gov"
     ]
 __license__ = "Licensed under the Apache License, Version 2.0"
-__version__ = "1.3.17"
-__date__ = "2024"
+__version__ = "1.3.18"
+__date__ = "2025"

@@ -201,6 +201,7 @@ The configuration files allow overriding of the udocker `Config` class
 dockerio_registry_url = "https://myregistry.mydomain:5000"
 http_insecure = True
 verbose_level = 5
+set_execution_mode = "F3"
 ```
 
 udocker loads the following configuration files if they are present:
@@ -269,6 +270,11 @@ from the host or from the udocker installation.
   in udocker under `$HOME/.udocker/lib`.
 * `UDOCKER_DEFAULT_EXECUTION_MODE`: default execution mode can be P1, P2, F1,
   S1, R1, R2 or R3.
+* `UDOCKER_SET_EXECUTION_MODE`: automatically set execution mode when running
+  containers from images. When set, this automatically creates a container and
+  sets the execution mode before running, equivalent to running `create`,
+  `setup --execmode`, and `run` commands in sequence. Can also be set via
+  configuration file as `set_execution_mode`.
 
 Several executables and libraries are shipped with udocker. For instance
 the executable for the Rn modes can be selected to be either `runc` or
@@ -281,6 +287,16 @@ host it can also be selected in this manner.
 export UDOCKER_USE_RUNC_EXECUTABLE=$HOME/.udocker/bin/crun-x86_64
 export UDOCKER_DEFAULT_EXECUTION_MODE=R1
 udocker run <mycontainerid>
+```
+
+```
+# Automatically set execution mode when running from images
+export UDOCKER_SET_EXECUTION_MODE=F3
+udocker run quay.io/pacbio/hiphase:1.5.0_build1 hiphase --help
+# This is equivalent to:
+# udocker create --name=hiphase quay.io/pacbio/hiphase:1.5.0_build1
+# udocker setup --execmode=F3 hiphase
+# udocker run hiphase hiphase --help
 ```
 
 ## 6. External tools and libraries

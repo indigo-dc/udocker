@@ -22,6 +22,7 @@ The configuration files allow overriding of the udocker `Config` class
 dockerio_registry_url = https://myregistry.mydomain:5000
 http_insecure = True
 verbose_level = 5
+set_execution_mode = F3
 ```
 
 udocker loads the following configuration files if they are present:
@@ -45,6 +46,8 @@ udocker loads the following configuration files if they are present:
 * `UDOCKER_REGISTRY`: override default registry default is Docker Hub.
 * `UDOCKER_INDEX`: override default index default is Docker Hub.
 * `UDOCKER_DEFAULT_EXECUTION_MODE`: change default execution mode
+* `UDOCKER_SET_EXECUTION_MODE`: automatically set execution mode when running
+  containers from images (can also be set via configuration file as `set_execution_mode`)
 * `UDOCKER_USE_CURL_EXECUTABLE`: pathname for curl executable
 * `UDOCKER_USE_PROOT_EXECUTABLE`: change pathname for proot executable
 * `UDOCKER_USE_RUNC_EXECUTABLE`: change pathname for runc executable
@@ -53,7 +56,26 @@ udocker loads the following configuration files if they are present:
 * `UDOCKER_FAKECHROOT_EXPAND_SYMLINKS`: translate symbolic links in Fn modes
 * `UDOCKER_NOSYSCONF`: prevent loading of udocker system wide configuration
 
-## 4. Verbosity
+## 4. Automatic Execution Mode Setting
+
+The `UDOCKER_SET_EXECUTION_MODE` environment variable allows automatic setting
+of execution mode when running containers from images. When set, udocker will
+automatically create a container and set the execution mode before running,
+equivalent to running `create`, `setup --execmode`, and `run` commands in sequence.
+
+```bash
+export UDOCKER_SET_EXECUTION_MODE=F3
+udocker run quay.io/pacbio/hiphase:1.5.0_build1 hiphase --help
+```
+
+This is equivalent to:
+```bash
+udocker create --name=hiphase quay.io/pacbio/hiphase:1.5.0_build1
+udocker setup --execmode=F3 hiphase
+udocker run hiphase hiphase --help
+```
+
+## 5. Verbosity
 
 The verbosity level of udocker can be enforced. Removing banners and most
 messages can be achieved by executing with `UDOCKER_LOGLEVEL=2`:
@@ -66,7 +88,7 @@ Optionally invoke udocker with `--quiet` or `-q` to decrease verbosity.
 udocker --quiet run <container>
 ```
 
-## 5. Security
+## 6. Security
 
 udocker does not require any type of privileges nor the deployment of
 services by system administrators. It can be downloaded and executed
@@ -77,7 +99,7 @@ Most udocker execution modes do not provide process isolation features
 such as docker. Due to the lack of isolation udocker must not be run
 by privileged users.
 
-## 6. Troubleshooting
+## 7. Troubleshooting
 
 Invoke udocker with `-D` for debugging.
 
@@ -85,7 +107,7 @@ Invoke udocker with `-D` for debugging.
 udocker -D run <container>
 ```
 
-## 7. Documentation
+## 8. Documentation
 
 For Python 3:
 

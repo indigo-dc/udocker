@@ -1,5 +1,13 @@
 # Changelog
 
+## udocker (1.3.18) - 2025-08-22
+
+* New environment variable `UDOCKER_SET_EXECUTION_MODE` and configuration parameter
+  `set_execution_mode` to automatically set execution mode when running containers
+  from images. When set, this automatically creates a container and sets the
+  execution mode before running, equivalent to running `create`, `setup --execmode`,
+  and `run` commands in sequence.
+
 ## udocker (1.3.17) - 2024-08-28
 
 * Update docker tools url location

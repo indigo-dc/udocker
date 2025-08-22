@@ -75,6 +75,8 @@ class Config(object):
                                        'arm64': "P1", 'arm': "P2",
                                        'ppc64le': "R1", 'DEFAULT': "R1"}
 
+    conf['set_execution_mode'] = ""
+
     # PRoot override seccomp
     # conf['proot_noseccomp'] = True
     conf['proot_noseccomp'] = None
@@ -255,6 +257,9 @@ class Config(object):
         Config.conf['override_default_execution_mode'] = \
             os.getenv("UDOCKER_DEFAULT_EXECUTION_MODE",
                       Config.conf['override_default_execution_mode'])
+        Config.conf['set_execution_mode'] = \
+            os.getenv("UDOCKER_SET_EXECUTION_MODE",
+                      Config.conf['set_execution_mode'])
         Config.conf['fakechroot_so'] = \
             os.getenv("UDOCKER_FAKECHROOT_SO", Config.conf['fakechroot_so'])
         Config.conf['fakechroot_libc'] = \
