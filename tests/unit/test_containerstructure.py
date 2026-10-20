@@ -359,6 +359,20 @@ class ContainerStructureTestCase(TestCase):
         self.assertTrue(status)
         self.assertTrue(mock_call.call_count, 2)
         self.assertTrue(mock_appwhite.call_count, 2)
+        # #457: device excludes must be anchored (both dev/* and ./dev/*
+        # forms) so nested */dev/* is kept; .wh.* stays unanchored
+        tar_cmds = [c[0][0] for c in mock_call.call_args_list
+                    if c[0] and c[0][0] and c[0][0][0] == "tar"]
+        self.assertTrue(tar_cmds)
+        cmd = tar_cmds[0]
+        anch = cmd.index("--anchored")
+        noanch = cmd.index("--no-anchored")
+        for pat in ("--exclude=dev/*", "--exclude=./dev/*",
+                    "--exclude=etc/udev/devices/*",
+                    "--exclude=./etc/udev/devices/*"):
+            self.assertIn(pat, cmd)
+            self.assertTrue(anch < cmd.index(pat) < noanch)
+        self.assertTrue(cmd.index("--exclude=.wh.*") > noanch)
 
     @patch('udocker.container.structure.FileUtil.tar')
     @patch('udocker.container.structure.Msg')

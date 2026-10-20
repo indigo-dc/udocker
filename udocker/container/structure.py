@@ -281,9 +281,22 @@ class ContainerStructure(object):
             if Msg.level >= Msg.VER:
                 verbose = 'v'
                 Msg().out("Info: extracting:", tarf, l=Msg.INF)
+            # Anchor the device excludes so only the container-root trees
+            # match; unanchored --exclude=dev/* also strips nested */dev/*
+            # paths (e.g. node_modules/.../dev) - see #457. Registry layers
+            # store members without a leading ./ while layers made by
+            # FileUtil.tar (tar -C dir .) have it, so cover both forms.
+            # Whiteouts (.wh.*) must still match at any depth.
             cmd = ["tar", "-C", destdir, "-x" + verbose,
                    "--one-file-system", "--no-same-owner", "--overwrite",
-                   "--exclude=dev/*", "--exclude=etc/udev/devices/*",
+                   "--anchored",
+                   "--exclude=dev", "--exclude=dev/*",
+                   "--exclude=./dev", "--exclude=./dev/*",
+                   "--exclude=etc/udev/devices",
+                   "--exclude=etc/udev/devices/*",
+                   "--exclude=./etc/udev/devices",
+                   "--exclude=./etc/udev/devices/*",
+                   "--no-anchored",
                    "--no-same-permissions", r"--exclude=.wh.*",
                    ] + optional_flags + ["-f", tarf]
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):
