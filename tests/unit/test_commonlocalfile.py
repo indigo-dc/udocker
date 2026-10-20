@@ -383,6 +383,41 @@ class CommonLocalFileApiTestCase(TestCase):
         status = clfapi._get_imagedir_type(tmp_imagedir)
         self.assertEqual(status, "Docker")
 
+    @patch('udocker.commonlocalfile.FileUtil.copyto')
+    @patch('udocker.commonlocalfile.os.rename')
+    @patch('udocker.commonlocalfile.os.path.exists')
+    def test_12__move_layer_to_v1repo_repeated_blob(self, mock_exists,
+                                                    mock_rename, mock_copy):
+        """Test12 repeated layer digests are not renamed twice (#449)."""
+        layer_id = "sha256:" + "a" * 64
+        filepath = "/tmp/blobs/sha256/" + "a" * 64
+        self.local.layersdir = "/home/.udocker"
+        self.local.add_image_layer.return_value = True
+        mock_exists.return_value = True
+        clfapi = CommonLocalFileApi(self.local)
+        status = clfapi._move_layer_to_v1repo(filepath, layer_id)
+        self.assertTrue(status)
+        self.assertFalse(mock_rename.called)
+        self.assertTrue(self.local.add_image_layer.called)
+
+    @patch('udocker.commonlocalfile.FileUtil.copyto')
+    @patch('udocker.commonlocalfile.os.rename')
+    @patch('udocker.commonlocalfile.os.path.exists')
+    def test_13__move_layer_to_v1repo_config(self, mock_exists, mock_rename,
+                                             mock_copy):
+        """Test13 OCI config blob is stored as .json (container.json)."""
+        layer_id = "sha256:" + "c" * 64
+        filepath = "/tmp/blobs/sha256/" + "c" * 64
+        self.local.layersdir = "/home/.udocker"
+        self.local.add_image_layer.return_value = True
+        mock_exists.return_value = False
+        mock_rename.return_value = None
+        clfapi = CommonLocalFileApi(self.local)
+        status = clfapi._move_layer_to_v1repo(filepath, layer_id,
+                                              "container.json")
+        self.assertTrue(status)
+        self.assertTrue(mock_rename.call_args[0][1].endswith(".json"))
+
 
 if __name__ == '__main__':
     main()

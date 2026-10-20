@@ -283,7 +283,15 @@ class ContainerStructure(object):
                 Msg().out("Info: extracting:", tarf, l=Msg.INF)
             cmd = ["tar", "-C", destdir, "-x" + verbose,
                    "--one-file-system", "--no-same-owner", "--overwrite",
-                   "--exclude=dev/*", "--exclude=etc/udev/devices/*",
+                   # exclude only container-root dev contents, not nested
+                   # */dev/* dirs (#457). Both "dev/" (registry layers)
+                   # and "./dev/" (udocker-made layers) are anchored;
+                   # .wh.* whiteouts stay unanchored (any level).
+                   "--anchored",
+                   "--exclude=dev/*", "--exclude=./dev/*",
+                   "--exclude=etc/udev/devices/*",
+                   "--exclude=./etc/udev/devices/*",
+                   "--no-anchored",
                    "--no-same-permissions", r"--exclude=.wh.*",
                    ] + optional_flags + ["-f", tarf]
             if subprocess.call(cmd, stderr=Msg.chlderr, close_fds=True):

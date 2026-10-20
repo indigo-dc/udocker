@@ -3,17 +3,19 @@
 udocker unit tests: NVIDIA mode
 """
 
+import collections
+
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
 from udocker.config import Config
 from udocker.engine.nvidia import NvidiaMode
-import collections
+from udocker.utils.uenv import Uenv
 
 collections.Callable = collections.abc.Callable
 
 
 class NvidiaModeTestCase(TestCase):
-    """Test PRootEngine() class for containers execution."""
+    """Test NvidiaMode() class for nvidia mode setup."""
 
     def setUp(self):
         Config().getconf()
@@ -31,6 +33,11 @@ class NvidiaModeTestCase(TestCase):
     def tearDown(self):
         self.lrepo.stop()
         self.cdcont.stop()
+
+    def _reset_mocks(self,*mocks):
+        """Reset mocks."""
+        for mock in mocks:
+            mock.reset_mock()
 
     def test_01_init(self):
         """Test01 NvidiaMode() constructor."""
@@ -53,54 +60,105 @@ class NvidiaModeTestCase(TestCase):
 
     @patch('udocker.engine.nvidia.Msg')
     @patch('udocker.engine.nvidia.os.access')
-    @patch('udocker.engine.nvidia.stat')
     @patch('udocker.engine.nvidia.shutil.copy2')
+    @patch('udocker.engine.nvidia.stat')
     @patch('udocker.engine.nvidia.os.symlink')
     @patch('udocker.engine.nvidia.os.readlink')
     @patch('udocker.engine.nvidia.os.chmod')
     @patch('udocker.engine.nvidia.os.makedirs')
+    @patch('udocker.engine.nvidia.os.path.exists')
     @patch('udocker.engine.nvidia.os.path.isdir')
-    @patch('udocker.engine.nvidia.os.path.dirname')
     @patch('udocker.engine.nvidia.os.remove')
+    @patch('udocker.engine.nvidia.os.stat')
     @patch('udocker.engine.nvidia.os.path.islink')
     @patch('udocker.engine.nvidia.os.path.isfile')
-    def test_03__copy_files(self, mock_isfile, mock_islink, mock_rm,
-                            mock_dirname, mock_isdir, mock_mkdir, mock_chmod,
-                            mock_readln, mock_symln, mock_copy2, mock_stat,
-                            mock_access, mock_msg):
+    @patch('udocker.engine.nvidia.os.path.realpath')
+    def test_03__copy_files(self, mock_realpath, mock_isfile, mock_islink,
+                            mock_stat, mock_rm, mock_isdir, mock_exists,
+                            mock_mkdir, mock_chmod, mock_readln, mock_symln,
+                            mock_statmod, mock_copy2, mock_access, mock_msg):
         """Test03 NvidiaMode._copy_files."""
         hsrc_dir = "/usr/lib"
-        cdst_dir = "/hone/.udocker/cont/ROOT/usr/lib"
+        cdst_dir = "/home/.udocker/cont/ROOT/usr/lib"
         flist = ["a"]
+        os_stat_result = Mock()
+        os_stat_result.st_mode = 0o100777
+        mock_stat.return_value = os_stat_result
+        nvmode = NvidiaMode(self.local, self.cont_id)
+
+        # Test force = False
         force = False
         mock_msg.level = 0
+
+        # Case 1: nvidia file already exists, force = False
         mock_isfile.side_effect = [True, False]
         mock_islink.side_effect = [True, False]
         mock_rm.return_value = None
-        nvmode = NvidiaMode(self.local, self.cont_id)
         status = nvmode._copy_files(hsrc_dir, cdst_dir, flist, force)
-        self.assertFalse(status)
+        self.assertFalse(status) # should return False
         self.assertTrue(mock_isfile.called)
+        self._reset_mocks(mock_isfile)
 
+        # Case 2: symlink to a file in the same directory
+        mock_isfile.side_effect = [False, False]
+        mock_islink.side_effect = [False, True]
+        mock_isdir.side_effect = [True, False]
+        mock_mkdir.return_value = None
+        mock_chmod.return_value = 644
+        mock_statmod.side_effect = [444, 222]
+        mock_readln.return_value = "libOpenCL.so.1.0.0"
+        mock_symln.return_value = None
+        status = nvmode._copy_files(hsrc_dir, cdst_dir, flist, force)
+        self.assertTrue(status)
+        self.assertTrue(mock_isdir.called)
+        self.assertTrue(mock_mkdir.called)
+        self.assertTrue(mock_chmod.called)
+        self.assertTrue(mock_islink.called)
+        self.assertTrue(mock_symln.called)  # should create symlink
+        self.assertFalse(mock_copy2.called)
+        self._reset_mocks(mock_isdir, mock_mkdir, mock_chmod, mock_islink, mock_symln, mock_copy2)
+
+        # Case 3: symlink to a file in another directory
+        mock_isfile.side_effect = [False, False]
+        mock_islink.side_effect = [False, True]
+        mock_isdir.side_effect = [True, False]
+        mock_readln.return_value = "/usr/xxx"
+        mock_realpath.return_value = "/usr/lib/x86_64/xxx"
+        mock_exists.return_value = False
+        mock_copy2.return_value = None
+        mock_statmod.side_effect = [444, 222, 111, 111]
+        mock_access.return_value = False
+        mock_chmod.side_effect = [644, 755]
+        status = nvmode._copy_files(hsrc_dir, cdst_dir, flist, force)
+        self.assertTrue(status)
+        self.assertTrue(mock_copy2.called)  # should copy file
+        self._reset_mocks(mock_copy2, mock_mkdir)
+
+        # Case 4: srcname not exists
+        mock_isfile.side_effect = [False, False]
+        mock_islink.side_effect = [False, False]
+        mock_isdir.side_effect = [False, False]
+        status = nvmode._copy_files(hsrc_dir, cdst_dir, flist, force)
+        self.assertTrue(status)
+        self.assertFalse(mock_mkdir.called)  # srcname not exists, should not mkdir
+        self._reset_mocks(mock_mkdir, mock_rm, mock_isfile)
+
+        # Test force = True
         force = True
         mock_msg.level = 0
         mock_isfile.side_effect = [True, True]
         mock_islink.side_effect = [True, False]
-        mock_dirname.side_effect = [None, None]
+        mock_isdir.side_effect = [True, True]
         mock_rm.return_value = None
-        mock_isdir.return_value = True
         mock_mkdir.return_value = None
         mock_chmod.side_effect = [644, 755]
-        mock_readln.return_value = "/usr/xxx"
-        mock_symln.return_value = None
         mock_copy2.return_value = None
-        mock_stat.side_effect = [444, 222, 111, 111]
-        mock_access.return_value = False
-        nvmode = NvidiaMode(self.local, self.cont_id)
+        mock_statmod.side_effect = [444, 222, 111, 111]
+        mock_access.return_value = True
         status = nvmode._copy_files(hsrc_dir, cdst_dir, flist, force)
         self.assertTrue(status)
+        self.assertTrue(mock_rm.called)  # should remove existing file
         self.assertTrue(mock_isfile.called)
-        self.assertTrue(mock_rm.called)
 
     @patch('udocker.engine.nvidia.glob.glob')
     def test_04__get_nvidia_libs(self, mock_glob):
@@ -258,6 +316,63 @@ class NvidiaModeTestCase(TestCase):
         nvmode = NvidiaMode(self.local, self.cont_id)
         status = nvmode.get_devices()
         self.assertEqual(status, Config().conf['nvi_dev_list'])
+
+    @patch('udocker.engine.nvidia.os.chmod')
+    @patch('udocker.engine.nvidia.os.access')
+    @patch('udocker.engine.nvidia.os.stat')
+    @patch('udocker.engine.nvidia.shutil.copy2')
+    @patch('udocker.engine.nvidia.stat')
+    @patch('udocker.engine.nvidia.os.path.exists')
+    def test_13__copy_single_file(self, mock_exists, mock_statmod, mock_copy2,
+                                  mock_stat, mock_access, mock_chmod):
+        """Test13 NvidiaMode._copy_single_file."""
+        src = "/usr/lib/libnvidia.so"
+        dst = "/home/.udocker/cont/usr/lib/libnvidia.so"
+        os_stat_result = Mock()
+        os_stat_result.st_mode = 0o100777
+        mock_stat.return_value = os_stat_result
+        nvmode = NvidiaMode(self.local, self.cont_id)
+
+        mock_copy2.return_value = None
+        mock_statmod.side_effect = [444, 222, 111, 111]
+        mock_access.return_value = True
+        mock_chmod.return_value = 644
+
+        # Case 1: dst file exists
+        mock_exists.return_value = True
+        nvmode._copy_single_file(src, dst)
+        self.assertTrue(mock_exists.called)
+        self.assertFalse(mock_copy2.called) # should not overwrite
+        self._reset_mocks(mock_exists, mock_copy2)
+
+        # Case 2: dst file does not exist
+        mock_exists.return_value = False
+        nvmode._copy_single_file(src, dst)
+        self.assertTrue(mock_copy2.called) # should copy file
+        self.assertTrue(mock_chmod.called)
+
+    @patch('udocker.engine.nvidia.os.path.isdir')
+    def test_14_merge_path_env(self, mock_isdir):
+        """Test14 NvidiaMode.merge_path_env()."""
+        nvmode = NvidiaMode(self.local, self.cont_id)
+        env_path = "/opt/python/bin"
+        nvi_lib_dir = nvmode._find_cont_dir()
+        mock_isdir.return_value = True
+
+        # Case 1: LD_LIBRARY_PATH not in env
+        env = Uenv(["PATH=%s" % env_path])
+        nvmode.merge_path_env(env)
+        self.assertEqual(nvi_lib_dir, env.getenv("LD_LIBRARY_PATH"))
+        self.assertEqual(env_path, env.getenv("PATH"))
+        self.assertTrue(mock_isdir.called)
+
+        # Case 2: LD_LIBRARY_PATH in env
+        original_ld_library_path = "/usr/local/nvidia/lib:/usr/local/nvidia/lib64"
+        env = Uenv(["PATH=%s" % env_path, "LD_LIBRARY_PATH=%s" % original_ld_library_path])
+        nvmode.merge_path_env(env)
+        self.assertTrue(nvi_lib_dir in env.getenv("LD_LIBRARY_PATH"))
+        self.assertTrue(original_ld_library_path in env.getenv("LD_LIBRARY_PATH"))
+        self.assertEqual(env_path, env.getenv("PATH"))
 
 
 if __name__ == '__main__':

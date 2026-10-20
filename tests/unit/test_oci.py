@@ -120,6 +120,66 @@ class OciLocalFileAPITestCase(TestCase):
         status = OciLocalFileAPI(self.local).load(tmpdir, imgrepo)
         self.assertEqual(status, ['r1', 'r2'])
 
+    @patch.object(OciLocalFileAPI, '_load_image')
+    def test_08__load_manifest_refname(self, mock_loadimg):
+        """Test08 ref.name annotation is split into repo and tag (#453)."""
+        manifest = {'digest': 'sha256:man',
+                    'annotations': {
+                        'org.opencontainers.image.ref.name': 'test:01'}}
+        struct = {'manifest': {},
+                  'repolayers': {'sha256:man': {'layer_f': 'f'}}}
+        mock_loadimg.return_value = ['test:01']
+        status = OciLocalFileAPI(self.local)._load_manifest(struct, manifest)
+        mock_loadimg.assert_called_with(struct, 'test', '01')
+        self.assertEqual(status, ['test:01'])
+
+    @patch.object(OciLocalFileAPI, '_load_image')
+    @patch('udocker.oci.Unique.imagetag')
+    @patch('udocker.oci.Unique.imagename')
+    def test_09__load_manifest_no_annotation(self, mock_name, mock_tag,
+                                             mock_loadimg):
+        """Test09 generated name and tag are used without annotation."""
+        manifest = {'digest': 'sha256:man'}
+        struct = {'manifest': {},
+                  'repolayers': {'sha256:man': {'layer_f': 'f'}}}
+        mock_name.return_value = 'randname'
+        mock_tag.return_value = 'randtag'
+        mock_loadimg.return_value = ['randname:randtag']
+        status = OciLocalFileAPI(self.local)._load_manifest(struct, manifest)
+        mock_loadimg.assert_called_with(struct, 'randname', 'randtag')
+        self.assertEqual(status, ['randname:randtag'])
+
+    @patch.object(OciLocalFileAPI, '_move_layer_to_v1repo')
+    def test_10__load_image_step2_dedup(self, mock_move):
+        """Test10 repeated layer digests produce a unique ancestry (#449)."""
+        mock_move.return_value = True
+        layer = 'sha256:' + 'b' * 64
+        struct = {
+            'manifest': {'repo:tag': {'json': {
+                'config': {'digest': 'sha256:cfg'},
+                'layers': [{'digest': layer}, {'digest': layer}]}}},
+            'repolayers': {'sha256:cfg': {'layer_f': 'cfg'},
+                           layer: {'layer_f': 'f', 'layer_h': 'b' * 64}}}
+        status = OciLocalFileAPI(self.local)._load_image_step2(
+            struct, 'repo', 'tag')
+        self.assertEqual(status, ['repo:tag'])
+        self.assertEqual(self.local.save_json.call_args[0][1], ['b' * 64])
+
+    @patch.object(OciLocalFileAPI, '_load_image')
+    def test_11__load_manifest_forced_tag(self, mock_loadimg):
+        """Test11 load override tag replaces the annotation tag."""
+        manifest = {'digest': 'sha256:man',
+                    'annotations': {
+                        'org.opencontainers.image.ref.name': 'test:01'}}
+        struct = {'manifest': {},
+                  'repolayers': {'sha256:man': {'layer_f': 'f'}}}
+        mock_loadimg.return_value = ['test:2.0']
+        api = OciLocalFileAPI(self.local)
+        api._forced_tag = '2.0'
+        status = api._load_manifest(struct, manifest)
+        mock_loadimg.assert_called_with(struct, 'test', '2.0')
+        self.assertEqual(status, ['test:2.0'])
+
 
 if __name__ == '__main__':
     main()

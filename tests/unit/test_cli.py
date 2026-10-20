@@ -10,6 +10,7 @@ from unittest.mock import Mock, patch
 from udocker.config import Config
 from udocker.cmdparser import CmdParser
 from udocker.cli import UdockerCLI
+from udocker.container.dockerfile import DockerfileParser as RealDockerfileParser
 import collections
 
 collections.Callable = collections.abc.Callable
@@ -1565,6 +1566,129 @@ class UdockerCLITestCase(TestCase):
         status = udoc.do_help(cmdp)
         self.assertEqual(status, 0)
         self.assertTrue(mock_msg.return_value.out.called)
+
+    @patch('udocker.cli.DockerIoAPI')
+    @patch('udocker.cli.Msg')
+    @patch('udocker.cli.os.path.isfile')
+    @patch('udocker.cli.FileUtil')
+    @patch('udocker.cli.ContainerBuilder')
+    @patch('udocker.cli.DockerfileParser')
+    @patch.object(UdockerCLI, '_create')
+    @patch.object(UdockerCLI, '_check_imagespec')
+    def test_40_do_build(self, mock_chkimg, mock_create, mock_dfparser,
+                         mock_cbuilder, mock_fu, mock_isfile, mock_msg,
+                         mock_dockerio):
+        """Test40 UdockerCLI().do_build()."""
+        mock_msg.level = 0
+        # split_stages() is pure instruction-list logic, exercise the
+        # real implementation instead of stubbing it out
+        mock_dfparser.split_stages = RealDockerfileParser.split_stages
+
+        # -h : leftover general option triggers syntax error
+        argv = ["udocker", "-h"]
+        cmdp = CmdParser()
+        cmdp.parse(argv)
+        udoc = UdockerCLI(self.local)
+        status = udoc.do_build(cmdp)
+        self.assertEqual(status, 1)
+
+        # build context directory does not exist
+        argv = ["udocker", "build", "-t", "myrepo/myimage:latest", "/nodir"]
+        cmdp = CmdParser()
+        cmdp.parse(argv)
+        mock_fu.return_value.isdir.return_value = False
+        udoc = UdockerCLI(self.local)
+        status = udoc.do_build(cmdp)
+        self.assertEqual(status, 1)
+
+        # Dockerfile not found
+        argv = ["udocker", "build", "-t", "myrepo/myimage:latest", "."]
+        cmdp = CmdParser()
+        cmdp.parse(argv)
+        mock_fu.return_value.isdir.return_value = True
+        mock_isfile.return_value = False
+        udoc = UdockerCLI(self.local)
+        status = udoc.do_build(cmdp)
+        self.assertEqual(status, 1)
+
+        # image tag already exists and --force not given
+        argv = ["udocker", "build", "-t", "myrepo/myimage:latest", "."]
+        cmdp = CmdParser()
+        cmdp.parse(argv)
+        mock_fu.return_value.isdir.return_value = True
+        mock_isfile.return_value = True
+        mock_chkimg.side_effect = [("myrepo/myimage", "latest")]
+        self.local.cd_imagerepo.return_value = True
+        udoc = UdockerCLI(self.local)
+        status = udoc.do_build(cmdp)
+        self.assertEqual(status, 1)
+
+        # Dockerfile does not start with FROM
+        argv = ["udocker", "build", "."]
+        cmdp = CmdParser()
+        cmdp.parse(argv)
+        mock_fu.return_value.isdir.return_value = True
+        mock_isfile.return_value = True
+        mock_chkimg.side_effect = None
+        mock_dfparser.return_value.parse.return_value = [("RUN", "echo hi")]
+        udoc = UdockerCLI(self.local)
+        status = udoc.do_build(cmdp)
+        self.assertEqual(status, 1)
+
+        # FROM scratch is not supported
+        argv = ["udocker", "build", "."]
+        cmdp = CmdParser()
+        cmdp.parse(argv)
+        mock_dfparser.return_value.parse.return_value = [("FROM", "scratch")]
+        udoc = UdockerCLI(self.local)
+        status = udoc.do_build(cmdp)
+        self.assertEqual(status, 1)
+
+        # successful build without --tag: prints the container id
+        argv = ["udocker", "build", "."]
+        cmdp = CmdParser()
+        cmdp.parse(argv)
+        mock_dfparser.return_value.parse.return_value = [
+            ("FROM", "busybox:latest"), ("RUN", "echo hi")]
+        mock_chkimg.side_effect = [("busybox", "latest")]
+        self.local.cd_imagerepo.return_value = True
+        mock_create.return_value = "CONTAINERID"
+        mock_cbuilder.return_value.run_instructions.return_value = True
+        udoc = UdockerCLI(self.local)
+        status = udoc.do_build(cmdp)
+        self.assertEqual(status, 0)
+        self.assertTrue(mock_cbuilder.return_value.run_instructions.called)
+        self.assertFalse(mock_cbuilder.return_value.commit.called)
+
+        # RUN instruction fails: build container is deleted, error returned
+        argv = ["udocker", "build", "."]
+        cmdp = CmdParser()
+        cmdp.parse(argv)
+        mock_chkimg.side_effect = [("busybox", "latest")]
+        mock_create.return_value = "CONTAINERID"
+        mock_cbuilder.return_value.run_instructions.return_value = False
+        udoc = UdockerCLI(self.local)
+        status = udoc.do_build(cmdp)
+        self.assertEqual(status, 1)
+        self.assertTrue(self.local.del_container.called)
+
+        # successful build with --tag: image is committed, container removed
+        argv = ["udocker", "build", "-t", "myrepo/myimage:latest", "."]
+        cmdp = CmdParser()
+        cmdp.parse(argv)
+        mock_chkimg.side_effect = [("myrepo/myimage", "latest"),
+                                   ("busybox", "latest")]
+        self.local.cd_imagerepo.side_effect = \
+            lambda repo, tag: repo != "myrepo/myimage"
+        mock_create.return_value = "CONTAINERID"
+        mock_cbuilder.return_value.run_instructions.return_value = True
+        mock_cbuilder.return_value.commit.return_value = True
+        self.local.del_container.reset_mock()
+        udoc = UdockerCLI(self.local)
+        status = udoc.do_build(cmdp)
+        self.assertEqual(status, 0)
+        self.assertTrue(mock_cbuilder.return_value.commit.called)
+        self.assertTrue(self.local.del_container.called)
 
 
 if __name__ == '__main__':

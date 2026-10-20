@@ -9,6 +9,7 @@ import json
 from udocker.genstr import is_genstr
 from udocker.msg import Msg
 from udocker.config import Config
+from udocker.engine.nvidia import NvidiaMode
 from udocker.helper.nixauth import NixAuthentication
 from udocker.helper.hostinfo import HostInfo
 from udocker.helper.osinfo import OSInfo
@@ -566,6 +567,10 @@ class ExecutionEngineCommon(object):
         self.opt["env"].append("container_execmode=" +
                                self.exec_mode.get_mode())
         cont_name = self.container_names
+        # Add nvidia library path to LD_LIBRARY_PATH
+        nvidia_mode = NvidiaMode(self.localrepo, self.container_id)
+        if nvidia_mode.get_mode():
+            nvidia_mode.merge_path_env(self.opt["env"])
         # if Python 3
         if sys.version_info[0] >= 3:
             names = str(cont_name).translate(str.maketrans('', '', " '\"[]"))

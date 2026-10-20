@@ -20,25 +20,32 @@ class CommonLocalFileApi(object):
     def __init__(self, localrepo):
         self.localrepo = localrepo
         self._imagerepo = None
+        self._forced_tag = None
 
     def _move_layer_to_v1repo(self, filepath, layer_id, linkname=None):
-        """Copy or rename an image layer file to a v1 repository"""
-        if filepath.endswith("json"):
-            target_file = self.localrepo.layersdir + '/' + layer_id + ".json"
-        elif filepath.endswith("layer.tar"):
-            target_file = self.localrepo.layersdir + '/' + layer_id + ".layer"
-        elif ':' in layer_id:
+        """Copy or rename an image layer file to a v1 repository.
+        Blobs are content addressed and the same digest can be
+        referenced by more than one layer (e.g. repeated empty
+        layers), in that case the layer file is already in place
+        and only the tag link needs to be created.
+        """
+        is_blob = ':' in layer_id
+        if is_blob:
             (dummy, layer_id) = layer_id.split(':', 1)
+        if filepath.endswith("json") or \
+                (linkname and linkname.endswith("json")):
+            target_file = self.localrepo.layersdir + '/' + layer_id + ".json"
+        elif filepath.endswith("layer.tar") or is_blob:
             target_file = self.localrepo.layersdir + '/' + layer_id + ".layer"
         else:
             return False
-        try:
-            os.rename(filepath, target_file)
-        except (IOError, OSError):
-            if not FileUtil(filepath).copyto(target_file):
-                return False
-        self.localrepo.add_image_layer(target_file, linkname)
-        return True
+        if not os.path.exists(target_file):
+            try:
+                os.rename(filepath, target_file)
+            except (IOError, OSError):
+                if not FileUtil(filepath).copyto(target_file):
+                    return False
+        return self.localrepo.add_image_layer(target_file, linkname)
 
     def _load_image_step2(self, structure, imagerepo, tag):
         """Implementation specific image load"""

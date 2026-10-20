@@ -16,7 +16,7 @@ class LocalFileAPI(CommonLocalFileApi):
     def __init__(self, localrepo):
         CommonLocalFileApi.__init__(self, localrepo)
 
-    def load(self, imagefile, imagerepo=None):
+    def load(self, imagefile, imagerepo=None, tag=None):
         """Generic load of image tags to a file"""
         if not os.path.exists(imagefile) and imagefile != '-':
             Msg().err("Error: image file does not exist:", imagefile)
@@ -33,10 +33,10 @@ class LocalFileAPI(CommonLocalFileApi):
         imagetype = self._get_imagedir_type(tmp_imagedir)
         if imagetype == "Docker":
             repositories = DockerLocalFileAPI(
-                self.localrepo).load(tmp_imagedir, imagerepo)
+                self.localrepo).load(tmp_imagedir, imagerepo, tag)
         elif imagetype == "OCI":
             repositories = OciLocalFileAPI(
-                self.localrepo).load(tmp_imagedir, imagerepo)
+                self.localrepo).load(tmp_imagedir, imagerepo, tag)
         else:
             repositories = []
         FileUtil(tmp_imagedir).remove(recursive=True)

@@ -60,12 +60,14 @@ class OciLocalFileAPI(CommonLocalFileApi):
             tag = manifest["annotations"]["org.opencontainers.image.ref.name"]
         except KeyError:
             tag = Unique().imagetag()
-        if '/' in tag and ':' in tag:
-            (imagerepo, tag) = tag.split(':', 1)
+        if ':' in tag:
+            (imagerepo, tag) = tag.rsplit(':', 1)
         else:
             imagerepo = Unique().imagename()
         if self._imagerepo:
             imagerepo = self._imagerepo
+        if self._forced_tag:
+            tag = self._forced_tag
         imagetag = imagerepo + ':' + tag
         structure["manifest"][imagetag] = {}
         structure["manifest"][imagetag]["json"] = \
@@ -102,16 +104,19 @@ class OciLocalFileAPI(CommonLocalFileApi):
             if not self._move_layer_to_v1repo(filename, layer_id):
                 Msg().err("Error: copying layer file", filename, l=Msg.VER)
                 return []
-            layer_hash_list.append(structure["repolayers"][layer_id]["layer_h"])
+            layer_hash = structure["repolayers"][layer_id]["layer_h"]
+            if layer_hash not in layer_hash_list:
+                layer_hash_list.append(layer_hash)
         self.localrepo.save_json("ancestry", layer_hash_list)
         return [imagetag]
 
-    def load(self, tmp_imagedir, imagerepo=None):
+    def load(self, tmp_imagedir, imagerepo=None, tag=None):
         """Load an OCI image file The file is a tarball containing several
         layers, each layer has metadata and data content (directory tree)
         stored as a tar file.
         """
         self._imagerepo = imagerepo
+        self._forced_tag = tag
         structure = self._load_structure(tmp_imagedir)
         if not structure:
             Msg().err("Error: failed to load image structure")

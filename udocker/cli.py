@@ -16,6 +16,7 @@ from udocker.helper.keystore import KeyStore
 from udocker.helper.hostinfo import HostInfo
 from udocker.helper.unshare import Unshare
 from udocker.container.structure import ContainerStructure
+from udocker.container.dockerfile import DockerfileParser, ContainerBuilder
 from udocker.engine.execmode import ExecutionMode
 from udocker.engine.nvidia import NvidiaMode
 from udocker.tools import UdockerTools
@@ -313,7 +314,10 @@ class UdockerCLI(object):
             return self.STATUS_ERROR
         if imagerepo and not self._check_imagerepo(imagerepo):
             return self.STATUS_ERROR
-        repos = self.localfileapi.load(imagefile, imagerepo)
+        tag = None
+        if imagerepo and ':' in imagerepo:
+            (imagerepo, tag) = imagerepo.rsplit(':', 1)
+        repos = self.localfileapi.load(imagefile, imagerepo, tag)
         if not repos:
             Msg().err("Error: load failed")
             return self.STATUS_ERROR
@@ -1159,6 +1163,177 @@ class UdockerCLI(object):
 
         return self.STATUS_OK
 
+    def _build_cleanup(self, container_ids):
+        """Delete build containers created for intermediate/failed stages"""
+        for container_id in container_ids:
+            self.localrepo.del_container(container_id)
+
+    def _build_stage_base(self, base_imagespec, platform, stage_containers):
+        """Resolve the FROM of a build stage to a fresh container id: pull
+        the image if needed and create a container from it, or clone the
+        container of a previously built stage referred to by name"""
+        if base_imagespec in stage_containers:
+            container_id = ContainerStructure(
+                self.localrepo, stage_containers[base_imagespec]).clone()
+            if not container_id:
+                Msg().err("Error: duplicating build stage:", base_imagespec)
+            return container_id
+
+        (base_imagerepo, base_tag) = self._check_imagespec(base_imagespec)
+        if not base_imagerepo:
+            return None
+
+        if not self.localrepo.cd_imagerepo(base_imagerepo, base_tag):
+            Msg().out("Info: pulling base image:", base_imagespec, l=Msg.INF)
+            self._set_repository(None, None, base_imagerepo, None)
+            v2_auth_token = self.keystore.get(self.dockerioapi.registry_url)
+            self.dockerioapi.set_v2_login_token(v2_auth_token)
+            if not self.dockerioapi.get(base_imagerepo, base_tag, platform):
+                Msg().err("Error: pulling base image failed:", base_imagespec)
+                return None
+
+        if self.localrepo.cd_imagerepo(base_imagerepo, base_tag):
+            image_platform = self.localrepo.get_image_platform_fmt()
+            wanted = platform or (HostInfo().osversion() + "/" +
+                                  HostInfo().arch("docker"))
+            if isinstance(image_platform, str) and \
+                    image_platform != wanted and "unknown" not in image_platform:
+                Msg().out("Warning: base image platform", image_platform,
+                          "differs from", wanted, l=Msg.WAR)
+
+        container_id = self._create(base_imagerepo + ":" + base_tag)
+        if not container_id:
+            Msg().err("Error: creating build container from base image")
+
+        return container_id
+
+    def do_build(self, cmdp):
+        """
+        build: build a container image from a Dockerfile
+        build [options]  PATH
+        -f=<Dockerfile>              :Alternate Dockerfile (default: PATH/Dockerfile)
+        --file=<Dockerfile>          :Alternate Dockerfile (default: PATH/Dockerfile)
+        -t=<repo/image:tag>          :Repository and tag to apply to the built image
+        --tag=<repo/image:tag>       :Repository and tag to apply to the built image
+        --build-arg=<VAR=VALUE>      :Set a build-time ARG variable (repeatable)
+        --platform=os/arch           :Pull the base image for this platform
+        --force                      :Replace the image tag if it already exists
+        --name=<container-name>      :Name given to the resulting build container
+
+        Multi-stage Dockerfiles are supported: FROM <image> AS <name>
+        followed later by COPY --from=<name-or-index> <src> <dest>, and by
+        FROM <name> to continue building on top of an earlier stage.
+        RUN instructions execute using the container execution mode
+        currently configured, see: udocker setup --execmode. ADD does not
+        fetch remote URLs.
+
+        Examples:
+          udocker build -t myrepo/myimage:latest .
+          udocker build -f Dockerfile.alt -t myrepo/myimage:latest .
+        """
+        dockerfile = cmdp.get("-f=") or cmdp.get("--file=")
+        imagespec = cmdp.get("-t=") or cmdp.get("--tag=")
+        build_args = cmdp.get("--build-arg=", "CMD_OPT", True)
+        platform = cmdp.get("--platform=")
+        force = cmdp.get("--force")
+        name = cmdp.get("--name=")
+        context_dir = cmdp.get("P1") or "."
+        if cmdp.missing_options():               # syntax error
+            return self.STATUS_ERROR
+
+        if not FileUtil(context_dir).isdir():
+            Msg().err("Error: build context directory not found:", context_dir)
+            return self.STATUS_ERROR
+
+        if not dockerfile:
+            dockerfile = context_dir.rstrip("/") + "/Dockerfile"
+        if not os.path.isfile(dockerfile):
+            Msg().err("Error: Dockerfile not found:", dockerfile)
+            return self.STATUS_ERROR
+
+        imagerepo = tag = None
+        if imagespec:
+            (imagerepo, tag) = self._check_imagespec(imagespec)
+            if not imagerepo:
+                return self.STATUS_ERROR
+            if not force and self.localrepo.cd_imagerepo(imagerepo, tag):
+                Msg().err("Error: image tag already exists:", imagespec,
+                          "(use --force to replace)")
+                return self.STATUS_ERROR
+
+        try:
+            instructions = DockerfileParser().parse(dockerfile)
+        except (IOError, OSError) as error:
+            Msg().err("Error: reading Dockerfile:", error)
+            return self.STATUS_ERROR
+
+        try:
+            stages = DockerfileParser.split_stages(instructions)
+        except ValueError as error:
+            Msg().err("Error:", error)
+            return self.STATUS_ERROR
+
+        if not stages:
+            Msg().err("Error: Dockerfile must start with a FROM instruction")
+            return self.STATUS_ERROR
+
+        stage_containers = {}     # stage name/index (str) -> container id
+        stage_roots = {}          # stage name/index (str) -> container ROOT
+        all_container_ids = []
+        builder = None
+        container_id = None
+
+        for (index, stage) in enumerate(stages):
+            base_imagespec = stage["image"]
+            if base_imagespec.lower() == "scratch":
+                Msg().err("Error: FROM scratch is not supported")
+                self._build_cleanup(all_container_ids)
+                return self.STATUS_ERROR
+
+            container_id = self._build_stage_base(
+                base_imagespec, platform, stage_containers)
+            if not container_id:
+                self._build_cleanup(all_container_ids)
+                return self.STATUS_ERROR
+
+            all_container_ids.append(container_id)
+            Msg().out("Info: build stage %d/%d, container: %s" %
+                      (index + 1, len(stages), container_id), l=Msg.INF)
+            builder = ContainerBuilder(self.localrepo, container_id,
+                                       context_dir)
+            builder.set_build_args(build_args)
+            builder.set_stage_roots(stage_roots)
+            if not builder.run_instructions(stage["instructions"]):
+                self._build_cleanup(all_container_ids)
+                return self.STATUS_ERROR
+
+            stage_roots[str(index)] = builder.container_root
+            stage_containers[str(index)] = container_id
+            if stage["name"]:
+                stage_roots[stage["name"]] = builder.container_root
+                stage_containers[stage["name"]] = container_id
+
+        self._build_cleanup(all_container_ids[:-1])
+
+        if name and not self.localrepo.set_container_name(container_id, name):
+            Msg().out("Warning: invalid container name, container kept as:",
+                      container_id, l=Msg.WAR)
+
+        if imagerepo:
+            if force and self.localrepo.cd_imagerepo(imagerepo, tag):
+                self.localrepo.del_imagerepo(imagerepo, tag, force=True)
+            if not builder.commit(imagerepo, tag):
+                Msg().err("Error: committing built image")
+                self.localrepo.del_container(container_id)
+                return self.STATUS_ERROR
+            Msg().out("Info: image built:", imagerepo + ":" + tag, l=Msg.INF)
+            if not name:
+                self.localrepo.del_container(container_id)
+        else:
+            Msg().out(container_id)
+
+        return self.STATUS_OK
+
     def do_inspect(self, cmdp):
         """
         inspect: print container metadata JSON from an imagerepo or container
@@ -1375,6 +1550,7 @@ Commands:
   create <repo/image:tag>       :Create container from a pulled image
   run <container_id|name>       :Execute created container
   run <repo/image:tag>          :Pull, create and execute container
+  build -t <repo/image:tag> <path> :Build image from a Dockerfile
 
   images -l                     :List container images
   ps -m -s                      :List created containers
@@ -1430,6 +1606,9 @@ Examples:
   udocker manifest inspect centos/centos8
   udocker pull --platform=linux/arm64 centos/centos8
   udocker tag centos/centos8  mycentos/centos8:arm64
+
+  udocker build -t myrepo/myimage:latest .
+  udocker build -f Dockerfile.alt -t myrepo/myimage:latest .
 
   udocker run  mycontainer  cat /etc/redhat-release
   udocker run --hostauth --hostenv --bindhome  mycontainer

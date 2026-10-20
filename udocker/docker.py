@@ -834,7 +834,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
                         loaded_repositories.extend(loaded_repo)
         return loaded_repositories
 
-    def load(self, tmp_imagedir, imagerepo=None):
+    def load(self, tmp_imagedir, imagerepo=None, tag=None):
         """Load a Docker file created with docker save, mimic Docker
         load. The file is a tarball containing several layers, each
         layer has metadata and data content (directory tree) stored
@@ -850,7 +850,7 @@ class DockerLocalFileAPI(CommonLocalFileApi):
         else:
             if not imagerepo:
                 imagerepo = Unique().imagename()
-            tag = Unique().imagetag()
+            tag = tag or Unique().imagetag()
             repositories = self._load_image(structure, imagerepo, tag)
         return repositories
 

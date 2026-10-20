@@ -436,6 +436,35 @@ class ContainerStructureTestCase(TestCase):
         status = prex.clone()
         self.assertEqual(status, "123456")
 
+    @patch('udocker.container.structure.HostInfo')
+    @patch('udocker.container.structure.subprocess.call')
+    @patch.object(ContainerStructure, '_apply_whiteouts')
+    @patch('udocker.container.structure.Msg')
+    def test_15__untar_layers_excludes(self, mock_msg, mock_appwhite,
+                                       mock_call, mock_hinfo):
+        """Test15 tar excludes are anchored to the container root (#457)."""
+        mock_msg.level = 0
+        mock_msg.VER = 3
+        mock_hinfo.gid = "1000"
+        mock_hinfo.return_value.cmd_has_option.return_value = False
+        mock_appwhite.return_value = None
+        mock_call.return_value = 0
+        prex = ContainerStructure(self.local)
+        status = prex._untar_layers(["a.tar"], "/tmp")
+        self.assertTrue(status)
+        cmd = mock_call.call_args_list[0][0][0]
+        self.assertIn("--anchored", cmd)
+        self.assertIn("--exclude=dev/*", cmd)
+        self.assertIn("--exclude=./dev/*", cmd)
+        self.assertIn("--exclude=etc/udev/devices/*", cmd)
+        self.assertIn("--exclude=./etc/udev/devices/*", cmd)
+        self.assertIn("--no-anchored", cmd)
+        self.assertIn(r"--exclude=.wh.*", cmd)
+        self.assertLess(cmd.index("--anchored"),
+                        cmd.index("--exclude=dev/*"))
+        self.assertLess(cmd.index("--no-anchored"),
+                        cmd.index(r"--exclude=.wh.*"))
+
 
 if __name__ == '__main__':
     main()
